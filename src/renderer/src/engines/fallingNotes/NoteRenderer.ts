@@ -10,7 +10,8 @@ import {
 } from './ViewportManager'
 
 function noteKey(trackIdx: number, midi: number, time: number): string {
-  return `${trackIdx}:${midi}:${time}`
+  // Convert time to microseconds integer to avoid float-to-string instability
+  return `${trackIdx}:${midi}:${Math.round(time * 1e6)}`
 }
 
 const INITIAL_POOL_SIZE = 512
@@ -51,7 +52,7 @@ export class NoteRenderer {
     for (let trackIdx = 0; trackIdx < song.tracks.length; trackIdx++) {
       const track = song.tracks[trackIdx]
       const color = getTrackColor(trackIdx)
-      const visibleNotes = getVisibleNotes(track.notes, vp)
+      const visibleNotes = getVisibleNotes(track.notes, vp, hitWindow)
 
       for (const note of visibleNotes) {
         const key = noteKey(trackIdx, note.midi, note.time)
@@ -95,6 +96,7 @@ export class NoteRenderer {
     this.container.removeChildren()
     this.pool.length = 0
     this.active.clear()
+    this.keyPositions.clear()
   }
 
   private createSprite(): Sprite {

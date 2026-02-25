@@ -1,9 +1,7 @@
 import { useRef, useEffect } from 'react'
 import { Application } from 'pixi.js'
 import { NoteRenderer } from '@renderer/engines/fallingNotes/NoteRenderer'
-import { useSongStore } from '@renderer/stores/useSongStore'
-import { usePlaybackStore } from '@renderer/stores/usePlaybackStore'
-import type { Viewport } from '@renderer/engines/fallingNotes/ViewportManager'
+import { createTickerUpdate } from '@renderer/engines/fallingNotes/tickerLoop'
 
 interface FallingNotesCanvasProps {
   /** Callback to send active MIDI notes to PianoKeyboard */
@@ -15,6 +13,11 @@ export function FallingNotesCanvas({ onActiveNotesChange }: FallingNotesCanvasPr
   const appRef = useRef<Application | null>(null)
   const rendererRef = useRef<NoteRenderer | null>(null)
 
+  // Stable ref so the ticker closure always sees the latest callback
+  // without re-running the effect (fix: avoid destroying PixiJS on parent re-render)
+  const onActiveNotesChangeRef = useRef(onActiveNotesChange)
+  onActiveNotesChangeRef.current = onActiveNotesChange
+
   // One-time PixiJS setup + teardown
   useEffect(() => {
     const container = containerRef.current
@@ -22,6 +25,7 @@ export function FallingNotesCanvas({ onActiveNotesChange }: FallingNotesCanvasPr
 
     const app = new Application()
     let destroyed = false
+    let resizeObserver: ResizeObserver | null = null
 
     const setup = async (): Promise<void> => {
       await app.init({
@@ -45,72 +49,43 @@ export function FallingNotesCanvas({ onActiveNotesChange }: FallingNotesCanvasPr
       noteRenderer.init(app.screen.width)
       rendererRef.current = noteRenderer
 
-      // Main render loop
-      app.ticker.add((time) => {
-        const songState = useSongStore.getState()
-        const playState = usePlaybackStore.getState()
-        if (!songState.song) return
+      // Main render loop — uses extracted tickerLoop for testability
+      app.ticker.add(createTickerUpdate(
+        noteRenderer,
+        () => ({ width: app.screen.width, height: app.screen.height }),
+        onActiveNotesChangeRef,
+      ))
 
-        // Advance time if playing
-        if (playState.isPlaying) {
-          const dt = time.deltaMS / 1000
-          const nextTime = Math.min(
-            playState.currentTime + dt,
-            songState.song.duration
-          )
-          usePlaybackStore.getState().setCurrentTime(nextTime)
-
-          // Auto-stop at end
-          if (nextTime >= songState.song.duration) {
-            usePlaybackStore.getState().setPlaying(false)
-          }
-        }
-
-        const vp: Viewport = {
-          width: app.screen.width,
-          height: app.screen.height,
-          pps: playState.pixelsPerSecond,
-          currentTime: usePlaybackStore.getState().currentTime,
-        }
-
-        noteRenderer.update(songState.song, vp)
-
-        // Notify React about active notes (for keyboard highlight)
-        if (onActiveNotesChange) {
-          onActiveNotesChange(new Set(noteRenderer.activeNotes))
+      // Resize handler — attached after init so the first resize event
+      // fires when appRef and rendererRef are already set
+      resizeObserver = new ResizeObserver(() => {
+        if (appRef.current && rendererRef.current) {
+          rendererRef.current.resize(appRef.current.screen.width)
         }
       })
+      resizeObserver.observe(container)
     }
 
     setup()
 
-    // Resize handler
-    const resizeObserver = new ResizeObserver(() => {
-      if (appRef.current && rendererRef.current) {
-        rendererRef.current.resize(appRef.current.screen.width)
-      }
-    })
-    resizeObserver.observe(container)
-
     return () => {
       destroyed = true
-      resizeObserver.disconnect()
+      resizeObserver?.disconnect()
       if (rendererRef.current) {
         rendererRef.current.destroy()
         rendererRef.current = null
       }
       if (appRef.current) {
-        appRef.current.destroy({ removeView: true }, { children: true })
+        appRef.current.destroy({ removeView: true })
         appRef.current = null
       }
     }
-  }, [onActiveNotesChange])
+  }, [])
 
   return (
     <div
       ref={containerRef}
-      className="flex-1 w-full overflow-hidden"
-      style={{ minHeight: 200 }}
+      className="flex-1 w-full min-h-[200px] overflow-hidden"
     />
   )
 }

@@ -23,16 +23,17 @@ export function getVisibleTimeRange(vp: Viewport): [number, number] {
   return [startTime, endTime]
 }
 
-export function getVisibleNotes(notes: ParsedNote[], vp: Viewport): ParsedNote[] {
+export function getVisibleNotes(notes: ParsedNote[], vp: Viewport, marginBefore = 0): ParsedNote[] {
   const [startTime, endTime] = getVisibleTimeRange(vp)
+  const adjustedStart = startTime - marginBefore
 
   // Binary search for first note that could be visible.
-  // A note is visible if: note.time + note.duration > startTime AND note.time < endTime
+  // A note is visible if: note.time + note.duration > adjustedStart AND note.time < endTime
   let lo = 0
   let hi = notes.length
   while (lo < hi) {
     const mid = (lo + hi) >>> 1
-    if (notes[mid].time + notes[mid].duration < startTime) {
+    if (notes[mid].time + notes[mid].duration < adjustedStart) {
       lo = mid + 1
     } else {
       hi = mid

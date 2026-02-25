@@ -146,6 +146,22 @@ describe('getVisibleNotes', () => {
     expect(getVisibleNotes(notes, viewport)).toEqual([])
   })
 
+  test('marginBefore extends the visible range backward', () => {
+    // Viewport: currentTime=5, window [5, 8]
+    // Note at t=4.5, duration=0.4 → ends at 4.9, before window
+    // Without margin: excluded. With margin=0.2: adjustedStart=4.8, 4.9 > 4.8 → included
+    const notes = [note(4.5, 0.4), note(6, 0.5)]
+    const visible = getVisibleNotes(notes, viewport, 0.2)
+    expect(visible.map(n => n.time)).toEqual([4.5, 6])
+  })
+
+  test('marginBefore=0 is the default (no change)', () => {
+    const notes = [note(4.5, 0.4), note(6, 0.5)]
+    const withoutMargin = getVisibleNotes(notes, viewport)
+    const withZeroMargin = getVisibleNotes(notes, viewport, 0)
+    expect(withoutMargin).toEqual(withZeroMargin)
+  })
+
   test('handles large note arrays efficiently (no timeout)', () => {
     // Create 10,000 notes spanning 100 seconds
     const manyNotes: ParsedNote[] = []
