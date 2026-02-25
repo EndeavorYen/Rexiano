@@ -23,6 +23,11 @@ vi.mock('pixi.js', () => {
   }
 })
 
+// Mock noteColors to avoid pulling in useThemeStore (which accesses document)
+vi.mock('./noteColors', () => ({
+  getTrackColor: (trackIndex: number) => [0x9b7fd4, 0xc084cf, 0x7ba4d9, 0xa8d4a0][trackIndex % 4],
+}))
+
 import { NoteRenderer } from './NoteRenderer'
 import { Container } from 'pixi.js'
 import type { ParsedSong } from '@renderer/engines/midi/types'
