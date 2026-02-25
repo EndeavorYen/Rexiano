@@ -19,7 +19,6 @@ interface WhiteKeyInfo {
 
 interface BlackKeyInfo {
   midi: number
-  /** Index of the white key immediately to the left */
   leftWhiteIndex: number
 }
 
@@ -57,27 +56,36 @@ export function PianoKeyboard({ activeNotes, height = 120 }: PianoKeyboardProps)
   const wPct = 100 / layout.whiteKeyCount
 
   return (
-    <div className="relative w-full select-none overflow-hidden bg-white" style={{ height }}>
-      {/* White keys — bottom layer */}
+    <div
+      className="relative w-full select-none overflow-hidden"
+      style={{ height, background: 'var(--color-surface)' }}
+    >
+      {/* White keys */}
       {layout.whiteKeys.map((key) => {
         const active = activeNotes?.has(key.midi)
         return (
           <div
             key={key.midi}
-            className={`absolute top-0 border-r border-stone-300 transition-colors ${
-              active ? 'bg-sky-400' : 'bg-white hover:bg-stone-50'
-            }`}
+            className="absolute top-0 transition-all duration-75"
             style={{
               left: `${key.index * wPct}%`,
               width: `${wPct}%`,
               height: '100%',
-              boxSizing: 'border-box'
+              boxSizing: 'border-box',
+              background: active
+                ? 'var(--color-key-active)'
+                : `linear-gradient(to bottom, var(--color-key-white), var(--color-key-white-bottom))`,
+              borderRight: '1px solid var(--color-border)',
+              borderRadius: '0 0 4px 4px',
+              boxShadow: active
+                ? '0 1px 8px color-mix(in srgb, var(--color-accent) 30%, transparent)'
+                : '0 2px 4px rgba(0,0,0,0.08)',
             }}
           />
         )
       })}
 
-      {/* Black keys — top layer, overlaid on white keys */}
+      {/* Black keys */}
       {layout.blackKeys.map((key) => {
         const active = activeNotes?.has(key.midi)
         const bWidth = wPct * BLACK_KEY_WIDTH_RATIO
@@ -85,21 +93,23 @@ export function PianoKeyboard({ activeNotes, height = 120 }: PianoKeyboardProps)
         return (
           <div
             key={key.midi}
-            className={`absolute top-0 rounded-b-sm transition-colors ${
-              active ? 'bg-sky-500' : 'bg-stone-900'
-            }`}
+            className="absolute top-0 transition-all duration-75"
             style={{
               left: `${centerX - bWidth / 2}%`,
               width: `${bWidth}%`,
               height: `${BLACK_KEY_HEIGHT_RATIO * 100}%`,
-              zIndex: 1
+              zIndex: 1,
+              background: active
+                ? 'var(--color-key-active)'
+                : `linear-gradient(to bottom, var(--color-key-black-top), var(--color-key-black))`,
+              borderRadius: '0 0 3px 3px',
+              boxShadow: active
+                ? '0 1px 6px color-mix(in srgb, var(--color-accent) 40%, transparent)'
+                : '0 2px 3px rgba(0,0,0,0.25), inset 0 -1px 1px rgba(255,255,255,0.05)',
             }}
           />
         )
       })}
-
-      {/* Bottom edge */}
-      <div className="absolute bottom-0 left-0 right-0 h-px bg-stone-400" />
     </div>
   )
 }
