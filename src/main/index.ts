@@ -5,7 +5,9 @@ import { registerFileHandlers } from './ipc/fileHandlers'
 
 // WSL2 doesn't forward Windows display scaling to X11/Wayland,
 // so Electron defaults to devicePixelRatio=1. Force the correct factor.
-app.commandLine.appendSwitch('force-device-scale-factor', '1.5')
+if (process.env.WSL_DISTRO_NAME) {
+  app.commandLine.appendSwitch('force-device-scale-factor', '1.5')
+}
 
 function createWindow(): void {
   const mainWindow = new BrowserWindow({
