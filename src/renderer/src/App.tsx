@@ -18,14 +18,23 @@ function App(): React.JSX.Element {
     setActiveNotes(notes)
   }, [])
 
-  const handleOpenFile = async (): Promise<void> => {
-    const result = await window.api.openMidiFile()
-    if (result) {
-      const parsed = parseMidiFile(result.fileName, result.data)
-      loadSong(parsed)
-      reset()
+  const [error, setError] = useState<string | null>(null)
+
+  const handleOpenFile = useCallback(async (): Promise<void> => {
+    setError(null)
+    try {
+      const result = await window.api.openMidiFile()
+      if (result) {
+        const parsed = parseMidiFile(result.fileName, result.data)
+        loadSong(parsed)
+        reset()
+      }
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : 'Failed to open MIDI file'
+      setError(msg)
+      console.error('Failed to parse MIDI file:', e)
     }
-  }
+  }, [loadSong, reset])
 
   return (
     <div className="flex flex-col h-screen" style={{ background: 'var(--color-bg)', color: 'var(--color-text)' }}>
@@ -50,6 +59,11 @@ function App(): React.JSX.Element {
           >
             Open MIDI File
           </button>
+          {error && (
+            <p className="mt-4 text-sm" style={{ color: 'var(--color-accent)' }}>
+              {error}
+            </p>
+          )}
           <div className="absolute bottom-6 right-6">
             <ThemePicker />
           </div>
@@ -67,7 +81,7 @@ function App(): React.JSX.Element {
               <p className="text-xs" style={{ color: 'var(--color-text-muted)' }}>
                 {song.tracks.length} track{song.tracks.length > 1 ? 's' : ''} &middot;{' '}
                 {song.noteCount} notes
-                {song.tempos.length > 0 && ` \u00B7 ${song.tempos[0].bpm} BPM`}
+                {song.tempos.length > 0 && ` \u00B7 ${Math.round(song.tempos[0].bpm)} BPM`}
               </p>
             </div>
             <div className="flex items-center gap-2 shrink-0 ml-3">

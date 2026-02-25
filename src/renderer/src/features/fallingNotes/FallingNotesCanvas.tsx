@@ -1,7 +1,9 @@
 import { useRef, useEffect } from 'react'
 import { Application } from 'pixi.js'
 import { NoteRenderer } from '@renderer/engines/fallingNotes/NoteRenderer'
+import { getCanvasBgColor } from '@renderer/engines/fallingNotes/noteColors'
 import { createTickerUpdate } from '@renderer/engines/fallingNotes/tickerLoop'
+import { useThemeStore } from '@renderer/stores/useThemeStore'
 
 interface FallingNotesCanvasProps {
   /** Callback to send active MIDI notes to PianoKeyboard */
@@ -26,10 +28,11 @@ export function FallingNotesCanvas({ onActiveNotesChange }: FallingNotesCanvasPr
     const app = new Application()
     let destroyed = false
     let resizeObserver: ResizeObserver | null = null
+    let unsubTheme: (() => void) | null = null
 
     const setup = async (): Promise<void> => {
       await app.init({
-        background: 0xfafaf9, // stone-50, matches Tailwind bg
+        background: getCanvasBgColor(),
         resizeTo: container,
         antialias: true,
         autoDensity: true,
@@ -56,6 +59,11 @@ export function FallingNotesCanvas({ onActiveNotesChange }: FallingNotesCanvasPr
         onActiveNotesChangeRef,
       ))
 
+      // Update canvas background when theme changes
+      unsubTheme = useThemeStore.subscribe(() => {
+        app.renderer.background.color = getCanvasBgColor()
+      })
+
       // Resize handler — attached after init so the first resize event
       // fires when appRef and rendererRef are already set
       resizeObserver = new ResizeObserver(() => {
@@ -70,6 +78,7 @@ export function FallingNotesCanvas({ onActiveNotesChange }: FallingNotesCanvasPr
 
     return () => {
       destroyed = true
+      unsubTheme?.()
       resizeObserver?.disconnect()
       if (rendererRef.current) {
         rendererRef.current.destroy()
