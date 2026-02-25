@@ -1,14 +1,26 @@
-/** Track colors for falling notes on a light background. */
-const TRACK_COLORS: number[] = [
-  0x3b82f6, // blue   — Track 1 (typically right hand)
-  0xf97316, // orange — Track 2 (typically left hand)
-  0x8b5cf6, // purple — Track 3
-  0x10b981, // green  — Track 4
-  0xef4444, // red    — Track 5
-  0x06b6d4, // cyan   — Track 6
-]
+import { useThemeStore } from '@renderer/stores/useThemeStore'
+import { hexToPixi } from '@renderer/themes/tokens'
 
-/** Get the PixiJS tint color for a given track index. */
+/**
+ * Get the PixiJS tint color for a given track index.
+ * Reads from the current active theme.
+ */
 export function getTrackColor(trackIndex: number): number {
-  return TRACK_COLORS[trackIndex % TRACK_COLORS.length]
+  const colors = useThemeStore.getState().theme.colors
+  const palette = [colors.note1, colors.note2, colors.note3, colors.note4]
+  return hexToPixi(palette[trackIndex % palette.length])
+}
+
+/**
+ * Get the canvas background color as a PixiJS number.
+ */
+export function getCanvasBgColor(): number {
+  return hexToPixi(useThemeStore.getState().theme.colors.canvasBg)
+}
+
+/**
+ * Get the hit line color as a PixiJS number.
+ */
+export function getHitLineColor(): number {
+  return hexToPixi(useThemeStore.getState().theme.colors.hitLine)
 }
