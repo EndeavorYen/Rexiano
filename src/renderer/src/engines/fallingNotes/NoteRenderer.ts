@@ -1,5 +1,5 @@
 import { Container, Sprite, Texture } from 'pixi.js'
-import type { ParsedSong } from '@renderer/engines/midi/types'
+import type { ParsedSong, ParsedNote } from '@renderer/engines/midi/types'
 import { buildKeyPositions, type KeyPosition } from './keyPositions'
 import { getTrackColor } from './noteColors'
 import {
@@ -20,6 +20,8 @@ export class NoteRenderer {
   private container: Container
   private pool: Sprite[] = []
   private active = new Map<string, Sprite>()
+  private nextActive = new Map<string, Sprite>()
+  private visibleBuf: ParsedNote[] = []
   private keyPositions = new Map<number, KeyPosition>()
   private noteTexture!: Texture
 
@@ -44,7 +46,9 @@ export class NoteRenderer {
   }
 
   update(song: ParsedSong, vp: Viewport): void {
-    const nextActive = new Map<string, Sprite>()
+    // Double-buffer swap: reuse nextActive map instead of allocating each frame
+    const nextActive = this.nextActive
+    nextActive.clear()
     this.activeNotes.clear()
 
     const hitWindow = 0.05
@@ -52,7 +56,7 @@ export class NoteRenderer {
     for (let trackIdx = 0; trackIdx < song.tracks.length; trackIdx++) {
       const track = song.tracks[trackIdx]
       const color = getTrackColor(trackIdx)
-      const visibleNotes = getVisibleNotes(track.notes, vp, hitWindow)
+      const visibleNotes = getVisibleNotes(track.notes, vp, hitWindow, this.visibleBuf)
 
       for (const note of visibleNotes) {
         const key = noteKey(trackIdx, note.midi, note.time)
@@ -63,7 +67,8 @@ export class NoteRenderer {
         const h = durationToHeight(note.duration, vp.pps)
         const rectY = screenY - h
 
-        let sprite = this.active.get(key)
+        // Check both active (from last frame) and nextActive (from this frame, for duplicate keys)
+        let sprite = this.active.get(key) ?? nextActive.get(key)
         if (!sprite) {
           sprite = this.allocate()
           sprite.tint = color
@@ -89,6 +94,8 @@ export class NoteRenderer {
       }
     }
 
+    // Swap buffers: active ↔ nextActive
+    this.nextActive = this.active
     this.active = nextActive
   }
 
@@ -96,6 +103,7 @@ export class NoteRenderer {
     this.container.removeChildren()
     this.pool.length = 0
     this.active.clear()
+    this.nextActive.clear()
     this.keyPositions.clear()
   }
 

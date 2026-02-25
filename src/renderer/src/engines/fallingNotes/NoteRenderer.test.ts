@@ -275,4 +275,28 @@ describe('NoteRenderer', () => {
   test('resize updates key positions without error', () => {
     expect(() => renderer.resize(800)).not.toThrow()
   })
+
+  test('handles duplicate notes at same track/midi/time (last one wins)', () => {
+    // Two notes at exact same midi and time on the same track — noteKey collides.
+    // The second note's sprite should overwrite the first in nextActive.
+    // Only one sprite should be visible (no duplicates, no crash).
+    const song = makeSong([{
+      notes: [
+        { midi: 60, time: 1, duration: 0.5 },
+        { midi: 60, time: 1, duration: 1.0 },
+      ],
+    }])
+    const vp = makeViewport({ currentTime: 1 })
+
+    renderer.update(song, vp)
+
+    const sprites = (parent as unknown as { children: { children: unknown[] }[] }).children[0].children as {
+      visible: boolean; height: number
+    }[]
+    const visible = sprites.filter(s => s.visible)
+    // Both notes share the same key, so only one sprite is used
+    expect(visible.length).toBe(1)
+    // The second note (duration=1.0) overwrites the first, so height = max(1.0 * 200, 2) = 200
+    expect(visible[0].height).toBe(200)
+  })
 })

@@ -29,6 +29,7 @@ export function getCanvasBgColor(): number {
 
 /**
  * Get the hit line color as a PixiJS number.
+ * Reserved for Phase 4 — will render a visible hit line on the canvas.
  */
 export function getHitLineColor(): number {
   return hexToPixi(useThemeStore.getState().theme.colors.hitLine)

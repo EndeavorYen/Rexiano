@@ -23,7 +23,16 @@ export function getVisibleTimeRange(vp: Viewport): [number, number] {
   return [startTime, endTime]
 }
 
-export function getVisibleNotes(notes: ParsedNote[], vp: Viewport, marginBefore = 0): ParsedNote[] {
+/**
+ * Filter notes to only those visible in the current viewport.
+ * Pass a reusable `out` array from a render loop to avoid per-frame allocation.
+ */
+export function getVisibleNotes(
+  notes: ParsedNote[],
+  vp: Viewport,
+  marginBefore = 0,
+  out?: ParsedNote[],
+): ParsedNote[] {
   const [startTime, endTime] = getVisibleTimeRange(vp)
   const adjustedStart = startTime - marginBefore
 
@@ -40,7 +49,8 @@ export function getVisibleNotes(notes: ParsedNote[], vp: Viewport, marginBefore 
     }
   }
 
-  const result: ParsedNote[] = []
+  const result = out ?? []
+  result.length = 0
   for (let i = lo; i < notes.length; i++) {
     const note = notes[i]
     if (note.time > endTime) break
