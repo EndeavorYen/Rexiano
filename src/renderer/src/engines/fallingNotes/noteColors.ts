@@ -1,14 +1,23 @@
 import { useThemeStore } from '@renderer/stores/useThemeStore'
 import { hexToPixi } from '@renderer/themes/tokens'
 
+// Four-color palette per theme. Tracks beyond 4 will cycle through these colors.
+let cachedThemeId: string | null = null
+let cachedPalette: number[] = []
+
 /**
  * Get the PixiJS tint color for a given track index.
- * Reads from the current active theme.
+ * Reads from the current active theme, with per-theme caching to
+ * avoid allocations and hexToPixi calls in the render loop.
  */
 export function getTrackColor(trackIndex: number): number {
-  const colors = useThemeStore.getState().theme.colors
-  const palette = [colors.note1, colors.note2, colors.note3, colors.note4]
-  return hexToPixi(palette[trackIndex % palette.length])
+  const state = useThemeStore.getState()
+  if (state.themeId !== cachedThemeId) {
+    const c = state.theme.colors
+    cachedPalette = [hexToPixi(c.note1), hexToPixi(c.note2), hexToPixi(c.note3), hexToPixi(c.note4)]
+    cachedThemeId = state.themeId
+  }
+  return cachedPalette[trackIndex % cachedPalette.length]
 }
 
 /**

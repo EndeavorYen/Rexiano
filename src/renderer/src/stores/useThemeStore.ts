@@ -13,30 +13,15 @@ function loadSavedTheme(): ThemeId {
   return 'lavender'
 }
 
-/** Apply theme CSS custom properties to document root */
+/** Apply theme CSS custom properties to document root.
+ *  Derives CSS variable names from object keys automatically:
+ *  camelCase → kebab-case (e.g. surfaceAlt → --color-surface-alt) */
 function applyThemeToDOM(tokens: ThemeTokens): void {
   const root = document.documentElement
-  const c = tokens.colors
-  root.style.setProperty('--color-bg', c.bg)
-  root.style.setProperty('--color-surface', c.surface)
-  root.style.setProperty('--color-surface-alt', c.surfaceAlt)
-  root.style.setProperty('--color-accent', c.accent)
-  root.style.setProperty('--color-accent-hover', c.accentHover)
-  root.style.setProperty('--color-text', c.text)
-  root.style.setProperty('--color-text-muted', c.textMuted)
-  root.style.setProperty('--color-border', c.border)
-  root.style.setProperty('--color-canvas-bg', c.canvasBg)
-  root.style.setProperty('--color-grid-line', c.gridLine)
-  root.style.setProperty('--color-hit-line', c.hitLine)
-  root.style.setProperty('--color-note-1', c.note1)
-  root.style.setProperty('--color-note-2', c.note2)
-  root.style.setProperty('--color-note-3', c.note3)
-  root.style.setProperty('--color-note-4', c.note4)
-  root.style.setProperty('--color-key-active', c.keyActive)
-  root.style.setProperty('--color-key-white', c.keyWhite)
-  root.style.setProperty('--color-key-white-bottom', c.keyWhiteBottom)
-  root.style.setProperty('--color-key-black', c.keyBlack)
-  root.style.setProperty('--color-key-black-top', c.keyBlackTop)
+  for (const [key, value] of Object.entries(tokens.colors)) {
+    const cssName = '--color-' + key.replace(/[A-Z]/g, (m) => '-' + m.toLowerCase())
+    root.style.setProperty(cssName, value)
+  }
 }
 
 interface ThemeState {
