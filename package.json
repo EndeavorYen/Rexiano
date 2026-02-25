@@ -11,6 +11,8 @@
     "lint": "eslint --cache .",
     "typecheck:node": "tsc --noEmit -p tsconfig.node.json --composite false",
     "typecheck:web": "tsc --noEmit -p tsconfig.web.json --composite false",
+    "test": "vitest run",
+    "test:watch": "vitest",
     "typecheck": "pnpm typecheck:node && pnpm typecheck:web",
     "start": "electron-vite preview",
     "dev": "unset ELECTRON_RUN_AS_NODE && NO_SANDBOX=1 electron-vite dev",
@@ -43,7 +45,8 @@
     "react-dom": "^19.2.1",
     "tailwindcss": "^4.2.1",
     "typescript": "^5.9.3",
-    "vite": "^7.2.6"
+    "vite": "^7.2.6",
+    "vitest": "^4.0.18"
   },
   "pnpm": {
     "onlyBuiltDependencies": [
@@ -52,6 +55,9 @@
     ]
   },
   "dependencies": {
+    "@fontsource-variable/dm-sans": "^5.2.8",
+    "@fontsource-variable/jetbrains-mono": "^5.2.8",
+    "@fontsource-variable/nunito": "^5.2.7",
     "@tonejs/midi": "^2.0.28",
     "pixi.js": "^8.16.0",
     "zustand": "^5.0.11"
