@@ -10,11 +10,14 @@ interface FallingNotesCanvasProps {
   onActiveNotesChange?: (notes: Set<number>) => void;
   /** Phase 4: Get current playback time from AudioScheduler */
   getAudioCurrentTime?: () => number | null;
+  /** Expose the NoteRenderer instance for external use (e.g. practice visual feedback) */
+  onNoteRendererReady?: (renderer: NoteRenderer) => void;
 }
 
 export function FallingNotesCanvas({
   onActiveNotesChange,
   getAudioCurrentTime,
+  onNoteRendererReady,
 }: FallingNotesCanvasProps): React.JSX.Element {
   const containerRef = useRef<HTMLDivElement>(null);
   const appRef = useRef<Application | null>(null);
@@ -32,6 +35,12 @@ export function FallingNotesCanvas({
   useEffect(() => {
     getAudioCurrentTimeRef.current = getAudioCurrentTime;
   }, [getAudioCurrentTime]);
+
+  // Stable ref for note renderer callback
+  const onNoteRendererReadyRef = useRef(onNoteRendererReady);
+  useEffect(() => {
+    onNoteRendererReadyRef.current = onNoteRendererReady;
+  }, [onNoteRendererReady]);
 
   // One-time PixiJS setup + teardown
   useEffect(() => {
@@ -64,6 +73,7 @@ export function FallingNotesCanvas({
       const noteRenderer = new NoteRenderer(app.stage);
       noteRenderer.init(app.screen.width);
       rendererRef.current = noteRenderer;
+      onNoteRendererReadyRef.current?.(noteRenderer);
 
       // Main render loop — uses extracted tickerLoop for testability
       app.ticker.add(
