@@ -57,3 +57,22 @@ export interface MidiDeviceInfo {
   /** Current connection state */
   state: 'connected' | 'disconnected'
 }
+
+// ─── Phase 6: Practice Mode ─────────────────────────────────────────
+
+/** Available practice modes */
+export type PracticeMode = 'watch' | 'wait' | 'free'
+
+/** Scoring result for a practice session */
+export interface PracticeScore {
+  totalNotes: number
+  hitNotes: number
+  missedNotes: number
+  /** Accuracy percentage (0–100) */
+  accuracy: number
+  currentStreak: number
+  bestStreak: number
+}
+
+/** Result status for an individual note in practice mode */
+export type NoteResult = 'hit' | 'miss' | 'pending'
