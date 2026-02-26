@@ -1,6 +1,6 @@
 // ─── Phase 4: Audio Playback — Interface Contracts ───
 
-import type { ParsedNote } from '../midi/types'
+import type { ParsedNote, ParsedSong } from '../midi/types'
 
 // ─── AudioEngine ────────────────────────────────────
 
@@ -129,6 +129,9 @@ export interface ScheduledNote {
  * - Handling play/pause/stop
  */
 export interface IAudioScheduler {
+  /** Bind a song for scheduling. Call before start(). */
+  setSong(song: ParsedSong): void
+
   /**
    * Start scheduling from a given song time.
    * @param songTime  Current playback position in seconds
@@ -143,6 +146,9 @@ export interface IAudioScheduler {
    * @param songTime  New playback position in seconds
    */
   seek(songTime: number): void
+
+  /** Get the current song time derived from AudioContext. Returns null if unavailable. */
+  getCurrentTime(): number | null
 
   /** Clean up interval timers */
   dispose(): void

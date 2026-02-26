@@ -9,13 +9,13 @@
 //
 // Timing model (from DESIGN.md):
 //   songTime = audioContext.currentTime - startAudioTime + seekOffset
-//   audioTime = startAudioTime + (songTime - seekOffset)
+//   audioTime = startAudioTime + (note.time - seekOffset)
 //
 // This replaces the deltaMS-based time advancement in tickerLoop.ts
 
 import type { IAudioScheduler, AudioSchedulerConfig } from './types'
 import type { IAudioEngine } from './types'
-import type { ParsedSong } from '../midi/types'
+import type { ParsedSong, ParsedNote } from '../midi/types'
 
 const DEFAULT_CONFIG: AudioSchedulerConfig = {
   lookAheadSeconds: 0.1,
@@ -49,13 +49,19 @@ export class AudioScheduler implements IAudioScheduler {
   }
 
   start(songTime: number): void {
-    // TODO: Phase 4 implementation
-    // 1. Record startAudioTime = audioContext.currentTime
-    // 2. Set seekOffset = songTime
-    // 3. Reset track cursors to the right position (binary search)
-    // 4. Start setInterval loop → this._tick()
+    if (!this._song) return
+    const ctx = this._engine.audioContext
+    if (!ctx) return
+
+    // Stop any existing scheduling
+    if (this._intervalId !== null) {
+      clearInterval(this._intervalId)
+      this._intervalId = null
+    }
+
+    this._startAudioTime = ctx.currentTime
     this._seekOffset = songTime
-    this._startAudioTime = 0
+    this._resetCursors(songTime)
     this._intervalId = setInterval(() => this._tick(), this._config.intervalMs)
   }
 
@@ -68,13 +74,29 @@ export class AudioScheduler implements IAudioScheduler {
   }
 
   seek(songTime: number): void {
-    // TODO: Phase 4 implementation
-    // 1. Stop all sounding notes
-    // 2. Update seekOffset
-    // 3. Reset track cursors via binary search
-    // 4. If was playing, restart scheduling
+    if (!this._song) return
+
+    this._engine.allNotesOff()
+
+    const ctx = this._engine.audioContext
+    if (!ctx) return
+
     this._seekOffset = songTime
-    this._trackCursors = this._song?.tracks.map(() => 0) ?? []
+    this._startAudioTime = ctx.currentTime
+    this._resetCursors(songTime)
+
+    // If currently playing, restart the interval
+    if (this._intervalId !== null) {
+      clearInterval(this._intervalId)
+      this._intervalId = setInterval(() => this._tick(), this._config.intervalMs)
+    }
+  }
+
+  /** Get the current song time derived from AudioContext. Returns null if unavailable. */
+  getCurrentTime(): number | null {
+    const ctx = this._engine.audioContext
+    if (!ctx || this._intervalId === null) return null
+    return ctx.currentTime - this._startAudioTime + this._seekOffset
   }
 
   dispose(): void {
@@ -86,22 +108,78 @@ export class AudioScheduler implements IAudioScheduler {
   // ─── Private ────────────────────────────
 
   /**
+   * Binary search to find the first note index where note.time >= targetTime.
+   */
+  private _findCursorPosition(notes: ParsedNote[], targetTime: number): number {
+    let lo = 0
+    let hi = notes.length
+    while (lo < hi) {
+      const mid = (lo + hi) >>> 1
+      if (notes[mid].time < targetTime) {
+        lo = mid + 1
+      } else {
+        hi = mid
+      }
+    }
+    return lo
+  }
+
+  /**
+   * Reset all track cursors to the correct position for the given song time
+   * using binary search.
+   */
+  private _resetCursors(songTime: number): void {
+    if (!this._song) return
+    this._trackCursors = this._song.tracks.map((track) =>
+      this._findCursorPosition(track.notes, songTime),
+    )
+  }
+
+  /**
    * Called every `intervalMs`. Scans each track for notes
    * whose start time falls within [now, now + lookAhead],
    * and schedules them via AudioEngine.
    */
   private _tick(): void {
     if (!this._song) return
+    const ctx = this._engine.audioContext
+    if (!ctx) return
 
-    // TODO: Phase 4 implementation
-    // songTime = audioCtx.currentTime - _startAudioTime + _seekOffset
-    const songTime = this._startAudioTime + this._seekOffset // placeholder
+    const songTime = ctx.currentTime - this._startAudioTime + this._seekOffset
     const lookAhead = this._config.lookAheadSeconds
+    const horizon = songTime + lookAhead
+
     for (let t = 0; t < this._song.tracks.length; t++) {
-      const cursor = this._trackCursors[t]
-      // Advance cursor while note.time < songTime + lookAhead
-      // Call engine.noteOn / engine.noteOff for each note
-      void [songTime, lookAhead, cursor]
+      const notes = this._song.tracks[t].notes
+      let cursor = this._trackCursors[t]
+
+      while (cursor < notes.length) {
+        const note = notes[cursor]
+
+        // Note is beyond our look-ahead window — stop scanning this track
+        if (note.time >= horizon) break
+
+        // Skip notes that have already fully elapsed (noteOff in the past)
+        if (note.time + note.duration < songTime) {
+          cursor++
+          continue
+        }
+
+        // Schedule noteOn and noteOff at precise AudioContext times
+        const audioTime = this._startAudioTime + (note.time - this._seekOffset)
+        // Clamp audioTime to now at minimum (don't schedule in the past)
+        const clampedOnTime = Math.max(audioTime, ctx.currentTime)
+        this._engine.noteOn(note.midi, note.velocity, clampedOnTime)
+
+        const offTime = this._startAudioTime + (note.time + note.duration - this._seekOffset)
+        // Ensure noteOff is always after noteOn (noteOn may have been clamped forward)
+        const clampedOffTime = Math.max(offTime, clampedOnTime + 0.01)
+        this._engine.noteOff(note.midi, clampedOffTime)
+
+        cursor++
+      }
+
+      this._trackCursors[t] = cursor
     }
   }
 }

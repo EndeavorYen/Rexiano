@@ -22,6 +22,7 @@ export function createTickerUpdate(
   noteRenderer: NoteRenderer,
   getScreenSize: () => { width: number; height: number },
   onActiveNotesChangeRef: { current: ((notes: Set<number>) => void) | undefined },
+  getAudioCurrentTime?: () => number | null,
 ) {
   let prevActiveNotes = new Set<number>()
 
@@ -33,8 +34,13 @@ export function createTickerUpdate(
     let effectiveTime = playState.currentTime
 
     if (playState.isPlaying) {
-      const dt = Math.min(time.deltaMS / 1000, MAX_DELTA_SECONDS)
-      effectiveTime = Math.min(effectiveTime + dt, songState.song.duration)
+      const audioTime = getAudioCurrentTime?.()
+      if (audioTime != null) {
+        effectiveTime = Math.min(audioTime, songState.song.duration)
+      } else {
+        const dt = Math.min(time.deltaMS / 1000, MAX_DELTA_SECONDS)
+        effectiveTime = Math.min(effectiveTime + dt, songState.song.duration)
+      }
       playState.setCurrentTime(effectiveTime)
 
       if (effectiveTime >= songState.song.duration) {

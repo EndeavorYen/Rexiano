@@ -1,5 +1,6 @@
 import { usePlaybackStore } from '@renderer/stores/usePlaybackStore'
 import { useSongStore } from '@renderer/stores/useSongStore'
+import { VolumeControl } from '@renderer/features/audio/VolumeControl'
 
 export function formatTime(seconds: number): string {
   if (!Number.isFinite(seconds) || seconds < 0) return '0:00'
@@ -65,6 +66,9 @@ export function TransportBar(): React.JSX.Element {
         style={{ accentColor: 'var(--color-accent)' }}
         aria-label="Seek position"
       />
+
+      {/* Volume */}
+      <VolumeControl />
     </div>
   )
 }

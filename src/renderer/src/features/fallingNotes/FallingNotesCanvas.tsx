@@ -8,9 +8,11 @@ import { useThemeStore } from '@renderer/stores/useThemeStore'
 interface FallingNotesCanvasProps {
   /** Callback to send active MIDI notes to PianoKeyboard */
   onActiveNotesChange?: (notes: Set<number>) => void
+  /** Phase 4: Get current playback time from AudioScheduler */
+  getAudioCurrentTime?: () => number | null
 }
 
-export function FallingNotesCanvas({ onActiveNotesChange }: FallingNotesCanvasProps): React.JSX.Element {
+export function FallingNotesCanvas({ onActiveNotesChange, getAudioCurrentTime }: FallingNotesCanvasProps): React.JSX.Element {
   const containerRef = useRef<HTMLDivElement>(null)
   const appRef = useRef<Application | null>(null)
   const rendererRef = useRef<NoteRenderer | null>(null)
@@ -19,6 +21,10 @@ export function FallingNotesCanvas({ onActiveNotesChange }: FallingNotesCanvasPr
   // without re-running the effect (fix: avoid destroying PixiJS on parent re-render)
   const onActiveNotesChangeRef = useRef(onActiveNotesChange)
   onActiveNotesChangeRef.current = onActiveNotesChange
+
+  // Stable ref for audio time callback
+  const getAudioCurrentTimeRef = useRef(getAudioCurrentTime)
+  getAudioCurrentTimeRef.current = getAudioCurrentTime
 
   // One-time PixiJS setup + teardown
   useEffect(() => {
@@ -57,6 +63,7 @@ export function FallingNotesCanvas({ onActiveNotesChange }: FallingNotesCanvasPr
         noteRenderer,
         () => ({ width: app.screen.width, height: app.screen.height }),
         onActiveNotesChangeRef,
+        () => getAudioCurrentTimeRef.current?.() ?? null,
       ))
 
       // Update canvas background when theme changes

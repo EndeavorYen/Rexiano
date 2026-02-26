@@ -1,3 +1,26 @@
+# Rexiano — Claude Code 開發指引
+
+## 必讀文件
+
+開發前請先閱讀以下文件，了解專案全貌與當前進度：
+
+- **[docs/DESIGN.md](docs/DESIGN.md)** — 系統設計文件（Phase 1~9 完整架構、資料模型、技術決策）
+- **[docs/ROADMAP.md](docs/ROADMAP.md)** — 開發路線圖與任務追蹤（checkbox 清單，標示已完成 / 未完成）
+- **[docs/init.md](docs/init.md)** — 原始需求文件（六大核心功能）
+
+開發任何新功能前，先確認該功能在 DESIGN.md 中的 Phase 定義與架構設計，並在完成後更新 ROADMAP.md 的 checkbox。
+
+## 技術堆疊速查
+
+- **框架**: Electron 33 + React 19 + TypeScript 5.9
+- **建置**: electron-vite 5 + Vite 7 + Tailwind CSS 4
+- **渲染**: PixiJS 8（下落音符）、CSS（鍵盤 / UI）
+- **狀態**: Zustand 5（songStore / playbackStore / themeStore）
+- **測試**: Vitest 4
+- **套件管理**: pnpm
+
+## 前端美學守則
+
 DISTILLED_AESTHETICS_PROMPT = """
 <frontend_aesthetics>
 You tend to converge toward generic, "on distribution" outputs. In frontend design, this creates what users call the "AI slop" aesthetic. Avoid this: make creative, distinctive frontends that surprise and delight. Focus on:
@@ -29,3 +52,10 @@ WSL2 不支援 Chromium sandbox（seccomp-bpf），需要 NO_SANDBOX=1。GPU 也
 ─────────────────────────────────────────────────
 
 為什麼傳 number[] 而不是 Uint8Array：Electron 的 IPC 使用 structured clone 序列化資料，Uint8Array 在跨 context 傳遞時可能會遺失型別資訊。用 number[] 更安全，renderer 端再轉回 Uint8Array 即可。
+
+## 開發慣例
+
+- PixiJS 透過 `store.getState()` 直接讀取 Zustand（非 React hook），避免 re-render
+- 主題色統一透過 CSS Custom Properties `var(--color-*)` 引用，定義在 `src/renderer/src/themes/tokens.ts`
+- 字型使用 @fontsource 離線打包（Nunito / DM Sans / JetBrains Mono），不依賴 CDN
+- 測試檔案放在對應模組旁邊（`*.test.ts`），使用 Vitest
