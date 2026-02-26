@@ -488,4 +488,19 @@ describe("NoteRenderer", () => {
       vi.unstubAllGlobals();
     });
   });
+
+  describe("findSpriteForNote", () => {
+    test("returns null when no active sprites", () => {
+      const sprite = renderer.findSpriteForNote(0, 60, 1.0);
+      expect(sprite).toBeNull();
+    });
+
+    test("returns null for non-existent note", () => {
+      // After update, try a note that doesn't exist
+      const song = makeSong([{ notes: [{ midi: 60, time: 0, duration: 1 }] }]);
+      renderer.update(song, makeViewport({ currentTime: 0 }));
+      const sprite = renderer.findSpriteForNote(99, 999, 999);
+      expect(sprite).toBeNull();
+    });
+  });
 });

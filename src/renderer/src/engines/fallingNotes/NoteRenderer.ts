@@ -267,4 +267,17 @@ export class NoteRenderer {
     };
     requestAnimationFrame(tick);
   }
+
+  /**
+   * Look up the currently active sprite for a specific note.
+   * Returns null if the note is not currently visible on screen.
+   */
+  findSpriteForNote(
+    trackIdx: number,
+    midi: number,
+    time: number,
+  ): Sprite | null {
+    const key = noteKey(trackIdx, midi, time);
+    return this.active.get(key) ?? null;
+  }
 }
