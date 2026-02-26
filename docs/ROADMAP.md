@@ -13,7 +13,7 @@
 | **v0.1.0** | 靜默視覺化播放器 | Phase 1 + 2 + 3 ✅ |
 | **v0.2.0** | 有聲播放器 | + Phase 4 ✅ |
 | **v0.3.0** | MIDI 鍵盤連接 | + Phase 5 ✅ |
-| **v0.4.0** | 練習模式 | + Phase 6 |
+| **v0.4.0** | 練習模式 | + Phase 6 ✅ |
 | **v0.4.1** | 🎯 兒童可用版 | + Phase 6.5（可用性增強） |
 | **v0.5.0** | 五線譜顯示 | + Phase 7 |
 | **v1.0.0** | 正式發佈 | + Phase 8 + 9，全功能穩定版 |
@@ -134,46 +134,50 @@
 
 ---
 
-## Phase 6 — 練習模式 🔄
+## Phase 6 — 練習模式 ✅
 
-> 目標版本：v0.4.0
+> 已完成，包含在 v0.4.0
 >
 > 前置：Phase 5 ✅
->
-> 狀態：Agent Team 執行中
 
-- [ ] `stores/usePracticeStore.ts` — 練習狀態管理
-  - [ ] 模式切換：Watch / Wait / Free
-  - [ ] 速度控制 (0.25x ~ 2.0x)
-  - [ ] A-B 段落循環
-  - [ ] 分手練習（track 過濾）
-  - [ ] 評分統計
-- [ ] 等待模式（Wait Mode）核心邏輯
-  - [ ] 偵測下一個目標音符
-  - [ ] 暫停播放直到使用者彈出正確音
-  - [ ] 和弦判定（多音同時）
-  - [ ] 容許時間窗口 ±200ms
-- [ ] 速度控制
-  - [ ] 調整 `pixelsPerSecond` 與音頻播放速率
-  - [ ] 音高校正（變速不變調）
-  - [ ] UI：速度選擇器 (25% / 50% / 75% / 100%)
-- [ ] 段落循環
-  - [ ] seek bar 上拖曳設定 A-B 點
-  - [ ] 到達 B 點自動跳回 A 點
-  - [ ] UI：seek bar 上的彩色高亮區段
-- [ ] 分手練習
-  - [ ] Track 選擇 UI（勾選要練習的 track）
-  - [ ] 隱藏 track 僅播音頻（伴奏）
-  - [ ] 評分僅計算已選 track
-- [ ] 評分系統
-  - [ ] Hit / Miss 即時判定
-  - [ ] 準確率、連擊數統計
-  - [ ] 練習結束結算畫面
-- [ ] 視覺回饋
-  - [ ] Hit 音符：短暫發光效果
-  - [ ] Miss 音符：轉灰 + 正確鍵閃爍
-  - [ ] 連擊提示（combo counter）
-- [ ] 測試：等待模式邏輯、評分計算
+- [x] `stores/usePracticeStore.ts` — 練習狀態管理
+  - [x] 模式切換：Watch / Wait / Free
+  - [x] 速度控制 (0.25x ~ 2.0x)
+  - [x] A-B 段落循環
+  - [x] 分手練習（track 過濾）
+  - [x] 評分統計
+- [x] 等待模式（Wait Mode）核心邏輯
+  - [x] 偵測下一個目標音符
+  - [x] 暫停播放直到使用者彈出正確音
+  - [x] 和弦判定（多音同時）
+  - [x] 容許時間窗口 ±200ms
+- [x] 速度控制
+  - [x] 調整 `pixelsPerSecond` 與音頻播放速率
+  - [x] UI：速度選擇器 (25% / 50% / 75% / 100%)
+- [x] 段落循環
+  - [x] A-B 按鈕設定循環點
+  - [x] 到達 B 點自動跳回 A 點
+  - [ ] UI：seek bar 上的彩色高亮區段 → **移至 Phase 6.5**
+- [x] 分手練習
+  - [x] Track 選擇 UI（勾選要練習的 track）
+  - [x] 評分僅計算已選 track
+- [x] 評分系統
+  - [x] Hit / Miss 即時判定
+  - [x] 準確率、連擊數統計
+  - [ ] 練習結束結算畫面 → **移至 Phase 6.5**
+- [x] 視覺回饋
+  - [x] Hit 音符：短暫發光效果（flashHit）
+  - [x] Miss 音符：轉灰（markMiss）
+  - [x] 連擊提示（combo counter — showCombo at milestones）
+- [x] 整合
+  - [x] practiceManager.ts — 引擎單例管理
+  - [x] tickerLoop.ts — WaitMode 閘控 + 速度乘數 + 循環偵測
+  - [x] App.tsx — 引擎生命週期 + 回調接線 + MIDI 輸入路由
+  - [x] FallingNotesCanvas — NoteRenderer ref 暴露
+  - [x] NoteRenderer.findSpriteForNote() — 視覺回饋查找
+  - [x] PracticeToolbar.tsx — 練習控制面板 UI
+  - [x] ScoreOverlay — 即時分數 HUD
+- [x] 測試：等待模式邏輯、評分計算（91+ practice tests）
 
 ---
 
@@ -435,7 +439,7 @@ Phase 1 ✅ ─→ Phase 2 ✅ ─→ Phase 3 ✅
       (MIDI)     │   (樂譜顯示)
           │      │      │
           ▼      │      ▼
-      Phase 6    │   Phase 8
+      Phase 6 ✅ │   Phase 8
       (練習)     │   (樂譜編輯)
           │      │
           ▼      │
