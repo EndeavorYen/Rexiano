@@ -1,4 +1,5 @@
 import { describe, test, expect, vi, beforeEach } from "vitest";
+import type { Sprite } from "pixi.js";
 
 // Mock pixi.js before importing NoteRenderer
 

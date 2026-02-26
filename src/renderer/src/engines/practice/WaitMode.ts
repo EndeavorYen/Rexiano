@@ -28,8 +28,6 @@ export class WaitMode {
 
   /** Notes the user must currently play (empty when not waiting) */
   private _targetNotes: Set<number> = new Set();
-  /** Time of the current target note group */
-  private _targetTime = 0;
   /** Per-note results keyed by "trackIndex:noteIndex" */
   private _noteResults: Map<string, NoteResult> = new Map();
 
@@ -107,7 +105,6 @@ export class WaitMode {
         // Note is within tolerance window of hit line
         if (Math.abs(note.time - currentTime) <= toleranceSec) {
           pendingMidis.add(note.midi);
-          this._targetTime = note.time;
 
           // Mark as pending
           if (!this._noteResults.has(key)) {
