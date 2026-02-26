@@ -26,6 +26,14 @@ export interface ThemeTokens {
     keyWhiteBottom: string
     keyBlack: string
     keyBlackTop: string
+    /** Practice mode — warm glow on correct hit */
+    hitGlow: string
+    /** Practice mode — desaturated gray for missed notes */
+    missGray: string
+    /** Practice mode — floating combo counter text */
+    comboText: string
+    /** Practice mode — streak milestone accent */
+    streakGold: string
   }
 }
 
@@ -55,6 +63,10 @@ export const themes: Record<ThemeId, ThemeTokens> = {
       keyWhiteBottom: '#F0EDF5',
       keyBlack: '#3D3556',
       keyBlackTop: '#4D4566',
+      hitGlow: '#E8C547',
+      missGray: '#8A8A9E',
+      comboText: '#B47AED',
+      streakGold: '#D4A038',
     },
   },
   ocean: {
@@ -82,6 +94,10 @@ export const themes: Record<ThemeId, ThemeTokens> = {
       keyWhiteBottom: '#EDF3F5',
       keyBlack: '#2A3D44',
       keyBlackTop: '#3A4D54',
+      hitGlow: '#3DE8E0',
+      missGray: '#5A6268',
+      comboText: '#4DD8A0',
+      streakGold: '#D4B86A',
     },
   },
   peach: {
@@ -109,6 +125,10 @@ export const themes: Record<ThemeId, ThemeTokens> = {
       keyWhiteBottom: '#F5EDE6',
       keyBlack: '#3B2F2F',
       keyBlackTop: '#4B3F3F',
+      hitGlow: '#F0C8A0',
+      missGray: '#A89090',
+      comboText: '#E07058',
+      streakGold: '#DAA850',
     },
   },
 }

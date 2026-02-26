@@ -1,6 +1,6 @@
 # Rexiano — 開發路線圖與追蹤清單
 
-> **最後更新**: 2026-02-26
+> **最後更新**: 2026-02-27
 >
 > 詳細設計請參考 [DESIGN.md](./DESIGN.md)
 
@@ -11,9 +11,10 @@
 | 版本 | 里程碑 | 包含 Phase |
 |------|--------|-----------|
 | **v0.1.0** | 靜默視覺化播放器 | Phase 1 + 2 + 3 ✅ |
-| **v0.2.0** | 有聲播放器 | + Phase 4 |
-| **v0.3.0** | MIDI 鍵盤連接 | + Phase 5 |
+| **v0.2.0** | 有聲播放器 | + Phase 4 ✅ |
+| **v0.3.0** | MIDI 鍵盤連接 | + Phase 5 ✅ |
 | **v0.4.0** | 練習模式 | + Phase 6 |
+| **v0.4.1** | 🎯 兒童可用版 | + Phase 6.5（可用性增強） |
 | **v0.5.0** | 五線譜顯示 | + Phase 7 |
 | **v1.0.0** | 正式發佈 | + Phase 8 + 9，全功能穩定版 |
 
@@ -73,69 +74,73 @@
 
 ---
 
-## Phase 4 — 音頻播放 🔲
+## Phase 4 — 音頻播放 ✅
 
-> 目標版本：v0.2.0
+> 已完成，包含在 v0.2.0
 >
 > 前置：Phase 2 ✅
 
-- [ ] 方案選型確認（Web Audio API + SoundFont vs Tone.js）
-- [ ] 選擇並取得鋼琴 SoundFont 檔案（FluidR3_GM 或 Musescore General）
-- [ ] `engines/audio/SoundFontLoader.ts` — SF2 解析與音色載入
-- [ ] `engines/audio/AudioEngine.ts` — Web Audio API 封裝
-  - [ ] `init()` — 建立 AudioContext + 載入 SoundFont
-  - [ ] `noteOn(midi, velocity, time)` — 觸發音符
-  - [ ] `noteOff(midi, time)` — 停止音符
-  - [ ] `stop()` / `resume()` — 暫停 / 繼續
-- [ ] `engines/audio/AudioScheduler.ts` — Look-ahead 音符排程
-  - [ ] 預排 100ms 內的音符到 Web Audio buffer
-  - [ ] 處理 seek（清除排程、重新計算）
-  - [ ] 處理 tempo 變化
-- [ ] 時間同步：`currentTime` 改用 `AudioContext.currentTime` 驅動
-  - [ ] 修改 `usePlaybackStore` 新增 audio 相關狀態
-  - [ ] 修改 `tickerLoop.ts` 時間來源
-- [ ] TransportBar — Play 觸發 `AudioContext.resume()`
-- [ ] 音量控制 UI（master volume slider）
-- [ ] SoundFont 資源打包策略（resources/ 目錄）
-- [ ] 測試：音畫同步驗證、seek 後音頻正確重排
+- [x] 方案選型：Web Audio API + SoundFont（soundfont2 套件）
+- [x] `engines/audio/SoundFontLoader.ts` — SF2 解析與音色載入（含合成器 fallback）
+- [x] `engines/audio/AudioEngine.ts` — Web Audio API 封裝
+  - [x] `init()` — 建立 AudioContext + 載入 SoundFont
+  - [x] `noteOn(midi, velocity, time)` — 觸發音符
+  - [x] `noteOff(midi, time)` — 停止音符（150ms release）
+  - [x] `resume()` / `allNotesOff()` — 暫停 / 全部停止
+- [x] `engines/audio/AudioScheduler.ts` — Look-ahead 音符排程
+  - [x] 預排 100ms 內的音符到 Web Audio buffer（25ms interval）
+  - [x] 處理 seek（清除排程、binary search 重新定位 cursor）
+  - [x] getCurrentTime() 從 AudioContext.currentTime 導出
+- [x] 時間同步：`tickerLoop.ts` 讀取 `AudioScheduler.getCurrentTime()`
+  - [x] `usePlaybackStore` 新增 audioStatus, volume
+  - [x] `tickerLoop.ts` 支援 `getAudioCurrentTime` callback
+- [x] TransportBar — Play 觸發 `AudioContext.resume()`
+- [x] 音量控制 UI（VolumeControl.tsx, master volume slider）
+- [x] App.tsx 中完整的 AudioEngine 生命週期管理
+- [ ] ⚠️ **鋼琴 SoundFont 檔案**：目前無 .sf2 檔，fallback 到合成器正弦波音色 → **移至 Phase 6.5**
+- [x] 測試：AudioEngine, SoundFontLoader, AudioScheduler 單元測試
 
 ---
 
-## Phase 5 — MIDI 裝置連接 🔲
+## Phase 5 — MIDI 裝置連接 ✅
 
-> 目標版本：v0.3.0
+> 已完成，包含在 v0.3.0
 >
-> 前置：Phase 4
+> 前置：Phase 4 ✅
 
-- [ ] `stores/useMidiDeviceStore.ts` — 裝置狀態管理
-  - [ ] 裝置列表（inputs / outputs）
-  - [ ] 選擇 / 連接 / 斷開
-  - [ ] 自動重連
-- [ ] Web MIDI API 整合
-  - [ ] `navigator.requestMIDIAccess()` 初始化
-  - [ ] `onmidimessage` 監聽（Note On / Off / CC）
-  - [ ] `onstatechange` 監聽（裝置熱插拔）
-- [ ] MIDI Input 處理
-  - [ ] 解析 Note On / Off → 更新 activeNotes（鍵盤高亮）
-  - [ ] 解析 Control Change（踏板 sustain CC64）
-  - [ ] 延遲補償設定
-- [ ] MIDI Output 處理
-  - [ ] 將歌曲 MIDI 事件傳送到外部裝置
-  - [ ] 示範模式（鋼琴自動彈奏）
-- [ ] `features/settings/MidiDevicePanel.tsx` — 裝置管理 UI
-  - [ ] 輸入 / 輸出裝置下拉選單
-  - [ ] 連線狀態指示
-  - [ ] 連線測試按鈕
-- [ ] Windows BLE MIDI 橋接說明文件
-- [ ] 測試：模擬 MIDI 輸入、裝置斷線重連
+- [x] `stores/useMidiDeviceStore.ts` — 裝置狀態管理
+  - [x] 裝置列表（inputs / outputs）
+  - [x] 選擇 / 連接 / 斷開
+  - [x] 自動重連（lastInputId 記憶 + tryAutoReconnect）
+- [x] Web MIDI API 整合
+  - [x] `navigator.requestMIDIAccess()` 初始化
+  - [x] `onmidimessage` 監聽（Note On / Off / CC）
+  - [x] `onstatechange` 監聽（裝置熱插拔）
+- [x] MIDI Input 處理
+  - [x] 解析 Note On / Off → 更新 activeNotes（鍵盤高亮）
+  - [x] 解析 Control Change（CC64 sustain pedal）
+  - [x] Note On velocity=0 視為 Note Off
+- [x] MIDI Output 處理
+  - [x] `MidiOutputSender.ts`：noteOn / noteOff / sendCC / allNotesOff
+  - [x] `sendParsedNote()` 用於示範模式
+- [x] `features/midiDevice/DeviceSelector.tsx` — 裝置管理 UI
+  - [x] 輸入 / 輸出裝置下拉選單
+  - [x] `ConnectionStatus.tsx` 連線狀態指示（綠/灰/紅燈）
+- [x] Electron MIDI 權限自動核准（`midiDeviceHandlers.ts`）
+- [x] 測試：MidiDeviceManager, MidiInputParser, MidiOutputSender, useMidiDeviceStore, ConnectionStatus
+- [ ] Windows BLE MIDI 橋接說明文件 → **移至 Phase 9**
+- [ ] 連線測試按鈕 → **移至 Phase 6.5**
+- [ ] 延遲補償設定 → **移至 Phase 6.5**
 
 ---
 
-## Phase 6 — 練習模式 🔲
+## Phase 6 — 練習模式 🔄
 
 > 目標版本：v0.4.0
 >
-> 前置：Phase 5（需要 MIDI 輸入）
+> 前置：Phase 5 ✅
+>
+> 狀態：Agent Team 執行中
 
 - [ ] `stores/usePracticeStore.ts` — 練習狀態管理
   - [ ] 模式切換：Watch / Wait / Free
@@ -172,11 +177,132 @@
 
 ---
 
+## Phase 6.5 — 兒童可用性增強 🔲
+
+> 目標版本：v0.4.1 — **Rex 可以坐下來練琴的最低門檻**
+>
+> 前置：Phase 6
+>
+> 設計詳見 [DESIGN.md §8.5](./DESIGN.md#85-兒童可用性增強phase-65)
+
+### Sprint 1 — 基礎可用性（全部無依賴，可平行）
+
+- [ ] 鍵盤快捷鍵
+  - [ ] `hooks/useKeyboardShortcuts.ts` — 全域 keydown hook
+  - [ ] Space = Play/Pause, Home = 回到開頭, ←→ = Seek ±5s, ↑↓ = 音量 ±10%, Esc = 回到曲庫
+- [ ] 琴鍵音名標籤
+  - [ ] 白鍵底部顯示音名（C, D, E...），C 鍵加八度數字（C4）
+  - [ ] 黑鍵可選顯示升音名（C#, D#...）
+  - [ ] 可開關設定
+- [ ] 真實鋼琴音色
+  - [ ] 取得免費可再發佈的鋼琴 SoundFont（Salamander Grand Piano ~12MB, CC BY 3.0）
+  - [ ] 放入 `resources/piano.sf2`
+  - [ ] TransportBar 顯示音訊載入狀態
+- [ ] 暗色主題「Midnight」
+  - [ ] 第四套主題，深色背景 + 亮色音符
+  - [ ] `themes/tokens.ts` 新增 midnight 定義
+- [ ] 拖放 MIDI 匯入
+  - [ ] SongLibrary 支援 drag-and-drop `.mid` 檔案
+  - [ ] 拖曳時顯示視覺指示
+- [ ] BPM / 節拍顯示
+  - [ ] TransportBar 時間旁顯示當前 BPM
+- [ ] 難度說明
+  - [ ] SongCard 難度 badge 加 tooltip 解釋
+
+### Sprint 2 — 練習體驗增強（依賴 Phase 6 產出）
+
+- [ ] 練習控制面板整合
+  - [ ] `features/practice/PracticeToolbar.tsx` — 組合所有練習元件
+  - [ ] 嵌入 App.tsx 主佈局
+  - [ ] 將 speed / loopRange / activeTracks 接入 tickerLoop.ts
+- [ ] 下落音符音名標籤
+  - [ ] NoteRenderer 新增 PixiJS BitmapText 池
+  - [ ] 音符矩形內顯示音名（"C", "D#" 等）
+  - [ ] 只在音符高度 > 16px 時顯示
+  - [ ] 可開關設定
+- [ ] 慶祝回饋效果
+  - [ ] 接通已存在的 `flashHit()` / `markMiss()` / `showCombo()` 到 practice scoring
+  - [ ] 連擊里程碑動畫（5x, 10x, 25x, 50x, 100x）
+  - [ ] 練習結束結算畫面（準確率 + 星級評分 + 鼓勵訊息）
+
+### Sprint 3 — 持久化與設定（依賴 Sprint 2）
+
+- [ ] 練習成績持久化
+  - [ ] `stores/useProgressStore.ts` — 歷史成績 Zustand store
+  - [ ] `main/ipc/progressHandlers.ts` — 讀寫 scores.json（userData 目錄）
+  - [ ] SongCard 顯示最佳成績 badge
+  - [ ] 結算畫面顯示「新紀錄！」
+- [ ] 最近開啟檔案
+  - [ ] `main/ipc/recentFilesHandlers.ts` — 管理 recents.json
+  - [ ] SongLibrary 頂部「最近」section
+  - [ ] 直接路徑載入（免 dialog）
+- [ ] 設定面板
+  - [ ] `stores/useSettingsStore.ts` — localStorage 持久化
+  - [ ] `features/settings/SettingsPanel.tsx` — modal 設定面板（整合 ThemePicker）
+  - [ ] 欄位：showNoteLabels, showFallingNoteLabels, noteNameFormat, latencyMs
+  - [ ] 鍵盤快捷鍵參考表
+
+### Sprint 4 — 教學工具（可與 Sprint 3 平行）
+
+- [ ] 視覺節拍器
+  - [ ] `features/fallingNotes/Metronome.tsx` — 每拍脈衝動畫
+  - [ ] 可選音效 click（`engines/audio/MetronomeEngine.ts`）
+  - [ ] TransportBar 開關按鈕
+- [ ] 新手引導教學
+  - [ ] `features/onboarding/TutorialOverlay.tsx` — 5 步驟 spotlight 導覽
+  - [ ] 首次啟動自動顯示，Settings 可重播
+- [ ] 擴充內建曲庫（目標 15-20 首）
+  - [ ] Beginner: Mary Had a Little Lamb, Hot Cross Buns, Jingle Bells, Happy Birthday, London Bridge, Row Row Row Your Boat
+  - [ ] Intermediate: Für Elise (simplified), Minuet in G, Prelude in C, Canon in D (simplified)
+  - [ ] Advanced: Moonlight Sonata (1st mvt), Turkish March
+  - [ ] SongLibrary 分類顯示（category 欄位）
+
+### Sprint 5 — 超越 Synthesia（長期差異化）
+
+- [ ] 指法建議
+  - [ ] `engines/practice/FingeringEngine.ts` — 啟發式自動指法演算法
+  - [ ] 音符上顯示帶圈數字 ①②③④⑤
+  - [ ] 可開關設定
+- [ ] 練習洞察分析
+  - [ ] 累積歷史 noteResults，統計每音符 hit/miss rate
+  - [ ] 識別弱點段落，建議重點練習區段
+  - [ ] 熱力圖視覺化曲目掌握程度
+- [ ] 中文 UI
+  - [ ] i18n 框架（react-i18next 或輕量 key-value）
+  - [ ] 初期兩語言：English / 中文
+  - [ ] Settings 語言切換
+
+### Synthesia 對照表
+
+| 功能 | Synthesia | Rexiano Phase 6.5 後 | 超越？ |
+|------|-----------|---------------------|--------|
+| Falling notes | ✅ | ✅ Phase 2 | 平手 |
+| 鋼琴音色 | ✅ 優質 | ✅ Sprint 1 (Salamander SF2) | 平手 |
+| 琴鍵音名 | ✅ 可開關 | ✅ Sprint 1 | 平手 |
+| 音符音名 | ✅ 可開關 | ✅ Sprint 2 | 平手 |
+| 指法建議 | ✅ | ✅ Sprint 5 | 平手 |
+| 練習模式 (Wait) | ✅ | ✅ Phase 6 | 平手 |
+| 速度控制 | ✅ | ✅ Phase 6 | 平手 |
+| A-B 循環 | ✅ | ✅ Phase 6 | 平手 |
+| 分手練習 | ✅ | ✅ Phase 6 | 平手 |
+| 評分系統 | ✅ | ✅ Phase 6 | 平手 |
+| 暗色主題 | ✅ | ✅ Sprint 1 | 平手 |
+| 節拍器 | ✅ | ✅ Sprint 4 | 平手 |
+| 成績追蹤 | ✅ | ✅ Sprint 3 | 平手 |
+| 新手引導 | ✅ | ✅ Sprint 4 | 平手 |
+| **五線譜顯示** | ❌ | ✅ Phase 7 | **勝** |
+| **練習洞察分析** | ❌ | ✅ Sprint 5 | **勝** |
+| **多主題** | ❌ 僅一種 | ✅ 4 套 | **勝** |
+| **開源免費** | ❌ $39 | ✅ 永遠免費 | **勝** |
+| **中文 UI** | ❌ | ✅ Sprint 5 | **勝** |
+
+---
+
 ## Phase 7 — 樂譜顯示 🔲
 
 > 目標版本：v0.5.0
 >
-> 前置：Phase 4（需要播放同步）
+> 前置：Phase 4 ✅（需要播放同步）
 
 - [ ] 方案選型確認（VexFlow vs OSMD）
 - [ ] `engines/notation/MidiToNotation.ts` — MIDI → 樂譜轉換
@@ -243,7 +369,7 @@
 
 > 可與 Phase 4~8 並行進行
 >
-> 建議在 Phase 4 完成後發佈 v0.2.0
+> 建議在 Phase 6.5 完成後發佈 v0.4.1（首個可給 Rex 使用的版本）
 
 - [ ] CI/CD 管線（GitHub Actions）
   - [ ] tag push 觸發多平台建置
@@ -277,15 +403,17 @@
 
 > 這些項目不屬於特定 Phase，隨開發過程持續推進
 
-- [ ] 鍵盤快捷鍵（Space = Play, R = Reset, ← → = Seek 等）
-- [ ] Dark 主題（第四套主題）
-- [ ] 最近開啟檔案列表
-- [ ] 拖放 .mid 檔案開啟
 - [ ] 效能監控（FPS counter, 記憶體用量）
 - [ ] 無障礙 (ARIA labels, 螢幕閱讀器)
-- [ ] 國際化框架 (i18n) — 預留 key，初期僅英文
-- [ ] 中文翻譯
 - [ ] E2E 測試（Playwright）
+
+> 以下項目已移入 Phase 6.5 的具體 Sprint 中：
+> - 鍵盤快捷鍵 → Sprint 1
+> - Dark 主題 → Sprint 1
+> - 最近開啟檔案列表 → Sprint 3
+> - 拖放 .mid 檔案開啟 → Sprint 1
+> - 國際化框架 (i18n) → Sprint 5
+> - 中文翻譯 → Sprint 5
 
 ---
 
@@ -297,19 +425,23 @@ Phase 1 ✅ ─→ Phase 2 ✅ ─→ Phase 3 ✅
                     ┌────────────┤
                     │            │
                     ▼            ▼
-              Phase 4        Phase 9（可並行）
+              Phase 4 ✅     Phase 9（可並行）
               (音頻)         (打包發佈)
                  │
           ┌──────┼──────┐
           │      │      │
           ▼      │      ▼
-      Phase 5    │   Phase 7
+      Phase 5 ✅ │   Phase 7
       (MIDI)     │   (樂譜顯示)
           │      │      │
           ▼      │      ▼
       Phase 6    │   Phase 8
       (練習)     │   (樂譜編輯)
-                 │
-                 ▼
+          │      │
+          ▼      │
+     Phase 6.5   │
+   (兒童可用版)   │
+          │      │
+          ▼      ▼
         v1.0.0 正式發佈
 ```

@@ -152,3 +152,77 @@ input[type="range"]:disabled::-moz-range-thumb {
   border-color: var(--color-accent);
   outline: none;
 }
+
+/* ── Practice mode animations ── */
+@keyframes practice-miss-blink {
+  0%, 100% { box-shadow: inset 0 0 0 0 transparent; }
+  16% { box-shadow: inset 0 0 12px 2px #e05050; }
+  33% { box-shadow: inset 0 0 0 0 transparent; }
+  50% { box-shadow: inset 0 0 12px 2px #e05050; }
+  66% { box-shadow: inset 0 0 0 0 transparent; }
+  83% { box-shadow: inset 0 0 12px 2px #e05050; }
+}
+
+@keyframes practice-hit-flash {
+  0% {
+    box-shadow: inset 0 0 0 0 transparent;
+    transform: scaleY(1);
+  }
+  40% {
+    box-shadow: inset 0 0 18px 4px var(--color-hit-glow);
+    transform: scaleY(1.02);
+  }
+  100% {
+    box-shadow: inset 0 0 0 0 transparent;
+    transform: scaleY(1);
+  }
+}
+
+@keyframes practice-combo-pop {
+  0% {
+    opacity: 0;
+    transform: scale(0.4) translateY(0);
+  }
+  25% {
+    opacity: 1;
+    transform: scale(1.15) translateY(-8px);
+  }
+  50% {
+    transform: scale(1) translateY(-16px);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(0.85) translateY(-32px);
+  }
+}
+
+@keyframes practice-score-enter {
+  0% {
+    opacity: 0;
+    transform: translateX(40px);
+  }
+  60% {
+    opacity: 1;
+    transform: translateX(-4px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.practice-key-miss {
+  animation: practice-miss-blink 0.45s ease-in-out;
+}
+
+.practice-key-hit {
+  animation: practice-hit-flash 0.25s ease-out;
+}
+
+.animate-combo-pop {
+  animation: practice-combo-pop 0.6s ease-out both;
+}
+
+.animate-score-enter {
+  animation: practice-score-enter 0.35s cubic-bezier(0.22, 0.61, 0.36, 1) both;
+}

@@ -4,6 +4,7 @@ import {
   getWhiteKeyBackground,
   getBlackKeyBackground,
   getKeyShadow,
+  getPracticeClass,
 } from './PianoKeyboard'
 
 describe('PianoKeyboard highlight helpers', () => {
@@ -90,6 +91,34 @@ describe('PianoKeyboard highlight helpers', () => {
     test('is distinct from generic accent placeholder', () => {
       expect(MIDI_HIGHLIGHT).not.toBe('var(--color-key-active)')
       expect(MIDI_HIGHLIGHT).not.toBe('var(--color-accent)')
+    })
+  })
+
+  describe('getPracticeClass', () => {
+    test('returns empty string when no practice sets provided', () => {
+      expect(getPracticeClass(60)).toBe('')
+    })
+
+    test('returns empty string when note is not in any set', () => {
+      const hits = new Set([62])
+      const misses = new Set([64])
+      expect(getPracticeClass(60, hits, misses)).toBe('')
+    })
+
+    test('returns hit class when note is in hitNotes', () => {
+      const hits = new Set([60])
+      expect(getPracticeClass(60, hits)).toBe('practice-key-hit')
+    })
+
+    test('returns miss class when note is in missedNotes', () => {
+      const misses = new Set([60])
+      expect(getPracticeClass(60, undefined, misses)).toBe('practice-key-miss')
+    })
+
+    test('hit takes priority over miss when note is in both sets', () => {
+      const hits = new Set([60])
+      const misses = new Set([60])
+      expect(getPracticeClass(60, hits, misses)).toBe('practice-key-hit')
     })
   })
 })

@@ -9,16 +9,38 @@ vi.mock('pixi.js', () => {
     height = 0
     visible = false
     tint = 0xffffff
+    alpha = 1
+    _scale = { x: 1, y: 1, set(v: number) { this.x = v; this.y = v } }
+    get scale() { return this._scale }
+    anchor = { set(_x: number, _y?: number) { void _x; void _y } }
     constructor() {}
+    destroy() {}
   }
   class MockContainer {
     children: unknown[] = []
     addChild(child: unknown) { this.children.push(child) }
+    removeChild(child: unknown) {
+      const idx = this.children.indexOf(child)
+      if (idx >= 0) this.children.splice(idx, 1)
+    }
     removeChildren() { this.children.length = 0 }
+  }
+  class MockText extends MockSprite {
+    text = ''
+    style: unknown
+    constructor(opts?: { text?: string; style?: unknown }) {
+      super()
+      if (opts) { this.text = opts.text ?? ''; this.style = opts.style }
+    }
+  }
+  class MockTextStyle {
+    constructor(_opts?: unknown) {}
   }
   return {
     Container: MockContainer,
     Sprite: MockSprite,
+    Text: MockText,
+    TextStyle: MockTextStyle,
     Texture: { WHITE: {} },
   }
 })
@@ -298,5 +320,94 @@ describe('NoteRenderer', () => {
     expect(visible.length).toBe(1)
     // The second note (duration=1.0) overwrites the first, so height = max(1.0 * 200, 2) = 200
     expect(visible[0].height).toBe(200)
+  })
+
+  // ── Practice mode visual feedback tests ──
+
+  describe('flashHit', () => {
+    test('modifies sprite tint toward white on first animation frame', () => {
+      // Provide a fake rAF that invokes callback immediately
+      let rafCb: ((time: number) => void) | null = null
+      vi.stubGlobal('requestAnimationFrame', (cb: (time: number) => void) => { rafCb = cb; return 0 })
+
+      const song = makeSong([{ notes: [{ midi: 60, time: 0, duration: 1 }] }])
+      renderer.update(song, makeViewport({ currentTime: 0 }))
+
+      const sprites = (parent as unknown as { children: { children: unknown[] }[] }).children[0].children as {
+        visible: boolean; tint: number; alpha: number
+      }[]
+      const sprite = sprites.find(s => s.visible)!
+      const originalTint = sprite.tint
+
+      renderer.flashHit(sprite as unknown as Sprite)
+      // First rAF registers; fire it at t=0
+      expect(rafCb).not.toBeNull()
+      rafCb!(0)
+      // Second rAF is queued; fire it partway through animation
+      rafCb!(60) // 60ms into 200ms animation — in the flash-up phase (t<0.3 → t/0.3 = 1.0)
+
+      // Tint should have shifted toward white
+      expect(sprite.tint).not.toBe(originalTint)
+
+      vi.unstubAllGlobals()
+    })
+  })
+
+  describe('markMiss', () => {
+    test('transitions sprite tint toward gray and reduces alpha', () => {
+      let rafCb: ((time: number) => void) | null = null
+      vi.stubGlobal('requestAnimationFrame', (cb: (time: number) => void) => { rafCb = cb; return 0 })
+
+      const song = makeSong([{ notes: [{ midi: 60, time: 0, duration: 1 }] }])
+      renderer.update(song, makeViewport({ currentTime: 0 }))
+
+      const sprites = (parent as unknown as { children: { children: unknown[] }[] }).children[0].children as {
+        visible: boolean; tint: number; alpha: number
+      }[]
+      const sprite = sprites.find(s => s.visible)!
+      const originalAlpha = sprite.alpha
+
+      renderer.markMiss(sprite as unknown as Sprite)
+      expect(rafCb).not.toBeNull()
+      // Fire first frame at t=0
+      rafCb!(0)
+      // Fire at end of animation (150ms)
+      rafCb!(150)
+
+      // At the end, tint should be 0x888888 and alpha ~0.4
+      expect(sprite.tint).toBe(0x888888)
+      expect(sprite.alpha).toBeCloseTo(0.4, 1)
+      // Alpha decreased from original
+      expect(sprite.alpha).toBeLessThan(originalAlpha)
+
+      vi.unstubAllGlobals()
+    })
+  })
+
+  describe('showCombo', () => {
+    test('adds a Text child to the container and removes it after animation', () => {
+      const calls: ((time: number) => void)[] = []
+      vi.stubGlobal('requestAnimationFrame', (cb: (time: number) => void) => { calls.push(cb); return 0 })
+
+      const containerChildren = (parent as unknown as { children: { children: unknown[] }[] }).children[0].children
+
+      const countBefore = containerChildren.length
+      renderer.showCombo(5, 100, 200)
+
+      // A Text object was added to the container
+      expect(containerChildren.length).toBe(countBefore + 1)
+      const textObj = containerChildren[containerChildren.length - 1] as { text: string; alpha: number }
+      expect(textObj.text).toBe('5x')
+
+      // Run animation to completion
+      // First call registers the tick
+      calls[0](0) // start
+      calls[1](600) // end
+
+      // Text removed after animation completes
+      expect(containerChildren.length).toBe(countBefore)
+
+      vi.unstubAllGlobals()
+    })
   })
 })

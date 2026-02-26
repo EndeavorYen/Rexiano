@@ -51,7 +51,18 @@ interface PianoKeyboardProps {
   activeNotes?: Set<number>
   /** Notes highlighted by live MIDI input */
   midiActiveNotes?: Set<number>
+  /** Notes the player hit correctly (practice mode) */
+  hitNotes?: Set<number>
+  /** Notes the player missed (practice mode) */
+  missedNotes?: Set<number>
   height?: number
+}
+
+/** Returns the CSS animation class for practice mode hit/miss feedback. */
+function getPracticeClass(midi: number, hitNotes?: Set<number>, missedNotes?: Set<number>): string {
+  if (hitNotes?.has(midi)) return 'practice-key-hit'
+  if (missedNotes?.has(midi)) return 'practice-key-miss'
+  return ''
 }
 
 /** MIDI input highlight — a distinct warm cyan to contrast the theme accent */
@@ -91,7 +102,7 @@ function getKeyShadow(
     : '0 2px 4px rgba(0,0,0,0.08)'
 }
 
-export function PianoKeyboard({ activeNotes, midiActiveNotes, height = 120 }: PianoKeyboardProps): React.JSX.Element {
+export function PianoKeyboard({ activeNotes, midiActiveNotes, hitNotes, missedNotes, height = 120 }: PianoKeyboardProps): React.JSX.Element {
   const layout = useMemo(() => buildLayout(), [])
   const wPct = 100 / layout.whiteKeyCount
 
@@ -104,10 +115,11 @@ export function PianoKeyboard({ activeNotes, midiActiveNotes, height = 120 }: Pi
       {layout.whiteKeys.map((key) => {
         const songActive = activeNotes?.has(key.midi) ?? false
         const midiActive = midiActiveNotes?.has(key.midi) ?? false
+        const practiceClass = getPracticeClass(key.midi, hitNotes, missedNotes)
         return (
           <div
             key={key.midi}
-            className="absolute top-0 transition-all duration-75"
+            className={`absolute top-0 transition-all duration-75 ${practiceClass}`}
             style={{
               left: `${key.index * wPct}%`,
               width: `${wPct}%`,
@@ -126,12 +138,13 @@ export function PianoKeyboard({ activeNotes, midiActiveNotes, height = 120 }: Pi
       {layout.blackKeys.map((key) => {
         const songActive = activeNotes?.has(key.midi) ?? false
         const midiActive = midiActiveNotes?.has(key.midi) ?? false
+        const practiceClass = getPracticeClass(key.midi, hitNotes, missedNotes)
         const bWidth = wPct * BLACK_KEY_WIDTH_RATIO
         const centerX = (key.leftWhiteIndex + 1) * wPct
         return (
           <div
             key={key.midi}
-            className="absolute top-0 transition-all duration-75"
+            className={`absolute top-0 transition-all duration-75 ${practiceClass}`}
             style={{
               left: `${centerX - bWidth / 2}%`,
               width: `${bWidth}%`,
@@ -149,4 +162,4 @@ export function PianoKeyboard({ activeNotes, midiActiveNotes, height = 120 }: Pi
 }
 
 // Exported for testing
-export { MIDI_HIGHLIGHT, getWhiteKeyBackground, getBlackKeyBackground, getKeyShadow }
+export { MIDI_HIGHLIGHT, getWhiteKeyBackground, getBlackKeyBackground, getKeyShadow, getPracticeClass }

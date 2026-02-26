@@ -25,6 +25,8 @@ Rexiano — 開源跨平台鋼琴練習軟體（Synthesia 替代品）。
 - Phase 1: MIDI 解析（@tonejs/midi → ParsedSong/ParsedTrack/ParsedNote）
 - Phase 2: Falling notes PixiJS 引擎（sprite pool, binary search, 60 FPS）
 - Phase 3: 三色主題系統（Lavender/Ocean/Peach, CSS Custom Properties）
+- Phase 4: 音訊引擎（AudioEngine + SoundFontLoader + AudioScheduler + 時間同步）
+- Phase 5: MIDI 裝置連接（MidiDeviceManager + MidiInputParser + MidiOutputSender + DeviceSelector UI）
 
 開發慣例：
 - PixiJS 引擎內用 store.getState() 讀取狀態，不用 React hook
@@ -508,6 +510,204 @@ Teammate 4 — QA Engineer：
 - Engine 和 UI/UX 對齊介面：Engine 暴露事件（onWait, onResume, onHit, onMiss），
   Store subscribe 這些事件
 - 完成後各自跑 pnpm test
+```
+
+---
+
+## Phase 6.5：兒童可用性增強（v0.4.1）
+
+### Stage 1 — Lead 前置作業
+
+```
+Lead 需要做：
+1. 下載並放入鋼琴 SoundFont 到 resources/piano.sf2
+   - 推薦：Musescore_General_Lite.sf2（~30MB）或 FluidR3_GM_GS.sf2
+   - 確認 AudioEngine / SoundFontLoader 能正確載入（可能需微調路徑）
+   - 在 main process 確認 LOAD_SOUNDFONT IPC handler 指向正確檔案
+2. 在 src/shared/types.ts 新增：
+   - SessionRecord { id, songId, songTitle, timestamp, mode, speed, score, durationSeconds, tracksPlayed }
+   - IpcChannels 新增 SAVE_SESSION, LOAD_SESSIONS
+3. 建立空目錄：
+   - src/renderer/src/hooks/
+   - src/renderer/src/features/onboarding/
+   - src/renderer/src/features/insights/
+   - src/renderer/src/engines/metronome/
+4. git commit "phase 6.5: scaffold usability enhancements"
+```
+
+### Stage 2 — Agent Team Prompt
+
+```
+建立一個 agent team 來實作 Phase 6.5 兒童可用性增強。
+
+專案背景：
+Rexiano — 開源跨平台鋼琴練習軟體（Synthesia 替代品）。
+框架：Electron 33 + React 19 + TypeScript 5.9 + Tailwind 4 + PixiJS 8
+狀態管理：Zustand 5（store.getState() 在引擎內直接讀取）
+建置：electron-vite 5 + Vite 7
+測試：Vitest 4
+字型：Nunito + DM Sans + JetBrains Mono（@fontsource）
+
+已完成：
+- Phase 1-3：MIDI 解析、falling notes 引擎、三色主題
+- Phase 4：音訊引擎（AudioEngine + SoundFontLoader + AudioScheduler + 時間同步）
+- Phase 5：MIDI 裝置連接（MidiDeviceManager + MidiInputParser + MidiOutputSender）
+- Phase 6：練習模式（WaitMode + SpeedController + LoopController + ScoreCalculator + UI）
+- resources/piano.sf2：已放入真實鋼琴 SoundFont（Lead 在 Stage 1 完成）
+
+Phase 6.5 目標：讓 6 歲兒童能獨立坐下練琴。目前缺少：
+- 琴鍵沒有音名標籤（初學者不知道哪個鍵是什麼音）
+- 下落音符沒有音名（只靠顏色區分左右手）
+- 沒有鍵盤快捷鍵（練琴時手不離鍵盤）
+- 沒有暗色主題（夜間練琴刺眼）
+- 沒有拖放匯入（要透過選單開檔案）
+- 沒有設定面板（設定散落各處）
+- 沒有成績保存（無法追蹤進步）
+- 沒有慶祝效果（練習結束缺少正面回饋）
+- 沒有新手引導（首次啟動不知從何開始）
+
+設計規格：見 DESIGN.md §9（Phase 6.5 完整設計）
+
+開發慣例：
+- PixiJS 引擎內用 store.getState() 讀取狀態，不用 React hook
+- CSS 色彩用 var(--color-*) 引用 themes/tokens.ts
+- IPC 傳 number[] 而非 Uint8Array
+- 測試檔案 collocated（*.test.ts 放在源碼旁）
+- 遵循 CLAUDE.md 的 frontend_aesthetics 指引（避免 AI slop 風格）
+
+團隊（4 人）：
+
+Teammate 1 — UX Engineer（互動增強）：
+  身份：專精 React hooks 和鍵盤互動的前端工程師。
+  任務：
+  1. 新增 hooks/useKeyboardShortcuts.ts
+     - useEffect → window.addEventListener('keydown', handler)
+     - 快捷鍵對照（見 DESIGN.md §9.3 完整表格）：
+       Space=Play/Pause, R=Reset, ←→=Seek 5s, Shift+←→=Seek 15s,
+       ↑↓=Speed ±25%, L=Loop, 1/2/3=Mode, M=Mute, Ctrl+O=Open, ?=Help
+     - e.target 檢查：input/textarea 內不攔截
+     - cleanup：useEffect return 移除 listener
+  2. 修改 features/fallingNotes/PianoKeyboard.tsx — 琴鍵音名標籤
+     - 在每個琴鍵 DOM 元素中加入 <span> 顯示音名（C4, D4, F#4 等）
+     - 白鍵：底部居中，JetBrains Mono 10px，opacity 0.6
+     - 黑鍵：底部居中，白色文字
+     - 受 useSettingsStore.showNoteLabels 控制
+  3. 修改 engines/fallingNotes/NoteRenderer.ts — 下落音符音名
+     - 新增 BitmapFont atlas（JetBrains Mono 12px bold white）
+     - 平行管理 BitmapText pool（初始 256 個）
+     - 在音符矩形內垂直居中顯示音名
+     - 音符高度 < 16px 時不顯示（避免文字溢出）
+     - 受 useSettingsStore.showFallingNoteLabels 控制
+  4. 新增拖放匯入
+     - 在 App.tsx 加入 onDragOver/onDrop 事件監聽
+     - 拖入時顯示半透明 overlay：「拖放 .mid 檔案到此處」
+     - 驗證副檔名（.mid, .midi），非法格式顯示錯誤
+     - 成功後走 useSongStore.loadSong() 現有流程
+  5. 撰寫測試
+  只改：hooks/useKeyboardShortcuts.ts, features/fallingNotes/PianoKeyboard.tsx,
+        engines/fallingNotes/NoteRenderer.ts（只加音名相關，不改渲染核心），
+        App.tsx（只加拖放事件），及對應 .test.ts
+  不改：stores/, themes/, engines/audio/, engines/practice/
+
+Teammate 2 — UI Designer（主題與面板）：
+  身份：React + Tailwind 前端設計師，遵循 CLAUDE.md frontend_aesthetics 指引。
+  不要用 AI slop 風格——設計要有個性、有驚喜感。
+  任務：
+  1. 更新 themes/tokens.ts — 新增 Midnight 暗色主題
+     - 色票見 DESIGN.md §9.4（bg: #0f0f14, accent: #7c6ef0 等完整定義）
+     - 與 Lavender/Ocean/Peach 並列於 themes 物件
+  2. 修改 features/settings/ThemePicker.tsx
+     - 新增第四個色點（深灰 + 月亮圖示）
+     - 或者：升級為完整的 SettingsPanel.tsx（取代 ThemePicker）
+  3. 新增 features/settings/SettingsPanel.tsx
+     - Modal/Drawer 形式，從 TransportBar 齒輪圖示觸發
+     - 分區：顯示（音名開關）、音頻（音量/靜音）、練習（速度/模式/節拍器）、主題
+     - 見 DESIGN.md §9.5 完整 UI mockup
+  4. 新增 stores/useSettingsStore.ts
+     - showNoteLabels, showFallingNoteLabels, volume, muted,
+       defaultSpeed, defaultMode, metronomeEnabled, countInBeats
+     - localStorage 自動同步（與 themeStore 同模式）
+  5. 新增 features/onboarding/OnboardingGuide.tsx
+     - 首次啟動顯示 3-5 步引導 overlay
+     - 步驟：匯入 MIDI → Space 播放 → 練習模式 → 連接鍵盤
+     - localStorage 記錄 onboardingCompleted
+  6. 新增 features/practice/CelebrationOverlay.tsx
+     - 練習結束時根據 accuracy 顯示慶祝動畫：
+       ≥90%：confetti + 太棒了、≥70%：星星 + 做得好、<70%：鼓勵文字
+     - 結算畫面：Modal 顯示 PracticeScore 詳細 + 最佳對比 + 重新練習按鈕
+  7. 撰寫元件測試
+  只改：themes/tokens.ts, stores/useSettingsStore.ts,
+        features/settings/*, features/onboarding/*, features/practice/CelebrationOverlay.tsx,
+        及對應 .test.ts
+  不改：engines/, hooks/, features/fallingNotes/（那是 UX Engineer 的）
+
+Teammate 3 — Engine Engineer（持久化與整合）：
+  身份：Electron IPC + Zustand 後端工程師。
+  任務：
+  1. 新增 stores/useProgressStore.ts
+     - sessions: SessionRecord[]
+     - addSession(), getSessionsBySong(), getRecentSessions(), getBestScore()
+     - 持久化：透過 IPC 存取 app.getPath('userData')/progress.json
+  2. 新增 src/main/ipc/progressHandlers.ts
+     - SAVE_SESSION handler：接收 SessionRecord → 寫入 JSON 檔
+     - LOAD_SESSIONS handler：讀取 JSON 檔 → 回傳 SessionRecord[]
+     - 更新 preload/index.ts 和 preload/index.d.ts
+  3. 新增最近檔案功能
+     - 記錄最近 10 個 MIDI 檔案路徑 + 檔名
+     - 儲存於 localStorage 或 electron-store
+     - UI 端由 Teammate 2 整合，Engine 只負責存取邏輯
+  4. 整合練習面板到播放流程（wire tickerLoop）
+     - 確認 usePracticeStore → engines/practice/ 的事件橋接正常
+     - 確認 WaitMode 暫停/恢復透過 tickerLoop 正確運作
+     - 確認 ScoreCalculator 結果正確寫入 usePracticeStore
+     - 練習結束時自動呼叫 addSession() 保存成績
+  5. 新增 engines/metronome/MetronomeEngine.ts
+     - Web Audio API 產生 click 音（oscillator 短脈衝）
+     - 每拍觸發一次（強拍不同音高）
+     - 透過 useSettingsStore.metronomeEnabled 控制
+     - 預備拍（count-in）：播放前先打 N 拍
+  6. 撰寫所有引擎和 IPC 測試
+  只改：stores/useProgressStore.ts, main/ipc/progressHandlers.ts,
+        preload/index.ts, preload/index.d.ts,
+        engines/metronome/*, engines/practice/*（只改整合層，不改核心邏輯），
+        及對應 .test.ts
+  不改：features/（UI 由 Teammate 2 負責），themes/, hooks/
+
+Teammate 4 — QA Engineer（測試與品質）：
+  身份：測試工程師，負責整合測試和回歸驗證。
+  任務：
+  1. Review 其他三位 teammate 的程式碼，發現問題直接 message 對方
+  2. 鍵盤快捷鍵測試：
+     - 所有快捷鍵功能正確
+     - input/textarea 內不觸發
+     - 多鍵組合（Shift+→, Ctrl+O）正確
+  3. 琴鍵音名測試：
+     - 88 個鍵的音名正確（C1 ~ C8）
+     - 黑鍵顯示 sharp 而非 flat
+     - showNoteLabels=false 時不顯示
+  4. 暗色主題測試：
+     - Midnight 主題切換不 crash
+     - 所有 var(--color-*) 在 Midnight 下有定義
+     - 對比度足夠（文字可讀）
+  5. 成績持久化測試：
+     - 保存 → 讀取 → 資料一致
+     - JSON 檔格式正確
+     - 最佳成績查詢正確
+  6. 設定面板測試：
+     - 所有設定項持久化（重啟後恢復）
+     - toggle 操作正確反映到 UI
+  7. 確認所有現有測試仍通過（pnpm test）
+  8. 確認 TypeScript 無錯誤（pnpm typecheck）
+  只改：*.test.ts
+  不改：非測試程式碼
+
+規則：
+- 每位 teammate 嚴格只改自己負責的檔案，讀取其他檔案沒問題
+- 有疑問直接 message 對方
+- useSettingsStore 由 Teammate 2 建立，其他人只讀取不修改 store 定義
+- useProgressStore 由 Teammate 3 建立，其他人只讀取不修改 store 定義
+- 完成後各自跑 pnpm test 確認通過
+- 遵循現有模式：CSS 色彩 var(--color-*)，PixiJS 用 store.getState()
 ```
 
 ---
