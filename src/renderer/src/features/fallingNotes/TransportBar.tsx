@@ -1,6 +1,7 @@
 import { usePlaybackStore } from '@renderer/stores/usePlaybackStore'
 import { useSongStore } from '@renderer/stores/useSongStore'
 import { VolumeControl } from '@renderer/features/audio/VolumeControl'
+import { DeviceSelector } from '@renderer/features/midiDevice/DeviceSelector'
 
 export function formatTime(seconds: number): string {
   if (!Number.isFinite(seconds) || seconds < 0) return '0:00'
@@ -69,6 +70,13 @@ export function TransportBar(): React.JSX.Element {
 
       {/* Volume */}
       <VolumeControl />
+
+      {/* MIDI device selector (separator + selector) */}
+      <div
+        className="h-5 w-px shrink-0"
+        style={{ background: 'var(--color-border)' }}
+      />
+      <DeviceSelector />
     </div>
   )
 }

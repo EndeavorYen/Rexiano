@@ -1,0 +1,29 @@
+[
+  {
+    "id": "c-major-scale",
+    "file": "c-major-scale.mid",
+    "title": "C Major Scale",
+    "composer": "Exercise",
+    "difficulty": "beginner",
+    "durationSeconds": 8,
+    "tags": ["exercise", "scale"]
+  },
+  {
+    "id": "twinkle-twinkle",
+    "file": "twinkle-twinkle.mid",
+    "title": "Twinkle Twinkle Little Star",
+    "composer": "Traditional",
+    "difficulty": "beginner",
+    "durationSeconds": 24,
+    "tags": ["traditional", "melody"]
+  },
+  {
+    "id": "ode-to-joy",
+    "file": "ode-to-joy.mid",
+    "title": "Ode to Joy",
+    "composer": "Ludwig van Beethoven",
+    "difficulty": "beginner",
+    "durationSeconds": 16,
+    "tags": ["classical", "melody"]
+  }
+]

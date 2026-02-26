@@ -59,3 +59,32 @@ WSL2 不支援 Chromium sandbox（seccomp-bpf），需要 NO_SANDBOX=1。GPU 也
 - 主題色統一透過 CSS Custom Properties `var(--color-*)` 引用，定義在 `src/renderer/src/themes/tokens.ts`
 - 字型使用 @fontsource 離線打包（Nunito / DM Sans / JetBrains Mono），不依賴 CDN
 - 測試檔案放在對應模組旁邊（`*.test.ts`），使用 Vitest
+
+## MIDI Device 慣例（Phase 5）
+
+### 架構分層
+
+```
+engines/midi/          ← 純邏輯層（無 React 依賴）
+  MidiDeviceManager.ts ← Singleton，管理 Web MIDI API 存取與裝置列表
+  MidiInputParser.ts   ← 解析 MIDI 訊息（Note On/Off/CC），callback-based
+  MidiOutputSender.ts  ← 發送 MIDI 訊息到輸出裝置
+stores/
+  useMidiDeviceStore.ts ← Zustand store，橋接 engine → React
+features/midiDevice/   ← React UI 元件
+  DeviceSelector.tsx   ← 裝置選擇下拉選單（嵌入 TransportBar）
+  ConnectionStatus.tsx ← 連線狀態指示燈
+```
+
+### 關鍵設計決策
+
+- **MidiDeviceManager 使用 Singleton**（`getInstance()`），因為 Web MIDI API 的 `MIDIAccess` 物件全域唯一
+- **MidiInputParser 使用 callback pattern**（`onNoteOn(cb)` / `onNoteOff(cb)` / `onCC(cb)`），不使用 EventEmitter
+- **Parser 與 Store 的橋接**：在 `useMidiDeviceStore` 中以 module-level 變數管理 `_parser` 實例，透過 `syncParserToActiveInput()` 在裝置切換時自動 attach/detach
+- **連線狀態指示燈使用固定色（非 theme vars）**：綠/灰/紅具有通用語義意義，需在所有主題下保持一致對比（見 `ConnectionStatus.tsx` JSDoc 說明）
+- **Electron MIDI 權限**：在 main process 中透過 `session.setPermissionRequestHandler` 自動核准 `midi` 權限請求（`src/main/ipc/midiDeviceHandlers.ts`）
+
+### 測試注意事項
+
+- Web MIDI API 的 `MIDIInput.onmidimessage` 型別包含 `this: MIDIInput` 約束，測試中需使用 helper 函式 cast 掉此約束（見 `MidiInputParser.test.ts` 中的 `getHandler()`）
+- Mock `MIDIInput` 使用 `as unknown as MIDIInput` 型別斷言

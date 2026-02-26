@@ -2,6 +2,7 @@ import { app, shell, BrowserWindow } from 'electron'
 import { join } from 'path'
 import icon from '../../resources/icon.png?asset'
 import { registerFileHandlers } from './ipc/fileHandlers'
+import { registerMidiDeviceHandlers } from './ipc/midiDeviceHandlers'
 
 // WSL2 doesn't forward Windows display scaling to X11/Wayland,
 // so Electron defaults to devicePixelRatio=1. Force the correct factor.
@@ -45,6 +46,7 @@ app.whenReady().then(() => {
   app.setAppUserModelId('com.rexiano')
 
   registerFileHandlers()
+  registerMidiDeviceHandlers()
 
   createWindow()
 

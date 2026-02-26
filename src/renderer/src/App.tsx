@@ -8,6 +8,8 @@ import { FallingNotesCanvas } from './features/fallingNotes/FallingNotesCanvas'
 import { PianoKeyboard } from './features/fallingNotes/PianoKeyboard'
 import { TransportBar } from './features/fallingNotes/TransportBar'
 import { ThemePicker } from './features/settings/ThemePicker'
+import { SongLibrary } from './features/songLibrary/SongLibrary'
+import { useMidiDeviceStore } from './stores/useMidiDeviceStore'
 
 function App(): React.JSX.Element {
   const song = useSongStore((s) => s.song)
@@ -15,12 +17,11 @@ function App(): React.JSX.Element {
   const reset = usePlaybackStore((s) => s.reset)
 
   const [activeNotes, setActiveNotes] = useState<Set<number>>(new Set())
+  const midiActiveNotes = useMidiDeviceStore((s) => s.activeNotes)
 
   const handleActiveNotesChange = useCallback((notes: Set<number>) => {
     setActiveNotes(notes)
   }, [])
-
-  const [error, setError] = useState<string | null>(null)
 
   // ─── Phase 4: Audio Engine lifecycle ─────────────────
   const audioRef = useRef<{ engine: AudioEngine | null; scheduler: AudioScheduler | null }>({
@@ -113,7 +114,6 @@ function App(): React.JSX.Element {
   // ─── End Phase 4 ─────────────────────────────────────
 
   const handleOpenFile = useCallback(async (): Promise<void> => {
-    setError(null)
     try {
       const result = await window.api.openMidiFile()
       if (result) {
@@ -122,8 +122,6 @@ function App(): React.JSX.Element {
         reset()
       }
     } catch (e) {
-      const msg = e instanceof Error ? e.message : 'Failed to open MIDI file'
-      setError(msg)
       console.error('Failed to parse MIDI file:', e)
     }
   }, [loadSong, reset])
@@ -131,35 +129,7 @@ function App(): React.JSX.Element {
   return (
     <div className="flex flex-col h-screen" style={{ background: 'var(--color-bg)', color: 'var(--color-text)' }}>
       {!song ? (
-        /* Welcome screen */
-        <div className="flex-1 flex flex-col items-center justify-center p-8 relative">
-          <h1
-            className="text-5xl font-extrabold mb-3 font-display"
-            style={{ color: 'var(--color-accent)' }}
-          >
-            Rexiano
-          </h1>
-          <p className="text-lg mb-10" style={{ color: 'var(--color-text-muted)' }}>
-            A modern, open-source piano practice application
-          </p>
-          <button
-            onClick={handleOpenFile}
-            className="px-8 py-3.5 text-white rounded-full font-body font-medium text-base transition-colors cursor-pointer"
-            style={{ background: 'var(--color-accent)' }}
-            onMouseEnter={(e) => e.currentTarget.style.background = 'var(--color-accent-hover)'}
-            onMouseLeave={(e) => e.currentTarget.style.background = 'var(--color-accent)'}
-          >
-            Open MIDI File
-          </button>
-          {error && (
-            <p className="mt-4 text-sm" style={{ color: 'var(--color-accent)' }}>
-              {error}
-            </p>
-          )}
-          <div className="absolute bottom-6 right-6">
-            <ThemePicker />
-          </div>
-        </div>
+        <SongLibrary onOpenFile={handleOpenFile} />
       ) : (
         /* Song loaded: header + falling notes + transport + keyboard */
         <>
@@ -179,13 +149,13 @@ function App(): React.JSX.Element {
             <div className="flex items-center gap-2 shrink-0 ml-3">
               <ThemePicker />
               <button
-                onClick={handleOpenFile}
+                onClick={() => { useSongStore.getState().clearSong(); usePlaybackStore.getState().reset() }}
                 className="px-3 py-1.5 text-xs rounded-lg font-body transition-colors cursor-pointer"
                 style={{ background: 'var(--color-surface-alt)', color: 'var(--color-text)' }}
                 onMouseEnter={(e) => e.currentTarget.style.background = 'var(--color-border)'}
                 onMouseLeave={(e) => e.currentTarget.style.background = 'var(--color-surface-alt)'}
               >
-                Open Another
+                ← Library
               </button>
             </div>
           </div>
@@ -200,7 +170,7 @@ function App(): React.JSX.Element {
           <TransportBar />
 
           {/* Piano keyboard */}
-          <PianoKeyboard activeNotes={activeNotes} height={100} />
+          <PianoKeyboard activeNotes={activeNotes} midiActiveNotes={midiActiveNotes} height={100} />
         </>
       )}
     </div>

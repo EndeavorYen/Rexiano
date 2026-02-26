@@ -47,11 +47,51 @@ function buildLayout(): Layout {
 }
 
 interface PianoKeyboardProps {
+  /** Notes highlighted by the falling notes hit line */
   activeNotes?: Set<number>
+  /** Notes highlighted by live MIDI input */
+  midiActiveNotes?: Set<number>
   height?: number
 }
 
-export function PianoKeyboard({ activeNotes, height = 120 }: PianoKeyboardProps): React.JSX.Element {
+/** MIDI input highlight — a distinct warm cyan to contrast the theme accent */
+const MIDI_HIGHLIGHT = '#38bdf8'
+
+function getWhiteKeyBackground(
+  songActive: boolean,
+  midiActive: boolean
+): string {
+  if (midiActive) return MIDI_HIGHLIGHT
+  if (songActive) return 'var(--color-key-active)'
+  return 'linear-gradient(to bottom, var(--color-key-white), var(--color-key-white-bottom))'
+}
+
+function getBlackKeyBackground(
+  songActive: boolean,
+  midiActive: boolean
+): string {
+  if (midiActive) return MIDI_HIGHLIGHT
+  if (songActive) return 'var(--color-key-active)'
+  return 'linear-gradient(to bottom, var(--color-key-black-top), var(--color-key-black))'
+}
+
+function getKeyShadow(
+  songActive: boolean,
+  midiActive: boolean,
+  isBlack: boolean
+): string {
+  if (midiActive) {
+    return `0 1px ${isBlack ? 6 : 8}px color-mix(in srgb, ${MIDI_HIGHLIGHT} 50%, transparent)`
+  }
+  if (songActive) {
+    return `0 1px ${isBlack ? 6 : 8}px color-mix(in srgb, var(--color-accent) ${isBlack ? 40 : 30}%, transparent)`
+  }
+  return isBlack
+    ? '0 2px 3px rgba(0,0,0,0.25), inset 0 -1px 1px rgba(255,255,255,0.05)'
+    : '0 2px 4px rgba(0,0,0,0.08)'
+}
+
+export function PianoKeyboard({ activeNotes, midiActiveNotes, height = 120 }: PianoKeyboardProps): React.JSX.Element {
   const layout = useMemo(() => buildLayout(), [])
   const wPct = 100 / layout.whiteKeyCount
 
@@ -62,7 +102,8 @@ export function PianoKeyboard({ activeNotes, height = 120 }: PianoKeyboardProps)
     >
       {/* White keys */}
       {layout.whiteKeys.map((key) => {
-        const active = activeNotes?.has(key.midi)
+        const songActive = activeNotes?.has(key.midi) ?? false
+        const midiActive = midiActiveNotes?.has(key.midi) ?? false
         return (
           <div
             key={key.midi}
@@ -72,14 +113,10 @@ export function PianoKeyboard({ activeNotes, height = 120 }: PianoKeyboardProps)
               width: `${wPct}%`,
               height: '100%',
               boxSizing: 'border-box',
-              background: active
-                ? 'var(--color-key-active)'
-                : `linear-gradient(to bottom, var(--color-key-white), var(--color-key-white-bottom))`,
+              background: getWhiteKeyBackground(songActive, midiActive),
               borderRight: '1px solid var(--color-border)',
               borderRadius: '0 0 4px 4px',
-              boxShadow: active
-                ? '0 1px 8px color-mix(in srgb, var(--color-accent) 30%, transparent)'
-                : '0 2px 4px rgba(0,0,0,0.08)',
+              boxShadow: getKeyShadow(songActive, midiActive, false),
             }}
           />
         )
@@ -87,7 +124,8 @@ export function PianoKeyboard({ activeNotes, height = 120 }: PianoKeyboardProps)
 
       {/* Black keys */}
       {layout.blackKeys.map((key) => {
-        const active = activeNotes?.has(key.midi)
+        const songActive = activeNotes?.has(key.midi) ?? false
+        const midiActive = midiActiveNotes?.has(key.midi) ?? false
         const bWidth = wPct * BLACK_KEY_WIDTH_RATIO
         const centerX = (key.leftWhiteIndex + 1) * wPct
         return (
@@ -99,13 +137,9 @@ export function PianoKeyboard({ activeNotes, height = 120 }: PianoKeyboardProps)
               width: `${bWidth}%`,
               height: `${BLACK_KEY_HEIGHT_RATIO * 100}%`,
               zIndex: 1,
-              background: active
-                ? 'var(--color-key-active)'
-                : `linear-gradient(to bottom, var(--color-key-black-top), var(--color-key-black))`,
+              background: getBlackKeyBackground(songActive, midiActive),
               borderRadius: '0 0 3px 3px',
-              boxShadow: active
-                ? '0 1px 6px color-mix(in srgb, var(--color-accent) 40%, transparent)'
-                : '0 2px 3px rgba(0,0,0,0.25), inset 0 -1px 1px rgba(255,255,255,0.05)',
+              boxShadow: getKeyShadow(songActive, midiActive, true),
             }}
           />
         )
@@ -113,3 +147,6 @@ export function PianoKeyboard({ activeNotes, height = 120 }: PianoKeyboardProps)
     </div>
   )
 }
+
+// Exported for testing
+export { MIDI_HIGHLIGHT, getWhiteKeyBackground, getBlackKeyBackground, getKeyShadow }

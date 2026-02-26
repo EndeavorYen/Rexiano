@@ -2,7 +2,12 @@ import { ipcMain, dialog, BrowserWindow, app } from 'electron'
 import { readFile } from 'fs/promises'
 import { basename, join, resolve } from 'path'
 import { existsSync } from 'fs'
-import { IpcChannels, type MidiFileResult, type SoundFontResult } from '../../shared/types'
+import {
+  IpcChannels,
+  type MidiFileResult,
+  type SoundFontResult,
+  type BuiltinSongMeta,
+} from '../../shared/types'
 
 export function registerFileHandlers(): void {
   ipcMain.handle(IpcChannels.OPEN_MIDI_FILE, async (): Promise<MidiFileResult | null> => {
@@ -52,6 +57,53 @@ export function registerFileHandlers(): void {
       return {
         data: Array.from(buffer),
         fileName: sfName,
+      }
+    }
+  )
+
+  // ─── Song Library ──────────────────────────────────────
+
+  ipcMain.handle(IpcChannels.LIST_BUILTIN_SONGS, async (): Promise<BuiltinSongMeta[]> => {
+    const resourcesDir = app.isPackaged
+      ? join(process.resourcesPath, 'resources')
+      : join(app.getAppPath(), 'resources')
+
+    const manifestPath = join(resourcesDir, 'midi', 'songs.json')
+
+    if (!existsSync(manifestPath)) {
+      console.warn('Song library manifest not found:', manifestPath)
+      return []
+    }
+
+    const raw = await readFile(manifestPath, 'utf-8')
+    return JSON.parse(raw) as BuiltinSongMeta[]
+  })
+
+  ipcMain.handle(
+    IpcChannels.LOAD_BUILTIN_SONG,
+    async (_event, songId: string): Promise<MidiFileResult | null> => {
+      const resourcesDir = app.isPackaged
+        ? join(process.resourcesPath, 'resources')
+        : join(app.getAppPath(), 'resources')
+
+      const midiDir = join(resourcesDir, 'midi')
+      const manifestPath = join(midiDir, 'songs.json')
+
+      if (!existsSync(manifestPath)) return null
+
+      const manifest: BuiltinSongMeta[] = JSON.parse(await readFile(manifestPath, 'utf-8'))
+      const entry = manifest.find((s) => s.id === songId)
+      if (!entry) return null
+
+      const filePath = resolve(midiDir, entry.file)
+      // Path traversal guard
+      if (!filePath.startsWith(resolve(midiDir))) return null
+      if (!existsSync(filePath)) return null
+
+      const buffer = await readFile(filePath)
+      return {
+        fileName: entry.title,
+        data: Array.from(buffer),
       }
     }
   )

@@ -15,6 +15,10 @@ export const IpcChannels = {
   MIDI_REQUEST_ACCESS: 'midi:requestAccess',
   /** Phase 5: List available MIDI devices */
   MIDI_DEVICE_LIST: 'midi:deviceList',
+  /** Song library: list all built-in songs */
+  LIST_BUILTIN_SONGS: 'library:listBuiltinSongs',
+  /** Song library: load a specific built-in song by ID */
+  LOAD_BUILTIN_SONG: 'library:loadBuiltinSong',
 } as const
 
 /** Result of loading a SoundFont file via IPC */
@@ -23,6 +27,19 @@ export interface SoundFontResult {
   data: number[]
   /** File name of the loaded SoundFont */
   fileName: string
+}
+
+// ─── Song Library ────────────────────────────────────────────────────
+
+/** Metadata for a built-in song in the library */
+export interface BuiltinSongMeta {
+  id: string
+  file: string
+  title: string
+  composer: string
+  difficulty: 'beginner' | 'intermediate' | 'advanced'
+  durationSeconds: number
+  tags: string[]
 }
 
 // ─── Phase 5: MIDI Device Connection ─────────────────────────────────

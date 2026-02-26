@@ -6,6 +6,8 @@ const api = {
   loadSoundFont: (fileName?: string) => ipcRenderer.invoke(IpcChannels.LOAD_SOUNDFONT, fileName),
   requestMidiAccess: () => ipcRenderer.invoke(IpcChannels.MIDI_REQUEST_ACCESS),
   listMidiDevices: () => ipcRenderer.invoke(IpcChannels.MIDI_DEVICE_LIST),
+  listBuiltinSongs: () => ipcRenderer.invoke(IpcChannels.LIST_BUILTIN_SONGS),
+  loadBuiltinSong: (songId: string) => ipcRenderer.invoke(IpcChannels.LOAD_BUILTIN_SONG, songId),
 }
 
 if (process.contextIsolated) {
