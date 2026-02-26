@@ -1,33 +1,72 @@
-import { usePracticeStore } from '@renderer/stores/usePracticeStore'
-import type { PracticeMode } from '@shared/types'
+import { usePracticeStore } from "@renderer/stores/usePracticeStore";
+import type { PracticeMode } from "@shared/types";
 
 const modes: { id: PracticeMode; label: string; icon: React.JSX.Element }[] = [
   {
-    id: 'watch',
-    label: 'Watch',
+    id: "watch",
+    label: "Watch",
     icon: (
-      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-        <ellipse cx="8" cy="8" rx="7" ry="4.5" stroke="currentColor" strokeWidth="1.5" />
+      <svg
+        width="16"
+        height="16"
+        viewBox="0 0 16 16"
+        fill="none"
+        aria-hidden="true"
+      >
+        <ellipse
+          cx="8"
+          cy="8"
+          rx="7"
+          ry="4.5"
+          stroke="currentColor"
+          strokeWidth="1.5"
+        />
         <circle cx="8" cy="8" r="2" fill="currentColor" />
       </svg>
     ),
   },
   {
-    id: 'wait',
-    label: 'Wait',
+    id: "wait",
+    label: "Wait",
     icon: (
-      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+      <svg
+        width="16"
+        height="16"
+        viewBox="0 0 16 16"
+        fill="none"
+        aria-hidden="true"
+      >
         <circle cx="8" cy="8" r="6.5" stroke="currentColor" strokeWidth="1.5" />
-        <rect x="5.5" y="4.5" width="2" height="7" rx="0.5" fill="currentColor" />
-        <rect x="8.5" y="4.5" width="2" height="7" rx="0.5" fill="currentColor" />
+        <rect
+          x="5.5"
+          y="4.5"
+          width="2"
+          height="7"
+          rx="0.5"
+          fill="currentColor"
+        />
+        <rect
+          x="8.5"
+          y="4.5"
+          width="2"
+          height="7"
+          rx="0.5"
+          fill="currentColor"
+        />
       </svg>
     ),
   },
   {
-    id: 'free',
-    label: 'Free',
+    id: "free",
+    label: "Free",
     icon: (
-      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+      <svg
+        width="16"
+        height="16"
+        viewBox="0 0 16 16"
+        fill="none"
+        aria-hidden="true"
+      >
         <path
           d="M3 8C3 5.5 5 3 8 3C11 3 12 5 12.5 6.5"
           stroke="currentColor"
@@ -57,16 +96,20 @@ const modes: { id: PracticeMode; label: string; icon: React.JSX.Element }[] = [
       </svg>
     ),
   },
-]
+];
 
 export function PracticeModeSelector(): React.JSX.Element {
-  const currentMode = usePracticeStore((s) => s.mode)
-  const setMode = usePracticeStore((s) => s.setMode)
+  const currentMode = usePracticeStore((s) => s.mode);
+  const setMode = usePracticeStore((s) => s.setMode);
 
   return (
-    <div className="flex items-center gap-1" role="radiogroup" aria-label="Practice mode">
+    <div
+      className="flex items-center gap-1"
+      role="radiogroup"
+      aria-label="Practice mode"
+    >
       {modes.map(({ id, label, icon }) => {
-        const isActive = currentMode === id
+        const isActive = currentMode === id;
         return (
           <button
             key={id}
@@ -75,17 +118,19 @@ export function PracticeModeSelector(): React.JSX.Element {
             onClick={() => setMode(id)}
             className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-body font-medium transition-all duration-150 cursor-pointer"
             style={{
-              background: isActive ? 'var(--color-accent)' : 'var(--color-surface-alt)',
-              color: isActive ? '#fff' : 'var(--color-text-muted)',
-              boxShadow: isActive ? '0 1px 4px rgba(0,0,0,0.15)' : 'none',
+              background: isActive
+                ? "var(--color-accent)"
+                : "var(--color-surface-alt)",
+              color: isActive ? "#fff" : "var(--color-text-muted)",
+              boxShadow: isActive ? "0 1px 4px rgba(0,0,0,0.15)" : "none",
             }}
             title={`${label} mode`}
           >
             {icon}
             <span>{label}</span>
           </button>
-        )
+        );
       })}
     </div>
-  )
+  );
 }

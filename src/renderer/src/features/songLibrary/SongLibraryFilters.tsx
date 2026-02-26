@@ -1,26 +1,29 @@
-import { useCallback } from 'react'
-import { Search } from 'lucide-react'
-import { useSongLibraryStore, type DifficultyFilter } from '../../stores/useSongLibraryStore'
+import { useCallback } from "react";
+import { Search } from "lucide-react";
+import {
+  useSongLibraryStore,
+  type DifficultyFilter,
+} from "../../stores/useSongLibraryStore";
 
 const difficulties: { value: DifficultyFilter; label: string }[] = [
-  { value: 'all', label: 'All' },
-  { value: 'beginner', label: 'Beginner' },
-  { value: 'intermediate', label: 'Intermediate' },
-  { value: 'advanced', label: 'Advanced' },
-]
+  { value: "all", label: "All" },
+  { value: "beginner", label: "Beginner" },
+  { value: "intermediate", label: "Intermediate" },
+  { value: "advanced", label: "Advanced" },
+];
 
 export function SongLibraryFilters(): React.JSX.Element {
-  const searchQuery = useSongLibraryStore((s) => s.searchQuery)
-  const difficultyFilter = useSongLibraryStore((s) => s.difficultyFilter)
-  const setSearchQuery = useSongLibraryStore((s) => s.setSearchQuery)
-  const setDifficultyFilter = useSongLibraryStore((s) => s.setDifficultyFilter)
+  const searchQuery = useSongLibraryStore((s) => s.searchQuery);
+  const difficultyFilter = useSongLibraryStore((s) => s.difficultyFilter);
+  const setSearchQuery = useSongLibraryStore((s) => s.setSearchQuery);
+  const setDifficultyFilter = useSongLibraryStore((s) => s.setDifficultyFilter);
 
   const handleSearch = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
-      setSearchQuery(e.target.value)
+      setSearchQuery(e.target.value);
     },
     [setSearchQuery],
-  )
+  );
 
   return (
     <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full max-w-2xl mx-auto">
@@ -29,7 +32,7 @@ export function SongLibraryFilters(): React.JSX.Element {
         <Search
           size={14}
           className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none"
-          style={{ color: 'var(--color-text-muted)' }}
+          style={{ color: "var(--color-text-muted)" }}
         />
         <input
           type="text"
@@ -48,12 +51,18 @@ export function SongLibraryFilters(): React.JSX.Element {
             onClick={() => setDifficultyFilter(d.value)}
             className="px-3 py-1.5 rounded-full text-xs font-body font-medium transition-colors cursor-pointer"
             style={{
-              background: difficultyFilter === d.value ? 'var(--color-accent)' : 'var(--color-surface)',
-              color: difficultyFilter === d.value ? '#fff' : 'var(--color-text-muted)',
+              background:
+                difficultyFilter === d.value
+                  ? "var(--color-accent)"
+                  : "var(--color-surface)",
+              color:
+                difficultyFilter === d.value
+                  ? "#fff"
+                  : "var(--color-text-muted)",
               border:
                 difficultyFilter === d.value
-                  ? '1px solid var(--color-accent)'
-                  : '1px solid var(--color-border)',
+                  ? "1px solid var(--color-accent)"
+                  : "1px solid var(--color-border)",
             }}
           >
             {d.label}
@@ -61,5 +70,5 @@ export function SongLibraryFilters(): React.JSX.Element {
         ))}
       </div>
     </div>
-  )
+  );
 }

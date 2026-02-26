@@ -6,45 +6,45 @@
 // - Used in demo mode: AudioScheduler drives timing, this sends to hardware
 // - Supports optional timestamp for precise Web MIDI scheduling
 
-import type { ParsedNote } from './types'
+import type { ParsedNote } from "./types";
 
 /** Default velocity for noteOn when not specified */
-const DEFAULT_VELOCITY = 100
+const DEFAULT_VELOCITY = 100;
 
 /** MIDI status bytes */
-const NOTE_ON = 0x90
-const NOTE_OFF = 0x80
-const CONTROL_CHANGE = 0xb0
+const NOTE_ON = 0x90;
+const NOTE_OFF = 0x80;
+const CONTROL_CHANGE = 0xb0;
 
 /** Well-known MIDI CC numbers */
 export const CC = {
   SUSTAIN_PEDAL: 64,
   ALL_NOTES_OFF: 123,
-} as const
+} as const;
 
 export class MidiOutputSender {
-  private _output: MIDIOutput | null = null
-  private _channel: number = 0
+  private _output: MIDIOutput | null = null;
+  private _channel: number = 0;
 
   // ─── Attach / Detach ────────────────────────────
   /** Bind to a MIDI output port */
   attach(output: MIDIOutput, channel: number = 0): void {
-    this.detach()
-    this._output = output
-    this._channel = channel & 0x0f
+    this.detach();
+    this._output = output;
+    this._channel = channel & 0x0f;
   }
 
   /** Unbind from the current output port */
   detach(): void {
     if (this._output) {
-      this.allNotesOff()
-      this._output = null
+      this.allNotesOff();
+      this._output = null;
     }
   }
 
   /** Whether currently attached to an output port */
   get isAttached(): boolean {
-    return this._output !== null
+    return this._output !== null;
   }
 
   // ─── Send methods ──────────────────────────────
@@ -54,9 +54,16 @@ export class MidiOutputSender {
    * @param velocity Velocity (0-127), default 100
    * @param timestamp  DOMHighResTimeStamp for precise scheduling (ms), 0 = immediate
    */
-  noteOn(midi: number, velocity: number = DEFAULT_VELOCITY, timestamp: number = 0): void {
-    if (!this._output) return
-    this._output.send([NOTE_ON | this._channel, midi & 0x7f, velocity & 0x7f], timestamp)
+  noteOn(
+    midi: number,
+    velocity: number = DEFAULT_VELOCITY,
+    timestamp: number = 0,
+  ): void {
+    if (!this._output) return;
+    this._output.send(
+      [NOTE_ON | this._channel, midi & 0x7f, velocity & 0x7f],
+      timestamp,
+    );
   }
 
   /**
@@ -65,8 +72,8 @@ export class MidiOutputSender {
    * @param timestamp  DOMHighResTimeStamp for precise scheduling (ms), 0 = immediate
    */
   noteOff(midi: number, timestamp: number = 0): void {
-    if (!this._output) return
-    this._output.send([NOTE_OFF | this._channel, midi & 0x7f, 0x40], timestamp)
+    if (!this._output) return;
+    this._output.send([NOTE_OFF | this._channel, midi & 0x7f, 0x40], timestamp);
   }
 
   /**
@@ -76,16 +83,19 @@ export class MidiOutputSender {
    * @param timestamp DOMHighResTimeStamp (ms), 0 = immediate
    */
   sendCC(cc: number, value: number, timestamp: number = 0): void {
-    if (!this._output) return
-    this._output.send([CONTROL_CHANGE | this._channel, cc & 0x7f, value & 0x7f], timestamp)
+    if (!this._output) return;
+    this._output.send(
+      [CONTROL_CHANGE | this._channel, cc & 0x7f, value & 0x7f],
+      timestamp,
+    );
   }
 
   /**
    * Send All Notes Off (CC 123, value 0) to silence all sounding notes.
    */
   allNotesOff(): void {
-    if (!this._output) return
-    this._output.send([CONTROL_CHANGE | this._channel, CC.ALL_NOTES_OFF, 0])
+    if (!this._output) return;
+    this._output.send([CONTROL_CHANGE | this._channel, CC.ALL_NOTES_OFF, 0]);
   }
 
   /**
@@ -97,17 +107,17 @@ export class MidiOutputSender {
    * @param noteTime   Song time of the note relative to baseTime, in seconds
    */
   sendParsedNote(note: ParsedNote, baseTime: number, noteTime: number): void {
-    if (!this._output) return
+    if (!this._output) return;
 
-    const onTimeMs = baseTime + noteTime * 1000
-    const offTimeMs = onTimeMs + note.duration * 1000
+    const onTimeMs = baseTime + noteTime * 1000;
+    const offTimeMs = onTimeMs + note.duration * 1000;
 
-    this.noteOn(note.midi, note.velocity, onTimeMs)
-    this.noteOff(note.midi, offTimeMs)
+    this.noteOn(note.midi, note.velocity, onTimeMs);
+    this.noteOff(note.midi, offTimeMs);
   }
 
   // ─── Dispose ────────────────────────────────────
   dispose(): void {
-    this.detach()
+    this.detach();
   }
 }
