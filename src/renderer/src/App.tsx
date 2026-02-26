@@ -1,4 +1,5 @@
 import { useState, useCallback, useRef, useEffect } from 'react'
+import { ArrowLeft } from 'lucide-react'
 import { parseMidiFile } from './engines/midi/MidiFileParser'
 import { useSongStore } from './stores/useSongStore'
 import { usePlaybackStore } from './stores/usePlaybackStore'
@@ -9,6 +10,7 @@ import { PianoKeyboard } from './features/fallingNotes/PianoKeyboard'
 import { TransportBar } from './features/fallingNotes/TransportBar'
 import { ThemePicker } from './features/settings/ThemePicker'
 import { SongLibrary } from './features/songLibrary/SongLibrary'
+import { DeviceSelector } from './features/midiDevice/DeviceSelector'
 import { useMidiDeviceStore } from './stores/useMidiDeviceStore'
 
 function App(): React.JSX.Element {
@@ -129,10 +131,12 @@ function App(): React.JSX.Element {
   return (
     <div className="flex flex-col h-screen" style={{ background: 'var(--color-bg)', color: 'var(--color-text)' }}>
       {!song ? (
-        <SongLibrary onOpenFile={handleOpenFile} />
+        <div key="library" className="flex-1 flex flex-col animate-page-enter">
+          <SongLibrary onOpenFile={handleOpenFile} />
+        </div>
       ) : (
         /* Song loaded: header + falling notes + transport + keyboard */
-        <>
+        <div key="playback" className="flex-1 flex flex-col animate-page-enter">
           {/* Song info header */}
           <div
             className="flex items-center justify-between px-4 py-2"
@@ -147,15 +151,15 @@ function App(): React.JSX.Element {
               </p>
             </div>
             <div className="flex items-center gap-2 shrink-0 ml-3">
+              <DeviceSelector />
+              <div className="h-5 w-px shrink-0" style={{ background: 'var(--color-border)' }} />
               <ThemePicker />
               <button
                 onClick={() => { useSongStore.getState().clearSong(); usePlaybackStore.getState().reset() }}
-                className="px-3 py-1.5 text-xs rounded-lg font-body transition-colors cursor-pointer"
-                style={{ background: 'var(--color-surface-alt)', color: 'var(--color-text)' }}
-                onMouseEnter={(e) => e.currentTarget.style.background = 'var(--color-border)'}
-                onMouseLeave={(e) => e.currentTarget.style.background = 'var(--color-surface-alt)'}
+                className="flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-lg font-body cursor-pointer btn-surface-themed"
               >
-                ← Library
+                <ArrowLeft size={14} />
+                Library
               </button>
             </div>
           </div>
@@ -171,7 +175,7 @@ function App(): React.JSX.Element {
 
           {/* Piano keyboard */}
           <PianoKeyboard activeNotes={activeNotes} midiActiveNotes={midiActiveNotes} height={100} />
-        </>
+        </div>
       )}
     </div>
   )

@@ -1,10 +1,11 @@
 import { useCallback, useRef } from 'react'
+import { VolumeX, Volume1, Volume2 } from 'lucide-react'
 import { usePlaybackStore } from '@renderer/stores/usePlaybackStore'
 
 function VolumeIcon({ level }: { level: number }): React.JSX.Element {
-  if (level === 0) return <span aria-hidden="true">{'\u{1F507}'}</span>
-  if (level <= 50) return <span aria-hidden="true">{'\u{1F508}'}</span>
-  return <span aria-hidden="true">{'\u{1F50A}'}</span>
+  if (level === 0) return <VolumeX size={16} />
+  if (level <= 50) return <Volume1 size={16} />
+  return <Volume2 size={16} />
 }
 
 export function VolumeControl(): React.JSX.Element {

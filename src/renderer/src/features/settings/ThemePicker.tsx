@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useCallback } from 'react'
 import { useThemeStore } from '@renderer/stores/useThemeStore'
 import { themes, type ThemeId } from '@renderer/themes/tokens'
 
@@ -9,6 +9,22 @@ export function ThemePicker(): React.JSX.Element {
   const currentId = useThemeStore((s) => s.themeId)
   const setTheme = useThemeStore((s) => s.setTheme)
   const popoverRef = useRef<HTMLDivElement>(null)
+
+  // First-visit pulse to draw attention to theme picker
+  const [isFirstVisit] = useState(() => {
+    try {
+      return !localStorage.getItem('rexiano-theme-picker-seen')
+    } catch {
+      return false
+    }
+  })
+
+  const handleOpen = useCallback(() => {
+    setOpen((prev) => !prev)
+    if (isFirstVisit) {
+      try { localStorage.setItem('rexiano-theme-picker-seen', '1') } catch { /* noop */ }
+    }
+  }, [isFirstVisit])
 
   // Close on outside click
   useEffect(() => {
@@ -25,8 +41,8 @@ export function ThemePicker(): React.JSX.Element {
   return (
     <div className="relative" ref={popoverRef}>
       <button
-        onClick={() => setOpen(!open)}
-        className="w-8 h-8 flex items-center justify-center rounded-full transition-colors cursor-pointer"
+        onClick={handleOpen}
+        className={`w-8 h-8 flex items-center justify-center rounded-full transition-colors cursor-pointer ${isFirstVisit ? 'animate-gentle-pulse' : ''}`}
         style={{ background: 'var(--color-surface-alt)' }}
         title="Change theme"
       >

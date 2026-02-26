@@ -1,7 +1,7 @@
+import { Play, Pause, SkipBack } from 'lucide-react'
 import { usePlaybackStore } from '@renderer/stores/usePlaybackStore'
 import { useSongStore } from '@renderer/stores/useSongStore'
 import { VolumeControl } from '@renderer/features/audio/VolumeControl'
-import { DeviceSelector } from '@renderer/features/midiDevice/DeviceSelector'
 
 export function formatTime(seconds: number): string {
   if (!Number.isFinite(seconds) || seconds < 0) return '0:00'
@@ -31,10 +31,10 @@ export function TransportBar(): React.JSX.Element {
         disabled={!song}
         className="w-8 h-8 flex items-center justify-center rounded text-white disabled:opacity-40 transition-colors cursor-pointer"
         style={{ background: 'var(--color-accent)' }}
-        title={isPlaying ? 'Pause' : 'Play'}
+        title={isPlaying ? 'Pause (Space)' : 'Play (Space)'}
         aria-label={isPlaying ? 'Pause' : 'Play'}
       >
-        {isPlaying ? '\u275A\u275A' : '\u25B6'}
+        {isPlaying ? <Pause size={16} fill="currentColor" /> : <Play size={16} fill="currentColor" />}
       </button>
 
       {/* Reset */}
@@ -43,10 +43,10 @@ export function TransportBar(): React.JSX.Element {
         disabled={!song}
         className="w-8 h-8 flex items-center justify-center rounded disabled:opacity-40 transition-colors cursor-pointer"
         style={{ background: 'var(--color-surface-alt)', color: 'var(--color-text)' }}
-        title="Reset"
+        title="Back to start (Home)"
         aria-label="Reset to beginning"
       >
-        {'\u23EE'}
+        <SkipBack size={14} fill="currentColor" />
       </button>
 
       {/* Time display */}
@@ -70,13 +70,6 @@ export function TransportBar(): React.JSX.Element {
 
       {/* Volume */}
       <VolumeControl />
-
-      {/* MIDI device selector (separator + selector) */}
-      <div
-        className="h-5 w-px shrink-0"
-        style={{ background: 'var(--color-border)' }}
-      />
-      <DeviceSelector />
     </div>
   )
 }

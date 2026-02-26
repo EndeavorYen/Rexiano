@@ -21,7 +21,7 @@ body {
   background: var(--color-bg);
 }
 
-/* ── Custom slider styling ── */
+/* ── Custom slider styling (Webkit) ── */
 input[type="range"] {
   -webkit-appearance: none;
   appearance: none;
@@ -49,4 +49,106 @@ input[type="range"]::-webkit-slider-thumb {
 
 input[type="range"]:disabled::-webkit-slider-thumb {
   opacity: 0.4;
+}
+
+/* ── Custom slider styling (Firefox) ── */
+input[type="range"]::-moz-range-track {
+  height: 4px;
+  border-radius: 2px;
+  background: var(--color-border);
+  border: none;
+}
+
+input[type="range"]::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--color-accent);
+  border: 2px solid white;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+}
+
+input[type="range"]:disabled::-moz-range-thumb {
+  opacity: 0.4;
+}
+
+/* ── Skeleton shimmer animation ── */
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--color-surface) 25%,
+    var(--color-surface-alt) 50%,
+    var(--color-surface) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.8s ease-in-out infinite;
+  border-radius: 0.75rem;
+}
+
+/* ── Page transition ── */
+@keyframes fade-slide-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-page-enter {
+  animation: fade-slide-in 0.25s ease-out both;
+}
+
+/* ── ThemePicker first-visit pulse ── */
+@keyframes gentle-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 transparent; }
+  50% { box-shadow: 0 0 0 4px color-mix(in srgb, var(--color-accent) 25%, transparent); }
+}
+
+.animate-gentle-pulse {
+  animation: gentle-pulse 2.5s ease-in-out 3;
+}
+
+/* ── Themed button utilities (CSS :hover replaces JS handlers) ── */
+.btn-ghost-themed {
+  background: transparent;
+  color: var(--color-text-muted);
+  border: 1px solid var(--color-border);
+  transition: color 0.15s, border-color 0.15s, background 0.15s;
+}
+
+.btn-ghost-themed:hover {
+  color: var(--color-accent);
+  border-color: var(--color-accent);
+  background: color-mix(in srgb, var(--color-accent) 6%, transparent);
+}
+
+.btn-surface-themed {
+  background: var(--color-surface-alt);
+  color: var(--color-text);
+  transition: background 0.15s;
+}
+
+.btn-surface-themed:hover {
+  background: var(--color-border);
+}
+
+/* ── Themed input focus ── */
+.input-themed {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  color: var(--color-text);
+  transition: border-color 0.15s;
+}
+
+.input-themed:focus {
+  border-color: var(--color-accent);
+  outline: none;
 }
