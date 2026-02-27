@@ -12,6 +12,9 @@
 const BLE_MIDI_SERVICE = "03b80e5a-ede8-4b33-a751-6ce34ec4c700";
 const BLE_MIDI_CHARACTERISTIC = "7772e5db-3868-4112-a1a9-f2669d106bf3";
 
+/** Timeout for BLE device scanning (ms) */
+const SCAN_TIMEOUT_MS = 20_000;
+
 export interface BleMidiCallbacks {
   onNoteOn?: (note: number, velocity: number) => void;
   onNoteOff?: (note: number, velocity: number) => void;
@@ -72,11 +75,14 @@ export class BleMidiManager {
       this._status = "scanning";
       this._error = null;
 
-      // Request a BLE MIDI device — Electron's main process handles
-      // the device picker via the select-bluetooth-device event
-      const device = await navigator.bluetooth.requestDevice({
-        filters: [{ services: [BLE_MIDI_SERVICE] }],
-      });
+      console.log("[BLE MIDI] Scanning for BLE MIDI devices...");
+
+      // Race requestDevice against a timeout so the UI doesn't hang forever
+      const device = await this._requestDeviceWithTimeout();
+
+      console.log(
+        `[BLE MIDI] Device found: ${device.name ?? device.id}`,
+      );
 
       this._device = device;
       this._status = "connecting";
@@ -85,8 +91,11 @@ export class BleMidiManager {
       device.addEventListener("gattserverdisconnected", this._onDisconnect);
 
       // Connect to GATT server
+      console.log("[BLE MIDI] Connecting to GATT server...");
       const server = await device.gatt!.connect();
+      console.log("[BLE MIDI] GATT connected, getting MIDI service...");
       const service = await server.getPrimaryService(BLE_MIDI_SERVICE);
+      console.log("[BLE MIDI] Service found, getting characteristic...");
       this._characteristic = await service.getCharacteristic(
         BLE_MIDI_CHARACTERISTIC,
       );
@@ -98,11 +107,13 @@ export class BleMidiManager {
       );
       await this._characteristic.startNotifications();
 
+      console.log("[BLE MIDI] Connected and listening for MIDI data");
       this._status = "connected";
       this._error = null;
     } catch (err) {
       // User cancelled the picker or connection failed
       const msg = err instanceof Error ? err.message : "Connection failed";
+      console.warn(`[BLE MIDI] Error: ${msg}`);
       if (msg.includes("cancelled") || msg.includes("canceled")) {
         // User cancelled — go back to idle, not error
         this._status = "idle";
@@ -112,6 +123,47 @@ export class BleMidiManager {
         this._error = msg;
       }
     }
+  }
+
+  /**
+   * Request a BLE MIDI device with a scan timeout.
+   * First tries filtered scan (BLE MIDI service UUID).
+   * Falls back to broad scan if filtered scan times out.
+   */
+  private async _requestDeviceWithTimeout(): Promise<BluetoothDevice> {
+    // Try 1: filtered scan for BLE MIDI service
+    try {
+      const device = await Promise.race([
+        navigator.bluetooth.requestDevice({
+          filters: [{ services: [BLE_MIDI_SERVICE] }],
+        }),
+        this._timeout(SCAN_TIMEOUT_MS, "BLE MIDI scan timed out"),
+      ]);
+      return device;
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "";
+      // If user cancelled, re-throw immediately
+      if (msg.includes("cancelled") || msg.includes("canceled")) throw err;
+      // If it timed out, try broad scan
+      console.log(
+        "[BLE MIDI] Filtered scan timed out, trying broad scan...",
+      );
+    }
+
+    // Try 2: accept all BLE devices, request MIDI service as optional
+    return Promise.race([
+      navigator.bluetooth.requestDevice({
+        acceptAllDevices: true,
+        optionalServices: [BLE_MIDI_SERVICE],
+      }),
+      this._timeout(SCAN_TIMEOUT_MS, "Bluetooth scan timed out — no BLE MIDI device found"),
+    ]);
+  }
+
+  private _timeout(ms: number, message: string): Promise<never> {
+    return new Promise((_resolve, reject) => {
+      setTimeout(() => reject(new Error(message)), ms);
+    });
   }
 
   /** Disconnect from the BLE MIDI device */

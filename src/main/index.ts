@@ -51,7 +51,13 @@ function createWindow(): void {
       // Store the callback for later if no devices found yet
       pendingBluetoothCallback = callback;
 
+      console.log(
+        `[BLE] select-bluetooth-device: ${devices.length} device(s) found`,
+        devices.map((d) => `${d.deviceName} (${d.deviceId})`),
+      );
+
       if (devices.length > 0) {
+        console.log(`[BLE] Auto-selecting: ${devices[0].deviceName}`);
         callback(devices[0].deviceId);
         pendingBluetoothCallback = null;
       }
