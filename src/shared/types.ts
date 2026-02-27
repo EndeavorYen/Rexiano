@@ -19,6 +19,10 @@ export const IpcChannels = {
   LIST_BUILTIN_SONGS: "library:listBuiltinSongs",
   /** Song library: load a specific built-in song by ID */
   LOAD_BUILTIN_SONG: "library:loadBuiltinSong",
+  /** Phase 6.5: Save a practice session record */
+  SAVE_SESSION: "progress:saveSession",
+  /** Phase 6.5: Load all practice session records */
+  LOAD_SESSIONS: "progress:loadSessions",
 } as const;
 
 /** Result of loading a SoundFont file via IPC */
@@ -76,3 +80,27 @@ export interface PracticeScore {
 
 /** Result status for an individual note in practice mode */
 export type NoteResult = "hit" | "miss" | "pending";
+
+// ─── Phase 6.5: Children Usability Enhancements ────────────────────
+
+/** Record of a completed practice session, persisted to disk */
+export interface SessionRecord {
+  /** Unique identifier (UUID) */
+  id: string;
+  /** BuiltinSongMeta.id or fileName hash for user-imported files */
+  songId: string;
+  /** Redundant storage for display convenience */
+  songTitle: string;
+  /** Unix timestamp in milliseconds */
+  timestamp: number;
+  /** Practice mode used during this session */
+  mode: PracticeMode;
+  /** Playback speed used (0.25–2.0) */
+  speed: number;
+  /** Final score snapshot */
+  score: PracticeScore;
+  /** Total practice duration in seconds */
+  durationSeconds: number;
+  /** Track indices that were practiced */
+  tracksPlayed: number[];
+}
