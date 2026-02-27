@@ -30,6 +30,7 @@ export function registerFileHandlers(): void {
       return {
         fileName: basename(filePath),
         data: Array.from(buffer),
+        path: filePath,
       };
     },
   );
@@ -80,6 +81,7 @@ export function registerFileHandlers(): void {
       return {
         fileName: basename(filePath),
         data: Array.from(buffer),
+        path: filePath,
       };
     },
   );

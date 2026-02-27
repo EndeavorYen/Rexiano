@@ -4,6 +4,8 @@ export interface MidiFileResult {
   fileName: string;
   /** Raw file content as a Uint8Array-compatible array */
   data: number[];
+  /** Absolute file path on disk (present for user-imported files, absent for built-in songs) */
+  path?: string;
 }
 
 /** IPC channel names — single source of truth */

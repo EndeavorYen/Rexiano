@@ -1,13 +1,16 @@
 import { useEffect, useMemo, useCallback, useState } from "react";
-import { Upload } from "lucide-react";
+import { Upload, Clock, AlertCircle } from "lucide-react";
 import { parseMidiFile } from "../../engines/midi/MidiFileParser";
 import { useSongStore } from "../../stores/useSongStore";
 import { usePlaybackStore } from "../../stores/usePlaybackStore";
 import { useSongLibraryStore } from "../../stores/useSongLibraryStore";
+import { useRecentFiles } from "../../hooks/useRecentFiles";
+import { formatRelativeTime } from "../../utils/relativeTime";
 import { SongCard } from "./SongCard";
 import { SongLibraryFilters } from "./SongLibraryFilters";
 import { ThemePicker } from "../settings/ThemePicker";
 import appIcon from "../../assets/icon.png";
+import type { RecentFile } from "../../../../shared/types";
 
 interface SongLibraryProps {
   onOpenFile: () => Promise<void>;
@@ -25,8 +28,14 @@ export function SongLibrary({
   const loadSong = useSongStore((s) => s.loadSong);
   const reset = usePlaybackStore((s) => s.reset);
 
+  const { recentFiles, refresh: refreshRecents } = useRecentFiles();
+
   const [loadingId, setLoadingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [recentError, setRecentError] = useState<string | null>(null);
+  const [loadingRecentPath, setLoadingRecentPath] = useState<string | null>(
+    null,
+  );
 
   useEffect(() => {
     fetchSongs();
@@ -58,6 +67,13 @@ export function SongLibrary({
           const parsed = parseMidiFile(result.fileName, result.data);
           loadSong(parsed);
           reset();
+          // Save to recent files with builtin: prefix
+          void window.api.saveRecentFile({
+            path: `builtin:${songId}`,
+            name: result.fileName,
+            timestamp: Date.now(),
+          });
+          refreshRecents();
         }
       } catch (e) {
         const msg = e instanceof Error ? e.message : "Failed to load song";
@@ -67,8 +83,67 @@ export function SongLibrary({
         setLoadingId(null);
       }
     },
-    [loadSong, reset],
+    [loadSong, reset, refreshRecents],
   );
+
+  /** Max recent files shown in the quick-access strip */
+  const RECENT_DISPLAY_LIMIT = 5;
+  const visibleRecents = recentFiles.slice(0, RECENT_DISPLAY_LIMIT);
+
+  const handleSelectRecent = useCallback(
+    async (file: RecentFile) => {
+      setRecentError(null);
+      setLoadingRecentPath(file.path);
+      try {
+        let result;
+        if (file.path.startsWith("builtin:")) {
+          // Built-in song — extract the songId and load via library API
+          const songId = file.path.slice("builtin:".length);
+          result = await window.api.loadBuiltinSong(songId);
+        } else {
+          // User-imported file — load by absolute path
+          result = await window.api.loadMidiPath(file.path);
+        }
+
+        if (!result) {
+          setRecentError(`File not found: ${file.name}`);
+          setTimeout(() => setRecentError(null), 3000);
+          return;
+        }
+        const parsed = parseMidiFile(result.fileName, result.data);
+        loadSong(parsed);
+        reset();
+        // Bump timestamp
+        void window.api.saveRecentFile({
+          path: file.path,
+          name: file.name,
+          timestamp: Date.now(),
+        });
+        refreshRecents();
+      } catch (e) {
+        const msg = e instanceof Error ? e.message : "Failed to load file";
+        setRecentError(msg);
+        setTimeout(() => setRecentError(null), 3000);
+        console.error("Failed to load recent file:", e);
+      } finally {
+        setLoadingRecentPath(null);
+      }
+    },
+    [loadSong, reset, refreshRecents],
+  );
+
+  /**
+   * Truncate a filename for display in the chip.
+   * Keeps the extension visible so the user recognises it as a MIDI file.
+   */
+  const truncateName = (name: string, maxLen: number = 24): string => {
+    if (name.length <= maxLen) return name;
+    const ext = name.lastIndexOf(".") >= 0 ? name.slice(name.lastIndexOf(".")) : "";
+    const stem = name.slice(0, name.length - ext.length);
+    const available = maxLen - ext.length - 1; // 1 for the ellipsis char
+    if (available <= 3) return name.slice(0, maxLen - 1) + "\u2026";
+    return stem.slice(0, available) + "\u2026" + ext;
+  };
 
   return (
     <div className="flex-1 flex flex-col items-center px-6 py-8 overflow-y-auto relative">
@@ -94,6 +169,66 @@ export function SongLibrary({
       >
         Pick a song to start practicing
       </p>
+
+      {/* Recently Played */}
+      {visibleRecents.length > 0 && (
+        <div className="w-full max-w-2xl mb-5">
+          <div
+            className="flex items-center gap-1.5 mb-2.5"
+            style={{ color: "var(--color-text-muted)" }}
+          >
+            <Clock size={13} />
+            <span className="text-xs font-body font-medium uppercase tracking-wide">
+              Recently Played
+            </span>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {visibleRecents.map((file) => (
+              <button
+                key={file.path}
+                onClick={() => handleSelectRecent(file)}
+                disabled={loadingRecentPath === file.path}
+                className="group relative flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-body font-medium cursor-pointer transition-all duration-150 hover:scale-[1.03] active:scale-[0.97] disabled:opacity-50 disabled:cursor-wait"
+                style={{
+                  background:
+                    "color-mix(in srgb, var(--color-accent) 12%, var(--color-surface))",
+                  color: "var(--color-text)",
+                  border: "1px solid var(--color-border)",
+                }}
+                title={file.path}
+              >
+                {loadingRecentPath === file.path ? (
+                  <div
+                    className="w-3 h-3 border-[1.5px] rounded-full animate-spin shrink-0"
+                    style={{
+                      borderColor: "var(--color-border)",
+                      borderTopColor: "var(--color-accent)",
+                    }}
+                  />
+                ) : null}
+                <span className="truncate max-w-[160px]">
+                  {truncateName(file.name)}
+                </span>
+                <span
+                  className="shrink-0 opacity-60"
+                  style={{ color: "var(--color-text-muted)" }}
+                >
+                  {formatRelativeTime(file.timestamp)}
+                </span>
+              </button>
+            ))}
+          </div>
+          {recentError && (
+            <div
+              className="flex items-center gap-1.5 mt-2 text-xs font-body"
+              style={{ color: "#dc2626" }}
+            >
+              <AlertCircle size={12} />
+              {recentError}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Filters */}
       <SongLibraryFilters />

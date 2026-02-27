@@ -143,6 +143,14 @@ function App(): React.JSX.Element {
         const parsed = parseMidiFile(result.fileName, result.data);
         loadSong(parsed);
         reset();
+        // Save to recent files if we have the full path
+        if (result.path) {
+          void window.api.saveRecentFile({
+            path: result.path,
+            name: result.fileName,
+            timestamp: Date.now(),
+          });
+        }
       }
     } catch (e) {
       console.error("Failed to parse MIDI file:", e);
