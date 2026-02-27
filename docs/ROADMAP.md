@@ -97,7 +97,7 @@
 - [x] TransportBar — Play 觸發 `AudioContext.resume()`
 - [x] 音量控制 UI（VolumeControl.tsx, master volume slider）
 - [x] App.tsx 中完整的 AudioEngine 生命週期管理
-- [ ] ⚠️ **鋼琴 SoundFont 檔案**：目前無 .sf2 檔，fallback 到合成器正弦波音色 → **移至 Phase 6.5**
+- [x] ⚠️ **鋼琴 SoundFont 檔案**：使用 TimGM6mb SF2（`resources/piano.sf2`, 6MB）
 - [x] 測試：AudioEngine, SoundFontLoader, AudioScheduler 單元測試
 
 ---
@@ -129,8 +129,8 @@
 - [x] Electron MIDI 權限自動核准（`midiDeviceHandlers.ts`）
 - [x] 測試：MidiDeviceManager, MidiInputParser, MidiOutputSender, useMidiDeviceStore, ConnectionStatus
 - [ ] Windows BLE MIDI 橋接說明文件 → **移至 Phase 9**
-- [ ] 連線測試按鈕 → **移至 Phase 6.5**
-- [ ] 延遲補償設定 → **移至 Phase 6.5**
+- [x] 連線測試按鈕（DeviceSelector test button, 3-state cycle: idle → playing → ok）
+- [x] 延遲補償設定（SettingsPanel 0-100ms slider, WaitMode 整合）
 
 ---
 
@@ -157,7 +157,7 @@
 - [x] 段落循環
   - [x] A-B 按鈕設定循環點
   - [x] 到達 B 點自動跳回 A 點
-  - [ ] UI：seek bar 上的彩色高亮區段 → **移至 Phase 6.5**
+  - [x] UI：seek bar 上的彩色高亮區段（TransportBar A-B loop highlight）
 - [x] 分手練習
   - [x] Track 選擇 UI（勾選要練習的 track）
   - [x] 評分僅計算已選 track
@@ -189,7 +189,7 @@
 >
 > 設計詳見 [DESIGN.md §8.5](./DESIGN.md#85-兒童可用性增強phase-65)
 >
-> Sprint 1~4 核心功能已完成，剩餘 UI 整合與 Sprint 5 待做
+> Sprint 1~4 完成（除真實鋼琴音色外），Sprint 5 待做
 
 ### Sprint 1 — 基礎可用性（全部無依賴，可平行）
 
@@ -200,10 +200,10 @@
   - [x] 白鍵底部顯示音名（C, D, E...），C 鍵加八度數字（C4）
   - [x] 黑鍵可選顯示升音名（C#, D#...）
   - [x] 可開關設定（`showLabels` prop）
-- [ ] 真實鋼琴音色
+- [ ] 真實鋼琴音色（保留 TimGM6mb，未來可升級 Salamander SF2）
   - [ ] 取得免費可再發佈的鋼琴 SoundFont（Salamander Grand Piano ~12MB, CC BY 3.0）
   - [ ] 放入 `resources/piano.sf2`
-  - [ ] TransportBar 顯示音訊載入狀態
+  - [x] TransportBar 顯示音訊載入狀態（Loader2 spinner + AlertCircle error indicator）
 - [x] 暗色主題「Midnight」
   - [x] 第四套主題，深色背景 + 紫色重點色 + 青/粉/金音符色
   - [x] `themes/tokens.ts` 新增 midnight 定義（WCAG AA 對比度已驗證）
@@ -213,8 +213,8 @@
   - [x] 錯誤提示（非 MIDI 檔案時 3 秒 toast）
 - [x] BPM / 節拍顯示
   - [x] 歌曲 header 旁顯示當前 BPM（`Math.round(song.tempos[0].bpm) BPM`）
-- [ ] 難度說明
-  - [ ] SongCard 難度 badge 加 tooltip 解釋
+- [x] 難度說明
+  - [x] SongCard 難度 badge 加 tooltip 解釋（title + aria-label）
 
 ### Sprint 2 — 練習體驗增強（依賴 Phase 6 產出）
 
@@ -237,12 +237,12 @@
 - [x] 練習成績持久化
   - [x] `stores/useProgressStore.ts` — 歷史成績 Zustand store（含 auto-save on 播放停止）
   - [x] `main/ipc/progressHandlers.ts` — 讀寫 progress.json（userData 目錄）
-  - [ ] SongCard 顯示最佳成績 badge
+  - [x] SongCard 顯示最佳成績 badge（accuracy-colored badge, threshold: gold ≥90% / silver ≥70% / green <70%）
   - [x] 結算畫面顯示「新紀錄！」（`isNewRecord()` in celebrationUtils + CelebrationOverlay badge）
-- [x] 最近開啟檔案（後端完成，前端 UI 待做）
+- [x] 最近開啟檔案
   - [x] `main/ipc/recentFilesHandlers.ts` — 管理 recents.json（去重 + MRU 排序 + MAX_RECENTS=10）
-  - [ ] SongLibrary 頂部「最近」section
-  - [ ] 直接路徑載入（免 dialog）
+  - [x] SongLibrary 頂部「最近」section（clickable chips + relative time display）
+  - [x] 直接路徑載入（免 dialog，via `loadMidiPath` IPC）
 - [x] 設定面板
   - [x] `stores/useSettingsStore.ts` — localStorage 持久化（8 個欄位）
   - [x] `features/settings/SettingsPanel.tsx` — modal 設定面板（主題 + 顯示 + 音訊 + 練習預設 + 快捷鍵）
@@ -251,18 +251,18 @@
 
 ### Sprint 4 — 教學工具（可與 Sprint 3 平行）
 
-- [x] 視覺節拍器（引擎完成，UI 待做）
-  - [ ] `features/fallingNotes/Metronome.tsx` — 每拍脈衝動畫
+- [x] 視覺節拍器
+  - [x] `features/metronome/MetronomePulse.tsx` — 每拍脈衝動畫（dot row, accent on beat 1）
   - [x] 可選音效 click（`engines/metronome/MetronomeEngine.ts` — Web Audio，含 count-in）
-  - [ ] TransportBar 開關按鈕
+  - [x] TransportBar 開關按鈕（Timer icon, accent color when enabled）
 - [x] 新手引導教學
   - [x] `features/onboarding/OnboardingGuide.tsx` — 4 步驟卡片導覽（開啟歌曲 → 播放 → 練習 → 連接鍵盤）
   - [x] 首次啟動自動顯示（localStorage 記憶），`resetOnboarding()` 可重播
-- [ ] 擴充內建曲庫（目標 15-20 首）
-  - [ ] Beginner: Mary Had a Little Lamb, Hot Cross Buns, Jingle Bells, Happy Birthday, London Bridge, Row Row Row Your Boat
-  - [ ] Intermediate: Für Elise (simplified), Minuet in G, Prelude in C, Canon in D (simplified)
-  - [ ] Advanced: Moonlight Sonata (1st mvt), Turkish March
-  - [ ] SongLibrary 分類顯示（category 欄位）
+- [x] 擴充內建曲庫（18 首）
+  - [x] Beginner: C Major Scale, Mary Had a Little Lamb, Hot Cross Buns, Twinkle Twinkle, Happy Birthday, London Bridge, Row Row Row Your Boat, Au Clair de la Lune, Chopsticks, Lavender's Blue, Jingle Bells
+  - [x] Intermediate: Ode to Joy, Für Elise (simplified), Minuet in G, Prelude in C, Canon in D (simplified)
+  - [x] Advanced: Moonlight Sonata (1st mvt), Turkish March
+  - [x] SongLibrary 分類顯示（category 欄位 + `groupSongsByCategory()` section headers）
 
 ### Sprint 5 — 超越 Synthesia（長期差異化）
 
