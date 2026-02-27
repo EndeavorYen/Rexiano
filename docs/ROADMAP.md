@@ -1,6 +1,6 @@
 # Rexiano — 開發路線圖與追蹤清單
 
-> **最後更新**: 2026-02-27
+> **最後更新**: 2026-02-28
 >
 > 詳細設計請參考 [DESIGN.md](./DESIGN.md)
 
@@ -164,7 +164,7 @@
 - [x] 評分系統
   - [x] Hit / Miss 即時判定
   - [x] 準確率、連擊數統計
-  - [ ] 練習結束結算畫面 → **移至 Phase 6.5**
+  - [x] 練習結束結算畫面（CelebrationOverlay — Phase 6.5 Sprint 2 完成）
 - [x] 視覺回饋
   - [x] Hit 音符：短暫發光效果（flashHit）
   - [x] Miss 音符：轉灰（markMiss）
@@ -181,80 +181,83 @@
 
 ---
 
-## Phase 6.5 — 兒童可用性增強 🔲
+## Phase 6.5 — 兒童可用性增強 🚧
 
 > 目標版本：v0.4.1 — **Rex 可以坐下來練琴的最低門檻**
 >
-> 前置：Phase 6
+> 前置：Phase 6 ✅
 >
 > 設計詳見 [DESIGN.md §8.5](./DESIGN.md#85-兒童可用性增強phase-65)
+>
+> Sprint 1~4 核心功能已完成，剩餘 UI 整合與 Sprint 5 待做
 
 ### Sprint 1 — 基礎可用性（全部無依賴，可平行）
 
-- [ ] 鍵盤快捷鍵
-  - [ ] `hooks/useKeyboardShortcuts.ts` — 全域 keydown hook
-  - [ ] Space = Play/Pause, Home = 回到開頭, ←→ = Seek ±5s, ↑↓ = 音量 ±10%, Esc = 回到曲庫
-- [ ] 琴鍵音名標籤
-  - [ ] 白鍵底部顯示音名（C, D, E...），C 鍵加八度數字（C4）
-  - [ ] 黑鍵可選顯示升音名（C#, D#...）
-  - [ ] 可開關設定
+- [x] 鍵盤快捷鍵
+  - [x] `hooks/useKeyboardShortcuts.ts` — 全域 keydown hook
+  - [x] Space = Play/Pause, R = Restart, ←→ = Seek ±5s, Shift+←→ = ±15s, ↑↓ = 速度 ±0.25x, M = Mute, Ctrl+O = Open, 1/2/3 = Mode, L = Loop
+- [x] 琴鍵音名標籤
+  - [x] 白鍵底部顯示音名（C, D, E...），C 鍵加八度數字（C4）
+  - [x] 黑鍵可選顯示升音名（C#, D#...）
+  - [x] 可開關設定（`showLabels` prop）
 - [ ] 真實鋼琴音色
   - [ ] 取得免費可再發佈的鋼琴 SoundFont（Salamander Grand Piano ~12MB, CC BY 3.0）
   - [ ] 放入 `resources/piano.sf2`
   - [ ] TransportBar 顯示音訊載入狀態
-- [ ] 暗色主題「Midnight」
-  - [ ] 第四套主題，深色背景 + 亮色音符
-  - [ ] `themes/tokens.ts` 新增 midnight 定義
-- [ ] 拖放 MIDI 匯入
-  - [ ] SongLibrary 支援 drag-and-drop `.mid` 檔案
-  - [ ] 拖曳時顯示視覺指示
-- [ ] BPM / 節拍顯示
-  - [ ] TransportBar 時間旁顯示當前 BPM
+- [x] 暗色主題「Midnight」
+  - [x] 第四套主題，深色背景 + 紫色重點色 + 青/粉/金音符色
+  - [x] `themes/tokens.ts` 新增 midnight 定義（WCAG AA 對比度已驗證）
+- [x] 拖放 MIDI 匯入
+  - [x] App.tsx 支援 drag-and-drop `.mid` / `.midi` 檔案
+  - [x] 拖曳時顯示視覺指示（虛線邊框 + backdrop blur）
+  - [x] 錯誤提示（非 MIDI 檔案時 3 秒 toast）
+- [x] BPM / 節拍顯示
+  - [x] 歌曲 header 旁顯示當前 BPM（`Math.round(song.tempos[0].bpm) BPM`）
 - [ ] 難度說明
   - [ ] SongCard 難度 badge 加 tooltip 解釋
 
 ### Sprint 2 — 練習體驗增強（依賴 Phase 6 產出）
 
-- [ ] 練習控制面板整合
-  - [ ] `features/practice/PracticeToolbar.tsx` — 組合所有練習元件
-  - [ ] 嵌入 App.tsx 主佈局
-  - [ ] 將 speed / loopRange / activeTracks 接入 tickerLoop.ts
-- [ ] 下落音符音名標籤
-  - [ ] NoteRenderer 新增 PixiJS BitmapText 池
-  - [ ] 音符矩形內顯示音名（"C", "D#" 等）
-  - [ ] 只在音符高度 > 16px 時顯示
-  - [ ] 可開關設定
-- [ ] 慶祝回饋效果
-  - [ ] 接通已存在的 `flashHit()` / `markMiss()` / `showCombo()` 到 practice scoring
-  - [ ] 連擊里程碑動畫（5x, 10x, 25x, 50x, 100x）
-  - [ ] 練習結束結算畫面（準確率 + 星級評分 + 鼓勵訊息）
+- [x] 練習控制面板整合（Phase 6 已完成）
+  - [x] `features/practice/PracticeToolbar.tsx` — 組合所有練習元件
+  - [x] 嵌入 App.tsx 主佈局
+  - [x] 將 speed / loopRange / activeTracks 接入 tickerLoop.ts
+- [x] 下落音符音名標籤
+  - [x] NoteRenderer 新增 PixiJS Text 池（`_labelPool` + `_spriteLabels` Map）
+  - [x] 音符矩形內顯示音名（"C4", "F#5" 等，`midiToNoteName()`）
+  - [x] 只在音符高度 > 16px 時顯示（`MIN_HEIGHT_FOR_LABEL`）
+  - [x] 可開關設定（`showNoteLabels` 屬性）
+- [x] 慶祝回饋效果
+  - [x] 接通已存在的 `flashHit()` / `markMiss()` / `showCombo()` 到 practice scoring
+  - [x] 連擊里程碑動畫（showCombo at milestones）
+  - [x] 練習結束結算畫面（`CelebrationOverlay.tsx` — 3 級評分：🎉 amazing ≥90% / ⭐ great ≥70% / ✨ encourage，CSS 粒子動畫）
 
 ### Sprint 3 — 持久化與設定（依賴 Sprint 2）
 
-- [ ] 練習成績持久化
-  - [ ] `stores/useProgressStore.ts` — 歷史成績 Zustand store
-  - [ ] `main/ipc/progressHandlers.ts` — 讀寫 scores.json（userData 目錄）
+- [x] 練習成績持久化
+  - [x] `stores/useProgressStore.ts` — 歷史成績 Zustand store（含 auto-save on 播放停止）
+  - [x] `main/ipc/progressHandlers.ts` — 讀寫 progress.json（userData 目錄）
   - [ ] SongCard 顯示最佳成績 badge
-  - [ ] 結算畫面顯示「新紀錄！」
-- [ ] 最近開啟檔案
-  - [ ] `main/ipc/recentFilesHandlers.ts` — 管理 recents.json
+  - [x] 結算畫面顯示「新紀錄！」（`isNewRecord()` in celebrationUtils + CelebrationOverlay badge）
+- [x] 最近開啟檔案（後端完成，前端 UI 待做）
+  - [x] `main/ipc/recentFilesHandlers.ts` — 管理 recents.json（去重 + MRU 排序 + MAX_RECENTS=10）
   - [ ] SongLibrary 頂部「最近」section
   - [ ] 直接路徑載入（免 dialog）
-- [ ] 設定面板
-  - [ ] `stores/useSettingsStore.ts` — localStorage 持久化
-  - [ ] `features/settings/SettingsPanel.tsx` — modal 設定面板（整合 ThemePicker）
-  - [ ] 欄位：showNoteLabels, showFallingNoteLabels, noteNameFormat, latencyMs
-  - [ ] 鍵盤快捷鍵參考表
+- [x] 設定面板
+  - [x] `stores/useSettingsStore.ts` — localStorage 持久化（8 個欄位）
+  - [x] `features/settings/SettingsPanel.tsx` — modal 設定面板（主題 + 顯示 + 音訊 + 練習預設 + 快捷鍵）
+  - [x] 欄位：showNoteLabels, showFallingNoteLabels, volume, muted, defaultSpeed, defaultMode, metronomeEnabled, countInBeats
+  - [x] 鍵盤快捷鍵參考表（基礎版）
 
 ### Sprint 4 — 教學工具（可與 Sprint 3 平行）
 
-- [ ] 視覺節拍器
+- [x] 視覺節拍器（引擎完成，UI 待做）
   - [ ] `features/fallingNotes/Metronome.tsx` — 每拍脈衝動畫
-  - [ ] 可選音效 click（`engines/audio/MetronomeEngine.ts`）
+  - [x] 可選音效 click（`engines/metronome/MetronomeEngine.ts` — Web Audio，含 count-in）
   - [ ] TransportBar 開關按鈕
-- [ ] 新手引導教學
-  - [ ] `features/onboarding/TutorialOverlay.tsx` — 5 步驟 spotlight 導覽
-  - [ ] 首次啟動自動顯示，Settings 可重播
+- [x] 新手引導教學
+  - [x] `features/onboarding/OnboardingGuide.tsx` — 4 步驟卡片導覽（開啟歌曲 → 播放 → 練習 → 連接鍵盤）
+  - [x] 首次啟動自動顯示（localStorage 記憶），`resetOnboarding()` 可重播
 - [ ] 擴充內建曲庫（目標 15-20 首）
   - [ ] Beginner: Mary Had a Little Lamb, Hot Cross Buns, Jingle Bells, Happy Birthday, London Bridge, Row Row Row Your Boat
   - [ ] Intermediate: Für Elise (simplified), Minuet in G, Prelude in C, Canon in D (simplified)
@@ -408,7 +411,8 @@
 > 這些項目不屬於特定 Phase，隨開發過程持續推進
 
 - [ ] 效能監控（FPS counter, 記憶體用量）
-- [ ] 無障礙 (ARIA labels, 螢幕閱讀器)
+- [x] 無障礙：`@media (prefers-reduced-motion: reduce)` 停用所有動畫
+- [ ] 無障礙：ARIA labels, 螢幕閱讀器
 - [ ] E2E 測試（Playwright）
 
 > 以下項目已移入 Phase 6.5 的具體 Sprint 中：

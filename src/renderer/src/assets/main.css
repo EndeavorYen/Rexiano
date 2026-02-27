@@ -283,6 +283,35 @@ input[type="range"]:disabled::-moz-range-thumb {
   }
 }
 
+/* New Record badge — entrance + gentle pulse */
+.celebration-new-record {
+  animation:
+    celebration-new-record-enter 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) 0.5s both,
+    celebration-new-record-pulse 1.8s ease-in-out 0.9s infinite;
+}
+
+@keyframes celebration-new-record-enter {
+  from {
+    opacity: 0;
+    transform: scale(0.5) translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+@keyframes celebration-new-record-pulse {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.85;
+    transform: scale(1.06);
+  }
+}
+
 /* Particle fall animations */
 .celebration-particle {
   position: absolute;

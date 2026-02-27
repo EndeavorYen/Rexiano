@@ -1,12 +1,19 @@
 import { useMemo } from "react";
 import type { PracticeScore } from "@shared/types";
-import { getTier, type CelebrationTier } from "./celebrationUtils";
+import { useProgressStore } from "../../stores/useProgressStore";
+import {
+  getTier,
+  isNewRecord,
+  type CelebrationTier,
+} from "./celebrationUtils";
 
 interface CelebrationOverlayProps {
   score: PracticeScore;
   visible: boolean;
   onPracticeAgain: () => void;
   onChooseSong: () => void;
+  /** Song identifier used to look up previous best score for "New Record!" detection */
+  songId?: string;
 }
 
 const tierConfig: Record<
@@ -79,10 +86,21 @@ export function CelebrationOverlay({
   visible,
   onPracticeAgain,
   onChooseSong,
+  songId,
 }: CelebrationOverlayProps): React.JSX.Element {
   const tier = getTier(score.accuracy);
   const config = tierConfig[tier];
   const count = PARTICLE_COUNT[tier];
+
+  const previousBest = useProgressStore((s) =>
+    songId ? s.getBestScore(songId) : null,
+  );
+  const showNewRecord = isNewRecord(
+    score.accuracy,
+    score.totalNotes,
+    songId,
+    previousBest ? previousBest.score.accuracy : null,
+  );
 
   // Regenerate particles when tier changes (count is derived from tier)
   const particles = useMemo(() => generateParticles(count, tier), [count, tier]);
@@ -154,6 +172,17 @@ export function CelebrationOverlay({
         >
           {config.subtitle}
         </p>
+
+        {/* New Record indicator */}
+        {showNewRecord && (
+          <div
+            className="font-display font-bold tracking-wide text-sm celebration-new-record"
+            style={{ color: "var(--color-accent)" }}
+            data-testid="celebration-new-record"
+          >
+            New Record!
+          </div>
+        )}
 
         {/* Score breakdown */}
         <div
