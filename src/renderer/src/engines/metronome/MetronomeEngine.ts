@@ -67,6 +67,11 @@ export class MetronomeEngine {
     return this._currentBeat;
   }
 
+  /** Number of beats per measure */
+  get beatsPerMeasure(): number {
+    return this._beatsPerMeasure;
+  }
+
   setEnabled(enabled: boolean): void {
     this._enabled = enabled;
     if (!enabled && this._intervalId !== null) {

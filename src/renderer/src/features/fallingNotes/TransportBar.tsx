@@ -11,6 +11,8 @@ import { useSongStore } from "@renderer/stores/useSongStore";
 import { usePracticeStore } from "@renderer/stores/usePracticeStore";
 import { useSettingsStore } from "@renderer/stores/useSettingsStore";
 import { VolumeControl } from "@renderer/features/audio/VolumeControl";
+import { MetronomePulse } from "@renderer/features/metronome/MetronomePulse";
+import { useMetronomeBeat } from "@renderer/hooks/useMetronomeBeat";
 
 // eslint-disable-next-line react-refresh/only-export-components
 export function formatTime(seconds: number): string {
@@ -51,6 +53,8 @@ export function TransportBar(): React.JSX.Element {
 
   const metronomeEnabled = useSettingsStore((s) => s.metronomeEnabled);
   const setMetronomeEnabled = useSettingsStore((s) => s.setMetronomeEnabled);
+
+  const metronomeBeat = useMetronomeBeat();
 
   const duration = song?.duration ?? 0;
   const loopHighlight = computeLoopHighlight(loopRange, duration);
@@ -134,6 +138,13 @@ export function TransportBar(): React.JSX.Element {
       >
         <Timer size={14} />
       </button>
+
+      {/* Metronome beat indicator */}
+      <MetronomePulse
+        isPlaying={metronomeBeat.isRunning}
+        currentBeat={metronomeBeat.currentBeat}
+        beatsPerMeasure={metronomeBeat.beatsPerMeasure}
+      />
 
       {/* Time display */}
       <span
