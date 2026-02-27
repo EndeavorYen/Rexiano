@@ -1,5 +1,6 @@
 import type { ParsedTrack } from "../midi/types";
 import type { NoteResult } from "@shared/types";
+import { useSettingsStore } from "@renderer/stores/useSettingsStore";
 
 /** WaitMode state machine states */
 export type WaitState = "playing" | "waiting" | "idle";
@@ -109,6 +110,11 @@ export class WaitMode {
     if (this._state === "idle") return true;
     if (this._state === "waiting") return false;
 
+    // Read latency compensation from settings (engines use getState(), not hooks).
+    // Shifts the effective time backward so MIDI input arriving late still matches.
+    const latencyMs = useSettingsStore.getState().latencyCompensation;
+    const adjustedTime = currentTime - latencyMs / 1000;
+
     const toleranceSec = this._toleranceMs / 1000;
     const pendingMidis = this._pendingMidis;
     pendingMidis.clear();
@@ -124,7 +130,7 @@ export class WaitMode {
         const note = track.notes[ni];
 
         // Notes are time-sorted: if beyond lookahead, stop scanning this track
-        if (note.time > currentTime + toleranceSec) break;
+        if (note.time > adjustedTime + toleranceSec) break;
 
         const key = `${trackIndex}:${ni}`;
 
@@ -135,7 +141,7 @@ export class WaitMode {
         }
 
         // Note within tolerance window → pending
-        if (note.time >= currentTime - toleranceSec) {
+        if (note.time >= adjustedTime - toleranceSec) {
           pendingMidis.add(note.midi);
           this._noteResults.set(key, "pending");
           this._pendingNoteDetails.push({

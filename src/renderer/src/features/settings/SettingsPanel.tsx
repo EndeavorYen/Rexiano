@@ -38,6 +38,7 @@ export function SettingsPanel(): React.JSX.Element {
   const defaultMode = useSettingsStore((s) => s.defaultMode);
   const metronomeEnabled = useSettingsStore((s) => s.metronomeEnabled);
   const countInBeats = useSettingsStore((s) => s.countInBeats);
+  const latencyCompensation = useSettingsStore((s) => s.latencyCompensation);
 
   const setShowNoteLabels = useSettingsStore((s) => s.setShowNoteLabels);
   const setShowFallingNoteLabels = useSettingsStore(
@@ -49,6 +50,9 @@ export function SettingsPanel(): React.JSX.Element {
   const setDefaultMode = useSettingsStore((s) => s.setDefaultMode);
   const setMetronomeEnabled = useSettingsStore((s) => s.setMetronomeEnabled);
   const setCountInBeats = useSettingsStore((s) => s.setCountInBeats);
+  const setLatencyCompensation = useSettingsStore(
+    (s) => s.setLatencyCompensation,
+  );
 
   // First-visit pulse
   const [isFirstVisit] = useState(() => {
@@ -359,6 +363,44 @@ export function SettingsPanel(): React.JSX.Element {
                         </button>
                       ))}
                     </div>
+                  </div>
+
+                  {/* Latency compensation */}
+                  <div className="flex flex-col gap-1.5">
+                    <div className="flex items-center gap-3">
+                      <span
+                        className="text-xs font-body w-16 shrink-0"
+                        style={{ color: "var(--color-text)" }}
+                      >
+                        Latency
+                      </span>
+                      <input
+                        type="range"
+                        min={0}
+                        max={100}
+                        step={1}
+                        value={latencyCompensation}
+                        onChange={(e) =>
+                          setLatencyCompensation(Number(e.target.value))
+                        }
+                        className="flex-1"
+                        data-testid="latency-slider"
+                        aria-label="Latency compensation"
+                      />
+                      <span
+                        className="text-xs font-mono w-10 text-right tabular-nums"
+                        style={{ color: "var(--color-text-muted)" }}
+                        data-testid="latency-value"
+                      >
+                        {latencyCompensation}ms
+                      </span>
+                    </div>
+                    <span
+                      className="text-[10px] font-body"
+                      style={{ color: "var(--color-text-muted)" }}
+                    >
+                      Adjust timing offset for MIDI keyboard input
+                    </span>
                   </div>
                 </div>
               </section>

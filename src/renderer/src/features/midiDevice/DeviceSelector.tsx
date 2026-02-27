@@ -1,6 +1,9 @@
-import { useEffect, useCallback } from "react";
+import { useEffect, useCallback, useState, useRef } from "react";
 import { useMidiDeviceStore } from "@renderer/stores/useMidiDeviceStore";
+import { MidiDeviceManager } from "@renderer/engines/midi/MidiDeviceManager";
+import { MidiOutputSender } from "@renderer/engines/midi/MidiOutputSender";
 import { ConnectionStatus } from "./ConnectionStatus";
+import { sendTestNote, type TestButtonState } from "./midiTestUtils";
 
 export function DeviceSelector(): React.JSX.Element {
   const inputs = useMidiDeviceStore((s) => s.inputs);
@@ -14,10 +17,42 @@ export function DeviceSelector(): React.JSX.Element {
   const selectInput = useMidiDeviceStore((s) => s.selectInput);
   const selectOutput = useMidiDeviceStore((s) => s.selectOutput);
 
+  // Test button state
+  const [testState, setTestState] = useState<TestButtonState>("idle");
+  const okTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   // Auto-init MIDI access on mount
   useEffect(() => {
     connect();
   }, [connect]);
+
+  // Cleanup ok timer on unmount
+  useEffect(() => {
+    return () => {
+      if (okTimerRef.current) clearTimeout(okTimerRef.current);
+    };
+  }, []);
+
+  const handleTestClick = useCallback(async () => {
+    if (testState !== "idle") return;
+
+    const manager = MidiDeviceManager.getInstance();
+    const output = manager.getActiveOutput();
+    if (!output) return;
+
+    setTestState("playing");
+    try {
+      const sender = new MidiOutputSender();
+      await sendTestNote(sender, output);
+      setTestState("ok");
+      okTimerRef.current = setTimeout(() => {
+        setTestState("idle");
+        okTimerRef.current = null;
+      }, 1500);
+    } catch {
+      setTestState("idle");
+    }
+  }, [testState]);
 
   const handleInputChange = useCallback(
     (e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -104,6 +139,36 @@ export function DeviceSelector(): React.JSX.Element {
                 ))}
               </select>
             </label>
+          )}
+
+          {/* Test output button — visible only when an output device is selected */}
+          {selectedOutputId && (
+            <button
+              onClick={handleTestClick}
+              disabled={testState !== "idle"}
+              className="px-2.5 py-1 rounded text-xs font-medium transition-colors cursor-pointer"
+              style={{
+                background:
+                  testState === "ok"
+                    ? "#22c55e"
+                    : "var(--color-surface)",
+                color:
+                  testState === "ok"
+                    ? "#fff"
+                    : "var(--color-text)",
+                border: "1px solid var(--color-border)",
+                opacity: testState === "playing" ? 0.7 : 1,
+              }}
+              title="Send a test note (C4) to the selected MIDI output"
+              aria-label="Test MIDI output"
+              data-testid="midi-test-button"
+            >
+              {testState === "idle"
+                ? "Test"
+                : testState === "playing"
+                  ? "Playing..."
+                  : "OK!"}
+            </button>
           )}
         </>
       )}

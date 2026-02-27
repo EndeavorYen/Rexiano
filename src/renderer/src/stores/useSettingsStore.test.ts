@@ -70,6 +70,11 @@ describe("useSettingsStore", () => {
       const store = await getStore();
       expect(store.getState().countInBeats).toBe(4);
     });
+
+    test("latencyCompensation defaults to 0", async () => {
+      const store = await getStore();
+      expect(store.getState().latencyCompensation).toBe(0);
+    });
   });
 
   describe("setters update state", () => {
@@ -120,6 +125,12 @@ describe("useSettingsStore", () => {
       store.getState().setCountInBeats(2);
       expect(store.getState().countInBeats).toBe(2);
     });
+
+    test("setLatencyCompensation updates latency", async () => {
+      const store = await getStore();
+      store.getState().setLatencyCompensation(15);
+      expect(store.getState().latencyCompensation).toBe(15);
+    });
   });
 
   describe("value clamping", () => {
@@ -164,6 +175,24 @@ describe("useSettingsStore", () => {
       store.getState().setCountInBeats(3.7);
       expect(store.getState().countInBeats).toBe(4);
     });
+
+    test("latencyCompensation is clamped to 0 minimum", async () => {
+      const store = await getStore();
+      store.getState().setLatencyCompensation(-10);
+      expect(store.getState().latencyCompensation).toBe(0);
+    });
+
+    test("latencyCompensation is clamped to 100 maximum", async () => {
+      const store = await getStore();
+      store.getState().setLatencyCompensation(200);
+      expect(store.getState().latencyCompensation).toBe(100);
+    });
+
+    test("latencyCompensation is rounded to integer", async () => {
+      const store = await getStore();
+      store.getState().setLatencyCompensation(15.7);
+      expect(store.getState().latencyCompensation).toBe(16);
+    });
   });
 
   describe("localStorage persistence", () => {
@@ -182,6 +211,14 @@ describe("useSettingsStore", () => {
       const raw = storage.get(STORAGE_KEY);
       const parsed = JSON.parse(raw!);
       expect(parsed.defaultMode).toBe("free");
+    });
+
+    test("setLatencyCompensation persists to localStorage", async () => {
+      const store = await getStore();
+      store.getState().setLatencyCompensation(25);
+      const raw = storage.get(STORAGE_KEY);
+      const parsed = JSON.parse(raw!);
+      expect(parsed.latencyCompensation).toBe(25);
     });
 
     test("saved values are restored on store re-creation", async () => {
