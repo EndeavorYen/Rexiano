@@ -58,18 +58,27 @@ function createWindow(): void {
 
       if (devices.length === 0) return; // Keep waiting
 
-      // Prefer a device whose name contains "Roland", "HP", "FP", "Piano",
-      // or "MIDI" — otherwise fall back to the first device with a name.
-      const keywords = ["roland", "hp-", "fp-", "piano", "midi"];
+      // Only auto-select devices with a recognizable name.
+      // Skip unnamed devices — they're likely nearby phones or peripherals.
+      const keywords = ["roland", "hp-", "hp7", "fp-", "piano", "midi"];
       const preferred = devices.find((d) =>
-        keywords.some((k) => d.deviceName?.toLowerCase().includes(k)),
+        d.deviceName &&
+        keywords.some((k) => d.deviceName!.toLowerCase().includes(k)),
       );
-      const named = devices.find((d) => d.deviceName && d.deviceName !== "");
-      const pick = preferred ?? named ?? devices[0];
 
-      console.log(`[BLE] Auto-selecting: ${pick.deviceName} (${pick.deviceId})`);
-      callback(pick.deviceId);
-      pendingBluetoothCallback = null;
+      if (preferred) {
+        console.log(`[BLE] Auto-selecting: ${preferred.deviceName} (${preferred.deviceId})`);
+        callback(preferred.deviceId);
+        pendingBluetoothCallback = null;
+        return;
+      }
+
+      // No preferred device yet — log what we see and keep waiting
+      const named = devices.filter((d) => d.deviceName && d.deviceName !== "");
+      console.log(
+        `[BLE] Waiting for piano — ${devices.length} device(s) found, ` +
+          `${named.length} named: ${named.map((d) => d.deviceName).join(", ") || "(none)"}`,
+      );
     },
   );
 
