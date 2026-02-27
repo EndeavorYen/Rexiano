@@ -10,6 +10,7 @@ import { SongCard } from "./SongCard";
 import { SongLibraryFilters } from "./SongLibraryFilters";
 import { ThemePicker } from "../settings/ThemePicker";
 import { groupSongsByCategory } from "./songCardUtils";
+import { DeviceSelector } from "../midiDevice/DeviceSelector";
 import appIcon from "../../assets/icon.png";
 import type { RecentFile } from "../../../../shared/types";
 
@@ -390,9 +391,14 @@ export function SongLibrary({
         </button>
       </div>
 
-      {/* Theme picker */}
-      <div className="absolute bottom-6 right-6">
-        <ThemePicker />
+      {/* Bottom bar: MIDI device + Theme picker */}
+      <div className="absolute bottom-6 left-6 right-6 flex items-center justify-between pointer-events-none">
+        <div className="pointer-events-auto rounded-lg" style={{ background: "var(--color-surface)", border: "1px solid var(--color-border)" }}>
+          <DeviceSelector />
+        </div>
+        <div className="pointer-events-auto">
+          <ThemePicker />
+        </div>
       </div>
     </div>
   );
