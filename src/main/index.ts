@@ -38,18 +38,34 @@ function createWindow(): void {
 
   // ─── Web Bluetooth: auto-select first BLE MIDI device ──────────
   // When renderer calls navigator.bluetooth.requestDevice(), Electron fires
-  // this event. We auto-select the first discovered device since the renderer
-  // already filters by BLE MIDI service UUID.
+  // this event repeatedly as BLE scanning discovers devices. We store the
+  // callback and auto-select the first matching device once discovered.
+  // The renderer already filters by BLE MIDI service UUID so all devices
+  // in the list are BLE MIDI devices.
+  let pendingBluetoothCallback: ((deviceId: string) => void) | null = null;
+
   mainWindow.webContents.on(
     "select-bluetooth-device",
     (event, devices, callback) => {
       event.preventDefault();
+      // Store the callback for later if no devices found yet
+      pendingBluetoothCallback = callback;
+
       if (devices.length > 0) {
         callback(devices[0].deviceId);
+        pendingBluetoothCallback = null;
       }
-      // If no devices yet, don't call callback — Electron keeps scanning
+      // If no devices yet, keep waiting — event fires again as devices appear
     },
   );
+
+  // Cancel pending Bluetooth scan if the window is closed
+  mainWindow.on("closed", () => {
+    if (pendingBluetoothCallback) {
+      pendingBluetoothCallback("");
+      pendingBluetoothCallback = null;
+    }
+  });
 
   // HMR for renderer based on electron-vite cli
   if (!app.isPackaged && process.env["ELECTRON_RENDERER_URL"]) {

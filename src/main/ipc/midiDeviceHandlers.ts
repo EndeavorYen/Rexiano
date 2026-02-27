@@ -6,14 +6,14 @@ export function registerMidiDeviceHandlers(): void {
   // When the renderer calls navigator.requestMIDIAccess(), Chromium fires a
   // permission request through the session — we grant it here so no
   // user-facing prompt appears.
+  // Allowed permissions: MIDI (wired) + Bluetooth (BLE MIDI).
+  // Chromium sends "bluetooth" at runtime but Electron's TS types don't
+  // include it in the permission union, so we cast to string for the check.
+  const allowedPermissions: string[] = ["midi", "midiSysex", "bluetooth"];
+
   session.defaultSession.setPermissionRequestHandler(
     (_webContents, permission, callback) => {
-      if (permission === "midi" || permission === "midiSysex") {
-        callback(true);
-        return;
-      }
-      // Default: deny unknown permissions
-      callback(false);
+      callback(allowedPermissions.includes(permission));
     },
   );
 
