@@ -28,6 +28,8 @@ declare global {
       loadRecentFiles: () => Promise<RecentFile[]>;
       /** Phase 6.5: Save a recently opened MIDI file */
       saveRecentFile: (file: RecentFile) => Promise<void>;
+      /** Phase 6.5: Load a MIDI file by absolute path (for recent files) */
+      loadMidiPath: (filePath: string) => Promise<MidiFileResult | null>;
     };
   }
 }

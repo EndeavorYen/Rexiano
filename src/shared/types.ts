@@ -27,6 +27,8 @@ export const IpcChannels = {
   SAVE_RECENT_FILE: "recents:saveRecentFile",
   /** Phase 6.5: Load list of recently opened MIDI files */
   LOAD_RECENT_FILES: "recents:loadRecentFiles",
+  /** Phase 6.5: Load a MIDI file by absolute path (for recent files) */
+  LOAD_MIDI_PATH: "dialog:loadMidiPath",
 } as const;
 
 /** Result of loading a SoundFont file via IPC */
@@ -46,6 +48,7 @@ export interface BuiltinSongMeta {
   title: string;
   composer: string;
   difficulty: "beginner" | "intermediate" | "advanced";
+  category?: "exercise" | "classical" | "popular" | "holiday";
   durationSeconds: number;
   tags: string[];
 }

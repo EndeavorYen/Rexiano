@@ -64,6 +64,26 @@ export function registerFileHandlers(): void {
     },
   );
 
+  // ─── Direct MIDI path loading (for recent files) ─────────
+
+  ipcMain.handle(
+    IpcChannels.LOAD_MIDI_PATH,
+    async (_event, filePath: string): Promise<MidiFileResult | null> => {
+      if (typeof filePath !== "string" || filePath.length === 0) return null;
+      if (!existsSync(filePath)) return null;
+
+      // Only allow .mid/.midi files
+      const lower = filePath.toLowerCase();
+      if (!lower.endsWith(".mid") && !lower.endsWith(".midi")) return null;
+
+      const buffer = await readFile(filePath);
+      return {
+        fileName: basename(filePath),
+        data: Array.from(buffer),
+      };
+    },
+  );
+
   // ─── Song Library ──────────────────────────────────────
 
   ipcMain.handle(

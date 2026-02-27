@@ -12,6 +12,7 @@ interface SettingsState {
   defaultMode: PracticeMode;
   metronomeEnabled: boolean;
   countInBeats: number;
+  latencyCompensation: number;
 
   setShowNoteLabels: (v: boolean) => void;
   setShowFallingNoteLabels: (v: boolean) => void;
@@ -21,6 +22,7 @@ interface SettingsState {
   setDefaultMode: (m: PracticeMode) => void;
   setMetronomeEnabled: (v: boolean) => void;
   setCountInBeats: (v: number) => void;
+  setLatencyCompensation: (ms: number) => void;
 }
 
 interface PersistedSettings {
@@ -32,6 +34,7 @@ interface PersistedSettings {
   defaultMode?: PracticeMode;
   metronomeEnabled?: boolean;
   countInBeats?: number;
+  latencyCompensation?: number;
 }
 
 const defaults: PersistedSettings = {
@@ -43,6 +46,7 @@ const defaults: PersistedSettings = {
   defaultMode: "watch",
   metronomeEnabled: false,
   countInBeats: 4,
+  latencyCompensation: 0,
 };
 
 function loadSavedSettings(): PersistedSettings {
@@ -80,6 +84,7 @@ export const useSettingsStore = create<SettingsState>()((set) => {
     defaultMode: saved.defaultMode!,
     metronomeEnabled: saved.metronomeEnabled!,
     countInBeats: saved.countInBeats!,
+    latencyCompensation: saved.latencyCompensation!,
 
     setShowNoteLabels: (v) => {
       persist({ showNoteLabels: v });
@@ -115,6 +120,11 @@ export const useSettingsStore = create<SettingsState>()((set) => {
       const clamped = Math.max(0, Math.min(8, Math.round(v)));
       persist({ countInBeats: clamped });
       set({ countInBeats: clamped });
+    },
+    setLatencyCompensation: (ms) => {
+      const clamped = Math.max(0, Math.min(100, Math.round(ms)));
+      persist({ latencyCompensation: clamped });
+      set({ latencyCompensation: clamped });
     },
   };
 });
