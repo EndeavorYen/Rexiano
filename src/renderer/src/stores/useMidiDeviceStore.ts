@@ -2,6 +2,10 @@ import { create } from "zustand";
 import type { MidiDeviceInfo } from "@shared/types";
 import { MidiDeviceManager } from "@renderer/engines/midi/MidiDeviceManager";
 import { MidiInputParser } from "@renderer/engines/midi/MidiInputParser";
+import {
+  BleMidiManager,
+  type BleMidiStatus,
+} from "@renderer/engines/midi/BleMidiManager";
 
 interface MidiDeviceState {
   /** Available MIDI input devices */
@@ -19,6 +23,12 @@ interface MidiDeviceState {
   /** Real-time set of MIDI notes currently being pressed */
   activeNotes: Set<number>;
 
+  // ─── BLE MIDI state ─────────────────────────────
+  /** Bluetooth MIDI connection status */
+  bleStatus: BleMidiStatus;
+  /** Connected BLE device name (e.g. "Roland FP-30X") */
+  bleDeviceName: string | null;
+
   // ─── Actions ──────────────────────────────────
   /** Initialize MIDI access and begin listening for devices */
   connect: () => Promise<void>;
@@ -34,10 +44,17 @@ interface MidiDeviceState {
   onNoteOff: (midi: number) => void;
   /** Replace the device lists (called by MidiDeviceManager callback) */
   setDeviceLists: (inputs: MidiDeviceInfo[], outputs: MidiDeviceInfo[]) => void;
+  /** Scan and connect to a BLE MIDI device via Bluetooth */
+  connectBluetooth: () => Promise<void>;
+  /** Disconnect BLE MIDI device */
+  disconnectBluetooth: () => void;
 }
 
 /** Module-level parser instance — one per app, managed by the store */
 let _parser: MidiInputParser | null = null;
+
+/** Module-level BLE MIDI manager */
+let _bleManager: BleMidiManager | null = null;
 
 function getParser(store: {
   onNoteOn: (midi: number) => void;
@@ -74,6 +91,8 @@ export const useMidiDeviceStore = create<MidiDeviceState>()((set, get) => ({
   isConnected: false,
   connectionError: null,
   activeNotes: new Set(),
+  bleStatus: "idle" as BleMidiStatus,
+  bleDeviceName: null,
 
   connect: async () => {
     const manager = MidiDeviceManager.getInstance();
@@ -191,5 +210,51 @@ export const useMidiDeviceStore = create<MidiDeviceState>()((set, get) => ({
 
   setDeviceLists: (inputs, outputs) => {
     set({ inputs, outputs });
+  },
+
+  connectBluetooth: async () => {
+    if (!BleMidiManager.isSupported) {
+      set({
+        connectionError: "Bluetooth not supported in this environment",
+        bleStatus: "error",
+      });
+      return;
+    }
+
+    // Create manager if needed
+    if (!_bleManager) {
+      _bleManager = new BleMidiManager();
+    }
+
+    // Wire up MIDI callbacks to this store's note handlers
+    _bleManager.setCallbacks({
+      onNoteOn: (note) => get().onNoteOn(note),
+      onNoteOff: (note) => get().onNoteOff(note),
+    });
+
+    set({ bleStatus: "scanning", connectionError: null });
+
+    await _bleManager.connect();
+
+    set({
+      bleStatus: _bleManager.status,
+      bleDeviceName: _bleManager.deviceName,
+      isConnected:
+        _bleManager.status === "connected" || get().selectedInputId !== null,
+      connectionError: _bleManager.error,
+    });
+  },
+
+  disconnectBluetooth: () => {
+    if (_bleManager) {
+      _bleManager.disconnect();
+      _bleManager = null;
+    }
+    set({
+      bleStatus: "idle",
+      bleDeviceName: null,
+      isConnected: get().selectedInputId !== null,
+      activeNotes: new Set(),
+    });
   },
 }));

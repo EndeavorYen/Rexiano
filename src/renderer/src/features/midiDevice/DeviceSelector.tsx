@@ -1,4 +1,5 @@
 import { useEffect, useCallback, useState, useRef } from "react";
+import { Bluetooth } from "lucide-react";
 import { useMidiDeviceStore } from "@renderer/stores/useMidiDeviceStore";
 import { MidiDeviceManager } from "@renderer/engines/midi/MidiDeviceManager";
 import { MidiOutputSender } from "@renderer/engines/midi/MidiOutputSender";
@@ -16,6 +17,10 @@ export function DeviceSelector(): React.JSX.Element {
   const disconnect = useMidiDeviceStore((s) => s.disconnect);
   const selectInput = useMidiDeviceStore((s) => s.selectInput);
   const selectOutput = useMidiDeviceStore((s) => s.selectOutput);
+  const bleStatus = useMidiDeviceStore((s) => s.bleStatus);
+  const bleDeviceName = useMidiDeviceStore((s) => s.bleDeviceName);
+  const connectBluetooth = useMidiDeviceStore((s) => s.connectBluetooth);
+  const disconnectBluetooth = useMidiDeviceStore((s) => s.disconnectBluetooth);
 
   // Test button state
   const [testState, setTestState] = useState<TestButtonState>("idle");
@@ -189,6 +194,46 @@ export function DeviceSelector(): React.JSX.Element {
           Disconnect
         </button>
       ) : null}
+
+      {/* Bluetooth MIDI connect/disconnect */}
+      {bleStatus === "connected" && bleDeviceName ? (
+        <button
+          onClick={disconnectBluetooth}
+          className="flex items-center gap-1 px-2.5 py-1 rounded text-xs font-medium transition-colors cursor-pointer"
+          style={{
+            background: "#3b82f6",
+            color: "#fff",
+            border: "1px solid #2563eb",
+          }}
+          title={`Bluetooth: ${bleDeviceName} (click to disconnect)`}
+          aria-label="Disconnect Bluetooth MIDI"
+        >
+          <Bluetooth size={12} />
+          {bleDeviceName}
+        </button>
+      ) : (
+        <button
+          onClick={connectBluetooth}
+          disabled={bleStatus === "scanning" || bleStatus === "connecting"}
+          className="flex items-center gap-1 px-2.5 py-1 rounded text-xs font-medium transition-colors cursor-pointer"
+          style={{
+            background: "var(--color-surface-alt)",
+            color: "var(--color-text-muted)",
+            border: "1px solid var(--color-border)",
+            opacity:
+              bleStatus === "scanning" || bleStatus === "connecting" ? 0.6 : 1,
+          }}
+          title="Connect Bluetooth MIDI device (e.g. Roland piano)"
+          aria-label="Connect Bluetooth MIDI"
+        >
+          <Bluetooth size={12} />
+          {bleStatus === "scanning"
+            ? "Scanning..."
+            : bleStatus === "connecting"
+              ? "Connecting..."
+              : "Bluetooth"}
+        </button>
+      )}
 
       {/* Error message */}
       {connectionError && (
