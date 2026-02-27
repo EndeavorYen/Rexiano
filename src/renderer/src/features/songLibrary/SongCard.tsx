@@ -1,5 +1,7 @@
 import { useCallback } from "react";
 import type { BuiltinSongMeta } from "../../../../shared/types";
+import { useProgressStore } from "@renderer/stores/useProgressStore";
+import { difficultyDescriptions, getBestScoreColor } from "./songCardUtils";
 
 interface SongCardProps {
   song: BuiltinSongMeta;
@@ -32,9 +34,13 @@ export function SongCard({
   ];
   const stripeColor = noteColors[colorIndex % noteColors.length];
 
+  const bestScore = useProgressStore((s) => s.getBestScore(song.id));
+
   const handleClick = useCallback(() => {
     onSelect(song.id);
   }, [song.id, onSelect]);
+
+  const difficultyDescription = difficultyDescriptions[song.difficulty];
 
   return (
     <button
@@ -69,15 +75,31 @@ export function SongCard({
         </p>
 
         <div className="flex items-center justify-between mt-3">
-          <span
-            className="text-[10px] font-mono px-2 py-0.5 rounded-full"
-            style={{
-              background: "var(--color-surface-alt)",
-              color: "var(--color-text-muted)",
-            }}
-          >
-            {difficultyLabels[song.difficulty]}
-          </span>
+          <div className="flex items-center gap-1.5">
+            <span
+              className="text-[10px] font-mono px-2 py-0.5 rounded-full"
+              title={difficultyDescription}
+              aria-label={`Difficulty: ${difficultyLabels[song.difficulty]} — ${difficultyDescription}`}
+              style={{
+                background: "var(--color-surface-alt)",
+                color: "var(--color-text-muted)",
+              }}
+            >
+              {difficultyLabels[song.difficulty]}
+            </span>
+            {bestScore && (
+              <span
+                className="text-[10px] font-mono font-semibold px-2 py-0.5 rounded-full"
+                title={`Best accuracy: ${Math.round(bestScore.score.accuracy)}%`}
+                aria-label={`Best score: ${Math.round(bestScore.score.accuracy)}%`}
+                style={{
+                  color: getBestScoreColor(bestScore.score.accuracy),
+                }}
+              >
+                {Math.round(bestScore.score.accuracy)}%
+              </span>
+            )}
+          </div>
           <span
             className="text-[11px] font-mono"
             style={{ color: "var(--color-text-muted)" }}
