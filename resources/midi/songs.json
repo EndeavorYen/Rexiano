@@ -5,8 +5,40 @@
     "title": "C Major Scale",
     "composer": "Exercise",
     "difficulty": "beginner",
+    "category": "exercise",
     "durationSeconds": 8,
-    "tags": ["exercise", "scale"]
+    "tags": [
+      "exercise",
+      "scale"
+    ]
+  },
+  {
+    "id": "mary-had-a-little-lamb",
+    "file": "mary-had-a-little-lamb.mid",
+    "title": "Mary Had a Little Lamb",
+    "composer": "Traditional",
+    "difficulty": "beginner",
+    "category": "popular",
+    "durationSeconds": 18,
+    "tags": [
+      "traditional",
+      "melody",
+      "beginner"
+    ]
+  },
+  {
+    "id": "hot-cross-buns",
+    "file": "hot-cross-buns.mid",
+    "title": "Hot Cross Buns",
+    "composer": "Traditional",
+    "difficulty": "beginner",
+    "category": "popular",
+    "durationSeconds": 14,
+    "tags": [
+      "traditional",
+      "melody",
+      "beginner"
+    ]
   },
   {
     "id": "twinkle-twinkle",
@@ -14,8 +46,107 @@
     "title": "Twinkle Twinkle Little Star",
     "composer": "Traditional",
     "difficulty": "beginner",
-    "durationSeconds": 24,
-    "tags": ["traditional", "melody"]
+    "category": "popular",
+    "durationSeconds": 29,
+    "tags": [
+      "traditional",
+      "melody"
+    ]
+  },
+  {
+    "id": "happy-birthday",
+    "file": "happy-birthday.mid",
+    "title": "Happy Birthday",
+    "composer": "Traditional",
+    "difficulty": "beginner",
+    "category": "popular",
+    "durationSeconds": 15,
+    "tags": [
+      "popular",
+      "melody"
+    ]
+  },
+  {
+    "id": "london-bridge",
+    "file": "london-bridge.mid",
+    "title": "London Bridge",
+    "composer": "Traditional",
+    "difficulty": "beginner",
+    "category": "popular",
+    "durationSeconds": 16,
+    "tags": [
+      "traditional",
+      "melody"
+    ]
+  },
+  {
+    "id": "row-row-row",
+    "file": "row-row-row.mid",
+    "title": "Row Row Row Your Boat",
+    "composer": "Traditional",
+    "difficulty": "beginner",
+    "category": "popular",
+    "durationSeconds": 15,
+    "tags": [
+      "traditional",
+      "melody"
+    ]
+  },
+  {
+    "id": "au-clair-de-la-lune",
+    "file": "au-clair-de-la-lune.mid",
+    "title": "Au Clair de la Lune",
+    "composer": "Traditional (French)",
+    "difficulty": "beginner",
+    "category": "popular",
+    "durationSeconds": 20,
+    "tags": [
+      "traditional",
+      "melody",
+      "french"
+    ]
+  },
+  {
+    "id": "chopsticks",
+    "file": "chopsticks.mid",
+    "title": "Chopsticks",
+    "composer": "Euphemia Allen",
+    "difficulty": "beginner",
+    "category": "popular",
+    "durationSeconds": 12,
+    "tags": [
+      "popular",
+      "duet",
+      "classic"
+    ]
+  },
+  {
+    "id": "lavender-blue",
+    "file": "lavender-blue.mid",
+    "title": "Lavender's Blue",
+    "composer": "Traditional (English)",
+    "difficulty": "beginner",
+    "category": "popular",
+    "durationSeconds": 22,
+    "tags": [
+      "traditional",
+      "melody",
+      "folk"
+    ]
+  },
+  {
+    "id": "jingle-bells",
+    "file": "jingle-bells.mid",
+    "title": "Jingle Bells",
+    "composer": "James Lord Pierpont",
+    "difficulty": "beginner",
+    "category": "holiday",
+    "durationSeconds": 16,
+    "tags": [
+      "holiday",
+      "christmas",
+      "melody"
+    ]
   },
   {
     "id": "ode-to-joy",
@@ -23,7 +154,94 @@
     "title": "Ode to Joy",
     "composer": "Ludwig van Beethoven",
     "difficulty": "beginner",
+    "category": "classical",
     "durationSeconds": 16,
-    "tags": ["classical", "melody"]
+    "tags": [
+      "classical",
+      "melody"
+    ]
+  },
+  {
+    "id": "fur-elise",
+    "file": "fur-elise.mid",
+    "title": "Fur Elise",
+    "composer": "Ludwig van Beethoven",
+    "difficulty": "intermediate",
+    "category": "classical",
+    "durationSeconds": 35,
+    "tags": [
+      "classical",
+      "romantic"
+    ]
+  },
+  {
+    "id": "minuet-in-g",
+    "file": "minuet-in-g.mid",
+    "title": "Minuet in G Major",
+    "composer": "J.S. Bach",
+    "difficulty": "intermediate",
+    "category": "classical",
+    "durationSeconds": 15,
+    "tags": [
+      "classical",
+      "baroque",
+      "two-hands"
+    ]
+  },
+  {
+    "id": "prelude-in-c",
+    "file": "prelude-in-c.mid",
+    "title": "Prelude in C Major (BWV 846)",
+    "composer": "J.S. Bach",
+    "difficulty": "intermediate",
+    "category": "classical",
+    "durationSeconds": 14,
+    "tags": [
+      "classical",
+      "baroque",
+      "arpeggiated",
+      "two-hands"
+    ]
+  },
+  {
+    "id": "canon-in-d",
+    "file": "canon-in-d.mid",
+    "title": "Canon in D",
+    "composer": "Johann Pachelbel",
+    "difficulty": "intermediate",
+    "category": "classical",
+    "durationSeconds": 12,
+    "tags": [
+      "classical",
+      "baroque",
+      "two-hands"
+    ]
+  },
+  {
+    "id": "moonlight-sonata",
+    "file": "moonlight-sonata.mid",
+    "title": "Moonlight Sonata (1st mvt)",
+    "composer": "Ludwig van Beethoven",
+    "difficulty": "advanced",
+    "category": "classical",
+    "durationSeconds": 35,
+    "tags": [
+      "classical",
+      "romantic",
+      "two-hands"
+    ]
+  },
+  {
+    "id": "turkish-march",
+    "file": "turkish-march.mid",
+    "title": "Turkish March",
+    "composer": "W.A. Mozart",
+    "difficulty": "advanced",
+    "category": "classical",
+    "durationSeconds": 7,
+    "tags": [
+      "classical",
+      "fast"
+    ]
   }
 ]

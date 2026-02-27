@@ -9,6 +9,7 @@ import { formatRelativeTime } from "../../utils/relativeTime";
 import { SongCard } from "./SongCard";
 import { SongLibraryFilters } from "./SongLibraryFilters";
 import { ThemePicker } from "../settings/ThemePicker";
+import { groupSongsByCategory } from "./songCardUtils";
 import appIcon from "../../assets/icon.png";
 import type { RecentFile } from "../../../../shared/types";
 
@@ -56,6 +57,12 @@ export function SongLibrary({
     }
     return result;
   }, [songs, difficultyFilter, searchQuery]);
+
+  /** Songs grouped by category for section display */
+  const categoryGroups = useMemo(
+    () => groupSongsByCategory(filteredSongs),
+    [filteredSongs],
+  );
 
   const handleSelectSong = useCallback(
     async (songId: string) => {
@@ -233,7 +240,7 @@ export function SongLibrary({
       {/* Filters */}
       <SongLibraryFilters />
 
-      {/* Song grid */}
+      {/* Song grid — grouped by category */}
       <div className="w-full max-w-2xl mt-6">
         {isLoading ? (
           /* Skeleton loading cards */
@@ -302,32 +309,62 @@ export function SongLibrary({
             )}
           </div>
         ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-            {filteredSongs.map((song, i) => (
-              <div key={song.id} className="relative">
-                <SongCard
-                  song={song}
-                  onSelect={handleSelectSong}
-                  colorIndex={i}
-                />
-                {loadingId === song.id && (
-                  <div
-                    className="absolute inset-0 flex items-center justify-center rounded-xl"
+          <div className="space-y-6">
+            {categoryGroups.map((group, groupIdx) => (
+              <section key={group.category}>
+                {/* Category section header */}
+                <div
+                  className="flex items-center gap-2 mb-3"
+                  style={{ color: "var(--color-text-muted)" }}
+                >
+                  <span className="text-xs font-body font-semibold uppercase tracking-wider">
+                    {group.label}
+                  </span>
+                  <span
+                    className="text-[10px] font-mono px-1.5 py-0.5 rounded-full"
                     style={{
-                      background:
-                        "color-mix(in srgb, var(--color-surface) 70%, transparent)",
+                      background: "var(--color-surface-alt)",
+                      color: "var(--color-text-muted)",
                     }}
                   >
-                    <div
-                      className="w-5 h-5 border-2 rounded-full animate-spin"
-                      style={{
-                        borderColor: "var(--color-border)",
-                        borderTopColor: "var(--color-accent)",
-                      }}
-                    />
-                  </div>
-                )}
-              </div>
+                    {group.songs.length}
+                  </span>
+                  <div
+                    className="flex-1 h-px ml-1"
+                    style={{ background: "var(--color-border)" }}
+                  />
+                </div>
+
+                {/* Song cards grid */}
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                  {group.songs.map((song, i) => (
+                    <div key={song.id} className="relative">
+                      <SongCard
+                        song={song}
+                        onSelect={handleSelectSong}
+                        colorIndex={groupIdx * 3 + i}
+                      />
+                      {loadingId === song.id && (
+                        <div
+                          className="absolute inset-0 flex items-center justify-center rounded-xl"
+                          style={{
+                            background:
+                              "color-mix(in srgb, var(--color-surface) 70%, transparent)",
+                          }}
+                        >
+                          <div
+                            className="w-5 h-5 border-2 rounded-full animate-spin"
+                            style={{
+                              borderColor: "var(--color-border)",
+                              borderTopColor: "var(--color-accent)",
+                            }}
+                          />
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </section>
             ))}
           </div>
         )}

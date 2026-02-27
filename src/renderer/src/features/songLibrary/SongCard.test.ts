@@ -2,9 +2,12 @@ import { describe, test, expect, beforeEach } from "vitest";
 import {
   difficultyDescriptions,
   getBestScoreColor,
+  groupSongsByCategory,
+  CATEGORY_ORDER,
+  categoryLabels,
 } from "@renderer/features/songLibrary/songCardUtils";
 import { useProgressStore } from "@renderer/stores/useProgressStore";
-import type { SessionRecord } from "@shared/types";
+import type { BuiltinSongMeta, SessionRecord } from "@shared/types";
 
 // ─── Difficulty descriptions ────────────────────────────────────────
 
@@ -132,5 +135,150 @@ describe("SongCard best score via useProgressStore", () => {
     const best = useProgressStore.getState().getBestScore("song-1");
     expect(best).not.toBeNull();
     expect(getBestScoreColor(best!.score.accuracy)).toBe("var(--color-accent)");
+  });
+});
+
+// ─── Category grouping ──────────────────────────────────────────────
+
+/** Factory for a minimal BuiltinSongMeta with a given category */
+function makeSong(
+  id: string,
+  category?: BuiltinSongMeta["category"],
+): BuiltinSongMeta {
+  return {
+    id,
+    file: `${id}.mid`,
+    title: id,
+    composer: "Test",
+    difficulty: "beginner",
+    category,
+    durationSeconds: 10,
+    tags: [],
+  };
+}
+
+describe("CATEGORY_ORDER", () => {
+  test("contains exactly four categories in display order", () => {
+    expect(CATEGORY_ORDER).toEqual([
+      "exercise",
+      "popular",
+      "holiday",
+      "classical",
+    ]);
+  });
+});
+
+describe("categoryLabels", () => {
+  test("has human-readable label for every category", () => {
+    expect(categoryLabels.exercise).toBe("Exercises");
+    expect(categoryLabels.popular).toBe("Popular");
+    expect(categoryLabels.holiday).toBe("Holiday");
+    expect(categoryLabels.classical).toBe("Classical");
+  });
+});
+
+describe("groupSongsByCategory", () => {
+  test("returns empty array for empty input", () => {
+    expect(groupSongsByCategory([])).toEqual([]);
+  });
+
+  test("groups songs into correct categories", () => {
+    const songs = [
+      makeSong("scale", "exercise"),
+      makeSong("twinkle", "popular"),
+      makeSong("jingle", "holiday"),
+      makeSong("ode", "classical"),
+    ];
+
+    const groups = groupSongsByCategory(songs);
+    expect(groups).toHaveLength(4);
+    expect(groups[0].category).toBe("exercise");
+    expect(groups[0].songs).toHaveLength(1);
+    expect(groups[0].songs[0].id).toBe("scale");
+    expect(groups[1].category).toBe("popular");
+    expect(groups[2].category).toBe("holiday");
+    expect(groups[3].category).toBe("classical");
+  });
+
+  test("follows display order: exercise, popular, holiday, classical", () => {
+    // Insert in reverse order to verify sorting
+    const songs = [
+      makeSong("bach", "classical"),
+      makeSong("jingle", "holiday"),
+      makeSong("scale", "exercise"),
+      makeSong("mary", "popular"),
+    ];
+
+    const groups = groupSongsByCategory(songs);
+    const categories = groups.map((g) => g.category);
+    expect(categories).toEqual(["exercise", "popular", "holiday", "classical"]);
+  });
+
+  test("omits empty categories", () => {
+    const songs = [
+      makeSong("scale", "exercise"),
+      makeSong("bach", "classical"),
+    ];
+
+    const groups = groupSongsByCategory(songs);
+    expect(groups).toHaveLength(2);
+    expect(groups[0].category).toBe("exercise");
+    expect(groups[1].category).toBe("classical");
+  });
+
+  test("songs without a category default to 'popular'", () => {
+    const songs = [makeSong("mystery", undefined)];
+
+    const groups = groupSongsByCategory(songs);
+    expect(groups).toHaveLength(1);
+    expect(groups[0].category).toBe("popular");
+    expect(groups[0].songs[0].id).toBe("mystery");
+  });
+
+  test("multiple songs in the same category are preserved in order", () => {
+    const songs = [
+      makeSong("mary", "popular"),
+      makeSong("twinkle", "popular"),
+      makeSong("hot-cross", "popular"),
+    ];
+
+    const groups = groupSongsByCategory(songs);
+    expect(groups).toHaveLength(1);
+    expect(groups[0].songs.map((s) => s.id)).toEqual([
+      "mary",
+      "twinkle",
+      "hot-cross",
+    ]);
+  });
+
+  test("label is set correctly for each group", () => {
+    const songs = [
+      makeSong("scale", "exercise"),
+      makeSong("jingle", "holiday"),
+    ];
+
+    const groups = groupSongsByCategory(songs);
+    expect(groups[0].label).toBe("Exercises");
+    expect(groups[1].label).toBe("Holiday");
+  });
+
+  test("handles a realistic full library", () => {
+    const songs = [
+      makeSong("scale", "exercise"),
+      makeSong("mary", "popular"),
+      makeSong("twinkle", "popular"),
+      makeSong("hot-cross", "popular"),
+      makeSong("jingle", "holiday"),
+      makeSong("ode", "classical"),
+      makeSong("fur-elise", "classical"),
+      makeSong("moonlight", "classical"),
+    ];
+
+    const groups = groupSongsByCategory(songs);
+    expect(groups).toHaveLength(4);
+    expect(groups[0].songs).toHaveLength(1); // exercise
+    expect(groups[1].songs).toHaveLength(3); // popular
+    expect(groups[2].songs).toHaveLength(1); // holiday
+    expect(groups[3].songs).toHaveLength(3); // classical
   });
 });
