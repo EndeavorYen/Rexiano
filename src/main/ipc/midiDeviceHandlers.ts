@@ -17,6 +17,19 @@ export function registerMidiDeviceHandlers(): void {
     },
   );
 
+  // Grant device-level permission for Bluetooth devices.
+  // Without this, Chromium blocks GATT access even after the user picks a device.
+  // Electron's TS types don't include "bluetooth" in deviceType union.
+  session.defaultSession.setDevicePermissionHandler((details) => {
+    return (details.deviceType as string) === "bluetooth";
+  });
+
+  // Auto-approve BLE pairing requests.
+  // Roland pianos use "Just Works" pairing (no PIN) for BLE MIDI.
+  session.defaultSession.setBluetoothPairingHandler((_details, callback) => {
+    callback({ confirmed: true });
+  });
+
   // Confirm MIDI access is available. The renderer calls this before
   // navigator.requestMIDIAccess() to ensure the main process has already
   // configured permission approval.
