@@ -52,16 +52,24 @@ function createWindow(): void {
       pendingBluetoothCallback = callback;
 
       console.log(
-        `[BLE] select-bluetooth-device: ${devices.length} device(s) found`,
+        `[BLE] select-bluetooth-device: ${devices.length} device(s)`,
         devices.map((d) => `${d.deviceName} (${d.deviceId})`),
       );
 
-      if (devices.length > 0) {
-        console.log(`[BLE] Auto-selecting: ${devices[0].deviceName}`);
-        callback(devices[0].deviceId);
-        pendingBluetoothCallback = null;
-      }
-      // If no devices yet, keep waiting — event fires again as devices appear
+      if (devices.length === 0) return; // Keep waiting
+
+      // Prefer a device whose name contains "Roland", "HP", "FP", "Piano",
+      // or "MIDI" — otherwise fall back to the first device with a name.
+      const keywords = ["roland", "hp-", "fp-", "piano", "midi"];
+      const preferred = devices.find((d) =>
+        keywords.some((k) => d.deviceName?.toLowerCase().includes(k)),
+      );
+      const named = devices.find((d) => d.deviceName && d.deviceName !== "");
+      const pick = preferred ?? named ?? devices[0];
+
+      console.log(`[BLE] Auto-selecting: ${pick.deviceName} (${pick.deviceId})`);
+      callback(pick.deviceId);
+      pendingBluetoothCallback = null;
     },
   );
 
