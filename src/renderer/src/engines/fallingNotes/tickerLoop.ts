@@ -36,8 +36,9 @@ export function createTickerUpdate(
     const playState = usePlaybackStore.getState();
     if (!songState.song) return;
 
-    const practiceState = usePracticeStore.getState();
-    const { waitMode, speedController, loopController } = getPracticeEngines();
+    // Read practice state only when playing (avoids getState + destructure at idle)
+    const engines = getPracticeEngines();
+    const { waitMode, speedController, loopController } = engines;
 
     // Compute effective pps with speed multiplier
     const effectivePps = speedController
@@ -48,7 +49,7 @@ export function createTickerUpdate(
 
     if (playState.isPlaying) {
       // ── WaitMode gate: if waiting, freeze time ──
-      if (practiceState.mode === "wait" && waitMode) {
+      if (usePracticeStore.getState().mode === "wait" && waitMode) {
         const shouldContinue = waitMode.tick(effectiveTime);
         if (!shouldContinue) {
           // Don't advance time — waiting for user input
@@ -76,17 +77,17 @@ export function createTickerUpdate(
           songState.song.duration,
         );
       }
-      playState.setCurrentTime(effectiveTime);
 
-      // ── Loop check: auto-seek at B point ──
+      // ── Loop check: auto-seek at B point (before writing to store) ──
       if (
         loopController?.isActive &&
         loopController.shouldLoop(effectiveTime)
       ) {
-        const loopStart = loopController.getLoopStart();
-        playState.setCurrentTime(loopStart);
-        effectiveTime = loopStart;
+        effectiveTime = loopController.getLoopStart();
       }
+
+      // Single setCurrentTime per frame (avoids double-fire to subscribers)
+      playState.setCurrentTime(effectiveTime);
 
       if (effectiveTime >= songState.song.duration) {
         playState.setPlaying(false);

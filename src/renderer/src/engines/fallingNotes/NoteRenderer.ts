@@ -1,3 +1,8 @@
+/**
+ * Phase 2: PixiJS sprite renderer for falling note visualization.
+ * Manages a double-buffered sprite pool, per-frame viewport updates, and
+ * practice mode visual feedback (hit flash, miss fade, combo text pop).
+ */
 import { Container, Sprite, Text, TextStyle, Texture } from "pixi.js";
 import type { ParsedSong, ParsedNote } from "@renderer/engines/midi/types";
 import { buildKeyPositions, type KeyPosition } from "./keyPositions";
@@ -37,7 +42,12 @@ export class NoteRenderer {
   private nextActive = new Map<string, Sprite>();
   private visibleBuf: ParsedNote[] = [];
   private keyPositions = new Map<number, KeyPosition>();
-  private noteTexture!: Texture;
+  private noteTexture: Texture = Texture.EMPTY;
+
+  /** Tracks in-flight rAF animation handles per sprite to cancel on recycle */
+  private _animHandles = new Map<Sprite, number>();
+  /** Tracks in-flight rAF handles for showCombo text animations (cancelled on destroy) */
+  private _comboHandles = new Set<number>();
 
   public activeNotes = new Set<number>();
 
@@ -46,6 +56,11 @@ export class NoteRenderer {
     parentContainer.addChild(this.container);
   }
 
+  /**
+   * Initialize the renderer with canvas width and pre-fill the sprite pool.
+   * Must be called once before any `update()` or `resize()` calls.
+   * @param canvasWidth Canvas pixel width, used to compute key positions
+   */
   init(canvasWidth: number): void {
     this.keyPositions = buildKeyPositions(canvasWidth);
     this.noteTexture = Texture.WHITE;
@@ -55,10 +70,21 @@ export class NoteRenderer {
     }
   }
 
+  /**
+   * Recompute key positions after a canvas resize.
+   * @param canvasWidth New canvas pixel width
+   */
   resize(canvasWidth: number): void {
     this.keyPositions = buildKeyPositions(canvasWidth);
   }
 
+  /**
+   * Main per-frame update. Positions and shows sprites for all notes
+   * visible in the given viewport, and returns stale sprites to the pool.
+   * Called ~60 times/sec by the ticker loop.
+   * @param song Currently loaded parsed song
+   * @param vp   Current viewport (position + dimensions)
+   */
   update(song: ParsedSong, vp: Viewport): void {
     // Double-buffer swap: reuse nextActive map instead of allocating each frame
     const nextActive = this.nextActive;
@@ -120,7 +146,21 @@ export class NoteRenderer {
     this.active = nextActive;
   }
 
+  /**
+   * Cancel all animations and release all sprites.
+   * Call when the canvas is unmounted or a new song is loaded.
+   */
   destroy(): void {
+    // Cancel all in-flight animations
+    for (const handle of this._animHandles.values()) {
+      cancelAnimationFrame(handle);
+    }
+    this._animHandles.clear();
+    for (const handle of this._comboHandles) {
+      cancelAnimationFrame(handle);
+    }
+    this._comboHandles.clear();
+
     this.container.removeChildren();
     this.pool.length = 0;
     this.active.clear();
@@ -146,6 +186,13 @@ export class NoteRenderer {
   }
 
   private release(sprite: Sprite): void {
+    // Cancel any in-flight animation before returning sprite to pool
+    const handle = this._animHandles.get(sprite);
+    if (handle !== undefined) {
+      cancelAnimationFrame(handle);
+      this._animHandles.delete(sprite);
+    }
+    sprite.alpha = 1;
     sprite.visible = false;
     this.pool.push(sprite);
   }
@@ -155,14 +202,22 @@ export class NoteRenderer {
   /**
    * Flash a bright hit effect on a note sprite.
    * Tint shifts to white and alpha pulses, then restores over ~200ms.
+   * Animation is automatically cancelled if the sprite is recycled.
    */
   flashHit(sprite: Sprite): void {
+    // Cancel any existing animation on this sprite
+    const existing = this._animHandles.get(sprite);
+    if (existing !== undefined) cancelAnimationFrame(existing);
+
     const originalTint = sprite.tint;
     const originalAlpha = sprite.alpha;
     const duration = 200; // ms
     let start = -1;
 
     const tick = (now: number): void => {
+      // Sprite was recycled — stop animating
+      if (!this._animHandles.has(sprite)) return;
+
       if (start < 0) start = now;
       const elapsed = now - start;
       const t = Math.min(elapsed / duration, 1);
@@ -173,26 +228,32 @@ export class NoteRenderer {
       sprite.alpha = originalAlpha + (1 - originalAlpha) * flash * 0.5;
 
       if (t < 1) {
-        requestAnimationFrame(tick);
+        this._animHandles.set(sprite, requestAnimationFrame(tick));
       } else {
+        this._animHandles.delete(sprite);
         sprite.tint = originalTint;
         sprite.alpha = originalAlpha;
       }
     };
-    requestAnimationFrame(tick);
+    this._animHandles.set(sprite, requestAnimationFrame(tick));
   }
 
   /**
    * Mark a note sprite as missed: fade to gray and reduce opacity.
-   * Transition runs over ~150ms.
+   * Transition runs over ~150ms. Cancelled if sprite is recycled.
    */
   markMiss(sprite: Sprite): void {
+    const existing = this._animHandles.get(sprite);
+    if (existing !== undefined) cancelAnimationFrame(existing);
+
     const originalTint = sprite.tint;
     const originalAlpha = sprite.alpha;
     const duration = 150;
     let start = -1;
 
     const tick = (now: number): void => {
+      if (!this._animHandles.has(sprite)) return;
+
       if (start < 0) start = now;
       const t = Math.min((now - start) / duration, 1);
       const ease = t * (2 - t); // ease-out quad
@@ -201,10 +262,12 @@ export class NoteRenderer {
       sprite.alpha = originalAlpha - (originalAlpha - 0.4) * ease;
 
       if (t < 1) {
-        requestAnimationFrame(tick);
+        this._animHandles.set(sprite, requestAnimationFrame(tick));
+      } else {
+        this._animHandles.delete(sprite);
       }
     };
-    requestAnimationFrame(tick);
+    this._animHandles.set(sprite, requestAnimationFrame(tick));
   }
 
   /**
@@ -236,6 +299,9 @@ export class NoteRenderer {
     let start = -1;
 
     const tick = (now: number): void => {
+      // Animation was cancelled by destroy() — stop writing to removed label
+      if (!this._comboHandles.has(handle)) return;
+
       if (start < 0) start = now;
       const t = Math.min((now - start) / duration, 1);
 
@@ -259,13 +325,18 @@ export class NoteRenderer {
       label.y = y - 40 * t;
 
       if (t < 1) {
-        requestAnimationFrame(tick);
+        this._comboHandles.delete(handle);
+        const next = requestAnimationFrame(tick);
+        this._comboHandles.add(next);
+        handle = next;
       } else {
+        this._comboHandles.delete(handle);
         this.container.removeChild(label);
         label.destroy();
       }
     };
-    requestAnimationFrame(tick);
+    let handle = requestAnimationFrame(tick);
+    this._comboHandles.add(handle);
   }
 
   /**

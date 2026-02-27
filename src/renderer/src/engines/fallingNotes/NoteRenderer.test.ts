@@ -502,5 +502,58 @@ describe("NoteRenderer", () => {
       const sprite = renderer.findSpriteForNote(99, 999, 999);
       expect(sprite).toBeNull();
     });
+
+    test("returns the active sprite for a visible note", () => {
+      const song = makeSong([{ notes: [{ midi: 60, time: 0, duration: 1 }] }]);
+      renderer.update(song, makeViewport({ currentTime: 0 }));
+
+      const sprite = renderer.findSpriteForNote(0, 60, 0);
+      expect(sprite).not.toBeNull();
+      expect((sprite as unknown as { visible: boolean }).visible).toBe(true);
+    });
+
+    test("returns correct sprite when multiple tracks have notes", () => {
+      const song = makeSong([
+        { notes: [{ midi: 60, time: 0, duration: 1 }] },
+        { notes: [{ midi: 72, time: 0, duration: 1 }] },
+      ]);
+      renderer.update(song, makeViewport({ currentTime: 0 }));
+
+      const s0 = renderer.findSpriteForNote(0, 60, 0);
+      const s1 = renderer.findSpriteForNote(1, 72, 0);
+      expect(s0).not.toBeNull();
+      expect(s1).not.toBeNull();
+      // Different sprites for different tracks
+      expect(s0).not.toBe(s1);
+    });
+  });
+
+  describe("animation cancellation on release", () => {
+    test("cancelling animations on sprite release prevents stale writes", () => {
+      let cancelledId: number | undefined;
+      vi.stubGlobal("requestAnimationFrame", () => 42);
+      vi.stubGlobal("cancelAnimationFrame", (id: number) => {
+        cancelledId = id;
+      });
+
+      const song = makeSong([
+        { notes: [{ midi: 60, time: 0, duration: 0.1 }] },
+      ]);
+      renderer.update(song, makeViewport({ currentTime: 0 }));
+
+      const sprite = renderer.findSpriteForNote(0, 60, 0)!;
+      expect(sprite).not.toBeNull();
+
+      // Start an animation on the sprite
+      renderer.flashHit(sprite as unknown as Sprite);
+
+      // Move time forward so the note is no longer visible — sprite gets released
+      renderer.update(song, makeViewport({ currentTime: 10 }));
+
+      // The animation should have been cancelled during release
+      expect(cancelledId).toBe(42);
+
+      vi.unstubAllGlobals();
+    });
   });
 });

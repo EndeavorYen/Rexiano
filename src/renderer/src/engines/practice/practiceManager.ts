@@ -1,4 +1,4 @@
-// practiceManager.ts
+// practiceManager.ts — Module-level singleton manager for practice engines
 import { WaitMode } from "./WaitMode";
 import { SpeedController } from "./SpeedController";
 import { LoopController } from "./LoopController";
@@ -11,34 +11,46 @@ export interface PracticeEngines {
   scoreCalculator: ScoreCalculator | null;
 }
 
-let _waitMode: WaitMode | null = null;
-let _speedController: SpeedController | null = null;
-let _loopController: LoopController | null = null;
-let _scoreCalculator: ScoreCalculator | null = null;
+/**
+ * Stable singleton — mutated in place by init/dispose.
+ * Avoids allocating a new object per `getPracticeEngines()` call
+ * (critical since tickerLoop calls it ~60 times/sec).
+ */
+const _engines: PracticeEngines = {
+  waitMode: null,
+  speedController: null,
+  loopController: null,
+  scoreCalculator: null,
+};
 
+/**
+ * Initialize all four practice engines (idempotent — safe to call multiple times).
+ * Must be called before `getPracticeEngines()` returns useful values.
+ */
 export function initPracticeEngines(): void {
-  if (_waitMode) return; // already initialized
-  _waitMode = new WaitMode();
-  _speedController = new SpeedController();
-  _loopController = new LoopController();
-  _scoreCalculator = new ScoreCalculator();
+  if (_engines.waitMode) return; // already initialized
+  _engines.waitMode = new WaitMode();
+  _engines.speedController = new SpeedController();
+  _engines.loopController = new LoopController();
+  _engines.scoreCalculator = new ScoreCalculator();
 }
 
+/** Returns the stable singleton object (same reference every call). */
 export function getPracticeEngines(): PracticeEngines {
-  return {
-    waitMode: _waitMode,
-    speedController: _speedController,
-    loopController: _loopController,
-    scoreCalculator: _scoreCalculator,
-  };
+  return _engines;
 }
 
+/**
+ * Dispose all practice engines: clear callbacks, stop WaitMode, and null all fields.
+ * Call when a song is unloaded or the practice view unmounts.
+ */
 export function disposePracticeEngines(): void {
-  _waitMode?.stop();
-  _waitMode = null;
-  _speedController = null;
-  _loopController?.clear();
-  _loopController = null;
-  _scoreCalculator?.reset();
-  _scoreCalculator = null;
+  _engines.waitMode?.clearCallbacks();
+  _engines.waitMode?.stop();
+  _engines.waitMode = null;
+  _engines.speedController = null;
+  _engines.loopController?.clear();
+  _engines.loopController = null;
+  _engines.scoreCalculator?.reset();
+  _engines.scoreCalculator = null;
 }

@@ -12,15 +12,9 @@ import { ThemePicker } from "./features/settings/ThemePicker";
 import { SongLibrary } from "./features/songLibrary/SongLibrary";
 import { DeviceSelector } from "./features/midiDevice/DeviceSelector";
 import { useMidiDeviceStore } from "./stores/useMidiDeviceStore";
-import {
-  initPracticeEngines,
-  getPracticeEngines,
-  disposePracticeEngines,
-} from "./engines/practice/practiceManager";
-import { usePracticeStore } from "./stores/usePracticeStore";
+import { usePracticeLifecycle } from "./features/practice/usePracticeLifecycle";
 import { PracticeToolbar } from "./features/practice/PracticeToolbar";
 import { ScoreOverlay } from "./features/practice/ScoreOverlay";
-import type { NoteRenderer } from "./engines/fallingNotes/NoteRenderer";
 
 function App(): React.JSX.Element {
   const song = useSongStore((s) => s.song);
@@ -95,8 +89,12 @@ function App(): React.JSX.Element {
       }
 
       // Seek detection while playing (user dragged slider → large time jump)
-      // Debounced to avoid rapid seek calls during slider drag
-      if (state.isPlaying && prev.isPlaying) {
+      // Only check forward time movement — backward jumps are intentional (loop/seek)
+      if (
+        state.isPlaying &&
+        prev.isPlaying &&
+        state.currentTime >= prev.currentTime
+      ) {
         const audioTime = scheduler.getCurrentTime();
         if (
           audioTime !== null &&
@@ -130,175 +128,8 @@ function App(): React.JSX.Element {
   }, []);
   // ─── End Phase 4 ─────────────────────────────────────
 
-  // ─── Phase 6: Practice Engine lifecycle ─────────────────
-  const noteRendererRef = useRef<NoteRenderer | null>(null);
-
-  const handleNoteRendererReady = useCallback((renderer: NoteRenderer) => {
-    noteRendererRef.current = renderer;
-  }, []);
-
-  // Init practice engines when a song loads
-  useEffect(() => {
-    if (!song) return;
-
-    initPracticeEngines();
-    const { waitMode, scoreCalculator } = getPracticeEngines();
-    if (!waitMode || !scoreCalculator) return;
-
-    const practiceState = usePracticeStore.getState();
-    // Initialize WaitMode with song tracks and active tracks
-    const activeTracks =
-      practiceState.activeTracks.size > 0
-        ? practiceState.activeTracks
-        : new Set(song.tracks.map((_, i) => i));
-    if (practiceState.activeTracks.size === 0) {
-      usePracticeStore.getState().setActiveTracks(activeTracks);
-    }
-    waitMode.init(song.tracks, activeTracks);
-
-    // Wire callbacks
-    waitMode.setCallbacks({
-      onHit: (midi, time) => {
-        const key = `${midi}:${Math.round(time * 1e6)}`;
-        usePracticeStore.getState().recordHit(key);
-        scoreCalculator.noteHit(midi, time);
-        // Visual feedback
-        const nr = noteRendererRef.current;
-        if (nr) {
-          for (let t = 0; t < song.tracks.length; t++) {
-            const sprite = nr.findSpriteForNote(t, midi, time);
-            if (sprite) {
-              nr.flashHit(sprite);
-              break;
-            }
-          }
-        }
-        // Show combo at milestones
-        const score = usePracticeStore.getState().score;
-        if (nr && [5, 10, 25, 50, 100].includes(score.currentStreak)) {
-          nr.showCombo(score.currentStreak, 400, 200);
-        }
-      },
-      onMiss: (midi, time) => {
-        const key = `${midi}:${Math.round(time * 1e6)}`;
-        usePracticeStore.getState().recordMiss(key);
-        scoreCalculator.noteMiss(midi, time);
-        // Visual feedback
-        const nr = noteRendererRef.current;
-        if (nr) {
-          for (let t = 0; t < song.tracks.length; t++) {
-            const sprite = nr.findSpriteForNote(t, midi, time);
-            if (sprite) {
-              nr.markMiss(sprite);
-              break;
-            }
-          }
-        }
-      },
-      onWait: () => {
-        // Pause audio when waiting for input
-        audioRef.current.scheduler?.stop();
-      },
-      onResume: () => {
-        // Resume audio after correct input
-        const { scheduler } = audioRef.current;
-        const time = usePlaybackStore.getState().currentTime;
-        if (scheduler) {
-          void audioRef.current.engine?.resume().then(() => scheduler.start(time));
-        }
-      },
-    });
-
-    return () => {
-      disposePracticeEngines();
-    };
-  }, [song]);
-
-  // Sync practice store → engine singletons
-  useEffect(() => {
-    const unsub = usePracticeStore.subscribe((state, prev) => {
-      const { waitMode, speedController, loopController, scoreCalculator } =
-        getPracticeEngines();
-
-      // Mode change
-      if (state.mode !== prev.mode && waitMode && song) {
-        if (state.mode === "wait") {
-          waitMode.init(song.tracks, state.activeTracks);
-          if (usePlaybackStore.getState().isPlaying) {
-            waitMode.start();
-          }
-        } else {
-          waitMode.stop();
-        }
-        scoreCalculator?.reset();
-      }
-
-      // Speed change
-      if (state.speed !== prev.speed && speedController) {
-        speedController.setSpeed(state.speed);
-      }
-
-      // Loop range change
-      if (state.loopRange !== prev.loopRange && loopController) {
-        if (state.loopRange) {
-          loopController.setRange(state.loopRange[0], state.loopRange[1]);
-        } else {
-          loopController.clear();
-        }
-      }
-
-      // Active tracks change
-      if (state.activeTracks !== prev.activeTracks && waitMode && song) {
-        waitMode.init(song.tracks, state.activeTracks);
-      }
-    });
-    return unsub;
-  }, [song]);
-
-  // Wire MIDI input → WaitMode.checkInput()
-  useEffect(() => {
-    const unsub = useMidiDeviceStore.subscribe((state, prev) => {
-      if (state.activeNotes !== prev.activeNotes) {
-        const { waitMode } = getPracticeEngines();
-        const practiceMode = usePracticeStore.getState().mode;
-        if (waitMode && practiceMode === "wait") {
-          waitMode.checkInput(state.activeNotes);
-        }
-      }
-    });
-    return unsub;
-  }, []);
-
-  // Start/stop WaitMode with playback
-  useEffect(() => {
-    const unsub = usePlaybackStore.subscribe((state, prev) => {
-      const { waitMode } = getPracticeEngines();
-      const practiceMode = usePracticeStore.getState().mode;
-      if (!waitMode || practiceMode !== "wait") return;
-
-      if (state.isPlaying && !prev.isPlaying) {
-        waitMode.start();
-      } else if (!state.isPlaying && prev.isPlaying) {
-        waitMode.stop();
-      }
-    });
-    return unsub;
-  }, []);
-
-  // Sync loop seek → AudioScheduler
-  useEffect(() => {
-    const unsub = usePlaybackStore.subscribe((state, prev) => {
-      const { loopController } = getPracticeEngines();
-      if (!loopController?.isActive) return;
-      if (
-        state.currentTime < prev.currentTime &&
-        Math.abs(state.currentTime - loopController.getLoopStart()) < 0.1
-      ) {
-        audioRef.current.scheduler?.seek(state.currentTime);
-      }
-    });
-    return unsub;
-  }, []);
+  // ─── Phase 6: Practice Engine lifecycle (extracted to hook) ──
+  const { handleNoteRendererReady } = usePracticeLifecycle(song, audioRef);
   // ─── End Phase 6 ─────────────────────────────────────
 
   const handleOpenFile = useCallback(async (): Promise<void> => {

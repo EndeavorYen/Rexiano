@@ -177,4 +177,31 @@ describe("WaitMode", () => {
     wm.stop();
     expect(wm.state).toBe("idle");
   });
+
+  it("clearCallbacks() prevents callbacks from firing after disposal", () => {
+    const onWait = vi.fn();
+    const onMiss = vi.fn();
+    wm.setCallbacks({ onWait, onMiss });
+    wm.init(makeTracks([{ midi: 60, time: 1.0 }]), new Set([0]));
+    wm.start();
+
+    // Verify callbacks fire before clearing
+    wm.tick(0.85); // note at 1.0 within ±200ms → onWait fires
+    expect(onWait).toHaveBeenCalledOnce();
+
+    // Clear and reset for a fresh pass
+    wm.clearCallbacks();
+    wm.reset();
+    wm.start();
+
+    // Same tick — note is again in window, but callbacks must not fire
+    wm.tick(0.85);
+    expect(onWait).toHaveBeenCalledOnce(); // still only once from before
+
+    // Past tolerance — onMiss must also not fire
+    wm.reset();
+    wm.start();
+    wm.tick(1.5);
+    expect(onMiss).not.toHaveBeenCalled();
+  });
 });
