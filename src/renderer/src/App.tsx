@@ -8,13 +8,17 @@ import { AudioScheduler } from "./engines/audio/AudioScheduler";
 import { FallingNotesCanvas } from "./features/fallingNotes/FallingNotesCanvas";
 import { PianoKeyboard } from "./features/fallingNotes/PianoKeyboard";
 import { TransportBar } from "./features/fallingNotes/TransportBar";
-import { ThemePicker } from "./features/settings/ThemePicker";
+import { SettingsPanel } from "./features/settings/SettingsPanel";
 import { SongLibrary } from "./features/songLibrary/SongLibrary";
 import { DeviceSelector } from "./features/midiDevice/DeviceSelector";
 import { useMidiDeviceStore } from "./stores/useMidiDeviceStore";
 import { usePracticeLifecycle } from "./features/practice/usePracticeLifecycle";
 import { PracticeToolbar } from "./features/practice/PracticeToolbar";
 import { ScoreOverlay } from "./features/practice/ScoreOverlay";
+import { useKeyboardShortcuts } from "./hooks/useKeyboardShortcuts";
+
+/** Accepted file extensions for drag-and-drop MIDI import */
+const MIDI_EXTENSIONS = [".mid", ".midi"];
 
 function App(): React.JSX.Element {
   const song = useSongStore((s) => s.song);
@@ -145,11 +149,140 @@ function App(): React.JSX.Element {
     }
   }, [loadSong, reset]);
 
+  // ─── Phase 6.5: Mute toggle ────────────────────────────
+  const muteRef = useRef({ prevVolume: 0.8 });
+  const handleToggleMute = useCallback(() => {
+    const pb = usePlaybackStore.getState();
+    if (pb.volume > 0) {
+      muteRef.current.prevVolume = pb.volume;
+      pb.setVolume(0);
+    } else {
+      pb.setVolume(muteRef.current.prevVolume || 0.8);
+    }
+  }, []);
+
+  // ─── Phase 6.5: Keyboard shortcuts ─────────────────────
+  useKeyboardShortcuts({
+    onOpenFile: handleOpenFile,
+    onToggleMute: handleToggleMute,
+  });
+
+  // ─── Phase 6.5: Drag-and-drop MIDI import ──────────────
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragError, setDragError] = useState<string | null>(null);
+  const dragCountRef = useRef(0);
+
+  const handleDragEnter = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    dragCountRef.current++;
+    setIsDragging(true);
+    setDragError(null);
+  }, []);
+
+  const handleDragLeave = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    dragCountRef.current--;
+    if (dragCountRef.current <= 0) {
+      dragCountRef.current = 0;
+      setIsDragging(false);
+      setDragError(null);
+    }
+  }, []);
+
+  const handleDragOver = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+  }, []);
+
+  const handleDrop = useCallback(
+    (e: React.DragEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      dragCountRef.current = 0;
+      setIsDragging(false);
+
+      const files = e.dataTransfer?.files;
+      if (!files || files.length === 0) return;
+
+      const file = files[0];
+      const ext = file.name.toLowerCase().slice(file.name.lastIndexOf("."));
+      if (!MIDI_EXTENSIONS.includes(ext)) {
+        setDragError(`Invalid file type: ${ext}. Only .mid and .midi files are accepted.`);
+        setTimeout(() => setDragError(null), 3000);
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onload = () => {
+        try {
+          const arrayBuf = reader.result as ArrayBuffer;
+          const data = Array.from(new Uint8Array(arrayBuf));
+          const parsed = parseMidiFile(file.name, data);
+          loadSong(parsed);
+          reset();
+        } catch (err) {
+          console.error("Failed to parse dropped MIDI file:", err);
+          setDragError("Failed to parse MIDI file.");
+          setTimeout(() => setDragError(null), 3000);
+        }
+      };
+      reader.onerror = () => {
+        setDragError("Failed to read file.");
+        setTimeout(() => setDragError(null), 3000);
+      };
+      reader.readAsArrayBuffer(file);
+    },
+    [loadSong, reset],
+  );
+  // ─── End Phase 6.5 ─────────────────────────────────────
+
   return (
     <div
       className="flex flex-col h-screen"
       style={{ background: "var(--color-bg)", color: "var(--color-text)" }}
+      onDragEnter={handleDragEnter}
+      onDragLeave={handleDragLeave}
+      onDragOver={handleDragOver}
+      onDrop={handleDrop}
     >
+      {/* Drag-and-drop overlay */}
+      {isDragging && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center"
+          style={{ background: "rgba(0, 0, 0, 0.5)", backdropFilter: "blur(4px)" }}
+        >
+          <div
+            className="rounded-2xl px-10 py-8 text-center"
+            style={{
+              background: "var(--color-surface)",
+              border: "3px dashed var(--color-accent)",
+            }}
+          >
+            <p className="text-lg font-semibold font-body" style={{ color: "var(--color-text)" }}>
+              Drop .mid file here
+            </p>
+            <p className="text-sm mt-1" style={{ color: "var(--color-text-muted)" }}>
+              Supported formats: .mid, .midi
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* Drag error toast */}
+      {dragError && (
+        <div
+          className="fixed top-4 left-1/2 -translate-x-1/2 z-50 px-4 py-2 rounded-lg text-sm font-body"
+          style={{
+            background: "#dc2626",
+            color: "#ffffff",
+          }}
+        >
+          {dragError}
+        </div>
+      )}
+
       {!song ? (
         <div key="library" className="flex-1 flex flex-col animate-page-enter">
           <SongLibrary onOpenFile={handleOpenFile} />
@@ -185,7 +318,7 @@ function App(): React.JSX.Element {
                 className="h-5 w-px shrink-0"
                 style={{ background: "var(--color-border)" }}
               />
-              <ThemePicker />
+              <SettingsPanel />
               <button
                 onClick={() => {
                   useSongStore.getState().clearSong();

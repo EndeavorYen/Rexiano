@@ -210,7 +210,8 @@ describe("NoteRenderer", () => {
       height: number;
       visible: boolean;
     }[];
-    const visible = sprites.filter((s) => s.visible);
+    // Filter out Text labels — only count Sprite children
+    const visible = sprites.filter((s) => s.visible && !("text" in s));
     expect(visible.length).toBe(1);
     expect(visible[0].y).toBe(500);
     expect(visible[0].height).toBe(100);
@@ -242,12 +243,12 @@ describe("NoteRenderer", () => {
     ).children[0].children as {
       visible: boolean;
     }[];
-    const visibleCount1 = sprites.filter((s) => s.visible).length;
+    const visibleCount1 = sprites.filter((s) => s.visible && !("text" in s)).length;
     expect(visibleCount1).toBe(1);
 
     // Frame 2: note has scrolled past (currentTime=10, well past the note)
     renderer.update(song, makeViewport({ currentTime: 10 }));
-    const visibleCount2 = sprites.filter((s) => s.visible).length;
+    const visibleCount2 = sprites.filter((s) => s.visible && !("text" in s)).length;
     expect(visibleCount2).toBe(0);
   });
 
@@ -266,7 +267,7 @@ describe("NoteRenderer", () => {
       visible: boolean;
       tint: number;
     }[];
-    const visible = sprites.filter((s) => s.visible);
+    const visible = sprites.filter((s) => s.visible && !("text" in s));
     expect(visible.length).toBe(2);
     // Track 0 and Track 1 should have different colors
     const tints = new Set(visible.map((s) => s.tint));
@@ -293,7 +294,7 @@ describe("NoteRenderer", () => {
     ).children[0].children as {
       visible: boolean;
     }[];
-    const visible = sprites.filter((s) => s.visible);
+    const visible = sprites.filter((s) => s.visible && !("text" in s));
     // Only midi 60 should render; 20 and 109 are out of range
     expect(visible.length).toBe(1);
   });
@@ -371,7 +372,7 @@ describe("NoteRenderer", () => {
       visible: boolean;
       height: number;
     }[];
-    const visible = sprites.filter((s) => s.visible);
+    const visible = sprites.filter((s) => s.visible && !("text" in s));
     // Both notes share the same key, so only one sprite is used
     expect(visible.length).toBe(1);
     // The second note (duration=1.0) overwrites the first, so height = max(1.0 * 200, 2) = 200
@@ -554,6 +555,119 @@ describe("NoteRenderer", () => {
       expect(cancelledId).toBe(42);
 
       vi.unstubAllGlobals();
+    });
+  });
+
+  // ── Note label pool tests ──
+
+  describe("note labels", () => {
+    test("creates labels for notes with sufficient height", () => {
+      // duration=0.5 at pps=200 → h=100px, well above MIN_HEIGHT_FOR_LABEL (16px)
+      const song = makeSong([{ notes: [{ midi: 60, time: 0, duration: 0.5 }] }]);
+      renderer.update(song, makeViewport({ currentTime: 0, pps: 200 }));
+
+      const containerChildren = (
+        parent as unknown as { children: { children: unknown[] }[] }
+      ).children[0].children as {
+        text?: string;
+        visible: boolean;
+      }[];
+      // There should be a Text object with the note name among visible children
+      const labels = containerChildren.filter(
+        (c) => typeof c.text === "string" && c.text !== "" && c.visible,
+      );
+      expect(labels.length).toBe(1);
+      expect(labels[0].text).toBe("C4");
+    });
+
+    test("does not create labels for notes shorter than MIN_HEIGHT_FOR_LABEL", () => {
+      // duration=0.01 at pps=200 → h=2px, below 16px threshold
+      const song = makeSong([
+        { notes: [{ midi: 60, time: 0, duration: 0.01 }] },
+      ]);
+      renderer.update(song, makeViewport({ currentTime: 0, pps: 200 }));
+
+      const containerChildren = (
+        parent as unknown as { children: { children: unknown[] }[] }
+      ).children[0].children as {
+        text?: string;
+        visible: boolean;
+      }[];
+      const labels = containerChildren.filter(
+        (c) => typeof c.text === "string" && c.text !== "" && c.visible,
+      );
+      expect(labels.length).toBe(0);
+    });
+
+    test("hides labels when showNoteLabels is false", () => {
+      renderer.showNoteLabels = false;
+      const song = makeSong([{ notes: [{ midi: 60, time: 0, duration: 0.5 }] }]);
+      renderer.update(song, makeViewport({ currentTime: 0, pps: 200 }));
+
+      const containerChildren = (
+        parent as unknown as { children: { children: unknown[] }[] }
+      ).children[0].children as {
+        text?: string;
+        visible: boolean;
+      }[];
+      const labels = containerChildren.filter(
+        (c) => typeof c.text === "string" && c.text !== "" && c.visible,
+      );
+      expect(labels.length).toBe(0);
+    });
+
+    test("labels display correct note names for different MIDI notes", () => {
+      const song = makeSong([
+        {
+          notes: [
+            { midi: 60, time: 0, duration: 0.5 },  // C4
+            { midi: 69, time: 0, duration: 0.5 },  // A4
+          ],
+        },
+      ]);
+      renderer.update(song, makeViewport({ currentTime: 0, pps: 200 }));
+
+      const containerChildren = (
+        parent as unknown as { children: { children: unknown[] }[] }
+      ).children[0].children as {
+        text?: string;
+        visible: boolean;
+      }[];
+      const labels = containerChildren.filter(
+        (c) => typeof c.text === "string" && c.text !== "" && c.visible,
+      );
+      const labelTexts = labels.map((l) => l.text).sort();
+      expect(labelTexts).toContain("C4");
+      expect(labelTexts).toContain("A4");
+    });
+
+    test("labels are released when notes leave viewport", () => {
+      const song = makeSong([{ notes: [{ midi: 60, time: 0, duration: 0.1 }] }]);
+
+      // Frame 1: note is visible with label
+      renderer.update(song, makeViewport({ currentTime: 0, pps: 200, height: 600 }));
+
+      // Frame 2: note is gone
+      renderer.update(song, makeViewport({ currentTime: 10, pps: 200, height: 600 }));
+
+      const containerChildren = (
+        parent as unknown as { children: { children: unknown[] }[] }
+      ).children[0].children as {
+        text?: string;
+        visible: boolean;
+      }[];
+      const visibleLabels = containerChildren.filter(
+        (c) => typeof c.text === "string" && c.text !== "" && c.visible,
+      );
+      expect(visibleLabels.length).toBe(0);
+    });
+
+    test("labels are cleaned up on destroy", () => {
+      const song = makeSong([{ notes: [{ midi: 60, time: 0, duration: 0.5 }] }]);
+      renderer.update(song, makeViewport({ currentTime: 0 }));
+      renderer.destroy();
+      // No crash, and all state is clean
+      expect(renderer.activeNotes.size).toBe(0);
     });
   });
 });

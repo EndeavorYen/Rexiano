@@ -1,5 +1,6 @@
 import { contextBridge, ipcRenderer } from "electron";
 import { IpcChannels } from "../shared/types";
+import type { SessionRecord, RecentFile } from "../shared/types";
 
 const api = {
   openMidiFile: () => ipcRenderer.invoke(IpcChannels.OPEN_MIDI_FILE),
@@ -10,6 +11,16 @@ const api = {
   listBuiltinSongs: () => ipcRenderer.invoke(IpcChannels.LIST_BUILTIN_SONGS),
   loadBuiltinSong: (songId: string) =>
     ipcRenderer.invoke(IpcChannels.LOAD_BUILTIN_SONG, songId),
+
+  // Phase 6.5: Progress persistence
+  loadSessions: () => ipcRenderer.invoke(IpcChannels.LOAD_SESSIONS),
+  saveSession: (record: SessionRecord) =>
+    ipcRenderer.invoke(IpcChannels.SAVE_SESSION, record),
+
+  // Phase 6.5: Recent files
+  loadRecentFiles: () => ipcRenderer.invoke(IpcChannels.LOAD_RECENT_FILES),
+  saveRecentFile: (file: RecentFile) =>
+    ipcRenderer.invoke(IpcChannels.SAVE_RECENT_FILE, file),
 };
 
 if (process.contextIsolated) {

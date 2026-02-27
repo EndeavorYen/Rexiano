@@ -20,6 +20,39 @@ const IS_BLACK_NOTE = [
   false,
 ];
 
+/** White key note names indexed by noteInOctave (only for non-black keys). */
+const WHITE_NOTE_NAMES = ["C", "D", "E", "F", "G", "A", "B"] as const;
+/** Black key sharp names indexed by noteInOctave (only for black keys). */
+const BLACK_NOTE_NAMES: Record<number, string> = {
+  1: "C#",
+  3: "D#",
+  6: "F#",
+  8: "G#",
+  10: "A#",
+};
+
+/**
+ * Get the display label for a white key MIDI note.
+ * C keys include the octave number (e.g. "C4"), others show just the letter.
+ */
+function getWhiteKeyLabel(midi: number): string {
+  const noteInOctave = midi % 12;
+  const octave = Math.floor(midi / 12) - 1;
+  // Map noteInOctave to white key index: C=0, D=1, E=2, F=3, G=4, A=5, B=6
+  const whiteIndex = [0, -1, 1, -1, 2, 3, -1, 4, -1, 5, -1, 6][noteInOctave];
+  const name = WHITE_NOTE_NAMES[whiteIndex];
+  // Only C keys show octave number
+  return noteInOctave === 0 ? `${name}${octave}` : name;
+}
+
+/**
+ * Get the display label for a black key MIDI note (e.g. "C#", "D#").
+ */
+function getBlackKeyLabel(midi: number): string {
+  const noteInOctave = midi % 12;
+  return BLACK_NOTE_NAMES[noteInOctave] ?? "";
+}
+
 /** Black key width as a fraction of white key width */
 const BLACK_KEY_WIDTH_RATIO = 0.58;
 /** Black key height as a fraction of total keyboard height */
@@ -69,6 +102,8 @@ interface PianoKeyboardProps {
   /** Notes the player missed (practice mode) */
   missedNotes?: Set<number>;
   height?: number;
+  /** Whether to show note name labels on keys (default: true) */
+  showLabels?: boolean;
 }
 
 /** Returns the CSS animation class for practice mode hit/miss feedback. */
@@ -119,12 +154,28 @@ function getKeyShadow(
     : "0 2px 4px rgba(0,0,0,0.08)";
 }
 
+/** Shared label style for key note names */
+const KEY_LABEL_STYLE: React.CSSProperties = {
+  position: "absolute",
+  bottom: 4,
+  left: 0,
+  right: 0,
+  textAlign: "center",
+  fontFamily: "'JetBrains Mono Variable', 'JetBrains Mono', monospace",
+  fontSize: 10,
+  lineHeight: 1,
+  opacity: 0.6,
+  pointerEvents: "none",
+  userSelect: "none",
+};
+
 export function PianoKeyboard({
   activeNotes,
   midiActiveNotes,
   hitNotes,
   missedNotes,
   height = 120,
+  showLabels = true,
 }: PianoKeyboardProps): React.JSX.Element {
   const layout = useMemo(() => buildLayout(), []);
   const wPct = 100 / layout.whiteKeyCount;
@@ -153,7 +204,18 @@ export function PianoKeyboard({
               borderRadius: "0 0 4px 4px",
               boxShadow: getKeyShadow(songActive, midiActive, false),
             }}
-          />
+          >
+            {showLabels && (
+              <span
+                style={{
+                  ...KEY_LABEL_STYLE,
+                  color: "var(--color-text-muted)",
+                }}
+              >
+                {getWhiteKeyLabel(key.midi)}
+              </span>
+            )}
+          </div>
         );
       })}
 
@@ -177,7 +239,18 @@ export function PianoKeyboard({
               borderRadius: "0 0 3px 3px",
               boxShadow: getKeyShadow(songActive, midiActive, true),
             }}
-          />
+          >
+            {showLabels && (
+              <span
+                style={{
+                  ...KEY_LABEL_STYLE,
+                  color: "rgba(255, 255, 255, 0.7)",
+                }}
+              >
+                {getBlackKeyLabel(key.midi)}
+              </span>
+            )}
+          </div>
         );
       })}
     </div>
@@ -192,5 +265,10 @@ export {
   getBlackKeyBackground,
   getKeyShadow,
   getPracticeClass,
+  getWhiteKeyLabel,
+  getBlackKeyLabel,
+  FIRST_NOTE,
+  LAST_NOTE,
+  IS_BLACK_NOTE,
 };
 /* eslint-enable react-refresh/only-export-components */

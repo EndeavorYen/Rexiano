@@ -23,6 +23,10 @@ export const IpcChannels = {
   SAVE_SESSION: "progress:saveSession",
   /** Phase 6.5: Load all practice session records */
   LOAD_SESSIONS: "progress:loadSessions",
+  /** Phase 6.5: Save a recently opened MIDI file */
+  SAVE_RECENT_FILE: "recents:saveRecentFile",
+  /** Phase 6.5: Load list of recently opened MIDI files */
+  LOAD_RECENT_FILES: "recents:loadRecentFiles",
 } as const;
 
 /** Result of loading a SoundFont file via IPC */
@@ -82,6 +86,16 @@ export interface PracticeScore {
 export type NoteResult = "hit" | "miss" | "pending";
 
 // ─── Phase 6.5: Children Usability Enhancements ────────────────────
+
+/** A recently opened MIDI file entry */
+export interface RecentFile {
+  /** Full file path or built-in song ID */
+  path: string;
+  /** Display name */
+  name: string;
+  /** Unix timestamp in milliseconds of last open */
+  timestamp: number;
+}
 
 /** Record of a completed practice session, persisted to disk */
 export interface SessionRecord {

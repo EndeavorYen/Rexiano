@@ -10,11 +10,32 @@ vi.mock("pixi.js", () => {
     height = 0;
     visible = false;
     tint = 0xffffff;
+    alpha = 1;
+    _scale = { x: 1, y: 1, set(v: number): void { this.x = v; this.y = v; } };
+    get scale(): { x: number; y: number; set(v: number): void } { return this._scale; }
+    anchor = { set(_x: number, _y?: number): void { void _x; void _y; } };
+    destroy(): void { /* noop */ }
+  }
+  class MockText extends MockSprite {
+    text = "";
+    style: unknown;
+    constructor(opts?: { text?: string; style?: unknown }) {
+      super();
+      if (opts) { this.text = opts.text ?? ""; this.style = opts.style; }
+    }
+  }
+  class MockTextStyle {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    constructor(_opts?: unknown) { /* noop */ }
   }
   class MockContainer {
     children: unknown[] = [];
     addChild(child: unknown): void {
       this.children.push(child);
+    }
+    removeChild(child: unknown): void {
+      const idx = this.children.indexOf(child);
+      if (idx >= 0) this.children.splice(idx, 1);
     }
     removeChildren(): void {
       this.children.length = 0;
@@ -24,6 +45,8 @@ vi.mock("pixi.js", () => {
     Application: vi.fn(),
     Container: MockContainer,
     Sprite: MockSprite,
+    Text: MockText,
+    TextStyle: MockTextStyle,
     Texture: { WHITE: {} },
   };
 });

@@ -21,6 +21,35 @@ function noteKey(trackIdx: number, midi: number, time: number): string {
 
 const INITIAL_POOL_SIZE = 512;
 
+/** Minimum note rectangle height (px) to show a label inside it. */
+const MIN_HEIGHT_FOR_LABEL = 16;
+
+/** Chromatic note names indexed by (midi % 12). */
+const NOTE_NAMES = [
+  "C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B",
+] as const;
+
+/** Convert a MIDI note number to a short display name (e.g. "C4", "F#5"). */
+function midiToNoteName(midi: number): string {
+  const name = NOTE_NAMES[midi % 12];
+  const octave = Math.floor(midi / 12) - 1;
+  return `${name}${octave}`;
+}
+
+/** Shared text style for note labels on falling note sprites. */
+let _labelStyle: TextStyle | null = null;
+function getLabelStyle(): TextStyle {
+  if (!_labelStyle) {
+    _labelStyle = new TextStyle({
+      fontFamily: "'JetBrains Mono Variable', 'JetBrains Mono', monospace",
+      fontSize: 12,
+      fontWeight: "bold",
+      fill: 0xffffff,
+    });
+  }
+  return _labelStyle;
+}
+
 /** Linearly interpolate between two 0xRRGGBB colors by factor t ∈ [0,1]. */
 function lerpColor(a: number, b: number, t: number): number {
   const ar = (a >> 16) & 0xff,
@@ -49,6 +78,14 @@ export class NoteRenderer {
   /** Tracks in-flight rAF handles for showCombo text animations (cancelled on destroy) */
   private _comboHandles = new Set<number>();
 
+  // ── Note label pool (parallel to sprite pool) ──
+  /** Text pool for reusable note labels */
+  private _labelPool: Text[] = [];
+  /** Maps each active sprite to its associated label Text object */
+  private _spriteLabels = new Map<Sprite, Text>();
+  /** Whether note labels on falling notes are enabled */
+  public showNoteLabels = true;
+
   public activeNotes = new Set<number>();
 
   constructor(parentContainer: Container) {
@@ -67,6 +104,12 @@ export class NoteRenderer {
 
     for (let i = 0; i < INITIAL_POOL_SIZE; i++) {
       this.pool.push(this.createSprite());
+    }
+
+    // Pre-fill label pool (smaller than sprite pool — not every note needs a label)
+    const labelPoolSize = Math.min(256, INITIAL_POOL_SIZE);
+    for (let i = 0; i < labelPoolSize; i++) {
+      this._labelPool.push(this.createLabel());
     }
   }
 
@@ -126,6 +169,26 @@ export class NoteRenderer {
         sprite.visible = true;
         nextActive.set(key, sprite);
 
+        // ── Note label management ──
+        if (this.showNoteLabels && h >= MIN_HEIGHT_FOR_LABEL) {
+          let label = this._spriteLabels.get(sprite);
+          if (!label) {
+            label = this.allocateLabel();
+            this._spriteLabels.set(sprite, label);
+          }
+          label.text = midiToNoteName(note.midi);
+          label.x = kp.x + kp.width / 2;
+          label.y = rectY + Math.max(h, 2) / 2;
+          label.visible = true;
+        } else {
+          // Hide label if note is too small or labels are disabled
+          const existingLabel = this._spriteLabels.get(sprite);
+          if (existingLabel) {
+            this.releaseLabel(existingLabel);
+            this._spriteLabels.delete(sprite);
+          }
+        }
+
         if (
           note.time <= vp.currentTime + hitWindow &&
           note.time + note.duration >= vp.currentTime - hitWindow
@@ -165,7 +228,12 @@ export class NoteRenderer {
     this.pool.length = 0;
     this.active.clear();
     this.nextActive.clear();
+    this.activeNotes.clear();
     this.keyPositions.clear();
+
+    // Clean up label pool
+    this._labelPool.length = 0;
+    this._spriteLabels.clear();
   }
 
   private createSprite(): Sprite {
@@ -173,6 +241,15 @@ export class NoteRenderer {
     s.visible = false;
     this.container.addChild(s);
     return s;
+  }
+
+  private createLabel(): Text {
+    const t = new Text({ text: "", style: getLabelStyle() });
+    t.anchor.set(0.5);
+    t.visible = false;
+    t.alpha = 0.85;
+    this.container.addChild(t);
+    return t;
   }
 
   private allocate(): Sprite {
@@ -185,6 +262,21 @@ export class NoteRenderer {
     return this.pool.pop()!;
   }
 
+  private allocateLabel(): Text {
+    if (this._labelPool.length === 0) {
+      const grow = Math.max(32, Math.floor(this._spriteLabels.size * 0.5));
+      for (let i = 0; i < grow; i++) {
+        this._labelPool.push(this.createLabel());
+      }
+    }
+    return this._labelPool.pop()!;
+  }
+
+  private releaseLabel(label: Text): void {
+    label.visible = false;
+    this._labelPool.push(label);
+  }
+
   private release(sprite: Sprite): void {
     // Cancel any in-flight animation before returning sprite to pool
     const handle = this._animHandles.get(sprite);
@@ -195,6 +287,13 @@ export class NoteRenderer {
     sprite.alpha = 1;
     sprite.visible = false;
     this.pool.push(sprite);
+
+    // Release the associated label if present
+    const label = this._spriteLabels.get(sprite);
+    if (label) {
+      this.releaseLabel(label);
+      this._spriteLabels.delete(sprite);
+    }
   }
 
   // ── Practice mode visual feedback ──────────────────────────────────

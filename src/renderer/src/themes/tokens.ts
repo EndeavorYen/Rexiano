@@ -1,4 +1,4 @@
-export type ThemeId = "lavender" | "ocean" | "peach";
+export type ThemeId = "lavender" | "ocean" | "peach" | "midnight";
 
 export interface ThemeTokens {
   id: ThemeId;
@@ -129,6 +129,37 @@ export const themes: Record<ThemeId, ThemeTokens> = {
       missGray: "#A89090",
       comboText: "#E07058",
       streakGold: "#DAA850",
+    },
+  },
+  midnight: {
+    id: "midnight",
+    label: "Midnight",
+    dot: "#7c6ef0",
+    colors: {
+      bg: "#0f0f14",
+      surface: "#1a1a24",
+      surfaceAlt: "#24243a",
+      accent: "#7c6ef0",
+      accentHover: "#9b8fff",
+      text: "#e8e6f0",
+      textMuted: "#9999b0",
+      border: "#2e2e44",
+      canvasBg: "#0a0a10",
+      gridLine: "#1e1e30",
+      hitLine: "#ff6b6b",
+      note1: "#7c6ef0",
+      note2: "#ff6b9d",
+      note3: "#4ecdc4",
+      note4: "#ffe66d",
+      keyActive: "#7c6ef0",
+      keyWhite: "#1e1e2e",
+      keyWhiteBottom: "#16162a",
+      keyBlack: "#0a0a14",
+      keyBlackTop: "#060610",
+      hitGlow: "#9b8fff",
+      missGray: "#4a4a60",
+      comboText: "#ff6b9d",
+      streakGold: "#ffe66d",
     },
   },
 };

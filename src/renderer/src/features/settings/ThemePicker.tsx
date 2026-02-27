@@ -2,7 +2,7 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import { useThemeStore } from "@renderer/stores/useThemeStore";
 import { themes, type ThemeId } from "@renderer/themes/tokens";
 
-const themeList: ThemeId[] = ["lavender", "ocean", "peach"];
+const themeList: ThemeId[] = ["lavender", "ocean", "peach", "midnight"];
 
 export function ThemePicker(): React.JSX.Element {
   const [open, setOpen] = useState(false);
