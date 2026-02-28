@@ -1,4 +1,5 @@
 import { useRef, useEffect } from "react";
+import "pixi.js/unsafe-eval";
 import { Application } from "pixi.js";
 import { NoteRenderer } from "@renderer/engines/fallingNotes/NoteRenderer";
 import { getCanvasBgColor } from "@renderer/engines/fallingNotes/noteColors";
