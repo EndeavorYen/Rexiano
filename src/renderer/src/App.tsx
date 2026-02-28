@@ -86,8 +86,13 @@ function App(): React.JSX.Element {
 
       // Play / pause
       if (state.isPlaying && !prev.isPlaying) {
-        // Resume AudioContext (Chrome suspends until user gesture)
-        void engine.resume().then(() => scheduler.start(state.currentTime));
+        // Start scheduler synchronously so the ticker loop gets valid
+        // audioTime immediately. AudioContext.resume() can happen in the
+        // background — ctx.currentTime is valid (just frozen) while
+        // suspended, and the math (currentTime - startAudioTime + offset)
+        // still works once it unfreezes.
+        scheduler.start(state.currentTime);
+        void engine.resume();
       } else if (!state.isPlaying && prev.isPlaying) {
         scheduler.stop();
       }
