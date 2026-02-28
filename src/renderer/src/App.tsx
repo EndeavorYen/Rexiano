@@ -346,7 +346,7 @@ function App(): React.JSX.Element {
           </div>
 
           {/* Falling notes canvas + score overlay */}
-          <div className="flex-1 relative">
+          <div className="flex-1 relative flex flex-col">
             <FallingNotesCanvas
               onActiveNotesChange={handleActiveNotesChange}
               getAudioCurrentTime={getAudioCurrentTime}
