@@ -3,9 +3,9 @@ import { VolumeX, Volume1, Volume2 } from "lucide-react";
 import { usePlaybackStore } from "@renderer/stores/usePlaybackStore";
 
 function VolumeIcon({ level }: { level: number }): React.JSX.Element {
-  if (level === 0) return <VolumeX size={16} />;
-  if (level <= 50) return <Volume1 size={16} />;
-  return <Volume2 size={16} />;
+  if (level === 0) return <VolumeX size={15} />;
+  if (level <= 50) return <Volume1 size={15} />;
+  return <Volume2 size={15} />;
 }
 
 export function VolumeControl(): React.JSX.Element {
@@ -40,10 +40,14 @@ export function VolumeControl(): React.JSX.Element {
     <div className="flex items-center gap-1.5">
       <button
         onClick={handleToggleMute}
-        className="w-7 h-7 flex items-center justify-center rounded text-sm transition-opacity cursor-pointer"
+        className="flex items-center justify-center rounded-md cursor-pointer"
         style={{
-          color: "var(--color-text)",
-          opacity: isMuted ? 0.5 : 1,
+          width: 28,
+          height: 28,
+          color: isMuted ? "var(--color-text-muted)" : "var(--color-text)",
+          background: "transparent",
+          opacity: isMuted ? 0.5 : 0.85,
+          transition: "opacity 0.15s, color 0.15s",
         }}
         title={isMuted ? "Unmute" : "Mute"}
         aria-label={isMuted ? "Unmute" : "Mute"}
@@ -57,8 +61,8 @@ export function VolumeControl(): React.JSX.Element {
         step={1}
         value={displayValue}
         onChange={handleVolumeChange}
-        className="w-20 h-1"
-        style={{ accentColor: "var(--color-accent)" }}
+        className="h-1"
+        style={{ accentColor: "var(--color-accent)", width: 72 }}
         aria-label="Volume"
         title={`Volume: ${displayValue}%`}
       />

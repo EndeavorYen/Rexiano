@@ -11,7 +11,8 @@
 // - SF2 loaded from Electron resources/ dir via IPC
 // - Fallback: generate sine-based piano tones for all 88 keys
 
-import { SoundFont2 } from "soundfont2";
+import { SoundFont2, GeneratorType } from "soundfont2";
+import type { Generator } from "soundfont2";
 import type { ISoundFontLoader, NoteSample } from "./types";
 
 /** Piano key range: A0 (21) to C8 (108) */
@@ -70,6 +71,37 @@ export class SoundFontLoader implements ISoundFontLoader {
 
   // ─── SF2 Parsing ─────────────────────────────────────
 
+  /**
+   * Compute the effective base pitch for a key, respecting SF2 generators.
+   * Priority: OverridingRootKey > originalPitch > target midi number.
+   * CoarseTune (semitones) and FineTune (cents) are folded in so the
+   * AudioEngine formula `2^((target - basePitch) / 12)` stays unchanged.
+   */
+  private static _effectiveBasePitch(
+    generators: Partial<Record<GeneratorType, Generator | undefined>>,
+    originalPitch: number,
+    midi: number,
+  ): number {
+    // OverridingRootKey (generator #58) takes precedence over sample header
+    const overrideGen = generators[GeneratorType.OverridingRootKey];
+    const rootKey =
+      overrideGen?.value != null && overrideGen.value >= 0
+        ? overrideGen.value
+        : originalPitch === 255
+          ? midi
+          : originalPitch;
+
+    // Pitch offset generators (additive)
+    const coarseTune = generators[GeneratorType.CoarseTune]?.value ?? 0;
+    const fineTune = generators[GeneratorType.FineTune]?.value ?? 0;
+
+    // Fold offsets into basePitch so AudioEngine's existing formula works:
+    //   playbackRate = 2^((targetMidi - basePitch) / 12)
+    // With tune:  2^((targetMidi - rootKey + coarseTune + fineTune/100) / 12)
+    // → basePitch = rootKey - coarseTune - fineTune/100
+    return rootKey - coarseTune - fineTune / 100;
+  }
+
   private async _parseSF2(
     arrayBuffer: ArrayBuffer,
     audioContext: AudioContext,
@@ -98,7 +130,11 @@ export class SoundFontLoader implements ISoundFontLoader {
       directSamples.set(midi, {
         data: sample.data,
         sampleRate: header.sampleRate,
-        basePitch: header.originalPitch === 255 ? midi : header.originalPitch,
+        basePitch: SoundFontLoader._effectiveBasePitch(
+          keyData.generators,
+          header.originalPitch,
+          midi,
+        ),
       });
     }
 
@@ -122,8 +158,11 @@ export class SoundFontLoader implements ISoundFontLoader {
           directSamples.set(midi, {
             data: sample.data,
             sampleRate: header.sampleRate,
-            basePitch:
-              header.originalPitch === 255 ? midi : header.originalPitch,
+            basePitch: SoundFontLoader._effectiveBasePitch(
+              keyData.generators,
+              header.originalPitch,
+              midi,
+            ),
           });
         }
         if (directSamples.size > 0) break;

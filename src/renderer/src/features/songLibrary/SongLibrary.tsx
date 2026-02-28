@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useCallback, useState } from "react";
-import { Upload, Clock, AlertCircle } from "lucide-react";
+import { Upload, Clock, AlertCircle, Music, Trophy, Flame } from "lucide-react";
 import { parseMidiFile } from "../../engines/midi/MidiFileParser";
 import { useSongStore } from "../../stores/useSongStore";
 import { usePlaybackStore } from "../../stores/usePlaybackStore";
 import { useSongLibraryStore } from "../../stores/useSongLibraryStore";
+import { useProgressStore } from "../../stores/useProgressStore";
 import { useRecentFiles } from "../../hooks/useRecentFiles";
 import { formatRelativeTime } from "../../utils/relativeTime";
 import { SongCard } from "./SongCard";
@@ -18,6 +19,14 @@ interface SongLibraryProps {
   onOpenFile: () => Promise<void>;
 }
 
+/** Warm greetings that rotate based on time of day */
+function getGreeting(): string {
+  const hour = new Date().getHours();
+  if (hour < 12) return "Good morning! Ready to practice?";
+  if (hour < 17) return "Good afternoon! Let's play some music.";
+  return "Good evening! Time for some piano practice.";
+}
+
 export function SongLibrary({
   onOpenFile,
 }: SongLibraryProps): React.JSX.Element {
@@ -29,6 +38,10 @@ export function SongLibrary({
 
   const loadSong = useSongStore((s) => s.loadSong);
   const reset = usePlaybackStore((s) => s.reset);
+
+  const sessions = useProgressStore((s) => s.sessions);
+  const isProgressLoaded = useProgressStore((s) => s.isLoaded);
+  const loadSessions = useProgressStore((s) => s.loadSessions);
 
   const { recentFiles, refresh: refreshRecents } = useRecentFiles();
 
@@ -42,6 +55,12 @@ export function SongLibrary({
   useEffect(() => {
     fetchSongs();
   }, [fetchSongs]);
+
+  useEffect(() => {
+    if (!isProgressLoaded) {
+      loadSessions();
+    }
+  }, [isProgressLoaded, loadSessions]);
 
   const filteredSongs = useMemo(() => {
     let result = songs;
@@ -64,6 +83,19 @@ export function SongLibrary({
     () => groupSongsByCategory(filteredSongs),
     [filteredSongs],
   );
+
+  /** Progress stats derived from sessions */
+  const progressStats = useMemo(() => {
+    const uniqueSongs = new Set(sessions.map((s) => s.songId)).size;
+    const totalSessions = sessions.length;
+    const bestAccuracy =
+      sessions.length > 0
+        ? Math.round(
+            Math.max(...sessions.map((s) => s.score.accuracy)),
+          )
+        : 0;
+    return { uniqueSongs, totalSessions, bestAccuracy };
+  }, [sessions]);
 
   const handleSelectSong = useCallback(
     async (songId: string) => {
@@ -155,28 +187,63 @@ export function SongLibrary({
 
   return (
     <div className="flex-1 flex flex-col items-center px-6 py-8 overflow-y-auto relative">
-      {/* Header */}
-      <div className="flex items-center gap-3 mb-2">
+      {/* Header with greeting */}
+      <div className="flex items-center gap-3 mb-1 animate-page-enter">
         <img
           src={appIcon}
           alt=""
-          width={48}
-          height={48}
-          className="rounded-xl"
+          width={44}
+          height={44}
+          className="rounded-xl subtle-shadow"
         />
         <h1
-          className="text-5xl font-extrabold font-display"
+          className="text-4xl font-extrabold font-display"
           style={{ color: "var(--color-accent)" }}
         >
           Rexiano
         </h1>
       </div>
       <p
-        className="text-base mb-8 font-body"
+        className="text-sm mb-6 font-body"
         style={{ color: "var(--color-text-muted)" }}
       >
-        Pick a song to start practicing
+        {getGreeting()}
       </p>
+
+      {/* Progress stats — only show when there are sessions */}
+      {isProgressLoaded && sessions.length > 0 && (
+        <div
+          className="flex items-center gap-4 mb-6 px-5 py-3 rounded-xl animate-page-enter"
+          style={{
+            background: "color-mix(in srgb, var(--color-accent) 8%, var(--color-surface))",
+            border: "1px solid color-mix(in srgb, var(--color-accent) 15%, var(--color-border))",
+          }}
+        >
+          <StatBadge
+            icon={<Music size={14} />}
+            value={progressStats.uniqueSongs}
+            label={progressStats.uniqueSongs === 1 ? "song practiced" : "songs practiced"}
+          />
+          <div
+            className="w-px h-6"
+            style={{ background: "var(--color-border)" }}
+          />
+          <StatBadge
+            icon={<Flame size={14} />}
+            value={progressStats.totalSessions}
+            label={progressStats.totalSessions === 1 ? "session" : "sessions"}
+          />
+          <div
+            className="w-px h-6"
+            style={{ background: "var(--color-border)" }}
+          />
+          <StatBadge
+            icon={<Trophy size={14} />}
+            value={`${progressStats.bestAccuracy}%`}
+            label="best score"
+          />
+        </div>
+      )}
 
       {/* Recently Played */}
       {visibleRecents.length > 0 && (
@@ -196,10 +263,10 @@ export function SongLibrary({
                 key={file.path}
                 onClick={() => handleSelectRecent(file)}
                 disabled={loadingRecentPath === file.path}
-                className="group relative flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-body font-medium cursor-pointer transition-all duration-150 hover:scale-[1.03] active:scale-[0.97] disabled:opacity-50 disabled:cursor-wait"
+                className="group relative flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-body font-medium cursor-pointer transition-all duration-150 disabled:opacity-50 disabled:cursor-wait card-hover"
                 style={{
                   background:
-                    "color-mix(in srgb, var(--color-accent) 12%, var(--color-surface))",
+                    "color-mix(in srgb, var(--color-accent) 8%, var(--color-surface))",
                   color: "var(--color-text)",
                   border: "1px solid var(--color-border)",
                 }}
@@ -265,48 +332,40 @@ export function SongLibrary({
             ))}
           </div>
         ) : filteredSongs.length === 0 ? (
-          /* Empty state */
+          /* Empty state — warm and encouraging */
           <div
-            className="text-center py-16"
+            className="text-center py-16 px-4"
             style={{ color: "var(--color-text-muted)" }}
           >
-            <svg
-              width="64"
-              height="64"
-              viewBox="0 0 64 64"
-              fill="none"
-              className="mx-auto mb-4 opacity-40"
+            <div
+              className="w-16 h-16 mx-auto mb-4 rounded-2xl flex items-center justify-center"
+              style={{
+                background: "color-mix(in srgb, var(--color-accent) 10%, var(--color-surface))",
+              }}
             >
-              <rect
-                x="8"
-                y="16"
-                width="48"
-                height="36"
-                rx="4"
-                stroke="currentColor"
-                strokeWidth="2"
+              <Music
+                size={28}
+                style={{ color: "var(--color-accent)", opacity: 0.6 }}
               />
-              <path
-                d="M24 36V28L36 32L24 36Z"
-                fill="currentColor"
-                opacity="0.3"
-              />
-              <path
-                d="M24 36V28L36 32L24 36Z"
-                stroke="currentColor"
-                strokeWidth="1.5"
-                strokeLinejoin="round"
-              />
-            </svg>
-            <p className="text-sm font-body">
-              {songs.length === 0
-                ? "No built-in songs found"
-                : "No songs match your filter"}
-            </p>
-            {songs.length === 0 && (
-              <p className="text-xs mt-2 font-body opacity-70">
-                Try importing a MIDI file to get started
-              </p>
+            </div>
+            {songs.length === 0 ? (
+              <>
+                <p className="text-sm font-body font-medium mb-1" style={{ color: "var(--color-text)" }}>
+                  No songs here yet
+                </p>
+                <p className="text-xs font-body opacity-70">
+                  Import a MIDI file below to get started!
+                </p>
+              </>
+            ) : (
+              <>
+                <p className="text-sm font-body font-medium mb-1" style={{ color: "var(--color-text)" }}>
+                  No songs match your search
+                </p>
+                <p className="text-xs font-body opacity-70">
+                  Try a different keyword or clear the filter
+                </p>
+              </>
             )}
           </div>
         ) : (
@@ -339,7 +398,11 @@ export function SongLibrary({
                 {/* Song cards grid */}
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                   {group.songs.map((song, i) => (
-                    <div key={song.id} className="relative">
+                    <div
+                      key={song.id}
+                      className="relative animate-stagger-child"
+                      style={{ animationDelay: `${(groupIdx * 3 + i) * 40}ms` }}
+                    >
                       <SongCard
                         song={song}
                         onSelect={handleSelectSong}
@@ -399,6 +462,38 @@ export function SongLibrary({
         <div className="pointer-events-auto">
           <ThemePicker />
         </div>
+      </div>
+    </div>
+  );
+}
+
+/* ─── Sub-components ─── */
+
+function StatBadge({
+  icon,
+  value,
+  label,
+}: {
+  icon: React.ReactNode;
+  value: number | string;
+  label: string;
+}): React.JSX.Element {
+  return (
+    <div className="flex items-center gap-2">
+      <span style={{ color: "var(--color-accent)" }}>{icon}</span>
+      <div className="flex flex-col">
+        <span
+          className="text-sm font-display font-bold leading-tight"
+          style={{ color: "var(--color-text)" }}
+        >
+          {value}
+        </span>
+        <span
+          className="text-[10px] font-body leading-tight"
+          style={{ color: "var(--color-text-muted)" }}
+        >
+          {label}
+        </span>
       </div>
     </div>
   );

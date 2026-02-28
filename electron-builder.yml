@@ -11,28 +11,87 @@ files:
   - '!{tsconfig.json,tsconfig.node.json,tsconfig.web.json}'
 asarUnpack:
   - resources/**
+
+# --- File associations: open .mid / .midi files with Rexiano ---
+fileAssociations:
+  - ext: mid
+    name: MIDI File
+    description: Standard MIDI file
+    mimeType: audio/midi
+    role: Viewer
+  - ext: midi
+    name: MIDI File
+    description: Standard MIDI file
+    mimeType: audio/midi
+    role: Viewer
+
+# --- Windows ---
 win:
   executableName: Rexiano
+  icon: build/icon.ico
+  target:
+    - target: nsis
+      arch:
+        - x64
 nsis:
   artifactName: ${name}-${version}-setup.${ext}
   shortcutName: ${productName}
   uninstallDisplayName: ${productName}
   createDesktopShortcut: always
+  createStartMenuShortcut: true
+  oneClick: false
+  allowToChangeInstallationDirectory: true
+  installerIcon: build/icon.ico
+  uninstallerIcon: build/icon.ico
+  installerHeaderIcon: build/icon.ico
+  license: LICENSE
+
+# --- macOS ---
 mac:
+  icon: build/icon.icns
+  category: public.app-category.education
   entitlementsInherit: build/entitlements.mac.plist
   extendInfo:
     - NSDocumentsFolderUsageDescription: Application requests access to the user's Documents folder.
     - NSDownloadsFolderUsageDescription: Application requests access to the user's Downloads folder.
   notarize: false
+  target:
+    - target: dmg
+      arch:
+        - x64
+        - arm64
 dmg:
-  artifactName: ${name}-${version}.${ext}
+  artifactName: ${name}-${version}-${arch}.${ext}
+  # To add a custom DMG background, place an image at build/dmg-background.png
+  # and uncomment the following lines:
+  # background: build/dmg-background.png
+  # window:
+  #   width: 540
+  #   height: 380
+  contents:
+    - x: 130
+      y: 220
+    - x: 410
+      y: 220
+      type: link
+      path: /Applications
+
+# --- Linux ---
 linux:
+  icon: build/icon.png
   target:
     - AppImage
-    - snap
     - deb
   maintainer: rexiano.dev
   category: Education
+  mimeTypes:
+    - audio/midi
+    - audio/x-midi
+  desktop:
+    MimeType: audio/midi;audio/x-midi;
 appImage:
-  artifactName: ${name}-${version}.${ext}
+  artifactName: ${name}-${version}-${arch}.${ext}
+deb:
+  artifactName: ${name}-${version}-${arch}.${ext}
+
 npmRebuild: false

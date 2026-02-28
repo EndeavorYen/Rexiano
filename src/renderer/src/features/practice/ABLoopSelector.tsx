@@ -1,5 +1,6 @@
 import { usePracticeStore } from "@renderer/stores/usePracticeStore";
 import { usePlaybackStore } from "@renderer/stores/usePlaybackStore";
+import { X } from "lucide-react";
 
 // eslint-disable-next-line react-refresh/only-export-components
 export function fmtSec(s: number): string {
@@ -18,10 +19,8 @@ export function ABLoopSelector(): React.JSX.Element {
 
   const handleA = (): void => {
     if (loopRange) {
-      // Update A point, keep B if it's still ahead
       setLoopRange([currentTime, Math.max(currentTime + 0.1, loopRange[1])]);
     } else {
-      // Set A point, B defaults to same (incomplete loop)
       setLoopRange([currentTime, currentTime]);
     }
   };
@@ -29,10 +28,8 @@ export function ABLoopSelector(): React.JSX.Element {
   const handleB = (): void => {
     if (loopRange) {
       const start = loopRange[0];
-      // B must be after A
       setLoopRange([start, Math.max(start + 0.1, currentTime)]);
     } else {
-      // No A set yet — use 0 as A
       setLoopRange([0, currentTime]);
     }
   };
@@ -47,65 +44,74 @@ export function ABLoopSelector(): React.JSX.Element {
         className="text-[10px] font-mono uppercase tracking-wider"
         style={{ color: "var(--color-text-muted)" }}
       >
-        A–B Loop
+        Loop Section
       </span>
 
       <div className="flex items-center gap-1.5">
         {/* Set A */}
         <button
           onClick={handleA}
-          className="px-2.5 py-1 rounded text-[11px] font-mono font-bold transition-all duration-150 cursor-pointer"
+          className="px-2.5 py-1 rounded-md text-[11px] font-mono font-bold cursor-pointer"
           style={{
             background: hasA
               ? "var(--color-accent)"
               : "var(--color-surface-alt)",
             color: hasA ? "#fff" : "var(--color-text-muted)",
+            border: !hasA
+              ? "1px dashed var(--color-border)"
+              : "1px solid transparent",
+            transition: "all 0.15s ease",
           }}
-          title="Set loop start to current position"
+          title={hasA ? `Loop start: ${fmtSec(loopRange![0])}` : "Set loop start to current position"}
           aria-label="Set loop start point"
         >
-          A
+          A{hasA && <span className="font-normal ml-1 opacity-80">{fmtSec(loopRange![0])}</span>}
         </button>
+
+        {/* Arrow */}
+        <span
+          className="text-[10px]"
+          style={{ color: "var(--color-text-muted)" }}
+        >
+          {"\u2192"}
+        </span>
 
         {/* Set B */}
         <button
           onClick={handleB}
-          className="px-2.5 py-1 rounded text-[11px] font-mono font-bold transition-all duration-150 cursor-pointer"
+          className="px-2.5 py-1 rounded-md text-[11px] font-mono font-bold cursor-pointer"
           style={{
             background: hasB
               ? "var(--color-accent)"
               : "var(--color-surface-alt)",
             color: hasB ? "#fff" : "var(--color-text-muted)",
+            border: !hasB
+              ? "1px dashed var(--color-border)"
+              : "1px solid transparent",
+            transition: "all 0.15s ease",
           }}
-          title="Set loop end to current position"
+          title={hasB ? `Loop end: ${fmtSec(loopRange![1])}` : "Set loop end to current position"}
           aria-label="Set loop end point"
         >
-          B
+          B{hasB && <span className="font-normal ml-1 opacity-80">{fmtSec(loopRange![1])}</span>}
         </button>
-
-        {/* Range display */}
-        {loopRange && (
-          <span
-            className="text-[11px] font-mono tabular-nums"
-            style={{ color: "var(--color-text-muted)" }}
-          >
-            {fmtSec(loopRange[0])}–{fmtSec(loopRange[1])}
-          </span>
-        )}
 
         {/* Clear */}
         {loopRange && (
           <button
             onClick={handleClear}
-            className="px-2 py-1 rounded text-[11px] font-body transition-colors duration-150 cursor-pointer"
+            className="flex items-center justify-center rounded-md cursor-pointer"
             style={{
+              width: 24,
+              height: 24,
               background: "var(--color-surface-alt)",
               color: "var(--color-text-muted)",
+              transition: "color 0.15s",
             }}
-            title="Clear A–B loop"
+            title="Clear A-B loop"
             aria-label="Clear loop"
           >
-            Clear
+            <X size={12} />
           </button>
         )}
       </div>

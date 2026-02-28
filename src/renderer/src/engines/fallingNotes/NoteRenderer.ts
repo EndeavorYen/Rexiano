@@ -13,6 +13,11 @@ import {
   getVisibleNotes,
   type Viewport,
 } from "./ViewportManager";
+import {
+  FingeringEngine,
+  type Finger,
+} from "@renderer/engines/practice/FingeringEngine";
+import { useSettingsStore } from "@renderer/stores/useSettingsStore";
 
 function noteKey(trackIdx: number, midi: number, time: number): string {
   // Convert time to microseconds integer to avoid float-to-string instability
@@ -23,6 +28,18 @@ const INITIAL_POOL_SIZE = 512;
 
 /** Minimum note rectangle height (px) to show a label inside it. */
 const MIN_HEIGHT_FOR_LABEL = 16;
+
+/** Minimum note height (px) at which we show the fingering label */
+const MIN_HEIGHT_FOR_FINGERING = 14;
+
+/** Circled digit characters for finger numbers 1-5 */
+const CIRCLED_DIGITS: Record<Finger, string> = {
+  1: "\u2460",
+  2: "\u2461",
+  3: "\u2462",
+  4: "\u2463",
+  5: "\u2464",
+};
 
 /** Chromatic note names indexed by (midi % 12). */
 const NOTE_NAMES = [
@@ -88,6 +105,18 @@ export class NoteRenderer {
 
   public activeNotes = new Set<number>();
 
+  // ── Fingering overlay ──────────────────────────────────────────
+  private fingeringEngine = new FingeringEngine();
+  /** Pool of reusable Text objects for fingering labels */
+  private fingeringLabelPool: Text[] = [];
+  /** Currently visible fingering labels (key → Text) */
+  private activeFingeringLabels = new Map<string, Text>();
+  private nextFingeringLabels = new Map<string, Text>();
+  /** Cached fingering results per song, keyed by "trackIdx" */
+  private fingeringCache = new Map<string, Map<number, Finger>>();
+  /** ID of the last song we computed fingering for */
+  private lastSongFileName = "";
+
   constructor(parentContainer: Container) {
     this.container = new Container();
     parentContainer.addChild(this.container);
@@ -135,6 +164,17 @@ export class NoteRenderer {
     this.activeNotes.clear();
 
     const hitWindow = 0.05;
+    const showFingering = useSettingsStore.getState().showFingering;
+
+    // Recompute fingering cache when song changes
+    if (showFingering && song.fileName !== this.lastSongFileName) {
+      this.computeFingeringForSong(song);
+      this.lastSongFileName = song.fileName;
+    }
+
+    // Double-buffer for fingering labels
+    const nextFLabels = this.nextFingeringLabels;
+    nextFLabels.clear();
 
     for (let trackIdx = 0; trackIdx < song.tracks.length; trackIdx++) {
       const track = song.tracks[trackIdx];
@@ -195,6 +235,23 @@ export class NoteRenderer {
         ) {
           this.activeNotes.add(note.midi);
         }
+
+        // ── Fingering label overlay ──────────────────────────────
+        if (showFingering && h >= MIN_HEIGHT_FOR_FINGERING) {
+          const finger = this.getFingerForNote(trackIdx, note);
+          if (finger) {
+            let label =
+              this.activeFingeringLabels.get(key) ?? nextFLabels.get(key);
+            if (!label) {
+              label = this.allocateFingeringLabel();
+            }
+            label.text = CIRCLED_DIGITS[finger];
+            label.x = kp.x + kp.width / 2;
+            label.y = rectY + Math.min(h, 20) / 2 + 1;
+            label.visible = true;
+            nextFLabels.set(key, label);
+          }
+        }
       }
     }
 
@@ -204,9 +261,27 @@ export class NoteRenderer {
       }
     }
 
+    // Release unused fingering labels
+    for (const [key, label] of this.activeFingeringLabels) {
+      if (!nextFLabels.has(key)) {
+        this.releaseFingeringLabel(label);
+      }
+    }
+
+    // Hide all labels if fingering is disabled
+    if (!showFingering) {
+      for (const [, label] of this.activeFingeringLabels) {
+        this.releaseFingeringLabel(label);
+      }
+    }
+
     // Swap buffers: active ↔ nextActive
     this.nextActive = this.active;
     this.active = nextActive;
+
+    // Swap fingering label buffers
+    this.nextFingeringLabels = this.activeFingeringLabels;
+    this.activeFingeringLabels = nextFLabels;
   }
 
   /**
@@ -234,6 +309,13 @@ export class NoteRenderer {
     // Clean up label pool
     this._labelPool.length = 0;
     this._spriteLabels.clear();
+
+    // Clean up fingering overlay
+    this.fingeringLabelPool.length = 0;
+    this.activeFingeringLabels.clear();
+    this.nextFingeringLabels.clear();
+    this.fingeringCache.clear();
+    this.lastSongFileName = "";
   }
 
   private createSprite(): Sprite {
@@ -294,6 +376,82 @@ export class NoteRenderer {
       this.releaseLabel(label);
       this._spriteLabels.delete(sprite);
     }
+  }
+
+  // ── Fingering label pool ──────────────────────────────────────────
+
+  /** Lazily created TextStyle for fingering labels */
+  private _fingeringLabelStyle: TextStyle | null = null;
+  private getFingeringLabelStyle(): TextStyle {
+    if (!this._fingeringLabelStyle) {
+      this._fingeringLabelStyle = new TextStyle({
+        fontFamily: "Nunito Variable, Nunito, sans-serif",
+        fontSize: 12,
+        fontWeight: "700",
+        fill: 0xffffff,
+        align: "center",
+      });
+    }
+    return this._fingeringLabelStyle;
+  }
+
+  private createFingeringLabel(): Text {
+    const label = new Text({ text: "", style: this.getFingeringLabelStyle() });
+    label.anchor.set(0.5);
+    label.visible = false;
+    this.container.addChild(label);
+    return label;
+  }
+
+  private allocateFingeringLabel(): Text {
+    if (this.fingeringLabelPool.length === 0) {
+      const grow = 32;
+      for (let i = 0; i < grow; i++) {
+        this.fingeringLabelPool.push(this.createFingeringLabel());
+      }
+    }
+    return this.fingeringLabelPool.pop()!;
+  }
+
+  private releaseFingeringLabel(label: Text): void {
+    label.visible = false;
+    this.fingeringLabelPool.push(label);
+  }
+
+  /**
+   * Pre-compute fingering for all tracks in a song.
+   */
+  private computeFingeringForSong(song: ParsedSong): void {
+    this.fingeringCache.clear();
+
+    for (let trackIdx = 0; trackIdx < song.tracks.length; trackIdx++) {
+      const track = song.tracks[trackIdx];
+      if (track.notes.length === 0) continue;
+
+      // Heuristic: tracks with mostly lower notes (avg midi < 60) are left hand
+      const avgMidi =
+        track.notes.reduce((sum, n) => sum + n.midi, 0) / track.notes.length;
+      const hand = avgMidi < 60 ? "left" : "right";
+
+      const results = this.fingeringEngine.computeFingering(track.notes, hand);
+      const trackCache = new Map<number, Finger>();
+
+      for (const result of results) {
+        trackCache.set(result.midi, result.finger);
+      }
+
+      this.fingeringCache.set(String(trackIdx), trackCache);
+    }
+  }
+
+  /** Look up the cached finger for a specific note */
+  private getFingerForNote(
+    trackIdx: number,
+    note: ParsedNote,
+  ): Finger | null {
+    const trackCache = this.fingeringCache.get(String(trackIdx));
+    if (!trackCache) return null;
+    return trackCache.get(note.midi) ?? null;
   }
 
   // ── Practice mode visual feedback ──────────────────────────────────

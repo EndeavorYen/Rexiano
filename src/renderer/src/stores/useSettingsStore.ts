@@ -1,11 +1,24 @@
 import { create } from "zustand";
 import type { PracticeMode } from "@shared/types";
 
+export type Language = "en" | "zh-TW";
+
 const STORAGE_KEY = "rexiano-settings";
+
+/** Detect initial language from browser/OS setting */
+function detectLanguage(): Language {
+  if (typeof navigator !== "undefined") {
+    const lang = navigator.language;
+    if (lang.startsWith("zh")) return "zh-TW";
+  }
+  return "en";
+}
 
 interface SettingsState {
   showNoteLabels: boolean;
   showFallingNoteLabels: boolean;
+  showFingering: boolean;
+  language: Language;
   volume: number;
   muted: boolean;
   defaultSpeed: number;
@@ -16,6 +29,8 @@ interface SettingsState {
 
   setShowNoteLabels: (v: boolean) => void;
   setShowFallingNoteLabels: (v: boolean) => void;
+  setShowFingering: (v: boolean) => void;
+  setLanguage: (lang: Language) => void;
   setVolume: (v: number) => void;
   setMuted: (v: boolean) => void;
   setDefaultSpeed: (v: number) => void;
@@ -28,6 +43,8 @@ interface SettingsState {
 interface PersistedSettings {
   showNoteLabels?: boolean;
   showFallingNoteLabels?: boolean;
+  showFingering?: boolean;
+  language?: Language;
   volume?: number;
   muted?: boolean;
   defaultSpeed?: number;
@@ -40,6 +57,8 @@ interface PersistedSettings {
 const defaults: PersistedSettings = {
   showNoteLabels: true,
   showFallingNoteLabels: true,
+  showFingering: true,
+  language: detectLanguage(),
   volume: 80,
   muted: false,
   defaultSpeed: 1.0,
@@ -78,6 +97,8 @@ export const useSettingsStore = create<SettingsState>()((set) => {
   return {
     showNoteLabels: saved.showNoteLabels!,
     showFallingNoteLabels: saved.showFallingNoteLabels!,
+    showFingering: saved.showFingering!,
+    language: saved.language!,
     volume: saved.volume!,
     muted: saved.muted!,
     defaultSpeed: saved.defaultSpeed!,
@@ -93,6 +114,14 @@ export const useSettingsStore = create<SettingsState>()((set) => {
     setShowFallingNoteLabels: (v) => {
       persist({ showFallingNoteLabels: v });
       set({ showFallingNoteLabels: v });
+    },
+    setShowFingering: (v) => {
+      persist({ showFingering: v });
+      set({ showFingering: v });
+    },
+    setLanguage: (lang) => {
+      persist({ language: lang });
+      set({ language: lang });
     },
     setVolume: (v) => {
       const clamped = Math.max(0, Math.min(100, v));

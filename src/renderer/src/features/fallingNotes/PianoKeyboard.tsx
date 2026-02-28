@@ -144,14 +144,26 @@ function getKeyShadow(
   isBlack: boolean,
 ): string {
   if (midiActive) {
-    return `0 1px ${isBlack ? 6 : 8}px color-mix(in srgb, ${MIDI_HIGHLIGHT} 50%, transparent)`;
+    return `0 0 ${isBlack ? 8 : 10}px color-mix(in srgb, ${MIDI_HIGHLIGHT} 50%, transparent), inset 0 0 6px color-mix(in srgb, ${MIDI_HIGHLIGHT} 25%, transparent)`;
   }
   if (songActive) {
-    return `0 1px ${isBlack ? 6 : 8}px color-mix(in srgb, var(--color-accent) ${isBlack ? 40 : 30}%, transparent)`;
+    return `0 0 ${isBlack ? 8 : 10}px color-mix(in srgb, var(--color-accent) ${isBlack ? 45 : 35}%, transparent), inset 0 0 6px color-mix(in srgb, var(--color-accent) 15%, transparent)`;
   }
   return isBlack
     ? "0 2px 3px rgba(0,0,0,0.25), inset 0 -1px 1px rgba(255,255,255,0.05)"
     : "0 2px 4px rgba(0,0,0,0.08)";
+}
+
+/** Get translateY for key press effect */
+function getKeyTransform(
+  songActive: boolean,
+  midiActive: boolean,
+  isBlack: boolean,
+): string {
+  if (midiActive || songActive) {
+    return isBlack ? "translateY(2px)" : "translateY(1px)";
+  }
+  return "translateY(0)";
 }
 
 /** Shared label style for key note names */
@@ -193,7 +205,7 @@ export function PianoKeyboard({
         return (
           <div
             key={key.midi}
-            className={`absolute top-0 transition-all duration-75 ${practiceClass}`}
+            className={`absolute top-0 ${practiceClass}`}
             style={{
               left: `${key.index * wPct}%`,
               width: `${wPct}%`,
@@ -203,6 +215,8 @@ export function PianoKeyboard({
               borderRight: "1px solid var(--color-border)",
               borderRadius: "0 0 4px 4px",
               boxShadow: getKeyShadow(songActive, midiActive, false),
+              transform: getKeyTransform(songActive, midiActive, false),
+              transition: "transform 0.06s ease-out, box-shadow 0.08s ease-out, background 0.06s ease-out",
             }}
           >
             {showLabels && (
@@ -229,7 +243,7 @@ export function PianoKeyboard({
         return (
           <div
             key={key.midi}
-            className={`absolute top-0 transition-all duration-75 ${practiceClass}`}
+            className={`absolute top-0 ${practiceClass}`}
             style={{
               left: `${centerX - bWidth / 2}%`,
               width: `${bWidth}%`,
@@ -238,6 +252,8 @@ export function PianoKeyboard({
               background: getBlackKeyBackground(songActive, midiActive),
               borderRadius: "0 0 3px 3px",
               boxShadow: getKeyShadow(songActive, midiActive, true),
+              transform: getKeyTransform(songActive, midiActive, true),
+              transition: "transform 0.06s ease-out, box-shadow 0.08s ease-out, background 0.06s ease-out",
             }}
           >
             {showLabels && (

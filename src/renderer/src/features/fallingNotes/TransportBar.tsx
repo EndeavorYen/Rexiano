@@ -1,3 +1,4 @@
+import { useState } from "react";
 import {
   Play,
   Pause,
@@ -59,133 +60,215 @@ export function TransportBar(): React.JSX.Element {
   const duration = song?.duration ?? 0;
   const loopHighlight = computeLoopHighlight(loopRange, duration);
 
+  const bpm =
+    song?.tempos && song.tempos.length > 0
+      ? Math.round(song.tempos[0].bpm)
+      : null;
+
+  const [playPulse, setPlayPulse] = useState(false);
+
+  const handlePlayPause = (): void => {
+    setPlaying(!isPlaying);
+    setPlayPulse(true);
+    setTimeout(() => setPlayPulse(false), 300);
+  };
+
   return (
     <div
-      className="flex items-center gap-3 px-4 py-2"
+      className="transport-strip"
       style={{
-        background: "var(--color-surface)",
+        display: "grid",
+        gridTemplateColumns: "auto 1fr auto",
+        alignItems: "center",
+        gap: 16,
+        padding: "8px 16px",
+        background:
+          "linear-gradient(to bottom, color-mix(in srgb, var(--color-surface) 95%, var(--color-bg)), var(--color-surface))",
         borderTop: "1px solid var(--color-border)",
+        boxShadow: "0 -2px 12px rgba(0,0,0,0.04)",
       }}
     >
-      {/* Play / Pause */}
-      <button
-        onClick={() => setPlaying(!isPlaying)}
-        disabled={!song}
-        className="w-8 h-8 flex items-center justify-center rounded text-white disabled:opacity-40 transition-colors cursor-pointer"
-        style={{ background: "var(--color-accent)" }}
-        title={isPlaying ? "Pause (Space)" : "Play (Space)"}
-        aria-label={isPlaying ? "Pause" : "Play"}
-      >
-        {isPlaying ? (
-          <Pause size={16} fill="currentColor" />
-        ) : (
-          <Play size={16} fill="currentColor" />
-        )}
-      </button>
-
-      {/* Audio loading / error status */}
-      {audioStatus === "loading" && (
-        <span
-          className="flex items-center gap-1 text-xs"
-          style={{ color: "var(--color-text-muted)" }}
-          aria-label="Audio loading"
-          data-testid="audio-status-loading"
-        >
-          <Loader2 size={14} className="animate-spin" />
-          Loading...
-        </span>
-      )}
-      {audioStatus === "error" && (
-        <span
-          className="flex items-center gap-1 text-xs"
-          style={{ color: "var(--color-error, #e53e3e)" }}
-          aria-label="Audio error"
-          data-testid="audio-status-error"
-        >
-          <AlertCircle size={14} />
-          Audio error
-        </span>
-      )}
-
-      {/* Reset */}
-      <button
-        onClick={reset}
-        disabled={!song}
-        className="w-8 h-8 flex items-center justify-center rounded disabled:opacity-40 transition-colors cursor-pointer"
-        style={{
-          background: "var(--color-surface-alt)",
-          color: "var(--color-text)",
-        }}
-        title="Back to start (Home)"
-        aria-label="Reset to beginning"
-      >
-        <SkipBack size={14} fill="currentColor" />
-      </button>
-
-      {/* Metronome toggle */}
-      <button
-        onClick={() => setMetronomeEnabled(!metronomeEnabled)}
-        className="w-8 h-8 flex items-center justify-center rounded transition-colors cursor-pointer"
-        style={{
-          background: metronomeEnabled
-            ? "var(--color-accent)"
-            : "var(--color-surface-alt)",
-          color: metronomeEnabled ? "#fff" : "var(--color-text-secondary)",
-        }}
-        title={metronomeEnabled ? "Disable metronome" : "Enable metronome"}
-        aria-label={metronomeEnabled ? "Disable metronome" : "Enable metronome"}
-        data-testid="metronome-toggle"
-      >
-        <Timer size={14} />
-      </button>
-
-      {/* Metronome beat indicator */}
-      <MetronomePulse
-        isPlaying={metronomeBeat.isRunning}
-        currentBeat={metronomeBeat.currentBeat}
-        beatsPerMeasure={metronomeBeat.beatsPerMeasure}
-      />
-
-      {/* Time display */}
-      <span
-        className="text-xs tabular-nums w-20 text-center"
-        style={{ color: "var(--color-text-muted)" }}
-      >
-        {formatTime(currentTime)} / {formatTime(duration)}
-      </span>
-
-      {/* Seek slider with optional A-B loop highlight */}
-      <div className="relative flex-1 flex items-center">
-        {/* A-B loop highlight overlay */}
-        {loopHighlight && (
-          <div
-            className="absolute top-0 bottom-0 rounded-sm pointer-events-none"
-            style={{
-              left: `${loopHighlight.left}%`,
-              width: `${loopHighlight.width}%`,
-              background: "var(--color-accent)",
-              opacity: 0.2,
-            }}
-            data-testid="loop-highlight"
-            aria-label="A-B loop range"
-          />
-        )}
-        <input
-          type="range"
-          min={0}
-          max={duration || 1}
-          step={0.1}
-          value={currentTime}
-          onChange={(e) => setCurrentTime(parseFloat(e.target.value))}
+      {/* ── Left: Playback controls ── */}
+      <div className="flex items-center gap-2">
+        {/* Play / Pause — hero button */}
+        <button
+          onClick={handlePlayPause}
           disabled={!song}
-          className="w-full h-1 relative z-10"
-          style={{ accentColor: "var(--color-accent)" }}
-          aria-label="Seek position"
+          className="flex items-center justify-center rounded-full text-white disabled:opacity-40 cursor-pointer"
+          style={{
+            width: 40,
+            height: 40,
+            background: "var(--color-accent)",
+            boxShadow: playPulse
+              ? "0 0 0 6px color-mix(in srgb, var(--color-accent) 25%, transparent)"
+              : "0 2px 8px color-mix(in srgb, var(--color-accent) 30%, transparent)",
+            transition: "box-shadow 0.3s ease, transform 0.1s ease",
+            transform: playPulse ? "scale(0.93)" : "scale(1)",
+          }}
+          title={isPlaying ? "Pause (Space)" : "Play (Space)"}
+          aria-label={isPlaying ? "Pause" : "Play"}
+        >
+          {isPlaying ? (
+            <Pause size={18} fill="currentColor" />
+          ) : (
+            <Play size={18} fill="currentColor" style={{ marginLeft: 2 }} />
+          )}
+        </button>
+
+        {/* Reset */}
+        <button
+          onClick={reset}
+          disabled={!song}
+          className="flex items-center justify-center rounded-lg disabled:opacity-40 cursor-pointer"
+          style={{
+            width: 32,
+            height: 32,
+            background: "var(--color-surface-alt)",
+            color: "var(--color-text-muted)",
+            transition: "background 0.15s, color 0.15s",
+          }}
+          title="Back to start (Home)"
+          aria-label="Reset to beginning"
+        >
+          <SkipBack size={14} fill="currentColor" />
+        </button>
+
+        {/* Metronome toggle */}
+        <button
+          onClick={() => setMetronomeEnabled(!metronomeEnabled)}
+          className="flex items-center justify-center rounded-lg cursor-pointer"
+          style={{
+            width: 32,
+            height: 32,
+            background: metronomeEnabled
+              ? "color-mix(in srgb, var(--color-accent) 15%, transparent)"
+              : "var(--color-surface-alt)",
+            color: metronomeEnabled
+              ? "var(--color-accent)"
+              : "var(--color-text-muted)",
+            border: metronomeEnabled
+              ? "1px solid color-mix(in srgb, var(--color-accent) 30%, transparent)"
+              : "1px solid transparent",
+            transition: "all 0.15s ease",
+          }}
+          title={metronomeEnabled ? "Disable metronome" : "Enable metronome"}
+          aria-label={
+            metronomeEnabled ? "Disable metronome" : "Enable metronome"
+          }
+          data-testid="metronome-toggle"
+        >
+          <Timer size={14} />
+        </button>
+
+        {/* Metronome beat indicator */}
+        <MetronomePulse
+          isPlaying={metronomeBeat.isRunning}
+          currentBeat={metronomeBeat.currentBeat}
+          beatsPerMeasure={metronomeBeat.beatsPerMeasure}
         />
+
+        {/* Audio loading / error status */}
+        {audioStatus === "loading" && (
+          <span
+            className="flex items-center gap-1 text-xs font-body"
+            style={{ color: "var(--color-text-muted)" }}
+            aria-label="Audio loading"
+            data-testid="audio-status-loading"
+          >
+            <Loader2 size={13} className="animate-spin" />
+            Loading
+          </span>
+        )}
+        {audioStatus === "error" && (
+          <span
+            className="flex items-center gap-1 text-xs font-body"
+            style={{ color: "var(--color-error, #e53e3e)" }}
+            aria-label="Audio error"
+            data-testid="audio-status-error"
+          >
+            <AlertCircle size={13} />
+            Error
+          </span>
+        )}
       </div>
 
-      {/* Volume */}
-      <VolumeControl />
+      {/* ── Center: Seek bar + time ── */}
+      <div className="flex items-center gap-3">
+        {/* Current time */}
+        <span
+          className="text-xs font-mono tabular-nums shrink-0"
+          style={{
+            color: "var(--color-text)",
+            minWidth: 36,
+            textAlign: "right",
+          }}
+        >
+          {formatTime(currentTime)}
+        </span>
+
+        {/* Seek slider with A-B loop highlight */}
+        <div className="relative flex-1 flex items-center" style={{ height: 20 }}>
+          {/* A-B loop highlight overlay */}
+          {loopHighlight && (
+            <div
+              className="absolute rounded-full pointer-events-none"
+              style={{
+                left: `${loopHighlight.left}%`,
+                width: `${loopHighlight.width}%`,
+                top: "50%",
+                height: 5,
+                transform: "translateY(-50%)",
+                background: `linear-gradient(90deg, color-mix(in srgb, var(--color-accent) 40%, transparent), var(--color-accent), color-mix(in srgb, var(--color-accent) 40%, transparent))`,
+                borderRadius: 3,
+              }}
+              data-testid="loop-highlight"
+              aria-label="A-B loop range"
+            />
+          )}
+          <input
+            type="range"
+            min={0}
+            max={duration || 1}
+            step={0.1}
+            value={currentTime}
+            onChange={(e) => setCurrentTime(parseFloat(e.target.value))}
+            disabled={!song}
+            className="w-full relative z-10"
+            style={{ accentColor: "var(--color-accent)" }}
+            aria-label="Seek position"
+          />
+        </div>
+
+        {/* Duration */}
+        <span
+          className="text-xs font-mono tabular-nums shrink-0"
+          style={{
+            color: "var(--color-text-muted)",
+            minWidth: 36,
+          }}
+        >
+          {formatTime(duration)}
+        </span>
+      </div>
+
+      {/* ── Right: Volume + BPM ── */}
+      <div className="flex items-center gap-3">
+        {/* BPM badge */}
+        {bpm && (
+          <span
+            className="text-[10px] font-mono tabular-nums px-1.5 py-0.5 rounded"
+            style={{
+              color: "var(--color-text-muted)",
+              background: "var(--color-surface-alt)",
+            }}
+          >
+            {bpm}
+          </span>
+        )}
+
+        {/* Volume */}
+        <VolumeControl />
+      </div>
     </div>
   );
 }

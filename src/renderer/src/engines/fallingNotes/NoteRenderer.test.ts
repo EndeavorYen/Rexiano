@@ -75,6 +75,22 @@ vi.mock("./noteColors", () => ({
     [0x9b7fd4, 0xc084cf, 0x7ba4d9, 0xa8d4a0][trackIndex % 4],
 }));
 
+// Mock useSettingsStore to prevent FingeringEngine from creating fingering labels
+vi.mock("@renderer/stores/useSettingsStore", () => ({
+  useSettingsStore: {
+    getState: () => ({ showFingering: false }),
+  },
+}));
+
+// Mock FingeringEngine to avoid importing heavy fingering logic in unit tests
+vi.mock("@renderer/engines/practice/FingeringEngine", () => ({
+  FingeringEngine: class {
+    computeFingering(): unknown[] {
+      return [];
+    }
+  },
+}));
+
 import { NoteRenderer } from "./NoteRenderer";
 import { Container } from "pixi.js";
 import type { ParsedSong } from "@renderer/engines/midi/types";

@@ -21,18 +21,18 @@ const tierConfig: Record<
   { title: string; subtitle: string; emoji: string }
 > = {
   amazing: {
-    title: "Amazing!",
-    subtitle: "You nailed it!",
+    title: "You're a star!",
+    subtitle: "That was absolutely wonderful!",
     emoji: "confetti",
   },
   great: {
-    title: "Great job!",
-    subtitle: "Keep it up!",
+    title: "Well done!",
+    subtitle: "You're getting better every time!",
     emoji: "star",
   },
   encourage: {
-    title: "Nice try!",
-    subtitle: "Practice makes perfect",
+    title: "Great effort!",
+    subtitle: "Every practice makes you stronger!",
     emoji: "sparkle",
   },
 };
@@ -77,9 +77,49 @@ function generateParticles(count: number, tier: CelebrationTier): Particle[] {
   }));
 }
 
+/** Convert accuracy to a 0-5 star rating */
+function getStarCount(accuracy: number): number {
+  if (accuracy >= 95) return 5;
+  if (accuracy >= 85) return 4;
+  if (accuracy >= 70) return 3;
+  if (accuracy >= 50) return 2;
+  if (accuracy >= 25) return 1;
+  return 1; // Always at least 1 star — keep it encouraging
+}
+
+/** Render star display */
+function StarDisplay({ accuracy }: { accuracy: number }): React.JSX.Element {
+  const filled = getStarCount(accuracy);
+  const total = 5;
+
+  return (
+    <div className="flex items-center gap-1" aria-label={`${filled} out of ${total} stars`}>
+      {Array.from({ length: total }, (_, i) => {
+        const isFilled = i < filled;
+        return (
+          <span
+            key={i}
+            className="text-xl"
+            style={{
+              opacity: isFilled ? 1 : 0.2,
+              filter: isFilled ? "none" : "grayscale(1)",
+              animationDelay: `${0.5 + i * 0.1}s`,
+              animation: isFilled
+                ? `celebration-emoji-bounce 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) ${0.5 + i * 0.1}s both`
+                : "none",
+            }}
+          >
+            {"\u2B50"}
+          </span>
+        );
+      })}
+    </div>
+  );
+}
+
 /**
  * Celebration screen shown when a practice session ends.
- * Uses pure CSS animations for particle effects — no PixiJS dependency.
+ * Uses pure CSS animations for particle effects -- no PixiJS dependency.
  */
 export function CelebrationOverlay({
   score,
@@ -141,7 +181,7 @@ export function CelebrationOverlay({
 
       {/* Content card */}
       <div
-        className="relative z-10 flex flex-col items-center gap-5 px-10 py-8 rounded-3xl celebration-card"
+        className="relative z-10 flex flex-col items-center gap-4 px-12 py-8 rounded-3xl celebration-card"
         style={{
           background:
             "color-mix(in srgb, var(--color-surface) 92%, transparent)",
@@ -167,11 +207,14 @@ export function CelebrationOverlay({
           {config.title}
         </h2>
         <p
-          className="text-sm font-body -mt-3"
+          className="text-sm font-body -mt-2"
           style={{ color: "var(--color-text-muted)" }}
         >
           {config.subtitle}
         </p>
+
+        {/* Star display instead of raw accuracy number */}
+        <StarDisplay accuracy={score.accuracy} />
 
         {/* New Record indicator */}
         {showNewRecord && (
@@ -184,9 +227,9 @@ export function CelebrationOverlay({
           </div>
         )}
 
-        {/* Score breakdown */}
+        {/* Score breakdown — compact and secondary */}
         <div
-          className="flex gap-6 mt-2 px-4 py-3 rounded-xl"
+          className="flex gap-6 px-4 py-3 rounded-xl"
           style={{
             background: "var(--color-surface-alt)",
             border: "1px solid var(--color-border)",
@@ -198,25 +241,31 @@ export function CelebrationOverlay({
           <ScoreStat label="Best Streak" value={String(score.bestStreak)} />
         </div>
 
-        {/* Buttons */}
-        <div className="flex gap-3 mt-2">
+        {/* Buttons with warmer wording */}
+        <div className="flex gap-3 mt-1">
           <button
             onClick={onPracticeAgain}
             className="px-6 py-2.5 text-sm font-display font-bold rounded-xl cursor-pointer transition-transform hover:scale-105 active:scale-95"
             style={{
               background: "var(--color-accent)",
               color: "#fff",
+              boxShadow:
+                "0 2px 8px color-mix(in srgb, var(--color-accent) 30%, transparent)",
             }}
             data-testid="celebration-again"
           >
-            Practice Again
+            {tier === "amazing"
+              ? "Play Again!"
+              : tier === "great"
+                ? "One More Time!"
+                : "Try Again!"}
           </button>
           <button
             onClick={onChooseSong}
             className="px-6 py-2.5 text-sm font-display font-bold rounded-xl cursor-pointer btn-ghost-themed"
             data-testid="celebration-choose-song"
           >
-            Choose Song
+            Pick a Song
           </button>
         </div>
       </div>

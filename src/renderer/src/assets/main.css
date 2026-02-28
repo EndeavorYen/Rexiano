@@ -21,51 +21,93 @@ body {
   background: var(--color-bg);
 }
 
+/* ── Glass surface utility ── */
+.glass-surface {
+  background: color-mix(in srgb, var(--color-surface) 72%, transparent);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid color-mix(in srgb, var(--color-border) 60%, transparent);
+}
+
+/* ── Subtle multi-layer shadow ── */
+.subtle-shadow {
+  box-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.04),
+    0 4px 12px rgba(0, 0, 0, 0.03),
+    0 8px 24px rgba(0, 0, 0, 0.02);
+}
+
+.subtle-shadow-md {
+  box-shadow:
+    0 2px 4px rgba(0, 0, 0, 0.05),
+    0 6px 16px rgba(0, 0, 0, 0.04),
+    0 12px 32px rgba(0, 0, 0, 0.03);
+}
+
 /* ── Custom slider styling (Webkit) ── */
 input[type="range"] {
   -webkit-appearance: none;
   appearance: none;
   background: transparent;
   cursor: pointer;
+  height: 20px;
 }
 
 input[type="range"]::-webkit-slider-track {
-  height: 4px;
-  border-radius: 2px;
+  height: 5px;
+  border-radius: 3px;
   background: var(--color-border);
+  transition: background 0.15s;
+}
+
+input[type="range"]:hover::-webkit-slider-track {
+  background: color-mix(in srgb, var(--color-accent) 25%, var(--color-border));
 }
 
 input[type="range"]::-webkit-slider-thumb {
   -webkit-appearance: none;
   appearance: none;
-  width: 14px;
-  height: 14px;
+  width: 16px;
+  height: 16px;
   border-radius: 50%;
   background: var(--color-accent);
-  margin-top: -5px;
-  border: 2px solid white;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+  margin-top: -5.5px;
+  border: 2px solid var(--color-surface);
+  box-shadow:
+    0 1px 3px rgba(0, 0, 0, 0.18),
+    0 0 0 1px color-mix(in srgb, var(--color-accent) 20%, transparent);
+  transition: transform 0.12s, box-shadow 0.12s;
+}
+
+input[type="range"]:hover::-webkit-slider-thumb {
+  transform: scale(1.12);
+  box-shadow:
+    0 2px 6px rgba(0, 0, 0, 0.22),
+    0 0 0 3px color-mix(in srgb, var(--color-accent) 15%, transparent);
 }
 
 input[type="range"]:disabled::-webkit-slider-thumb {
   opacity: 0.4;
+  transform: none;
 }
 
 /* ── Custom slider styling (Firefox) ── */
 input[type="range"]::-moz-range-track {
-  height: 4px;
-  border-radius: 2px;
+  height: 5px;
+  border-radius: 3px;
   background: var(--color-border);
   border: none;
 }
 
 input[type="range"]::-moz-range-thumb {
-  width: 14px;
-  height: 14px;
+  width: 16px;
+  height: 16px;
   border-radius: 50%;
   background: var(--color-accent);
-  border: 2px solid white;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+  border: 2px solid var(--color-surface);
+  box-shadow:
+    0 1px 3px rgba(0, 0, 0, 0.18),
+    0 0 0 1px color-mix(in srgb, var(--color-accent) 20%, transparent);
 }
 
 input[type="range"]:disabled::-moz-range-thumb {
@@ -121,23 +163,50 @@ input[type="range"]:disabled::-moz-range-thumb {
   background: transparent;
   color: var(--color-text-muted);
   border: 1px solid var(--color-border);
-  transition: color 0.15s, border-color 0.15s, background 0.15s;
+  transition: color 0.15s, border-color 0.15s, background 0.15s, box-shadow 0.15s;
 }
 
 .btn-ghost-themed:hover {
   color: var(--color-accent);
   border-color: var(--color-accent);
   background: color-mix(in srgb, var(--color-accent) 6%, transparent);
+  box-shadow: 0 1px 4px color-mix(in srgb, var(--color-accent) 10%, transparent);
+}
+
+.btn-ghost-themed:active {
+  background: color-mix(in srgb, var(--color-accent) 12%, transparent);
 }
 
 .btn-surface-themed {
   background: var(--color-surface-alt);
   color: var(--color-text);
-  transition: background 0.15s;
+  transition: background 0.15s, box-shadow 0.15s;
 }
 
 .btn-surface-themed:hover {
   background: var(--color-border);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+.btn-surface-themed:active {
+  background: color-mix(in srgb, var(--color-border) 80%, var(--color-accent));
+}
+
+/* ── Primary button (accent-filled) ── */
+.btn-primary-themed {
+  background: var(--color-accent);
+  color: #fff;
+  border: 1px solid transparent;
+  transition: background 0.15s, box-shadow 0.15s, transform 0.1s;
+}
+
+.btn-primary-themed:hover {
+  background: var(--color-accent-hover);
+  box-shadow: 0 2px 8px color-mix(in srgb, var(--color-accent) 30%, transparent);
+}
+
+.btn-primary-themed:active {
+  transform: scale(0.97);
 }
 
 /* ── Themed input focus ── */
@@ -375,11 +444,47 @@ input[type="range"]:disabled::-moz-range-thumb {
   transform: scale(1.3);
 }
 
+/* ── Card hover lift ── */
+.card-hover {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.card-hover:hover {
+  transform: translateY(-2px);
+  box-shadow:
+    0 4px 12px rgba(0, 0, 0, 0.06),
+    0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+.card-hover:active {
+  transform: translateY(0);
+}
+
+/* ── Staggered entrance for grid children ── */
+@keyframes stagger-fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-stagger-child {
+  animation: stagger-fade-up 0.3s ease-out both;
+}
+
 /* ── Accessibility: reduced motion ── */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
+  }
+
+  .card-hover:hover {
+    transform: none;
   }
 }

@@ -9,19 +9,9 @@ permissions:
   contents: write
 
 jobs:
-  build:
-    strategy:
-      matrix:
-        include:
-          - os: windows-latest
-            build_cmd: pnpm build:win
-          - os: macos-latest
-            build_cmd: pnpm build:mac
-          - os: ubuntu-latest
-            # Skip snap (requires snapcraft setup); build AppImage + deb only
-            build_cmd: electron-vite build && electron-builder --linux AppImage deb
-
-    runs-on: ${{ matrix.os }}
+  build-windows:
+    name: Build Windows
+    runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
 
@@ -37,24 +27,91 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Build
-        run: ${{ matrix.build_cmd }}
+      - name: Build Windows installer
+        run: pnpm build:win
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Upload artifacts
+      - name: Upload Windows artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: release-${{ matrix.os }}
+          name: release-windows
           path: |
             dist/*.exe
+          if-no-files-found: error
+          retention-days: 5
+
+  build-mac:
+    name: Build macOS
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build macOS DMG
+        run: pnpm build:mac
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Code signing disabled — no Apple Developer certificate
+          CSC_IDENTITY_AUTO_DISCOVERY: false
+
+      - name: Upload macOS artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-macos
+          path: |
             dist/*.dmg
+          if-no-files-found: error
+          retention-days: 5
+
+  build-linux:
+    name: Build Linux
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # Build AppImage + deb only (snap requires snapcraft login)
+      - name: Build Linux packages
+        run: electron-vite build && electron-builder --linux AppImage deb
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload Linux artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-linux
+          path: |
             dist/*.AppImage
             dist/*.deb
           if-no-files-found: error
+          retention-days: 5
 
-  publish:
-    needs: build
+  create-release:
+    name: Create GitHub Release
+    needs: [build-windows, build-mac, build-linux]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -65,13 +122,25 @@ jobs:
           path: artifacts
           merge-multiple: true
 
+      - name: Generate checksums
+        run: |
+          cd artifacts
+          sha256sum *.exe *.dmg *.AppImage *.deb > SHA256SUMS.txt
+          echo "## SHA256 Checksums" > checksums.md
+          echo '```' >> checksums.md
+          cat SHA256SUMS.txt >> checksums.md
+          echo '```' >> checksums.md
+          cat SHA256SUMS.txt
+
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
           draft: true
           generate_release_notes: true
+          body_path: artifacts/checksums.md
           files: |
             artifacts/*.exe
             artifacts/*.dmg
             artifacts/*.AppImage
             artifacts/*.deb
+            artifacts/SHA256SUMS.txt
