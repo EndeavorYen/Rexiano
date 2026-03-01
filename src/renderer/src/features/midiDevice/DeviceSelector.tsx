@@ -5,8 +5,10 @@ import { MidiDeviceManager } from "@renderer/engines/midi/MidiDeviceManager";
 import { MidiOutputSender } from "@renderer/engines/midi/MidiOutputSender";
 import { ConnectionStatus } from "./ConnectionStatus";
 import { sendTestNote, type TestButtonState } from "./midiTestUtils";
+import { useTranslation } from "@renderer/i18n/useTranslation";
 
 export function DeviceSelector(): React.JSX.Element {
+  const { t } = useTranslation();
   const inputs = useMidiDeviceStore((s) => s.inputs);
   const outputs = useMidiDeviceStore((s) => s.outputs);
   const selectedInputId = useMidiDeviceStore((s) => s.selectedInputId);
@@ -92,14 +94,16 @@ export function DeviceSelector(): React.JSX.Element {
           className="italic text-xs"
           style={{ color: "var(--color-text-muted)" }}
         >
-          No MIDI devices detected
+          {t("midi.noDevices")}
         </span>
       ) : (
         <>
           {/* Input device select */}
           {connectedInputs.length > 0 && (
             <label className="flex items-center gap-1.5">
-              <span style={{ color: "var(--color-text-muted)" }}>In</span>
+              <span style={{ color: "var(--color-text-muted)" }}>
+                {t("midi.inputLabel")}
+              </span>
               <select
                 value={selectedInputId ?? ""}
                 onChange={handleInputChange}
@@ -111,7 +115,7 @@ export function DeviceSelector(): React.JSX.Element {
                 }}
                 aria-label="MIDI input device"
               >
-                <option value="">-- None --</option>
+                <option value="">{t("midi.noneOption")}</option>
                 {connectedInputs.map((d) => (
                   <option key={d.id} value={d.id}>
                     {d.name}
@@ -124,7 +128,9 @@ export function DeviceSelector(): React.JSX.Element {
           {/* Output device select */}
           {connectedOutputs.length > 0 && (
             <label className="flex items-center gap-1.5">
-              <span style={{ color: "var(--color-text-muted)" }}>Out</span>
+              <span style={{ color: "var(--color-text-muted)" }}>
+                {t("midi.outputLabel")}
+              </span>
               <select
                 value={selectedOutputId ?? ""}
                 onChange={handleOutputChange}
@@ -136,7 +142,7 @@ export function DeviceSelector(): React.JSX.Element {
                 }}
                 aria-label="MIDI output device"
               >
-                <option value="">-- None --</option>
+                <option value="">{t("midi.noneOption")}</option>
                 {connectedOutputs.map((d) => (
                   <option key={d.id} value={d.id}>
                     {d.name}
@@ -154,25 +160,20 @@ export function DeviceSelector(): React.JSX.Element {
               className="px-2.5 py-1 rounded text-xs font-medium transition-colors cursor-pointer"
               style={{
                 background:
-                  testState === "ok"
-                    ? "#22c55e"
-                    : "var(--color-surface)",
-                color:
-                  testState === "ok"
-                    ? "#fff"
-                    : "var(--color-text)",
+                  testState === "ok" ? "#22c55e" : "var(--color-surface)",
+                color: testState === "ok" ? "#fff" : "var(--color-text)",
                 border: "1px solid var(--color-border)",
                 opacity: testState === "playing" ? 0.7 : 1,
               }}
-              title="Send a test note (C4) to the selected MIDI output"
-              aria-label="Test MIDI output"
+              title={t("midi.testTitle")}
+              aria-label={t("midi.testLabel")}
               data-testid="midi-test-button"
             >
               {testState === "idle"
-                ? "Test"
+                ? t("midi.testLabel")
                 : testState === "playing"
-                  ? "Playing..."
-                  : "OK!"}
+                  ? t("midi.testPlaying")
+                  : t("midi.testOk")}
             </button>
           )}
         </>
@@ -188,10 +189,10 @@ export function DeviceSelector(): React.JSX.Element {
             color: "var(--color-text-muted)",
             border: "1px solid var(--color-border)",
           }}
-          title="Disconnect MIDI device"
-          aria-label="Disconnect MIDI device"
+          title={t("midi.disconnectTitle")}
+          aria-label={t("midi.disconnectTitle")}
         >
-          Disconnect
+          {t("midi.disconnect")}
         </button>
       ) : null}
 
@@ -205,8 +206,8 @@ export function DeviceSelector(): React.JSX.Element {
             color: "#fff",
             border: "1px solid #2563eb",
           }}
-          title={`Bluetooth: ${bleDeviceName} (click to disconnect)`}
-          aria-label="Disconnect Bluetooth MIDI"
+          title={t("midi.bleDeviceTitle", { name: bleDeviceName })}
+          aria-label={t("midi.bleDisconnect")}
         >
           <Bluetooth size={12} />
           {bleDeviceName}
@@ -223,15 +224,15 @@ export function DeviceSelector(): React.JSX.Element {
             opacity:
               bleStatus === "scanning" || bleStatus === "connecting" ? 0.6 : 1,
           }}
-          title="Connect Bluetooth MIDI device (e.g. Roland piano)"
-          aria-label="Connect Bluetooth MIDI"
+          title={t("midi.bleConnect")}
+          aria-label={t("midi.bluetooth")}
         >
           <Bluetooth size={12} />
           {bleStatus === "scanning"
-            ? "Scanning..."
+            ? t("midi.bleScanning")
             : bleStatus === "connecting"
-              ? "Connecting..."
-              : "Bluetooth"}
+              ? t("midi.bleConnecting")
+              : t("midi.bluetooth")}
         </button>
       )}
 

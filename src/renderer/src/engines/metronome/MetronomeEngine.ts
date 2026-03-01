@@ -166,8 +166,7 @@ export class MetronomeEngine {
 
       // Advance to next beat
       this._nextClickTime += secondsPerBeat;
-      this._currentBeat =
-        (this._currentBeat + 1) % this._beatsPerMeasure;
+      this._currentBeat = (this._currentBeat + 1) % this._beatsPerMeasure;
 
       if (this._countInRemaining > 0) {
         this._countInRemaining--;

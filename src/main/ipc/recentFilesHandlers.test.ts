@@ -27,7 +27,9 @@ vi.mock("fs/promises", () => ({
 }));
 
 vi.mock("fs", () => ({
-  existsSync: vi.fn((path: string) => path.replace(/\\/g, "/") in mockFileContents),
+  existsSync: vi.fn(
+    (path: string) => path.replace(/\\/g, "/") in mockFileContents,
+  ),
 }));
 
 // Import after mocks are set up
@@ -106,9 +108,7 @@ describe("recentFilesHandlers", () => {
     await handlers["recents:saveRecentFile"](null, file);
 
     expect(writeFile).toHaveBeenCalledTimes(1);
-    const written = JSON.parse(
-      vi.mocked(writeFile).mock.calls[0][1] as string,
-    );
+    const written = JSON.parse(vi.mocked(writeFile).mock.calls[0][1] as string);
     expect(written).toHaveLength(1);
     expect(written[0].path).toBe("/test/song.mid");
   });
@@ -122,12 +122,14 @@ describe("recentFilesHandlers", () => {
     mockFileContents[filePath] = JSON.stringify(existing);
 
     // Re-add /b.mid — should move to front
-    const updated = makeRecentFile({ path: "/b.mid", name: "b.mid", timestamp: 3 });
+    const updated = makeRecentFile({
+      path: "/b.mid",
+      name: "b.mid",
+      timestamp: 3,
+    });
     await handlers["recents:saveRecentFile"](null, updated);
 
-    const written = JSON.parse(
-      vi.mocked(writeFile).mock.calls[0][1] as string,
-    );
+    const written = JSON.parse(vi.mocked(writeFile).mock.calls[0][1] as string);
     expect(written).toHaveLength(2);
     expect(written[0].path).toBe("/b.mid");
     expect(written[0].timestamp).toBe(3);
@@ -145,12 +147,12 @@ describe("recentFilesHandlers", () => {
     const newFile = makeRecentFile({ path: "/new.mid", name: "new.mid" });
     await handlers["recents:saveRecentFile"](null, newFile);
 
-    const written = JSON.parse(
-      vi.mocked(writeFile).mock.calls[0][1] as string,
-    );
+    const written = JSON.parse(vi.mocked(writeFile).mock.calls[0][1] as string);
     expect(written).toHaveLength(10);
     expect(written[0].path).toBe("/new.mid");
     // Last entry of existing should be dropped
-    expect(written.find((f: RecentFile) => f.path === "/file9.mid")).toBeUndefined();
+    expect(
+      written.find((f: RecentFile) => f.path === "/file9.mid"),
+    ).toBeUndefined();
   });
 });

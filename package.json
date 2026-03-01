@@ -63,6 +63,7 @@
     "lucide-react": "^0.575.0",
     "pixi.js": "^8.16.0",
     "soundfont2": "^0.5.0",
+    "vexflow": "^5.0.0",
     "zustand": "^5.0.11"
   }
 }

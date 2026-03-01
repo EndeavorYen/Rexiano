@@ -4,15 +4,18 @@ import {
   useSongLibraryStore,
   type DifficultyFilter,
 } from "../../stores/useSongLibraryStore";
+import { useTranslation } from "../../i18n/useTranslation";
+import type { TranslationKey } from "../../i18n/types";
 
-const difficulties: { value: DifficultyFilter; label: string }[] = [
-  { value: "all", label: "All" },
-  { value: "beginner", label: "Beginner" },
-  { value: "intermediate", label: "Intermediate" },
-  { value: "advanced", label: "Advanced" },
+const difficulties: { value: DifficultyFilter; key: TranslationKey }[] = [
+  { value: "all", key: "library.difficulty.all" },
+  { value: "beginner", key: "library.difficulty.beginner" },
+  { value: "intermediate", key: "library.difficulty.intermediate" },
+  { value: "advanced", key: "library.difficulty.advanced" },
 ];
 
 export function SongLibraryFilters(): React.JSX.Element {
+  const { t } = useTranslation();
   const searchQuery = useSongLibraryStore((s) => s.searchQuery);
   const difficultyFilter = useSongLibraryStore((s) => s.difficultyFilter);
   const setSearchQuery = useSongLibraryStore((s) => s.setSearchQuery);
@@ -38,7 +41,7 @@ export function SongLibraryFilters(): React.JSX.Element {
           type="text"
           value={searchQuery}
           onChange={handleSearch}
-          placeholder="Search songs..."
+          placeholder={t("library.searchPlaceholder")}
           className="w-full pl-8 pr-3 py-2 rounded-lg text-sm font-body input-themed"
         />
       </div>
@@ -65,7 +68,7 @@ export function SongLibraryFilters(): React.JSX.Element {
                   : "1px solid var(--color-border)",
             }}
           >
-            {d.label}
+            {t(d.key)}
           </button>
         ))}
       </div>

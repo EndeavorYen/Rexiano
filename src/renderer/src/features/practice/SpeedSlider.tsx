@@ -1,4 +1,5 @@
 import { usePracticeStore } from "@renderer/stores/usePracticeStore";
+import { useTranslation } from "@renderer/i18n/useTranslation";
 
 /** Primary presets shown as big buttons */
 const mainPresets = [0.5, 0.75, 1.0] as const;
@@ -19,6 +20,7 @@ function presetLabel(v: number): string {
 }
 
 export function SpeedSlider(): React.JSX.Element {
+  const { t } = useTranslation();
   const speed = usePracticeStore((s) => s.speed);
   const setSpeed = usePracticeStore((s) => s.setSpeed);
 
@@ -30,7 +32,7 @@ export function SpeedSlider(): React.JSX.Element {
         className="text-[10px] font-mono uppercase tracking-wider shrink-0"
         style={{ color: "var(--color-text-muted)" }}
       >
-        Speed
+        {t("practice.speed")}
       </span>
 
       {/* Main preset buttons */}
@@ -47,9 +49,7 @@ export function SpeedSlider(): React.JSX.Element {
                   ? "var(--color-accent)"
                   : "var(--color-surface-alt)",
                 color: isActive ? "#fff" : "var(--color-text-muted)",
-                boxShadow: isActive
-                  ? "0 1px 4px rgba(0,0,0,0.12)"
-                  : "none",
+                boxShadow: isActive ? "0 1px 4px rgba(0,0,0,0.12)" : "none",
                 transition: "all 0.15s ease",
               }}
               aria-label={`Set speed to ${v}x`}

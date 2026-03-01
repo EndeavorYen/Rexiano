@@ -1,10 +1,16 @@
 import { usePracticeStore } from "@renderer/stores/usePracticeStore";
+import { useTranslation } from "@renderer/i18n/useTranslation";
 import type { PracticeMode } from "@shared/types";
+import type { TranslationKey } from "@renderer/i18n/types";
 
-const modes: { id: PracticeMode; label: string; icon: React.JSX.Element }[] = [
+const modes: {
+  id: PracticeMode;
+  labelKey: TranslationKey;
+  icon: React.JSX.Element;
+}[] = [
   {
     id: "watch",
-    label: "Watch",
+    labelKey: "practice.watch",
     icon: (
       <svg
         width="16"
@@ -27,7 +33,7 @@ const modes: { id: PracticeMode; label: string; icon: React.JSX.Element }[] = [
   },
   {
     id: "wait",
-    label: "Wait",
+    labelKey: "practice.wait",
     icon: (
       <svg
         width="16"
@@ -58,7 +64,7 @@ const modes: { id: PracticeMode; label: string; icon: React.JSX.Element }[] = [
   },
   {
     id: "free",
-    label: "Free",
+    labelKey: "practice.free",
     icon: (
       <svg
         width="16"
@@ -99,6 +105,7 @@ const modes: { id: PracticeMode; label: string; icon: React.JSX.Element }[] = [
 ];
 
 export function PracticeModeSelector(): React.JSX.Element {
+  const { t } = useTranslation();
   const currentMode = usePracticeStore((s) => s.mode);
   const setMode = usePracticeStore((s) => s.setMode);
 
@@ -109,8 +116,9 @@ export function PracticeModeSelector(): React.JSX.Element {
       role="radiogroup"
       aria-label="Practice mode"
     >
-      {modes.map(({ id, label, icon }) => {
+      {modes.map(({ id, labelKey, icon }) => {
         const isActive = currentMode === id;
+        const label = t(labelKey);
         return (
           <button
             key={id}
@@ -121,13 +129,11 @@ export function PracticeModeSelector(): React.JSX.Element {
             style={{
               background: isActive ? "var(--color-accent)" : "transparent",
               color: isActive ? "#fff" : "var(--color-text-muted)",
-              boxShadow: isActive
-                ? "0 1px 4px rgba(0,0,0,0.15)"
-                : "none",
+              boxShadow: isActive ? "0 1px 4px rgba(0,0,0,0.15)" : "none",
               transition: "all 0.2s ease",
               transform: isActive ? "scale(1)" : "scale(0.98)",
             }}
-            title={`${label} mode`}
+            title={label}
           >
             {icon}
             <span>{label}</span>

@@ -1,14 +1,14 @@
-import type { ParsedNote } from '../midi/types'
+import type { ParsedNote } from "../midi/types";
 
 // ── Types ──────────────────────────────────────────────────────────────
 
-export type Finger = 1 | 2 | 3 | 4 | 5
-export type Hand = 'left' | 'right'
+export type Finger = 1 | 2 | 3 | 4 | 5;
+export type Hand = "left" | "right";
 
 export interface FingeringResult {
-  midi: number
-  finger: Finger
-  hand: Hand
+  midi: number;
+  finger: Finger;
+  hand: Hand;
 }
 
 // ── Constants ──────────────────────────────────────────────────────────
@@ -20,76 +20,79 @@ export const FINGER_REACH: Record<Finger, number> = {
   3: 5,
   4: 4,
   5: 4,
-}
+};
 
 /** Standard right-hand major scale ascending fingering (starting from tonic) */
-const RH_SCALE_UP: Finger[] = [1, 2, 3, 1, 2, 3, 4, 5]
+const RH_SCALE_UP: Finger[] = [1, 2, 3, 1, 2, 3, 4, 5];
 /** Standard right-hand major scale descending fingering (from octave down) */
-const RH_SCALE_DOWN: Finger[] = [5, 4, 3, 2, 1, 3, 2, 1]
+const RH_SCALE_DOWN: Finger[] = [5, 4, 3, 2, 1, 3, 2, 1];
 /** Standard left-hand major scale ascending fingering */
-const LH_SCALE_UP: Finger[] = [5, 4, 3, 2, 1, 3, 2, 1]
+const LH_SCALE_UP: Finger[] = [5, 4, 3, 2, 1, 3, 2, 1];
 /** Standard left-hand major scale descending fingering */
-const LH_SCALE_DOWN: Finger[] = [1, 2, 3, 1, 2, 3, 4, 5]
+const LH_SCALE_DOWN: Finger[] = [1, 2, 3, 1, 2, 3, 4, 5];
 
 /** Major scale intervals in semitones from root */
-const MAJOR_SCALE_INTERVALS = [0, 2, 4, 5, 7, 9, 11, 12]
+const MAJOR_SCALE_INTERVALS = [0, 2, 4, 5, 7, 9, 11, 12];
 /** Natural minor scale intervals in semitones from root */
-const MINOR_SCALE_INTERVALS = [0, 2, 3, 5, 7, 8, 10, 12]
+const MINOR_SCALE_INTERVALS = [0, 2, 3, 5, 7, 8, 10, 12];
 
 // ── Helpers ────────────────────────────────────────────────────────────
 
 /** Check whether a sequence of MIDI notes matches a scale pattern (ascending or descending) */
 function matchesScalePattern(midis: number[], intervals: number[]): boolean {
-  if (midis.length < 3) return false
+  if (midis.length < 3) return false;
 
   // Check ascending
-  const root = midis[0]
-  let matchesAsc = true
+  const root = midis[0];
+  let matchesAsc = true;
   for (let i = 1; i < midis.length && i < intervals.length; i++) {
     if (midis[i] - root !== intervals[i]) {
-      matchesAsc = false
-      break
+      matchesAsc = false;
+      break;
     }
   }
-  if (matchesAsc) return true
+  if (matchesAsc) return true;
 
   // Check descending (intervals reversed: octave minus ascending interval)
-  const topNote = midis[0]
-  const octave = intervals[intervals.length - 1] // e.g. 12
-  let matchesDesc = true
+  const topNote = midis[0];
+  const octave = intervals[intervals.length - 1]; // e.g. 12
+  let matchesDesc = true;
   for (let i = 1; i < midis.length && i < intervals.length; i++) {
-    const expectedDrop = octave - intervals[intervals.length - 1 - i]
+    const expectedDrop = octave - intervals[intervals.length - 1 - i];
     if (topNote - midis[i] !== expectedDrop) {
-      matchesDesc = false
-      break
+      matchesDesc = false;
+      break;
     }
   }
-  return matchesDesc
+  return matchesDesc;
 }
 
 /** Detect whether notes form an ascending sequence */
 function isAscending(midis: number[]): boolean {
   for (let i = 1; i < midis.length; i++) {
-    if (midis[i] <= midis[i - 1]) return false
+    if (midis[i] <= midis[i - 1]) return false;
   }
-  return true
+  return true;
 }
 
 /** Detect whether notes form a descending sequence */
 function isDescending(midis: number[]): boolean {
   for (let i = 1; i < midis.length; i++) {
-    if (midis[i] >= midis[i - 1]) return false
+    if (midis[i] >= midis[i - 1]) return false;
   }
-  return true
+  return true;
 }
 
 /** Validate thumb-under crossing: thumb (1) can only pass under fingers 3 or 4 */
-export function isValidThumbCross(prevFinger: Finger, nextFinger: Finger): boolean {
+export function isValidThumbCross(
+  prevFinger: Finger,
+  nextFinger: Finger,
+): boolean {
   // Thumb crossing under: going from 3 or 4 to 1
-  if (nextFinger === 1 && (prevFinger === 3 || prevFinger === 4)) return true
+  if (nextFinger === 1 && (prevFinger === 3 || prevFinger === 4)) return true;
   // Finger crossing over thumb: going from 1 to 3 or 4
-  if (prevFinger === 1 && (nextFinger === 3 || nextFinger === 4)) return true
-  return false
+  if (prevFinger === 1 && (nextFinger === 3 || nextFinger === 4)) return true;
+  return false;
 }
 
 // ── Main Engine ────────────────────────────────────────────────────────
@@ -108,30 +111,30 @@ export class FingeringEngine {
    * Handles scale patterns, stepwise motion, and leaps.
    */
   computeFingering(notes: ParsedNote[], hand: Hand): FingeringResult[] {
-    if (notes.length === 0) return []
+    if (notes.length === 0) return [];
 
-    const midis = notes.map((n) => n.midi)
+    const midis = notes.map((n) => n.midi);
 
     // Group notes by time to detect chords vs. single notes
-    const groups = this.groupByTime(notes)
-    const results: FingeringResult[] = []
+    const groups = this.groupByTime(notes);
+    const results: FingeringResult[] = [];
 
     for (const group of groups) {
       if (group.length > 1) {
         // Chord: use chord fingering
-        const chordMidis = group.map((n) => n.midi)
-        const chordResults = this.computeChordFingering(chordMidis, hand)
-        results.push(...chordResults)
+        const chordMidis = group.map((n) => n.midi);
+        const chordResults = this.computeChordFingering(chordMidis, hand);
+        results.push(...chordResults);
       } else {
         // Single note: will be processed in the sequential pass below
-        results.push({ midi: group[0].midi, finger: 1, hand })
+        results.push({ midi: group[0].midi, finger: 1, hand });
       }
     }
 
     // Sequential fingering pass for single notes
-    this.assignSequentialFingering(results, midis, hand)
+    this.assignSequentialFingering(results, midis, hand);
 
-    return results
+    return results;
   }
 
   /**
@@ -139,109 +142,111 @@ export class FingeringEngine {
    * Uses interval-based lookup for common voicings.
    */
   computeChordFingering(midiNotes: number[], hand: Hand): FingeringResult[] {
-    if (midiNotes.length === 0) return []
+    if (midiNotes.length === 0) return [];
 
     // Sort from lowest to highest
-    const sorted = [...midiNotes].sort((a, b) => a - b)
+    const sorted = [...midiNotes].sort((a, b) => a - b);
 
     if (sorted.length === 1) {
-      return [{ midi: sorted[0], finger: this.defaultSingleFinger(hand), hand }]
+      return [
+        { midi: sorted[0], finger: this.defaultSingleFinger(hand), hand },
+      ];
     }
 
     if (sorted.length === 2) {
-      return this.fingering2NoteChord(sorted, hand)
+      return this.fingering2NoteChord(sorted, hand);
     }
 
     if (sorted.length === 3) {
-      return this.fingering3NoteChord(sorted, hand)
+      return this.fingering3NoteChord(sorted, hand);
     }
 
     if (sorted.length === 4) {
-      return this.fingering4NoteChord(sorted, hand)
+      return this.fingering4NoteChord(sorted, hand);
     }
 
     // 5+ notes: assign 1-2-3-4-5 from bottom (RH) or top (LH)
-    return this.fingeringWideChord(sorted, hand)
+    return this.fingeringWideChord(sorted, hand);
   }
 
   // ── Private: Chord fingering helpers ─────────────────────────────
 
   private defaultSingleFinger(hand: Hand): Finger {
-    return hand === 'right' ? 2 : 2
+    return hand === "right" ? 2 : 2;
   }
 
   private fingering2NoteChord(sorted: number[], hand: Hand): FingeringResult[] {
-    const interval = sorted[1] - sorted[0]
+    const interval = sorted[1] - sorted[0];
 
-    if (hand === 'right') {
+    if (hand === "right") {
       if (interval <= 4) {
         // Third or smaller: 1-3
         return [
           { midi: sorted[0], finger: 1, hand },
           { midi: sorted[1], finger: 3, hand },
-        ]
+        ];
       }
       if (interval <= 7) {
         // Fourth to fifth: 1-5
         return [
           { midi: sorted[0], finger: 1, hand },
           { midi: sorted[1], finger: 5, hand },
-        ]
+        ];
       }
       // Sixth and beyond (including octave): 1-5
       return [
         { midi: sorted[0], finger: 1, hand },
         { midi: sorted[1], finger: 5, hand },
-      ]
+      ];
     } else {
       // Left hand: mirror (5 on bottom, 1 on top)
       if (interval <= 4) {
         return [
           { midi: sorted[0], finger: 3, hand },
           { midi: sorted[1], finger: 1, hand },
-        ]
+        ];
       }
       return [
         { midi: sorted[0], finger: 5, hand },
         { midi: sorted[1], finger: 1, hand },
-      ]
+      ];
     }
   }
 
   private fingering3NoteChord(sorted: number[], hand: Hand): FingeringResult[] {
-    const totalSpan = sorted[2] - sorted[0]
+    const totalSpan = sorted[2] - sorted[0];
 
-    if (hand === 'right') {
+    if (hand === "right") {
       if (totalSpan <= 7) {
         // Triad within a fifth: 1-3-5
         return [
           { midi: sorted[0], finger: 1, hand },
           { midi: sorted[1], finger: 3, hand },
           { midi: sorted[2], finger: 5, hand },
-        ]
+        ];
       }
       if (totalSpan <= 12) {
         // Wide triad (up to octave): 1-2-5 or 1-3-5
-        const midInterval = sorted[1] - sorted[0]
+        const midInterval = sorted[1] - sorted[0];
         if (midInterval <= 3) {
           return [
             { midi: sorted[0], finger: 1, hand },
             { midi: sorted[1], finger: 2, hand },
             { midi: sorted[2], finger: 5, hand },
-          ]
+          ];
         }
         return [
           { midi: sorted[0], finger: 1, hand },
           { midi: sorted[1], finger: 3, hand },
           { midi: sorted[2], finger: 5, hand },
-        ]
+        ];
       }
       // Very wide: 1-3-5
       return [
         { midi: sorted[0], finger: 1, hand },
         { midi: sorted[1], finger: 3, hand },
         { midi: sorted[2], finger: 5, hand },
-      ]
+      ];
     } else {
       // Left hand: mirror
       if (totalSpan <= 7) {
@@ -249,173 +254,177 @@ export class FingeringEngine {
           { midi: sorted[0], finger: 5, hand },
           { midi: sorted[1], finger: 3, hand },
           { midi: sorted[2], finger: 1, hand },
-        ]
+        ];
       }
       if (totalSpan <= 12) {
-        const topInterval = sorted[2] - sorted[1]
+        const topInterval = sorted[2] - sorted[1];
         if (topInterval <= 3) {
           return [
             { midi: sorted[0], finger: 5, hand },
             { midi: sorted[1], finger: 2, hand },
             { midi: sorted[2], finger: 1, hand },
-          ]
+          ];
         }
         return [
           { midi: sorted[0], finger: 5, hand },
           { midi: sorted[1], finger: 3, hand },
           { midi: sorted[2], finger: 1, hand },
-        ]
+        ];
       }
       return [
         { midi: sorted[0], finger: 5, hand },
         { midi: sorted[1], finger: 3, hand },
         { midi: sorted[2], finger: 1, hand },
-      ]
+      ];
     }
   }
 
   private fingering4NoteChord(sorted: number[], hand: Hand): FingeringResult[] {
-    if (hand === 'right') {
+    if (hand === "right") {
       return [
         { midi: sorted[0], finger: 1, hand },
         { midi: sorted[1], finger: 2, hand },
         { midi: sorted[2], finger: 3, hand },
         { midi: sorted[3], finger: 5, hand },
-      ]
+      ];
     } else {
       return [
         { midi: sorted[0], finger: 5, hand },
         { midi: sorted[1], finger: 3, hand },
         { midi: sorted[2], finger: 2, hand },
         { midi: sorted[3], finger: 1, hand },
-      ]
+      ];
     }
   }
 
   private fingeringWideChord(sorted: number[], hand: Hand): FingeringResult[] {
-    const fingers: Finger[] = [1, 2, 3, 4, 5]
-    const results: FingeringResult[] = []
+    const fingers: Finger[] = [1, 2, 3, 4, 5];
+    const results: FingeringResult[] = [];
 
-    if (hand === 'right') {
+    if (hand === "right") {
       for (let i = 0; i < sorted.length; i++) {
-        const finger = i < 5 ? fingers[i] : 5
-        results.push({ midi: sorted[i], finger, hand })
+        const finger = i < 5 ? fingers[i] : 5;
+        results.push({ midi: sorted[i], finger, hand });
       }
     } else {
       for (let i = 0; i < sorted.length; i++) {
-        const reverseIdx = sorted.length - 1 - i
-        const finger = reverseIdx < 5 ? fingers[reverseIdx] : 5
-        results.push({ midi: sorted[i], finger, hand })
+        const reverseIdx = sorted.length - 1 - i;
+        const finger = reverseIdx < 5 ? fingers[reverseIdx] : 5;
+        results.push({ midi: sorted[i], finger, hand });
       }
     }
 
-    return results
+    return results;
   }
 
   // ── Private: Sequential fingering logic ──────────────────────────
 
   /** Group notes into simultaneous chord groups (within 50ms) */
   private groupByTime(notes: ParsedNote[]): ParsedNote[][] {
-    if (notes.length === 0) return []
+    if (notes.length === 0) return [];
 
-    const groups: ParsedNote[][] = []
-    let currentGroup: ParsedNote[] = [notes[0]]
+    const groups: ParsedNote[][] = [];
+    let currentGroup: ParsedNote[] = [notes[0]];
 
     for (let i = 1; i < notes.length; i++) {
       if (Math.abs(notes[i].time - currentGroup[0].time) < 0.05) {
-        currentGroup.push(notes[i])
+        currentGroup.push(notes[i]);
       } else {
-        groups.push(currentGroup)
-        currentGroup = [notes[i]]
+        groups.push(currentGroup);
+        currentGroup = [notes[i]];
       }
     }
-    groups.push(currentGroup)
+    groups.push(currentGroup);
 
-    return groups
+    return groups;
   }
 
   /**
    * Assign fingering to sequential single notes using scale detection
    * and stepwise heuristics.
    */
-  private assignSequentialFingering(results: FingeringResult[], _allMidis: number[], hand: Hand): void {
-    if (results.length <= 1) return
+  private assignSequentialFingering(
+    results: FingeringResult[],
+    _allMidis: number[],
+    hand: Hand,
+  ): void {
+    if (results.length <= 1) return;
 
     // Try scale pattern detection first
-    if (this.tryScalePattern(results, hand)) return
+    if (this.tryScalePattern(results, hand)) return;
 
     // Fallback: stepwise heuristic
-    this.assignStepwise(results, hand)
+    this.assignStepwise(results, hand);
   }
 
   /** Attempt to match the note sequence against known scale patterns */
   private tryScalePattern(results: FingeringResult[], hand: Hand): boolean {
-    const midis = results.map((r) => r.midi)
-    if (midis.length < 5) return false
+    const midis = results.map((r) => r.midi);
+    if (midis.length < 5) return false;
 
     // Check major and minor scale patterns
-    const patterns = [MAJOR_SCALE_INTERVALS, MINOR_SCALE_INTERVALS]
+    const patterns = [MAJOR_SCALE_INTERVALS, MINOR_SCALE_INTERVALS];
     for (const pattern of patterns) {
       if (matchesScalePattern(midis, pattern)) {
-        const asc = isAscending(midis)
-        const desc = isDescending(midis)
+        const asc = isAscending(midis);
+        const desc = isDescending(midis);
 
-        let template: Finger[]
-        if (hand === 'right') {
-          template = asc ? RH_SCALE_UP : desc ? RH_SCALE_DOWN : RH_SCALE_UP
+        let template: Finger[];
+        if (hand === "right") {
+          template = asc ? RH_SCALE_UP : desc ? RH_SCALE_DOWN : RH_SCALE_UP;
         } else {
-          template = asc ? LH_SCALE_UP : desc ? LH_SCALE_DOWN : LH_SCALE_UP
+          template = asc ? LH_SCALE_UP : desc ? LH_SCALE_DOWN : LH_SCALE_UP;
         }
 
         for (let i = 0; i < results.length; i++) {
-          results[i].finger = template[i % template.length]
+          results[i].finger = template[i % template.length];
         }
-        return true
+        return true;
       }
     }
 
-    return false
+    return false;
   }
 
   /** Stepwise heuristic for passages that are not pure scales */
   private assignStepwise(results: FingeringResult[], hand: Hand): void {
-    if (results.length === 0) return
+    if (results.length === 0) return;
 
     // Start with a sensible finger
-    const firstMidi = results[0].midi
-    const lastMidi = results[results.length - 1].midi
-    const overallDirection = lastMidi - firstMidi
+    const firstMidi = results[0].midi;
+    const lastMidi = results[results.length - 1].midi;
+    const overallDirection = lastMidi - firstMidi;
 
-    if (hand === 'right') {
-      results[0].finger = overallDirection >= 0 ? 1 : 5
+    if (hand === "right") {
+      results[0].finger = overallDirection >= 0 ? 1 : 5;
     } else {
-      results[0].finger = overallDirection >= 0 ? 5 : 1
+      results[0].finger = overallDirection >= 0 ? 5 : 1;
     }
 
     for (let i = 1; i < results.length; i++) {
-      const prev = results[i - 1]
-      const curr = results[i]
-      const interval = curr.midi - prev.midi
-      const absInterval = Math.abs(interval)
+      const prev = results[i - 1];
+      const curr = results[i];
+      const interval = curr.midi - prev.midi;
+      const absInterval = Math.abs(interval);
 
       // Same note: same finger
       if (interval === 0) {
-        curr.finger = prev.finger
-        continue
+        curr.finger = prev.finger;
+        continue;
       }
 
       // Large leap (> octave): reset fingering
       if (absInterval > 12) {
-        if (hand === 'right') {
-          curr.finger = interval > 0 ? 1 : 5
+        if (hand === "right") {
+          curr.finger = interval > 0 ? 1 : 5;
         } else {
-          curr.finger = interval > 0 ? 5 : 1
+          curr.finger = interval > 0 ? 5 : 1;
         }
-        continue
+        continue;
       }
 
       // Try to find the next logical finger
-      curr.finger = this.nextFinger(prev.finger, interval, hand)
+      curr.finger = this.nextFinger(prev.finger, interval, hand);
     }
   }
 
@@ -424,55 +433,55 @@ export class FingeringEngine {
    * Incorporates thumb-under crossing rules.
    */
   private nextFinger(prevFinger: Finger, interval: number, hand: Hand): Finger {
-    const goingUp = interval > 0
-    const absInterval = Math.abs(interval)
+    const goingUp = interval > 0;
+    const absInterval = Math.abs(interval);
 
-    if (hand === 'right') {
+    if (hand === "right") {
       if (goingUp) {
         // Right hand ascending: increment finger, with thumb-under at 3→1 or 4→1
         if (prevFinger < 5 && absInterval <= 3) {
-          return (prevFinger + 1) as Finger
+          return (prevFinger + 1) as Finger;
         }
         // Thumb under after 3 or 4
         if (prevFinger === 3 || prevFinger === 4) {
-          return 1
+          return 1;
         }
         // Large step: reset to 1
-        if (absInterval >= 5) return 1
-        return Math.min(prevFinger + 1, 5) as Finger
+        if (absInterval >= 5) return 1;
+        return Math.min(prevFinger + 1, 5) as Finger;
       } else {
         // Right hand descending: decrement finger, with finger-over at 1→3
         if (prevFinger > 1 && absInterval <= 3) {
-          return (prevFinger - 1) as Finger
+          return (prevFinger - 1) as Finger;
         }
         if (prevFinger === 1) {
-          return absInterval <= 4 ? 3 : 4
+          return absInterval <= 4 ? 3 : 4;
         }
-        if (absInterval >= 5) return 5
-        return Math.max(prevFinger - 1, 1) as Finger
+        if (absInterval >= 5) return 5;
+        return Math.max(prevFinger - 1, 1) as Finger;
       }
     } else {
       // Left hand: mirror of right hand
       if (goingUp) {
         // Left hand ascending: decrement finger number (5→4→3→2→1)
         if (prevFinger > 1 && absInterval <= 3) {
-          return (prevFinger - 1) as Finger
+          return (prevFinger - 1) as Finger;
         }
         if (prevFinger === 1) {
-          return absInterval <= 4 ? 3 : 4
+          return absInterval <= 4 ? 3 : 4;
         }
-        if (absInterval >= 5) return 5
-        return Math.max(prevFinger - 1, 1) as Finger
+        if (absInterval >= 5) return 5;
+        return Math.max(prevFinger - 1, 1) as Finger;
       } else {
         // Left hand descending: increment finger number
         if (prevFinger < 5 && absInterval <= 3) {
-          return (prevFinger + 1) as Finger
+          return (prevFinger + 1) as Finger;
         }
         if (prevFinger === 3 || prevFinger === 4) {
-          return 1
+          return 1;
         }
-        if (absInterval >= 5) return 1
-        return Math.min(prevFinger + 1, 5) as Finger
+        if (absInterval >= 5) return 1;
+        return Math.min(prevFinger + 1, 5) as Finger;
       }
     }
   }

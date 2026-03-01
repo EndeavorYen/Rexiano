@@ -105,8 +105,10 @@ describe("beat dot rendering logic", () => {
   test("exactly one dot is active for a given currentBeat", () => {
     const beatsPerMeasure = 4;
     const currentBeat = 2;
-    const activeDots = Array.from({ length: beatsPerMeasure }, (_, i) => i)
-      .filter((i) => i === currentBeat);
+    const activeDots = Array.from(
+      { length: beatsPerMeasure },
+      (_, i) => i,
+    ).filter((i) => i === currentBeat);
     expect(activeDots).toHaveLength(1);
     expect(activeDots[0]).toBe(2);
   });

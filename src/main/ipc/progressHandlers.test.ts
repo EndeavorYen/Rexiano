@@ -5,7 +5,6 @@ import type { SessionRecord, PracticeScore } from "../../shared/types";
 const mockUserDataPath = "/mock/userData";
 let mockFileContents: Record<string, string> = {};
 
-
 vi.mock("electron", () => ({
   ipcMain: {
     handle: vi.fn(),
@@ -28,7 +27,9 @@ vi.mock("fs/promises", () => ({
 }));
 
 vi.mock("fs", () => ({
-  existsSync: vi.fn((path: string) => path.replace(/\\/g, "/") in mockFileContents),
+  existsSync: vi.fn(
+    (path: string) => path.replace(/\\/g, "/") in mockFileContents,
+  ),
 }));
 
 // Import after mocks are set up
@@ -47,9 +48,7 @@ function makeScore(accuracy: number): PracticeScore {
   };
 }
 
-function makeSession(
-  overrides: Partial<SessionRecord> = {},
-): SessionRecord {
+function makeSession(overrides: Partial<SessionRecord> = {}): SessionRecord {
   return {
     id: "test-id",
     songId: "test-song",
@@ -126,9 +125,7 @@ describe("progressHandlers", () => {
     await handlers["progress:saveSession"](null, session);
 
     expect(writeFile).toHaveBeenCalledTimes(1);
-    const written = JSON.parse(
-      vi.mocked(writeFile).mock.calls[0][1] as string,
-    );
+    const written = JSON.parse(vi.mocked(writeFile).mock.calls[0][1] as string);
     expect(written).toHaveLength(1);
     expect(written[0].songId).toBe("test-song");
   });
@@ -141,9 +138,7 @@ describe("progressHandlers", () => {
     const newSession = makeSession({ id: "new-1" });
     await handlers["progress:saveSession"](null, newSession);
 
-    const written = JSON.parse(
-      vi.mocked(writeFile).mock.calls[0][1] as string,
-    );
+    const written = JSON.parse(vi.mocked(writeFile).mock.calls[0][1] as string);
     expect(written).toHaveLength(2);
     expect(written[0].id).toBe("existing-1");
     expect(written[1].id).toBe("new-1");

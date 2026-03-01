@@ -51,34 +51,24 @@ function createWindow(): void {
       // Store the callback for later if no devices found yet
       pendingBluetoothCallback = callback;
 
-      console.log(
-        `[BLE] select-bluetooth-device: ${devices.length} device(s)`,
-        devices.map((d) => `${d.deviceName} (${d.deviceId})`),
-      );
-
       if (devices.length === 0) return; // Keep waiting
 
       // Only auto-select devices with a recognizable name.
       // Skip unnamed devices — they're likely nearby phones or peripherals.
       const keywords = ["roland", "hp-", "hp7", "fp-", "piano", "midi"];
-      const preferred = devices.find((d) =>
-        d.deviceName &&
-        keywords.some((k) => d.deviceName!.toLowerCase().includes(k)),
+      const preferred = devices.find(
+        (d) =>
+          d.deviceName &&
+          keywords.some((k) => d.deviceName!.toLowerCase().includes(k)),
       );
 
       if (preferred) {
-        console.log(`[BLE] Auto-selecting: ${preferred.deviceName} (${preferred.deviceId})`);
         callback(preferred.deviceId);
         pendingBluetoothCallback = null;
         return;
       }
 
-      // No preferred device yet — log what we see and keep waiting
-      const named = devices.filter((d) => d.deviceName && d.deviceName !== "");
-      console.log(
-        `[BLE] Waiting for piano — ${devices.length} device(s) found, ` +
-          `${named.length} named: ${named.map((d) => d.deviceName).join(", ") || "(none)"}`,
-      );
+      // No preferred device yet — keep waiting for a piano to appear
     },
   );
 

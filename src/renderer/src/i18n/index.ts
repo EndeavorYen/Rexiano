@@ -1,13 +1,17 @@
-import type { TranslationMap, TranslationKey, InterpolationParams } from './types'
-import type { Language } from '@renderer/stores/useSettingsStore'
-import { en } from '@renderer/locales/en'
-import { zhTW } from '@renderer/locales/zh-TW'
+import type {
+  TranslationMap,
+  TranslationKey,
+  InterpolationParams,
+} from "./types";
+import type { Language } from "@renderer/stores/useSettingsStore";
+import { en } from "@renderer/locales/en";
+import { zhTW } from "@renderer/locales/zh-TW";
 
 /** Registry of all loaded locale maps */
 const locales: Record<Language, TranslationMap> = {
-  'en': en,
-  'zh-TW': zhTW,
-}
+  en: en,
+  "zh-TW": zhTW,
+};
 
 /**
  * Core translation function.
@@ -22,17 +26,21 @@ const locales: Record<Language, TranslationMap> = {
  * translate('en', 'app.title') // "Rexiano"
  * translate('zh-TW', 'song.tracks') // "軌道"
  */
-export function translate(lang: Language, key: TranslationKey, params?: InterpolationParams): string {
-  const map = locales[lang] ?? locales['en']
-  let text = map[key] ?? locales['en'][key] ?? key
+export function translate(
+  lang: Language,
+  key: TranslationKey,
+  params?: InterpolationParams,
+): string {
+  const map = locales[lang] ?? locales["en"];
+  let text = map[key] ?? locales["en"][key] ?? key;
 
   if (params) {
     for (const [k, v] of Object.entries(params)) {
-      text = text.replace(new RegExp(`\\{${k}\\}`, 'g'), String(v))
+      text = text.replace(new RegExp(`\\{${k}\\}`, "g"), String(v));
     }
   }
 
-  return text
+  return text;
 }
 
 /**
@@ -40,7 +48,7 @@ export function translate(lang: Language, key: TranslationKey, params?: Interpol
  */
 export function getAvailableLanguages(): { code: Language; label: string }[] {
   return [
-    { code: 'en', label: 'English' },
-    { code: 'zh-TW', label: '繁體中文' },
-  ]
+    { code: "en", label: "English" },
+    { code: "zh-TW", label: "繁體中文" },
+  ];
 }

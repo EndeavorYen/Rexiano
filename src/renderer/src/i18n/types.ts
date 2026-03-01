@@ -4,102 +4,202 @@
  */
 export interface TranslationMap {
   // ── App Shell ──────────────────────────────────────────────────
-  'app.title': string
-  'app.subtitle': string
+  "app.title": string;
+  "app.subtitle": string;
+  "app.dropMidi": string;
+  "app.supportedFormats": string;
+  "app.invalidFileType": string;
+  "app.failedParse": string;
+  "app.failedRead": string;
+  "app.insightsTitle": string;
+  "app.startPractice": string;
+  "app.openSettings": string;
+  "app.menuGreeting": string;
 
   // ── Song Library ───────────────────────────────────────────────
-  'library.title': string
-  'library.subtitle': string
-  'library.searchPlaceholder': string
-  'library.importMidi': string
-  'library.noSongs': string
-  'library.noMatch': string
-  'library.importHint': string
-  'library.difficulty.all': string
-  'library.difficulty.beginner': string
-  'library.difficulty.intermediate': string
-  'library.difficulty.advanced': string
+  "library.title": string;
+  "library.subtitle": string;
+  "library.searchPlaceholder": string;
+  "library.importMidi": string;
+  "library.noSongs": string;
+  "library.noMatch": string;
+  "library.importHint": string;
+  "library.difficulty.all": string;
+  "library.difficulty.beginner": string;
+  "library.difficulty.intermediate": string;
+  "library.difficulty.advanced": string;
+  "library.greeting.morning": string;
+  "library.greeting.afternoon": string;
+  "library.greeting.evening": string;
+  "library.songPracticed": string;
+  "library.songsPracticed": string;
+  "library.session": string;
+  "library.sessions": string;
+  "library.bestScore": string;
+  "library.recentlyPlayed": string;
+  "library.noSongsYet": string;
+  "library.noSongsHint": string;
+  "library.noMatchSearch": string;
+  "library.noMatchHint": string;
 
   // ── Transport Bar ──────────────────────────────────────────────
-  'transport.play': string
-  'transport.pause': string
-  'transport.reset': string
-  'transport.seekPosition': string
-  'transport.volume': string
-  'transport.mute': string
-  'transport.unmute': string
+  "transport.play": string;
+  "transport.pause": string;
+  "transport.reset": string;
+  "transport.resetLabel": string;
+  "transport.seekPosition": string;
+  "transport.volume": string;
+  "transport.mute": string;
+  "transport.unmute": string;
+  "transport.enableMetronome": string;
+  "transport.disableMetronome": string;
 
   // ── Song Header ────────────────────────────────────────────────
-  'song.tracks': string
-  'song.track': string
-  'song.notes': string
-  'song.backToLibrary': string
+  "song.tracks": string;
+  "song.track": string;
+  "song.notes": string;
+  "song.backToLibrary": string;
 
   // ── MIDI Device ────────────────────────────────────────────────
-  'midi.noDevices': string
-  'midi.inputLabel': string
-  'midi.outputLabel': string
-  'midi.noneOption': string
-  'midi.disconnect': string
-  'midi.connected': string
-  'midi.disconnected': string
-  'midi.error': string
+  "midi.noDevices": string;
+  "midi.inputLabel": string;
+  "midi.outputLabel": string;
+  "midi.noneOption": string;
+  "midi.disconnect": string;
+  "midi.connected": string;
+  "midi.disconnected": string;
+  "midi.error": string;
+  "midi.testTitle": string;
+  "midi.testLabel": string;
+  "midi.testPlaying": string;
+  "midi.testOk": string;
+  "midi.disconnectTitle": string;
+  "midi.bleConnect": string;
+  "midi.bleScanning": string;
+  "midi.bleConnecting": string;
+  "midi.bluetooth": string;
+  "midi.bleDisconnect": string;
+  "midi.bleDeviceTitle": string;
 
   // ── Practice Mode ──────────────────────────────────────────────
-  'practice.watch': string
-  'practice.wait': string
-  'practice.free': string
-  'practice.speed': string
-  'practice.tracks': string
-  'practice.trackN': string
-  'practice.notesCount': string
-  'practice.accuracy': string
-  'practice.combo': string
-  'practice.abLoop': string
-  'practice.setA': string
-  'practice.setB': string
-  'practice.clearLoop': string
+  "practice.watch": string;
+  "practice.wait": string;
+  "practice.free": string;
+  "practice.speed": string;
+  "practice.tracks": string;
+  "practice.trackN": string;
+  "practice.notesCount": string;
+  "practice.accuracy": string;
+  "practice.combo": string;
+  "practice.abLoop": string;
+  "practice.setA": string;
+  "practice.setB": string;
+  "practice.clearLoop": string;
+  "practice.more": string;
+  "practice.showAdvanced": string;
+  "practice.hideAdvanced": string;
+  "practice.loopSection": string;
+  "practice.setALabel": string;
+  "practice.setBLabel": string;
+  "practice.clearLoopLabel": string;
+  "practice.encourageOnFire": string;
+  "practice.encourageStreak": string;
+  "practice.encouragePerfect": string;
+  "practice.encourageGreat": string;
+  "practice.encourageKeepGoing": string;
+  "practice.encourageGettingThere": string;
+  "practice.encourageYouCanDoIt": string;
+  "practice.scoreLabel": string;
 
   // ── Settings ───────────────────────────────────────────────────
-  'settings.title': string
-  'settings.language': string
-  'settings.showFingering': string
-  'settings.theme': string
+  "settings.title": string;
+  "settings.close": string;
+  "settings.language": string;
+  "settings.showFingering": string;
+  "settings.theme": string;
+  "settings.tab.theme": string;
+  "settings.tab.display": string;
+  "settings.tab.audio": string;
+  "settings.tab.practice": string;
+  "settings.tab.keys": string;
+  "settings.tab.lang": string;
+  "settings.chooseTheme": string;
+  "settings.themeDesc": string;
+  "settings.displayOptions": string;
+  "settings.showNoteLabels": string;
+  "settings.showNoteLabelsDesc": string;
+  "settings.showFallingLabels": string;
+  "settings.showFallingLabelsDesc": string;
+  "settings.showFingeringDesc": string;
+  "settings.audioSettings": string;
+  "settings.volume": string;
+  "settings.muted": string;
+  "settings.muteAudio": string;
+  "settings.practiceDefaults": string;
+  "settings.defaultMode": string;
+  "settings.defaultSpeed": string;
+  "settings.metronome": string;
+  "settings.metronomeDesc": string;
+  "settings.countInBeats": string;
+  "settings.countInOff": string;
+  "settings.latencyComp": string;
+  "settings.latencyDesc": string;
+  "settings.keyboardShortcuts": string;
+  "settings.langDesc": string;
+  "settings.shortcut.playPause": string;
+  "settings.shortcut.restart": string;
+  "settings.shortcut.speedDown": string;
+  "settings.shortcut.speedUp": string;
+  "settings.shortcut.loopA": string;
+  "settings.shortcut.loopB": string;
+  "settings.shortcut.closeBack": string;
 
   // ── Fingering ──────────────────────────────────────────────────
-  'fingering.label': string
+  "fingering.label": string;
 
   // ── Insights Panel ─────────────────────────────────────────────
-  'insights.title': string
-  'insights.weakSpots': string
-  'insights.accuracyTrend': string
-  'insights.totalMinutes': string
-  'insights.sessions': string
-  'insights.bestAccuracy': string
-  'insights.recentImprovement': string
-  'insights.emptyTitle': string
-  'insights.emptyMessage': string
-  'insights.missRate': string
-  'insights.attempts': string
-  'insights.practiceNumber': string
-  'insights.accuracyPercent': string
+  "insights.title": string;
+  "insights.weakSpots": string;
+  "insights.accuracyTrend": string;
+  "insights.totalMinutes": string;
+  "insights.sessions": string;
+  "insights.bestAccuracy": string;
+  "insights.recentImprovement": string;
+  "insights.emptyTitle": string;
+  "insights.emptyMessage": string;
+  "insights.missRate": string;
+  "insights.attempts": string;
+  "insights.practiceNumber": string;
+  "insights.accuracyPercent": string;
+  "insights.practiceTime": string;
+
+  // ── Sheet Music ────────────────────────────────────────────────
+  "sheetMusic.loadSong": string;
+  "sheetMusic.modeFalling": string;
+  "sheetMusic.modeSheet": string;
+  "sheetMusic.modeSplit": string;
+  "sheetMusic.displayMode": string;
+
+  // ── Audio ──────────────────────────────────────────────────────
+  "audio.mute": string;
+  "audio.unmute": string;
 
   // ── General ────────────────────────────────────────────────────
-  'general.loading': string
-  'general.error': string
-  'general.close': string
-  'general.save': string
-  'general.cancel': string
+  "general.loading": string;
+  "general.error": string;
+  "general.close": string;
+  "general.save": string;
+  "general.cancel": string;
 }
 
 /**
  * A valid translation key from our TranslationMap.
  * Used for type-safe t() calls.
  */
-export type TranslationKey = keyof TranslationMap
+export type TranslationKey = keyof TranslationMap;
 
 /**
  * Interpolation parameters for translation strings.
  * Example: t('welcome', { name: 'Rex' }) where the string is "Hi {name}!"
  */
-export type InterpolationParams = Record<string, string | number>
+export type InterpolationParams = Record<string, string | number>;

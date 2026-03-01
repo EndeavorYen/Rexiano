@@ -1,36 +1,87 @@
 import { useState, useRef, useEffect, useCallback } from "react";
-import { X, Settings, Palette, Monitor, Volume2, Music, Keyboard } from "lucide-react";
+import {
+  X,
+  Settings,
+  Palette,
+  Monitor,
+  Volume2,
+  Music,
+  Keyboard,
+  Globe,
+} from "lucide-react";
 import { useThemeStore } from "@renderer/stores/useThemeStore";
 import { useSettingsStore } from "@renderer/stores/useSettingsStore";
+import type { Language } from "@renderer/stores/useSettingsStore";
 import { themes, type ThemeId } from "@renderer/themes/tokens";
+import { getAvailableLanguages } from "@renderer/i18n";
+import { useTranslation } from "@renderer/i18n/useTranslation";
 import type { PracticeMode } from "@shared/types";
 
 const themeList: ThemeId[] = ["lavender", "ocean", "peach", "midnight"];
 
-const practiceModes: { value: PracticeMode; label: string }[] = [
-  { value: "watch", label: "Watch" },
-  { value: "wait", label: "Wait" },
-  { value: "free", label: "Free" },
-];
-
 const speedPresets = [0.25, 0.5, 0.75, 1.0, 1.25, 1.5, 2.0];
 
-type SettingsTab = "theme" | "display" | "audio" | "practice" | "shortcuts";
+type SettingsTab =
+  | "theme"
+  | "display"
+  | "audio"
+  | "practice"
+  | "shortcuts"
+  | "language";
 
-const tabDefs: { id: SettingsTab; label: string; icon: React.ReactNode }[] = [
-  { id: "theme", label: "Theme", icon: <Palette size={14} /> },
-  { id: "display", label: "Display", icon: <Monitor size={14} /> },
-  { id: "audio", label: "Audio", icon: <Volume2 size={14} /> },
-  { id: "practice", label: "Practice", icon: <Music size={14} /> },
-  { id: "shortcuts", label: "Keys", icon: <Keyboard size={14} /> },
+const tabKeys = [
+  "settings.tab.theme",
+  "settings.tab.display",
+  "settings.tab.audio",
+  "settings.tab.practice",
+  "settings.tab.keys",
+  "settings.tab.lang",
+] as const;
+
+const tabIds: SettingsTab[] = [
+  "theme",
+  "display",
+  "audio",
+  "practice",
+  "shortcuts",
+  "language",
+];
+
+const tabIcons = [
+  <Palette size={14} key="theme" />,
+  <Monitor size={14} key="display" />,
+  <Volume2 size={14} key="audio" />,
+  <Music size={14} key="practice" />,
+  <Keyboard size={14} key="shortcuts" />,
+  <Globe size={14} key="lang" />,
+];
+
+const practiceModeKeys: {
+  value: PracticeMode;
+  key: "practice.watch" | "practice.wait" | "practice.free";
+}[] = [
+  { value: "watch", key: "practice.watch" },
+  { value: "wait", key: "practice.wait" },
+  { value: "free", key: "practice.free" },
 ];
 
 /**
  * Full settings modal with tabbed navigation.
  * Covers Theme, Display, Audio, Practice, and Keyboard Shortcuts.
  */
-export function SettingsPanel(): React.JSX.Element {
-  const [open, setOpen] = useState(false);
+interface SettingsPanelProps {
+  /** When true, the panel renders pre-opened with no gear trigger button */
+  inline?: boolean;
+  /** Called when the inline panel is closed */
+  onClose?: () => void;
+}
+
+export function SettingsPanel({
+  inline = false,
+  onClose,
+}: SettingsPanelProps = {}): React.JSX.Element {
+  const { t } = useTranslation();
+  const [open, setOpen] = useState(inline);
   const [activeTab, setActiveTab] = useState<SettingsTab>("theme");
   const panelRef = useRef<HTMLDivElement>(null);
 
@@ -43,6 +94,8 @@ export function SettingsPanel(): React.JSX.Element {
   const showFallingNoteLabels = useSettingsStore(
     (s) => s.showFallingNoteLabels,
   );
+  const showFingering = useSettingsStore((s) => s.showFingering);
+  const language = useSettingsStore((s) => s.language);
   const volume = useSettingsStore((s) => s.volume);
   const muted = useSettingsStore((s) => s.muted);
   const defaultSpeed = useSettingsStore((s) => s.defaultSpeed);
@@ -55,6 +108,8 @@ export function SettingsPanel(): React.JSX.Element {
   const setShowFallingNoteLabels = useSettingsStore(
     (s) => s.setShowFallingNoteLabels,
   );
+  const setShowFingering = useSettingsStore((s) => s.setShowFingering);
+  const setLanguage = useSettingsStore((s) => s.setLanguage);
   const setVolume = useSettingsStore((s) => s.setVolume);
   const setMuted = useSettingsStore((s) => s.setMuted);
   const setDefaultSpeed = useSettingsStore((s) => s.setDefaultSpeed);
@@ -74,6 +129,11 @@ export function SettingsPanel(): React.JSX.Element {
     }
   });
 
+  const handleClose = useCallback(() => {
+    setOpen(false);
+    onClose?.();
+  }, [onClose]);
+
   const handleOpen = useCallback(() => {
     setOpen((prev) => !prev);
     if (isFirstVisit) {
@@ -90,35 +150,37 @@ export function SettingsPanel(): React.JSX.Element {
     if (!open) return;
     const handler = (e: MouseEvent): void => {
       if (panelRef.current && !panelRef.current.contains(e.target as Node)) {
-        setOpen(false);
+        handleClose();
       }
     };
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
-  }, [open]);
+  }, [open, handleClose]);
 
   // Close on Escape
   useEffect(() => {
     if (!open) return;
     const handler = (e: KeyboardEvent): void => {
-      if (e.key === "Escape") setOpen(false);
+      if (e.key === "Escape") handleClose();
     };
     document.addEventListener("keydown", handler);
     return () => document.removeEventListener("keydown", handler);
-  }, [open]);
+  }, [open, handleClose]);
 
   return (
     <>
-      {/* Trigger button — gear icon */}
-      <button
-        onClick={handleOpen}
-        className={`w-8 h-8 flex items-center justify-center rounded-full transition-colors cursor-pointer ${isFirstVisit ? "animate-gentle-pulse" : ""}`}
-        style={{ background: "var(--color-surface-alt)" }}
-        title="Settings"
-        data-testid="settings-trigger"
-      >
-        <Settings size={16} style={{ color: "var(--color-text-muted)" }} />
-      </button>
+      {/* Trigger button — gear icon (hidden in inline mode) */}
+      {!inline && (
+        <button
+          onClick={handleOpen}
+          className={`w-8 h-8 flex items-center justify-center rounded-full transition-colors cursor-pointer ${isFirstVisit ? "animate-gentle-pulse" : ""}`}
+          style={{ background: "var(--color-surface-alt)" }}
+          title={t("settings.title")}
+          data-testid="settings-trigger"
+        >
+          <Settings size={16} style={{ color: "var(--color-text-muted)" }} />
+        </button>
+      )}
 
       {/* Modal backdrop + panel */}
       {open && (
@@ -134,7 +196,7 @@ export function SettingsPanel(): React.JSX.Element {
               border: "1px solid var(--color-border)",
             }}
             role="dialog"
-            aria-label="Settings"
+            aria-label={t("settings.title")}
             data-testid="settings-panel"
           >
             {/* Header */}
@@ -144,14 +206,17 @@ export function SettingsPanel(): React.JSX.Element {
                 borderBottom: "1px solid var(--color-border)",
               }}
             >
-              <h2 className="text-base font-display font-bold" style={{ color: "var(--color-text)" }}>
-                Settings
+              <h2
+                className="text-base font-display font-bold"
+                style={{ color: "var(--color-text)" }}
+              >
+                {t("settings.title")}
               </h2>
               <button
-                onClick={() => setOpen(false)}
+                onClick={() => handleClose()}
                 className="w-7 h-7 flex items-center justify-center rounded-full cursor-pointer transition-colors"
                 style={{ background: "var(--color-surface-alt)" }}
-                title="Close"
+                title={t("settings.close")}
                 data-testid="settings-close"
               >
                 <X size={14} style={{ color: "var(--color-text-muted)" }} />
@@ -163,26 +228,26 @@ export function SettingsPanel(): React.JSX.Element {
               className="flex shrink-0 px-2 pt-2 gap-1"
               style={{ borderBottom: "1px solid var(--color-border)" }}
             >
-              {tabDefs.map((tab) => (
+              {tabIds.map((id, i) => (
                 <button
-                  key={tab.id}
-                  onClick={() => setActiveTab(tab.id)}
+                  key={id}
+                  onClick={() => setActiveTab(id)}
                   className="flex items-center gap-1.5 px-3 py-2 text-xs font-body font-medium rounded-t-lg cursor-pointer transition-colors relative"
                   style={{
                     color:
-                      activeTab === tab.id
+                      activeTab === id
                         ? "var(--color-accent)"
                         : "var(--color-text-muted)",
                     background:
-                      activeTab === tab.id
+                      activeTab === id
                         ? "color-mix(in srgb, var(--color-accent) 8%, var(--color-surface))"
                         : "transparent",
                   }}
-                  data-testid={`settings-tab-${tab.id}`}
+                  data-testid={`settings-tab-${id}`}
                 >
-                  {tab.icon}
-                  {tab.label}
-                  {activeTab === tab.id && (
+                  {tabIcons[i]}
+                  {t(tabKeys[i])}
+                  {activeTab === id && (
                     <div
                       className="absolute bottom-0 left-2 right-2 h-0.5 rounded-full"
                       style={{ background: "var(--color-accent)" }}
@@ -196,7 +261,7 @@ export function SettingsPanel(): React.JSX.Element {
             <div className="flex-1 overflow-y-auto px-5 py-4">
               {activeTab === "theme" && (
                 <TabContent>
-                  <SectionTitle>Choose a Theme</SectionTitle>
+                  <SectionTitle>{t("settings.chooseTheme")}</SectionTitle>
                   <div className="flex gap-4 mt-3">
                     {themeList.map((id) => (
                       <button
@@ -252,29 +317,35 @@ export function SettingsPanel(): React.JSX.Element {
                     className="text-[11px] font-body mt-4"
                     style={{ color: "var(--color-text-muted)" }}
                   >
-                    Themes change all colors across the app, including the
-                    falling notes and keyboard.
+                    {t("settings.themeDesc")}
                   </p>
                 </TabContent>
               )}
 
               {activeTab === "display" && (
                 <TabContent>
-                  <SectionTitle>Display Options</SectionTitle>
+                  <SectionTitle>{t("settings.displayOptions")}</SectionTitle>
                   <div className="flex flex-col gap-4 mt-3">
                     <ToggleRow
-                      label="Show note labels on keyboard"
-                      description="Display note names (C, D, E...) on piano keys"
+                      label={t("settings.showNoteLabels")}
+                      description={t("settings.showNoteLabelsDesc")}
                       checked={showNoteLabels}
                       onChange={setShowNoteLabels}
                       testId="toggle-note-labels"
                     />
                     <ToggleRow
-                      label="Show labels on falling notes"
-                      description="Display note names on the falling note blocks"
+                      label={t("settings.showFallingLabels")}
+                      description={t("settings.showFallingLabelsDesc")}
                       checked={showFallingNoteLabels}
                       onChange={setShowFallingNoteLabels}
                       testId="toggle-falling-labels"
+                    />
+                    <ToggleRow
+                      label={t("settings.showFingering")}
+                      description={t("settings.showFingeringDesc")}
+                      checked={showFingering}
+                      onChange={setShowFingering}
+                      testId="toggle-fingering"
                     />
                   </div>
                 </TabContent>
@@ -282,7 +353,7 @@ export function SettingsPanel(): React.JSX.Element {
 
               {activeTab === "audio" && (
                 <TabContent>
-                  <SectionTitle>Audio Settings</SectionTitle>
+                  <SectionTitle>{t("settings.audioSettings")}</SectionTitle>
                   <div className="flex flex-col gap-4 mt-3">
                     {/* Volume slider */}
                     <div>
@@ -291,13 +362,13 @@ export function SettingsPanel(): React.JSX.Element {
                           className="text-xs font-body"
                           style={{ color: "var(--color-text)" }}
                         >
-                          Volume
+                          {t("settings.volume")}
                         </span>
                         <span
                           className="text-xs font-mono tabular-nums"
                           style={{ color: "var(--color-text-muted)" }}
                         >
-                          {muted ? "Muted" : volume}
+                          {muted ? t("settings.muted") : volume}
                         </span>
                       </div>
                       <input
@@ -312,7 +383,7 @@ export function SettingsPanel(): React.JSX.Element {
                       />
                     </div>
                     <ToggleRow
-                      label="Mute audio"
+                      label={t("settings.muteAudio")}
                       checked={muted}
                       onChange={setMuted}
                       testId="toggle-mute"
@@ -323,7 +394,7 @@ export function SettingsPanel(): React.JSX.Element {
 
               {activeTab === "practice" && (
                 <TabContent>
-                  <SectionTitle>Practice Defaults</SectionTitle>
+                  <SectionTitle>{t("settings.practiceDefaults")}</SectionTitle>
                   <div className="flex flex-col gap-4 mt-3">
                     {/* Default mode */}
                     <div>
@@ -331,10 +402,10 @@ export function SettingsPanel(): React.JSX.Element {
                         className="text-xs font-body block mb-1.5"
                         style={{ color: "var(--color-text)" }}
                       >
-                        Default Mode
+                        {t("settings.defaultMode")}
                       </span>
                       <div className="flex gap-1.5">
-                        {practiceModes.map((m) => (
+                        {practiceModeKeys.map((m) => (
                           <button
                             key={m.value}
                             onClick={() => setDefaultMode(m.value)}
@@ -351,7 +422,7 @@ export function SettingsPanel(): React.JSX.Element {
                             }}
                             data-testid={`mode-btn-${m.value}`}
                           >
-                            {m.label}
+                            {t(m.key)}
                           </button>
                         ))}
                       </div>
@@ -363,7 +434,7 @@ export function SettingsPanel(): React.JSX.Element {
                         className="text-xs font-body block mb-1.5"
                         style={{ color: "var(--color-text)" }}
                       >
-                        Default Speed
+                        {t("settings.defaultSpeed")}
                       </span>
                       <div className="flex gap-1 flex-wrap">
                         {speedPresets.map((s) => (
@@ -390,8 +461,8 @@ export function SettingsPanel(): React.JSX.Element {
 
                     {/* Metronome */}
                     <ToggleRow
-                      label="Metronome"
-                      description="Play a click track along with the music"
+                      label={t("settings.metronome")}
+                      description={t("settings.metronomeDesc")}
                       checked={metronomeEnabled}
                       onChange={setMetronomeEnabled}
                       testId="toggle-metronome"
@@ -403,7 +474,7 @@ export function SettingsPanel(): React.JSX.Element {
                         className="text-xs font-body block mb-1.5"
                         style={{ color: "var(--color-text)" }}
                       >
-                        Count-in Beats
+                        {t("settings.countInBeats")}
                       </span>
                       <div className="flex gap-1.5">
                         {[0, 2, 4, 8].map((n) => (
@@ -422,7 +493,7 @@ export function SettingsPanel(): React.JSX.Element {
                                   : "var(--color-text-muted)",
                             }}
                           >
-                            {n === 0 ? "Off" : `${n}`}
+                            {n === 0 ? t("settings.countInOff") : `${n}`}
                           </button>
                         ))}
                       </div>
@@ -435,7 +506,7 @@ export function SettingsPanel(): React.JSX.Element {
                           className="text-xs font-body"
                           style={{ color: "var(--color-text)" }}
                         >
-                          Latency Compensation
+                          {t("settings.latencyComp")}
                         </span>
                         <span
                           className="text-xs font-mono tabular-nums"
@@ -456,13 +527,13 @@ export function SettingsPanel(): React.JSX.Element {
                         }
                         className="w-full"
                         data-testid="latency-slider"
-                        aria-label="Latency compensation"
+                        aria-label={t("settings.latencyComp")}
                       />
                       <span
                         className="text-[10px] font-body mt-1 block"
                         style={{ color: "var(--color-text-muted)" }}
                       >
-                        Adjust timing offset for MIDI keyboard input
+                        {t("settings.latencyDesc")}
                       </span>
                     </div>
                   </div>
@@ -471,16 +542,98 @@ export function SettingsPanel(): React.JSX.Element {
 
               {activeTab === "shortcuts" && (
                 <TabContent>
-                  <SectionTitle>Keyboard Shortcuts</SectionTitle>
+                  <SectionTitle>{t("settings.keyboardShortcuts")}</SectionTitle>
                   <div className="flex flex-col gap-2.5 mt-3">
-                    <ShortcutRow keys="Space" action="Play / Pause" />
-                    <ShortcutRow keys="R" action="Restart" />
-                    <ShortcutRow keys="[" action="Speed down" />
-                    <ShortcutRow keys="]" action="Speed up" />
-                    <ShortcutRow keys="A" action="Set loop A point" />
-                    <ShortcutRow keys="B" action="Set loop B point" />
-                    <ShortcutRow keys="Esc" action="Close / Back" />
+                    <ShortcutRow
+                      keys="Space"
+                      action={t("settings.shortcut.playPause")}
+                    />
+                    <ShortcutRow
+                      keys="R"
+                      action={t("settings.shortcut.restart")}
+                    />
+                    <ShortcutRow
+                      keys="["
+                      action={t("settings.shortcut.speedDown")}
+                    />
+                    <ShortcutRow
+                      keys="]"
+                      action={t("settings.shortcut.speedUp")}
+                    />
+                    <ShortcutRow
+                      keys="A"
+                      action={t("settings.shortcut.loopA")}
+                    />
+                    <ShortcutRow
+                      keys="B"
+                      action={t("settings.shortcut.loopB")}
+                    />
+                    <ShortcutRow
+                      keys="Esc"
+                      action={t("settings.shortcut.closeBack")}
+                    />
                   </div>
+                </TabContent>
+              )}
+
+              {activeTab === "language" && (
+                <TabContent>
+                  <SectionTitle>{t("settings.language")}</SectionTitle>
+                  <div className="flex flex-col gap-2 mt-3">
+                    {getAvailableLanguages().map((lang) => (
+                      <button
+                        key={lang.code}
+                        onClick={() => setLanguage(lang.code as Language)}
+                        className="flex items-center gap-3 px-4 py-3 rounded-xl cursor-pointer transition-colors text-left"
+                        style={{
+                          background:
+                            language === lang.code
+                              ? "color-mix(in srgb, var(--color-accent) 12%, var(--color-surface))"
+                              : "var(--color-surface-alt)",
+                          border:
+                            language === lang.code
+                              ? "1.5px solid var(--color-accent)"
+                              : "1.5px solid transparent",
+                        }}
+                        data-testid={`lang-btn-${lang.code}`}
+                      >
+                        <span
+                          className="text-sm font-body font-medium"
+                          style={{
+                            color:
+                              language === lang.code
+                                ? "var(--color-accent)"
+                                : "var(--color-text)",
+                          }}
+                        >
+                          {lang.label}
+                        </span>
+                        {language === lang.code && (
+                          <svg
+                            width="14"
+                            height="14"
+                            viewBox="0 0 14 14"
+                            fill="none"
+                            className="ml-auto"
+                          >
+                            <path
+                              d="M3 7L6 10L11 4"
+                              stroke="var(--color-accent)"
+                              strokeWidth="2"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                            />
+                          </svg>
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                  <p
+                    className="text-[10px] font-body mt-3"
+                    style={{ color: "var(--color-text-muted)" }}
+                  >
+                    {t("settings.langDesc")}
+                  </p>
                 </TabContent>
               )}
             </div>

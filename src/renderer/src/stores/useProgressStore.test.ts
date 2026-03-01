@@ -32,9 +32,7 @@ function makeScore(accuracy: number, total = 10): PracticeScore {
   };
 }
 
-function makeSession(
-  overrides: Partial<SessionRecord> = {},
-): SessionRecord {
+function makeSession(overrides: Partial<SessionRecord> = {}): SessionRecord {
   return {
     id: crypto.randomUUID(),
     songId: "test-song",

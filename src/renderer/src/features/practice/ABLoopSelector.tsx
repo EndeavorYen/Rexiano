@@ -1,5 +1,6 @@
 import { usePracticeStore } from "@renderer/stores/usePracticeStore";
 import { usePlaybackStore } from "@renderer/stores/usePlaybackStore";
+import { useTranslation } from "@renderer/i18n/useTranslation";
 import { X } from "lucide-react";
 
 // eslint-disable-next-line react-refresh/only-export-components
@@ -10,6 +11,7 @@ export function fmtSec(s: number): string {
 }
 
 export function ABLoopSelector(): React.JSX.Element {
+  const { t } = useTranslation();
   const loopRange = usePracticeStore((s) => s.loopRange);
   const setLoopRange = usePracticeStore((s) => s.setLoopRange);
   const currentTime = usePlaybackStore((s) => s.currentTime);
@@ -44,7 +46,7 @@ export function ABLoopSelector(): React.JSX.Element {
         className="text-[10px] font-mono uppercase tracking-wider"
         style={{ color: "var(--color-text-muted)" }}
       >
-        Loop Section
+        {t("practice.loopSection")}
       </span>
 
       <div className="flex items-center gap-1.5">
@@ -62,10 +64,17 @@ export function ABLoopSelector(): React.JSX.Element {
               : "1px solid transparent",
             transition: "all 0.15s ease",
           }}
-          title={hasA ? `Loop start: ${fmtSec(loopRange![0])}` : "Set loop start to current position"}
-          aria-label="Set loop start point"
+          title={
+            hasA ? `Loop start: ${fmtSec(loopRange![0])}` : t("practice.setA")
+          }
+          aria-label={t("practice.setALabel")}
         >
-          A{hasA && <span className="font-normal ml-1 opacity-80">{fmtSec(loopRange![0])}</span>}
+          A
+          {hasA && (
+            <span className="font-normal ml-1 opacity-80">
+              {fmtSec(loopRange![0])}
+            </span>
+          )}
         </button>
 
         {/* Arrow */}
@@ -90,10 +99,17 @@ export function ABLoopSelector(): React.JSX.Element {
               : "1px solid transparent",
             transition: "all 0.15s ease",
           }}
-          title={hasB ? `Loop end: ${fmtSec(loopRange![1])}` : "Set loop end to current position"}
-          aria-label="Set loop end point"
+          title={
+            hasB ? `Loop end: ${fmtSec(loopRange![1])}` : t("practice.setB")
+          }
+          aria-label={t("practice.setBLabel")}
         >
-          B{hasB && <span className="font-normal ml-1 opacity-80">{fmtSec(loopRange![1])}</span>}
+          B
+          {hasB && (
+            <span className="font-normal ml-1 opacity-80">
+              {fmtSec(loopRange![1])}
+            </span>
+          )}
         </button>
 
         {/* Clear */}
@@ -108,8 +124,8 @@ export function ABLoopSelector(): React.JSX.Element {
               color: "var(--color-text-muted)",
               transition: "color 0.15s",
             }}
-            title="Clear A-B loop"
-            aria-label="Clear loop"
+            title={t("practice.clearLoop")}
+            aria-label={t("practice.clearLoopLabel")}
           >
             <X size={12} />
           </button>

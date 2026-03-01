@@ -198,9 +198,8 @@ describe("Speed clamping consistency", () => {
 
 describe("Keyboard shortcut constants", () => {
   test("SEEK_STEP and SEEK_STEP_LARGE are positive and LARGE > regular", async () => {
-    const { SEEK_STEP, SEEK_STEP_LARGE } = await import(
-      "./hooks/useKeyboardShortcuts"
-    );
+    const { SEEK_STEP, SEEK_STEP_LARGE } =
+      await import("./hooks/useKeyboardShortcuts");
     expect(SEEK_STEP).toBeGreaterThan(0);
     expect(SEEK_STEP_LARGE).toBeGreaterThan(0);
     expect(SEEK_STEP_LARGE).toBeGreaterThan(SEEK_STEP);

@@ -43,7 +43,18 @@ const CIRCLED_DIGITS: Record<Finger, string> = {
 
 /** Chromatic note names indexed by (midi % 12). */
 const NOTE_NAMES = [
-  "C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B",
+  "C",
+  "C#",
+  "D",
+  "D#",
+  "E",
+  "F",
+  "F#",
+  "G",
+  "G#",
+  "A",
+  "A#",
+  "B",
 ] as const;
 
 /** Convert a MIDI note number to a short display name (e.g. "C4", "F#5"). */
@@ -445,10 +456,7 @@ export class NoteRenderer {
   }
 
   /** Look up the cached finger for a specific note */
-  private getFingerForNote(
-    trackIdx: number,
-    note: ParsedNote,
-  ): Finger | null {
+  private getFingerForNote(trackIdx: number, note: ParsedNote): Finger | null {
     const trackCache = this.fingeringCache.get(String(trackIdx));
     if (!trackCache) return null;
     return trackCache.get(note.midi) ?? null;

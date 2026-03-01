@@ -1,8 +1,10 @@
 import { useCallback } from "react";
 import { useSongStore } from "@renderer/stores/useSongStore";
 import { usePracticeStore } from "@renderer/stores/usePracticeStore";
+import { useTranslation } from "@renderer/i18n/useTranslation";
 
 export function TrackSelector(): React.JSX.Element {
+  const { t } = useTranslation();
   const song = useSongStore((s) => s.song);
   const activeTracks = usePracticeStore((s) => s.activeTracks);
   const setActiveTracks = usePracticeStore((s) => s.setActiveTracks);
@@ -30,7 +32,7 @@ export function TrackSelector(): React.JSX.Element {
         className="text-[10px] font-mono uppercase tracking-wider"
         style={{ color: "var(--color-text-muted)" }}
       >
-        Tracks
+        {t("practice.tracks")}
       </span>
 
       <div className="flex flex-col gap-0.5">
@@ -51,7 +53,7 @@ export function TrackSelector(): React.JSX.Element {
                 checked={isActive}
                 onChange={() => handleToggle(i)}
                 className="accent-[var(--color-accent)] cursor-pointer"
-                aria-label={`Toggle track ${track.name || `Track ${i + 1}`}`}
+                aria-label={t("practice.trackN", { n: i + 1 })}
               />
               <span
                 className="text-xs font-body truncate"
@@ -61,13 +63,13 @@ export function TrackSelector(): React.JSX.Element {
                     : "var(--color-text-muted)",
                 }}
               >
-                {track.name || `Track ${i + 1}`}
+                {track.name || t("practice.trackN", { n: i + 1 })}
               </span>
               <span
                 className="text-[10px] font-mono ml-auto shrink-0"
                 style={{ color: "var(--color-text-muted)" }}
               >
-                {track.notes.length} notes
+                {t("practice.notesCount", { count: track.notes.length })}
               </span>
             </label>
           );

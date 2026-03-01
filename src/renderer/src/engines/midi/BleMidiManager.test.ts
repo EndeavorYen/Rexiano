@@ -63,8 +63,13 @@ describe("BleMidiManager", () => {
       // Header + TS + NoteOn + Note1 + Vel1 + TS + Note2 + Vel2 (running status)
       const data = new Uint8Array([
         0x80, // header
-        0x80, 0x90, 60, 100, // timestamp + note on C4
-        0x81, 64, 80,        // timestamp + E4 (running status)
+        0x80,
+        0x90,
+        60,
+        100, // timestamp + note on C4
+        0x81,
+        64,
+        80, // timestamp + E4 (running status)
       ]);
       manager._parseBlePacket(data);
 
@@ -96,9 +101,15 @@ describe("BleMidiManager", () => {
       manager.setCallbacks({ onNoteOn, onNoteOff });
 
       const data = new Uint8Array([
-        0x80,            // header
-        0x80, 0x90, 60, 100, // Note On C4
-        0x82, 0x80, 60, 64,  // Note Off C4 (new status)
+        0x80, // header
+        0x80,
+        0x90,
+        60,
+        100, // Note On C4
+        0x82,
+        0x80,
+        60,
+        64, // Note Off C4 (new status)
       ]);
       manager._parseBlePacket(data);
 
@@ -122,9 +133,14 @@ describe("BleMidiManager", () => {
       manager.setCallbacks({ onNoteOn });
 
       const data = new Uint8Array([
-        0x80,            // header
-        0x80, 0xc0, 5,  // Program Change to program 5
-        0x81, 0x90, 60, 100, // Then Note On
+        0x80, // header
+        0x80,
+        0xc0,
+        5, // Program Change to program 5
+        0x81,
+        0x90,
+        60,
+        100, // Then Note On
       ]);
       manager._parseBlePacket(data);
 

@@ -14,6 +14,7 @@ import { useSettingsStore } from "@renderer/stores/useSettingsStore";
 import { VolumeControl } from "@renderer/features/audio/VolumeControl";
 import { MetronomePulse } from "@renderer/features/metronome/MetronomePulse";
 import { useMetronomeBeat } from "@renderer/hooks/useMetronomeBeat";
+import { useTranslation } from "@renderer/i18n/useTranslation";
 
 // eslint-disable-next-line react-refresh/only-export-components
 export function formatTime(seconds: number): string {
@@ -42,6 +43,7 @@ export function computeLoopHighlight(
 }
 
 export function TransportBar(): React.JSX.Element {
+  const { t } = useTranslation();
   const song = useSongStore((s) => s.song);
   const currentTime = usePlaybackStore((s) => s.currentTime);
   const isPlaying = usePlaybackStore((s) => s.isPlaying);
@@ -105,8 +107,8 @@ export function TransportBar(): React.JSX.Element {
             transition: "box-shadow 0.3s ease, transform 0.1s ease",
             transform: playPulse ? "scale(0.93)" : "scale(1)",
           }}
-          title={isPlaying ? "Pause (Space)" : "Play (Space)"}
-          aria-label={isPlaying ? "Pause" : "Play"}
+          title={isPlaying ? t("transport.pause") : t("transport.play")}
+          aria-label={isPlaying ? t("transport.pause") : t("transport.play")}
         >
           {isPlaying ? (
             <Pause size={18} fill="currentColor" />
@@ -127,8 +129,8 @@ export function TransportBar(): React.JSX.Element {
             color: "var(--color-text-muted)",
             transition: "background 0.15s, color 0.15s",
           }}
-          title="Back to start (Home)"
-          aria-label="Reset to beginning"
+          title={t("transport.reset")}
+          aria-label={t("transport.resetLabel")}
         >
           <SkipBack size={14} fill="currentColor" />
         </button>
@@ -151,9 +153,15 @@ export function TransportBar(): React.JSX.Element {
               : "1px solid transparent",
             transition: "all 0.15s ease",
           }}
-          title={metronomeEnabled ? "Disable metronome" : "Enable metronome"}
+          title={
+            metronomeEnabled
+              ? t("transport.disableMetronome")
+              : t("transport.enableMetronome")
+          }
           aria-label={
-            metronomeEnabled ? "Disable metronome" : "Enable metronome"
+            metronomeEnabled
+              ? t("transport.disableMetronome")
+              : t("transport.enableMetronome")
           }
           data-testid="metronome-toggle"
         >
@@ -176,7 +184,7 @@ export function TransportBar(): React.JSX.Element {
             data-testid="audio-status-loading"
           >
             <Loader2 size={13} className="animate-spin" />
-            Loading
+            {t("general.loading")}
           </span>
         )}
         {audioStatus === "error" && (
@@ -187,7 +195,7 @@ export function TransportBar(): React.JSX.Element {
             data-testid="audio-status-error"
           >
             <AlertCircle size={13} />
-            Error
+            {t("general.error")}
           </span>
         )}
       </div>
@@ -207,7 +215,10 @@ export function TransportBar(): React.JSX.Element {
         </span>
 
         {/* Seek slider with A-B loop highlight */}
-        <div className="relative flex-1 flex items-center" style={{ height: 20 }}>
+        <div
+          className="relative flex-1 flex items-center"
+          style={{ height: 20 }}
+        >
           {/* A-B loop highlight overlay */}
           {loopHighlight && (
             <div
@@ -235,7 +246,7 @@ export function TransportBar(): React.JSX.Element {
             disabled={!song}
             className="w-full relative z-10"
             style={{ accentColor: "var(--color-accent)" }}
-            aria-label="Seek position"
+            aria-label={t("transport.seekPosition")}
           />
         </div>
 

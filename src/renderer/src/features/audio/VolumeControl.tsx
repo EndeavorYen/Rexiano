@@ -1,6 +1,7 @@
 import { useCallback, useRef } from "react";
 import { VolumeX, Volume1, Volume2 } from "lucide-react";
 import { usePlaybackStore } from "@renderer/stores/usePlaybackStore";
+import { useTranslation } from "@renderer/i18n/useTranslation";
 
 function VolumeIcon({ level }: { level: number }): React.JSX.Element {
   if (level === 0) return <VolumeX size={15} />;
@@ -9,6 +10,7 @@ function VolumeIcon({ level }: { level: number }): React.JSX.Element {
 }
 
 export function VolumeControl(): React.JSX.Element {
+  const { t } = useTranslation();
   const volume = usePlaybackStore((s) => s.volume);
   const setVolume = usePlaybackStore((s) => s.setVolume);
   const preMuteVolume = useRef(volume > 0 ? volume : 0.8);
@@ -49,8 +51,8 @@ export function VolumeControl(): React.JSX.Element {
           opacity: isMuted ? 0.5 : 0.85,
           transition: "opacity 0.15s, color 0.15s",
         }}
-        title={isMuted ? "Unmute" : "Mute"}
-        aria-label={isMuted ? "Unmute" : "Mute"}
+        title={isMuted ? t("audio.unmute") : t("audio.mute")}
+        aria-label={isMuted ? t("audio.unmute") : t("audio.mute")}
       >
         <VolumeIcon level={displayValue} />
       </button>
@@ -63,8 +65,8 @@ export function VolumeControl(): React.JSX.Element {
         onChange={handleVolumeChange}
         className="h-1"
         style={{ accentColor: "var(--color-accent)", width: 72 }}
-        aria-label="Volume"
-        title={`Volume: ${displayValue}%`}
+        aria-label={t("transport.volume")}
+        title={`${t("transport.volume")}: ${displayValue}%`}
       />
     </div>
   );

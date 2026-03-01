@@ -100,11 +100,15 @@ export function createKeyboardHandler(
         if (e.shiftKey) {
           // Shift+← : large seek backward
           const ct = usePlaybackStore.getState().currentTime;
-          usePlaybackStore.getState().setCurrentTime(Math.max(0, ct - SEEK_STEP_LARGE));
+          usePlaybackStore
+            .getState()
+            .setCurrentTime(Math.max(0, ct - SEEK_STEP_LARGE));
         } else if (!e.ctrlKey && !e.metaKey && !e.altKey) {
           // ← : seek backward
           const ct = usePlaybackStore.getState().currentTime;
-          usePlaybackStore.getState().setCurrentTime(Math.max(0, ct - SEEK_STEP));
+          usePlaybackStore
+            .getState()
+            .setCurrentTime(Math.max(0, ct - SEEK_STEP));
         }
         break;
       }
@@ -115,10 +119,14 @@ export function createKeyboardHandler(
         const duration = useSongStore.getState().song?.duration ?? 0;
         if (e.shiftKey) {
           const ct = usePlaybackStore.getState().currentTime;
-          usePlaybackStore.getState().setCurrentTime(Math.min(duration, ct + SEEK_STEP_LARGE));
+          usePlaybackStore
+            .getState()
+            .setCurrentTime(Math.min(duration, ct + SEEK_STEP_LARGE));
         } else if (!e.ctrlKey && !e.metaKey && !e.altKey) {
           const ct = usePlaybackStore.getState().currentTime;
-          usePlaybackStore.getState().setCurrentTime(Math.min(duration, ct + SEEK_STEP));
+          usePlaybackStore
+            .getState()
+            .setCurrentTime(Math.min(duration, ct + SEEK_STEP));
         }
         break;
       }

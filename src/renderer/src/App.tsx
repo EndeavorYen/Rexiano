@@ -1,8 +1,9 @@
-import { useState, useCallback, useRef, useEffect } from "react";
-import { ArrowLeft } from "lucide-react";
+import { useState, useCallback, useRef, useEffect, useMemo } from "react";
+import { ArrowLeft, BarChart3 } from "lucide-react";
 import { parseMidiFile } from "./engines/midi/MidiFileParser";
 import { useSongStore } from "./stores/useSongStore";
 import { usePlaybackStore } from "./stores/usePlaybackStore";
+import { useProgressStore } from "./stores/useProgressStore";
 import { AudioEngine } from "./engines/audio/AudioEngine";
 import { AudioScheduler } from "./engines/audio/AudioScheduler";
 import { FallingNotesCanvas } from "./features/fallingNotes/FallingNotesCanvas";
@@ -11,19 +12,75 @@ import { TransportBar } from "./features/fallingNotes/TransportBar";
 import { SettingsPanel } from "./features/settings/SettingsPanel";
 import { SongLibrary } from "./features/songLibrary/SongLibrary";
 import { DeviceSelector } from "./features/midiDevice/DeviceSelector";
+import { InsightsPanel } from "./features/insights/InsightsPanel";
+import { WeakSpotAnalyzer } from "./features/insights/WeakSpotAnalyzer";
+import type { SessionSummary } from "./features/insights/WeakSpotAnalyzer";
 import { useMidiDeviceStore } from "./stores/useMidiDeviceStore";
 import { usePracticeLifecycle } from "./features/practice/usePracticeLifecycle";
 import { PracticeToolbar } from "./features/practice/PracticeToolbar";
 import { ScoreOverlay } from "./features/practice/ScoreOverlay";
 import { useKeyboardShortcuts } from "./hooks/useKeyboardShortcuts";
+import { useTranslation } from "./i18n/useTranslation";
+import { SheetMusicPanel } from "./features/sheetMusic/SheetMusicPanel";
+import { DisplayModeToggle } from "./features/sheetMusic/DisplayModeToggle";
+import { convertToNotation } from "./features/sheetMusic/MidiToNotation";
+import { getCursorPosition } from "./features/sheetMusic/CursorSync";
+import { usePracticeStore } from "./stores/usePracticeStore";
+import { MainMenu } from "./features/mainMenu/MainMenu";
 
 /** Accepted file extensions for drag-and-drop MIDI import */
 const MIDI_EXTENSIONS = [".mid", ".midi"];
 
+const analyzer = new WeakSpotAnalyzer();
+
+type AppView = "menu" | "library" | "playback";
+
 function App(): React.JSX.Element {
+  const { t } = useTranslation();
   const song = useSongStore((s) => s.song);
   const loadSong = useSongStore((s) => s.loadSong);
   const reset = usePlaybackStore((s) => s.reset);
+  const [viewIntent, setViewIntent] = useState<AppView>("menu");
+  const [showMenuSettings, setShowMenuSettings] = useState(false);
+
+  // Derive effective view: always show playback when a song is loaded
+  const view: AppView = song ? "playback" : viewIntent;
+
+  // ─── Phase 6.5 Sprint 5: Insights Panel ──────────────
+  const [showInsights, setShowInsights] = useState(false);
+  const sessions = useProgressStore((s) => s.sessions);
+  const songId = song?.fileName ?? "";
+
+  const insight = useMemo(() => {
+    if (!songId || sessions.length === 0) return null;
+    const summaries: SessionSummary[] = sessions
+      .filter((s) => s.songId === songId)
+      .map((s) => ({
+        songId: s.songId,
+        accuracy: s.score.accuracy,
+        durationMinutes: s.durationSeconds / 60,
+        timestamp: s.timestamp,
+        noteResults: new Map(),
+      }));
+    return analyzer.analyze(songId, summaries);
+  }, [songId, sessions]);
+
+  // ─── Phase 7: Sheet Music ──────────────────────────────
+  const displayMode = usePracticeStore((s) => s.displayMode);
+  const currentTime = usePlaybackStore((s) => s.currentTime);
+
+  const notationData = useMemo(() => {
+    if (!song) return null;
+    const allNotes = song.tracks.flatMap((tr) => tr.notes);
+    const bpm = song.tempos.length > 0 ? song.tempos[0].bpm : 120;
+    return convertToNotation(allNotes, bpm);
+  }, [song]);
+
+  const cursorPosition = useMemo(() => {
+    if (!notationData) return null;
+    return getCursorPosition(currentTime, notationData);
+  }, [notationData, currentTime]);
+  // ─── End Phase 7 ──────────────────────────────────────
 
   const [activeNotes, setActiveNotes] = useState<Set<number>>(new Set());
   const midiActiveNotes = useMidiDeviceStore((s) => s.activeNotes);
@@ -222,7 +279,7 @@ function App(): React.JSX.Element {
       const file = files[0];
       const ext = file.name.toLowerCase().slice(file.name.lastIndexOf("."));
       if (!MIDI_EXTENSIONS.includes(ext)) {
-        setDragError(`Invalid file type: ${ext}. Only .mid and .midi files are accepted.`);
+        setDragError(t("app.invalidFileType", { ext }));
         setTimeout(() => setDragError(null), 3000);
         return;
       }
@@ -237,17 +294,17 @@ function App(): React.JSX.Element {
           reset();
         } catch (err) {
           console.error("Failed to parse dropped MIDI file:", err);
-          setDragError("Failed to parse MIDI file.");
+          setDragError(t("app.failedParse"));
           setTimeout(() => setDragError(null), 3000);
         }
       };
       reader.onerror = () => {
-        setDragError("Failed to read file.");
+        setDragError(t("app.failedRead"));
         setTimeout(() => setDragError(null), 3000);
       };
       reader.readAsArrayBuffer(file);
     },
-    [loadSong, reset],
+    [loadSong, reset, t],
   );
   // ─── End Phase 6.5 ─────────────────────────────────────
 
@@ -264,7 +321,10 @@ function App(): React.JSX.Element {
       {isDragging && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center"
-          style={{ background: "rgba(0, 0, 0, 0.5)", backdropFilter: "blur(4px)" }}
+          style={{
+            background: "rgba(0, 0, 0, 0.5)",
+            backdropFilter: "blur(4px)",
+          }}
         >
           <div
             className="rounded-2xl px-10 py-8 text-center"
@@ -273,11 +333,17 @@ function App(): React.JSX.Element {
               border: "3px dashed var(--color-accent)",
             }}
           >
-            <p className="text-lg font-semibold font-body" style={{ color: "var(--color-text)" }}>
-              Drop .mid file here
+            <p
+              className="text-lg font-semibold font-body"
+              style={{ color: "var(--color-text)" }}
+            >
+              {t("app.dropMidi")}
             </p>
-            <p className="text-sm mt-1" style={{ color: "var(--color-text-muted)" }}>
-              Supported formats: .mid, .midi
+            <p
+              className="text-sm mt-1"
+              style={{ color: "var(--color-text-muted)" }}
+            >
+              {t("app.supportedFormats")}
             </p>
           </div>
         </div>
@@ -296,12 +362,31 @@ function App(): React.JSX.Element {
         </div>
       )}
 
-      {!song ? (
+      {/* View: Main Menu */}
+      {!song && view === "menu" && (
+        <>
+          <MainMenu
+            onStartPractice={() => setViewIntent("library")}
+            onOpenSettings={() => setShowMenuSettings(true)}
+          />
+          {showMenuSettings && (
+            <SettingsPanel inline onClose={() => setShowMenuSettings(false)} />
+          )}
+        </>
+      )}
+
+      {/* View: Song Library */}
+      {!song && view === "library" && (
         <div key="library" className="flex-1 flex flex-col animate-page-enter">
-          <SongLibrary onOpenFile={handleOpenFile} />
+          <SongLibrary
+            onOpenFile={handleOpenFile}
+            onBack={() => setViewIntent("menu")}
+          />
         </div>
-      ) : (
-        /* Song loaded: header + falling notes + transport + keyboard */
+      )}
+
+      {/* View: Playback */}
+      {song && (
         <div key="playback" className="flex-1 flex flex-col animate-page-enter">
           {/* Song info header */}
           <div
@@ -319,41 +404,92 @@ function App(): React.JSX.Element {
                 className="text-xs"
                 style={{ color: "var(--color-text-muted)" }}
               >
-                {song.tracks.length} track{song.tracks.length > 1 ? "s" : ""}{" "}
-                &middot; {song.noteCount} notes
+                {song.tracks.length}{" "}
+                {song.tracks.length > 1 ? t("song.tracks") : t("song.track")}{" "}
+                &middot; {song.noteCount} {t("song.notes")}
                 {song.tempos.length > 0 &&
                   ` \u00B7 ${Math.round(song.tempos[0].bpm)} BPM`}
               </p>
             </div>
             <div className="flex items-center gap-2 shrink-0 ml-3">
+              <DisplayModeToggle />
+              <div
+                className="h-5 w-px shrink-0"
+                style={{ background: "var(--color-border)" }}
+              />
               <DeviceSelector />
               <div
                 className="h-5 w-px shrink-0"
                 style={{ background: "var(--color-border)" }}
               />
+              <button
+                onClick={() => setShowInsights(true)}
+                className="w-8 h-8 flex items-center justify-center rounded-full transition-colors cursor-pointer"
+                style={{ background: "var(--color-surface-alt)" }}
+                title={t("app.insightsTitle")}
+                data-testid="insights-trigger"
+              >
+                <BarChart3
+                  size={16}
+                  style={{ color: "var(--color-text-muted)" }}
+                />
+              </button>
               <SettingsPanel />
               <button
                 onClick={() => {
                   useSongStore.getState().clearSong();
                   usePlaybackStore.getState().reset();
+                  setViewIntent("menu");
                 }}
                 className="flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-lg font-body cursor-pointer btn-surface-themed"
               >
                 <ArrowLeft size={14} />
-                Library
+                {t("song.backToLibrary")}
               </button>
             </div>
           </div>
 
-          {/* Falling notes canvas + score overlay */}
-          <div className="flex-1 relative flex flex-col">
-            <FallingNotesCanvas
-              onActiveNotesChange={handleActiveNotesChange}
-              getAudioCurrentTime={getAudioCurrentTime}
-              onNoteRendererReady={handleNoteRendererReady}
+          {/* Main display area: sheet music / falling notes / both */}
+          <div className="flex-1 relative flex flex-col min-h-0">
+            {/* Sheet music panel (shown in split & sheet modes) */}
+            <SheetMusicPanel
+              notationData={notationData}
+              cursorPosition={cursorPosition}
+              mode={displayMode}
+              height={displayMode === "split" ? 220 : undefined}
             />
+
+            {/* Falling notes canvas (shown in split & falling modes) */}
+            {displayMode !== "sheet" && (
+              <div className="flex-1 relative flex flex-col">
+                <FallingNotesCanvas
+                  onActiveNotesChange={handleActiveNotesChange}
+                  getAudioCurrentTime={getAudioCurrentTime}
+                  onNoteRendererReady={handleNoteRendererReady}
+                />
+              </div>
+            )}
             <ScoreOverlay />
           </div>
+
+          {/* Insights modal */}
+          {showInsights && (
+            <div
+              className="fixed inset-0 z-[100] flex items-center justify-center"
+              style={{ background: "rgba(0,0,0,0.45)" }}
+              onClick={() => setShowInsights(false)}
+            >
+              <div
+                className="w-[460px] max-h-[85vh] overflow-y-auto animate-page-enter"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <InsightsPanel
+                  insight={insight}
+                  onClose={() => setShowInsights(false)}
+                />
+              </div>
+            </div>
+          )}
 
           {/* Transport bar */}
           <TransportBar />

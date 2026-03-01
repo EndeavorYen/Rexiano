@@ -75,8 +75,6 @@ export class BleMidiManager {
       this._status = "scanning";
       this._error = null;
 
-      console.log("[BLE MIDI] Scanning — acceptAllDevices + optionalServices...");
-
       // Use acceptAllDevices so the scan finds devices even if they don't
       // advertise the BLE MIDI service UUID (common when the device is already
       // paired for Bluetooth Audio). We request BLE MIDI as an optionalService
@@ -86,12 +84,11 @@ export class BleMidiManager {
           acceptAllDevices: true,
           optionalServices: [BLE_MIDI_SERVICE],
         }),
-        this._timeout(SCAN_TIMEOUT_MS, "Bluetooth scan timed out — no device selected"),
+        this._timeout(
+          SCAN_TIMEOUT_MS,
+          "Bluetooth scan timed out — no device selected",
+        ),
       ]);
-
-      console.log(
-        `[BLE MIDI] Device found: ${device.name ?? device.id}`,
-      );
 
       this._device = device;
       this._status = "connecting";
@@ -100,11 +97,8 @@ export class BleMidiManager {
       device.addEventListener("gattserverdisconnected", this._onDisconnect);
 
       // Connect to GATT server
-      console.log("[BLE MIDI] Connecting to GATT server...");
       const server = await device.gatt!.connect();
-      console.log("[BLE MIDI] GATT connected, getting MIDI service...");
       const service = await server.getPrimaryService(BLE_MIDI_SERVICE);
-      console.log("[BLE MIDI] Service found, getting characteristic...");
       this._characteristic = await service.getCharacteristic(
         BLE_MIDI_CHARACTERISTIC,
       );
@@ -116,7 +110,6 @@ export class BleMidiManager {
       );
       await this._characteristic.startNotifications();
 
-      console.log("[BLE MIDI] Connected and listening for MIDI data");
       this._status = "connected";
       this._error = null;
     } catch (err) {

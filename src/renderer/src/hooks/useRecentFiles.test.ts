@@ -146,7 +146,9 @@ describe("useRecentFiles", () => {
       (async () => {
         result.refresh();
         // Wait for the promise chain to settle
-        await vi.mocked(window.api.loadRecentFiles).mock.results[0]?.value?.catch?.(() => {});
+        await vi
+          .mocked(window.api.loadRecentFiles)
+          .mock.results[0]?.value?.catch?.(() => {});
       })(),
     ).resolves.toBeUndefined();
   });

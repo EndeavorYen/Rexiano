@@ -117,9 +117,7 @@ export function SongCard({
                   className="w-1.5 h-1.5 rounded-full"
                   style={{
                     background:
-                      n <= dots
-                        ? "var(--color-accent)"
-                        : "var(--color-border)",
+                      n <= dots ? "var(--color-accent)" : "var(--color-border)",
                   }}
                 />
               ))}
@@ -138,7 +136,11 @@ export function SongCard({
                     height="10"
                     viewBox="0 0 12 12"
                     fill={n <= stars ? "var(--color-streak-gold)" : "none"}
-                    stroke={n <= stars ? "var(--color-streak-gold)" : "var(--color-border)"}
+                    stroke={
+                      n <= stars
+                        ? "var(--color-streak-gold)"
+                        : "var(--color-border)"
+                    }
                     strokeWidth="1.2"
                   >
                     <path d="M6 1l1.5 3.1L11 4.5 8.5 7l.6 3.5L6 8.8 2.9 10.5l.6-3.5L1 4.5l3.5-.4L6 1z" />

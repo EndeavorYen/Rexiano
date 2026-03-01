@@ -1,5 +1,13 @@
 import { useEffect, useMemo, useCallback, useState } from "react";
-import { Upload, Clock, AlertCircle, Music, Trophy, Flame } from "lucide-react";
+import {
+  Upload,
+  Clock,
+  AlertCircle,
+  Music,
+  Trophy,
+  Flame,
+  ArrowLeft,
+} from "lucide-react";
 import { parseMidiFile } from "../../engines/midi/MidiFileParser";
 import { useSongStore } from "../../stores/useSongStore";
 import { usePlaybackStore } from "../../stores/usePlaybackStore";
@@ -12,24 +20,28 @@ import { SongLibraryFilters } from "./SongLibraryFilters";
 import { ThemePicker } from "../settings/ThemePicker";
 import { groupSongsByCategory } from "./songCardUtils";
 import { DeviceSelector } from "../midiDevice/DeviceSelector";
+import { useTranslation } from "../../i18n/useTranslation";
 import appIcon from "../../assets/icon.png";
 import type { RecentFile } from "../../../../shared/types";
 
 interface SongLibraryProps {
   onOpenFile: () => Promise<void>;
-}
-
-/** Warm greetings that rotate based on time of day */
-function getGreeting(): string {
-  const hour = new Date().getHours();
-  if (hour < 12) return "Good morning! Ready to practice?";
-  if (hour < 17) return "Good afternoon! Let's play some music.";
-  return "Good evening! Time for some piano practice.";
+  onBack?: () => void;
 }
 
 export function SongLibrary({
   onOpenFile,
+  onBack,
 }: SongLibraryProps): React.JSX.Element {
+  const { t } = useTranslation();
+
+  /** Warm greetings that rotate based on time of day */
+  const greeting = useMemo(() => {
+    const hour = new Date().getHours();
+    if (hour < 12) return t("library.greeting.morning");
+    if (hour < 17) return t("library.greeting.afternoon");
+    return t("library.greeting.evening");
+  }, [t]);
   const songs = useSongLibraryStore((s) => s.songs);
   const isLoading = useSongLibraryStore((s) => s.isLoading);
   const searchQuery = useSongLibraryStore((s) => s.searchQuery);
@@ -90,9 +102,7 @@ export function SongLibrary({
     const totalSessions = sessions.length;
     const bestAccuracy =
       sessions.length > 0
-        ? Math.round(
-            Math.max(...sessions.map((s) => s.score.accuracy)),
-          )
+        ? Math.round(Math.max(...sessions.map((s) => s.score.accuracy)))
         : 0;
     return { uniqueSongs, totalSessions, bestAccuracy };
   }, [sessions]);
@@ -116,14 +126,14 @@ export function SongLibrary({
           refreshRecents();
         }
       } catch (e) {
-        const msg = e instanceof Error ? e.message : "Failed to load song";
+        const msg = e instanceof Error ? e.message : t("general.error");
         setError(msg);
         console.error("Failed to load built-in song:", e);
       } finally {
         setLoadingId(null);
       }
     },
-    [loadSong, reset, refreshRecents],
+    [loadSong, reset, refreshRecents, t],
   );
 
   /** Max recent files shown in the quick-access strip */
@@ -146,7 +156,7 @@ export function SongLibrary({
         }
 
         if (!result) {
-          setRecentError(`File not found: ${file.name}`);
+          setRecentError(t("general.error"));
           setTimeout(() => setRecentError(null), 3000);
           return;
         }
@@ -161,7 +171,7 @@ export function SongLibrary({
         });
         refreshRecents();
       } catch (e) {
-        const msg = e instanceof Error ? e.message : "Failed to load file";
+        const msg = e instanceof Error ? e.message : t("general.error");
         setRecentError(msg);
         setTimeout(() => setRecentError(null), 3000);
         console.error("Failed to load recent file:", e);
@@ -169,7 +179,7 @@ export function SongLibrary({
         setLoadingRecentPath(null);
       }
     },
-    [loadSong, reset, refreshRecents],
+    [loadSong, reset, refreshRecents, t],
   );
 
   /**
@@ -178,7 +188,8 @@ export function SongLibrary({
    */
   const truncateName = (name: string, maxLen: number = 24): string => {
     if (name.length <= maxLen) return name;
-    const ext = name.lastIndexOf(".") >= 0 ? name.slice(name.lastIndexOf(".")) : "";
+    const ext =
+      name.lastIndexOf(".") >= 0 ? name.slice(name.lastIndexOf(".")) : "";
     const stem = name.slice(0, name.length - ext.length);
     const available = maxLen - ext.length - 1; // 1 for the ellipsis char
     if (available <= 3) return name.slice(0, maxLen - 1) + "\u2026";
@@ -187,6 +198,21 @@ export function SongLibrary({
 
   return (
     <div className="flex-1 flex flex-col items-center px-6 py-8 overflow-y-auto relative">
+      {/* Back to main menu */}
+      {onBack && (
+        <button
+          onClick={onBack}
+          className="absolute top-4 left-4 flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-body cursor-pointer"
+          style={{
+            color: "var(--color-text-muted)",
+            background: "var(--color-surface-alt)",
+            transition: "all 0.15s",
+          }}
+        >
+          <ArrowLeft size={13} />
+        </button>
+      )}
+
       {/* Header with greeting */}
       <div className="flex items-center gap-3 mb-1 animate-page-enter">
         <img
@@ -207,7 +233,7 @@ export function SongLibrary({
         className="text-sm mb-6 font-body"
         style={{ color: "var(--color-text-muted)" }}
       >
-        {getGreeting()}
+        {greeting}
       </p>
 
       {/* Progress stats — only show when there are sessions */}
@@ -215,14 +241,20 @@ export function SongLibrary({
         <div
           className="flex items-center gap-4 mb-6 px-5 py-3 rounded-xl animate-page-enter"
           style={{
-            background: "color-mix(in srgb, var(--color-accent) 8%, var(--color-surface))",
-            border: "1px solid color-mix(in srgb, var(--color-accent) 15%, var(--color-border))",
+            background:
+              "color-mix(in srgb, var(--color-accent) 8%, var(--color-surface))",
+            border:
+              "1px solid color-mix(in srgb, var(--color-accent) 15%, var(--color-border))",
           }}
         >
           <StatBadge
             icon={<Music size={14} />}
             value={progressStats.uniqueSongs}
-            label={progressStats.uniqueSongs === 1 ? "song practiced" : "songs practiced"}
+            label={
+              progressStats.uniqueSongs === 1
+                ? t("library.songPracticed")
+                : t("library.songsPracticed")
+            }
           />
           <div
             className="w-px h-6"
@@ -231,7 +263,11 @@ export function SongLibrary({
           <StatBadge
             icon={<Flame size={14} />}
             value={progressStats.totalSessions}
-            label={progressStats.totalSessions === 1 ? "session" : "sessions"}
+            label={
+              progressStats.totalSessions === 1
+                ? t("library.session")
+                : t("library.sessions")
+            }
           />
           <div
             className="w-px h-6"
@@ -240,7 +276,7 @@ export function SongLibrary({
           <StatBadge
             icon={<Trophy size={14} />}
             value={`${progressStats.bestAccuracy}%`}
-            label="best score"
+            label={t("library.bestScore")}
           />
         </div>
       )}
@@ -254,7 +290,7 @@ export function SongLibrary({
           >
             <Clock size={13} />
             <span className="text-xs font-body font-medium uppercase tracking-wide">
-              Recently Played
+              {t("library.recentlyPlayed")}
             </span>
           </div>
           <div className="flex flex-wrap gap-2">
@@ -340,7 +376,8 @@ export function SongLibrary({
             <div
               className="w-16 h-16 mx-auto mb-4 rounded-2xl flex items-center justify-center"
               style={{
-                background: "color-mix(in srgb, var(--color-accent) 10%, var(--color-surface))",
+                background:
+                  "color-mix(in srgb, var(--color-accent) 10%, var(--color-surface))",
               }}
             >
               <Music
@@ -350,20 +387,26 @@ export function SongLibrary({
             </div>
             {songs.length === 0 ? (
               <>
-                <p className="text-sm font-body font-medium mb-1" style={{ color: "var(--color-text)" }}>
-                  No songs here yet
+                <p
+                  className="text-sm font-body font-medium mb-1"
+                  style={{ color: "var(--color-text)" }}
+                >
+                  {t("library.noSongsYet")}
                 </p>
                 <p className="text-xs font-body opacity-70">
-                  Import a MIDI file below to get started!
+                  {t("library.noSongsHint")}
                 </p>
               </>
             ) : (
               <>
-                <p className="text-sm font-body font-medium mb-1" style={{ color: "var(--color-text)" }}>
-                  No songs match your search
+                <p
+                  className="text-sm font-body font-medium mb-1"
+                  style={{ color: "var(--color-text)" }}
+                >
+                  {t("library.noMatchSearch")}
                 </p>
                 <p className="text-xs font-body opacity-70">
-                  Try a different keyword or clear the filter
+                  {t("library.noMatchHint")}
                 </p>
               </>
             )}
@@ -450,13 +493,19 @@ export function SongLibrary({
           className="flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-body font-medium cursor-pointer btn-ghost-themed"
         >
           <Upload size={15} />
-          Import your own MIDI file
+          {t("library.importMidi")}
         </button>
       </div>
 
       {/* Bottom bar: MIDI device + Theme picker */}
       <div className="absolute bottom-6 left-6 right-6 flex items-center justify-between pointer-events-none">
-        <div className="pointer-events-auto rounded-lg" style={{ background: "var(--color-surface)", border: "1px solid var(--color-border)" }}>
+        <div
+          className="pointer-events-auto rounded-lg"
+          style={{
+            background: "var(--color-surface)",
+            border: "1px solid var(--color-border)",
+          }}
+        >
           <DeviceSelector />
         </div>
         <div className="pointer-events-auto">

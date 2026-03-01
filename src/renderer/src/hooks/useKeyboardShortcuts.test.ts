@@ -41,7 +41,14 @@ vi.mock("@renderer/stores/usePracticeStore", () => {
 
 vi.mock("@renderer/stores/useSongStore", () => {
   const state = {
-    song: { duration: 120, tracks: [], noteCount: 0, tempos: [], timeSignatures: [], fileName: "test.mid" },
+    song: {
+      duration: 120,
+      tracks: [],
+      noteCount: 0,
+      tempos: [],
+      timeSignatures: [],
+      fileName: "test.mid",
+    },
   };
   const store = Object.assign(() => state, {
     getState: () => state,
@@ -108,7 +115,9 @@ describe("useKeyboardShortcuts", () => {
     (usePlaybackStore.getState() as { currentTime: number }).currentTime = 10;
     (usePlaybackStore.getState() as { isPlaying: boolean }).isPlaying = false;
     (usePracticeStore.getState() as { speed: number }).speed = 1.0;
-    (usePracticeStore.getState() as { loopRange: [number, number] | null }).loopRange = null;
+    (
+      usePracticeStore.getState() as { loopRange: [number, number] | null }
+    ).loopRange = null;
     setupHandler();
   });
 
@@ -135,7 +144,9 @@ describe("useKeyboardShortcuts", () => {
     test("toggles pause when already playing", () => {
       (usePlaybackStore.getState() as { isPlaying: boolean }).isPlaying = true;
       fireKey("Space");
-      expect(usePlaybackStore.getState().setPlaying).toHaveBeenCalledWith(false);
+      expect(usePlaybackStore.getState().setPlaying).toHaveBeenCalledWith(
+        false,
+      );
     });
   });
 
@@ -143,7 +154,9 @@ describe("useKeyboardShortcuts", () => {
   describe("R — Reset", () => {
     test("resets time to 0", () => {
       fireKey("KeyR");
-      expect(usePlaybackStore.getState().setCurrentTime).toHaveBeenCalledWith(0);
+      expect(usePlaybackStore.getState().setCurrentTime).toHaveBeenCalledWith(
+        0,
+      );
     });
 
     test("does not reset on Ctrl+R", () => {
@@ -156,35 +169,48 @@ describe("useKeyboardShortcuts", () => {
   describe("Arrow Left/Right — Seek", () => {
     test("ArrowLeft seeks backward by SEEK_STEP", () => {
       fireKey("ArrowLeft");
-      expect(usePlaybackStore.getState().setCurrentTime).toHaveBeenCalledWith(10 - SEEK_STEP);
+      expect(usePlaybackStore.getState().setCurrentTime).toHaveBeenCalledWith(
+        10 - SEEK_STEP,
+      );
     });
 
     test("ArrowRight seeks forward by SEEK_STEP", () => {
       fireKey("ArrowRight");
-      expect(usePlaybackStore.getState().setCurrentTime).toHaveBeenCalledWith(10 + SEEK_STEP);
+      expect(usePlaybackStore.getState().setCurrentTime).toHaveBeenCalledWith(
+        10 + SEEK_STEP,
+      );
     });
 
     test("Shift+ArrowLeft seeks backward by SEEK_STEP_LARGE (clamped to 0)", () => {
       // currentTime=10, SEEK_STEP_LARGE=15, Math.max(0, 10-15) = 0
       fireKey("ArrowLeft", { shiftKey: true });
-      expect(usePlaybackStore.getState().setCurrentTime).toHaveBeenCalledWith(0);
+      expect(usePlaybackStore.getState().setCurrentTime).toHaveBeenCalledWith(
+        0,
+      );
     });
 
     test("Shift+ArrowRight seeks forward by SEEK_STEP_LARGE", () => {
       fireKey("ArrowRight", { shiftKey: true });
-      expect(usePlaybackStore.getState().setCurrentTime).toHaveBeenCalledWith(10 + SEEK_STEP_LARGE);
+      expect(usePlaybackStore.getState().setCurrentTime).toHaveBeenCalledWith(
+        10 + SEEK_STEP_LARGE,
+      );
     });
 
     test("ArrowLeft clamps to 0", () => {
       (usePlaybackStore.getState() as { currentTime: number }).currentTime = 2;
       fireKey("ArrowLeft");
-      expect(usePlaybackStore.getState().setCurrentTime).toHaveBeenCalledWith(0);
+      expect(usePlaybackStore.getState().setCurrentTime).toHaveBeenCalledWith(
+        0,
+      );
     });
 
     test("ArrowRight clamps to song duration", () => {
-      (usePlaybackStore.getState() as { currentTime: number }).currentTime = 118;
+      (usePlaybackStore.getState() as { currentTime: number }).currentTime =
+        118;
       fireKey("ArrowRight");
-      expect(usePlaybackStore.getState().setCurrentTime).toHaveBeenCalledWith(120);
+      expect(usePlaybackStore.getState().setCurrentTime).toHaveBeenCalledWith(
+        120,
+      );
     });
   });
 
@@ -192,21 +218,29 @@ describe("useKeyboardShortcuts", () => {
   describe("Arrow Up/Down — Speed", () => {
     test("ArrowUp increases speed by SPEED_STEP", () => {
       fireKey("ArrowUp");
-      expect(usePracticeStore.getState().setSpeed).toHaveBeenCalledWith(1.0 + SPEED_STEP);
+      expect(usePracticeStore.getState().setSpeed).toHaveBeenCalledWith(
+        1.0 + SPEED_STEP,
+      );
     });
 
     test("ArrowDown decreases speed by SPEED_STEP", () => {
       fireKey("ArrowDown");
-      expect(usePracticeStore.getState().setSpeed).toHaveBeenCalledWith(1.0 - SPEED_STEP);
+      expect(usePracticeStore.getState().setSpeed).toHaveBeenCalledWith(
+        1.0 - SPEED_STEP,
+      );
     });
   });
 
   // ─── L — Loop toggle ───────────────────────────────────
   describe("L — Loop toggle", () => {
     test("clears loop when loop is active", () => {
-      (usePracticeStore.getState() as { loopRange: [number, number] | null }).loopRange = [10, 20];
+      (
+        usePracticeStore.getState() as { loopRange: [number, number] | null }
+      ).loopRange = [10, 20];
       fireKey("KeyL");
-      expect(usePracticeStore.getState().setLoopRange).toHaveBeenCalledWith(null);
+      expect(usePracticeStore.getState().setLoopRange).toHaveBeenCalledWith(
+        null,
+      );
     });
 
     test("does nothing when no loop is active", () => {

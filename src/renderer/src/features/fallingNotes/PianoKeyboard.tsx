@@ -216,7 +216,8 @@ export function PianoKeyboard({
               borderRadius: "0 0 4px 4px",
               boxShadow: getKeyShadow(songActive, midiActive, false),
               transform: getKeyTransform(songActive, midiActive, false),
-              transition: "transform 0.06s ease-out, box-shadow 0.08s ease-out, background 0.06s ease-out",
+              transition:
+                "transform 0.06s ease-out, box-shadow 0.08s ease-out, background 0.06s ease-out",
             }}
           >
             {showLabels && (
@@ -253,7 +254,8 @@ export function PianoKeyboard({
               borderRadius: "0 0 3px 3px",
               boxShadow: getKeyShadow(songActive, midiActive, true),
               transform: getKeyTransform(songActive, midiActive, true),
-              transition: "transform 0.06s ease-out, box-shadow 0.08s ease-out, background 0.06s ease-out",
+              transition:
+                "transform 0.06s ease-out, box-shadow 0.08s ease-out, background 0.06s ease-out",
             }}
           >
             {showLabels && (

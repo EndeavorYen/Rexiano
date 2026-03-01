@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import type { PracticeMode, PracticeScore, NoteResult } from "@shared/types";
+import type { DisplayMode } from "@renderer/features/sheetMusic/types";
 
 const initialScore: PracticeScore = {
   totalNotes: 0,
@@ -23,11 +24,14 @@ interface PracticeState {
   score: PracticeScore;
   /** Per-note results keyed by a unique note identifier */
   noteResults: Map<string, NoteResult>;
+  /** Display mode: falling notes, sheet music, or split view */
+  displayMode: DisplayMode;
 
   setMode: (mode: PracticeMode) => void;
   setSpeed: (speed: number) => void;
   setLoopRange: (range: [number, number] | null) => void;
   setActiveTracks: (tracks: Set<number>) => void;
+  setDisplayMode: (mode: DisplayMode) => void;
   recordHit: (noteKey: string) => void;
   recordMiss: (noteKey: string) => void;
   resetScore: () => void;
@@ -45,6 +49,7 @@ export const usePracticeStore = create<PracticeState>()((set) => ({
   activeTracks: new Set<number>(),
   score: { ...initialScore },
   noteResults: new Map<string, NoteResult>(),
+  displayMode: "falling",
 
   setMode: (mode) =>
     set({
@@ -56,6 +61,8 @@ export const usePracticeStore = create<PracticeState>()((set) => ({
   setSpeed: (speed) => set({ speed: Math.max(0.25, Math.min(2.0, speed)) }),
 
   setLoopRange: (range) => set({ loopRange: range }),
+
+  setDisplayMode: (displayMode) => set({ displayMode }),
 
   setActiveTracks: (tracks) => set({ activeTracks: tracks }),
 

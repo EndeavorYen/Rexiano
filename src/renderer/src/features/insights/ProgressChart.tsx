@@ -11,81 +11,95 @@
  * No external chart library — just SVG + math.
  */
 
-import { useId } from 'react'
+import { useId } from "react";
 
 interface ProgressChartProps {
   /** Accuracy values (0-100) in chronological order */
-  data: number[]
+  data: number[];
   /** Chart width in pixels */
-  width?: number
+  width?: number;
   /** Chart height in pixels */
-  height?: number
+  height?: number;
 }
 
-const PADDING = { top: 16, right: 16, bottom: 28, left: 40 }
-const DOT_RADIUS = 4
-const Y_MIN = 0
-const Y_MAX = 100
-const Y_TICKS = [0, 25, 50, 75, 100]
+const PADDING = { top: 16, right: 16, bottom: 28, left: 40 };
+const DOT_RADIUS = 4;
+const Y_MIN = 0;
+const Y_MAX = 100;
+const Y_TICKS = [0, 25, 50, 75, 100];
 
 /**
  * Simple linear regression: y = slope * x + intercept
  * @param values - Array of y-values with implicit x = index
  */
-function linearRegression(values: number[]): { slope: number; intercept: number } {
-  const n = values.length
-  let sumX = 0, sumY = 0, sumXY = 0, sumX2 = 0
+function linearRegression(values: number[]): {
+  slope: number;
+  intercept: number;
+} {
+  const n = values.length;
+  let sumX = 0,
+    sumY = 0,
+    sumXY = 0,
+    sumX2 = 0;
 
   for (let i = 0; i < n; i++) {
-    sumX += i
-    sumY += values[i]
-    sumXY += i * values[i]
-    sumX2 += i * i
+    sumX += i;
+    sumY += values[i];
+    sumXY += i * values[i];
+    sumX2 += i * i;
   }
 
-  const denom = n * sumX2 - sumX * sumX
-  if (denom === 0) return { slope: 0, intercept: sumY / n }
+  const denom = n * sumX2 - sumX * sumX;
+  if (denom === 0) return { slope: 0, intercept: sumY / n };
 
-  const slope = (n * sumXY - sumX * sumY) / denom
-  const intercept = (sumY - slope * sumX) / n
+  const slope = (n * sumXY - sumX * sumY) / denom;
+  const intercept = (sumY - slope * sumX) / n;
 
-  return { slope, intercept }
+  return { slope, intercept };
 }
 
-export function ProgressChart({ data, width = 400, height = 200 }: ProgressChartProps): React.JSX.Element {
+export function ProgressChart({
+  data,
+  width = 400,
+  height = 200,
+}: ProgressChartProps): React.JSX.Element {
   // useId must be called unconditionally (React hooks rule)
-  const reactId = useId()
-  const gradientId = `progress-gradient-${reactId.replace(/:/g, '')}`
+  const reactId = useId();
+  const gradientId = `progress-gradient-${reactId.replace(/:/g, "")}`;
 
   if (data.length === 0) {
     return (
       <div
         className="flex items-center justify-center text-xs font-body"
-        style={{ width, height, color: 'var(--color-text-muted)' }}
+        style={{ width, height, color: "var(--color-text-muted)" }}
       >
         No data yet
       </div>
-    )
+    );
   }
 
-  const plotW = width - PADDING.left - PADDING.right
-  const plotH = height - PADDING.top - PADDING.bottom
+  const plotW = width - PADDING.left - PADDING.right;
+  const plotH = height - PADDING.top - PADDING.bottom;
 
   // Map data points to SVG coordinates
   const points = data.map((val, i) => {
-    const x = PADDING.left + (data.length === 1 ? plotW / 2 : (i / (data.length - 1)) * plotW)
-    const y = PADDING.top + plotH - ((val - Y_MIN) / (Y_MAX - Y_MIN)) * plotH
-    return { x, y, val }
-  })
+    const x =
+      PADDING.left +
+      (data.length === 1 ? plotW / 2 : (i / (data.length - 1)) * plotW);
+    const y = PADDING.top + plotH - ((val - Y_MIN) / (Y_MAX - Y_MIN)) * plotH;
+    return { x, y, val };
+  });
 
   // Build polyline path
-  const linePath = points.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x} ${p.y}`).join(' ')
+  const linePath = points
+    .map((p, i) => `${i === 0 ? "M" : "L"} ${p.x} ${p.y}`)
+    .join(" ");
 
   // Build area fill path (close at bottom)
   const areaPath =
     linePath +
     ` L ${points[points.length - 1].x} ${PADDING.top + plotH}` +
-    ` L ${points[0].x} ${PADDING.top + plotH} Z`
+    ` L ${points[0].x} ${PADDING.top + plotH} Z`;
 
   return (
     <svg
@@ -98,14 +112,23 @@ export function ProgressChart({ data, width = 400, height = 200 }: ProgressChart
     >
       <defs>
         <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="var(--color-accent)" stopOpacity="0.35" />
-          <stop offset="100%" stopColor="var(--color-accent)" stopOpacity="0.03" />
+          <stop
+            offset="0%"
+            stopColor="var(--color-accent)"
+            stopOpacity="0.35"
+          />
+          <stop
+            offset="100%"
+            stopColor="var(--color-accent)"
+            stopOpacity="0.03"
+          />
         </linearGradient>
       </defs>
 
       {/* Y-axis grid lines and labels */}
       {Y_TICKS.map((tick) => {
-        const y = PADDING.top + plotH - ((tick - Y_MIN) / (Y_MAX - Y_MIN)) * plotH
+        const y =
+          PADDING.top + plotH - ((tick - Y_MIN) / (Y_MAX - Y_MIN)) * plotH;
         return (
           <g key={tick}>
             <line
@@ -115,7 +138,7 @@ export function ProgressChart({ data, width = 400, height = 200 }: ProgressChart
               y2={y}
               stroke="var(--color-grid-line, var(--color-border))"
               strokeWidth={1}
-              strokeDasharray={tick === 0 || tick === 100 ? 'none' : '3,3'}
+              strokeDasharray={tick === 0 || tick === 100 ? "none" : "3,3"}
               opacity={0.5}
             />
             <text
@@ -129,14 +152,14 @@ export function ProgressChart({ data, width = 400, height = 200 }: ProgressChart
               {tick}%
             </text>
           </g>
-        )
+        );
       })}
 
       {/* X-axis labels */}
       {points.map((p, i) => {
         // Show label every N points to avoid crowding
-        const step = Math.max(1, Math.ceil(data.length / 8))
-        if (i % step !== 0 && i !== data.length - 1) return null
+        const step = Math.max(1, Math.ceil(data.length / 8));
+        if (i % step !== 0 && i !== data.length - 1) return null;
         return (
           <text
             key={i}
@@ -149,7 +172,7 @@ export function ProgressChart({ data, width = 400, height = 200 }: ProgressChart
           >
             #{i + 1}
           </text>
-        )
+        );
       })}
 
       {/* Area fill */}
@@ -182,25 +205,28 @@ export function ProgressChart({ data, width = 400, height = 200 }: ProgressChart
       ))}
 
       {/* Trend line (linear regression) */}
-      {data.length >= 3 && (() => {
-        const { slope, intercept } = linearRegression(data)
-        const yStart = intercept
-        const yEnd = intercept + slope * (data.length - 1)
-        const startY = PADDING.top + plotH - ((yStart - Y_MIN) / (Y_MAX - Y_MIN)) * plotH
-        const endY = PADDING.top + plotH - ((yEnd - Y_MIN) / (Y_MAX - Y_MIN)) * plotH
-        return (
-          <line
-            x1={points[0].x}
-            y1={startY}
-            x2={points[points.length - 1].x}
-            y2={endY}
-            stroke="var(--color-accent)"
-            strokeWidth={1}
-            strokeDasharray="6,4"
-            opacity={0.4}
-          />
-        )
-      })()}
+      {data.length >= 3 &&
+        (() => {
+          const { slope, intercept } = linearRegression(data);
+          const yStart = intercept;
+          const yEnd = intercept + slope * (data.length - 1);
+          const startY =
+            PADDING.top + plotH - ((yStart - Y_MIN) / (Y_MAX - Y_MIN)) * plotH;
+          const endY =
+            PADDING.top + plotH - ((yEnd - Y_MIN) / (Y_MAX - Y_MIN)) * plotH;
+          return (
+            <line
+              x1={points[0].x}
+              y1={startY}
+              x2={points[points.length - 1].x}
+              y2={endY}
+              stroke="var(--color-accent)"
+              strokeWidth={1}
+              strokeDasharray="6,4"
+              opacity={0.4}
+            />
+          );
+        })()}
     </svg>
-  )
+  );
 }

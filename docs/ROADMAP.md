@@ -1,6 +1,6 @@
 # Rexiano — 開發路線圖與追蹤清單
 
-> **最後更新**: 2026-02-28
+> **最後更新**: 2026-03-01
 >
 > 詳細設計請參考 [DESIGN.md](./DESIGN.md)
 
@@ -189,7 +189,7 @@
 >
 > 設計詳見 [DESIGN.md §8.5](./DESIGN.md#85-兒童可用性增強phase-65)
 >
-> Sprint 1~4 完成（除真實鋼琴音色外），Sprint 5 待做
+> Sprint 1~4 完成（除真實鋼琴音色外），Sprint 5 完成
 
 ### Sprint 1 — 基礎可用性（全部無依賴，可平行）
 
@@ -266,18 +266,19 @@
 
 ### Sprint 5 — 超越 Synthesia（長期差異化）
 
-- [ ] 指法建議
-  - [ ] `engines/practice/FingeringEngine.ts` — 啟發式自動指法演算法
-  - [ ] 音符上顯示帶圈數字 ①②③④⑤
-  - [ ] 可開關設定
-- [ ] 練習洞察分析
-  - [ ] 累積歷史 noteResults，統計每音符 hit/miss rate
-  - [ ] 識別弱點段落，建議重點練習區段
-  - [ ] 熱力圖視覺化曲目掌握程度
-- [ ] 中文 UI
-  - [ ] i18n 框架（react-i18next 或輕量 key-value）
-  - [ ] 初期兩語言：English / 中文
-  - [ ] Settings 語言切換
+- [x] 指法建議
+  - [x] `engines/practice/FingeringEngine.ts` — 啟發式自動指法演算法
+  - [x] 音符上顯示帶圈數字 ①②③④⑤
+  - [x] 可開關設定（SettingsPanel Display tab toggle）
+- [x] 練習洞察分析
+  - [x] 累積歷史 noteResults，統計每音符 hit/miss rate（WeakSpotAnalyzer）
+  - [x] 識別弱點段落，建議重點練習區段（InsightsPanel + ProgressChart）
+  - [x] InsightsPanel 接入 App.tsx（BarChart3 按鈕 → modal overlay）
+- [x] 中文 UI
+  - [x] i18n 框架（輕量 key-value + I18nProvider + useTranslation hook）
+  - [x] 初期兩語言：English / 繁體中文（91 翻譯鍵值）
+  - [x] Settings 語言切換（Language tab + Globe icon）
+  - [x] I18nProvider mounted in main.tsx
 
 ### Synthesia 對照表
 
@@ -305,37 +306,38 @@
 
 ---
 
-## Phase 7 — 樂譜顯示 🔲
+## Phase 7 — 樂譜顯示 🚧
 
 > 目標版本：v0.5.0
 >
 > 前置：Phase 4 ✅（需要播放同步）
 
-- [ ] 方案選型確認（VexFlow vs OSMD）
-- [ ] `engines/notation/MidiToNotation.ts` — MIDI → 樂譜轉換
-  - [ ] 音符量化（對齊節拍格線）
-  - [ ] 時值推斷（秒 → 四分/八分/十六分音符）
-  - [ ] 休止符插入
-  - [ ] 小節線切割
-  - [ ] 譜號分配（高音 / 低音）
-- [ ] `features/sheetMusic/SheetMusicPanel.tsx` — 五線譜渲染元件
-  - [ ] VexFlow 初始化與 React 橋接
-  - [ ] 逐小節渲染
-  - [ ] 自適應寬度（視窗 resize）
-- [ ] `features/sheetMusic/CursorSync.ts` — 播放同步
-  - [ ] currentTime → 譜面位置映射
-  - [ ] 自動翻頁 / 平滑捲動
-  - [ ] 當前音符高亮
-- [ ] 顯示模式切換
-  - [ ] 模式 A：上半五線譜 + 下半下落音符
-  - [ ] 模式 B：僅五線譜
-  - [ ] 模式 C：僅下落音符（現有預設）
-- [ ] 基本符號支援
-  - [ ] 音符 + 休止符
-  - [ ] 拍號 / 調號
-  - [ ] 符桿方向
+- [x] 方案選型確認（VexFlow vs OSMD）— VexFlow 5.0 已安裝
+- [x] `features/sheetMusic/MidiToNotation.ts` — MIDI → 樂譜轉換
+  - [x] 音符量化（對齊節拍格線）
+  - [x] 時值推斷（秒 → 四分/八分/十六分音符）
+  - [x] 休止符插入（空譜表自動填入全休止符）
+  - [x] 小節線切割
+  - [x] 譜號分配（高音 MIDI≥60 / 低音 MIDI<60）
+- [x] `features/sheetMusic/SheetMusicPanel.tsx` — 五線譜渲染元件
+  - [x] VexFlow 初始化與 React 橋接（動態 import + ResizeObserver）
+  - [x] 逐小節渲染（大譜表：高音譜號 + 低音譜號 + brace 連接）
+  - [x] 自適應寬度（ResizeObserver 響應式佈局）
+- [x] `features/sheetMusic/CursorSync.ts` — 播放同步
+  - [x] currentTime → 譜面位置映射
+  - [x] 自動翻頁 / 平滑捲動
+  - [x] 當前小節高亮
+- [x] 顯示模式切換（`DisplayModeToggle.tsx` 三段選擇器）
+  - [x] 模式 A：上半五線譜 + 下半下落音符（split）
+  - [x] 模式 B：僅五線譜（sheet）
+  - [x] 模式 C：僅下落音符（falling，預設）
+- [ ] 基本符號支援（部分完成）
+  - [x] 音符 + 休止符
+  - [x] 拍號
+  - [ ] 調號
+  - [ ] 符桿方向（VexFlow 預設處理）
   - [ ] 連結線（跨小節音符）
-- [ ] 測試：量化精度、顯示模式切換
+- [x] 測試：量化精度、游標同步（25 tests: MidiToNotation 17 + CursorSync 8）
 
 ---
 
@@ -378,12 +380,12 @@
 >
 > 建議在 Phase 6.5 完成後發佈 v0.4.1（首個可給 Rex 使用的版本）
 
-- [ ] CI/CD 管線（GitHub Actions）
-  - [ ] tag push 觸發多平台建置
-  - [ ] Windows: .exe / .msi
-  - [ ] macOS: .dmg
-  - [ ] Linux: .AppImage / .deb / .snap
-  - [ ] 自動建立 GitHub Release + 上傳 artifacts
+- [x] CI/CD 管線（GitHub Actions）
+  - [x] tag push 觸發多平台建置（release.yml）
+  - [x] Windows: .exe / .msi
+  - [x] macOS: .dmg
+  - [x] Linux: .AppImage / .deb / .snap
+  - [x] 自動建立 GitHub Release + 上傳 artifacts
 - [ ] 自動更新
   - [ ] 整合 electron-updater
   - [ ] 應用內更新提示

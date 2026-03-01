@@ -1,11 +1,7 @@
 import { useMemo } from "react";
 import type { PracticeScore } from "@shared/types";
 import { useProgressStore } from "../../stores/useProgressStore";
-import {
-  getTier,
-  isNewRecord,
-  type CelebrationTier,
-} from "./celebrationUtils";
+import { getTier, isNewRecord, type CelebrationTier } from "./celebrationUtils";
 
 interface CelebrationOverlayProps {
   score: PracticeScore;
@@ -93,7 +89,10 @@ function StarDisplay({ accuracy }: { accuracy: number }): React.JSX.Element {
   const total = 5;
 
   return (
-    <div className="flex items-center gap-1" aria-label={`${filled} out of ${total} stars`}>
+    <div
+      className="flex items-center gap-1"
+      aria-label={`${filled} out of ${total} stars`}
+    >
       {Array.from({ length: total }, (_, i) => {
         const isFilled = i < filled;
         return (
@@ -143,7 +142,10 @@ export function CelebrationOverlay({
   );
 
   // Regenerate particles when tier changes (count is derived from tier)
-  const particles = useMemo(() => generateParticles(count, tier), [count, tier]);
+  const particles = useMemo(
+    () => generateParticles(count, tier),
+    [count, tier],
+  );
 
   if (!visible) return <></>;
 

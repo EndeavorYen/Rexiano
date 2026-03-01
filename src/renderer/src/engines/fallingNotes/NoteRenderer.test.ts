@@ -259,12 +259,16 @@ describe("NoteRenderer", () => {
     ).children[0].children as {
       visible: boolean;
     }[];
-    const visibleCount1 = sprites.filter((s) => s.visible && !("text" in s)).length;
+    const visibleCount1 = sprites.filter(
+      (s) => s.visible && !("text" in s),
+    ).length;
     expect(visibleCount1).toBe(1);
 
     // Frame 2: note has scrolled past (currentTime=10, well past the note)
     renderer.update(song, makeViewport({ currentTime: 10 }));
-    const visibleCount2 = sprites.filter((s) => s.visible && !("text" in s)).length;
+    const visibleCount2 = sprites.filter(
+      (s) => s.visible && !("text" in s),
+    ).length;
     expect(visibleCount2).toBe(0);
   });
 
@@ -579,7 +583,9 @@ describe("NoteRenderer", () => {
   describe("note labels", () => {
     test("creates labels for notes with sufficient height", () => {
       // duration=0.5 at pps=200 → h=100px, well above MIN_HEIGHT_FOR_LABEL (16px)
-      const song = makeSong([{ notes: [{ midi: 60, time: 0, duration: 0.5 }] }]);
+      const song = makeSong([
+        { notes: [{ midi: 60, time: 0, duration: 0.5 }] },
+      ]);
       renderer.update(song, makeViewport({ currentTime: 0, pps: 200 }));
 
       const containerChildren = (
@@ -617,7 +623,9 @@ describe("NoteRenderer", () => {
 
     test("hides labels when showNoteLabels is false", () => {
       renderer.showNoteLabels = false;
-      const song = makeSong([{ notes: [{ midi: 60, time: 0, duration: 0.5 }] }]);
+      const song = makeSong([
+        { notes: [{ midi: 60, time: 0, duration: 0.5 }] },
+      ]);
       renderer.update(song, makeViewport({ currentTime: 0, pps: 200 }));
 
       const containerChildren = (
@@ -636,8 +644,8 @@ describe("NoteRenderer", () => {
       const song = makeSong([
         {
           notes: [
-            { midi: 60, time: 0, duration: 0.5 },  // C4
-            { midi: 69, time: 0, duration: 0.5 },  // A4
+            { midi: 60, time: 0, duration: 0.5 }, // C4
+            { midi: 69, time: 0, duration: 0.5 }, // A4
           ],
         },
       ]);
@@ -658,13 +666,21 @@ describe("NoteRenderer", () => {
     });
 
     test("labels are released when notes leave viewport", () => {
-      const song = makeSong([{ notes: [{ midi: 60, time: 0, duration: 0.1 }] }]);
+      const song = makeSong([
+        { notes: [{ midi: 60, time: 0, duration: 0.1 }] },
+      ]);
 
       // Frame 1: note is visible with label
-      renderer.update(song, makeViewport({ currentTime: 0, pps: 200, height: 600 }));
+      renderer.update(
+        song,
+        makeViewport({ currentTime: 0, pps: 200, height: 600 }),
+      );
 
       // Frame 2: note is gone
-      renderer.update(song, makeViewport({ currentTime: 10, pps: 200, height: 600 }));
+      renderer.update(
+        song,
+        makeViewport({ currentTime: 10, pps: 200, height: 600 }),
+      );
 
       const containerChildren = (
         parent as unknown as { children: { children: unknown[] }[] }
@@ -679,7 +695,9 @@ describe("NoteRenderer", () => {
     });
 
     test("labels are cleaned up on destroy", () => {
-      const song = makeSong([{ notes: [{ midi: 60, time: 0, duration: 0.5 }] }]);
+      const song = makeSong([
+        { notes: [{ midi: 60, time: 0, duration: 0.5 }] },
+      ]);
       renderer.update(song, makeViewport({ currentTime: 0 }));
       renderer.destroy();
       // No crash, and all state is clean

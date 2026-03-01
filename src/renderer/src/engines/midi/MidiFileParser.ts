@@ -53,9 +53,17 @@ export function parseMidiFile(fileName: string, data: number[]): ParsedSong {
 
   const noteCount = tracks.reduce((sum, track) => sum + track.notes.length, 0);
 
+  // Use the end time of the last audible note instead of midi.duration,
+  // which includes MIDI end-of-track metadata and trailing silence.
+  const lastNoteEnd = tracks.reduce((max, track) => {
+    if (track.notes.length === 0) return max;
+    const last = track.notes[track.notes.length - 1];
+    return Math.max(max, last.time + last.duration);
+  }, 0);
+
   return {
     fileName,
-    duration: midi.duration,
+    duration: lastNoteEnd > 0 ? lastNoteEnd : midi.duration,
     tracks,
     tempos,
     timeSignatures,

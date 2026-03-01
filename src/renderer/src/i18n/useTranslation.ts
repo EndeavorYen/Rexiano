@@ -1,7 +1,7 @@
-import { useCallback } from 'react'
-import { useSettingsStore } from '@renderer/stores/useSettingsStore'
-import { translate } from './index'
-import type { TranslationKey, InterpolationParams } from './types'
+import { useCallback } from "react";
+import { useSettingsStore } from "@renderer/stores/useSettingsStore";
+import { translate } from "./index";
+import type { TranslationKey, InterpolationParams } from "./types";
 
 /**
  * React hook for accessing translations in components.
@@ -15,15 +15,16 @@ import type { TranslationKey, InterpolationParams } from './types'
  * }
  */
 export function useTranslation(): {
-  t: (key: TranslationKey, params?: InterpolationParams) => string
-  lang: string
+  t: (key: TranslationKey, params?: InterpolationParams) => string;
+  lang: string;
 } {
-  const language = useSettingsStore((s) => s.language)
+  const language = useSettingsStore((s) => s.language);
 
   const t = useCallback(
-    (key: TranslationKey, params?: InterpolationParams) => translate(language, key, params),
+    (key: TranslationKey, params?: InterpolationParams) =>
+      translate(language, key, params),
     [language],
-  )
+  );
 
-  return { t, lang: language }
+  return { t, lang: language };
 }

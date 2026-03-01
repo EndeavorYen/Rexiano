@@ -73,9 +73,7 @@ describe("Theme tokens", () => {
 
     test("has no extra color keys beyond the required set", () => {
       const colorKeys = Object.keys(theme.colors);
-      expect(colorKeys.sort()).toEqual(
-        [...REQUIRED_COLOR_KEYS].sort(),
-      );
+      expect(colorKeys.sort()).toEqual([...REQUIRED_COLOR_KEYS].sort());
     });
   });
 

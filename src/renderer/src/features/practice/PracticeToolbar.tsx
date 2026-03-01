@@ -1,11 +1,13 @@
 import { useState } from "react";
 import { ChevronDown, ChevronUp } from "lucide-react";
+import { useTranslation } from "@renderer/i18n/useTranslation";
 import { PracticeModeSelector } from "./PracticeModeSelector";
 import { SpeedSlider } from "./SpeedSlider";
 import { ABLoopSelector } from "./ABLoopSelector";
 import { TrackSelector } from "./TrackSelector";
 
 export function PracticeToolbar(): React.JSX.Element {
+  const { t } = useTranslation();
   const [expanded, setExpanded] = useState(false);
 
   return (
@@ -42,9 +44,11 @@ export function PracticeToolbar(): React.JSX.Element {
               transition: "all 0.15s ease",
             }}
             aria-expanded={expanded}
-            aria-label={expanded ? "Hide advanced controls" : "Show advanced controls"}
+            aria-label={
+              expanded ? t("practice.hideAdvanced") : t("practice.showAdvanced")
+            }
           >
-            More
+            {t("practice.more")}
             {expanded ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
           </button>
         </div>
