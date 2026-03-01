@@ -553,11 +553,11 @@ export function SettingsPanel({
                       action={t("settings.shortcut.restart")}
                     />
                     <ShortcutRow
-                      keys="["
+                      keys="[ / ↓"
                       action={t("settings.shortcut.speedDown")}
                     />
                     <ShortcutRow
-                      keys="]"
+                      keys="] / ↑"
                       action={t("settings.shortcut.speedUp")}
                     />
                     <ShortcutRow

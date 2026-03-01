@@ -6,10 +6,14 @@
 //   into Web Audio API for sample-accurate timing
 // - Handle seek: flush scheduled notes, restart from new position
 // - Handle tempo changes
+// - Support speed multiplier (0.25x–2.0x) for slow/fast practice
 //
-// Timing model (from DESIGN.md):
-//   songTime = audioContext.currentTime - startAudioTime + seekOffset
-//   audioTime = startAudioTime + (note.time - seekOffset)
+// Speed-aware timing model:
+//   songTime = (audioContext.currentTime - startAudioTime) * speed + seekOffset
+//   audioTime = startAudioTime + (note.time - seekOffset) / speed
+//
+// At speed=0.5, song time advances at half the rate of real time,
+// so real-clock intervals between notes are doubled (/ speed).
 //
 // This replaces the deltaMS-based time advancement in tickerLoop.ts
 
@@ -37,9 +41,21 @@ export class AudioScheduler implements IAudioScheduler {
   /** Song time offset (set by seek) */
   private _seekOffset = 0;
 
+  /** Playback speed multiplier (0.25–2.0). 1.0 = normal speed. */
+  private _speed = 1.0;
+
   constructor(engine: IAudioEngine, config?: Partial<AudioSchedulerConfig>) {
     this._engine = engine;
     this._config = { ...DEFAULT_CONFIG, ...config };
+  }
+
+  /**
+   * Set the playback speed multiplier.
+   * Must be called before start() or after seek() to take immediate effect.
+   * @param speed  Multiplier in range 0.25–2.0 (clamped by SpeedController upstream)
+   */
+  setSpeed(speed: number): void {
+    this._speed = speed;
   }
 
   /** Bind a song for scheduling. Call before start(). */
@@ -99,7 +115,9 @@ export class AudioScheduler implements IAudioScheduler {
   getCurrentTime(): number | null {
     const ctx = this._engine.audioContext;
     if (!ctx || this._intervalId === null) return null;
-    return ctx.currentTime - this._startAudioTime + this._seekOffset;
+    return (
+      (ctx.currentTime - this._startAudioTime) * this._speed + this._seekOffset
+    );
   }
 
   dispose(): void {
@@ -148,9 +166,11 @@ export class AudioScheduler implements IAudioScheduler {
     const ctx = this._engine.audioContext;
     if (!ctx) return;
 
-    const songTime = ctx.currentTime - this._startAudioTime + this._seekOffset;
-    const lookAhead = this._config.lookAheadSeconds;
-    const horizon = songTime + lookAhead;
+    // Speed-aware song time: real elapsed × speed + offset
+    const songTime =
+      (ctx.currentTime - this._startAudioTime) * this._speed + this._seekOffset;
+    // Look-ahead window in song time: real 100ms maps to (100ms × speed) of song
+    const horizon = songTime + this._config.lookAheadSeconds * this._speed;
 
     for (let t = 0; t < this._song.tracks.length; t++) {
       const notes = this._song.tracks[t].notes;
@@ -168,14 +188,16 @@ export class AudioScheduler implements IAudioScheduler {
           continue;
         }
 
-        // Schedule noteOn and noteOff at precise AudioContext times
-        const audioTime = this._startAudioTime + (note.time - this._seekOffset);
+        // Speed-aware AudioContext time: real offset = song offset / speed
+        const audioTime =
+          this._startAudioTime + (note.time - this._seekOffset) / this._speed;
         // Clamp audioTime to now at minimum (don't schedule in the past)
         const clampedOnTime = Math.max(audioTime, ctx.currentTime);
         this._engine.noteOn(note.midi, note.velocity, clampedOnTime);
 
         const offTime =
-          this._startAudioTime + (note.time + note.duration - this._seekOffset);
+          this._startAudioTime +
+          (note.time + note.duration - this._seekOffset) / this._speed;
         // Ensure noteOff is always after noteOn (noteOn may have been clamped forward)
         const clampedOffTime = Math.max(offTime, clampedOnTime + 0.01);
         this._engine.noteOff(note.midi, clampedOffTime);

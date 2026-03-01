@@ -133,6 +133,12 @@ export interface IAudioScheduler {
   setSong(song: ParsedSong): void;
 
   /**
+   * Set the playback speed multiplier.
+   * @param speed  Multiplier in range 0.25–2.0 (1.0 = normal)
+   */
+  setSpeed(speed: number): void;
+
+  /**
    * Start scheduling from a given song time.
    * @param songTime  Current playback position in seconds
    */

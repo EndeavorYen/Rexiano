@@ -2,6 +2,8 @@ import { useMemo } from "react";
 import type { PracticeScore } from "@shared/types";
 import { useProgressStore } from "../../stores/useProgressStore";
 import { getTier, isNewRecord, type CelebrationTier } from "./celebrationUtils";
+import { useTranslation } from "@renderer/i18n/useTranslation";
+import type { TranslationKey } from "@renderer/i18n/types";
 
 interface CelebrationOverlayProps {
   score: PracticeScore;
@@ -12,25 +14,31 @@ interface CelebrationOverlayProps {
   songId?: string;
 }
 
-const tierConfig: Record<
-  CelebrationTier,
-  { title: string; subtitle: string; emoji: string }
-> = {
-  amazing: {
-    title: "You're a star!",
-    subtitle: "That was absolutely wonderful!",
-    emoji: "confetti",
-  },
-  great: {
-    title: "Well done!",
-    subtitle: "You're getting better every time!",
-    emoji: "star",
-  },
-  encourage: {
-    title: "Great effort!",
-    subtitle: "Every practice makes you stronger!",
-    emoji: "sparkle",
-  },
+/** Emoji animation name per tier — not translated */
+const TIER_EMOJIS: Record<CelebrationTier, string> = {
+  amazing: "confetti",
+  great: "star",
+  encourage: "sparkle",
+};
+
+/** Translation keys for tier titles and subtitles */
+const TIER_TITLE_KEYS: Record<CelebrationTier, TranslationKey> = {
+  amazing: "celebration.amazing.title",
+  great: "celebration.great.title",
+  encourage: "celebration.encourage.title",
+};
+
+const TIER_SUBTITLE_KEYS: Record<CelebrationTier, TranslationKey> = {
+  amazing: "celebration.amazing.subtitle",
+  great: "celebration.great.subtitle",
+  encourage: "celebration.encourage.subtitle",
+};
+
+/** Play-again button translation keys per tier */
+const TIER_PLAY_AGAIN_KEYS: Record<CelebrationTier, TranslationKey> = {
+  amazing: "celebration.playAgain",
+  great: "celebration.oneMoreTime",
+  encourage: "celebration.tryAgain",
 };
 
 /** Number of CSS particles to render for each tier */
@@ -127,8 +135,8 @@ export function CelebrationOverlay({
   onChooseSong,
   songId,
 }: CelebrationOverlayProps): React.JSX.Element {
+  const { t } = useTranslation();
   const tier = getTier(score.accuracy);
-  const config = tierConfig[tier];
   const count = PARTICLE_COUNT[tier];
 
   const previousBest = useProgressStore((s) =>
@@ -194,9 +202,9 @@ export function CelebrationOverlay({
       >
         {/* Big emoji indicator */}
         <div className="text-5xl celebration-bounce" aria-hidden="true">
-          {config.emoji === "confetti"
+          {TIER_EMOJIS[tier] === "confetti"
             ? "\uD83C\uDF89"
-            : config.emoji === "star"
+            : TIER_EMOJIS[tier] === "star"
               ? "\u2B50"
               : "\u2728"}
         </div>
@@ -206,13 +214,13 @@ export function CelebrationOverlay({
           className="text-3xl font-display font-bold celebration-title"
           style={{ color: "var(--color-accent)" }}
         >
-          {config.title}
+          {t(TIER_TITLE_KEYS[tier])}
         </h2>
         <p
           className="text-sm font-body -mt-2"
           style={{ color: "var(--color-text-muted)" }}
         >
-          {config.subtitle}
+          {t(TIER_SUBTITLE_KEYS[tier])}
         </p>
 
         {/* Star display instead of raw accuracy number */}
@@ -225,7 +233,7 @@ export function CelebrationOverlay({
             style={{ color: "var(--color-accent)" }}
             data-testid="celebration-new-record"
           >
-            New Record!
+            {t("celebration.newRecord")}
           </div>
         )}
 
@@ -237,10 +245,22 @@ export function CelebrationOverlay({
             border: "1px solid var(--color-border)",
           }}
         >
-          <ScoreStat label="Accuracy" value={`${score.accuracy.toFixed(1)}%`} />
-          <ScoreStat label="Hits" value={String(score.hitNotes)} />
-          <ScoreStat label="Missed" value={String(score.missedNotes)} />
-          <ScoreStat label="Best Streak" value={String(score.bestStreak)} />
+          <ScoreStat
+            label={t("celebration.accuracy")}
+            value={`${score.accuracy.toFixed(1)}%`}
+          />
+          <ScoreStat
+            label={t("celebration.hits")}
+            value={String(score.hitNotes)}
+          />
+          <ScoreStat
+            label={t("celebration.missed")}
+            value={String(score.missedNotes)}
+          />
+          <ScoreStat
+            label={t("celebration.bestStreak")}
+            value={String(score.bestStreak)}
+          />
         </div>
 
         {/* Buttons with warmer wording */}
@@ -256,18 +276,14 @@ export function CelebrationOverlay({
             }}
             data-testid="celebration-again"
           >
-            {tier === "amazing"
-              ? "Play Again!"
-              : tier === "great"
-                ? "One More Time!"
-                : "Try Again!"}
+            {t(TIER_PLAY_AGAIN_KEYS[tier])}
           </button>
           <button
             onClick={onChooseSong}
             className="px-6 py-2.5 text-sm font-display font-bold rounded-xl cursor-pointer btn-ghost-themed"
             data-testid="celebration-choose-song"
           >
-            Pick a Song
+            {t("celebration.pickSong")}
           </button>
         </div>
       </div>

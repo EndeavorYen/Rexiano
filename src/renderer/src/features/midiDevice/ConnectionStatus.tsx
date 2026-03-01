@@ -1,4 +1,6 @@
 import { useMidiDeviceStore } from "@renderer/stores/useMidiDeviceStore";
+import { useTranslation } from "@renderer/i18n/useTranslation";
+import type { TranslationKey } from "@renderer/i18n/types";
 
 type StatusLevel = "connected" | "disconnected" | "error";
 
@@ -20,19 +22,21 @@ const STATUS_COLORS: Record<StatusLevel, string> = {
   error: "#f87171",
 };
 
-const STATUS_LABELS: Record<StatusLevel, string> = {
-  connected: "MIDI connected",
-  disconnected: "MIDI disconnected",
-  error: "MIDI error",
+/** Maps connection status levels to their i18n translation keys. */
+const STATUS_LABEL_KEYS: Record<StatusLevel, TranslationKey> = {
+  connected: "midi.connected",
+  disconnected: "midi.disconnected",
+  error: "midi.error",
 };
 
 export function ConnectionStatus(): React.JSX.Element {
+  const { t } = useTranslation();
   const isConnected = useMidiDeviceStore((s) => s.isConnected);
   const connectionError = useMidiDeviceStore((s) => s.connectionError);
 
   const level = getStatusLevel(isConnected, connectionError);
   const color = STATUS_COLORS[level];
-  const label = STATUS_LABELS[level];
+  const label = t(STATUS_LABEL_KEYS[level]);
 
   return (
     <span
@@ -54,5 +58,5 @@ export function ConnectionStatus(): React.JSX.Element {
 
 // Export for testing
 // eslint-disable-next-line react-refresh/only-export-components
-export { getStatusLevel, STATUS_COLORS, STATUS_LABELS };
+export { getStatusLevel, STATUS_COLORS, STATUS_LABEL_KEYS };
 export type { StatusLevel };

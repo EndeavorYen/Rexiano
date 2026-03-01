@@ -2,7 +2,7 @@ import { describe, test, expect } from "vitest";
 import {
   getStatusLevel,
   STATUS_COLORS,
-  STATUS_LABELS,
+  STATUS_LABEL_KEYS,
 } from "./ConnectionStatus";
 import type { StatusLevel } from "./ConnectionStatus";
 
@@ -39,23 +39,17 @@ describe("ConnectionStatus helpers", () => {
     });
   });
 
-  describe("STATUS_LABELS", () => {
-    test('each label contains "MIDI"', () => {
-      for (const label of Object.values(STATUS_LABELS)) {
-        expect(label).toContain("MIDI");
+  describe("STATUS_LABEL_KEYS", () => {
+    test("has a translation key for each status level", () => {
+      expect(STATUS_LABEL_KEYS.connected).toBe("midi.connected");
+      expect(STATUS_LABEL_KEYS.disconnected).toBe("midi.disconnected");
+      expect(STATUS_LABEL_KEYS.error).toBe("midi.error");
+    });
+
+    test("all keys follow the midi.* namespace", () => {
+      for (const key of Object.values(STATUS_LABEL_KEYS)) {
+        expect(key).toMatch(/^midi\./);
       }
-    });
-
-    test("connected label indicates connection", () => {
-      expect(STATUS_LABELS.connected).toContain("connected");
-    });
-
-    test("disconnected label indicates disconnection", () => {
-      expect(STATUS_LABELS.disconnected).toContain("disconnected");
-    });
-
-    test("error label indicates error", () => {
-      expect(STATUS_LABELS.error).toContain("error");
     });
   });
 });

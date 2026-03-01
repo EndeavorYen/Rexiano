@@ -1,6 +1,6 @@
 import { ipcMain, dialog, BrowserWindow, app } from "electron";
 import { readFile } from "fs/promises";
-import { basename, join, resolve } from "path";
+import { basename, join, resolve, relative, isAbsolute } from "path";
 import { existsSync } from "fs";
 import {
   IpcChannels,
@@ -45,9 +45,13 @@ export function registerFileHandlers(): void {
         ? join(process.resourcesPath, "resources")
         : join(app.getAppPath(), "resources");
 
-      // Prevent path traversal: resolve and verify the path stays within resourcesDir
+      // Prevent path traversal: resolve and verify the path stays within resourcesDir.
+      // Use path.relative() instead of startsWith() to avoid false matches on
+      // paths sharing a common prefix (e.g. /resources vs /resourcesEvil).
+      const resolvedResourcesDir = resolve(resourcesDir);
       const sfPath = resolve(resourcesDir, sfName);
-      if (!sfPath.startsWith(resolve(resourcesDir))) {
+      const sfRel = relative(resolvedResourcesDir, sfPath);
+      if (sfRel.startsWith("..") || isAbsolute(sfRel)) {
         console.warn(`SoundFont path traversal blocked: ${sfName}`);
         return null;
       }
@@ -126,8 +130,9 @@ export function registerFileHandlers(): void {
       if (!entry) return null;
 
       const filePath = resolve(midiDir, entry.file);
-      // Path traversal guard
-      if (!filePath.startsWith(resolve(midiDir))) return null;
+      // Path traversal guard: use relative() so /midi-evil paths can't sneak through.
+      const midiRel = relative(resolve(midiDir), filePath);
+      if (midiRel.startsWith("..") || isAbsolute(midiRel)) return null;
       if (!existsSync(filePath)) return null;
 
       const buffer = await readFile(filePath);

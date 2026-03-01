@@ -10,7 +10,7 @@
  * - falling: hidden (falling notes only — current default)
  */
 
-import { useRef, useEffect, useState, useCallback } from "react";
+import { useRef, useEffect, useState } from "react";
 import { useTranslation } from "@renderer/i18n/useTranslation";
 import type {
   NotationData,
@@ -201,16 +201,16 @@ export function SheetMusicPanel({
   const [containerWidth, setContainerWidth] = useState(800);
   const hidden = mode === "falling";
 
-  // Track container width with ResizeObserver
-  const resizeRef = useCallback((node: HTMLDivElement | null) => {
-    containerRef.current = node;
-    if (!node) return;
+  // Track container width with ResizeObserver (useEffect ensures cleanup runs on unmount)
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
     const observer = new ResizeObserver((entries) => {
       for (const entry of entries) {
         setContainerWidth(entry.contentRect.width);
       }
     });
-    observer.observe(node);
+    observer.observe(el);
     return () => observer.disconnect();
   }, []);
 
@@ -308,7 +308,7 @@ export function SheetMusicPanel({
 
   return (
     <div
-      ref={resizeRef}
+      ref={containerRef}
       className="w-full overflow-auto"
       style={{
         height: mode === "sheet" ? "100%" : height,

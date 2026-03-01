@@ -63,6 +63,9 @@ export function usePracticeLifecycle(
     const { waitMode } = getPracticeEngines();
     if (!waitMode) return;
 
+    // Reset stale track selection from a previous song before initialising
+    usePracticeStore.getState().setActiveTracks(new Set());
+
     const practiceState = usePracticeStore.getState();
     const activeTracks =
       practiceState.activeTracks.size > 0

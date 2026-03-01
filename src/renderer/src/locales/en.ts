@@ -175,6 +175,23 @@ export const en: TranslationMap = {
   "insights.accuracyPercent": "Accuracy %",
   "insights.practiceTime": "Practice time",
 
+  // ── Celebration ────────────────────────────────────────────────
+  "celebration.amazing.title": "You're a star!",
+  "celebration.amazing.subtitle": "That was absolutely wonderful!",
+  "celebration.great.title": "Well done!",
+  "celebration.great.subtitle": "You're getting better every time!",
+  "celebration.encourage.title": "Great effort!",
+  "celebration.encourage.subtitle": "Every practice makes you stronger!",
+  "celebration.newRecord": "New Record!",
+  "celebration.playAgain": "Play Again!",
+  "celebration.oneMoreTime": "One More Time!",
+  "celebration.tryAgain": "Try Again!",
+  "celebration.pickSong": "Pick a Song",
+  "celebration.accuracy": "Accuracy",
+  "celebration.hits": "Hits",
+  "celebration.missed": "Missed",
+  "celebration.bestStreak": "Best Streak",
+
   // ── Sheet Music ────────────────────────────────────────────────
   "sheetMusic.loadSong": "Load a song to see sheet music",
   "sheetMusic.modeFalling": "Notes",

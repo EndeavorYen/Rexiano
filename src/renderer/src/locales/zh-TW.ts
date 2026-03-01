@@ -171,6 +171,23 @@ export const zhTW: TranslationMap = {
   "insights.accuracyPercent": "準確率 %",
   "insights.practiceTime": "練習時間",
 
+  // ── Celebration ────────────────────────────────────────────────
+  "celebration.amazing.title": "你是最棒的！",
+  "celebration.amazing.subtitle": "真的彈得非常好！",
+  "celebration.great.title": "做得好！",
+  "celebration.great.subtitle": "你每次都在進步！",
+  "celebration.encourage.title": "很努力！",
+  "celebration.encourage.subtitle": "每次練習都讓你更強！",
+  "celebration.newRecord": "新紀錄！",
+  "celebration.playAgain": "再玩一次！",
+  "celebration.oneMoreTime": "再試一次！",
+  "celebration.tryAgain": "繼續努力！",
+  "celebration.pickSong": "選首曲子",
+  "celebration.accuracy": "準確率",
+  "celebration.hits": "命中",
+  "celebration.missed": "失誤",
+  "celebration.bestStreak": "最佳連擊",
+
   // ── Sheet Music ────────────────────────────────────────────────
   "sheetMusic.loadSong": "載入曲子以檢視樂譜",
   "sheetMusic.modeFalling": "音符",

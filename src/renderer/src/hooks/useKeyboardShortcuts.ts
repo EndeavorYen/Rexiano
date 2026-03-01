@@ -132,7 +132,8 @@ export function createKeyboardHandler(
       }
 
       // ── Speed ───────────────────────────────────────
-      case "ArrowUp": {
+      case "ArrowUp":
+      case "BracketRight": {
         e.preventDefault();
         if (!hasSong) return;
         const curSpeed = usePracticeStore.getState().speed;
@@ -140,11 +141,42 @@ export function createKeyboardHandler(
         break;
       }
 
-      case "ArrowDown": {
+      case "ArrowDown":
+      case "BracketLeft": {
         e.preventDefault();
         if (!hasSong) return;
         const curSpeedDown = usePracticeStore.getState().speed;
         usePracticeStore.getState().setSpeed(curSpeedDown - SPEED_STEP);
+        break;
+      }
+
+      // ── Loop A/B point setting ───────────────────────
+      case "KeyA": {
+        if (!hasSong) return;
+        const songA = useSongStore.getState().song;
+        const timeA = usePlaybackStore.getState().currentTime;
+        const loopA = usePracticeStore.getState().loopRange;
+        usePracticeStore
+          .getState()
+          .setLoopRange([timeA, loopA?.[1] ?? songA?.duration ?? timeA + 1]);
+        break;
+      }
+
+      case "KeyB": {
+        if (!hasSong) return;
+        const timeB = usePlaybackStore.getState().currentTime;
+        const loopB = usePracticeStore.getState().loopRange;
+        usePracticeStore.getState().setLoopRange([loopB?.[0] ?? 0, timeB]);
+        break;
+      }
+
+      // ── Stop / close ─────────────────────────────────
+      case "Escape": {
+        if (!hasSong) return;
+        const pb = usePlaybackStore.getState();
+        if (pb.isPlaying) {
+          pb.setPlaying(false);
+        }
         break;
       }
 
@@ -155,7 +187,7 @@ export function createKeyboardHandler(
         if (ps.loopRange) {
           ps.setLoopRange(null);
         }
-        // When no loop is active, L is a no-op (loop points must be set via UI)
+        // When no loop is active, L is a no-op (loop points must be set via A/B keys or UI)
         break;
       }
 

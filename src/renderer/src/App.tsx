@@ -3,7 +3,9 @@ import { ArrowLeft, BarChart3 } from "lucide-react";
 import { parseMidiFile } from "./engines/midi/MidiFileParser";
 import { useSongStore } from "./stores/useSongStore";
 import { usePlaybackStore } from "./stores/usePlaybackStore";
-import { useProgressStore } from "./stores/useProgressStore";
+import { useProgressStore, initAutoSave } from "./stores/useProgressStore";
+import { useSettingsStore } from "./stores/useSettingsStore";
+import { initMetronome } from "./engines/metronome/metronomeManager";
 import { AudioEngine } from "./engines/audio/AudioEngine";
 import { AudioScheduler } from "./engines/audio/AudioScheduler";
 import { FallingNotesCanvas } from "./features/fallingNotes/FallingNotesCanvas";
@@ -116,7 +118,12 @@ function App(): React.JSX.Element {
       usePlaybackStore.getState().setAudioStatus("loading");
       try {
         await engine.init();
-        engine.setVolume(usePlaybackStore.getState().volume);
+        const { muted } = useSettingsStore.getState();
+        engine.setVolume(muted ? 0 : usePlaybackStore.getState().volume);
+        // Wire metronome engine to the live AudioContext (first song load only)
+        if (engine.audioContext) {
+          initMetronome(engine.audioContext);
+        }
         scheduler.setSong(song);
         usePlaybackStore.getState().setAudioStatus("ready");
       } catch (err) {
@@ -124,6 +131,11 @@ function App(): React.JSX.Element {
         usePlaybackStore.getState().setAudioStatus("error");
       }
     };
+
+    // Apply default practice mode/speed from settings whenever a new song loads
+    const { defaultMode, defaultSpeed } = useSettingsStore.getState();
+    usePracticeStore.getState().setMode(defaultMode);
+    usePracticeStore.getState().setSpeed(defaultSpeed);
 
     init();
   }, [song]);
@@ -192,11 +204,55 @@ function App(): React.JSX.Element {
   const getAudioCurrentTime = useCallback((): number | null => {
     return audioRef.current.scheduler?.getCurrentTime() ?? null;
   }, []);
-  // ─── End Phase 4 ─────────────────────────────────────
+
+  // ─── Phase 6.5: Startup wiring — initAutoSave ──────────
+  // Subscribe to playback state transitions to auto-save session records on stop.
+  useEffect(() => {
+    const cleanup = initAutoSave();
+    return cleanup;
+  }, []);
+
+  // ─── Phase 6.5: Startup wiring — muted setting ─────────
+  // Sync the persisted muted setting to the audio engine whenever it changes.
+  useEffect(() => {
+    const unsub = useSettingsStore.subscribe((state, prev) => {
+      if (state.muted === prev.muted) return;
+      const { engine } = audioRef.current;
+      if (!engine) return;
+      engine.setVolume(state.muted ? 0 : usePlaybackStore.getState().volume);
+    });
+    return unsub;
+  }, []);
+
+  // ─── Phase 6.5: Startup wiring — speed sync to AudioScheduler ──
+  // When practice speed changes, sync the multiplier to the AudioScheduler
+  // so audio playback rate matches the visual slow-down.
+  useEffect(() => {
+    const unsub = usePracticeStore.subscribe((state, prev) => {
+      if (state.speed === prev.speed) return;
+      audioRef.current.scheduler?.setSpeed(state.speed);
+    });
+    return unsub;
+  }, []);
 
   // ─── Phase 6: Practice Engine lifecycle (extracted to hook) ──
-  const { handleNoteRendererReady } = usePracticeLifecycle(song, audioRef);
+  const { handleNoteRendererReady, noteRendererRef } = usePracticeLifecycle(
+    song,
+    audioRef,
+  );
   // ─── End Phase 6 ─────────────────────────────────────
+
+  // ─── Phase 6.5: Startup wiring — showFallingNoteLabels ─
+  // Sync the falling note label setting to NoteRenderer whenever it changes.
+  const showFallingNoteLabels = useSettingsStore(
+    (s) => s.showFallingNoteLabels,
+  );
+  useEffect(() => {
+    if (noteRendererRef.current) {
+      noteRendererRef.current.showNoteLabels = showFallingNoteLabels;
+    }
+  }, [showFallingNoteLabels, noteRendererRef]);
+  // ─── End Phase 6.5 ───────────────────────────────────
 
   const handleOpenFile = useCallback(async (): Promise<void> => {
     try {
@@ -218,6 +274,23 @@ function App(): React.JSX.Element {
       console.error("Failed to parse MIDI file:", e);
     }
   }, [loadSong, reset]);
+
+  // Load a MIDI file directly by path (used by recent files in MainMenu)
+  const handleLoadMidiPath = useCallback(
+    async (filePath: string): Promise<void> => {
+      try {
+        const result = await window.api.loadMidiPath(filePath);
+        if (result) {
+          const parsed = parseMidiFile(result.fileName, result.data);
+          loadSong(parsed);
+          reset();
+        }
+      } catch (e) {
+        console.error("Failed to load MIDI from path:", e);
+      }
+    },
+    [loadSong, reset],
+  );
 
   // ─── Phase 6.5: Mute toggle ────────────────────────────
   const muteRef = useRef({ prevVolume: 0.8 });
@@ -368,6 +441,7 @@ function App(): React.JSX.Element {
           <MainMenu
             onStartPractice={() => setViewIntent("library")}
             onOpenSettings={() => setShowMenuSettings(true)}
+            onSelectRecent={(file) => void handleLoadMidiPath(file.path)}
           />
           {showMenuSettings && (
             <SettingsPanel inline onClose={() => setShowMenuSettings(false)} />

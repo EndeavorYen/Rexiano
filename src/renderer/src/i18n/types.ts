@@ -173,6 +173,23 @@ export interface TranslationMap {
   "insights.accuracyPercent": string;
   "insights.practiceTime": string;
 
+  // ── Celebration ────────────────────────────────────────────────
+  "celebration.amazing.title": string;
+  "celebration.amazing.subtitle": string;
+  "celebration.great.title": string;
+  "celebration.great.subtitle": string;
+  "celebration.encourage.title": string;
+  "celebration.encourage.subtitle": string;
+  "celebration.newRecord": string;
+  "celebration.playAgain": string;
+  "celebration.oneMoreTime": string;
+  "celebration.tryAgain": string;
+  "celebration.pickSong": string;
+  "celebration.accuracy": string;
+  "celebration.hits": string;
+  "celebration.missed": string;
+  "celebration.bestStreak": string;
+
   // ── Sheet Music ────────────────────────────────────────────────
   "sheetMusic.loadSong": string;
   "sheetMusic.modeFalling": string;
