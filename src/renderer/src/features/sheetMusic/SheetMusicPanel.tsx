@@ -36,7 +36,8 @@ const MIN_MEASURE_WIDTH = 120; // px — even an empty measure needs this much
  *
  * @param noteCounts - Number of notes per slot (use 1 for empty slots)
  * @param totalWidth - Available pixel width across all slots
- * @returns Width in pixels for each slot, summing to ≤ totalWidth
+ * @returns Width in pixels for each slot, summing to exactly totalWidth when
+ *   totalWidth >= MIN_MEASURE_WIDTH * noteCounts.length
  */
 export function calcMeasureWidths(
   noteCounts: number[],
@@ -45,8 +46,9 @@ export function calcMeasureWidths(
   if (noteCounts.length === 0) return [];
   if (noteCounts.length === 1) return [totalWidth];
 
-  const sum = noteCounts.reduce((a, b) => a + b, 0);
-  const proportional = noteCounts.map((c) => (c / sum) * totalWidth);
+  const effective = noteCounts.map((c) => Math.max(c, 1));
+  const sum = effective.reduce((a, b) => a + b, 0);
+  const proportional = effective.map((c) => (c / sum) * totalWidth);
 
   // Clamp each slot to the minimum
   const clamped = proportional.map((w) => Math.max(w, MIN_MEASURE_WIDTH));
@@ -65,12 +67,11 @@ export function calcMeasureWidths(
   // proportionally among slots whose proportional share exceeds the minimum.
   const minTotal = MIN_MEASURE_WIDTH * noteCounts.length;
   const surplus = Math.max(0, totalWidth - minTotal);
-  const surplusSum = noteCounts.reduce((a, b) => a + b, 0);
-  const result = noteCounts.map((c) =>
-    Math.floor(MIN_MEASURE_WIDTH + (c / surplusSum) * surplus),
+  const result = effective.map((c) =>
+    Math.floor(MIN_MEASURE_WIDTH + (c / sum) * surplus),
   );
   const used = result.reduce((a, b) => a + b, 0);
-  result[0] += totalWidth - used; // distribute rounding remainder
+  result[0] = Math.max(1, result[0] + (totalWidth - used)); // distribute rounding remainder
   return result;
 }
 
@@ -123,19 +124,6 @@ function groupNotesIntoChords(notes: NotationNote[]): ChordGroup[] {
   return groups;
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function applyActiveStyle(staveNote: any): void {
-  staveNote.setStyle({
-    fillStyle: "rgba(30, 110, 114, 0.68)",
-    strokeStyle: "rgba(30, 110, 114, 0.86)",
-    shadowColor: "rgba(30, 110, 114, 0.18)",
-    shadowBlur: 3,
-  });
-}
-
-/**
- * Render a single system (treble + bass) for one measure using VexFlow.
- */
 function renderMeasure(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   VF: any,
@@ -146,8 +134,6 @@ function renderMeasure(
   y: number,
   width: number,
   isFirst: boolean,
-  isHighlighted: boolean,
-  activeTick: number | null,
 ): void {
   const { Stave, StaveNote, Voice, Formatter, StaveConnector } = VF;
 
@@ -191,13 +177,6 @@ function renderMeasure(
             keys: chord.keys,
             duration: chord.duration,
           });
-          if (
-            activeTick !== null &&
-            activeTick >= chord.startTick &&
-            activeTick < chord.startTick + chord.durationTicks
-          ) {
-            applyActiveStyle(note);
-          }
           return note;
         })
       : [
@@ -217,13 +196,6 @@ function renderMeasure(
             duration: chord.duration,
             clef: "bass",
           });
-          if (
-            activeTick !== null &&
-            activeTick >= chord.startTick &&
-            activeTick < chord.startTick + chord.durationTicks
-          ) {
-            applyActiveStyle(note);
-          }
           return note;
         })
       : [
@@ -254,13 +226,6 @@ function renderMeasure(
 
   trebleVoice.draw(context, treble);
   bassVoice.draw(context, bass);
-
-  if (isHighlighted) {
-    context.save();
-    context.setFillStyle("rgba(30, 110, 114, 0.06)");
-    context.fillRect(x, y, width, STAVE_HEIGHT * 2 + SYSTEM_GAP);
-    context.restore();
-  }
 }
 
 /**
@@ -309,14 +274,38 @@ export function SheetMusicPanel({
 }: SheetMusicPanelProps): React.JSX.Element | null {
   const { t } = useTranslation();
   const containerRef = useRef<HTMLDivElement>(null);
+  const svgHostRef = useRef<HTMLDivElement>(null);
   const [containerWidth, setContainerWidth] = useState(800);
   const hidden = mode === "falling";
+  const activeMeasureIndex = cursorPosition?.measureIndex ?? 0;
 
   const visibleMeasures = useMemo(() => {
     if (!notationData || notationData.measures.length === 0) return [];
-    const currentMeasure = cursorPosition?.measureIndex ?? 0;
-    return getMeasureWindow(currentMeasure, notationData.measures.length);
-  }, [notationData, cursorPosition]);
+    return getMeasureWindow(activeMeasureIndex, notationData.measures.length);
+  }, [notationData, activeMeasureIndex]);
+
+  const slotWidth = useMemo(
+    () =>
+      Math.floor((containerWidth - LEFT_MARGIN * 2) / DISPLAY_MEASURE_COUNT),
+    [containerWidth],
+  );
+  const totalHeight = SYSTEM_HEIGHT + TOP_MARGIN * 2 + 16;
+  const activeSlotIndex =
+    cursorPosition && visibleMeasures.length > 0
+      ? visibleMeasures.indexOf(cursorPosition.measureIndex)
+      : -1;
+  const activeMeasure =
+    activeSlotIndex >= 0 && cursorPosition && notationData
+      ? notationData.measures[cursorPosition.measureIndex]
+      : null;
+  const beatsPerMeasure = Math.max(activeMeasure?.timeSignatureTop ?? 4, 1);
+  const beatRatio =
+    cursorPosition && activeSlotIndex >= 0
+      ? Math.max(0, Math.min(0.995, cursorPosition.beat / beatsPerMeasure))
+      : 0;
+  const activeMeasureLeft =
+    activeSlotIndex >= 0 ? LEFT_MARGIN + activeSlotIndex * slotWidth : 0;
+  const cursorLeft = activeMeasureLeft + slotWidth * beatRatio;
 
   useEffect(() => {
     const el = containerRef.current;
@@ -331,24 +320,26 @@ export function SheetMusicPanel({
   }, []);
 
   useEffect(() => {
-    const el = containerRef.current;
-    if (hidden || !el || !notationData || notationData.measures.length === 0)
+    const host = svgHostRef.current;
+    if (
+      hidden ||
+      !host ||
+      !notationData ||
+      notationData.measures.length === 0 ||
+      slotWidth <= 0
+    ) {
       return;
+    }
 
     let cancelled = false;
     void import("vexflow").then(async (VF) => {
       await document.fonts.ready;
-      if (cancelled || !containerRef.current) return;
+      if (cancelled || !svgHostRef.current) return;
 
       const { Renderer } = VF;
-      el.innerHTML = "";
+      host.innerHTML = "";
 
-      const slotWidth = Math.floor(
-        (containerWidth - LEFT_MARGIN * 2) / DISPLAY_MEASURE_COUNT,
-      );
-      const totalHeight = SYSTEM_HEIGHT + TOP_MARGIN * 2 + 16;
-
-      const renderer = new Renderer(el, Renderer.Backends.SVG);
+      const renderer = new Renderer(host, Renderer.Backends.SVG);
       renderer.resize(containerWidth, Math.max(totalHeight, height));
       const context = renderer.getContext();
 
@@ -364,23 +355,9 @@ export function SheetMusicPanel({
         }
 
         const measure = notationData.measures[measureIndex];
-        const isHighlighted = cursorPosition?.measureIndex === measureIndex;
-        const activeTick = isHighlighted
-          ? (cursorPosition?.tick ?? null)
-          : null;
 
         try {
-          renderMeasure(
-            VF,
-            context,
-            measure,
-            x,
-            y,
-            slotWidth,
-            isFirst,
-            isHighlighted,
-            activeTick,
-          );
+          renderMeasure(VF, context, measure, x, y, slotWidth, isFirst);
         } catch (e) {
           console.warn(
             `SheetMusic: failed to render measure ${measureIndex}:`,
@@ -392,14 +369,15 @@ export function SheetMusicPanel({
 
     return () => {
       cancelled = true;
-      el.innerHTML = "";
+      host.innerHTML = "";
     };
   }, [
     hidden,
     notationData,
-    cursorPosition,
     containerWidth,
     height,
+    slotWidth,
+    totalHeight,
     visibleMeasures,
   ]);
 
@@ -421,9 +399,60 @@ export function SheetMusicPanel({
       }}
       data-testid="sheet-music-panel"
     >
+      <div
+        ref={svgHostRef}
+        className="w-full h-full"
+        data-testid="sheet-music-svg-host"
+      />
+
+      {activeSlotIndex >= 0 && cursorPosition && (
+        <>
+          <div
+            className="absolute pointer-events-none"
+            style={{
+              left: activeMeasureLeft,
+              width: slotWidth,
+              top: TOP_MARGIN,
+              height: SYSTEM_HEIGHT,
+              background: "rgba(30, 110, 114, 0.06)",
+              borderRadius: 3,
+            }}
+            data-testid="sheet-active-measure-overlay"
+          />
+          <div
+            className="absolute pointer-events-none"
+            style={{
+              left: cursorLeft,
+              width: 2,
+              top: TOP_MARGIN + 4,
+              height: SYSTEM_HEIGHT - 8,
+              background:
+                "linear-gradient(180deg, rgba(30, 110, 114, 0.75), rgba(30, 110, 114, 0.4))",
+              borderRadius: 999,
+              boxShadow: "0 0 8px rgba(30, 110, 114, 0.3)",
+              transform: "translateX(-1px)",
+            }}
+            data-testid="sheet-cursor-line"
+          />
+          <div
+            className="absolute pointer-events-none"
+            style={{
+              left: cursorLeft - 4,
+              top: TOP_MARGIN + 32,
+              width: 8,
+              height: 8,
+              borderRadius: "999px",
+              background: "rgba(30, 110, 114, 0.92)",
+              boxShadow: "0 0 10px rgba(30, 110, 114, 0.35)",
+            }}
+            data-testid="sheet-cursor-dot"
+          />
+        </>
+      )}
+
       {!notationData && (
         <div
-          className="flex items-center justify-center h-full text-sm font-body"
+          className="absolute inset-0 flex items-center justify-center h-full text-sm font-body"
           style={{ color: "var(--color-text-muted)" }}
         >
           {t("sheetMusic.loadSong")}

@@ -30,4 +30,19 @@ describe("calcMeasureWidths", () => {
     expect(result).toHaveLength(1);
     expect(result[0]).toBe(600);
   });
+
+  it("handles empty noteCounts", () => {
+    expect(calcMeasureWidths([], 800)).toEqual([]);
+  });
+
+  it("handles all-zero note counts without NaN", () => {
+    const result = calcMeasureWidths([0, 0, 0, 0], 800);
+    result.forEach((w) => expect(w).toBeGreaterThanOrEqual(1));
+    expect(result.reduce((a, b) => a + b, 0)).toBeLessThanOrEqual(800);
+  });
+
+  it("no slot gets zero or negative width when container is very narrow", () => {
+    const result = calcMeasureWidths([1, 1, 1, 1], 300); // 300 < 120*4 = 480
+    result.forEach((w) => expect(w).toBeGreaterThan(0));
+  });
 });
