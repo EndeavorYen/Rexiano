@@ -61,6 +61,7 @@ function stubGlobalAudioContext() {
   };
 
   let constructCount = 0;
+  let lastConstructorArg: unknown = undefined;
   class MockAudioContext {
     currentTime = mockCtx.currentTime;
     sampleRate = mockCtx.sampleRate;
@@ -72,8 +73,9 @@ function stubGlobalAudioContext() {
     resume = mockCtx.resume;
     suspend = mockCtx.suspend;
     close = mockCtx.close;
-    constructor() {
+    constructor(options?: unknown) {
       constructCount++;
+      lastConstructorArg = options;
       // Return the shared mock object so tests can inspect it
       return mockCtx as unknown as MockAudioContext;
     }
@@ -84,6 +86,9 @@ function stubGlobalAudioContext() {
     mockCtx,
     mockGainNode,
     MockAudioContext,
+    get lastConstructorArg() {
+      return lastConstructorArg;
+    },
     get constructCount() {
       return constructCount;
     },
@@ -125,6 +130,13 @@ describe("AudioEngine", () => {
       await engine.init();
       expect(stub.constructCount).toBe(1);
       expect(engine.audioContext).not.toBeNull();
+    });
+
+    test("passes latencyHint when configured", async () => {
+      const stub = stubGlobalAudioContext();
+      engine = new AudioEngine({ latencyHint: "playback" });
+      await engine.init();
+      expect(stub.lastConstructorArg).toEqual({ latencyHint: "playback" });
     });
 
     test("creates masterGain and connects to destination", async () => {
@@ -287,6 +299,38 @@ describe("AudioEngine", () => {
       // (only the init call to createGain counts)
       expect(mockCtx.createBufferSource).not.toHaveBeenCalled();
     });
+
+    test("noteOn reports recoverable runtime failures for auto-rebuild", async () => {
+      const { mockCtx } = stubGlobalAudioContext();
+      const runtimeError = new Error(
+        "WASAPI rendering failed: device invalidated (0x88890004)",
+      );
+      const onRuntimeError = vi.fn();
+      engine.setRuntimeErrorHandler(onRuntimeError);
+
+      const mockSample = {
+        midi: 60,
+        buffer: {} as AudioBuffer,
+        sampleRate: 44100,
+        basePitch: 60,
+      };
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const loader = (engine as any)._soundFontLoader;
+      loader.getSample.mockReturnValue(mockSample);
+
+      await engine.init();
+
+      const failingSource = createMockAudioBufferSourceNode();
+      failingSource.start = vi.fn(() => {
+        throw runtimeError;
+      });
+      mockCtx.createBufferSource.mockReturnValue(failingSource);
+      mockCtx.createGain.mockReturnValue(createMockGainNode());
+
+      expect(() => engine.noteOn(60, 100, 0)).not.toThrow();
+      expect(engine.status).toBe("error");
+      expect(onRuntimeError).toHaveBeenCalledWith(runtimeError);
+    });
   });
 
   describe("allNotesOff", () => {
@@ -340,6 +384,27 @@ describe("AudioEngine", () => {
 
       await engine.resume();
       expect(mockCtx.resume).toHaveBeenCalledTimes(1);
+    });
+
+    test("resume reports recoverable runtime failures for auto-rebuild", async () => {
+      const runtimeError = new Error(
+        "IAudioClient::GetCurrentPadding failed (0x88890004)",
+      );
+      const onRuntimeError = vi.fn();
+      engine.setRuntimeErrorHandler(onRuntimeError);
+
+      const mockCtx = {
+        resume: vi.fn().mockRejectedValue(runtimeError),
+        close: vi.fn().mockResolvedValue(undefined),
+      } as unknown as AudioContext;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (engine as any)._audioContext = mockCtx;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (engine as any)._status = "ready";
+
+      await expect(engine.resume()).rejects.toThrow(runtimeError);
+      expect(engine.status).toBe("error");
+      expect(onRuntimeError).toHaveBeenCalledWith(runtimeError);
     });
 
     test("suspend calls audioContext.suspend when available", async () => {

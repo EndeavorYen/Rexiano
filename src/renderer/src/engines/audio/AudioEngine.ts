@@ -27,11 +27,18 @@ const RELEASE_TIME = 0.15;
 /** Default SoundFont file name in resources/ */
 const DEFAULT_SOUNDFONT = "piano.sf2";
 
+interface AudioEngineOptions {
+  onRuntimeError?: (error: unknown) => void;
+  latencyHint?: AudioContextLatencyCategory | number;
+}
+
 export class AudioEngine implements IAudioEngine {
   private _status: AudioEngineStatus = "uninitialized";
   private _audioContext: AudioContext | null = null;
   private _masterGain: GainNode | null = null;
   private _soundFontLoader: SoundFontLoader = new SoundFontLoader();
+  private _onRuntimeError: ((error: unknown) => void) | null = null;
+  private _latencyHint: AudioContextLatencyCategory | number | undefined;
 
   /** Active notes: MIDI note → list of active sources (supports overlapping same-note) */
   private _activeNotes = new Map<number, ActiveNote[]>();
@@ -39,12 +46,21 @@ export class AudioEngine implements IAudioEngine {
   /** Guard against concurrent init() calls */
   private _initPromise: Promise<void> | null = null;
 
+  constructor(options?: AudioEngineOptions) {
+    this._onRuntimeError = options?.onRuntimeError ?? null;
+    this._latencyHint = options?.latencyHint;
+  }
+
   get status(): AudioEngineStatus {
     return this._status;
   }
 
   get audioContext(): AudioContext | null {
     return this._audioContext;
+  }
+
+  setRuntimeErrorHandler(handler: ((error: unknown) => void) | null): void {
+    this._onRuntimeError = handler;
   }
 
   async init(): Promise<void> {
@@ -66,7 +82,10 @@ export class AudioEngine implements IAudioEngine {
 
     try {
       // 1. Create AudioContext
-      this._audioContext = new AudioContext();
+      this._audioContext =
+        this._latencyHint !== undefined
+          ? new AudioContext({ latencyHint: this._latencyHint })
+          : new AudioContext();
 
       // 2. Create master GainNode → destination
       this._masterGain = this._audioContext.createGain();
@@ -89,77 +108,84 @@ export class AudioEngine implements IAudioEngine {
     if (this._status !== "ready" || !this._audioContext || !this._masterGain)
       return;
 
-    const sample = this._soundFontLoader.getSample(midi);
-    if (!sample) return;
+    try {
+      const sample = this._soundFontLoader.getSample(midi);
+      if (!sample) return;
 
-    // Create source node
-    const source = this._audioContext.createBufferSource();
-    source.buffer = sample.buffer;
+      // Create source node
+      const source = this._audioContext.createBufferSource();
+      source.buffer = sample.buffer;
 
-    // Pitch shift: adjust playbackRate if sample basePitch differs from target MIDI
-    if (sample.basePitch !== midi) {
-      source.playbackRate.value = Math.pow(2, (midi - sample.basePitch) / 12);
-    }
-
-    // Velocity gain: map 0-127 → 0.0-1.0
-    const velocityGain = this._audioContext.createGain();
-    velocityGain.gain.value = Math.max(0, Math.min(1, velocity / 127));
-
-    // Connect: source → velocityGain → masterGain → destination
-    source.connect(velocityGain);
-    velocityGain.connect(this._masterGain);
-
-    // Schedule start
-    source.start(time);
-
-    // Track the active note
-    const activeNote: ActiveNote = { source, gain: velocityGain };
-    const existing = this._activeNotes.get(midi);
-    if (existing) {
-      existing.push(activeNote);
-    } else {
-      this._activeNotes.set(midi, [activeNote]);
-    }
-
-    // Auto-cleanup when source finishes naturally
-    source.onended = () => {
-      // Disconnect audio graph nodes to prevent GainNode leak
-      source.disconnect();
-      velocityGain.disconnect();
-      const notes = this._activeNotes.get(midi);
-      if (notes) {
-        const idx = notes.indexOf(activeNote);
-        if (idx !== -1) notes.splice(idx, 1);
-        if (notes.length === 0) this._activeNotes.delete(midi);
+      // Pitch shift: adjust playbackRate if sample basePitch differs from target MIDI
+      if (sample.basePitch !== midi) {
+        source.playbackRate.value = Math.pow(2, (midi - sample.basePitch) / 12);
       }
-    };
+
+      // Velocity gain: map 0-127 → 0.0-1.0
+      const velocityGain = this._audioContext.createGain();
+      velocityGain.gain.value = Math.max(0, Math.min(1, velocity / 127));
+
+      // Connect: source → velocityGain → masterGain → destination
+      source.connect(velocityGain);
+      velocityGain.connect(this._masterGain);
+
+      // Schedule start
+      source.start(time);
+
+      // Track the active note
+      const activeNote: ActiveNote = { source, gain: velocityGain };
+      const existing = this._activeNotes.get(midi);
+      if (existing) {
+        existing.push(activeNote);
+      } else {
+        this._activeNotes.set(midi, [activeNote]);
+      }
+
+      // Auto-cleanup when source finishes naturally
+      source.onended = () => {
+        // Disconnect audio graph nodes to prevent GainNode leak
+        source.disconnect();
+        velocityGain.disconnect();
+        const notes = this._activeNotes.get(midi);
+        if (notes) {
+          const idx = notes.indexOf(activeNote);
+          if (idx !== -1) notes.splice(idx, 1);
+          if (notes.length === 0) this._activeNotes.delete(midi);
+        }
+      };
+    } catch (err) {
+      this._handleRuntimeError(err, "noteOn");
+    }
   }
 
   noteOff(midi: number, time: number): void {
     if (!this._audioContext) return;
-
-    const notes = this._activeNotes.get(midi);
-    if (!notes || notes.length === 0) return;
-
-    // Release the oldest active note for this MIDI key
-    const activeNote = notes.shift()!;
-    if (notes.length === 0) this._activeNotes.delete(midi);
-
-    const { source, gain } = activeNote;
-
-    // Apply release envelope: ramp gain to near-zero then stop
     try {
-      // setTargetAtTime is safer than exponentialRamp for small values
-      gain.gain.setValueAtTime(gain.gain.value, time);
-      gain.gain.exponentialRampToValueAtTime(0.001, time + RELEASE_TIME);
-      source.stop(time + RELEASE_TIME + 0.01);
-    } catch {
-      // Source may have already stopped
+      const notes = this._activeNotes.get(midi);
+      if (!notes || notes.length === 0) return;
+
+      // Release the oldest active note for this MIDI key
+      const activeNote = notes.shift()!;
+      if (notes.length === 0) this._activeNotes.delete(midi);
+
+      const { source, gain } = activeNote;
+
+      // Apply release envelope: ramp gain to near-zero then stop
       try {
-        source.stop();
+        // setTargetAtTime is safer than exponentialRamp for small values
+        gain.gain.setValueAtTime(gain.gain.value, time);
+        gain.gain.exponentialRampToValueAtTime(0.001, time + RELEASE_TIME);
+        source.stop(time + RELEASE_TIME + 0.01);
       } catch {
-        /* already stopped */
+        // Source may have already stopped
+        try {
+          source.stop();
+        } catch {
+          /* already stopped */
+        }
       }
+    } catch (err) {
+      this._handleRuntimeError(err, "noteOff");
     }
   }
 
@@ -182,11 +208,23 @@ export class AudioEngine implements IAudioEngine {
   }
 
   async resume(): Promise<void> {
-    await this._audioContext?.resume();
+    if (!this._audioContext) return;
+    try {
+      await this._audioContext.resume();
+    } catch (err) {
+      this._handleRuntimeError(err, "resume");
+      throw err;
+    }
   }
 
   async suspend(): Promise<void> {
-    await this._audioContext?.suspend();
+    if (!this._audioContext) return;
+    try {
+      await this._audioContext.suspend();
+    } catch (err) {
+      this._handleRuntimeError(err, "suspend");
+      throw err;
+    }
   }
 
   setVolume(volume: number): void {
@@ -202,5 +240,39 @@ export class AudioEngine implements IAudioEngine {
     this._audioContext = null;
     this._masterGain = null;
     this._status = "uninitialized";
+  }
+
+  private _isRecoverableAudioError(err: unknown): boolean {
+    if (err instanceof DOMException) {
+      return (
+        err.name === "InvalidStateError" ||
+        err.name === "AbortError" ||
+        err.name === "NotReadableError"
+      );
+    }
+
+    const message =
+      err instanceof Error
+        ? `${err.name} ${err.message}`.toLowerCase()
+        : String(err).toLowerCase();
+
+    return (
+      message.includes("0x88890004") ||
+      message.includes("wasapi") ||
+      message.includes("device invalidated") ||
+      message.includes("device lost") ||
+      message.includes("rendering failed") ||
+      message.includes("context was closed") ||
+      message.includes("invalid state")
+    );
+  }
+
+  private _handleRuntimeError(err: unknown, context: string): void {
+    if (!this._isRecoverableAudioError(err)) return;
+
+    console.error(`AudioEngine.${context} runtime failure:`, err);
+    this._status = "error";
+    this.allNotesOff();
+    this._onRuntimeError?.(err);
   }
 }

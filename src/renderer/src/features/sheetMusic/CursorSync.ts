@@ -21,6 +21,8 @@ export interface CursorPosition {
   tick: number;
 }
 
+const DISPLAY_MEASURE_COUNT = 4;
+
 /**
  * Compute the cursor position from a playback time.
  *
@@ -85,4 +87,49 @@ export function getScrollTarget(
   }
 
   return null; // No scroll needed
+}
+
+/**
+ * Compute a stable 4-measure display window with boundary preloading.
+ *
+ * Example (1-based for readability):
+ * - current 1~3: 1,2,3,4
+ * - current 4:   5,6,7,4
+ * - current 5+:  5,6,7,8
+ */
+export function getMeasureWindow(
+  currentMeasureIndex: number,
+  totalMeasures: number,
+): number[] {
+  if (totalMeasures <= 0) return [];
+
+  const current = Math.max(
+    0,
+    Math.min(Math.floor(currentMeasureIndex), totalMeasures - 1),
+  );
+  const groupStart = Math.floor(current / DISPLAY_MEASURE_COUNT) * 4;
+  const positionInGroup = current - groupStart;
+
+  if (positionInGroup === 3 && groupStart + 4 < totalMeasures) {
+    const nextGroupStart = groupStart + 4;
+    const nextMeasures: number[] = [];
+    for (let offset = 0; offset < 3; offset++) {
+      const index = nextGroupStart + offset;
+      if (index >= totalMeasures) break;
+      nextMeasures.push(index);
+    }
+
+    // Keep the current measure as the trailing anchor.
+    return [...nextMeasures, current].slice(0, DISPLAY_MEASURE_COUNT);
+  }
+
+  const window: number[] = [];
+  for (
+    let i = groupStart;
+    i < groupStart + DISPLAY_MEASURE_COUNT && i < totalMeasures;
+    i++
+  ) {
+    window.push(i);
+  }
+  return window;
 }

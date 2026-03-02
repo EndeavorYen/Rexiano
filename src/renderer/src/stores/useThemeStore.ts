@@ -14,7 +14,7 @@ function loadSavedTheme(): ThemeId {
   } catch {
     // localStorage might not be available
   }
-  return "lavender";
+  return "ocean";
 }
 
 /** Apply theme CSS custom properties to document root.

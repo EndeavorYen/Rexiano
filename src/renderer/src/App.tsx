@@ -1,13 +1,31 @@
 import { useState, useCallback, useRef, useEffect, useMemo } from "react";
-import { ArrowLeft, BarChart3 } from "lucide-react";
+import {
+  ArrowLeft,
+  BarChart3,
+  PanelRightOpen,
+  Pause,
+  Play,
+  X,
+} from "lucide-react";
 import { parseMidiFile } from "./engines/midi/MidiFileParser";
 import { useSongStore } from "./stores/useSongStore";
 import { usePlaybackStore } from "./stores/usePlaybackStore";
 import { useProgressStore, initAutoSave } from "./stores/useProgressStore";
 import { useSettingsStore } from "./stores/useSettingsStore";
-import { initMetronome } from "./engines/metronome/metronomeManager";
+import {
+  initMetronome,
+  disposeMetronome,
+} from "./engines/metronome/metronomeManager";
 import { AudioEngine } from "./engines/audio/AudioEngine";
 import { AudioScheduler } from "./engines/audio/AudioScheduler";
+import {
+  AUDIO_DEVICECHANGE_DEBOUNCE_MS,
+  AUDIO_RECOVERY_MAX_ATTEMPTS,
+  computeRecoveryBackoffMs,
+  delay,
+  extractAudioOutputIds,
+  hasAudioOutputChanged,
+} from "./engines/audio/recoveryUtils";
 import { FallingNotesCanvas } from "./features/fallingNotes/FallingNotesCanvas";
 import { PianoKeyboard } from "./features/fallingNotes/PianoKeyboard";
 import { TransportBar } from "./features/fallingNotes/TransportBar";
@@ -29,24 +47,131 @@ import { convertToNotation } from "./features/sheetMusic/MidiToNotation";
 import { getCursorPosition } from "./features/sheetMusic/CursorSync";
 import { usePracticeStore } from "./stores/usePracticeStore";
 import { MainMenu } from "./features/mainMenu/MainMenu";
+import { ModeSelectionModal } from "./features/practice/ModeSelectionModal";
+import { CelebrationOverlay } from "./features/practice/CelebrationOverlay";
+import { StatisticsPage } from "./features/statistics/StatisticsPage";
+import type { PracticeMode } from "@shared/types";
+import {
+  parseRouteHash,
+  resolveRoute,
+  routeToHash,
+  type AppRoute,
+} from "./features/routing/appRoute";
 
 /** Accepted file extensions for drag-and-drop MIDI import */
 const MIDI_EXTENSIONS = [".mid", ".midi"];
 
 const analyzer = new WeakSpotAnalyzer();
 
-type AppView = "menu" | "library" | "playback";
+function formatClock(seconds: number): string {
+  if (!Number.isFinite(seconds) || seconds <= 0) return "0:00";
+  const minutes = Math.floor(seconds / 60);
+  const remain = Math.floor(seconds % 60);
+  return `${minutes}:${String(remain).padStart(2, "0")}`;
+}
 
 function App(): React.JSX.Element {
   const { t } = useTranslation();
   const song = useSongStore((s) => s.song);
   const loadSong = useSongStore((s) => s.loadSong);
   const reset = usePlaybackStore((s) => s.reset);
-  const [viewIntent, setViewIntent] = useState<AppView>("menu");
+  const [routeIntent, setRouteIntent] = useState<AppRoute>(() => {
+    if (typeof window === "undefined") return "menu";
+    return parseRouteHash(window.location.hash);
+  });
   const [showMenuSettings, setShowMenuSettings] = useState(false);
 
-  // Derive effective view: always show playback when a song is loaded
-  const view: AppView = song ? "playback" : viewIntent;
+  // Routing rule source of truth:
+  // - Has song => playback
+  // - No song + playback route => menu
+  const view: AppRoute = resolveRoute(routeIntent, !!song);
+  const [showPlaybackDrawer, setShowPlaybackDrawer] = useState(false);
+
+  const applyRoute = useCallback((nextRoute: AppRoute): void => {
+    if (nextRoute !== "playback") {
+      setShowPlaybackDrawer(false);
+    }
+    setRouteIntent(nextRoute);
+    if (typeof window === "undefined") return;
+    const targetHash = routeToHash(nextRoute);
+    if (window.location.hash !== targetHash) {
+      window.location.hash = targetHash;
+    }
+  }, []);
+  const [showSceneCurtain, setShowSceneCurtain] = useState(false);
+  const sceneTokenRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const onHashChange = (): void => {
+      setRouteIntent(parseRouteHash(window.location.hash));
+    };
+    window.addEventListener("hashchange", onHashChange);
+    onHashChange();
+    return () => window.removeEventListener("hashchange", onHashChange);
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const targetHash = routeToHash(view);
+    if (window.location.hash !== targetHash) {
+      window.history.replaceState(null, "", targetHash);
+    }
+  }, [view]);
+
+  // ─── Mode selection + celebration + stats flow ────────
+  const [showModeModal, setShowModeModal] = useState(false);
+  const [showCelebration, setShowCelebration] = useState(false);
+  const [showStats, setShowStats] = useState(false);
+  const score = usePracticeStore((s) => s.score);
+
+  // Show mode selection when a new song loads (subscribe pattern avoids
+  // calling setState directly in an effect body).
+  useEffect(() => {
+    return useSongStore.subscribe((state, prev) => {
+      if (state.song !== prev.song && state.song) {
+        setShowModeModal(true);
+        setShowCelebration(false);
+        setShowStats(false);
+      }
+    });
+  }, []);
+
+  // Detect song end: isPlaying transitions true → false when near end of song.
+  useEffect(() => {
+    return usePlaybackStore.subscribe((state, prev) => {
+      if (prev.isPlaying && !state.isPlaying) {
+        const currentSong = useSongStore.getState().song;
+        if (currentSong && state.currentTime >= currentSong.duration - 1) {
+          setShowCelebration(true);
+        }
+      }
+    });
+  }, []);
+
+  const handleModeSelect = useCallback((mode: PracticeMode) => {
+    usePracticeStore.getState().setMode(mode);
+    setShowModeModal(false);
+    setTimeout(() => {
+      usePlaybackStore.getState().setPlaying(true);
+    }, 150);
+  }, []);
+
+  const handlePracticeAgain = useCallback(() => {
+    setShowCelebration(false);
+    setShowStats(false);
+    usePlaybackStore.getState().reset();
+    usePracticeStore.getState().resetScore();
+  }, []);
+
+  const handleChooseSong = useCallback(() => {
+    setShowCelebration(false);
+    setShowStats(false);
+    useSongStore.getState().clearSong();
+    usePlaybackStore.getState().reset();
+    applyRoute("menu");
+  }, [applyRoute]);
+  // ─── End mode/celebration/stats flow ──────────────────
 
   // ─── Phase 6.5 Sprint 5: Insights Panel ──────────────
   const [showInsights, setShowInsights] = useState(false);
@@ -70,6 +195,7 @@ function App(): React.JSX.Element {
   // ─── Phase 7: Sheet Music ──────────────────────────────
   const displayMode = usePracticeStore((s) => s.displayMode);
   const currentTime = usePlaybackStore((s) => s.currentTime);
+  const isPlaying = usePlaybackStore((s) => s.isPlaying);
 
   const notationData = useMemo(() => {
     if (!song) return null;
@@ -99,34 +225,237 @@ function App(): React.JSX.Element {
     engine: null,
     scheduler: null,
   });
+  const recoveryInFlightRef = useRef<Promise<void> | null>(null);
+  const deviceChangeDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(
+    null,
+  );
+  const audioOutputSnapshotRef = useRef<string[] | null>(null);
+  const triggerRecoveryRef = useRef<(reason: string, error?: unknown) => void>(
+    () => {},
+  );
+
+  const readAudioOutputSnapshot = useCallback(async (): Promise<
+    string[] | null
+  > => {
+    if (typeof navigator === "undefined") return null;
+    const mediaDevices = navigator.mediaDevices;
+    if (!mediaDevices?.enumerateDevices) return null;
+    try {
+      const devices = await mediaDevices.enumerateDevices();
+      return extractAudioOutputIds(devices);
+    } catch (err) {
+      console.warn("Failed to enumerate media devices:", err);
+      return null;
+    }
+  }, []);
+
+  const rebuildAudioStack = useCallback(
+    async (targetSong: NonNullable<typeof song>): Promise<void> => {
+      audioRef.current.engine?.setRuntimeErrorHandler(null);
+      audioRef.current.scheduler?.dispose();
+      audioRef.current.engine?.dispose();
+
+      const { audioCompatibilityMode } = useSettingsStore.getState();
+      const engine = new AudioEngine({
+        latencyHint: audioCompatibilityMode ? "playback" : "interactive",
+        onRuntimeError: (error) => {
+          triggerRecoveryRef.current("runtime-device-failure", error);
+        },
+      });
+      const scheduler = new AudioScheduler(engine);
+      audioRef.current = { engine, scheduler };
+
+      usePlaybackStore.getState().setAudioStatus("loading");
+      await engine.init();
+
+      const { muted } = useSettingsStore.getState();
+      engine.setVolume(muted ? 0 : usePlaybackStore.getState().volume);
+
+      // Rebind metronome to the latest live AudioContext after recovery/rebuild.
+      disposeMetronome();
+      if (engine.audioContext) {
+        initMetronome(engine.audioContext);
+      }
+
+      scheduler.setSong(targetSong);
+      scheduler.setSpeed(usePracticeStore.getState().speed);
+      usePlaybackStore.getState().setAudioStatus("ready");
+      usePlaybackStore.getState().clearAudioRecovery();
+    },
+    [],
+  );
+
+  const recoverAudio = useCallback(
+    (reason: string, error?: unknown): void => {
+      const activeSong = useSongStore.getState().song;
+      if (!activeSong || recoveryInFlightRef.current) return;
+
+      if (error) {
+        console.error(
+          `Audio runtime error (${reason}), rebuilding audio stack:`,
+          error,
+        );
+      }
+
+      const recovery = (async () => {
+        for (
+          let attempt = 1;
+          attempt <= AUDIO_RECOVERY_MAX_ATTEMPTS;
+          attempt++
+        ) {
+          usePlaybackStore
+            .getState()
+            .setAudioRecovering(attempt, AUDIO_RECOVERY_MAX_ATTEMPTS);
+
+          try {
+            const liveSong = useSongStore.getState().song;
+            if (!liveSong) {
+              usePlaybackStore.getState().clearAudioRecovery();
+              return;
+            }
+
+            const { isPlaying, currentTime } = usePlaybackStore.getState();
+            await rebuildAudioStack(liveSong);
+
+            if (isPlaying) {
+              const { engine, scheduler } = audioRef.current;
+              if (engine && scheduler) {
+                scheduler.start(currentTime);
+                await engine.resume();
+              }
+            }
+            return;
+          } catch (err) {
+            console.error(
+              `Audio recovery attempt ${attempt}/${AUDIO_RECOVERY_MAX_ATTEMPTS} failed:`,
+              err,
+            );
+            if (attempt >= AUDIO_RECOVERY_MAX_ATTEMPTS) {
+              throw err;
+            }
+            await delay(computeRecoveryBackoffMs(attempt));
+          }
+        }
+      })()
+        .catch((err) => {
+          console.error("Audio recovery failed:", err);
+          const playback = usePlaybackStore.getState();
+          playback.setAudioStatus("error");
+          playback.setAudioRecoveryFailed(AUDIO_RECOVERY_MAX_ATTEMPTS);
+          playback.setPlaying(false);
+        })
+        .finally(() => {
+          recoveryInFlightRef.current = null;
+        });
+
+      recoveryInFlightRef.current = recovery;
+    },
+    [rebuildAudioStack],
+  );
+
+  useEffect(() => {
+    triggerRecoveryRef.current = recoverAudio;
+  }, [recoverAudio]);
+
+  // Manual retry from UI (TransportBar "Retry" button)
+  useEffect(() => {
+    const unsub = usePlaybackStore.subscribe((state, prev) => {
+      if (state.audioRecoverySignal !== prev.audioRecoverySignal) {
+        triggerRecoveryRef.current("manual-retry");
+      }
+    });
+    return unsub;
+  }, []);
+
+  // Compatibility mode changes require a fresh AudioContext with a new latencyHint.
+  useEffect(() => {
+    const unsub = useSettingsStore.subscribe((state, prev) => {
+      if (state.audioCompatibilityMode === prev.audioCompatibilityMode) return;
+      if (!useSongStore.getState().song) return;
+      triggerRecoveryRef.current("compatibility-mode-change");
+    });
+    return unsub;
+  }, []);
+
+  // Proactively rebuild when output-device topology changes.
+  useEffect(() => {
+    if (typeof navigator === "undefined") return;
+    const mediaDevices = navigator.mediaDevices;
+    if (!mediaDevices?.enumerateDevices) return;
+
+    let disposed = false;
+
+    void readAudioOutputSnapshot().then((snapshot) => {
+      if (!disposed) {
+        audioOutputSnapshotRef.current = snapshot;
+      }
+    });
+
+    const onDeviceChange = (): void => {
+      if (deviceChangeDebounceRef.current) {
+        clearTimeout(deviceChangeDebounceRef.current);
+      }
+      deviceChangeDebounceRef.current = setTimeout(() => {
+        void readAudioOutputSnapshot().then((nextSnapshot) => {
+          if (!nextSnapshot || disposed) return;
+          const changed = hasAudioOutputChanged(
+            audioOutputSnapshotRef.current,
+            nextSnapshot,
+          );
+          audioOutputSnapshotRef.current = nextSnapshot;
+
+          if (!changed) return;
+          if (!useSongStore.getState().song) return;
+          triggerRecoveryRef.current("media-device-change");
+        });
+      }, AUDIO_DEVICECHANGE_DEBOUNCE_MS);
+    };
+
+    if (mediaDevices.addEventListener) {
+      mediaDevices.addEventListener("devicechange", onDeviceChange);
+    } else {
+      mediaDevices.ondevicechange = onDeviceChange;
+    }
+
+    return () => {
+      disposed = true;
+      if (deviceChangeDebounceRef.current) {
+        clearTimeout(deviceChangeDebounceRef.current);
+        deviceChangeDebounceRef.current = null;
+      }
+      if (mediaDevices.removeEventListener) {
+        mediaDevices.removeEventListener("devicechange", onDeviceChange);
+      } else {
+        mediaDevices.ondevicechange = null;
+      }
+    };
+  }, [readAudioOutputSnapshot]);
 
   // Init audio engine when a song is loaded
   useEffect(() => {
     if (!song) return;
 
+    let cancelled = false;
+
     const init = async (): Promise<void> => {
-      if (audioRef.current.engine) {
-        // Engine already exists, just bind the new song
-        audioRef.current.scheduler?.setSong(song);
+      if (recoveryInFlightRef.current) {
+        await recoveryInFlightRef.current;
+      }
+      if (cancelled) return;
+
+      const { engine, scheduler } = audioRef.current;
+      if (engine && scheduler && engine.status === "ready") {
+        // Engine already healthy, just bind the new song
+        scheduler.setSong(song);
+        scheduler.setSpeed(usePracticeStore.getState().speed);
+        usePlaybackStore.getState().setAudioStatus("ready");
         return;
       }
 
-      const engine = new AudioEngine();
-      const scheduler = new AudioScheduler(engine);
-      audioRef.current = { engine, scheduler };
-
-      usePlaybackStore.getState().setAudioStatus("loading");
       try {
-        await engine.init();
-        const { muted } = useSettingsStore.getState();
-        engine.setVolume(muted ? 0 : usePlaybackStore.getState().volume);
-        // Wire metronome engine to the live AudioContext (first song load only)
-        if (engine.audioContext) {
-          initMetronome(engine.audioContext);
-        }
-        scheduler.setSong(song);
-        usePlaybackStore.getState().setAudioStatus("ready");
+        await rebuildAudioStack(song);
       } catch (err) {
+        if (cancelled) return;
         console.error("Audio init failed:", err);
         usePlaybackStore.getState().setAudioStatus("error");
       }
@@ -137,8 +466,12 @@ function App(): React.JSX.Element {
     usePracticeStore.getState().setMode(defaultMode);
     usePracticeStore.getState().setSpeed(defaultSpeed);
 
-    init();
-  }, [song]);
+    void init();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [song, rebuildAudioStack]);
 
   // Sync playback state → AudioScheduler
   const seekTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -161,7 +494,10 @@ function App(): React.JSX.Element {
         // suspended, and the math (currentTime - startAudioTime + offset)
         // still works once it unfreezes.
         scheduler.start(state.currentTime);
-        void engine.resume();
+        void engine.resume().catch((err) => {
+          scheduler.stop();
+          triggerRecoveryRef.current("resume-failed", err);
+        });
       } else if (!state.isPlaying && prev.isPlaying) {
         scheduler.stop();
       }
@@ -195,8 +531,15 @@ function App(): React.JSX.Element {
   // Cleanup audio on unmount
   useEffect(() => {
     return () => {
+      audioRef.current.engine?.setRuntimeErrorHandler(null);
       audioRef.current.scheduler?.dispose();
       audioRef.current.engine?.dispose();
+      if (deviceChangeDebounceRef.current) {
+        clearTimeout(deviceChangeDebounceRef.current);
+        deviceChangeDebounceRef.current = null;
+      }
+      disposeMetronome();
+      triggerRecoveryRef.current = () => {};
     };
   }, []);
 
@@ -381,28 +724,62 @@ function App(): React.JSX.Element {
   );
   // ─── End Phase 6.5 ─────────────────────────────────────
 
+  const handleExitPlayback = useCallback(() => {
+    useSongStore.getState().clearSong();
+    usePlaybackStore.getState().reset();
+    applyRoute("menu");
+  }, [applyRoute]);
+
+  const progressPercent =
+    song && song.duration > 0
+      ? Math.min(
+          100,
+          Math.max(0, Math.round((currentTime / song.duration) * 100)),
+        )
+      : 0;
+
+  useEffect(() => {
+    const token = `${view}:${song?.fileName ?? ""}`;
+    if (sceneTokenRef.current === null) {
+      sceneTokenRef.current = token;
+      return;
+    }
+    if (sceneTokenRef.current === token) return;
+
+    sceneTokenRef.current = token;
+    const raf = requestAnimationFrame(() => setShowSceneCurtain(true));
+    const timer = setTimeout(() => setShowSceneCurtain(false), 520);
+    return () => {
+      cancelAnimationFrame(raf);
+      clearTimeout(timer);
+    };
+  }, [view, song?.fileName]);
+
   return (
     <div
-      className="flex flex-col h-screen"
-      style={{ background: "var(--color-bg)", color: "var(--color-text)" }}
+      className="app-shell flex h-screen flex-col"
+      style={{ color: "var(--color-text)" }}
       onDragEnter={handleDragEnter}
       onDragLeave={handleDragLeave}
       onDragOver={handleDragOver}
       onDrop={handleDrop}
     >
+      {showSceneCurtain && <div className="scene-curtain" />}
+
       {/* Drag-and-drop overlay */}
       {isDragging && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center"
           style={{
-            background: "rgba(0, 0, 0, 0.5)",
-            backdropFilter: "blur(4px)",
+            background: "rgba(6, 10, 12, 0.55)",
+            backdropFilter: "blur(8px)",
           }}
         >
           <div
-            className="rounded-2xl px-10 py-8 text-center"
+            className="rounded-3xl px-10 py-8 text-center subtle-shadow-md"
             style={{
-              background: "var(--color-surface)",
+              background:
+                "color-mix(in srgb, var(--color-surface) 90%, transparent)",
               border: "3px dashed var(--color-accent)",
             }}
           >
@@ -425,7 +802,7 @@ function App(): React.JSX.Element {
       {/* Drag error toast */}
       {dragError && (
         <div
-          className="fixed top-4 left-1/2 -translate-x-1/2 z-50 px-4 py-2 rounded-lg text-sm font-body"
+          className="fixed top-4 left-1/2 -translate-x-1/2 z-50 px-4 py-2 rounded-lg text-sm font-body subtle-shadow"
           style={{
             background: "#dc2626",
             color: "#ffffff",
@@ -439,7 +816,7 @@ function App(): React.JSX.Element {
       {!song && view === "menu" && (
         <>
           <MainMenu
-            onStartPractice={() => setViewIntent("library")}
+            onStartPractice={() => applyRoute("library")}
             onOpenSettings={() => setShowMenuSettings(true)}
             onSelectRecent={(file) => void handleLoadMidiPath(file.path)}
           />
@@ -454,77 +831,143 @@ function App(): React.JSX.Element {
         <div key="library" className="flex-1 flex flex-col animate-page-enter">
           <SongLibrary
             onOpenFile={handleOpenFile}
-            onBack={() => setViewIntent("menu")}
+            onBack={() => applyRoute("menu")}
           />
         </div>
       )}
 
       {/* View: Playback */}
       {song && (
-        <div key="playback" className="flex-1 flex flex-col animate-page-enter">
-          {/* Song info header */}
+        <div
+          key="playback"
+          className="flex-1 flex flex-col animate-page-enter px-3 pb-3 pt-3"
+        >
           <div
-            className="flex items-center justify-between px-4 py-2"
+            className="surface-panel subtle-shadow flex flex-col gap-3 px-4 py-3 mb-3"
             style={{
-              background: "var(--color-surface)",
-              borderBottom: "1px solid var(--color-border)",
+              borderRadius: "1.1rem",
             }}
           >
-            <div className="min-w-0">
-              <h2 className="text-sm font-semibold font-body truncate">
-                {song.fileName}
-              </h2>
-              <p
-                className="text-xs"
+            <div className="flex items-start gap-2 justify-between">
+              <div className="min-w-0 flex-1">
+                <span className="kicker-label">{t("app.subtitle")}</span>
+                <h2 className="text-base font-semibold font-body truncate">
+                  {song.fileName}
+                </h2>
+              </div>
+
+              <div className="flex items-center gap-2 shrink-0">
+                <button
+                  onClick={() => setShowPlaybackDrawer(true)}
+                  className="btn-surface-themed flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-lg font-body cursor-pointer"
+                  data-testid="playback-drawer-trigger"
+                >
+                  <PanelRightOpen size={14} />
+                  {t("settings.title")}
+                </button>
+                <button
+                  onClick={handleExitPlayback}
+                  className="btn-surface-themed flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-lg font-body cursor-pointer"
+                >
+                  <ArrowLeft size={14} />
+                  {t("song.backToLibrary")}
+                </button>
+              </div>
+            </div>
+
+            <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
+              <span className="control-chip">
+                <span
+                  className={`status-dot ${isPlaying ? "status-dot-live" : "status-dot-idle"}`}
+                />
+                {isPlaying ? <Pause size={11} /> : <Play size={11} />}
+              </span>
+              <span className="control-chip">
+                {song.tracks.length}{" "}
+                {song.tracks.length > 1 ? t("song.tracks") : t("song.track")}
+              </span>
+              <span className="control-chip">
+                {song.noteCount} {t("song.notes")}
+              </span>
+              <span className="control-chip font-mono tabular-nums">
+                {progressPercent}%
+              </span>
+              {song.tempos.length > 0 && (
+                <span className="control-chip font-mono tabular-nums">
+                  {Math.round(song.tempos[0].bpm)} BPM
+                </span>
+              )}
+            </div>
+
+            <div className="mt-2.5">
+              <div className="progress-rail">
+                <div
+                  className={`progress-fill ${isPlaying ? "progress-fill-live" : ""}`}
+                  style={{ width: `${progressPercent}%` }}
+                />
+              </div>
+              <div
+                className="mt-1 flex items-center justify-between text-[10px] font-mono tabular-nums"
                 style={{ color: "var(--color-text-muted)" }}
               >
-                {song.tracks.length}{" "}
-                {song.tracks.length > 1 ? t("song.tracks") : t("song.track")}{" "}
-                &middot; {song.noteCount} {t("song.notes")}
-                {song.tempos.length > 0 &&
-                  ` \u00B7 ${Math.round(song.tempos[0].bpm)} BPM`}
-              </p>
-            </div>
-            <div className="flex items-center gap-2 shrink-0 ml-3">
-              <DisplayModeToggle />
-              <div
-                className="h-5 w-px shrink-0"
-                style={{ background: "var(--color-border)" }}
-              />
-              <DeviceSelector />
-              <div
-                className="h-5 w-px shrink-0"
-                style={{ background: "var(--color-border)" }}
-              />
-              <button
-                onClick={() => setShowInsights(true)}
-                className="w-8 h-8 flex items-center justify-center rounded-full transition-colors cursor-pointer"
-                style={{ background: "var(--color-surface-alt)" }}
-                title={t("app.insightsTitle")}
-                data-testid="insights-trigger"
-              >
-                <BarChart3
-                  size={16}
-                  style={{ color: "var(--color-text-muted)" }}
-                />
-              </button>
-              <SettingsPanel />
-              <button
-                onClick={() => {
-                  useSongStore.getState().clearSong();
-                  usePlaybackStore.getState().reset();
-                  setViewIntent("menu");
-                }}
-                className="flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-lg font-body cursor-pointer btn-surface-themed"
-              >
-                <ArrowLeft size={14} />
-                {t("song.backToLibrary")}
-              </button>
+                <span>{formatClock(currentTime)}</span>
+                <span>{formatClock(song.duration)}</span>
+              </div>
             </div>
           </div>
 
+          {showPlaybackDrawer && (
+            <div
+              className="app-overlay-backdrop"
+              onClick={() => setShowPlaybackDrawer(false)}
+            >
+              <aside
+                className="app-side-drawer"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <div className="app-side-drawer-header">
+                  <span className="kicker-label">{t("settings.title")}</span>
+                  <button
+                    onClick={() => setShowPlaybackDrawer(false)}
+                    className="btn-surface-themed w-7 h-7 rounded-full flex items-center justify-center cursor-pointer"
+                    aria-label={t("settings.close")}
+                  >
+                    <X size={14} />
+                  </button>
+                </div>
+                <div className="app-side-drawer-body">
+                  <section className="app-side-section">
+                    <DisplayModeToggle />
+                  </section>
+                  <section className="app-side-section">
+                    <DeviceSelector />
+                  </section>
+                  <section className="app-side-section flex items-center gap-2">
+                    <button
+                      onClick={() => {
+                        setShowPlaybackDrawer(false);
+                        setShowInsights(true);
+                      }}
+                      className="btn-surface-themed w-8 h-8 flex items-center justify-center rounded-full cursor-pointer"
+                      title={t("app.insightsTitle")}
+                      data-testid="insights-trigger"
+                    >
+                      <BarChart3
+                        size={16}
+                        style={{ color: "var(--color-text)" }}
+                      />
+                    </button>
+                    <SettingsPanel />
+                  </section>
+                </div>
+              </aside>
+            </div>
+          )}
+
           {/* Main display area: sheet music / falling notes / both */}
-          <div className="flex-1 relative flex flex-col min-h-0">
+          <div
+            className={`workspace-frame ${isPlaying ? "workspace-frame-live" : ""} flex-1 relative flex flex-col min-h-0 surface-panel overflow-hidden`}
+          >
             {/* Sheet music panel (shown in split & sheet modes) */}
             <SheetMusicPanel
               notationData={notationData}
@@ -533,28 +976,29 @@ function App(): React.JSX.Element {
               height={displayMode === "split" ? 220 : undefined}
             />
 
-            {/* Falling notes canvas (shown in split & falling modes) */}
-            {displayMode !== "sheet" && (
-              <div className="flex-1 relative flex flex-col">
-                <FallingNotesCanvas
-                  onActiveNotesChange={handleActiveNotesChange}
-                  getAudioCurrentTime={getAudioCurrentTime}
-                  onNoteRendererReady={handleNoteRendererReady}
-                />
-              </div>
-            )}
+            {/* Falling notes canvas — always mounted so PixiJS ticker keeps
+                running (WaitMode relies on it). Hidden via CSS in sheet mode. */}
+            <div
+              className="flex-1 relative flex flex-col"
+              style={{ display: displayMode === "sheet" ? "none" : "flex" }}
+            >
+              <FallingNotesCanvas
+                onActiveNotesChange={handleActiveNotesChange}
+                getAudioCurrentTime={getAudioCurrentTime}
+                onNoteRendererReady={handleNoteRendererReady}
+              />
+            </div>
             <ScoreOverlay />
           </div>
 
           {/* Insights modal */}
           {showInsights && (
             <div
-              className="fixed inset-0 z-[100] flex items-center justify-center"
-              style={{ background: "rgba(0,0,0,0.45)" }}
+              className="fixed inset-0 z-[100] flex items-center justify-center modal-backdrop-cinematic"
               onClick={() => setShowInsights(false)}
             >
               <div
-                className="w-[460px] max-h-[85vh] overflow-y-auto animate-page-enter"
+                className="w-[92vw] max-w-[460px] max-h-[85vh] overflow-y-auto modal-card-cinematic subtle-shadow-md"
                 onClick={(e) => e.stopPropagation()}
               >
                 <InsightsPanel
@@ -577,6 +1021,39 @@ function App(): React.JSX.Element {
             midiActiveNotes={midiActiveNotes}
             height={100}
           />
+
+          {/* Mode selection modal (shown when a song first loads) */}
+          {showModeModal && (
+            <ModeSelectionModal
+              onSelect={handleModeSelect}
+              onClose={() => setShowModeModal(false)}
+            />
+          )}
+
+          {/* Celebration overlay (shown when song ends).
+              "Pick Song" leads to StatisticsPage instead of directly back. */}
+          {showCelebration && (
+            <CelebrationOverlay
+              score={score}
+              visible={showCelebration}
+              onPracticeAgain={handlePracticeAgain}
+              onChooseSong={() => {
+                setShowCelebration(false);
+                setShowStats(true);
+              }}
+              songId={songId}
+            />
+          )}
+
+          {/* Statistics page (shown after celebration) */}
+          {showStats && (
+            <StatisticsPage
+              score={score}
+              songName={song?.fileName ?? ""}
+              onPlayAgain={handlePracticeAgain}
+              onChooseSong={handleChooseSong}
+            />
+          )}
         </div>
       )}
     </div>

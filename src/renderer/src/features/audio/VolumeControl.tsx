@@ -39,7 +39,14 @@ export function VolumeControl(): React.JSX.Element {
   );
 
   return (
-    <div className="flex items-center gap-1.5">
+    <div
+      className="flex items-center gap-1.5 rounded-lg px-1.5 py-1"
+      style={{
+        background:
+          "color-mix(in srgb, var(--color-surface-alt) 72%, var(--color-surface))",
+        border: "1px solid var(--color-border)",
+      }}
+    >
       <button
         onClick={handleToggleMute}
         className="flex items-center justify-center rounded-md cursor-pointer"
@@ -47,9 +54,8 @@ export function VolumeControl(): React.JSX.Element {
           width: 28,
           height: 28,
           color: isMuted ? "var(--color-text-muted)" : "var(--color-text)",
-          background: "transparent",
-          opacity: isMuted ? 0.5 : 0.85,
-          transition: "opacity 0.15s, color 0.15s",
+          opacity: isMuted ? 0.5 : 0.92,
+          transition: "opacity 0.15s, color 0.15s, background 0.15s",
         }}
         title={isMuted ? t("audio.unmute") : t("audio.mute")}
         aria-label={isMuted ? t("audio.unmute") : t("audio.mute")}
@@ -64,7 +70,7 @@ export function VolumeControl(): React.JSX.Element {
         value={displayValue}
         onChange={handleVolumeChange}
         className="h-1"
-        style={{ accentColor: "var(--color-accent)", width: 72 }}
+        style={{ accentColor: "var(--color-accent)", width: 84 }}
         aria-label={t("transport.volume")}
         title={`${t("transport.volume")}: ${displayValue}%`}
       />

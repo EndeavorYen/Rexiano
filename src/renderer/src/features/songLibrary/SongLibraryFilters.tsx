@@ -29,12 +29,11 @@ export function SongLibraryFilters(): React.JSX.Element {
   );
 
   return (
-    <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full max-w-2xl mx-auto">
-      {/* Search */}
+    <div className="flex flex-col lg:flex-row items-stretch lg:items-center gap-3 w-full">
       <div className="flex-1 relative">
         <Search
-          size={14}
-          className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none"
+          size={15}
+          className="absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none"
           style={{ color: "var(--color-text-muted)" }}
         />
         <input
@@ -42,30 +41,30 @@ export function SongLibraryFilters(): React.JSX.Element {
           value={searchQuery}
           onChange={handleSearch}
           placeholder={t("library.searchPlaceholder")}
-          className="w-full pl-8 pr-3 py-2 rounded-lg text-sm font-body input-themed"
+          className="w-full pl-9 pr-3.5 py-2.5 rounded-lg text-sm font-body input-themed"
         />
       </div>
 
-      {/* Difficulty pills */}
-      <div className="flex gap-1.5">
+      <div
+        className="flex items-center gap-1.5 rounded-xl p-1"
+        style={{
+          background:
+            "color-mix(in srgb, var(--color-surface) 80%, transparent)",
+          border: "1px solid var(--color-border)",
+        }}
+      >
         {difficulties.map((d) => (
           <button
             key={d.value}
             onClick={() => setDifficultyFilter(d.value)}
-            className="px-3 py-1.5 rounded-full text-xs font-body font-medium transition-colors cursor-pointer"
+            className="px-3 py-1.5 rounded-lg text-xs font-body font-medium transition-colors cursor-pointer"
             style={{
               background:
                 difficultyFilter === d.value
                   ? "var(--color-accent)"
-                  : "var(--color-surface)",
+                  : "transparent",
               color:
-                difficultyFilter === d.value
-                  ? "#fff"
-                  : "var(--color-text-muted)",
-              border:
-                difficultyFilter === d.value
-                  ? "1px solid var(--color-accent)"
-                  : "1px solid var(--color-border)",
+                difficultyFilter === d.value ? "#fff" : "var(--color-text)",
             }}
           >
             {t(d.key)}

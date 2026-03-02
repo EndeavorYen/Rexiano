@@ -62,22 +62,21 @@ export function SongCard({
   return (
     <button
       onClick={handleClick}
-      className="group text-left rounded-xl overflow-hidden cursor-pointer w-full card-hover"
+      className="group card-hover text-left rounded-xl overflow-hidden cursor-pointer w-full"
       style={{
-        background: "var(--color-surface)",
+        background: "color-mix(in srgb, var(--color-surface) 88%, transparent)",
         border: "1px solid var(--color-border)",
       }}
     >
-      {/* Gradient header — subtle height transition */}
       <div
-        className="h-2 transition-all duration-300 group-hover:h-3"
+        className="h-1.5 transition-all duration-300 group-hover:h-2"
         style={{
-          background: `linear-gradient(135deg, ${stripeColor}, color-mix(in srgb, ${stripeColor} 50%, var(--color-surface)))`,
+          background: `linear-gradient(95deg, ${stripeColor}, color-mix(in srgb, ${stripeColor} 38%, var(--color-surface)))`,
         }}
       />
 
-      <div className="p-4">
-        <div className="flex items-start justify-between gap-2">
+      <div className="p-3.5">
+        <div className="flex items-start justify-between gap-2.5">
           <div className="min-w-0 flex-1">
             <h3
               className="font-body font-semibold text-sm truncate"
@@ -93,19 +92,21 @@ export function SongCard({
             </p>
           </div>
 
-          {/* Practiced indicator — small colored dot */}
           {bestScore && (
             <div
-              className="w-2 h-2 rounded-full shrink-0 mt-1.5"
-              style={{ background: "var(--color-accent)", opacity: 0.7 }}
+              className="w-2.5 h-2.5 rounded-full shrink-0 mt-1.5"
+              style={{
+                background: "var(--color-accent)",
+                boxShadow:
+                  "0 0 0 4px color-mix(in srgb, var(--color-accent) 18%, transparent)",
+              }}
               title="Practiced"
             />
           )}
         </div>
 
-        <div className="flex items-center justify-between mt-3">
-          <div className="flex items-center gap-2">
-            {/* Difficulty dots */}
+        <div className="flex items-center justify-between mt-3.5">
+          <div className="flex items-center gap-2.5 min-w-0">
             <div
               className="flex items-center gap-0.5"
               title={`${difficultyLabels[song.difficulty]}: ${difficultyDescription}`}
@@ -123,10 +124,9 @@ export function SongCard({
               ))}
             </div>
 
-            {/* Star rating for best score */}
             {bestScore && (
               <div
-                className="flex items-center gap-px ml-1"
+                className="flex items-center gap-px"
                 title={`Best: ${Math.round(bestScore.score.accuracy)}%`}
               >
                 {[1, 2, 3].map((n) => (
@@ -148,10 +148,24 @@ export function SongCard({
                 ))}
               </div>
             )}
+
+            {bestScore && (
+              <span
+                className="text-[10px] font-mono tabular-nums px-1.5 py-0.5 rounded-md"
+                style={{
+                  color: "var(--color-text-muted)",
+                  background:
+                    "color-mix(in srgb, var(--color-surface-alt) 80%, transparent)",
+                  border: "1px solid var(--color-border)",
+                }}
+              >
+                {Math.round(bestScore.score.accuracy)}%
+              </span>
+            )}
           </div>
 
           <span
-            className="text-[11px] font-mono"
+            className="text-[11px] font-mono tabular-nums"
             style={{ color: "var(--color-text-muted)" }}
           >
             {formatDuration(song.durationSeconds)}

@@ -135,6 +135,8 @@ export interface TranslationMap {
   "settings.volume": string;
   "settings.muted": string;
   "settings.muteAudio": string;
+  "settings.audioCompatibilityMode": string;
+  "settings.audioCompatibilityModeDesc": string;
   "settings.practiceDefaults": string;
   "settings.defaultMode": string;
   "settings.defaultSpeed": string;
@@ -153,6 +155,8 @@ export interface TranslationMap {
   "settings.shortcut.loopA": string;
   "settings.shortcut.loopB": string;
   "settings.shortcut.closeBack": string;
+  "settings.basicMode": string;
+  "settings.advancedMode": string;
 
   // ── Fingering ──────────────────────────────────────────────────
   "fingering.label": string;
@@ -197,9 +201,29 @@ export interface TranslationMap {
   "sheetMusic.modeSplit": string;
   "sheetMusic.displayMode": string;
 
+  // ── Mode Selection ─────────────────────────────────────────────
+  "modeSelect.title": string;
+  "modeSelect.subtitle": string;
+  "modeSelect.watchDesc": string;
+  "modeSelect.waitDesc": string;
+  "modeSelect.freeDesc": string;
+  "modeSelect.escToSkip": string;
+
+  // ── Statistics ─────────────────────────────────────────────────
+  "stats.title": string;
+  "stats.accuracy": string;
+  "stats.notesHit": string;
+  "stats.notesMissed": string;
+  "stats.streak": string;
+  "stats.playAgain": string;
+  "stats.backToLibrary": string;
+
   // ── Audio ──────────────────────────────────────────────────────
   "audio.mute": string;
   "audio.unmute": string;
+  "audio.recovering": string;
+  "audio.recoveryFailed": string;
+  "audio.retry": string;
 
   // ── General ────────────────────────────────────────────────────
   "general.loading": string;

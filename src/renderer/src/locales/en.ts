@@ -137,6 +137,9 @@ export const en: TranslationMap = {
   "settings.volume": "Volume",
   "settings.muted": "Muted",
   "settings.muteAudio": "Mute audio",
+  "settings.audioCompatibilityMode": "Audio compatibility mode",
+  "settings.audioCompatibilityModeDesc":
+    "Use safer playback latency to improve stability on some Windows audio drivers",
   "settings.practiceDefaults": "Practice Defaults",
   "settings.defaultMode": "Default Mode",
   "settings.defaultSpeed": "Default Speed",
@@ -155,6 +158,8 @@ export const en: TranslationMap = {
   "settings.shortcut.loopA": "Set loop A point",
   "settings.shortcut.loopB": "Set loop B point",
   "settings.shortcut.closeBack": "Close / Back",
+  "settings.basicMode": "Basic",
+  "settings.advancedMode": "Advanced",
 
   // ── Fingering ──────────────────────────────────────────────────
   "fingering.label": "Fingering",
@@ -199,9 +204,29 @@ export const en: TranslationMap = {
   "sheetMusic.modeSplit": "Both",
   "sheetMusic.displayMode": "Display mode",
 
+  // ── Mode Selection ─────────────────────────────────────────────
+  "modeSelect.title": "How do you want to play?",
+  "modeSelect.subtitle": "Choose your practice style",
+  "modeSelect.watchDesc": "Watch the notes fall and listen",
+  "modeSelect.waitDesc": "Music waits for you to play each note",
+  "modeSelect.freeDesc": "Play freely without guidance",
+  "modeSelect.escToSkip": "Press Esc to skip",
+
+  // ── Statistics ─────────────────────────────────────────────────
+  "stats.title": "Session Stats",
+  "stats.accuracy": "Accuracy",
+  "stats.notesHit": "Notes Hit",
+  "stats.notesMissed": "Missed",
+  "stats.streak": "Best Streak",
+  "stats.playAgain": "Play Again",
+  "stats.backToLibrary": "Back to Library",
+
   // ── Audio ──────────────────────────────────────────────────────
   "audio.mute": "Mute",
   "audio.unmute": "Unmute",
+  "audio.recovering": "Recovering audio ({attempt}/{max})...",
+  "audio.recoveryFailed": "Audio recovery failed",
+  "audio.retry": "Retry",
 
   // ── General ────────────────────────────────────────────────────
   "general.loading": "Loading...",

@@ -125,9 +125,14 @@ export function usePracticeLifecycle(
         // Resume audio — read fresh time INSIDE the .then() callback
         const { scheduler, engine } = audioRef.current;
         if (scheduler && engine) {
-          void engine.resume().then(() => {
-            scheduler.start(usePlaybackStore.getState().currentTime);
-          });
+          void engine
+            .resume()
+            .then(() => {
+              scheduler.start(usePlaybackStore.getState().currentTime);
+            })
+            .catch((err) => {
+              console.error("WaitMode audio resume failed:", err);
+            });
         }
       },
     });

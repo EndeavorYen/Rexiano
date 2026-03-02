@@ -26,6 +26,7 @@ interface SettingsState {
   metronomeEnabled: boolean;
   countInBeats: number;
   latencyCompensation: number;
+  audioCompatibilityMode: boolean;
 
   setShowNoteLabels: (v: boolean) => void;
   setShowFallingNoteLabels: (v: boolean) => void;
@@ -38,6 +39,7 @@ interface SettingsState {
   setMetronomeEnabled: (v: boolean) => void;
   setCountInBeats: (v: number) => void;
   setLatencyCompensation: (ms: number) => void;
+  setAudioCompatibilityMode: (v: boolean) => void;
 }
 
 interface PersistedSettings {
@@ -52,6 +54,7 @@ interface PersistedSettings {
   metronomeEnabled?: boolean;
   countInBeats?: number;
   latencyCompensation?: number;
+  audioCompatibilityMode?: boolean;
 }
 
 const defaults: PersistedSettings = {
@@ -66,6 +69,7 @@ const defaults: PersistedSettings = {
   metronomeEnabled: false,
   countInBeats: 4,
   latencyCompensation: 0,
+  audioCompatibilityMode: false,
 };
 
 function loadSavedSettings(): PersistedSettings {
@@ -106,6 +110,7 @@ export const useSettingsStore = create<SettingsState>()((set) => {
     metronomeEnabled: saved.metronomeEnabled!,
     countInBeats: saved.countInBeats!,
     latencyCompensation: saved.latencyCompensation!,
+    audioCompatibilityMode: saved.audioCompatibilityMode!,
 
     setShowNoteLabels: (v) => {
       persist({ showNoteLabels: v });
@@ -154,6 +159,10 @@ export const useSettingsStore = create<SettingsState>()((set) => {
       const clamped = Math.max(0, Math.min(100, Math.round(ms)));
       persist({ latencyCompensation: clamped });
       set({ latencyCompensation: clamped });
+    },
+    setAudioCompatibilityMode: (v) => {
+      persist({ audioCompatibilityMode: v });
+      set({ audioCompatibilityMode: v });
     },
   };
 });

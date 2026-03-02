@@ -133,6 +133,9 @@ export const zhTW: TranslationMap = {
   "settings.volume": "音量",
   "settings.muted": "已靜音",
   "settings.muteAudio": "靜音",
+  "settings.audioCompatibilityMode": "音訊相容模式",
+  "settings.audioCompatibilityModeDesc":
+    "使用較安全的播放延遲，改善部分 Windows 音效驅動穩定性",
   "settings.practiceDefaults": "練習預設值",
   "settings.defaultMode": "預設模式",
   "settings.defaultSpeed": "預設速度",
@@ -151,6 +154,8 @@ export const zhTW: TranslationMap = {
   "settings.shortcut.loopA": "設定循環 A 點",
   "settings.shortcut.loopB": "設定循環 B 點",
   "settings.shortcut.closeBack": "關閉 / 返回",
+  "settings.basicMode": "基本",
+  "settings.advancedMode": "進階",
 
   // ── Fingering ──────────────────────────────────────────────────
   "fingering.label": "指法",
@@ -195,9 +200,29 @@ export const zhTW: TranslationMap = {
   "sheetMusic.modeSplit": "雙顯示",
   "sheetMusic.displayMode": "顯示模式",
 
+  // ── Mode Selection ─────────────────────────────────────────────
+  "modeSelect.title": "你想怎麼練習？",
+  "modeSelect.subtitle": "選擇你的練習方式",
+  "modeSelect.watchDesc": "觀看音符下落並聆聽",
+  "modeSelect.waitDesc": "樂曲等待你彈奏每個音符",
+  "modeSelect.freeDesc": "自由彈奏，不受引導",
+  "modeSelect.escToSkip": "按 Esc 跳過",
+
+  // ── Statistics ─────────────────────────────────────────────────
+  "stats.title": "練習統計",
+  "stats.accuracy": "準確率",
+  "stats.notesHit": "擊中音符",
+  "stats.notesMissed": "未擊中",
+  "stats.streak": "最佳連擊",
+  "stats.playAgain": "再玩一次",
+  "stats.backToLibrary": "返回曲庫",
+
   // ── Audio ──────────────────────────────────────────────────────
   "audio.mute": "靜音",
   "audio.unmute": "取消靜音",
+  "audio.recovering": "音訊修復中（{attempt}/{max}）…",
+  "audio.recoveryFailed": "音訊自動修復失敗",
+  "audio.retry": "重試",
 
   // ── General ────────────────────────────────────────────────────
   "general.loading": "載入中…",

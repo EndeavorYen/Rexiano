@@ -25,20 +25,23 @@ export function DisplayModeToggle(): React.JSX.Element {
   const setDisplayMode = usePracticeStore((s) => s.setDisplayMode);
 
   return (
-    <div className="flex items-center gap-1">
+    <div
+      className="flex items-center gap-1 rounded-xl p-1"
+      style={{
+        background: "color-mix(in srgb, var(--color-surface) 78%, transparent)",
+        border: "1px solid var(--color-border)",
+      }}
+    >
       {modes.map(({ value, labelKey, Icon }) => {
         const isActive = displayMode === value;
         return (
           <button
             key={value}
             onClick={() => setDisplayMode(value)}
-            className="flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-body cursor-pointer"
+            className="flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] font-body cursor-pointer transition-colors"
             style={{
-              background: isActive
-                ? "var(--color-accent)"
-                : "var(--color-surface-alt)",
+              background: isActive ? "var(--color-accent)" : "transparent",
               color: isActive ? "#fff" : "var(--color-text-muted)",
-              transition: "all 0.15s ease",
             }}
             aria-pressed={isActive}
             aria-label={t(labelKey)}

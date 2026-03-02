@@ -75,6 +75,11 @@ describe("useSettingsStore", () => {
       const store = await getStore();
       expect(store.getState().latencyCompensation).toBe(0);
     });
+
+    test("audioCompatibilityMode defaults to false", async () => {
+      const store = await getStore();
+      expect(store.getState().audioCompatibilityMode).toBe(false);
+    });
   });
 
   describe("setters update state", () => {
@@ -130,6 +135,12 @@ describe("useSettingsStore", () => {
       const store = await getStore();
       store.getState().setLatencyCompensation(15);
       expect(store.getState().latencyCompensation).toBe(15);
+    });
+
+    test("setAudioCompatibilityMode updates compatibility mode", async () => {
+      const store = await getStore();
+      store.getState().setAudioCompatibilityMode(true);
+      expect(store.getState().audioCompatibilityMode).toBe(true);
     });
   });
 
@@ -219,6 +230,14 @@ describe("useSettingsStore", () => {
       const raw = storage.get(STORAGE_KEY);
       const parsed = JSON.parse(raw!);
       expect(parsed.latencyCompensation).toBe(25);
+    });
+
+    test("setAudioCompatibilityMode persists to localStorage", async () => {
+      const store = await getStore();
+      store.getState().setAudioCompatibilityMode(true);
+      const raw = storage.get(STORAGE_KEY);
+      const parsed = JSON.parse(raw!);
+      expect(parsed.audioCompatibilityMode).toBe(true);
     });
 
     test("saved values are restored on store re-creation", async () => {

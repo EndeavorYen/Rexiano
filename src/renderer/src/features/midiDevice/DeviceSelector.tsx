@@ -84,7 +84,7 @@ export function DeviceSelector(): React.JSX.Element {
 
   return (
     <div
-      className="flex items-center gap-3 px-3 py-1.5 text-xs font-body"
+      className="flex flex-wrap items-center gap-2.5 px-3 py-2 text-xs font-body"
       style={{ color: "var(--color-text)" }}
     >
       <ConnectionStatus />
@@ -100,19 +100,21 @@ export function DeviceSelector(): React.JSX.Element {
         <>
           {/* Input device select */}
           {connectedInputs.length > 0 && (
-            <label className="flex items-center gap-1.5">
+            <label
+              className="flex items-center gap-1.5 rounded-lg px-2 py-1"
+              style={{
+                background:
+                  "color-mix(in srgb, var(--color-surface) 75%, transparent)",
+                border: "1px solid var(--color-border)",
+              }}
+            >
               <span style={{ color: "var(--color-text-muted)" }}>
                 {t("midi.inputLabel")}
               </span>
               <select
                 value={selectedInputId ?? ""}
                 onChange={handleInputChange}
-                className="rounded px-2 py-1 text-xs outline-none cursor-pointer"
-                style={{
-                  background: "var(--color-surface-alt)",
-                  color: "var(--color-text)",
-                  border: "1px solid var(--color-border)",
-                }}
+                className="select-themed rounded px-2 py-1 text-xs outline-none cursor-pointer"
                 aria-label="MIDI input device"
               >
                 <option value="">{t("midi.noneOption")}</option>
@@ -127,19 +129,21 @@ export function DeviceSelector(): React.JSX.Element {
 
           {/* Output device select */}
           {connectedOutputs.length > 0 && (
-            <label className="flex items-center gap-1.5">
+            <label
+              className="flex items-center gap-1.5 rounded-lg px-2 py-1"
+              style={{
+                background:
+                  "color-mix(in srgb, var(--color-surface) 75%, transparent)",
+                border: "1px solid var(--color-border)",
+              }}
+            >
               <span style={{ color: "var(--color-text-muted)" }}>
                 {t("midi.outputLabel")}
               </span>
               <select
                 value={selectedOutputId ?? ""}
                 onChange={handleOutputChange}
-                className="rounded px-2 py-1 text-xs outline-none cursor-pointer"
-                style={{
-                  background: "var(--color-surface-alt)",
-                  color: "var(--color-text)",
-                  border: "1px solid var(--color-border)",
-                }}
+                className="select-themed rounded px-2 py-1 text-xs outline-none cursor-pointer"
                 aria-label="MIDI output device"
               >
                 <option value="">{t("midi.noneOption")}</option>
@@ -157,12 +161,11 @@ export function DeviceSelector(): React.JSX.Element {
             <button
               onClick={handleTestClick}
               disabled={testState !== "idle"}
-              className="px-2.5 py-1 rounded text-xs font-medium transition-colors cursor-pointer"
+              className="btn-surface-themed px-2.5 py-1 rounded text-xs font-medium transition-colors cursor-pointer"
               style={{
                 background:
                   testState === "ok" ? "#22c55e" : "var(--color-surface)",
                 color: testState === "ok" ? "#fff" : "var(--color-text)",
-                border: "1px solid var(--color-border)",
                 opacity: testState === "playing" ? 0.7 : 1,
               }}
               title={t("midi.testTitle")}
@@ -183,12 +186,8 @@ export function DeviceSelector(): React.JSX.Element {
       {isConnected ? (
         <button
           onClick={disconnect}
-          className="px-2.5 py-1 rounded text-xs font-medium transition-colors cursor-pointer"
-          style={{
-            background: "var(--color-surface-alt)",
-            color: "var(--color-text-muted)",
-            border: "1px solid var(--color-border)",
-          }}
+          className="btn-surface-themed px-2.5 py-1 rounded text-xs font-medium transition-colors cursor-pointer"
+          style={{ color: "var(--color-text-muted)" }}
           title={t("midi.disconnectTitle")}
           aria-label={t("midi.disconnectTitle")}
         >
@@ -200,11 +199,9 @@ export function DeviceSelector(): React.JSX.Element {
       {bleStatus === "connected" && bleDeviceName ? (
         <button
           onClick={disconnectBluetooth}
-          className="flex items-center gap-1 px-2.5 py-1 rounded text-xs font-medium transition-colors cursor-pointer"
+          className="flex items-center gap-1 px-2.5 py-1 rounded text-xs font-medium transition-colors cursor-pointer btn-primary-themed"
           style={{
-            background: "#3b82f6",
             color: "#fff",
-            border: "1px solid #2563eb",
           }}
           title={t("midi.bleDeviceTitle", { name: bleDeviceName })}
           aria-label={t("midi.bleDisconnect")}
@@ -216,11 +213,9 @@ export function DeviceSelector(): React.JSX.Element {
         <button
           onClick={connectBluetooth}
           disabled={bleStatus === "scanning" || bleStatus === "connecting"}
-          className="flex items-center gap-1 px-2.5 py-1 rounded text-xs font-medium transition-colors cursor-pointer"
+          className="btn-surface-themed flex items-center gap-1 px-2.5 py-1 rounded text-xs font-medium transition-colors cursor-pointer"
           style={{
-            background: "var(--color-surface-alt)",
             color: "var(--color-text-muted)",
-            border: "1px solid var(--color-border)",
             opacity:
               bleStatus === "scanning" || bleStatus === "connecting" ? 0.6 : 1,
           }}

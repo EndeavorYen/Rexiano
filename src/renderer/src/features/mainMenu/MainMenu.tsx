@@ -1,18 +1,17 @@
-/**
- * MainMenu — Landing screen shown at app startup.
- *
- * Provides a friendly, child-oriented welcome screen with:
- * - App branding and greeting
- * - Large "Start Practicing" button
- * - Settings shortcut
- * - Quick access to recently played songs
- */
-
 import { useMemo } from "react";
-import { Music, Settings, Play, Clock } from "lucide-react";
+import {
+  Play,
+  Clock3,
+  Library,
+  Flame,
+  SlidersHorizontal,
+  ArrowUpRight,
+} from "lucide-react";
+import appIcon from "@renderer/assets/icon.png";
 import { useTranslation } from "@renderer/i18n/useTranslation";
 import { useProgressStore } from "@renderer/stores/useProgressStore";
 import { useRecentFiles } from "@renderer/hooks/useRecentFiles";
+import { formatRelativeTime } from "@renderer/utils/relativeTime";
 import type { RecentFile } from "@shared/types";
 
 interface MainMenuProps {
@@ -29,7 +28,7 @@ export function MainMenu({
   const { t } = useTranslation();
   const sessions = useProgressStore((s) => s.sessions);
   const { recentFiles: allRecents } = useRecentFiles();
-  const recentFiles = allRecents.slice(0, 3);
+  const recentFiles = allRecents.slice(0, 5);
 
   const greeting = useMemo(() => {
     const hour = new Date().getHours();
@@ -39,123 +38,167 @@ export function MainMenu({
   }, [t]);
 
   const totalSessions = sessions.length;
+  const practicedSongs = new Set(sessions.map((s) => s.songId)).size;
 
   return (
-    <div
-      className="flex-1 flex flex-col items-center justify-center gap-8 px-6"
-      style={{
-        background:
-          "linear-gradient(165deg, var(--color-bg), color-mix(in srgb, var(--color-accent) 5%, var(--color-bg)))",
-      }}
-    >
-      {/* Logo & branding */}
-      <div className="text-center animate-page-enter">
-        <div
-          className="w-20 h-20 mx-auto mb-4 rounded-2xl flex items-center justify-center"
-          style={{
-            background:
-              "linear-gradient(135deg, var(--color-accent), color-mix(in srgb, var(--color-accent) 70%, #fff))",
-            boxShadow: "0 8px 32px rgba(0,0,0,0.1)",
-          }}
-        >
-          <Music size={36} color="#fff" />
-        </div>
-        <h1
-          className="text-3xl font-display font-bold tracking-tight"
-          style={{ color: "var(--color-text)" }}
-        >
-          {t("app.title")}
-        </h1>
-        <p
-          className="text-sm font-body mt-1"
-          style={{ color: "var(--color-text-muted)" }}
-        >
-          {greeting}
-        </p>
-      </div>
+    <div className="flex-1 app-shell overflow-y-auto px-6 py-8">
+      <div className="mx-auto h-full w-full max-w-6xl flex items-center">
+        <div className="surface-panel subtle-shadow-md w-full p-6 sm:p-8 lg:p-10 animate-page-enter">
+          <div className="grid gap-6 lg:grid-cols-[1.2fr_0.9fr]">
+            <section className="space-y-6">
+              <span className="kicker-label">{t("app.subtitle")}</span>
 
-      {/* Main CTA */}
-      <button
-        onClick={onStartPractice}
-        className="flex items-center gap-3 px-8 py-4 rounded-xl text-lg font-body font-bold cursor-pointer animate-page-enter"
-        style={{
-          background: "var(--color-accent)",
-          color: "#fff",
-          boxShadow:
-            "0 4px 20px rgba(0,0,0,0.15), 0 0 0 1px rgba(255,255,255,0.1) inset",
-          transition: "transform 0.15s, box-shadow 0.15s",
-          animationDelay: "0.1s",
-        }}
-        onMouseEnter={(e) => {
-          e.currentTarget.style.transform = "scale(1.03)";
-        }}
-        onMouseLeave={(e) => {
-          e.currentTarget.style.transform = "scale(1)";
-        }}
-      >
-        <Play size={22} />
-        {t("app.startPractice")}
-      </button>
+              <div className="flex items-center gap-4">
+                <div className="brand-emblem rounded-2xl">
+                  <img
+                    src={appIcon}
+                    alt="Rexiano"
+                    width={66}
+                    height={66}
+                    className="rounded-2xl subtle-shadow"
+                  />
+                </div>
+                <div className="min-w-0">
+                  <h1 className="text-3xl sm:text-4xl font-display font-bold tracking-tight leading-none">
+                    {t("app.title")}
+                  </h1>
+                  <p
+                    className="text-sm mt-1"
+                    style={{ color: "var(--color-text-muted)" }}
+                  >
+                    {greeting}
+                  </p>
+                </div>
+              </div>
 
-      {/* Recent songs quick access */}
-      {recentFiles.length > 0 && onSelectRecent && (
-        <div
-          className="flex flex-col items-center gap-2 animate-page-enter"
-          style={{ animationDelay: "0.2s" }}
-        >
-          <span
-            className="text-[10px] font-mono uppercase tracking-wider"
-            style={{ color: "var(--color-text-muted)" }}
-          >
-            {t("library.recentlyPlayed")}
-          </span>
-          <div className="flex items-center gap-2">
-            {recentFiles.map((file) => (
-              <button
-                key={file.path}
-                onClick={() => onSelectRecent(file)}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-body cursor-pointer"
-                style={{
-                  background: "var(--color-surface)",
-                  color: "var(--color-text-muted)",
-                  border: "1px solid var(--color-border)",
-                  transition: "all 0.15s",
-                }}
-                title={file.name}
+              <p
+                className="text-sm sm:text-base max-w-lg"
+                style={{ color: "var(--color-text-muted)" }}
               >
-                <Clock size={11} />
-                <span className="truncate max-w-[120px]">{file.name}</span>
-              </button>
-            ))}
+                {t("app.menuGreeting")}
+              </p>
+
+              <div className="flex flex-wrap gap-2.5">
+                <MetaPill
+                  icon={<Library size={14} />}
+                  label={t("library.songsPracticed")}
+                  value={practicedSongs}
+                />
+                <MetaPill
+                  icon={<Flame size={14} />}
+                  label={
+                    totalSessions === 1
+                      ? t("library.session")
+                      : t("library.sessions")
+                  }
+                  value={totalSessions}
+                />
+              </div>
+
+              <div className="flex flex-wrap gap-3">
+                <button
+                  onClick={onStartPractice}
+                  className="btn-primary-themed flex items-center gap-2.5 rounded-xl px-6 py-3.5 text-sm font-body font-semibold cursor-pointer"
+                >
+                  <Play size={17} />
+                  {t("app.startPractice")}
+                </button>
+                <button
+                  onClick={onOpenSettings}
+                  className="btn-surface-themed flex items-center gap-2.5 rounded-xl px-5 py-3 text-sm font-body font-medium cursor-pointer"
+                >
+                  <SlidersHorizontal size={16} />
+                  {t("app.openSettings")}
+                </button>
+              </div>
+            </section>
+
+            <aside className="surface-elevated p-4 sm:p-5 space-y-3">
+              <div
+                className="flex items-center gap-2 text-[11px] font-mono uppercase tracking-[0.16em]"
+                style={{ color: "var(--color-text-muted)" }}
+              >
+                <Clock3 size={13} />
+                {t("library.recentlyPlayed")}
+              </div>
+
+              {recentFiles.length > 0 && onSelectRecent ? (
+                <div className="space-y-2.5">
+                  {recentFiles.map((file, idx) => (
+                    <button
+                      key={file.path}
+                      onClick={() => onSelectRecent(file)}
+                      className="card-hover animate-page-enter w-full text-left rounded-lg px-3.5 py-2.5 cursor-pointer"
+                      style={{
+                        background:
+                          "color-mix(in srgb, var(--color-surface) 80%, transparent)",
+                        border: "1px solid var(--color-border)",
+                        animationDelay: `${idx * 55}ms`,
+                      }}
+                      title={file.name}
+                    >
+                      <div className="flex items-start justify-between gap-2">
+                        <p className="text-sm font-body font-medium truncate">
+                          {file.name}
+                        </p>
+                        <ArrowUpRight
+                          size={13}
+                          style={{ color: "var(--color-text-muted)" }}
+                        />
+                      </div>
+                      <p
+                        className="text-[11px] mt-0.5"
+                        style={{ color: "var(--color-text-muted)" }}
+                      >
+                        {formatRelativeTime(file.timestamp)}
+                      </p>
+                    </button>
+                  ))}
+                </div>
+              ) : (
+                <div
+                  className="rounded-lg px-3.5 py-4 text-sm"
+                  style={{
+                    color: "var(--color-text-muted)",
+                    background:
+                      "color-mix(in srgb, var(--color-surface) 74%, transparent)",
+                    border: "1px dashed var(--color-border)",
+                  }}
+                >
+                  {t("library.noSongsHint")}
+                </div>
+              )}
+            </aside>
           </div>
         </div>
-      )}
+      </div>
+    </div>
+  );
+}
 
-      {/* Settings button */}
-      <button
-        onClick={onOpenSettings}
-        className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-body cursor-pointer animate-page-enter"
-        style={{
-          background: "var(--color-surface-alt)",
-          color: "var(--color-text-muted)",
-          transition: "all 0.15s",
-          animationDelay: "0.3s",
-        }}
-      >
-        <Settings size={15} />
-        {t("app.openSettings")}
-      </button>
-
-      {/* Stats footer */}
-      {totalSessions > 0 && (
-        <p
-          className="text-xs font-body animate-page-enter"
-          style={{ color: "var(--color-text-muted)", animationDelay: "0.4s" }}
-        >
-          {totalSessions}{" "}
-          {totalSessions === 1 ? t("library.session") : t("library.sessions")}
-        </p>
-      )}
+function MetaPill({
+  icon,
+  label,
+  value,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  value: number;
+}): React.JSX.Element {
+  return (
+    <div
+      className="inline-flex items-center gap-2 rounded-full px-3.5 py-2 text-xs"
+      style={{
+        color: "var(--color-text)",
+        background:
+          "color-mix(in srgb, var(--color-accent) 8%, var(--color-surface))",
+        border:
+          "1px solid color-mix(in srgb, var(--color-accent) 22%, var(--color-border))",
+      }}
+    >
+      <span style={{ color: "var(--color-accent)" }}>{icon}</span>
+      <span className="font-body font-medium">{value}</span>
+      <span style={{ color: "var(--color-text-muted)" }}>{label}</span>
     </div>
   );
 }

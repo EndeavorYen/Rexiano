@@ -47,6 +47,8 @@ const tabIds: SettingsTab[] = [
   "language",
 ];
 
+const basicTabIds: SettingsTab[] = ["theme", "language"];
+
 const tabIcons = [
   <Palette size={14} key="theme" />,
   <Monitor size={14} key="display" />,
@@ -83,6 +85,8 @@ export function SettingsPanel({
   const { t } = useTranslation();
   const [open, setOpen] = useState(inline);
   const [activeTab, setActiveTab] = useState<SettingsTab>("theme");
+  const [isBasicMode, setIsBasicMode] = useState(true);
+  const visibleTabIds = isBasicMode ? basicTabIds : tabIds;
   const panelRef = useRef<HTMLDivElement>(null);
 
   // Theme state
@@ -103,6 +107,9 @@ export function SettingsPanel({
   const metronomeEnabled = useSettingsStore((s) => s.metronomeEnabled);
   const countInBeats = useSettingsStore((s) => s.countInBeats);
   const latencyCompensation = useSettingsStore((s) => s.latencyCompensation);
+  const audioCompatibilityMode = useSettingsStore(
+    (s) => s.audioCompatibilityMode,
+  );
 
   const setShowNoteLabels = useSettingsStore((s) => s.setShowNoteLabels);
   const setShowFallingNoteLabels = useSettingsStore(
@@ -118,6 +125,9 @@ export function SettingsPanel({
   const setCountInBeats = useSettingsStore((s) => s.setCountInBeats);
   const setLatencyCompensation = useSettingsStore(
     (s) => s.setLatencyCompensation,
+  );
+  const setAudioCompatibilityMode = useSettingsStore(
+    (s) => s.setAudioCompatibilityMode,
   );
 
   // First-visit pulse
@@ -173,8 +183,10 @@ export function SettingsPanel({
       {!inline && (
         <button
           onClick={handleOpen}
-          className={`w-8 h-8 flex items-center justify-center rounded-full transition-colors cursor-pointer ${isFirstVisit ? "animate-gentle-pulse" : ""}`}
-          style={{ background: "var(--color-surface-alt)" }}
+          className={`btn-surface-themed w-8 h-8 flex items-center justify-center rounded-full cursor-pointer ${isFirstVisit ? "animate-gentle-pulse" : ""}`}
+          style={{
+            border: "1px solid var(--color-border)",
+          }}
           title={t("settings.title")}
           data-testid="settings-trigger"
         >
@@ -184,15 +196,13 @@ export function SettingsPanel({
 
       {/* Modal backdrop + panel */}
       {open && (
-        <div
-          className="fixed inset-0 z-[100] flex items-center justify-center"
-          style={{ background: "rgba(0,0,0,0.45)" }}
-        >
+        <div className="fixed inset-0 z-[100] flex items-center justify-center modal-backdrop-cinematic">
           <div
             ref={panelRef}
-            className="w-[460px] max-h-[85vh] flex flex-col rounded-2xl shadow-2xl animate-page-enter overflow-hidden"
+            className="w-[92vw] max-w-[560px] max-h-[85vh] flex flex-col rounded-2xl shadow-2xl modal-card-cinematic overflow-hidden"
             style={{
-              background: "var(--color-surface)",
+              background:
+                "color-mix(in srgb, var(--color-surface) 90%, transparent)",
               border: "1px solid var(--color-border)",
             }}
             role="dialog"
@@ -212,49 +222,83 @@ export function SettingsPanel({
               >
                 {t("settings.title")}
               </h2>
-              <button
-                onClick={() => handleClose()}
-                className="w-7 h-7 flex items-center justify-center rounded-full cursor-pointer transition-colors"
-                style={{ background: "var(--color-surface-alt)" }}
-                title={t("settings.close")}
-                data-testid="settings-close"
-              >
-                <X size={14} style={{ color: "var(--color-text-muted)" }} />
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => {
+                    const goingBasic = !isBasicMode;
+                    setIsBasicMode(goingBasic);
+                    if (goingBasic && !basicTabIds.includes(activeTab)) {
+                      setActiveTab("theme");
+                    }
+                  }}
+                  className="flex items-center gap-1 px-2.5 py-1 text-[11px] font-body rounded-full cursor-pointer transition-colors"
+                  style={{
+                    background: isBasicMode
+                      ? "color-mix(in srgb, var(--color-surface-alt) 88%, var(--color-surface))"
+                      : "color-mix(in srgb, var(--color-accent) 10%, var(--color-surface))",
+                    color: isBasicMode
+                      ? "var(--color-text-muted)"
+                      : "var(--color-accent)",
+                    border: isBasicMode
+                      ? "1px solid var(--color-border)"
+                      : "1px solid color-mix(in srgb, var(--color-accent) 30%, transparent)",
+                  }}
+                  data-testid="settings-mode-toggle"
+                >
+                  {isBasicMode
+                    ? t("settings.basicMode")
+                    : t("settings.advancedMode")}
+                </button>
+                <button
+                  onClick={() => handleClose()}
+                  className="btn-surface-themed w-7 h-7 flex items-center justify-center rounded-full cursor-pointer transition-colors"
+                  title={t("settings.close")}
+                  data-testid="settings-close"
+                >
+                  <X size={14} style={{ color: "var(--color-text-muted)" }} />
+                </button>
+              </div>
             </div>
 
             {/* Tab bar */}
             <div
-              className="flex shrink-0 px-2 pt-2 gap-1"
-              style={{ borderBottom: "1px solid var(--color-border)" }}
+              className="flex shrink-0 px-2 pt-2 gap-1 overflow-x-auto"
+              style={{
+                borderBottom: "1px solid var(--color-border)",
+                background:
+                  "color-mix(in srgb, var(--color-surface-alt) 30%, var(--color-surface))",
+              }}
             >
-              {tabIds.map((id, i) => (
-                <button
-                  key={id}
-                  onClick={() => setActiveTab(id)}
-                  className="flex items-center gap-1.5 px-3 py-2 text-xs font-body font-medium rounded-t-lg cursor-pointer transition-colors relative"
-                  style={{
-                    color:
-                      activeTab === id
-                        ? "var(--color-accent)"
-                        : "var(--color-text-muted)",
-                    background:
-                      activeTab === id
-                        ? "color-mix(in srgb, var(--color-accent) 8%, var(--color-surface))"
-                        : "transparent",
-                  }}
-                  data-testid={`settings-tab-${id}`}
-                >
-                  {tabIcons[i]}
-                  {t(tabKeys[i])}
-                  {activeTab === id && (
-                    <div
-                      className="absolute bottom-0 left-2 right-2 h-0.5 rounded-full"
-                      style={{ background: "var(--color-accent)" }}
-                    />
-                  )}
-                </button>
-              ))}
+              {visibleTabIds.map((id) => {
+                const i = tabIds.indexOf(id);
+                return (
+                  <button
+                    key={id}
+                    onClick={() => setActiveTab(id)}
+                    className="flex items-center gap-1.5 px-3 py-2 text-xs font-body font-medium rounded-t-lg cursor-pointer transition-colors relative whitespace-nowrap"
+                    style={{
+                      color:
+                        activeTab === id
+                          ? "var(--color-accent)"
+                          : "var(--color-text-muted)",
+                      background:
+                        activeTab === id
+                          ? "color-mix(in srgb, var(--color-accent) 9%, var(--color-surface))"
+                          : "transparent",
+                    }}
+                    data-testid={`settings-tab-${id}`}
+                  >
+                    {tabIcons[i]}
+                    {t(tabKeys[i])}
+                    {activeTab === id && (
+                      <div
+                        className="absolute bottom-0 left-2 right-2 h-0.5 rounded-full"
+                        style={{ background: "var(--color-accent)" }}
+                      />
+                    )}
+                  </button>
+                );
+              })}
             </div>
 
             {/* Tab content */}
@@ -387,6 +431,13 @@ export function SettingsPanel({
                       checked={muted}
                       onChange={setMuted}
                       testId="toggle-mute"
+                    />
+                    <ToggleRow
+                      label={t("settings.audioCompatibilityMode")}
+                      description={t("settings.audioCompatibilityModeDesc")}
+                      checked={audioCompatibilityMode}
+                      onChange={setAudioCompatibilityMode}
+                      testId="toggle-audio-compatibility"
                     />
                   </div>
                 </TabContent>
@@ -683,7 +734,14 @@ function ToggleRow({
   testId?: string;
 }): React.JSX.Element {
   return (
-    <label className="flex items-center justify-between cursor-pointer gap-3">
+    <label
+      className="flex items-center justify-between cursor-pointer gap-3 rounded-xl px-3 py-2.5"
+      style={{
+        background:
+          "color-mix(in srgb, var(--color-surface-alt) 52%, var(--color-surface))",
+        border: "1px solid var(--color-border)",
+      }}
+    >
       <div className="flex flex-col">
         <span
           className="text-xs font-body"
@@ -736,7 +794,14 @@ function ShortcutRow({
   action: string;
 }): React.JSX.Element {
   return (
-    <div className="flex items-center justify-between">
+    <div
+      className="flex items-center justify-between rounded-lg px-3 py-2"
+      style={{
+        background:
+          "color-mix(in srgb, var(--color-surface-alt) 52%, var(--color-surface))",
+        border: "1px solid var(--color-border)",
+      }}
+    >
       <span
         className="text-xs font-body"
         style={{ color: "var(--color-text-muted)" }}

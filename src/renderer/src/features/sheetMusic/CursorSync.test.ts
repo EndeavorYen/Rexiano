@@ -1,5 +1,9 @@
 import { describe, it, expect } from "vitest";
-import { getCursorPosition, getScrollTarget } from "./CursorSync";
+import {
+  getCursorPosition,
+  getScrollTarget,
+  getMeasureWindow,
+} from "./CursorSync";
 import type { NotationData } from "./types";
 
 describe("CursorSync", () => {
@@ -81,6 +85,36 @@ describe("CursorSync", () => {
         4,
       );
       expect(result).toBe(1);
+    });
+  });
+
+  describe("getMeasureWindow", () => {
+    it("returns 4-measure base window", () => {
+      expect(getMeasureWindow(0, 12)).toEqual([0, 1, 2, 3]);
+      expect(getMeasureWindow(2, 12)).toEqual([0, 1, 2, 3]);
+    });
+
+    it("preloads next 3 measures when cursor reaches the 4th measure", () => {
+      // 1,2,3,4 -> 5,6,7,4 (0-based: 4,5,6,3)
+      expect(getMeasureWindow(3, 12)).toEqual([4, 5, 6, 3]);
+    });
+
+    it("advances to next full 4-measure window on the next measure", () => {
+      // 5,6,7,8 (0-based: 4,5,6,7)
+      expect(getMeasureWindow(4, 12)).toEqual([4, 5, 6, 7]);
+    });
+
+    it("does not return out-of-range indices near the song end", () => {
+      expect(getMeasureWindow(7, 9)).toEqual([8, 7]);
+      expect(getMeasureWindow(7, 10)).toEqual([8, 9, 7]);
+      for (const index of getMeasureWindow(7, 9)) {
+        expect(index).toBeLessThan(9);
+      }
+    });
+
+    it("handles short songs", () => {
+      expect(getMeasureWindow(0, 2)).toEqual([0, 1]);
+      expect(getMeasureWindow(5, 2)).toEqual([0, 1]);
     });
   });
 });

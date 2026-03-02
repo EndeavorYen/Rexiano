@@ -12,21 +12,19 @@ export function PracticeToolbar(): React.JSX.Element {
 
   return (
     <div
+      className="mx-3 mt-3 rounded-2xl surface-panel overflow-hidden"
       style={{
-        background:
-          "linear-gradient(to bottom, var(--color-surface), color-mix(in srgb, var(--color-surface) 95%, var(--color-bg)))",
-        borderTop: "1px solid var(--color-border)",
+        border: "1px solid var(--color-border)",
       }}
     >
-      {/* Primary row: mode selector + speed + expand toggle */}
       <div
-        className="flex items-center gap-4 px-4 py-2"
-        style={{ minHeight: 40 }}
+        className="flex flex-wrap items-center gap-3 px-4 py-2.5"
+        style={{ minHeight: 42 }}
       >
         <PracticeModeSelector />
 
         <div
-          className="h-5 w-px shrink-0"
+          className="hidden sm:block h-5 w-px shrink-0"
           style={{ background: "var(--color-border)" }}
         />
 
@@ -35,32 +33,51 @@ export function PracticeToolbar(): React.JSX.Element {
         <div className="ml-auto shrink-0">
           <button
             onClick={() => setExpanded(!expanded)}
-            className="flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-body cursor-pointer"
+            className="btn-surface-themed flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-body cursor-pointer"
             style={{
               color: "var(--color-text-muted)",
               background: expanded
-                ? "color-mix(in srgb, var(--color-accent) 10%, transparent)"
-                : "transparent",
-              transition: "all 0.15s ease",
+                ? "color-mix(in srgb, var(--color-accent) 12%, var(--color-surface))"
+                : undefined,
             }}
             aria-expanded={expanded}
             aria-label={
               expanded ? t("practice.hideAdvanced") : t("practice.showAdvanced")
             }
           >
+            <span
+              className={`status-dot ${expanded ? "status-dot-live" : "status-dot-idle"}`}
+            />
             {t("practice.more")}
-            {expanded ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
+            {expanded ? (
+              <ChevronUp
+                size={13}
+                style={{ transform: "translateY(-0.5px)" }}
+              />
+            ) : (
+              <ChevronDown
+                size={13}
+                style={{ transform: "translateY(0.5px)" }}
+              />
+            )}
           </button>
         </div>
       </div>
 
-      {/* Expanded row: A-B loop + tracks */}
       {expanded && (
-        <div className="flex items-start gap-6 px-4 pb-2 overflow-x-auto animate-page-enter">
+        <div
+          className="flex items-start gap-6 px-4 pb-2.5 overflow-x-auto animate-page-enter"
+          style={{
+            borderTop:
+              "1px solid color-mix(in srgb, var(--color-border) 70%, transparent)",
+            background:
+              "color-mix(in srgb, var(--color-surface-alt) 38%, var(--color-surface))",
+          }}
+        >
           <ABLoopSelector />
 
           <div
-            className="h-8 w-px shrink-0 self-center"
+            className="hidden sm:block h-8 w-px shrink-0 self-center"
             style={{ background: "var(--color-border)" }}
           />
 

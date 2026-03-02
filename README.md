@@ -136,6 +136,9 @@ pnpm dev:sandbox
 | `pnpm build:linux` | Build Linux packages (.AppImage, .deb) |
 | `pnpm test` | Run all tests with Vitest |
 | `pnpm test:watch` | Run tests in watch mode |
+| `pnpm test:e2e` | Build app and run Playwright Electron E2E tests |
+| `pnpm test:e2e:update` | Build app and update Playwright visual snapshots |
+| `pnpm test:visual` | Build app and run visual regression snapshot tests |
 | `pnpm lint` | Run ESLint |
 | `pnpm typecheck` | Run TypeScript compiler checks |
 | `pnpm format` | Format code with Prettier |
@@ -175,7 +178,7 @@ build/                   # Electron-builder resources (icons, entitlements)
 | MIDI | @tonejs/midi + Web MIDI API | File parsing + live device I/O |
 | Audio | Web Audio API + SoundFont (soundfont2) | Piano playback |
 | Fonts | @fontsource (Nunito, DM Sans, JetBrains Mono) | Offline, no CDN |
-| Testing | Vitest 4 | Unit tests (25 files, 343+ tests) |
+| Testing | Vitest 4 + Playwright 1.58 | Unit tests + Electron E2E + visual regression |
 | Packaging | electron-builder 26 | Installers for Win / Mac / Linux |
 
 ---

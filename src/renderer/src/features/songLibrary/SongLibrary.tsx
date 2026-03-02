@@ -7,6 +7,8 @@ import {
   Trophy,
   Flame,
   ArrowLeft,
+  PanelRightOpen,
+  X,
 } from "lucide-react";
 import { parseMidiFile } from "../../engines/midi/MidiFileParser";
 import { useSongStore } from "../../stores/useSongStore";
@@ -63,6 +65,7 @@ export function SongLibrary({
   const [loadingRecentPath, setLoadingRecentPath] = useState<string | null>(
     null,
   );
+  const [showDeviceDrawer, setShowDeviceDrawer] = useState(false);
 
   useEffect(() => {
     fetchSongs();
@@ -197,320 +200,336 @@ export function SongLibrary({
   };
 
   return (
-    <div className="flex-1 flex flex-col items-center px-6 py-8 overflow-y-auto relative">
-      {/* Back to main menu */}
-      {onBack && (
-        <button
-          onClick={onBack}
-          className="absolute top-4 left-4 flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-body cursor-pointer"
-          style={{
-            color: "var(--color-text-muted)",
-            background: "var(--color-surface-alt)",
-            transition: "all 0.15s",
-          }}
-        >
-          <ArrowLeft size={13} />
-        </button>
-      )}
-
-      {/* Header with greeting */}
-      <div className="flex items-center gap-3 mb-1 animate-page-enter">
-        <img
-          src={appIcon}
-          alt=""
-          width={44}
-          height={44}
-          className="rounded-xl subtle-shadow"
-        />
-        <h1
-          className="text-4xl font-extrabold font-display"
-          style={{ color: "var(--color-accent)" }}
-        >
-          Rexiano
-        </h1>
-      </div>
-      <p
-        className="text-sm mb-6 font-body"
-        style={{ color: "var(--color-text-muted)" }}
-      >
-        {greeting}
-      </p>
-
-      {/* Progress stats — only show when there are sessions */}
-      {isProgressLoaded && sessions.length > 0 && (
-        <div
-          className="flex items-center gap-4 mb-6 px-5 py-3 rounded-xl animate-page-enter"
-          style={{
-            background:
-              "color-mix(in srgb, var(--color-accent) 8%, var(--color-surface))",
-            border:
-              "1px solid color-mix(in srgb, var(--color-accent) 15%, var(--color-border))",
-          }}
-        >
-          <StatBadge
-            icon={<Music size={14} />}
-            value={progressStats.uniqueSongs}
-            label={
-              progressStats.uniqueSongs === 1
-                ? t("library.songPracticed")
-                : t("library.songsPracticed")
-            }
-          />
-          <div
-            className="w-px h-6"
-            style={{ background: "var(--color-border)" }}
-          />
-          <StatBadge
-            icon={<Flame size={14} />}
-            value={progressStats.totalSessions}
-            label={
-              progressStats.totalSessions === 1
-                ? t("library.session")
-                : t("library.sessions")
-            }
-          />
-          <div
-            className="w-px h-6"
-            style={{ background: "var(--color-border)" }}
-          />
-          <StatBadge
-            icon={<Trophy size={14} />}
-            value={`${progressStats.bestAccuracy}%`}
-            label={t("library.bestScore")}
-          />
-        </div>
-      )}
-
-      {/* Recently Played */}
-      {visibleRecents.length > 0 && (
-        <div className="w-full max-w-2xl mb-5">
-          <div
-            className="flex items-center gap-1.5 mb-2.5"
-            style={{ color: "var(--color-text-muted)" }}
-          >
-            <Clock size={13} />
-            <span className="text-xs font-body font-medium uppercase tracking-wide">
-              {t("library.recentlyPlayed")}
-            </span>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            {visibleRecents.map((file) => (
-              <button
-                key={file.path}
-                onClick={() => handleSelectRecent(file)}
-                disabled={loadingRecentPath === file.path}
-                className="group relative flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-body font-medium cursor-pointer transition-all duration-150 disabled:opacity-50 disabled:cursor-wait card-hover"
-                style={{
-                  background:
-                    "color-mix(in srgb, var(--color-accent) 8%, var(--color-surface))",
-                  color: "var(--color-text)",
-                  border: "1px solid var(--color-border)",
-                }}
-                title={file.path}
-              >
-                {loadingRecentPath === file.path ? (
-                  <div
-                    className="w-3 h-3 border-[1.5px] rounded-full animate-spin shrink-0"
-                    style={{
-                      borderColor: "var(--color-border)",
-                      borderTopColor: "var(--color-accent)",
-                    }}
-                  />
-                ) : null}
-                <span className="truncate max-w-[160px]">
-                  {truncateName(file.name)}
-                </span>
-                <span
-                  className="shrink-0 opacity-60"
+    <div className="flex-1 app-shell overflow-y-auto">
+      <div className="mx-auto w-full max-w-6xl px-6 py-6 pb-24">
+        <header className="surface-panel subtle-shadow sticky top-4 z-20 mb-5 p-4 sm:p-5 animate-page-enter">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              {onBack && (
+                <button
+                  onClick={onBack}
+                  className="btn-surface-themed flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs cursor-pointer"
+                  aria-label={t("settings.shortcut.closeBack")}
+                >
+                  <ArrowLeft size={13} />
+                </button>
+              )}
+              <img
+                src={appIcon}
+                alt=""
+                width={42}
+                height={42}
+                className="rounded-xl subtle-shadow"
+              />
+              <div className="min-w-0">
+                <span className="kicker-label">{t("app.subtitle")}</span>
+                <h1
+                  className="text-3xl font-display font-bold tracking-tight leading-none"
+                  style={{ color: "var(--color-text)" }}
+                >
+                  Rexiano
+                </h1>
+                <p
+                  className="text-sm mt-1"
                   style={{ color: "var(--color-text-muted)" }}
                 >
-                  {formatRelativeTime(file.timestamp)}
-                </span>
-              </button>
-            ))}
-          </div>
-          {recentError && (
-            <div
-              className="flex items-center gap-1.5 mt-2 text-xs font-body"
-              style={{ color: "#dc2626" }}
-            >
-              <AlertCircle size={12} />
-              {recentError}
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* Filters */}
-      <SongLibraryFilters />
-
-      {/* Song grid — grouped by category */}
-      <div className="w-full max-w-2xl mt-6">
-        {isLoading ? (
-          /* Skeleton loading cards */
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-            {Array.from({ length: 6 }).map((_, i) => (
-              <div
-                key={i}
-                className="rounded-xl overflow-hidden"
-                style={{ border: "1px solid var(--color-border)" }}
-              >
-                <div className="skeleton h-10" />
-                <div className="p-4 space-y-3">
-                  <div className="skeleton h-4 w-3/4 rounded" />
-                  <div className="skeleton h-3 w-1/2 rounded" />
-                  <div className="flex justify-between mt-3">
-                    <div className="skeleton h-4 w-16 rounded-full" />
-                    <div className="skeleton h-3 w-10 rounded" />
-                  </div>
-                </div>
+                  {greeting}
+                </p>
               </div>
-            ))}
+            </div>
+
+            <div className="flex items-center gap-2.5">
+              <button
+                onClick={onOpenFile}
+                className="btn-primary-themed flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium cursor-pointer"
+              >
+                <Upload size={15} />
+                {t("library.importMidi")}
+              </button>
+              <ThemePicker />
+            </div>
           </div>
-        ) : filteredSongs.length === 0 ? (
-          /* Empty state — warm and encouraging */
-          <div
-            className="text-center py-16 px-4"
-            style={{ color: "var(--color-text-muted)" }}
-          >
+
+          {isProgressLoaded && sessions.length > 0 && (
             <div
-              className="w-16 h-16 mx-auto mb-4 rounded-2xl flex items-center justify-center"
+              className="mt-4 grid gap-3 rounded-xl px-4 py-3 sm:grid-cols-3"
               style={{
                 background:
-                  "color-mix(in srgb, var(--color-accent) 10%, var(--color-surface))",
+                  "color-mix(in srgb, var(--color-accent) 8%, var(--color-surface))",
+                border:
+                  "1px solid color-mix(in srgb, var(--color-accent) 16%, var(--color-border))",
               }}
             >
-              <Music
-                size={28}
-                style={{ color: "var(--color-accent)", opacity: 0.6 }}
+              <StatBadge
+                icon={<Music size={14} />}
+                value={progressStats.uniqueSongs}
+                label={
+                  progressStats.uniqueSongs === 1
+                    ? t("library.songPracticed")
+                    : t("library.songsPracticed")
+                }
+              />
+              <StatBadge
+                icon={<Flame size={14} />}
+                value={progressStats.totalSessions}
+                label={
+                  progressStats.totalSessions === 1
+                    ? t("library.session")
+                    : t("library.sessions")
+                }
+              />
+              <StatBadge
+                icon={<Trophy size={14} />}
+                value={`${progressStats.bestAccuracy}%`}
+                label={t("library.bestScore")}
               />
             </div>
-            {songs.length === 0 ? (
-              <>
-                <p
-                  className="text-sm font-body font-medium mb-1"
-                  style={{ color: "var(--color-text)" }}
+          )}
+        </header>
+
+        {visibleRecents.length > 0 && (
+          <section className="surface-elevated mb-5 p-4 animate-page-enter">
+            <div
+              className="flex items-center gap-1.5 mb-2.5"
+              style={{ color: "var(--color-text-muted)" }}
+            >
+              <Clock size={13} />
+              <span className="text-xs font-body font-medium uppercase tracking-wide">
+                {t("library.recentlyPlayed")}
+              </span>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {visibleRecents.map((file, idx) => (
+                <button
+                  key={file.path}
+                  onClick={() => handleSelectRecent(file)}
+                  disabled={loadingRecentPath === file.path}
+                  className="card-hover animate-page-enter group relative flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-body font-medium cursor-pointer transition-all duration-150 disabled:opacity-50 disabled:cursor-wait"
+                  style={{
+                    background:
+                      "color-mix(in srgb, var(--color-surface) 82%, transparent)",
+                    color: "var(--color-text)",
+                    border: "1px solid var(--color-border)",
+                    animationDelay: `${idx * 40}ms`,
+                  }}
+                  title={file.path}
                 >
-                  {t("library.noSongsYet")}
-                </p>
-                <p className="text-xs font-body opacity-70">
-                  {t("library.noSongsHint")}
-                </p>
-              </>
-            ) : (
-              <>
-                <p
-                  className="text-sm font-body font-medium mb-1"
-                  style={{ color: "var(--color-text)" }}
-                >
-                  {t("library.noMatchSearch")}
-                </p>
-                <p className="text-xs font-body opacity-70">
-                  {t("library.noMatchHint")}
-                </p>
-              </>
-            )}
-          </div>
-        ) : (
-          <div className="space-y-6">
-            {categoryGroups.map((group, groupIdx) => (
-              <section key={group.category}>
-                {/* Category section header */}
-                <div
-                  className="flex items-center gap-2 mb-3"
-                  style={{ color: "var(--color-text-muted)" }}
-                >
-                  <span className="text-xs font-body font-semibold uppercase tracking-wider">
-                    {group.label}
+                  {loadingRecentPath === file.path ? (
+                    <div
+                      className="w-3 h-3 border-[1.5px] rounded-full animate-spin shrink-0"
+                      style={{
+                        borderColor: "var(--color-border)",
+                        borderTopColor: "var(--color-accent)",
+                      }}
+                    />
+                  ) : null}
+                  <span className="truncate max-w-[180px]">
+                    {truncateName(file.name)}
                   </span>
                   <span
-                    className="text-[10px] font-mono px-1.5 py-0.5 rounded-full"
-                    style={{
-                      background: "var(--color-surface-alt)",
-                      color: "var(--color-text-muted)",
-                    }}
+                    className="shrink-0 opacity-70 font-mono tabular-nums"
+                    style={{ color: "var(--color-text-muted)" }}
                   >
-                    {group.songs.length}
+                    {formatRelativeTime(file.timestamp)}
                   </span>
+                </button>
+              ))}
+            </div>
+            {recentError && (
+              <div
+                className="flex items-center gap-1.5 mt-2 text-xs font-body"
+                style={{ color: "#dc2626" }}
+              >
+                <AlertCircle size={12} />
+                {recentError}
+              </div>
+            )}
+          </section>
+        )}
+
+        <section className="surface-panel p-4 sm:p-5 animate-page-enter">
+          <SongLibraryFilters />
+
+          <div className="mt-6">
+            {isLoading ? (
+              <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-3">
+                {Array.from({ length: 8 }).map((_, i) => (
                   <div
-                    className="flex-1 h-px ml-1"
-                    style={{ background: "var(--color-border)" }}
+                    key={i}
+                    className="rounded-xl overflow-hidden"
+                    style={{ border: "1px solid var(--color-border)" }}
+                  >
+                    <div className="skeleton h-10" />
+                    <div className="p-4 space-y-3">
+                      <div className="skeleton h-4 w-3/4 rounded" />
+                      <div className="skeleton h-3 w-1/2 rounded" />
+                      <div className="flex justify-between mt-3">
+                        <div className="skeleton h-4 w-16 rounded-full" />
+                        <div className="skeleton h-3 w-10 rounded" />
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : filteredSongs.length === 0 ? (
+              <div
+                className="text-center py-16 px-4"
+                style={{ color: "var(--color-text-muted)" }}
+              >
+                <div
+                  className="w-16 h-16 mx-auto mb-4 rounded-2xl flex items-center justify-center"
+                  style={{
+                    background:
+                      "color-mix(in srgb, var(--color-accent) 10%, var(--color-surface))",
+                  }}
+                >
+                  <Music
+                    size={28}
+                    style={{ color: "var(--color-accent)", opacity: 0.6 }}
                   />
                 </div>
-
-                {/* Song cards grid */}
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                  {group.songs.map((song, i) => (
-                    <div
-                      key={song.id}
-                      className="relative animate-stagger-child"
-                      style={{ animationDelay: `${(groupIdx * 3 + i) * 40}ms` }}
+                {songs.length === 0 ? (
+                  <>
+                    <p
+                      className="text-sm font-body font-medium mb-1"
+                      style={{ color: "var(--color-text)" }}
                     >
-                      <SongCard
-                        song={song}
-                        onSelect={handleSelectSong}
-                        colorIndex={groupIdx * 3 + i}
+                      {t("library.noSongsYet")}
+                    </p>
+                    <p className="text-xs font-body opacity-70">
+                      {t("library.noSongsHint")}
+                    </p>
+                  </>
+                ) : (
+                  <>
+                    <p
+                      className="text-sm font-body font-medium mb-1"
+                      style={{ color: "var(--color-text)" }}
+                    >
+                      {t("library.noMatchSearch")}
+                    </p>
+                    <p className="text-xs font-body opacity-70">
+                      {t("library.noMatchHint")}
+                    </p>
+                  </>
+                )}
+              </div>
+            ) : (
+              <div className="space-y-7">
+                {categoryGroups.map((group, groupIdx) => (
+                  <section
+                    key={group.category}
+                    className="surface-elevated p-3 sm:p-4 animate-page-enter"
+                    style={{ animationDelay: `${groupIdx * 60}ms` }}
+                  >
+                    <div
+                      className="flex items-center gap-2 mb-3"
+                      style={{ color: "var(--color-text-muted)" }}
+                    >
+                      <span className="text-xs font-body font-semibold uppercase tracking-wider">
+                        {group.label}
+                      </span>
+                      <span
+                        className="text-[10px] font-mono px-1.5 py-0.5 rounded-full"
+                        style={{
+                          background: "var(--color-surface-alt)",
+                          color: "var(--color-text-muted)",
+                        }}
+                      >
+                        {group.songs.length}
+                      </span>
+                      <div
+                        className="flex-1 h-px ml-1"
+                        style={{ background: "var(--color-border)" }}
                       />
-                      {loadingId === song.id && (
+                    </div>
+
+                    <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-3">
+                      {group.songs.map((song, i) => (
                         <div
-                          className="absolute inset-0 flex items-center justify-center rounded-xl"
+                          key={song.id}
+                          className="relative animate-stagger-child"
                           style={{
-                            background:
-                              "color-mix(in srgb, var(--color-surface) 70%, transparent)",
+                            animationDelay: `${(groupIdx * 4 + i) * 30}ms`,
                           }}
                         >
-                          <div
-                            className="w-5 h-5 border-2 rounded-full animate-spin"
-                            style={{
-                              borderColor: "var(--color-border)",
-                              borderTopColor: "var(--color-accent)",
-                            }}
+                          <SongCard
+                            song={song}
+                            onSelect={handleSelectSong}
+                            colorIndex={groupIdx * 4 + i}
                           />
+                          {loadingId === song.id && (
+                            <div
+                              className="absolute inset-0 flex items-center justify-center rounded-xl"
+                              style={{
+                                background:
+                                  "color-mix(in srgb, var(--color-surface) 70%, transparent)",
+                              }}
+                            >
+                              <div
+                                className="w-5 h-5 border-2 rounded-full animate-spin"
+                                style={{
+                                  borderColor: "var(--color-border)",
+                                  borderTopColor: "var(--color-accent)",
+                                }}
+                              />
+                            </div>
+                          )}
                         </div>
-                      )}
+                      ))}
                     </div>
-                  ))}
-                </div>
-              </section>
-            ))}
+                  </section>
+                ))}
+              </div>
+            )}
+          </div>
+        </section>
+
+        {error && (
+          <p
+            className="mt-4 text-sm font-body"
+            style={{ color: "var(--color-accent)" }}
+          >
+            {error}
+          </p>
+        )}
+
+        <button
+          onClick={() => setShowDeviceDrawer(true)}
+          className="fixed right-5 bottom-5 z-30 btn-surface-themed rounded-full px-3 py-2 flex items-center gap-1.5 text-xs font-body cursor-pointer subtle-shadow"
+          data-testid="library-device-drawer-trigger"
+        >
+          <PanelRightOpen size={14} />
+          MIDI
+        </button>
+
+        {showDeviceDrawer && (
+          <div
+            className="app-overlay-backdrop"
+            onClick={() => setShowDeviceDrawer(false)}
+          >
+            <aside
+              className="app-side-drawer"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="app-side-drawer-header">
+                <span className="kicker-label">MIDI</span>
+                <button
+                  onClick={() => setShowDeviceDrawer(false)}
+                  className="btn-surface-themed w-7 h-7 rounded-full flex items-center justify-center cursor-pointer"
+                  aria-label={t("settings.close")}
+                >
+                  <X size={14} />
+                </button>
+              </div>
+              <div className="app-side-drawer-body">
+                <section className="app-side-section">
+                  <DeviceSelector />
+                </section>
+              </div>
+            </aside>
           </div>
         )}
-      </div>
-
-      {error && (
-        <p
-          className="mt-4 text-sm font-body"
-          style={{ color: "var(--color-accent)" }}
-        >
-          {error}
-        </p>
-      )}
-
-      {/* Secondary action: import custom file */}
-      <div className="mt-8 mb-4">
-        <button
-          onClick={onOpenFile}
-          className="flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-body font-medium cursor-pointer btn-ghost-themed"
-        >
-          <Upload size={15} />
-          {t("library.importMidi")}
-        </button>
-      </div>
-
-      {/* Bottom bar: MIDI device + Theme picker */}
-      <div className="absolute bottom-6 left-6 right-6 flex items-center justify-between pointer-events-none">
-        <div
-          className="pointer-events-auto rounded-lg"
-          style={{
-            background: "var(--color-surface)",
-            border: "1px solid var(--color-border)",
-          }}
-        >
-          <DeviceSelector />
-        </div>
-        <div className="pointer-events-auto">
-          <ThemePicker />
-        </div>
       </div>
     </div>
   );
@@ -528,17 +547,23 @@ function StatBadge({
   label: string;
 }): React.JSX.Element {
   return (
-    <div className="flex items-center gap-2">
+    <div
+      className="flex items-center gap-2.5 rounded-lg px-2 py-1.5"
+      style={{
+        background: "color-mix(in srgb, var(--color-surface) 75%, transparent)",
+        border: "1px solid var(--color-border)",
+      }}
+    >
       <span style={{ color: "var(--color-accent)" }}>{icon}</span>
-      <div className="flex flex-col">
+      <div className="min-w-0">
         <span
-          className="text-sm font-display font-bold leading-tight"
+          className="text-sm font-display font-bold leading-tight block"
           style={{ color: "var(--color-text)" }}
         >
           {value}
         </span>
         <span
-          className="text-[10px] font-body leading-tight"
+          className="text-[10px] font-body leading-tight truncate block"
           style={{ color: "var(--color-text-muted)" }}
         >
           {label}
