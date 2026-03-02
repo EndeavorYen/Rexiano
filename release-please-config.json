@@ -4,6 +4,7 @@
   "changelog-path": "CHANGELOG.md",
   "include-v-in-tag": true,
   "tag-separator": "",
+  "bump-minor-pre-major": true,
   "packages": {
     ".": {}
   }
