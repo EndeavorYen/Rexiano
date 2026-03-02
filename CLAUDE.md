@@ -87,6 +87,7 @@ Interpret creatively and make unexpected choices that feel genuinely designed fo
 - 測試檔案放在對應模組旁邊（`*.test.ts`），使用 Vitest
 - **引擎層（`engines/`）為純邏輯，不依賴 React**；Store 層橋接引擎與 React；Features 層為 UI 元件
 - 新增 store 或引擎時，遵循現有的 callback pattern（非 EventEmitter）
+- **文件中的流程圖 / 架構圖一律使用 Mermaid**（`graph TB` / `flowchart TD` / `stateDiagram-v2`），不使用 ANSI 繪製的 box-drawing 圖形（┌ ─ │ 等）
 
 ## Practice Mode 慣例（Phase 6）
 

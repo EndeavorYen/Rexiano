@@ -9,50 +9,35 @@
 
 Rexiano is an Electron desktop application with a clear separation between the main process (Node.js) and the renderer process (Chromium / React).
 
-```
-┌────────────────────────────────────────────────────────────────────┐
-│                     Electron Main Process                         │
-│                                                                    │
-│  ┌─────────────────┐  ┌──────────────────┐  ┌──────────────────┐  │
-│  │  fileHandlers    │  │ midiDeviceHdlrs  │  │ progressHandlers │  │
-│  │  (dialog, load)  │  │ (MIDI perms)     │  │ (JSON read/write)│  │
-│  └────────┬─────────┘  └────────┬─────────┘  └────────┬─────────┘  │
-│           │                     │                      │            │
-│           └─────────────────────┼──────────────────────┘            │
-│                                 │                                   │
-│                    IPC (contextBridge)                              │
-├─────────────────────────────────┼──────────────────────────────────┤
-│                     Renderer Process                               │
-│                                 │                                   │
-│  ┌──────────────────────────────┴───────────────────────────────┐  │
-│  │                     Zustand Stores (8)                       │  │
-│  │  songStore · playbackStore · themeStore · midiDeviceStore    │  │
-│  │  practiceStore · settingsStore · progressStore · songLibrary │  │
-│  └──────────────────────────────┬───────────────────────────────┘  │
-│                                 │                                   │
-│  ┌──────────────────────────────┴───────────────────────────────┐  │
-│  │                      App.tsx (Root)                          │  │
-│  │                                                              │  │
-│  │  ┌────────────────────────────────────────────────────────┐  │  │
-│  │  │  SongLibrary  (when no song loaded)                    │  │  │
-│  │  ├────────────────────────────────────────────────────────┤  │  │
-│  │  │  Song Header  ·  DeviceSelector  ·  SettingsPanel      │  │  │
-│  │  ├────────────────────────────────────────────────────────┤  │  │
-│  │  │  FallingNotesCanvas (PixiJS 8 WebGL)  ·  ScoreOverlay  │  │  │
-│  │  ├────────────────────────────────────────────────────────┤  │  │
-│  │  │  TransportBar (play/pause, seek, volume, metronome)    │  │  │
-│  │  ├────────────────────────────────────────────────────────┤  │  │
-│  │  │  PracticeToolbar (mode, speed, loop, tracks)           │  │  │
-│  │  ├────────────────────────────────────────────────────────┤  │  │
-│  │  │  PianoKeyboard (88 keys, CSS-rendered)                 │  │  │
-│  │  └────────────────────────────────────────────────────────┘  │  │
-│  │                                                              │  │
-│  │  ┌─── Engines (pure logic, no React) ──────────────────┐    │  │
-│  │  │  audio/    fallingNotes/    midi/    practice/       │    │  │
-│  │  │  metronome/                                          │    │  │
-│  │  └──────────────────────────────────────────────────────┘    │  │
-│  └──────────────────────────────────────────────────────────────┘  │
-└────────────────────────────────────────────────────────────────────┘
+```mermaid
+graph TB
+    subgraph Main["Electron Main Process"]
+        FH["fileHandlers\n(dialog, load)"]
+        MH["midiDeviceHandlers\n(MIDI perms)"]
+        PH["progressHandlers\n(JSON read/write)"]
+    end
+    FH & MH & PH --> IPC["IPC — contextBridge"]
+
+    subgraph Renderer["Renderer Process"]
+        subgraph Stores["Zustand Stores (8)"]
+            S["songStore · playbackStore · themeStore · midiDeviceStore\npracticeStore · settingsStore · progressStore · songLibrary"]
+        end
+        subgraph AppRoot["App.tsx (Root)"]
+            direction TB
+            U1["SongLibrary (when no song loaded)"]
+            U2["Song Header · DeviceSelector · SettingsPanel"]
+            U3["FallingNotesCanvas (PixiJS 8 WebGL) · ScoreOverlay"]
+            U4["TransportBar (play/pause, seek, volume, metronome)"]
+            U5["PracticeToolbar (mode, speed, loop, tracks)"]
+            U6["PianoKeyboard (88 keys, CSS-rendered)"]
+        end
+        subgraph EngLayer["Engines (pure logic, no React)"]
+            direction LR
+            EA[audio] --- EF[fallingNotes] --- EM[midi] --- EP[practice] --- EMet[metronome]
+        end
+    end
+
+    IPC --> Stores --> AppRoot
 ```
 
 ---
@@ -139,27 +124,18 @@ rexiano/
 
 Rexiano enforces a strict three-layer architecture within the renderer process:
 
-```
-┌─────────────────────────────────────────────────────────┐
-│  features/ (React UI Components)                        │
-│  - JSX components with hooks                            │
-│  - Read state via useStore(selector)                    │
-│  - Dispatch actions via store methods                   │
-│  - No direct engine access                              │
-├─────────────────────────────────────────────────────────┤
-│  stores/ (Zustand State Bridge)                         │
-│  - Bridge between engines and React                     │
-│  - Module-level singletons for engine instances          │
-│  - Callback wiring (engine events → store updates)      │
-│  - localStorage persistence where needed                │
-├─────────────────────────────────────────────────────────┤
-│  engines/ (Pure Logic)                                  │
-│  - Zero React dependencies                              │
-│  - Callback pattern (not EventEmitter)                  │
-│  - Class-based with getter/setter + validation          │
-│  - Independently testable                               │
-│  - PixiJS reads stores via store.getState() (not hooks) │
-└─────────────────────────────────────────────────────────┘
+```mermaid
+graph TB
+    subgraph Features["features/ — React UI Components"]
+        F["JSX components with hooks\nRead state via useStore(selector)\nDispatch actions via store methods\nNo direct engine access"]
+    end
+    subgraph Stores["stores/ — Zustand State Bridge"]
+        S["Bridge between engines and React\nModule-level singletons for engine instances\nCallback wiring: engine events → store updates\nlocalStorage persistence where needed"]
+    end
+    subgraph Engines["engines/ — Pure Logic"]
+        E["Zero React dependencies\nCallback pattern (not EventEmitter)\nClass-based with getter/setter + validation\nIndependently testable\nPixiJS reads stores via store.getState()"]
+    end
+    Features --> Stores --> Engines
 ```
 
 **Rules**:
@@ -175,115 +151,99 @@ Rexiano enforces a strict three-layer architecture within the renderer process:
 
 ### 5.1 MIDI File Loading
 
-```
-User action (Open File / Drag-and-Drop / Song Library click)
-    │
-    ▼
-IPC: dialog:openMidiFile / library:loadBuiltinSong
-    │
-    ▼
-Main Process: reads file, returns { fileName, data: number[] }
-    │                                 └── number[] not Uint8Array (IPC structured clone issue)
-    ▼
-Renderer: MidiFileParser.parseMidiFile(fileName, data)
-    │        └── uses @tonejs/midi internally
-    ▼
-ParsedSong { fileName, duration, noteCount, tempos[], timeSignatures[], tracks[] }
-    │
-    ▼
-useSongStore.loadSong(parsedSong)
-    │
-    ├──▶ FallingNotesCanvas picks up new song via store subscription
-    ├──▶ AudioScheduler.setSong() prepares note schedule
-    └──▶ PracticeToolbar UI updates track list
+```mermaid
+flowchart TD
+    A["User action\n(Open File / Drag-and-Drop / Song Library click)"]
+    B["IPC: dialog:openMidiFile / library:loadBuiltinSong"]
+    C["Main Process: reads file\nreturns { fileName, data: number[] }\nnumber[] not Uint8Array — IPC structured clone issue"]
+    D["Renderer: MidiFileParser.parseMidiFile(fileName, data)\nuses @tonejs/midi internally"]
+    E["ParsedSong { fileName, duration, noteCount,\ntempos[], timeSignatures[], tracks[] }"]
+    F["useSongStore.loadSong(parsedSong)"]
+    G["FallingNotesCanvas picks up\nnew song via store subscription"]
+    H["AudioScheduler.setSong()\nprepares note schedule"]
+    I["PracticeToolbar UI\nupdates track list"]
+
+    A --> B --> C --> D --> E --> F
+    F --> G & H & I
 ```
 
 ### 5.2 Playback & Rendering Loop
 
-```
-User presses Space (or clicks Play)
-    │
-    ▼
-usePlaybackStore.setPlaying(true)
-    │
-    ├──▶ AudioScheduler.start(currentTime) — begins look-ahead note scheduling
-    ├──▶ AudioEngine.resume() — unfreezes AudioContext
-    │
-    ▼
-tickerLoop (PixiJS Ticker, 60 FPS)
-    │
-    ├─ 1. Read currentTime from AudioScheduler.getCurrentTime() (hardware clock)
-    ├─ 2. Apply speed multiplier from practiceStore.speed
-    ├─ 3. Check WaitMode gate (pause if waiting for user input)
-    ├─ 4. Check loop range (jump to A point if past B point)
-    ├─ 5. Binary search for visible notes in time window
-    ├─ 6. Update sprite positions from object pool (acquire/release)
-    ├─ 7. Detect notes crossing hit line (±50ms tolerance)
-    ├─ 8. Update activeNotes → callback to React → PianoKeyboard highlight
-    └─ 9. Schedule audio notes via AudioScheduler (100ms look-ahead, 25ms interval)
+```mermaid
+flowchart TD
+    A["User presses Space (or clicks Play)"]
+    B["usePlaybackStore.setPlaying(true)"]
+    C["AudioScheduler.start(currentTime)\nbegins look-ahead note scheduling"]
+    D["AudioEngine.resume()\nunfreezes AudioContext"]
+    E["tickerLoop — PixiJS Ticker, 60 FPS"]
+    F["1. Read currentTime from AudioScheduler.getCurrentTime() — hardware clock"]
+    G["2. Apply speed multiplier from practiceStore.speed"]
+    H["3. Check WaitMode gate — pause if waiting for user input"]
+    I["4. Check loop range — jump to A point if past B point"]
+    J["5. Binary search for visible notes in time window"]
+    K["6. Update sprite positions from object pool (acquire/release)"]
+    L["7. Detect notes crossing hit line (±50ms tolerance)"]
+    M["8. Update activeNotes → callback to React → PianoKeyboard highlight"]
+    N["9. Schedule audio notes via AudioScheduler\n100ms look-ahead, 25ms interval"]
+
+    A --> B
+    B --> C & D
+    C & D --> E
+    E --> F --> G --> H --> I --> J --> K --> L --> M --> N
 ```
 
 ### 5.3 MIDI Input → Practice Scoring
 
-```
-Physical MIDI keyboard
-    │
-    ▼
-Web MIDI API: MIDIInput.onmidimessage
-    │
-    ▼
-MidiInputParser: decode 3-byte message [command, note, velocity]
-    │
-    ├── 0x90 + velocity > 0 → onNoteOn callback
-    ├── 0x80 or velocity = 0 → onNoteOff callback
-    └── 0xB0 → onCC callback (sustain pedal, etc.)
-    │
-    ▼
-useMidiDeviceStore.onNoteOn(midi) / .onNoteOff(midi)
-    │
-    ├──▶ Update activeNotes set → PianoKeyboard highlights pressed keys
-    │
-    └──▶ WaitMode.receiveNote(midi, currentTime)
-         │
-         ├── Correct note? → onHit callback → practiceStore.recordHit()
-         │                                    NoteRenderer.flashHit()
-         │                                    Resume playback
-         │
-         └── Wrong note?   → onMiss callback → practiceStore.recordMiss()
-                                                NoteRenderer.markMiss()
+```mermaid
+flowchart TD
+    A["Physical MIDI keyboard"]
+    B["Web MIDI API: MIDIInput.onmidimessage"]
+    C["MidiInputParser\ndecode 3-byte message: command, note, velocity"]
+    D["0x90 + velocity > 0\nonNoteOn callback"]
+    E["0x80 or velocity = 0\nonNoteOff callback"]
+    F["0xB0\nonCC callback — sustain pedal, etc."]
+    G["useMidiDeviceStore.onNoteOn / .onNoteOff"]
+    H["Update activeNotes set\n→ PianoKeyboard highlights pressed keys"]
+    I["WaitMode.receiveNote(midi, currentTime)"]
+    J["Correct note → onHit callback\n→ practiceStore.recordHit()\nNoteRenderer.flashHit()\nResume playback"]
+    K["Wrong note → onMiss callback\n→ practiceStore.recordMiss()\nNoteRenderer.markMiss()"]
+
+    A --> B --> C
+    C --> D & E & F
+    D & E --> G
+    G --> H & I
+    I --> J & K
 ```
 
 ### 5.4 Audio Pipeline
 
-```
-SoundFont (resources/piano.sf2)
-    │
-    ▼
-IPC: audio:loadSoundFont → Main reads file → returns number[]
-    │
-    ▼
-SoundFontLoader.load(data)
-    │
-    ├── Success: parse SF2, extract instrument presets
-    └── Failure: fall back to sine wave oscillator synthesis
-    │
-    ▼
-AudioEngine
-    │
-    ├── init() → create AudioContext
-    ├── noteOn(midi, velocity, audioTime) → schedule via Web Audio API
-    ├── noteOff(midi, audioTime) → 150ms release envelope
-    ├── setVolume(0.0–1.0) → master gain node
-    └── allNotesOff() → silence all active voices
-    │
-    ▼
-AudioScheduler
-    │
-    ├── setSong(parsedSong) → index all notes across tracks
-    ├── start(seekTime) → record startAudioTime, begin scheduling loop
-    ├── getCurrentTime() → audioContext.currentTime - startAudioTime + seekOffset
-    └── scheduling loop (setInterval 25ms):
-        └── scan notes in [currentTime, currentTime + 100ms] → engine.noteOn()
+```mermaid
+flowchart TD
+    A["SoundFont — resources/piano.sf2"]
+    B["IPC: audio:loadSoundFont\nMain reads file → returns number[]"]
+    C["SoundFontLoader.load(data)"]
+    D["Success: parse SF2\nextract instrument presets"]
+    E["Failure: fall back to\nsine wave oscillator synthesis"]
+
+    subgraph AE["AudioEngine"]
+        AE1["init() → create AudioContext"]
+        AE2["noteOn(midi, velocity, audioTime)\nschedule via Web Audio API"]
+        AE3["noteOff(midi, audioTime)\n150ms release envelope"]
+        AE4["setVolume(0.0–1.0)\nmaster gain node"]
+        AE5["allNotesOff()\nsilence all active voices"]
+    end
+
+    subgraph AS["AudioScheduler"]
+        AS1["setSong(parsedSong)\nindex all notes across tracks"]
+        AS2["start(seekTime)\nrecord startAudioTime, begin scheduling loop"]
+        AS3["getCurrentTime()\naudioContext.currentTime - startAudioTime + seekOffset"]
+        AS4["scheduling loop — setInterval 25ms\nscan notes in currentTime..currentTime+100ms → engine.noteOn()"]
+    end
+
+    A --> B --> C
+    C --> D & E
+    D & E --> AE
+    AE --> AS
 ```
 
 ---

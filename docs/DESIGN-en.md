@@ -72,52 +72,45 @@ Electron + React was chosen over Python (PyQt/Pygame) for these reasons:
 
 ### Process Architecture
 
-```
-┌─────────────────────────────────────────────────────────┐
-│  Electron Main Process                                  │
-│  ┌───────────────┐  ┌───────────────┐                   │
-│  │ fileHandlers  │  │ midiDevice    │                   │
-│  │ (IPC: dialog) │  │ (IPC: MIDI)   │                   │
-│  └───────┬───────┘  └───────┬───────┘                   │
-│          │ IPC (contextBridge)                          │
-├──────────┼───────────────────────────────────────────── ┤
-│  Renderer Process (React)                              │
-│  ┌───────────────────────────────────────────────────┐ │
-│  │  Zustand Stores (8)                               │ │
-│  │  songStore · playbackStore · themeStore            │ │
-│  │  midiDeviceStore · practiceStore · settingsStore  │ │
-│  │  progressStore · songLibraryStore                 │ │
-│  └────────────────────────┬──────────────────────────┘ │
-│                           │                             │
-│  ┌────────────────────────┴──────────────────────────┐ │
-│  │  App.tsx (Root)                                   │ │
-│  │  FallingNotesCanvas (PixiJS) · TransportBar       │ │
-│  │  PianoKeyboard · PracticeToolbar · SongLibrary    │ │
-│  └────────────────────────┬──────────────────────────┘ │
-│                           │                             │
-│  ┌────────────────────────┴──────────────────────────┐ │
-│  │  Engines (pure logic, no React)                   │ │
-│  │  audio/ · fallingNotes/ · midi/ · practice/       │ │
-│  │  metronome/                                       │ │
-│  └───────────────────────────────────────────────────┘ │
-└─────────────────────────────────────────────────────────┘
+```mermaid
+graph TB
+    subgraph Main["Electron Main Process"]
+        FH["fileHandlers\n(IPC: dialog)"]
+        MD["midiDevice\n(IPC: MIDI)"]
+    end
+    FH & MD --> IPC["IPC — contextBridge"]
+
+    subgraph Renderer["Renderer Process (React)"]
+        subgraph Stores["Zustand Stores (8)"]
+            S["songStore · playbackStore · themeStore\nmidiDeviceStore · practiceStore · settingsStore\nprogressStore · songLibraryStore"]
+        end
+        subgraph App["App.tsx (Root)"]
+            A["FallingNotesCanvas (PixiJS) · TransportBar\nPianoKeyboard · PracticeToolbar · SongLibrary"]
+        end
+        subgraph Eng["Engines (pure logic, no React)"]
+            E["audio · fallingNotes · midi · practice · metronome"]
+        end
+    end
+
+    IPC --> Stores --> App --> Eng
 ```
 
 ### Three-Layer Architecture
 
 The renderer enforces strict separation:
 
-```
-┌─────────────────────────────────────────────────────────┐
-│  features/ (React UI Components)                        │
-│  Read state via useStore(); dispatch via store methods  │
-├─────────────────────────────────────────────────────────┤
-│  stores/ (Zustand State Bridge)                         │
-│  Bridge engines ↔ React; manage engine singletons      │
-├─────────────────────────────────────────────────────────┤
-│  engines/ (Pure Logic)                                  │
-│  Zero React deps; callback pattern; independently tested│
-└─────────────────────────────────────────────────────────┘
+```mermaid
+graph TB
+    subgraph Features["features/ — React UI Components"]
+        F["Read state via useStore()\nDispatch via store methods"]
+    end
+    subgraph Stores["stores/ — Zustand State Bridge"]
+        S["Bridge engines ↔ React\nManage engine singletons"]
+    end
+    subgraph Engines["engines/ — Pure Logic"]
+        E["Zero React deps\nCallback pattern\nIndependently testable"]
+    end
+    Features --> Stores --> Engines
 ```
 
 **Rules:**
@@ -184,16 +177,13 @@ The falling notes engine renders an animated "piano roll" view using PixiJS 8 (W
 
 ### Coordinate System
 
-```
-Y = 0 (top of canvas)
-  │
-  │  Future notes fall downward
-  │  Note Y position = (note.startTime - currentTime) * pixelsPerSecond
-  │
-hit line = canvas.height - pianoKeyboardHeight
-  │
-  ▼
-Y = canvas.height
+```mermaid
+flowchart TB
+    T["Y = 0 — top of canvas"]
+    M["Future notes fall downward\nNote Y = (note.startTime - currentTime) × pixelsPerSecond"]
+    H["Hit line = canvas.height - pianoKeyboardHeight"]
+    B["Y = canvas.height"]
+    T --> M --> H --> B
 ```
 
 ---
@@ -221,28 +211,32 @@ Adding a new theme requires only adding a new entry to `tokens.ts` — no compon
 
 ### Audio Pipeline
 
-```
-resources/piano.sf2 (SoundFont, ~6 MB)
-         │
-    IPC: audio:loadSoundFont → Main reads file → returns number[]
-         │
-    SoundFontLoader.load(data)
-         │
-    ├── Success: parse SF2, extract presets
-    └── Failure: fall back to sine-wave oscillator
-         │
-    AudioEngine
-    ├── init() → create AudioContext
-    ├── noteOn(midi, velocity, audioTime)
-    ├── noteOff(midi, audioTime) → 150ms release
-    └── setVolume(0.0–1.0) → master gain node
-         │
-    AudioScheduler (look-ahead scheduler)
-    ├── setSong(parsedSong) → index all notes
-    ├── start(seekTime) → begin scheduling loop
-    ├── getCurrentTime() → derived from AudioContext.currentTime
-    └── scheduling loop (setInterval 25ms):
-        └── scan notes in [now, now + 100ms] → engine.noteOn()
+```mermaid
+flowchart TD
+    A["resources/piano.sf2\n(SoundFont, ~6 MB)"]
+    B["IPC: audio:loadSoundFont\nMain reads file → returns number[]"]
+    C["SoundFontLoader.load(data)"]
+    D["Success: parse SF2\nextract presets"]
+    E["Failure: fall back to\nsine-wave oscillator"]
+
+    subgraph AE["AudioEngine"]
+        AE1["init() → create AudioContext"]
+        AE2["noteOn(midi, velocity, audioTime)"]
+        AE3["noteOff(midi, audioTime) → 150ms release"]
+        AE4["setVolume(0.0–1.0) → master gain node"]
+    end
+
+    subgraph AS["AudioScheduler (look-ahead)"]
+        AS1["setSong(parsedSong) → index all notes"]
+        AS2["start(seekTime) → begin scheduling loop"]
+        AS3["getCurrentTime() → derived from AudioContext.currentTime"]
+        AS4["scheduling loop (setInterval 25ms)\nscan notes in [now, now+100ms] → engine.noteOn()"]
+    end
+
+    A --> B --> C
+    C --> D & E
+    D & E --> AE
+    AE --> AS
 ```
 
 **Time source**: `AudioContext.currentTime` (hardware clock), not `requestAnimationFrame`. This ensures audio scheduling is immune to frame drops.
@@ -298,15 +292,11 @@ engines/practice/
 
 WaitMode is the core of the "Wait" practice feature. It intercepts playback at note boundaries:
 
-```
-playing
-  │
-  ├─ Note arrives at hit line → transition to waiting
-  │
-waiting
-  │
-  ├─ Correct note received (within ±200ms window) → onHit → resume playing
-  └─ Wrong note received → onMiss → stay waiting
+```mermaid
+stateDiagram-v2
+    playing --> waiting : Note arrives at hit line
+    waiting --> playing : Correct note (±200ms window)\nonHit callback
+    waiting --> waiting : Wrong note received\nonMiss callback
 ```
 
 **Chord collection**: Notes within a ±200ms window are grouped as a chord. All notes in the chord must be pressed before playback resumes.

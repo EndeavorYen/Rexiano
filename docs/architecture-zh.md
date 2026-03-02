@@ -11,50 +11,35 @@
 
 Rexiano 是一個 Electron 桌面應用程式，在主程序（Node.js）和渲染程序（Chromium / React）之間有清晰的分層。
 
-```
-┌────────────────────────────────────────────────────────────────────┐
-│                     Electron 主程序                                 │
-│                                                                    │
-│  ┌─────────────────┐  ┌──────────────────┐  ┌──────────────────┐  │
-│  │  fileHandlers    │  │ midiDeviceHdlrs  │  │ progressHandlers │  │
-│  │  (對話框、載入)  │  │ (MIDI 權限)      │  │ (JSON 讀寫)      │  │
-│  └────────┬─────────┘  └────────┬─────────┘  └────────┬─────────┘  │
-│           │                     │                      │            │
-│           └─────────────────────┼──────────────────────┘            │
-│                                 │                                   │
-│                    IPC (contextBridge)                              │
-├─────────────────────────────────┼──────────────────────────────────┤
-│                     渲染程序                                         │
-│                                 │                                   │
-│  ┌──────────────────────────────┴───────────────────────────────┐  │
-│  │                     Zustand Stores (8)                       │  │
-│  │  songStore · playbackStore · themeStore · midiDeviceStore    │  │
-│  │  practiceStore · settingsStore · progressStore · songLibrary │  │
-│  └──────────────────────────────┬───────────────────────────────┘  │
-│                                 │                                   │
-│  ┌──────────────────────────────┴───────────────────────────────┐  │
-│  │                      App.tsx（根元件）                        │  │
-│  │                                                              │  │
-│  │  ┌────────────────────────────────────────────────────────┐  │  │
-│  │  │  SongLibrary（未載入歌曲時顯示）                        │  │  │
-│  │  ├────────────────────────────────────────────────────────┤  │  │
-│  │  │  Song Header  ·  DeviceSelector  ·  SettingsPanel      │  │  │
-│  │  ├────────────────────────────────────────────────────────┤  │  │
-│  │  │  FallingNotesCanvas（PixiJS 8 WebGL）·  ScoreOverlay   │  │  │
-│  │  ├────────────────────────────────────────────────────────┤  │  │
-│  │  │  TransportBar（播放/暫停、seek、音量、節拍器）           │  │  │
-│  │  ├────────────────────────────────────────────────────────┤  │  │
-│  │  │  PracticeToolbar（模式、速度、循環、音軌）              │  │  │
-│  │  ├────────────────────────────────────────────────────────┤  │  │
-│  │  │  PianoKeyboard（88 鍵 CSS 渲染）                       │  │  │
-│  │  └────────────────────────────────────────────────────────┘  │  │
-│  │                                                              │  │
-│  │  ┌─── 引擎層（純邏輯，無 React）────────────────────────┐   │  │
-│  │  │  audio/    fallingNotes/    midi/    practice/        │   │  │
-│  │  │  metronome/                                           │   │  │
-│  │  └──────────────────────────────────────────────────────┘   │  │
-│  └──────────────────────────────────────────────────────────────┘  │
-└────────────────────────────────────────────────────────────────────┘
+```mermaid
+graph TB
+    subgraph Main["Electron 主程序"]
+        FH["fileHandlers\n（對話框、載入）"]
+        MH["midiDeviceHandlers\n（MIDI 權限）"]
+        PH["progressHandlers\n（JSON 讀寫）"]
+    end
+    FH & MH & PH --> IPC["IPC — contextBridge"]
+
+    subgraph Renderer["渲染程序"]
+        subgraph Stores["Zustand Stores (8)"]
+            S["songStore · playbackStore · themeStore · midiDeviceStore\npracticeStore · settingsStore · progressStore · songLibrary"]
+        end
+        subgraph AppRoot["App.tsx（根元件）"]
+            direction TB
+            U1["SongLibrary（未載入歌曲時顯示）"]
+            U2["Song Header · DeviceSelector · SettingsPanel"]
+            U3["FallingNotesCanvas（PixiJS 8 WebGL）· ScoreOverlay"]
+            U4["TransportBar（播放/暫停、seek、音量、節拍器）"]
+            U5["PracticeToolbar（模式、速度、循環、音軌）"]
+            U6["PianoKeyboard（88 鍵 CSS 渲染）"]
+        end
+        subgraph EngLayer["引擎層（純邏輯，無 React）"]
+            direction LR
+            EA[audio] --- EF[fallingNotes] --- EM[midi] --- EP[practice] --- EMet[metronome]
+        end
+    end
+
+    IPC --> Stores --> AppRoot
 ```
 
 ---
@@ -141,27 +126,18 @@ rexiano/
 
 Rexiano 在渲染程序中強制執行嚴格的三層架構：
 
-```
-┌─────────────────────────────────────────────────────────┐
-│  features/（React UI 元件）                              │
-│  - JSX 元件 + hooks                                     │
-│  - 透過 useStore(selector) 讀取狀態                     │
-│  - 透過 store 方法派發操作                              │
-│  - 不直接存取引擎                                       │
-├─────────────────────────────────────────────────────────┤
-│  stores/（Zustand 狀態橋接）                            │
-│  - 橋接引擎與 React                                    │
-│  - 模組級單例管理引擎實例                               │
-│  - 回調接線（引擎事件 → store 更新）                   │
-│  - 必要時透過 localStorage 持久化                       │
-├─────────────────────────────────────────────────────────┤
-│  engines/（純邏輯）                                     │
-│  - 零 React 依賴                                       │
-│  - 回調模式（非 EventEmitter）                          │
-│  - Class-based，含 getter/setter 驗證                  │
-│  - 可獨立測試                                          │
-│  - PixiJS 透過 store.getState() 讀取（非 hooks）       │
-└─────────────────────────────────────────────────────────┘
+```mermaid
+graph TB
+    subgraph Features["features/ — React UI 元件"]
+        F["JSX 元件 + hooks\n透過 useStore(selector) 讀取狀態\n透過 store 方法派發操作\n不直接存取引擎"]
+    end
+    subgraph Stores["stores/ — Zustand 狀態橋接"]
+        S["橋接引擎與 React\n模組級單例管理引擎實例\n回調接線：引擎事件 → store 更新\n必要時透過 localStorage 持久化"]
+    end
+    subgraph Engines["engines/ — 純邏輯"]
+        E["零 React 依賴\n回調模式（非 EventEmitter）\nClass-based，含 getter/setter 驗證\n可獨立測試\nPixiJS 透過 store.getState() 讀取"]
+    end
+    Features --> Stores --> Engines
 ```
 
 **規則**：
@@ -177,115 +153,99 @@ Rexiano 在渲染程序中強制執行嚴格的三層架構：
 
 ### 5.1 MIDI 檔案載入
 
-```
-使用者操作（開啟檔案 / 拖放 / 點擊曲庫歌曲）
-    │
-    ▼
-IPC: dialog:openMidiFile / library:loadBuiltinSong
-    │
-    ▼
-主程序：讀取檔案，回傳 { fileName, data: number[] }
-    │                        └── 用 number[] 而非 Uint8Array（IPC structured clone 問題）
-    ▼
-Renderer: MidiFileParser.parseMidiFile(fileName, data)
-    │      └── 內部使用 @tonejs/midi
-    ▼
-ParsedSong { fileName, duration, noteCount, tempos[], timeSignatures[], tracks[] }
-    │
-    ▼
-useSongStore.loadSong(parsedSong)
-    │
-    ├──▶ FallingNotesCanvas 透過 store 訂閱感知新歌曲
-    ├──▶ AudioScheduler.setSong() 準備音符排程
-    └──▶ PracticeToolbar UI 更新音軌清單
+```mermaid
+flowchart TD
+    A["使用者操作\n（開啟檔案 / 拖放 / 點擊曲庫歌曲）"]
+    B["IPC: dialog:openMidiFile / library:loadBuiltinSong"]
+    C["主程序：讀取檔案\n回傳 { fileName, data: number[] }\n用 number[] 而非 Uint8Array（IPC structured clone 問題）"]
+    D["Renderer: MidiFileParser.parseMidiFile(fileName, data)\n內部使用 @tonejs/midi"]
+    E["ParsedSong { fileName, duration, noteCount,\ntempos[], timeSignatures[], tracks[] }"]
+    F["useSongStore.loadSong(parsedSong)"]
+    G["FallingNotesCanvas 透過\nstore 訂閱感知新歌曲"]
+    H["AudioScheduler.setSong()\n準備音符排程"]
+    I["PracticeToolbar UI\n更新音軌清單"]
+
+    A --> B --> C --> D --> E --> F
+    F --> G & H & I
 ```
 
 ### 5.2 播放 & 渲染迴圈
 
-```
-使用者按下 Space（或點擊播放）
-    │
-    ▼
-usePlaybackStore.setPlaying(true)
-    │
-    ├──▶ AudioScheduler.start(currentTime) — 開始 look-ahead 音符排程
-    ├──▶ AudioEngine.resume() — 解除 AudioContext 凍結
-    │
-    ▼
-tickerLoop（PixiJS Ticker，60 FPS）
-    │
-    ├─ 1. 從 AudioScheduler.getCurrentTime() 讀取 currentTime（硬體時鐘）
-    ├─ 2. 套用 practiceStore.speed 速度乘數
-    ├─ 3. 檢查 WaitMode 閘控（若等待輸入則暫停）
-    ├─ 4. 檢查循環範圍（若超過 B 點則跳回 A 點）
-    ├─ 5. Binary search 找出時間窗口內的可見音符
-    ├─ 6. 從物件池取出/歸還 sprite，更新位置
-    ├─ 7. 偵測越過 hit line 的音符（±50ms 容許值）
-    ├─ 8. 更新 activeNotes → 回調至 React → PianoKeyboard 高亮
-    └─ 9. 透過 AudioScheduler 排程音符（100ms look-ahead，25ms interval）
+```mermaid
+flowchart TD
+    A["使用者按下 Space（或點擊播放）"]
+    B["usePlaybackStore.setPlaying(true)"]
+    C["AudioScheduler.start(currentTime)\n開始 look-ahead 音符排程"]
+    D["AudioEngine.resume()\n解除 AudioContext 凍結"]
+    E["tickerLoop — PixiJS Ticker，60 FPS"]
+    F["1. 從 AudioScheduler.getCurrentTime() 讀取 currentTime（硬體時鐘）"]
+    G["2. 套用 practiceStore.speed 速度乘數"]
+    H["3. 檢查 WaitMode 閘控（若等待輸入則暫停）"]
+    I["4. 檢查循環範圍（若超過 B 點則跳回 A 點）"]
+    J["5. Binary search 找出時間窗口內的可見音符"]
+    K["6. 從物件池取出/歸還 sprite，更新位置"]
+    L["7. 偵測越過 hit line 的音符（±50ms 容許值）"]
+    M["8. 更新 activeNotes → 回調至 React → PianoKeyboard 高亮"]
+    N["9. 透過 AudioScheduler 排程音符\n100ms look-ahead，25ms interval"]
+
+    A --> B
+    B --> C & D
+    C & D --> E
+    E --> F --> G --> H --> I --> J --> K --> L --> M --> N
 ```
 
 ### 5.3 MIDI 輸入 → 練習評分
 
-```
-實體 MIDI 鍵盤
-    │
-    ▼
-Web MIDI API: MIDIInput.onmidimessage
-    │
-    ▼
-MidiInputParser：解碼 3-byte 訊息 [command, note, velocity]
-    │
-    ├── 0x90 + velocity > 0 → onNoteOn callback
-    ├── 0x80 或 velocity = 0 → onNoteOff callback
-    └── 0xB0 → onCC callback（延音踏板等）
-    │
-    ▼
-useMidiDeviceStore.onNoteOn(midi) / .onNoteOff(midi)
-    │
-    ├──▶ 更新 activeNotes set → PianoKeyboard 高亮按下的琴鍵
-    │
-    └──▶ WaitMode.receiveNote(midi, currentTime)
-         │
-         ├── 正確音符？→ onHit callback → practiceStore.recordHit()
-         │                              NoteRenderer.flashHit()
-         │                              恢復播放
-         │
-         └── 錯誤音符？→ onMiss callback → practiceStore.recordMiss()
-                                          NoteRenderer.markMiss()
+```mermaid
+flowchart TD
+    A["實體 MIDI 鍵盤"]
+    B["Web MIDI API: MIDIInput.onmidimessage"]
+    C["MidiInputParser\n解碼 3-byte 訊息：command, note, velocity"]
+    D["0x90 + velocity > 0\nonNoteOn callback"]
+    E["0x80 或 velocity = 0\nonNoteOff callback"]
+    F["0xB0\nonCC callback（延音踏板等）"]
+    G["useMidiDeviceStore.onNoteOn / .onNoteOff"]
+    H["更新 activeNotes set\n→ PianoKeyboard 高亮按下的琴鍵"]
+    I["WaitMode.receiveNote(midi, currentTime)"]
+    J["正確音符 → onHit callback\n→ practiceStore.recordHit()\nNoteRenderer.flashHit()\n恢復播放"]
+    K["錯誤音符 → onMiss callback\n→ practiceStore.recordMiss()\nNoteRenderer.markMiss()"]
+
+    A --> B --> C
+    C --> D & E & F
+    D & E --> G
+    G --> H & I
+    I --> J & K
 ```
 
 ### 5.4 音頻管線
 
-```
-SoundFont（resources/piano.sf2）
-    │
-    ▼
-IPC: audio:loadSoundFont → 主程序讀取 → 回傳 number[]
-    │
-    ▼
-SoundFontLoader.load(data)
-    │
-    ├── 成功：解析 SF2，提取樂器預設音色
-    └── 失敗：退回正弦波振盪器合成
-    │
-    ▼
-AudioEngine
-    │
-    ├── init() → 建立 AudioContext
-    ├── noteOn(midi, velocity, audioTime) → 透過 Web Audio API 排程
-    ├── noteOff(midi, audioTime) → 150ms 釋音包絡
-    ├── setVolume(0.0–1.0) → 主 gain 節點
-    └── allNotesOff() → 靜音所有激活音符
-    │
-    ▼
-AudioScheduler
-    │
-    ├── setSong(parsedSong) → 索引所有音軌的音符
-    ├── start(seekTime) → 記錄 startAudioTime，開始排程迴圈
-    ├── getCurrentTime() → audioContext.currentTime - startAudioTime + seekOffset
-    └── 排程迴圈（setInterval 25ms）：
-        └── 掃描 [currentTime, currentTime + 100ms] 的音符 → engine.noteOn()
+```mermaid
+flowchart TD
+    A["SoundFont — resources/piano.sf2"]
+    B["IPC: audio:loadSoundFont\n主程序讀取 → 回傳 number[]"]
+    C["SoundFontLoader.load(data)"]
+    D["成功：解析 SF2\n提取樂器預設音色"]
+    E["失敗：退回\n正弦波振盪器合成"]
+
+    subgraph AE["AudioEngine"]
+        AE1["init() → 建立 AudioContext"]
+        AE2["noteOn(midi, velocity, audioTime)\n透過 Web Audio API 排程"]
+        AE3["noteOff(midi, audioTime)\n150ms 釋音包絡"]
+        AE4["setVolume(0.0–1.0)\n主 gain 節點"]
+        AE5["allNotesOff()\n靜音所有激活音符"]
+    end
+
+    subgraph AS["AudioScheduler"]
+        AS1["setSong(parsedSong)\n索引所有音軌的音符"]
+        AS2["start(seekTime)\n記錄 startAudioTime，開始排程迴圈"]
+        AS3["getCurrentTime()\naudioContext.currentTime - startAudioTime + seekOffset"]
+        AS4["排程迴圈（setInterval 25ms）\n掃描 currentTime..currentTime+100ms → engine.noteOn()"]
+    end
+
+    A --> B --> C
+    C --> D & E
+    D & E --> AE
+    AE --> AS
 ```
 
 ---
