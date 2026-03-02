@@ -24,8 +24,8 @@ import { getMeasureWindow } from "./CursorSync";
 const STAVE_HEIGHT = 80;
 const SYSTEM_GAP = 20;
 const SYSTEM_HEIGHT = STAVE_HEIGHT * 2 + SYSTEM_GAP;
-const LEFT_MARGIN = 18;
-const TOP_MARGIN = 12;
+const LEFT_MARGIN = 28;
+const TOP_MARGIN = 10;
 const DISPLAY_MEASURE_COUNT = 4;
 
 const MIN_MEASURE_WIDTH = 120; // px — even an empty measure needs this much
@@ -332,44 +332,56 @@ export function SheetMusicPanel({
     }
 
     let cancelled = false;
-    void import("vexflow").then(async (VF) => {
-      await document.fonts.ready;
-      if (cancelled || !svgHostRef.current) return;
+    void import("vexflow")
+      .then(async (VF) => {
+        await document.fonts.ready;
+        if (cancelled || !svgHostRef.current) return;
 
-      const { Renderer } = VF;
-      host.innerHTML = "";
+        const { Renderer } = VF;
+        const stage = document.createElement("div");
+        const renderer = new Renderer(stage, Renderer.Backends.SVG);
+        renderer.resize(containerWidth, Math.max(totalHeight, height));
+        const context = renderer.getContext();
 
-      const renderer = new Renderer(host, Renderer.Backends.SVG);
-      renderer.resize(containerWidth, Math.max(totalHeight, height));
-      const context = renderer.getContext();
+        for (let slot = 0; slot < DISPLAY_MEASURE_COUNT; slot++) {
+          const measureIndex = visibleMeasures[slot];
+          const x = LEFT_MARGIN + slot * slotWidth;
+          const y = TOP_MARGIN;
+          const isFirst = slot === 0;
 
-      for (let slot = 0; slot < DISPLAY_MEASURE_COUNT; slot++) {
-        const measureIndex = visibleMeasures[slot];
-        const x = LEFT_MARGIN + slot * slotWidth;
-        const y = TOP_MARGIN;
-        const isFirst = slot === 0;
+          if (measureIndex === undefined) {
+            renderEmptyMeasure(VF, context, x, y, slotWidth, isFirst);
+            continue;
+          }
 
-        if (measureIndex === undefined) {
-          renderEmptyMeasure(VF, context, x, y, slotWidth, isFirst);
-          continue;
+          const measure = notationData.measures[measureIndex];
+
+          try {
+            renderMeasure(VF, context, measure, x, y, slotWidth, isFirst);
+          } catch (e) {
+            console.warn(
+              `SheetMusic: failed to render measure ${measureIndex}:`,
+              e,
+            );
+          }
         }
 
-        const measure = notationData.measures[measureIndex];
-
-        try {
-          renderMeasure(VF, context, measure, x, y, slotWidth, isFirst);
-        } catch (e) {
-          console.warn(
-            `SheetMusic: failed to render measure ${measureIndex}:`,
-            e,
-          );
+        if (cancelled || !svgHostRef.current) return;
+        const nextSvg = stage.querySelector("svg");
+        if (nextSvg) {
+          host.replaceChildren(nextSvg);
+        } else {
+          host.replaceChildren();
         }
-      }
-    });
+      })
+      .catch((err: unknown) => {
+        if (!cancelled) {
+          console.error("SheetMusic: failed to load VexFlow", err);
+        }
+      });
 
     return () => {
       cancelled = true;
-      host.innerHTML = "";
     };
   }, [
     hidden,
@@ -386,7 +398,7 @@ export function SheetMusicPanel({
   return (
     <div
       ref={containerRef}
-      className="w-full overflow-hidden"
+      className="relative w-full overflow-hidden"
       style={{
         flex: mode === "sheet" ? 1 : undefined,
         height: mode === "split" ? height : undefined,

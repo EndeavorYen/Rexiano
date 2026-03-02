@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { calcMeasureWidths } from "./SheetMusicPanel";
+import { calcMeasureWidths } from "./sheetMusicUtils";
 
 describe("calcMeasureWidths", () => {
   it("distributes proportionally — denser measure gets more width", () => {
@@ -44,5 +44,7 @@ describe("calcMeasureWidths", () => {
   it("no slot gets zero or negative width when container is very narrow", () => {
     const result = calcMeasureWidths([1, 1, 1, 1], 300); // 300 < 120*4 = 480
     result.forEach((w) => expect(w).toBeGreaterThan(0));
+    // In extreme narrow cases, slots may not fit within totalWidth —
+    // each slot is guaranteed at least 1px, not a proportional share
   });
 });
