@@ -43,7 +43,13 @@ export function computeLoopHighlight(
   return { left, width };
 }
 
-export function TransportBar(): React.JSX.Element {
+interface TransportBarProps {
+  compact?: boolean;
+}
+
+export function TransportBar({
+  compact = false,
+}: TransportBarProps): React.JSX.Element {
   const { t } = useTranslation();
   const song = useSongStore((s) => s.song);
   const currentTime = usePlaybackStore((s) => s.currentTime);
@@ -81,12 +87,25 @@ export function TransportBar(): React.JSX.Element {
     setPlayPulse(true);
     setTimeout(() => setPlayPulse(false), 300);
   };
+  const primaryButtonSize = compact ? 36 : 40;
+  const iconSize = compact ? 16 : 18;
+  const utilityButtonSize = compact ? 30 : 32;
 
   return (
-    <div className="transport-strip surface-panel mx-3 mt-3 rounded-2xl px-3 py-2.5 sm:px-4">
-      <div className="grid gap-2 lg:grid-cols-[auto_1fr_auto] lg:items-center lg:gap-3">
+    <div
+      className={`transport-strip surface-panel mx-3 rounded-2xl sm:px-4 ${
+        compact ? "mt-2 px-2.5 py-2" : "mt-3 px-3 py-2.5"
+      }`}
+    >
+      <div
+        className={`grid lg:grid-cols-[auto_1fr_auto] lg:items-center ${
+          compact ? "gap-1.5 lg:gap-2.5" : "gap-2 lg:gap-3"
+        }`}
+      >
         <div
-          className="flex items-center gap-2 overflow-x-auto lg:overflow-visible rounded-xl px-1.5 py-1"
+          className={`flex items-center gap-2 overflow-x-auto lg:overflow-visible rounded-xl ${
+            compact ? "px-1.5 py-0.5" : "px-1.5 py-1"
+          }`}
           style={{
             background:
               "color-mix(in srgb, var(--color-surface-alt) 46%, var(--color-surface))",
@@ -98,8 +117,8 @@ export function TransportBar(): React.JSX.Element {
             disabled={!song}
             className="flex items-center justify-center rounded-full text-white disabled:opacity-40 cursor-pointer"
             style={{
-              width: 40,
-              height: 40,
+              width: primaryButtonSize,
+              height: primaryButtonSize,
               background: "var(--color-accent)",
               boxShadow: playPulse
                 ? "0 0 0 6px color-mix(in srgb, var(--color-accent) 25%, transparent)"
@@ -114,9 +133,13 @@ export function TransportBar(): React.JSX.Element {
             aria-label={isPlaying ? t("transport.pause") : t("transport.play")}
           >
             {isPlaying ? (
-              <Pause size={18} fill="currentColor" />
+              <Pause size={iconSize} fill="currentColor" />
             ) : (
-              <Play size={18} fill="currentColor" style={{ marginLeft: 2 }} />
+              <Play
+                size={iconSize}
+                fill="currentColor"
+                style={{ marginLeft: 2 }}
+              />
             )}
           </button>
 
@@ -125,22 +148,22 @@ export function TransportBar(): React.JSX.Element {
             disabled={!song}
             className="btn-surface-themed flex items-center justify-center rounded-lg disabled:opacity-40 cursor-pointer"
             style={{
-              width: 32,
-              height: 32,
+              width: utilityButtonSize,
+              height: utilityButtonSize,
               color: "var(--color-text-muted)",
             }}
             title={t("transport.reset")}
             aria-label={t("transport.resetLabel")}
           >
-            <SkipBack size={14} fill="currentColor" />
+            <SkipBack size={compact ? 13 : 14} fill="currentColor" />
           </button>
 
           <button
             onClick={() => setMetronomeEnabled(!metronomeEnabled)}
             className="flex items-center justify-center rounded-lg cursor-pointer transition-colors"
             style={{
-              width: 32,
-              height: 32,
+              width: utilityButtonSize,
+              height: utilityButtonSize,
               background: metronomeEnabled
                 ? "color-mix(in srgb, var(--color-accent) 15%, transparent)"
                 : "var(--color-surface-alt)",
@@ -164,7 +187,7 @@ export function TransportBar(): React.JSX.Element {
             }
             data-testid="metronome-toggle"
           >
-            <Timer size={14} />
+            <Timer size={compact ? 13 : 14} />
           </button>
 
           <div className="hidden md:block">
@@ -240,7 +263,9 @@ export function TransportBar(): React.JSX.Element {
         </div>
 
         <div
-          className="flex items-center gap-3 min-w-0 lg:min-w-[280px] rounded-xl px-2 py-1"
+          className={`flex items-center min-w-0 lg:min-w-[280px] rounded-xl px-2 ${
+            compact ? "gap-2 py-0.5" : "gap-3 py-1"
+          }`}
           style={{
             background:
               "color-mix(in srgb, var(--color-surface) 72%, transparent)",
@@ -260,7 +285,7 @@ export function TransportBar(): React.JSX.Element {
 
           <div
             className="relative flex-1 flex items-center"
-            style={{ height: 20 }}
+            style={{ height: compact ? 18 : 20 }}
           >
             {loopHighlight && (
               <div
@@ -304,7 +329,9 @@ export function TransportBar(): React.JSX.Element {
         </div>
 
         <div
-          className="flex items-center gap-2.5 justify-end rounded-xl px-1.5 py-1"
+          className={`flex items-center justify-end rounded-xl px-1.5 ${
+            compact ? "gap-2 py-0.5" : "gap-2.5 py-1"
+          }`}
           style={{
             background:
               "color-mix(in srgb, var(--color-surface-alt) 46%, var(--color-surface))",

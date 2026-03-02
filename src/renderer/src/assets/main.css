@@ -92,6 +92,9 @@ textarea:focus-visible {
 .app-shell {
   position: relative;
   isolation: isolate;
+}
+
+.app-shell-clipped {
   overflow: hidden;
 }
 

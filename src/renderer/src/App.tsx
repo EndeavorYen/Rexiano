@@ -756,6 +756,10 @@ function App(): React.JSX.Element {
           Math.max(0, Math.round((currentTime / song.duration) * 100)),
         )
       : 0;
+  const isSplitMode = displayMode === "split";
+  const splitSheetHeight = isSplitMode ? 168 : undefined;
+  const fallingCanvasMinHeight = isSplitMode ? 120 : 200;
+  const keyboardHeight = isSplitMode ? 84 : 100;
 
   useEffect(() => {
     const token = `${view}:${song?.fileName ?? ""}`;
@@ -859,10 +863,12 @@ function App(): React.JSX.Element {
       {song && (
         <div
           key="playback"
-          className="flex-1 flex flex-col animate-page-enter px-3 pb-3 pt-3"
+          className="flex-1 min-h-0 flex flex-col animate-page-enter px-3 pb-3 pt-3"
         >
           <div
-            className="surface-panel subtle-shadow flex flex-col gap-3 px-4 py-3 mb-3"
+            className={`surface-panel subtle-shadow flex flex-col ${
+              isSplitMode ? "gap-2 px-3 py-2.5 mb-2.5" : "gap-3 px-4 py-3 mb-3"
+            }`}
             style={{
               borderRadius: "1.1rem",
             }}
@@ -870,7 +876,11 @@ function App(): React.JSX.Element {
             <div className="flex items-start gap-2 justify-between">
               <div className="min-w-0 flex-1">
                 <span className="kicker-label">{t("app.subtitle")}</span>
-                <h2 className="text-base font-semibold font-body truncate">
+                <h2
+                  className={`font-semibold font-body truncate ${
+                    isSplitMode ? "text-[0.95rem]" : "text-base"
+                  }`}
+                >
                   {song.fileName}
                 </h2>
               </div>
@@ -878,23 +888,35 @@ function App(): React.JSX.Element {
               <div className="flex items-center gap-2 shrink-0">
                 <button
                   onClick={() => setShowPlaybackDrawer(true)}
-                  className="btn-surface-themed flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-lg font-body cursor-pointer"
+                  className={`btn-surface-themed flex items-center gap-1.5 rounded-lg font-body cursor-pointer ${
+                    isSplitMode
+                      ? "px-2.5 py-1 text-[11px]"
+                      : "px-3 py-1.5 text-xs"
+                  }`}
                   data-testid="playback-drawer-trigger"
                 >
-                  <PanelRightOpen size={14} />
+                  <PanelRightOpen size={isSplitMode ? 13 : 14} />
                   {t("settings.title")}
                 </button>
                 <button
                   onClick={handleExitPlayback}
-                  className="btn-surface-themed flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-lg font-body cursor-pointer"
+                  className={`btn-surface-themed flex items-center gap-1.5 rounded-lg font-body cursor-pointer ${
+                    isSplitMode
+                      ? "px-2.5 py-1 text-[11px]"
+                      : "px-3 py-1.5 text-xs"
+                  }`}
                 >
-                  <ArrowLeft size={14} />
+                  <ArrowLeft size={isSplitMode ? 13 : 14} />
                   {t("song.backToLibrary")}
                 </button>
               </div>
             </div>
 
-            <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
+            <div
+              className={`flex flex-wrap items-center gap-1.5 ${
+                isSplitMode ? "mt-1" : "mt-1.5"
+              }`}
+            >
               <span className="control-chip">
                 <span
                   className={`status-dot ${isPlaying ? "status-dot-live" : "status-dot-idle"}`}
@@ -918,7 +940,7 @@ function App(): React.JSX.Element {
               )}
             </div>
 
-            <div className="mt-2.5">
+            <div className={isSplitMode ? "mt-1.5" : "mt-2.5"}>
               <div className="progress-rail">
                 <div
                   className={`progress-fill ${isPlaying ? "progress-fill-live" : ""}`}
@@ -992,19 +1014,20 @@ function App(): React.JSX.Element {
               notationData={notationData}
               cursorPosition={cursorPosition}
               mode={displayMode}
-              height={displayMode === "split" ? 220 : undefined}
+              height={splitSheetHeight}
             />
 
             {/* Falling notes canvas — always mounted so PixiJS ticker keeps
                 running (WaitMode relies on it). Hidden via CSS in sheet mode. */}
             <div
-              className="flex-1 relative flex flex-col"
+              className="flex-1 min-h-0 relative flex flex-col"
               style={{ display: displayMode === "sheet" ? "none" : "flex" }}
             >
               <FallingNotesCanvas
                 onActiveNotesChange={handleActiveNotesChange}
                 getAudioCurrentTime={getAudioCurrentTime}
                 onNoteRendererReady={handleNoteRendererReady}
+                minHeight={fallingCanvasMinHeight}
               />
             </div>
             <ScoreOverlay />
@@ -1029,24 +1052,20 @@ function App(): React.JSX.Element {
           )}
 
           {/* Transport bar */}
-          <TransportBar />
+          <TransportBar compact={isSplitMode} />
 
           {/* Practice toolbar */}
-          <PracticeToolbar />
+          <PracticeToolbar compact={isSplitMode} />
 
           {/* Piano keyboard */}
           <PianoKeyboard
             activeNotes={activeNotes}
             midiActiveNotes={midiActiveNotes}
-            height={100}
+            height={keyboardHeight}
           />
 
           {/* Mode selection modal (shown when a song first loads) */}
-          {showModeModal && (
-            <ModeSelectionModal
-              onSelect={handleModeSelect}
-            />
-          )}
+          {showModeModal && <ModeSelectionModal onSelect={handleModeSelect} />}
 
           {/* Celebration overlay (shown when song ends).
               "Pick Song" leads to StatisticsPage instead of directly back. */}

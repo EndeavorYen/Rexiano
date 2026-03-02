@@ -6,20 +6,30 @@ import { SpeedSlider } from "./SpeedSlider";
 import { ABLoopSelector } from "./ABLoopSelector";
 import { TrackSelector } from "./TrackSelector";
 
-export function PracticeToolbar(): React.JSX.Element {
+interface PracticeToolbarProps {
+  compact?: boolean;
+}
+
+export function PracticeToolbar({
+  compact = false,
+}: PracticeToolbarProps): React.JSX.Element {
   const { t } = useTranslation();
   const [expanded, setExpanded] = useState(false);
 
   return (
     <div
-      className="mx-3 mt-3 rounded-2xl surface-panel overflow-hidden"
+      className={`mx-3 rounded-2xl surface-panel overflow-hidden ${
+        compact ? "mt-2" : "mt-3"
+      }`}
       style={{
         border: "1px solid var(--color-border)",
       }}
     >
       <div
-        className="flex flex-wrap items-center gap-3 px-4 py-2.5"
-        style={{ minHeight: 42 }}
+        className={`flex flex-wrap items-center px-4 ${
+          compact ? "gap-2 py-2" : "gap-3 py-2.5"
+        }`}
+        style={{ minHeight: compact ? 38 : 42 }}
       >
         <PracticeModeSelector />
 
@@ -33,7 +43,9 @@ export function PracticeToolbar(): React.JSX.Element {
         <div className="ml-auto shrink-0">
           <button
             onClick={() => setExpanded(!expanded)}
-            className="btn-surface-themed flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-body cursor-pointer"
+            className={`btn-surface-themed flex items-center gap-1.5 rounded-md font-body cursor-pointer ${
+              compact ? "px-2 py-[3px] text-[10px]" : "px-2.5 py-1 text-[11px]"
+            }`}
             style={{
               color: "var(--color-text-muted)",
               background: expanded
@@ -66,7 +78,9 @@ export function PracticeToolbar(): React.JSX.Element {
 
       {expanded && (
         <div
-          className="flex items-start gap-6 px-4 pb-2.5 overflow-x-auto animate-page-enter"
+          className={`flex items-start px-4 overflow-x-auto animate-page-enter ${
+            compact ? "gap-5 pb-2" : "gap-6 pb-2.5"
+          }`}
           style={{
             borderTop:
               "1px solid color-mix(in srgb, var(--color-border) 70%, transparent)",

@@ -13,12 +13,15 @@ interface FallingNotesCanvasProps {
   getAudioCurrentTime?: () => number | null;
   /** Expose the NoteRenderer instance for external use (e.g. practice visual feedback) */
   onNoteRendererReady?: (renderer: NoteRenderer) => void;
+  /** Optional minimum render height in px */
+  minHeight?: number;
 }
 
 export function FallingNotesCanvas({
   onActiveNotesChange,
   getAudioCurrentTime,
   onNoteRendererReady,
+  minHeight = 200,
 }: FallingNotesCanvasProps): React.JSX.Element {
   const containerRef = useRef<HTMLDivElement>(null);
   const appRef = useRef<Application | null>(null);
@@ -121,7 +124,8 @@ export function FallingNotesCanvas({
   return (
     <div
       ref={containerRef}
-      className="flex-1 w-full min-h-[200px] overflow-hidden"
+      className="flex-1 w-full overflow-hidden"
+      style={{ minHeight }}
     />
   );
 }

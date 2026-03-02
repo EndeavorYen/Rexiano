@@ -200,7 +200,7 @@ export function SongLibrary({
   };
 
   return (
-    <div className="flex-1 app-shell overflow-y-auto">
+    <div className="flex-1 min-h-0 app-shell overflow-y-auto overflow-x-hidden">
       <div className="mx-auto w-full max-w-6xl px-6 py-6 pb-24">
         <header className="surface-panel subtle-shadow sticky top-4 z-20 mb-5 p-4 sm:p-5 animate-page-enter">
           <div className="flex flex-wrap items-center justify-between gap-3">
