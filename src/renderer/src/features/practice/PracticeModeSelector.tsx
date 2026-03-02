@@ -134,6 +134,7 @@ export function PracticeModeSelector(): React.JSX.Element {
               transform: isActive ? "scale(1)" : "scale(0.98)",
             }}
             title={label}
+            data-testid={`practice-mode-${id}`}
           >
             {icon}
             <span>{label}</span>

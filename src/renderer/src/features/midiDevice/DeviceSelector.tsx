@@ -233,13 +233,47 @@ export function DeviceSelector(): React.JSX.Element {
 
       {/* Error message */}
       {connectionError && (
-        <span
-          className="text-xs truncate max-w-48"
-          style={{ color: "#f87171" }}
-          title={connectionError}
+        <div
+          className="flex items-center gap-2 rounded-lg px-2 py-1.5 max-w-[360px]"
+          style={{
+            color: "#f87171",
+            background: "color-mix(in srgb, #ef4444 8%, var(--color-surface))",
+            border:
+              "1px solid color-mix(in srgb, #ef4444 30%, var(--color-border))",
+          }}
+          data-testid="midi-error-guidance"
         >
-          {connectionError}
-        </span>
+          <span className="text-xs truncate" title={connectionError}>
+            {connectionError}
+          </span>
+          <button
+            onClick={() => connect()}
+            className="px-1.5 py-0.5 rounded text-[10px] font-body font-medium cursor-pointer"
+            style={{
+              color: "var(--color-text)",
+              background:
+                "color-mix(in srgb, var(--color-surface-alt) 75%, var(--color-surface))",
+              border: "1px solid var(--color-border)",
+            }}
+          >
+            Retry
+          </button>
+          {bleStatus !== "connected" && (
+            <button
+              onClick={() => connectBluetooth()}
+              disabled={bleStatus === "scanning" || bleStatus === "connecting"}
+              className="px-1.5 py-0.5 rounded text-[10px] font-body font-medium cursor-pointer disabled:opacity-55"
+              style={{
+                color: "var(--color-text)",
+                background:
+                  "color-mix(in srgb, var(--color-surface-alt) 75%, var(--color-surface))",
+                border: "1px solid var(--color-border)",
+              }}
+            >
+              Bluetooth
+            </button>
+          )}
+        </div>
       )}
     </div>
   );

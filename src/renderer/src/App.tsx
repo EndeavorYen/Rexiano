@@ -37,7 +37,6 @@ import { useTranslation } from "./i18n/useTranslation";
 import { SheetMusicPanel } from "./features/sheetMusic/SheetMusicPanel";
 import { DisplayModeToggle } from "./features/sheetMusic/DisplayModeToggle";
 import { convertToNotation } from "./features/sheetMusic/MidiToNotation";
-import { getCursorPosition } from "./features/sheetMusic/CursorSync";
 import { usePracticeStore } from "./stores/usePracticeStore";
 import { MainMenu } from "./features/mainMenu/MainMenu";
 import { ModeSelectionModal } from "./features/practice/ModeSelectionModal";
@@ -54,6 +53,17 @@ import {
 /** Accepted file extensions for drag-and-drop MIDI import */
 const MIDI_EXTENSIONS = [".mid", ".midi"];
 const CELEBRATION_DURATION_MS = 2200;
+const HEADER_ESTIMATED_HEIGHT = 112;
+const TRANSPORT_ESTIMATED_HEIGHT = 84;
+const TOOLBAR_ESTIMATED_HEIGHT = 72;
+const CHROME_VERTICAL_PADDING = 34;
+const SPLIT_SHEET_MIN = 168;
+const SPLIT_SHEET_MAX = 272;
+const SPLIT_SHEET_RATIO = 0.31;
+
+function clampNumber(value: number, min: number, max: number): number {
+  return Math.min(max, Math.max(min, value));
+}
 
 const analyzer = new WeakSpotAnalyzer();
 
@@ -199,7 +209,6 @@ function App(): React.JSX.Element {
 
   // ─── Phase 7: Sheet Music ──────────────────────────────
   const displayMode = usePracticeStore((s) => s.displayMode);
-  const currentTime = usePlaybackStore((s) => s.currentTime);
   const isPlaying = usePlaybackStore((s) => s.isPlaying);
 
   const notationData = useMemo(() => {
@@ -209,17 +218,28 @@ function App(): React.JSX.Element {
     return convertToNotation(allNotes, bpm);
   }, [song]);
 
-  const cursorPosition = useMemo(() => {
-    if (!notationData) return null;
-    return getCursorPosition(currentTime, notationData);
-  }, [notationData, currentTime]);
   // ─── End Phase 7 ──────────────────────────────────────
 
   const [activeNotes, setActiveNotes] = useState<Set<number>>(new Set());
   const midiActiveNotes = useMidiDeviceStore((s) => s.activeNotes);
+  const [viewportHeight, setViewportHeight] = useState(() =>
+    typeof window !== "undefined" ? window.innerHeight : 900,
+  );
+  const [splitFocusPanel, setSplitFocusPanel] = useState<"sheet" | "falling">(
+    "sheet",
+  );
 
   const handleActiveNotesChange = useCallback((notes: Set<number>) => {
     setActiveNotes(notes);
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const onResize = (): void => {
+      setViewportHeight(window.innerHeight);
+    };
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
   }, []);
 
   // ─── Phase 4: Audio Engine lifecycle ─────────────────
@@ -595,6 +615,7 @@ function App(): React.JSX.Element {
   const showFallingNoteLabels = useSettingsStore(
     (s) => s.showFallingNoteLabels,
   );
+  const compactKeyLabels = useSettingsStore((s) => s.compactKeyLabels);
   useEffect(() => {
     if (noteRendererRef.current) {
       noteRendererRef.current.showNoteLabels = showFallingNoteLabels;
@@ -736,9 +757,41 @@ function App(): React.JSX.Element {
   }, [applyRoute]);
 
   const isSplitMode = displayMode === "split";
-  const splitSheetHeight = isSplitMode ? 216 : undefined;
-  const fallingCanvasMinHeight = isSplitMode ? 120 : 200;
   const keyboardHeight = isSplitMode ? 84 : 100;
+  useEffect(() => {
+    if (!isSplitMode) {
+      setSplitFocusPanel("sheet");
+    }
+  }, [isSplitMode]);
+  const reservedChromeHeight =
+    HEADER_ESTIMATED_HEIGHT +
+    TRANSPORT_ESTIMATED_HEIGHT +
+    TOOLBAR_ESTIMATED_HEIGHT +
+    keyboardHeight +
+    CHROME_VERTICAL_PADDING;
+  const estimatedWorkspaceHeight = Math.max(
+    260,
+    viewportHeight - reservedChromeHeight,
+  );
+  const splitSheetHeight = isSplitMode
+    ? Math.round(
+        clampNumber(
+          estimatedWorkspaceHeight * SPLIT_SHEET_RATIO,
+          SPLIT_SHEET_MIN,
+          SPLIT_SHEET_MAX,
+        ),
+      )
+    : undefined;
+  const splitFallingMinHeight = isSplitMode
+    ? Math.max(
+        96,
+        Math.min(
+          Math.round(estimatedWorkspaceHeight * 0.42),
+          estimatedWorkspaceHeight - splitSheetHeight!,
+        ),
+      )
+    : null;
+  const fallingCanvasMinHeight = isSplitMode ? splitFallingMinHeight! : 200;
   const speedPercent = Math.round(speed * 100);
   const baseBpm =
     song?.tempos && song.tempos.length > 0
@@ -853,56 +906,59 @@ function App(): React.JSX.Element {
         >
           <div
             className={`surface-panel subtle-shadow ${
-              isSplitMode ? "px-2.5 py-2 mb-2" : "px-3 py-2.5 mb-2.5"
+              isSplitMode ? "px-2 py-1.5 mb-1.5" : "px-2.5 py-2 mb-2"
             }`}
             style={{
               borderRadius: "1.1rem",
             }}
             data-testid="playback-header-panel"
           >
-            <div className="flex items-center gap-2 justify-between min-w-0">
+            <div className="flex items-center gap-1.5 justify-between min-w-0">
               <div
-                className="min-w-0 flex-1 flex flex-wrap items-center gap-1.25"
+                className="min-w-0 flex-1 flex items-center gap-1.5 overflow-hidden"
                 data-testid="playback-title-meta-row"
               >
-                <span className="kicker-label shrink-0">
+                <span className="kicker-label shrink-0 text-[11px]">
                   {t("app.subtitle")}
                 </span>
                 <h2
-                  className="font-semibold font-body truncate text-[0.98rem] max-w-[34vw]"
+                  className="font-semibold font-body truncate text-[1.02rem] leading-tight max-w-[min(40vw,420px)]"
                   data-testid="playback-song-title"
                 >
                   {song.fileName}
                 </h2>
 
                 <div
-                  className="flex flex-wrap items-center gap-1"
+                  className="flex items-center gap-1 min-w-0 overflow-hidden"
                   data-testid="playback-header-chips"
                 >
-                  <span className="control-chip playback-header-chip">
+                  <span className="control-chip playback-header-chip shrink-0">
                     {song.tracks.length}{" "}
                     {song.tracks.length > 1
                       ? t("song.tracks")
                       : t("song.track")}
                   </span>
-                  <span className="control-chip playback-header-chip">
+                  <span className="control-chip playback-header-chip shrink-0">
                     {song.noteCount} {t("song.notes")}
                   </span>
-                  <span className="control-chip playback-header-chip font-mono tabular-nums">
+                  <span className="control-chip playback-header-chip tabular-nums shrink-0">
                     {speedPercent}%
                   </span>
                   {effectiveBpm !== null && (
-                    <span className="control-chip playback-header-chip font-mono tabular-nums">
+                    <span className="control-chip playback-header-chip tabular-nums shrink-0">
                       {effectiveBpm} BPM
                     </span>
                   )}
                 </div>
               </div>
 
-              <div className="flex items-center gap-1.5 shrink-0">
+              <div
+                className="flex items-center gap-1 shrink-0"
+                data-testid="playback-header-actions"
+              >
                 <button
                   onClick={() => setShowPlaybackDrawer(true)}
-                  className="btn-surface-themed flex items-center gap-1.5 rounded-lg font-body cursor-pointer px-2 py-1 text-[11px]"
+                  className="btn-surface-themed flex items-center gap-1 rounded-lg font-body cursor-pointer px-2 py-[3px] text-[10px]"
                   data-testid="playback-drawer-trigger"
                 >
                   <PanelRightOpen size={13} />
@@ -910,7 +966,7 @@ function App(): React.JSX.Element {
                 </button>
                 <button
                   onClick={handleExitPlayback}
-                  className="btn-surface-themed flex items-center gap-1.5 rounded-lg font-body cursor-pointer px-2 py-1 text-[11px]"
+                  className="btn-surface-themed flex items-center gap-1 rounded-lg font-body cursor-pointer px-2 py-[3px] text-[10px]"
                 >
                   <ArrowLeft size={13} />
                   {t("song.backToLibrary")}
@@ -972,18 +1028,43 @@ function App(): React.JSX.Element {
             className={`workspace-frame ${isPlaying ? "workspace-frame-live" : ""} flex-1 relative flex flex-col min-h-0 surface-panel overflow-hidden`}
           >
             {/* Sheet music panel (shown in split & sheet modes) */}
-            <SheetMusicPanel
-              notationData={notationData}
-              cursorPosition={cursorPosition}
-              mode={displayMode}
-              height={splitSheetHeight}
-            />
+            <div
+              className="relative"
+              style={
+                isSplitMode
+                  ? {
+                      filter:
+                        splitFocusPanel === "sheet"
+                          ? "saturate(1.03) brightness(1.015)"
+                          : "saturate(0.9) brightness(0.965)",
+                      transition: "filter 160ms ease",
+                    }
+                  : undefined
+              }
+              onMouseEnter={() => isSplitMode && setSplitFocusPanel("sheet")}
+              data-testid="split-sheet-region"
+            >
+              <SheetMusicPanel
+                notationData={notationData}
+                mode={displayMode}
+                height={splitSheetHeight}
+              />
+            </div>
 
             {/* Falling notes canvas — always mounted so PixiJS ticker keeps
                 running (WaitMode relies on it). Hidden via CSS in sheet mode. */}
             <div
+              data-testid="falling-notes-panel"
               className="flex-1 min-h-0 relative flex flex-col"
-              style={{ display: displayMode === "sheet" ? "none" : "flex" }}
+              style={{
+                display: displayMode === "sheet" ? "none" : "flex",
+                filter:
+                  isSplitMode && splitFocusPanel === "sheet"
+                    ? "saturate(0.9) brightness(0.965)"
+                    : undefined,
+                transition: isSplitMode ? "filter 160ms ease" : undefined,
+              }}
+              onMouseEnter={() => isSplitMode && setSplitFocusPanel("falling")}
             >
               <FallingNotesCanvas
                 onActiveNotesChange={handleActiveNotesChange}
@@ -1024,6 +1105,7 @@ function App(): React.JSX.Element {
             activeNotes={activeNotes}
             midiActiveNotes={midiActiveNotes}
             height={keyboardHeight}
+            compactLabels={compactKeyLabels}
           />
 
           {/* Mode selection modal (shown when a song first loads) */}
@@ -1051,7 +1133,9 @@ function App(): React.JSX.Element {
               songName={song?.fileName ?? ""}
               mode={mode}
               speed={speed}
-              durationSeconds={Math.round(currentTime)}
+              durationSeconds={Math.round(
+                usePlaybackStore.getState().currentTime,
+              )}
               onPlayAgain={handlePracticeAgain}
               onChooseSong={handleChooseSong}
             />

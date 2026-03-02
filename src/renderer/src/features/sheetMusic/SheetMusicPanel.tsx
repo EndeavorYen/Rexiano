@@ -11,14 +11,14 @@
 
 import { useRef, useEffect, useState, useMemo } from "react";
 import { useTranslation } from "@renderer/i18n/useTranslation";
+import { usePlaybackStore } from "@renderer/stores/usePlaybackStore";
 import type {
   NotationData,
   NotationMeasure,
   NotationNote,
   DisplayMode,
 } from "./types";
-import type { CursorPosition } from "./CursorSync";
-import { getMeasureWindow } from "./CursorSync";
+import { getCursorPosition, getMeasureWindow } from "./CursorSync";
 
 /** Layout constants */
 const STAVE_HEIGHT = 80;
@@ -28,56 +28,8 @@ const LEFT_MARGIN = 28;
 const TOP_MARGIN = 10;
 const DISPLAY_MEASURE_COUNT = 4;
 
-const MIN_MEASURE_WIDTH = 120; // px — even an empty measure needs this much
-
-/**
- * Allocate horizontal widths to measure slots proportionally by note density.
- * Each slot gets at least MIN_MEASURE_WIDTH.
- *
- * @param noteCounts - Number of notes per slot (use 1 for empty slots)
- * @param totalWidth - Available pixel width across all slots
- * @returns Width in pixels for each slot, summing to exactly totalWidth when
- *   totalWidth >= MIN_MEASURE_WIDTH * noteCounts.length
- */
-export function calcMeasureWidths(
-  noteCounts: number[],
-  totalWidth: number,
-): number[] {
-  if (noteCounts.length === 0) return [];
-  if (noteCounts.length === 1) return [totalWidth];
-
-  const effective = noteCounts.map((c) => Math.max(c, 1));
-  const sum = effective.reduce((a, b) => a + b, 0);
-  const proportional = effective.map((c) => (c / sum) * totalWidth);
-
-  // Clamp each slot to the minimum
-  const clamped = proportional.map((w) => Math.max(w, MIN_MEASURE_WIDTH));
-
-  const clampedTotal = clamped.reduce((a, b) => a + b, 0);
-  if (clampedTotal <= totalWidth) {
-    // Floor each, give leftover to first slot
-    const floored = clamped.map(Math.floor);
-    const used = floored.reduce((a, b) => a + b, 0);
-    floored[0] += totalWidth - used;
-    return floored;
-  }
-
-  // Total exceeds container (too many min-width slots):
-  // Give every slot its minimum, then distribute whatever is left
-  // proportionally among slots whose proportional share exceeds the minimum.
-  const minTotal = MIN_MEASURE_WIDTH * noteCounts.length;
-  const surplus = Math.max(0, totalWidth - minTotal);
-  const result = effective.map((c) =>
-    Math.floor(MIN_MEASURE_WIDTH + (c / sum) * surplus),
-  );
-  const used = result.reduce((a, b) => a + b, 0);
-  result[0] = Math.max(1, result[0] + (totalWidth - used)); // distribute rounding remainder
-  return result;
-}
-
 interface SheetMusicPanelProps {
   notationData: NotationData | null;
-  cursorPosition: CursorPosition | null;
   mode: DisplayMode;
   height?: number;
 }
@@ -268,15 +220,19 @@ function renderEmptyMeasure(
 
 export function SheetMusicPanel({
   notationData,
-  cursorPosition,
   mode,
   height = 220,
 }: SheetMusicPanelProps): React.JSX.Element | null {
   const { t } = useTranslation();
+  const currentTime = usePlaybackStore((s) => s.currentTime);
   const containerRef = useRef<HTMLDivElement>(null);
   const svgHostRef = useRef<HTMLDivElement>(null);
   const [containerWidth, setContainerWidth] = useState(800);
   const hidden = mode === "falling";
+  const cursorPosition = useMemo(() => {
+    if (!notationData) return null;
+    return getCursorPosition(currentTime, notationData);
+  }, [currentTime, notationData]);
   const activeMeasureIndex = cursorPosition?.measureIndex ?? 0;
 
   const visibleMeasures = useMemo(() => {
@@ -428,6 +384,7 @@ export function SheetMusicPanel({
               height: SYSTEM_HEIGHT,
               background: "rgba(30, 110, 114, 0.06)",
               borderRadius: 3,
+              transition: "left 120ms ease-out, width 120ms ease-out",
             }}
             data-testid="sheet-active-measure-overlay"
           />
@@ -443,6 +400,7 @@ export function SheetMusicPanel({
               borderRadius: 999,
               boxShadow: "0 0 8px rgba(30, 110, 114, 0.3)",
               transform: "translateX(-1px)",
+              transition: "left 120ms linear",
             }}
             data-testid="sheet-cursor-line"
           />
@@ -456,6 +414,7 @@ export function SheetMusicPanel({
               borderRadius: "999px",
               background: "rgba(30, 110, 114, 0.92)",
               boxShadow: "0 0 10px rgba(30, 110, 114, 0.35)",
+              transition: "left 120ms linear",
             }}
             data-testid="sheet-cursor-dot"
           />

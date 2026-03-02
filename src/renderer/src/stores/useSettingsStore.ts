@@ -18,6 +18,7 @@ interface SettingsState {
   showNoteLabels: boolean;
   showFallingNoteLabels: boolean;
   showFingering: boolean;
+  compactKeyLabels: boolean;
   language: Language;
   volume: number;
   muted: boolean;
@@ -31,6 +32,7 @@ interface SettingsState {
   setShowNoteLabels: (v: boolean) => void;
   setShowFallingNoteLabels: (v: boolean) => void;
   setShowFingering: (v: boolean) => void;
+  setCompactKeyLabels: (v: boolean) => void;
   setLanguage: (lang: Language) => void;
   setVolume: (v: number) => void;
   setMuted: (v: boolean) => void;
@@ -46,6 +48,7 @@ interface PersistedSettings {
   showNoteLabels?: boolean;
   showFallingNoteLabels?: boolean;
   showFingering?: boolean;
+  compactKeyLabels?: boolean;
   language?: Language;
   volume?: number;
   muted?: boolean;
@@ -61,6 +64,7 @@ const defaults: PersistedSettings = {
   showNoteLabels: true,
   showFallingNoteLabels: true,
   showFingering: true,
+  compactKeyLabels: false,
   language: detectLanguage(),
   volume: 80,
   muted: false,
@@ -102,6 +106,7 @@ export const useSettingsStore = create<SettingsState>()((set) => {
     showNoteLabels: saved.showNoteLabels!,
     showFallingNoteLabels: saved.showFallingNoteLabels!,
     showFingering: saved.showFingering!,
+    compactKeyLabels: saved.compactKeyLabels!,
     language: saved.language!,
     volume: saved.volume!,
     muted: saved.muted!,
@@ -123,6 +128,10 @@ export const useSettingsStore = create<SettingsState>()((set) => {
     setShowFingering: (v) => {
       persist({ showFingering: v });
       set({ showFingering: v });
+    },
+    setCompactKeyLabels: (v) => {
+      persist({ compactKeyLabels: v });
+      set({ compactKeyLabels: v });
     },
     setLanguage: (lang) => {
       persist({ language: lang });

@@ -26,7 +26,10 @@ export function SpeedSlider(): React.JSX.Element {
   const speedPercent = Math.round(speed * 100);
 
   return (
-    <div className="flex items-center gap-2.5 min-w-0">
+    <div
+      className="flex items-center gap-2.5 min-w-0 py-0.5"
+      data-testid="speed-slider-control"
+    >
       <span
         className="text-[11px] font-body font-medium shrink-0"
         style={{ color: "var(--color-text-muted)" }}
@@ -71,11 +74,13 @@ export function SpeedSlider(): React.JSX.Element {
         className="speed-slider-input shrink-0"
         style={{ accentColor: "var(--color-accent)", width: 96 }}
         aria-label="Playback speed percentage"
+        data-testid="speed-slider"
       />
 
       <span
         className="text-[11px] font-mono tabular-nums shrink-0"
         style={{ color: "var(--color-text)" }}
+        data-testid="speed-slider-percent"
       >
         {formatSpeed(speed)}
       </span>

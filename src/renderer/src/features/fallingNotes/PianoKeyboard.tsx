@@ -45,6 +45,12 @@ function getWhiteKeyLabel(midi: number): string {
   return noteInOctave === 0 ? `${name}${octave}` : name;
 }
 
+function getCompactWhiteKeyLabel(midi: number): string {
+  const noteInOctave = midi % 12;
+  if (noteInOctave !== 0) return "";
+  return getWhiteKeyLabel(midi);
+}
+
 /**
  * Get the display label for a black key MIDI note (e.g. "C#", "D#").
  */
@@ -104,6 +110,8 @@ interface PianoKeyboardProps {
   height?: number;
   /** Whether to show note name labels on keys (default: true) */
   showLabels?: boolean;
+  /** Show simplified key names to reduce crowding on narrow layouts */
+  compactLabels?: boolean;
 }
 
 /** Returns the CSS animation class for practice mode hit/miss feedback. */
@@ -188,6 +196,7 @@ export function PianoKeyboard({
   missedNotes,
   height = 120,
   showLabels = true,
+  compactLabels = false,
 }: PianoKeyboardProps): React.JSX.Element {
   const layout = useMemo(() => buildLayout(), []);
   const wPct = 100 / layout.whiteKeyCount;
@@ -196,6 +205,7 @@ export function PianoKeyboard({
     <div
       className="relative w-full select-none overflow-hidden"
       style={{ height, background: "var(--color-surface)" }}
+      data-testid="piano-keyboard"
     >
       {/* White keys */}
       {layout.whiteKeys.map((key) => {
@@ -227,7 +237,9 @@ export function PianoKeyboard({
                   color: "var(--color-text-muted)",
                 }}
               >
-                {getWhiteKeyLabel(key.midi)}
+                {compactLabels
+                  ? getCompactWhiteKeyLabel(key.midi)
+                  : getWhiteKeyLabel(key.midi)}
               </span>
             )}
           </div>
@@ -258,7 +270,7 @@ export function PianoKeyboard({
                 "transform 0.06s ease-out, box-shadow 0.08s ease-out, background 0.06s ease-out",
             }}
           >
-            {showLabels && (
+            {showLabels && !compactLabels && (
               <span
                 style={{
                   ...KEY_LABEL_STYLE,

@@ -41,6 +41,19 @@ export function PracticeToolbar({
 
         <SpeedSlider />
 
+        <span
+          className="text-[10px] font-body font-medium rounded-full px-2 py-0.5"
+          style={{
+            color: "var(--color-text-muted)",
+            background:
+              "color-mix(in srgb, var(--color-surface-alt) 74%, var(--color-surface))",
+            border: "1px solid var(--color-border)",
+          }}
+          data-testid="practice-toolbar-level"
+        >
+          {expanded ? t("settings.advancedMode") : t("settings.basicMode")}
+        </span>
+
         <div className="ml-auto shrink-0">
           <button
             onClick={() => setExpanded(!expanded)}

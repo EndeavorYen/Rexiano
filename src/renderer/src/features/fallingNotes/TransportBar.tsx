@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   Play,
   Pause,
@@ -78,6 +78,23 @@ export function TransportBar({
   const volumePercent = Math.round(volume * 100);
 
   const [playPulse, setPlayPulse] = useState(false);
+  const [showRecoveryOk, setShowRecoveryOk] = useState(false);
+  const prevRecoveryStateRef = useRef(audioRecoveryState);
+
+  useEffect(() => {
+    let timer: ReturnType<typeof setTimeout> | null = null;
+    const prev = prevRecoveryStateRef.current;
+    if (prev === "recovering" && audioRecoveryState === "idle") {
+      setShowRecoveryOk(true);
+      prevRecoveryStateRef.current = audioRecoveryState;
+      timer = setTimeout(() => setShowRecoveryOk(false), 1800);
+    } else {
+      prevRecoveryStateRef.current = audioRecoveryState;
+    }
+    return () => {
+      if (timer) clearTimeout(timer);
+    };
+  }, [audioRecoveryState]);
 
   const handlePlayPause = (): void => {
     setPlaying(!isPlaying);
@@ -258,6 +275,16 @@ export function TransportBar({
               {t("general.error")}
             </span>
           )}
+          {showRecoveryOk && (
+            <span
+              className="control-chip text-xs font-body"
+              style={{ color: "var(--color-accent)" }}
+              data-testid="audio-status-recovered"
+            >
+              <span className="status-dot status-dot-live" />
+              Audio Restored
+            </span>
+          )}
         </div>
 
         <div
@@ -328,7 +355,7 @@ export function TransportBar({
 
         <div
           className={`flex items-center justify-end rounded-xl px-1.5 ${
-            compact ? "gap-2 py-0.5" : "gap-2.5 py-1"
+            compact ? "gap-2 py-1" : "gap-2.5 py-1.5"
           }`}
           style={{
             background:

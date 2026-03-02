@@ -189,20 +189,6 @@ export function SongLibrary({
     [loadSong, reset, refreshRecents, t],
   );
 
-  /**
-   * Truncate a filename for display in the chip.
-   * Keeps the extension visible so the user recognises it as a MIDI file.
-   */
-  const truncateName = (name: string, maxLen: number = 24): string => {
-    if (name.length <= maxLen) return name;
-    const ext =
-      name.lastIndexOf(".") >= 0 ? name.slice(name.lastIndexOf(".")) : "";
-    const stem = name.slice(0, name.length - ext.length);
-    const available = maxLen - ext.length - 1; // 1 for the ellipsis char
-    if (available <= 3) return name.slice(0, maxLen - 1) + "\u2026";
-    return stem.slice(0, available) + "\u2026" + ext;
-  };
-
   return (
     <div className="flex-1 min-h-0 app-shell overflow-y-auto overflow-x-hidden">
       <div className="mx-auto w-full max-w-6xl px-6 py-6 pb-24">
@@ -308,7 +294,7 @@ export function SongLibrary({
                   key={file.path}
                   onClick={() => handleSelectRecent(file)}
                   disabled={loadingRecentPath === file.path}
-                  className="card-hover animate-page-enter group relative flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-body font-medium cursor-pointer transition-all duration-150 disabled:opacity-50 disabled:cursor-wait"
+                  className="card-hover animate-page-enter group relative min-w-[190px] max-w-[280px] flex flex-col items-start gap-1 rounded-lg px-3 py-2 text-xs font-body font-medium cursor-pointer transition-all duration-150 disabled:opacity-50 disabled:cursor-wait"
                   style={{
                     background:
                       "color-mix(in srgb, var(--color-surface) 82%, transparent)",
@@ -320,18 +306,27 @@ export function SongLibrary({
                 >
                   {loadingRecentPath === file.path ? (
                     <div
-                      className="w-3 h-3 border-[1.5px] rounded-full animate-spin shrink-0"
+                      className="w-3 h-3 border-[1.5px] rounded-full animate-spin shrink-0 absolute top-2.5 right-2.5"
                       style={{
                         borderColor: "var(--color-border)",
                         borderTopColor: "var(--color-accent)",
                       }}
                     />
                   ) : null}
-                  <span className="truncate max-w-[180px]">
-                    {truncateName(file.name)}
+                  <span
+                    className="w-full text-left leading-tight"
+                    style={{
+                      color: "var(--color-text)",
+                      display: "-webkit-box",
+                      WebkitLineClamp: 2,
+                      WebkitBoxOrient: "vertical",
+                      overflow: "hidden",
+                    }}
+                  >
+                    {file.name}
                   </span>
                   <span
-                    className="shrink-0 opacity-70 font-mono tabular-nums"
+                    className="shrink-0 opacity-70 font-mono tabular-nums text-[11px]"
                     style={{ color: "var(--color-text-muted)" }}
                   >
                     {formatRelativeTime(file.timestamp)}

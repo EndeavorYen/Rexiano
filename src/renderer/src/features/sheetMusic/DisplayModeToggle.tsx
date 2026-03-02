@@ -45,6 +45,7 @@ export function DisplayModeToggle(): React.JSX.Element {
             }}
             aria-pressed={isActive}
             aria-label={t(labelKey)}
+            data-testid={`display-mode-${value}`}
           >
             <Icon size={12} />
             {t(labelKey)}

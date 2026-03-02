@@ -203,8 +203,10 @@ textarea:focus-visible {
 }
 
 .playback-header-chip {
-  padding: 0.26rem 0.58rem;
-  font-size: 0.68rem;
+  padding: 0.22rem 0.54rem;
+  font-size: 0.72rem;
+  font-weight: 500;
+  line-height: 1.05;
 }
 
 .status-dot {
@@ -509,13 +511,17 @@ input[type="range"] {
   appearance: none;
   background: transparent;
   cursor: pointer;
-  height: 20px;
+  height: 22px;
+  margin: 0;
+  padding: 0;
 }
 
 input[type="range"]::-webkit-slider-track {
-  height: 5px;
+  height: 6px;
   border-radius: 999px;
   background: color-mix(in srgb, var(--color-border) 90%, var(--color-surface));
+  box-shadow: inset 0 0 0 1px
+    color-mix(in srgb, var(--color-border) 72%, transparent);
   transition: background 0.15s ease;
 }
 
@@ -526,11 +532,11 @@ input[type="range"]:hover::-webkit-slider-track {
 input[type="range"]::-webkit-slider-thumb {
   -webkit-appearance: none;
   appearance: none;
-  width: 14px;
-  height: 14px;
+  width: 16px;
+  height: 16px;
   border-radius: 999px;
   background: var(--color-accent);
-  margin-top: -4.5px;
+  margin-top: -5px;
   border: 2px solid color-mix(in srgb, var(--color-surface) 78%, #fff);
   box-shadow:
     0 1px 3px rgba(0, 0, 0, 0.2),
@@ -554,15 +560,17 @@ input[type="range"]:disabled::-webkit-slider-thumb {
 
 /* ── Custom slider styling (Firefox) ── */
 input[type="range"]::-moz-range-track {
-  height: 5px;
+  height: 6px;
   border-radius: 999px;
   background: color-mix(in srgb, var(--color-border) 90%, var(--color-surface));
   border: none;
+  box-shadow: inset 0 0 0 1px
+    color-mix(in srgb, var(--color-border) 72%, transparent);
 }
 
 input[type="range"]::-moz-range-thumb {
-  width: 14px;
-  height: 14px;
+  width: 16px;
+  height: 16px;
   border-radius: 999px;
   background: var(--color-accent);
   border: 2px solid color-mix(in srgb, var(--color-surface) 78%, #fff);
@@ -576,11 +584,13 @@ input[type="range"]:disabled::-moz-range-thumb {
 }
 
 .speed-slider-input {
-  height: 20px;
+  height: 22px;
+  padding: 2px 0;
 }
 
 .volume-slider-input {
-  height: 20px;
+  height: 22px;
+  padding: 2px 0;
 }
 
 /* ── Skeleton shimmer animation ── */

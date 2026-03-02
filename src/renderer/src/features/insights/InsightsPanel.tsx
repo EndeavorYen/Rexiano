@@ -13,6 +13,7 @@
 
 import { ProgressChart } from "./ProgressChart";
 import { useTranslation } from "@renderer/i18n/useTranslation";
+import type { TranslationKey } from "@renderer/i18n/types";
 import type { PracticeInsight, WeakSpot } from "./WeakSpotAnalyzer";
 
 interface InsightsPanelProps {
@@ -121,6 +122,12 @@ export function InsightsPanel({
     bestAccuracy,
     recentImprovement,
   } = insight;
+  const nextPlan = buildNextPlan({
+    weakSpots,
+    recentImprovement,
+    sessionsCount,
+    t,
+  });
 
   return (
     <div
@@ -222,6 +229,29 @@ export function InsightsPanel({
           </div>
         </div>
       )}
+
+      <div className="flex flex-col gap-2">
+        <h3
+          className="text-[11px] font-mono uppercase tracking-wider"
+          style={{ color: "var(--color-text-muted)" }}
+        >
+          {t("stats.nextFocus")}
+        </h3>
+        <div
+          className="rounded-xl p-3 space-y-1.5"
+          style={{ background: "var(--color-surface-alt)" }}
+        >
+          {nextPlan.map((line, index) => (
+            <p
+              key={`${index}-${line}`}
+              className="text-xs font-body"
+              style={{ color: "var(--color-text-muted)" }}
+            >
+              {index + 1}. {line}
+            </p>
+          ))}
+        </div>
+      </div>
     </div>
   );
 }
@@ -336,4 +366,42 @@ function formatImprovement(value: number): string {
   if (value === 0) return "--";
   const sign = value > 0 ? "+" : "";
   return `${sign}${value.toFixed(1)}%`;
+}
+
+function buildNextPlan({
+  weakSpots,
+  recentImprovement,
+  sessionsCount,
+  t,
+}: {
+  weakSpots: WeakSpot[];
+  recentImprovement: number;
+  sessionsCount: number;
+  t: (key: TranslationKey) => string;
+}): string[] {
+  const plan: string[] = [];
+
+  if (weakSpots[0] && weakSpots[0].missRate >= 0.35) {
+    plan.push(t("stats.tipSlowDown"));
+  } else if (recentImprovement < 0) {
+    plan.push(t("stats.tipUseWaitMode"));
+  } else {
+    plan.push(t("stats.tipRaiseSpeed"));
+  }
+
+  if (weakSpots[0]) {
+    plan.push(
+      `Loop ${weakSpots[0].noteName} focus bars for 5 minutes in A-B mode.`,
+    );
+  } else {
+    plan.push(t("stats.tipKeepGoing"));
+  }
+
+  if (sessionsCount < 3) {
+    plan.push("Run one short 8-minute session today to build consistency.");
+  } else {
+    plan.push(t("stats.tipTrainStreak"));
+  }
+
+  return plan.slice(0, 3);
 }

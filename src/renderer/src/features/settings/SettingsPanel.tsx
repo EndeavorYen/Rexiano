@@ -8,6 +8,7 @@ import {
   Music,
   Keyboard,
   Globe,
+  Info,
 } from "lucide-react";
 import { useThemeStore } from "@renderer/stores/useThemeStore";
 import { useSettingsStore } from "@renderer/stores/useSettingsStore";
@@ -27,7 +28,8 @@ type SettingsTab =
   | "audio"
   | "practice"
   | "shortcuts"
-  | "language";
+  | "language"
+  | "about";
 
 const tabKeys = [
   "settings.tab.theme",
@@ -36,6 +38,7 @@ const tabKeys = [
   "settings.tab.practice",
   "settings.tab.keys",
   "settings.tab.lang",
+  "settings.tab.about",
 ] as const;
 
 const tabIds: SettingsTab[] = [
@@ -45,6 +48,7 @@ const tabIds: SettingsTab[] = [
   "practice",
   "shortcuts",
   "language",
+  "about",
 ];
 
 const basicTabIds: SettingsTab[] = ["theme", "language"];
@@ -56,6 +60,7 @@ const tabIcons = [
   <Music size={14} key="practice" />,
   <Keyboard size={14} key="shortcuts" />,
   <Globe size={14} key="lang" />,
+  <Info size={14} key="about" />,
 ];
 
 const practiceModeKeys: {
@@ -86,8 +91,24 @@ export function SettingsPanel({
   const [open, setOpen] = useState(inline);
   const [activeTab, setActiveTab] = useState<SettingsTab>("theme");
   const [isBasicMode, setIsBasicMode] = useState(true);
+  const [settingsSearch, setSettingsSearch] = useState("");
   const visibleTabIds = isBasicMode ? basicTabIds : tabIds;
+  const normalizedSettingsSearch = settingsSearch.trim().toLowerCase();
+  const filteredTabIds =
+    normalizedSettingsSearch.length === 0
+      ? visibleTabIds
+      : visibleTabIds.filter((id) => {
+          const i = tabIds.indexOf(id);
+          return t(tabKeys[i]).toLowerCase().includes(normalizedSettingsSearch);
+        });
   const panelRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (filteredTabIds.length === 0) return;
+    if (!filteredTabIds.includes(activeTab)) {
+      setActiveTab(filteredTabIds[0]);
+    }
+  }, [activeTab, filteredTabIds]);
 
   // Theme state
   const currentThemeId = useThemeStore((s) => s.themeId);
@@ -99,6 +120,7 @@ export function SettingsPanel({
     (s) => s.showFallingNoteLabels,
   );
   const showFingering = useSettingsStore((s) => s.showFingering);
+  const compactKeyLabels = useSettingsStore((s) => s.compactKeyLabels);
   const language = useSettingsStore((s) => s.language);
   const volume = useSettingsStore((s) => s.volume);
   const muted = useSettingsStore((s) => s.muted);
@@ -116,6 +138,7 @@ export function SettingsPanel({
     (s) => s.setShowFallingNoteLabels,
   );
   const setShowFingering = useSettingsStore((s) => s.setShowFingering);
+  const setCompactKeyLabels = useSettingsStore((s) => s.setCompactKeyLabels);
   const setLanguage = useSettingsStore((s) => s.setLanguage);
   const setVolume = useSettingsStore((s) => s.setVolume);
   const setMuted = useSettingsStore((s) => s.setMuted);
@@ -177,6 +200,18 @@ export function SettingsPanel({
     return () => document.removeEventListener("keydown", handler);
   }, [open, handleClose]);
 
+  // About tab: lazy-load app info
+  const [appInfo, setAppInfo] = useState<{
+    version: string;
+    changelog: string;
+  } | null>(null);
+
+  useEffect(() => {
+    if (activeTab === "about" && !appInfo) {
+      window.api.getAppInfo().then(setAppInfo);
+    }
+  }, [activeTab, appInfo]);
+
   return (
     <>
       {/* Trigger button — gear icon (hidden in inline mode) */}
@@ -223,6 +258,13 @@ export function SettingsPanel({
                 {t("settings.title")}
               </h2>
               <div className="flex items-center gap-2">
+                <input
+                  value={settingsSearch}
+                  onChange={(e) => setSettingsSearch(e.target.value)}
+                  placeholder="Search tabs..."
+                  className="input-themed w-[120px] px-2 py-1 text-[11px] font-body"
+                  aria-label="Search settings tabs"
+                />
                 <button
                   onClick={() => {
                     const goingBasic = !isBasicMode;
@@ -269,7 +311,7 @@ export function SettingsPanel({
                   "color-mix(in srgb, var(--color-surface-alt) 30%, var(--color-surface))",
               }}
             >
-              {visibleTabIds.map((id) => {
+              {filteredTabIds.map((id) => {
                 const i = tabIds.indexOf(id);
                 return (
                   <button
@@ -299,10 +341,77 @@ export function SettingsPanel({
                   </button>
                 );
               })}
+              {filteredTabIds.length === 0 && (
+                <span
+                  className="px-3 py-2 text-xs font-body"
+                  style={{ color: "var(--color-text-muted)" }}
+                >
+                  No matching tab
+                </span>
+              )}
             </div>
 
             {/* Tab content */}
             <div className="flex-1 overflow-y-auto px-5 py-4">
+              <div
+                className="rounded-xl px-3 py-2.5 mb-4"
+                style={{
+                  background:
+                    "color-mix(in srgb, var(--color-surface-alt) 38%, var(--color-surface))",
+                  border: "1px solid var(--color-border)",
+                }}
+                data-testid="settings-common-quick"
+              >
+                <div
+                  className="text-[10px] font-mono uppercase tracking-wider mb-2"
+                  style={{ color: "var(--color-text-muted)" }}
+                >
+                  Common
+                </div>
+                <div className="flex flex-wrap gap-1.5">
+                  <button
+                    onClick={() => setMuted(!muted)}
+                    className="px-2.5 py-1 rounded-md text-[11px] font-body font-medium cursor-pointer"
+                    style={{
+                      color: muted ? "#fff" : "var(--color-text-muted)",
+                      background: muted
+                        ? "var(--color-accent)"
+                        : "var(--color-surface-alt)",
+                    }}
+                  >
+                    {t("settings.muteAudio")}
+                  </button>
+                  <button
+                    onClick={() => setMetronomeEnabled(!metronomeEnabled)}
+                    className="px-2.5 py-1 rounded-md text-[11px] font-body font-medium cursor-pointer"
+                    style={{
+                      color: metronomeEnabled
+                        ? "#fff"
+                        : "var(--color-text-muted)",
+                      background: metronomeEnabled
+                        ? "var(--color-accent)"
+                        : "var(--color-surface-alt)",
+                    }}
+                  >
+                    {t("settings.metronome")}
+                  </button>
+                  <button
+                    onClick={() => setShowNoteLabels(!showNoteLabels)}
+                    className="px-2.5 py-1 rounded-md text-[11px] font-body font-medium cursor-pointer"
+                    style={{
+                      color: showNoteLabels
+                        ? "#fff"
+                        : "var(--color-text-muted)",
+                      background: showNoteLabels
+                        ? "var(--color-accent)"
+                        : "var(--color-surface-alt)",
+                    }}
+                  >
+                    {t("settings.showNoteLabels")}
+                  </button>
+                </div>
+              </div>
+
               {activeTab === "theme" && (
                 <TabContent>
                   <SectionTitle>{t("settings.chooseTheme")}</SectionTitle>
@@ -390,6 +499,13 @@ export function SettingsPanel({
                       checked={showFingering}
                       onChange={setShowFingering}
                       testId="toggle-fingering"
+                    />
+                    <ToggleRow
+                      label="Compact key labels"
+                      description="Show fewer key names on narrow keyboards"
+                      checked={compactKeyLabels}
+                      onChange={setCompactKeyLabels}
+                      testId="toggle-compact-key-labels"
                     />
                   </div>
                 </TabContent>
@@ -685,6 +801,54 @@ export function SettingsPanel({
                   >
                     {t("settings.langDesc")}
                   </p>
+                </TabContent>
+              )}
+
+              {activeTab === "about" && (
+                <TabContent>
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <span
+                        className="text-sm font-medium"
+                        style={{ color: "var(--color-text)" }}
+                      >
+                        {t("about.version")}
+                      </span>
+                      <span
+                        className="font-mono text-sm px-2 py-0.5 rounded"
+                        style={{
+                          background:
+                            "color-mix(in srgb, var(--color-accent) 10%, var(--color-surface))",
+                          color: "var(--color-accent)",
+                        }}
+                      >
+                        {appInfo ? `v${appInfo.version}` : "…"}
+                      </span>
+                    </div>
+
+                    <div>
+                      <p
+                        className="text-xs font-mono uppercase tracking-widest mb-2"
+                        style={{ color: "var(--color-text-muted)" }}
+                      >
+                        {t("about.changelog")}
+                      </p>
+                      <pre
+                        className="text-xs leading-relaxed rounded-lg p-3 overflow-auto max-h-72 whitespace-pre-wrap"
+                        style={{
+                          background:
+                            "color-mix(in srgb, var(--color-surface) 70%, transparent)",
+                          border: "1px solid var(--color-border)",
+                          color: "var(--color-text-muted)",
+                          fontFamily: "var(--font-mono)",
+                        }}
+                      >
+                        {appInfo
+                          ? appInfo.changelog || t("about.noChangelog")
+                          : "…"}
+                      </pre>
+                    </div>
+                  </div>
                 </TabContent>
               )}
             </div>

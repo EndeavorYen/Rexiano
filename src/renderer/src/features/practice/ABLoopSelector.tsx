@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { usePracticeStore } from "@renderer/stores/usePracticeStore";
 import { usePlaybackStore } from "@renderer/stores/usePlaybackStore";
 import { useTranslation } from "@renderer/i18n/useTranslation";
@@ -15,9 +16,16 @@ export function ABLoopSelector(): React.JSX.Element {
   const loopRange = usePracticeStore((s) => s.loopRange);
   const setLoopRange = usePracticeStore((s) => s.setLoopRange);
   const currentTime = usePlaybackStore((s) => s.currentTime);
+  const [flashMessage, setFlashMessage] = useState<string | null>(null);
 
   const hasA = loopRange !== null;
   const hasB = loopRange !== null && loopRange[1] > loopRange[0];
+
+  useEffect(() => {
+    if (!flashMessage) return;
+    const timer = setTimeout(() => setFlashMessage(null), 1300);
+    return () => clearTimeout(timer);
+  }, [flashMessage]);
 
   const handleA = (): void => {
     if (loopRange) {
@@ -25,19 +33,23 @@ export function ABLoopSelector(): React.JSX.Element {
     } else {
       setLoopRange([currentTime, currentTime]);
     }
+    setFlashMessage(`A ${fmtSec(currentTime)}`);
   };
 
   const handleB = (): void => {
     if (loopRange) {
       const start = loopRange[0];
       setLoopRange([start, Math.max(start + 0.1, currentTime)]);
+      setFlashMessage(`B ${fmtSec(Math.max(start + 0.1, currentTime))}`);
     } else {
       setLoopRange([0, currentTime]);
+      setFlashMessage(`B ${fmtSec(currentTime)}`);
     }
   };
 
   const handleClear = (): void => {
     setLoopRange(null);
+    setFlashMessage(t("practice.clearLoop"));
   };
 
   return (
@@ -129,6 +141,24 @@ export function ABLoopSelector(): React.JSX.Element {
           >
             <X size={12} />
           </button>
+        )}
+      </div>
+
+      <div className="h-4">
+        {flashMessage && (
+          <span
+            className="inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-mono tabular-nums animate-page-enter"
+            style={{
+              color: "var(--color-accent)",
+              background:
+                "color-mix(in srgb, var(--color-accent) 12%, var(--color-surface))",
+              border:
+                "1px solid color-mix(in srgb, var(--color-accent) 30%, var(--color-border))",
+            }}
+            data-testid="ab-loop-feedback"
+          >
+            {flashMessage}
+          </span>
         )}
       </div>
     </div>

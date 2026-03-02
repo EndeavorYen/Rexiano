@@ -26,6 +26,22 @@ export function TrackSelector(): React.JSX.Element {
 
   if (tracks.length === 0) return <></>;
 
+  const setAllTracks = (): void => {
+    const next = new Set<number>();
+    for (let i = 0; i < tracks.length; i++) {
+      next.add(i);
+    }
+    setActiveTracks(next);
+  };
+
+  const muteAllTracks = (): void => {
+    setActiveTracks(new Set<number>());
+  };
+
+  const soloTrack = (index: number): void => {
+    setActiveTracks(new Set<number>([index]));
+  };
+
   return (
     <div className="flex flex-col gap-1.5">
       <span
@@ -34,6 +50,33 @@ export function TrackSelector(): React.JSX.Element {
       >
         {t("practice.tracks")}
       </span>
+
+      <div className="flex items-center gap-1">
+        <button
+          onClick={muteAllTracks}
+          className="px-2 py-0.5 rounded text-[10px] font-body font-medium cursor-pointer"
+          style={{
+            color: "var(--color-text-muted)",
+            background:
+              "color-mix(in srgb, var(--color-surface-alt) 72%, var(--color-surface))",
+            border: "1px solid var(--color-border)",
+          }}
+        >
+          Mute All
+        </button>
+        <button
+          onClick={setAllTracks}
+          className="px-2 py-0.5 rounded text-[10px] font-body font-medium cursor-pointer"
+          style={{
+            color: "var(--color-text-muted)",
+            background:
+              "color-mix(in srgb, var(--color-surface-alt) 72%, var(--color-surface))",
+            border: "1px solid var(--color-border)",
+          }}
+        >
+          Reset
+        </button>
+      </div>
 
       <div className="flex flex-col gap-0.5">
         {tracks.map((track, i) => {
@@ -71,6 +114,22 @@ export function TrackSelector(): React.JSX.Element {
               >
                 {t("practice.notesCount", { count: track.notes.length })}
               </span>
+              <button
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  soloTrack(i);
+                }}
+                className="px-1.5 py-0.5 rounded text-[9px] font-body font-medium cursor-pointer"
+                style={{
+                  color: "var(--color-text-muted)",
+                  background:
+                    "color-mix(in srgb, var(--color-surface-alt) 76%, var(--color-surface))",
+                  border: "1px solid var(--color-border)",
+                }}
+              >
+                Solo
+              </button>
             </label>
           );
         })}

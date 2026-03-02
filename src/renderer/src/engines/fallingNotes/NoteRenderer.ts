@@ -176,6 +176,9 @@ export class NoteRenderer {
 
     const hitWindow = 0.05;
     const showFingering = useSettingsStore.getState().showFingering;
+    const maxVisibleLabels =
+      vp.height < 200 ? 14 : vp.height < 280 ? 22 : vp.height < 360 ? 30 : 42;
+    let shownLabelCount = 0;
 
     // Recompute fingering cache when song changes
     if (showFingering && song.fileName !== this.lastSongFileName) {
@@ -221,7 +224,11 @@ export class NoteRenderer {
         nextActive.set(key, sprite);
 
         // ── Note label management ──
-        if (this.showNoteLabels && h >= MIN_HEIGHT_FOR_LABEL) {
+        if (
+          this.showNoteLabels &&
+          h >= MIN_HEIGHT_FOR_LABEL &&
+          shownLabelCount < maxVisibleLabels
+        ) {
           let label = this._spriteLabels.get(sprite);
           if (!label) {
             label = this.allocateLabel();
@@ -231,6 +238,7 @@ export class NoteRenderer {
           label.x = kp.x + kp.width / 2;
           label.y = rectY + Math.max(h, 2) / 2;
           label.visible = true;
+          shownLabelCount += 1;
         } else {
           // Hide label if note is too small or labels are disabled
           const existingLabel = this._spriteLabels.get(sprite);

@@ -40,7 +40,7 @@ export function VolumeControl(): React.JSX.Element {
 
   return (
     <div
-      className="flex items-center gap-1.5 rounded-lg px-1.5 py-1"
+      className="flex items-center gap-1.5 rounded-lg px-1.5 py-1.5"
       style={{
         background:
           "color-mix(in srgb, var(--color-surface-alt) 72%, var(--color-surface))",
@@ -71,7 +71,7 @@ export function VolumeControl(): React.JSX.Element {
         value={displayValue}
         onChange={handleVolumeChange}
         className="volume-slider-input"
-        style={{ accentColor: "var(--color-accent)", width: 84 }}
+        style={{ accentColor: "var(--color-accent)", width: 88 }}
         aria-label={t("transport.volume")}
         title={`${t("transport.volume")}: ${displayValue}%`}
         data-testid="volume-slider"
