@@ -5,6 +5,7 @@ import { registerFileHandlers } from "./ipc/fileHandlers";
 import { registerMidiDeviceHandlers } from "./ipc/midiDeviceHandlers";
 import { registerProgressHandlers } from "./ipc/progressHandlers";
 import { registerRecentFilesHandlers } from "./ipc/recentFilesHandlers";
+import { registerAppInfoHandlers } from "./ipc/appInfoHandlers";
 
 // WSL2 doesn't forward Windows display scaling to X11/Wayland,
 // so Electron defaults to devicePixelRatio=1. Force the correct factor.
@@ -95,6 +96,7 @@ app.whenReady().then(() => {
   registerMidiDeviceHandlers();
   registerProgressHandlers();
   registerRecentFilesHandlers();
+  registerAppInfoHandlers();
 
   createWindow();
 
