@@ -133,6 +133,10 @@ export interface TranslationMap {
   "settings.tab.practice": string;
   "settings.tab.keys": string;
   "settings.tab.lang": string;
+  "settings.tab.about": string;
+  "about.version": string;
+  "about.changelog": string;
+  "about.noChangelog": string;
   "settings.chooseTheme": string;
   "settings.themeDesc": string;
   "settings.displayOptions": string;

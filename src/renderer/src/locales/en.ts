@@ -132,6 +132,10 @@ export const en: TranslationMap = {
   "settings.tab.practice": "Practice",
   "settings.tab.keys": "Keys",
   "settings.tab.lang": "Lang",
+  "settings.tab.about": 'About',
+  "about.version": 'Version',
+  "about.changelog": "What's New",
+  "about.noChangelog": 'No changelog available.',
   "settings.chooseTheme": "Choose a Theme",
   "settings.themeDesc":
     "Themes change all colors across the app, including the falling notes and keyboard.",
