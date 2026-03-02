@@ -28,6 +28,52 @@ const LEFT_MARGIN = 18;
 const TOP_MARGIN = 12;
 const DISPLAY_MEASURE_COUNT = 4;
 
+const MIN_MEASURE_WIDTH = 120; // px — even an empty measure needs this much
+
+/**
+ * Allocate horizontal widths to measure slots proportionally by note density.
+ * Each slot gets at least MIN_MEASURE_WIDTH.
+ *
+ * @param noteCounts - Number of notes per slot (use 1 for empty slots)
+ * @param totalWidth - Available pixel width across all slots
+ * @returns Width in pixels for each slot, summing to ≤ totalWidth
+ */
+export function calcMeasureWidths(
+  noteCounts: number[],
+  totalWidth: number,
+): number[] {
+  if (noteCounts.length === 0) return [];
+  if (noteCounts.length === 1) return [totalWidth];
+
+  const sum = noteCounts.reduce((a, b) => a + b, 0);
+  const proportional = noteCounts.map((c) => (c / sum) * totalWidth);
+
+  // Clamp each slot to the minimum
+  const clamped = proportional.map((w) => Math.max(w, MIN_MEASURE_WIDTH));
+
+  const clampedTotal = clamped.reduce((a, b) => a + b, 0);
+  if (clampedTotal <= totalWidth) {
+    // Floor each, give leftover to first slot
+    const floored = clamped.map(Math.floor);
+    const used = floored.reduce((a, b) => a + b, 0);
+    floored[0] += totalWidth - used;
+    return floored;
+  }
+
+  // Total exceeds container (too many min-width slots):
+  // Give every slot its minimum, then distribute whatever is left
+  // proportionally among slots whose proportional share exceeds the minimum.
+  const minTotal = MIN_MEASURE_WIDTH * noteCounts.length;
+  const surplus = Math.max(0, totalWidth - minTotal);
+  const surplusSum = noteCounts.reduce((a, b) => a + b, 0);
+  const result = noteCounts.map((c) =>
+    Math.floor(MIN_MEASURE_WIDTH + (c / surplusSum) * surplus),
+  );
+  const used = result.reduce((a, b) => a + b, 0);
+  result[0] += totalWidth - used; // distribute rounding remainder
+  return result;
+}
+
 interface SheetMusicPanelProps {
   notationData: NotationData | null;
   cursorPosition: CursorPosition | null;
