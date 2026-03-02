@@ -7,3 +7,5 @@ dist/
 Thumbs.db
 *.tsbuildinfo
 .claude/
+playwright-report/
+test-results/

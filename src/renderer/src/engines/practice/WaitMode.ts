@@ -1,15 +1,24 @@
-import type { ParsedNote, ParsedTrack } from '../midi/types'
-import type { NoteResult } from '@shared/types'
+import type { ParsedTrack } from "../midi/types";
+import type { NoteResult } from "@shared/types";
+import { useSettingsStore } from "@renderer/stores/useSettingsStore";
 
 /** WaitMode state machine states */
-export type WaitState = 'playing' | 'waiting' | 'idle'
+export type WaitState = "playing" | "waiting" | "idle";
 
 /** Callback signatures for WaitMode events */
 export interface WaitModeCallbacks {
-  onWait?: () => void
-  onResume?: () => void
-  onHit?: (midi: number, time: number) => void
-  onMiss?: (midi: number, time: number) => void
+  onWait?: () => void;
+  onResume?: () => void;
+  onHit?: (midi: number, time: number) => void;
+  onMiss?: (midi: number, time: number) => void;
+}
+
+/** Structured info for a note awaiting user input */
+interface PendingNoteInfo {
+  trackIndex: number;
+  noteIndex: number;
+  midi: number;
+  time: number;
 }
 
 /**
@@ -20,118 +29,147 @@ export interface WaitModeCallbacks {
  * Pure logic — no React or DOM dependencies.
  */
 export class WaitMode {
-  private _state: WaitState = 'idle'
-  private _tracks: ParsedTrack[] = []
-  private _activeTracks: Set<number> = new Set()
-  private _toleranceMs: number
-  private _callbacks: WaitModeCallbacks = {}
+  private _state: WaitState = "idle";
+  private _tracks: ParsedTrack[] = [];
+  private _activeTracks: Set<number> = new Set();
+  private _toleranceMs: number;
+  private _callbacks: WaitModeCallbacks = {};
 
   /** Notes the user must currently play (empty when not waiting) */
-  private _targetNotes: Set<number> = new Set()
-  /** Time of the current target note group */
-  private _targetTime = 0
+  private _targetNotes: Set<number> = new Set();
   /** Per-note results keyed by "trackIndex:noteIndex" */
-  private _noteResults: Map<string, NoteResult> = new Map()
+  private _noteResults: Map<string, NoteResult> = new Map();
+  /** Per-track scan cursors — index of earliest unjudged note */
+  private _trackCursors = new Map<number, number>();
+  /** Reusable set for pending MIDI numbers (avoids allocation per tick) */
+  private _pendingMidis = new Set<number>();
+  /** Structured info for currently pending notes (avoids string parsing) */
+  private _pendingNoteDetails: PendingNoteInfo[] = [];
 
   /**
    * @param toleranceMs Time window (±ms) around the hit line for accepting input.
    *                     Default ±200ms.
    */
   constructor(toleranceMs = 200) {
-    this._toleranceMs = toleranceMs
+    this._toleranceMs = toleranceMs;
   }
 
   get state(): WaitState {
-    return this._state
+    return this._state;
   }
 
   get targetNotes(): ReadonlySet<number> {
-    return this._targetNotes
+    return this._targetNotes;
   }
 
   get noteResults(): ReadonlyMap<string, NoteResult> {
-    return this._noteResults
+    return this._noteResults;
   }
 
   /** Register event callbacks */
   setCallbacks(cb: WaitModeCallbacks): void {
-    this._callbacks = cb
+    this._callbacks = cb;
+  }
+
+  /** Remove all callbacks (severs closure references on dispose) */
+  clearCallbacks(): void {
+    this._callbacks = {};
   }
 
   /** Initialize with song tracks and active track selection */
   init(tracks: ParsedTrack[], activeTracks: Set<number>): void {
-    this._tracks = tracks
-    this._activeTracks = activeTracks
-    this._noteResults.clear()
-    this._targetNotes.clear()
-    this._state = 'idle'
+    this._tracks = tracks;
+    this._activeTracks = activeTracks;
+    this._noteResults.clear();
+    this._targetNotes.clear();
+    this._trackCursors.clear();
+    this._pendingNoteDetails.length = 0;
+    this._state = "idle";
   }
 
   /** Start wait mode (called when user presses play) */
   start(): void {
-    this._state = 'playing'
+    this._state = "playing";
   }
 
   /** Stop wait mode */
   stop(): void {
-    this._state = 'idle'
-    this._targetNotes.clear()
+    this._state = "idle";
+    this._targetNotes.clear();
   }
 
   /**
    * Called every frame by the ticker loop.
    * Scans for notes at the current time and pauses if needed.
+   * Uses per-track cursors and sorted-note early-exit for O(window) per frame.
    *
    * @param currentTime Current playback time in seconds
    * @returns true if playback should continue, false if paused (waiting)
    */
   tick(currentTime: number): boolean {
-    if (this._state === 'idle') return true
-    if (this._state === 'waiting') return false
+    if (this._state === "idle") return true;
+    if (this._state === "waiting") return false;
 
-    // Scan active tracks for notes within the tolerance window
-    const toleranceSec = this._toleranceMs / 1000
-    const pendingMidis = new Set<number>()
+    // Read latency compensation from settings (engines use getState(), not hooks).
+    // Shifts the effective time backward so MIDI input arriving late still matches.
+    const latencyMs = useSettingsStore.getState().latencyCompensation;
+    const adjustedTime = currentTime - latencyMs / 1000;
+
+    const toleranceSec = this._toleranceMs / 1000;
+    const pendingMidis = this._pendingMidis;
+    pendingMidis.clear();
+    this._pendingNoteDetails.length = 0;
 
     for (const trackIndex of this._activeTracks) {
-      const track = this._tracks[trackIndex]
-      if (!track) continue
+      const track = this._tracks[trackIndex];
+      if (!track) continue;
 
-      for (let ni = 0; ni < track.notes.length; ni++) {
-        const note = track.notes[ni]
-        const key = `${trackIndex}:${ni}`
+      let cursor = this._trackCursors.get(trackIndex) ?? 0;
 
-        // Skip already judged notes
-        if (this._noteResults.has(key)) continue
+      for (let ni = cursor; ni < track.notes.length; ni++) {
+        const note = track.notes[ni];
 
-        // Note is within tolerance window of hit line
-        if (Math.abs(note.time - currentTime) <= toleranceSec) {
-          pendingMidis.add(note.midi)
-          this._targetTime = note.time
+        // Notes are time-sorted: if beyond lookahead, stop scanning this track
+        if (note.time > adjustedTime + toleranceSec) break;
 
-          // Mark as pending
-          if (!this._noteResults.has(key)) {
-            this._noteResults.set(key, 'pending')
-          }
+        const key = `${trackIndex}:${ni}`;
+
+        // Already judged — advance cursor past contiguous judged notes
+        if (this._noteResults.has(key)) {
+          if (ni === cursor) cursor = ni + 1;
+          continue;
         }
 
-        // Note has passed beyond tolerance window → missed
-        if (note.time < currentTime - toleranceSec && !this._noteResults.has(key)) {
-          this._noteResults.set(key, 'miss')
-          this._callbacks.onMiss?.(note.midi, note.time)
+        // Note within tolerance window → pending
+        if (note.time >= adjustedTime - toleranceSec) {
+          pendingMidis.add(note.midi);
+          this._noteResults.set(key, "pending");
+          this._pendingNoteDetails.push({
+            trackIndex,
+            noteIndex: ni,
+            midi: note.midi,
+            time: note.time,
+          });
+        } else {
+          // Past tolerance window → missed
+          this._noteResults.set(key, "miss");
+          this._callbacks.onMiss?.(note.midi, note.time);
+          if (ni === cursor) cursor = ni + 1;
         }
       }
+
+      this._trackCursors.set(trackIndex, cursor);
     }
 
     // If there are pending notes, pause and wait for input
     if (pendingMidis.size > 0) {
-      this._targetNotes = pendingMidis
-      this._state = 'waiting'
-      this._callbacks.onWait?.()
-      return false
+      this._targetNotes = new Set(pendingMidis);
+      this._state = "waiting";
+      this._callbacks.onWait?.();
+      return false;
     }
 
-    return true
+    return true;
   }
 
   /**
@@ -142,55 +180,40 @@ export class WaitMode {
    * @returns true if all target notes were matched (resume playback)
    */
   checkInput(activeNotes: Set<number>): boolean {
-    if (this._state !== 'waiting') return false
-    if (this._targetNotes.size === 0) return false
+    if (this._state !== "waiting") return false;
+    if (this._targetNotes.size === 0) return false;
 
     // Check if all target notes are pressed
-    let allMatched = true
     for (const midi of this._targetNotes) {
-      if (!activeNotes.has(midi)) {
-        allMatched = false
-        break
-      }
+      if (!activeNotes.has(midi)) return false;
     }
 
-    if (allMatched) {
-      // Mark all pending notes for this time as hit (fires onHit callbacks)
-      this._markPendingAs('hit')
-      this._targetNotes.clear()
-      this._state = 'playing'
-      this._callbacks.onResume?.()
-      return true
-    }
-
-    return false
+    // All matched — mark pending notes as hit and resume
+    this._markPendingAs("hit");
+    this._targetNotes.clear();
+    this._state = "playing";
+    this._callbacks.onResume?.();
+    return true;
   }
 
   /** Mark all currently pending notes as hit or miss */
   private _markPendingAs(result: NoteResult): void {
-    for (const [key, value] of this._noteResults) {
-      if (value === 'pending') {
-        this._noteResults.set(key, result)
-        if (result === 'hit') {
-          // Extract midi from key for callback
-          const trackIndex = parseInt(key.split(':')[0])
-          const noteIndex = parseInt(key.split(':')[1])
-          const track = this._tracks[trackIndex]
-          if (track) {
-            const note = track.notes[noteIndex]
-            if (note) {
-              this._callbacks.onHit?.(note.midi, note.time)
-            }
-          }
-        }
+    for (const pn of this._pendingNoteDetails) {
+      const key = `${pn.trackIndex}:${pn.noteIndex}`;
+      this._noteResults.set(key, result);
+      if (result === "hit") {
+        this._callbacks.onHit?.(pn.midi, pn.time);
       }
     }
+    this._pendingNoteDetails.length = 0;
   }
 
-  /** Reset all state for a new practice session */
+  /** Reset all state for a new practice session or loop restart */
   reset(): void {
-    this._noteResults.clear()
-    this._targetNotes.clear()
-    this._state = 'idle'
+    this._noteResults.clear();
+    this._targetNotes.clear();
+    this._trackCursors.clear();
+    this._pendingNoteDetails.length = 0;
+    this._state = "idle";
   }
 }

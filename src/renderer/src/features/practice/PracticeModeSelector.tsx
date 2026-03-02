@@ -1,33 +1,78 @@
-import { usePracticeStore } from '@renderer/stores/usePracticeStore'
-import type { PracticeMode } from '@shared/types'
+import { usePracticeStore } from "@renderer/stores/usePracticeStore";
+import { useTranslation } from "@renderer/i18n/useTranslation";
+import type { PracticeMode } from "@shared/types";
+import type { TranslationKey } from "@renderer/i18n/types";
 
-const modes: { id: PracticeMode; label: string; icon: React.JSX.Element }[] = [
+const modes: {
+  id: PracticeMode;
+  labelKey: TranslationKey;
+  icon: React.JSX.Element;
+}[] = [
   {
-    id: 'watch',
-    label: 'Watch',
+    id: "watch",
+    labelKey: "practice.watch",
     icon: (
-      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-        <ellipse cx="8" cy="8" rx="7" ry="4.5" stroke="currentColor" strokeWidth="1.5" />
+      <svg
+        width="16"
+        height="16"
+        viewBox="0 0 16 16"
+        fill="none"
+        aria-hidden="true"
+      >
+        <ellipse
+          cx="8"
+          cy="8"
+          rx="7"
+          ry="4.5"
+          stroke="currentColor"
+          strokeWidth="1.5"
+        />
         <circle cx="8" cy="8" r="2" fill="currentColor" />
       </svg>
     ),
   },
   {
-    id: 'wait',
-    label: 'Wait',
+    id: "wait",
+    labelKey: "practice.wait",
     icon: (
-      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+      <svg
+        width="16"
+        height="16"
+        viewBox="0 0 16 16"
+        fill="none"
+        aria-hidden="true"
+      >
         <circle cx="8" cy="8" r="6.5" stroke="currentColor" strokeWidth="1.5" />
-        <rect x="5.5" y="4.5" width="2" height="7" rx="0.5" fill="currentColor" />
-        <rect x="8.5" y="4.5" width="2" height="7" rx="0.5" fill="currentColor" />
+        <rect
+          x="5.5"
+          y="4.5"
+          width="2"
+          height="7"
+          rx="0.5"
+          fill="currentColor"
+        />
+        <rect
+          x="8.5"
+          y="4.5"
+          width="2"
+          height="7"
+          rx="0.5"
+          fill="currentColor"
+        />
       </svg>
     ),
   },
   {
-    id: 'free',
-    label: 'Free',
+    id: "free",
+    labelKey: "practice.free",
     icon: (
-      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+      <svg
+        width="16"
+        height="16"
+        viewBox="0 0 16 16"
+        fill="none"
+        aria-hidden="true"
+      >
         <path
           d="M3 8C3 5.5 5 3 8 3C11 3 12 5 12.5 6.5"
           stroke="currentColor"
@@ -57,35 +102,45 @@ const modes: { id: PracticeMode; label: string; icon: React.JSX.Element }[] = [
       </svg>
     ),
   },
-]
+];
 
 export function PracticeModeSelector(): React.JSX.Element {
-  const currentMode = usePracticeStore((s) => s.mode)
-  const setMode = usePracticeStore((s) => s.setMode)
+  const { t } = useTranslation();
+  const currentMode = usePracticeStore((s) => s.mode);
+  const setMode = usePracticeStore((s) => s.setMode);
 
   return (
-    <div className="flex items-center gap-1" role="radiogroup" aria-label="Practice mode">
-      {modes.map(({ id, label, icon }) => {
-        const isActive = currentMode === id
+    <div
+      className="flex items-center gap-1 p-0.5 rounded-lg"
+      style={{ background: "var(--color-surface-alt)" }}
+      role="radiogroup"
+      aria-label="Practice mode"
+    >
+      {modes.map(({ id, labelKey, icon }) => {
+        const isActive = currentMode === id;
+        const label = t(labelKey);
         return (
           <button
             key={id}
             role="radio"
             aria-checked={isActive}
             onClick={() => setMode(id)}
-            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-body font-medium transition-all duration-150 cursor-pointer"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-body font-medium cursor-pointer"
             style={{
-              background: isActive ? 'var(--color-accent)' : 'var(--color-surface-alt)',
-              color: isActive ? '#fff' : 'var(--color-text-muted)',
-              boxShadow: isActive ? '0 1px 4px rgba(0,0,0,0.15)' : 'none',
+              background: isActive ? "var(--color-accent)" : "transparent",
+              color: isActive ? "#fff" : "var(--color-text-muted)",
+              boxShadow: isActive ? "0 1px 4px rgba(0,0,0,0.15)" : "none",
+              transition: "all 0.2s ease",
+              transform: isActive ? "scale(1)" : "scale(0.98)",
             }}
-            title={`${label} mode`}
+            title={label}
+            data-testid={`practice-mode-${id}`}
           >
             {icon}
             <span>{label}</span>
           </button>
-        )
+        );
       })}
     </div>
-  )
+  );
 }

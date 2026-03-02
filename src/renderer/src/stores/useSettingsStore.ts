@@ -1,0 +1,177 @@
+import { create } from "zustand";
+import type { PracticeMode } from "@shared/types";
+
+export type Language = "en" | "zh-TW";
+
+const STORAGE_KEY = "rexiano-settings";
+
+/** Detect initial language from browser/OS setting */
+function detectLanguage(): Language {
+  if (typeof navigator !== "undefined") {
+    const lang = navigator.language;
+    if (lang.startsWith("zh")) return "zh-TW";
+  }
+  return "en";
+}
+
+interface SettingsState {
+  showNoteLabels: boolean;
+  showFallingNoteLabels: boolean;
+  showFingering: boolean;
+  compactKeyLabels: boolean;
+  language: Language;
+  volume: number;
+  muted: boolean;
+  defaultSpeed: number;
+  defaultMode: PracticeMode;
+  metronomeEnabled: boolean;
+  countInBeats: number;
+  latencyCompensation: number;
+  audioCompatibilityMode: boolean;
+
+  setShowNoteLabels: (v: boolean) => void;
+  setShowFallingNoteLabels: (v: boolean) => void;
+  setShowFingering: (v: boolean) => void;
+  setCompactKeyLabels: (v: boolean) => void;
+  setLanguage: (lang: Language) => void;
+  setVolume: (v: number) => void;
+  setMuted: (v: boolean) => void;
+  setDefaultSpeed: (v: number) => void;
+  setDefaultMode: (m: PracticeMode) => void;
+  setMetronomeEnabled: (v: boolean) => void;
+  setCountInBeats: (v: number) => void;
+  setLatencyCompensation: (ms: number) => void;
+  setAudioCompatibilityMode: (v: boolean) => void;
+}
+
+interface PersistedSettings {
+  showNoteLabels?: boolean;
+  showFallingNoteLabels?: boolean;
+  showFingering?: boolean;
+  compactKeyLabels?: boolean;
+  language?: Language;
+  volume?: number;
+  muted?: boolean;
+  defaultSpeed?: number;
+  defaultMode?: PracticeMode;
+  metronomeEnabled?: boolean;
+  countInBeats?: number;
+  latencyCompensation?: number;
+  audioCompatibilityMode?: boolean;
+}
+
+const defaults: PersistedSettings = {
+  showNoteLabels: true,
+  showFallingNoteLabels: true,
+  showFingering: true,
+  compactKeyLabels: false,
+  language: detectLanguage(),
+  volume: 80,
+  muted: false,
+  defaultSpeed: 1.0,
+  defaultMode: "watch",
+  metronomeEnabled: false,
+  countInBeats: 4,
+  latencyCompensation: 0,
+  audioCompatibilityMode: false,
+};
+
+function loadSavedSettings(): PersistedSettings {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw) as PersistedSettings;
+      return { ...defaults, ...parsed };
+    }
+  } catch {
+    // localStorage might not be available
+  }
+  return { ...defaults };
+}
+
+function persist(patch: Partial<PersistedSettings>): void {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    const current = raw ? (JSON.parse(raw) as PersistedSettings) : {};
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ ...current, ...patch }));
+  } catch {
+    // localStorage might not be available
+  }
+}
+
+export const useSettingsStore = create<SettingsState>()((set) => {
+  const saved = loadSavedSettings();
+
+  return {
+    showNoteLabels: saved.showNoteLabels!,
+    showFallingNoteLabels: saved.showFallingNoteLabels!,
+    showFingering: saved.showFingering!,
+    compactKeyLabels: saved.compactKeyLabels!,
+    language: saved.language!,
+    volume: saved.volume!,
+    muted: saved.muted!,
+    defaultSpeed: saved.defaultSpeed!,
+    defaultMode: saved.defaultMode!,
+    metronomeEnabled: saved.metronomeEnabled!,
+    countInBeats: saved.countInBeats!,
+    latencyCompensation: saved.latencyCompensation!,
+    audioCompatibilityMode: saved.audioCompatibilityMode!,
+
+    setShowNoteLabels: (v) => {
+      persist({ showNoteLabels: v });
+      set({ showNoteLabels: v });
+    },
+    setShowFallingNoteLabels: (v) => {
+      persist({ showFallingNoteLabels: v });
+      set({ showFallingNoteLabels: v });
+    },
+    setShowFingering: (v) => {
+      persist({ showFingering: v });
+      set({ showFingering: v });
+    },
+    setCompactKeyLabels: (v) => {
+      persist({ compactKeyLabels: v });
+      set({ compactKeyLabels: v });
+    },
+    setLanguage: (lang) => {
+      persist({ language: lang });
+      set({ language: lang });
+    },
+    setVolume: (v) => {
+      const clamped = Math.max(0, Math.min(100, v));
+      persist({ volume: clamped });
+      set({ volume: clamped });
+    },
+    setMuted: (v) => {
+      persist({ muted: v });
+      set({ muted: v });
+    },
+    setDefaultSpeed: (v) => {
+      const clamped = Math.max(0.25, Math.min(2.0, v));
+      persist({ defaultSpeed: clamped });
+      set({ defaultSpeed: clamped });
+    },
+    setDefaultMode: (m) => {
+      persist({ defaultMode: m });
+      set({ defaultMode: m });
+    },
+    setMetronomeEnabled: (v) => {
+      persist({ metronomeEnabled: v });
+      set({ metronomeEnabled: v });
+    },
+    setCountInBeats: (v) => {
+      const clamped = Math.max(0, Math.min(8, Math.round(v)));
+      persist({ countInBeats: clamped });
+      set({ countInBeats: clamped });
+    },
+    setLatencyCompensation: (ms) => {
+      const clamped = Math.max(0, Math.min(100, Math.round(ms)));
+      persist({ latencyCompensation: clamped });
+      set({ latencyCompensation: clamped });
+    },
+    setAudioCompatibilityMode: (v) => {
+      persist({ audioCompatibilityMode: v });
+      set({ audioCompatibilityMode: v });
+    },
+  };
+});

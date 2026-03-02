@@ -1,142 +1,473 @@
-import { Container, Sprite, Text, TextStyle, Texture } from 'pixi.js'
-import type { ParsedSong, ParsedNote } from '@renderer/engines/midi/types'
-import { buildKeyPositions, type KeyPosition } from './keyPositions'
-import { getTrackColor } from './noteColors'
+/**
+ * Phase 2: PixiJS sprite renderer for falling note visualization.
+ * Manages a double-buffered sprite pool, per-frame viewport updates, and
+ * practice mode visual feedback (hit flash, miss fade, combo text pop).
+ */
+import { Container, Sprite, Text, TextStyle, Texture } from "pixi.js";
+import type { ParsedSong, ParsedNote } from "@renderer/engines/midi/types";
+import { buildKeyPositions, type KeyPosition } from "./keyPositions";
+import { getTrackColor } from "./noteColors";
 import {
   noteToScreenY,
   durationToHeight,
   getVisibleNotes,
   type Viewport,
-} from './ViewportManager'
+} from "./ViewportManager";
+import {
+  FingeringEngine,
+  type Finger,
+} from "@renderer/engines/practice/FingeringEngine";
+import { useSettingsStore } from "@renderer/stores/useSettingsStore";
 
 function noteKey(trackIdx: number, midi: number, time: number): string {
   // Convert time to microseconds integer to avoid float-to-string instability
-  return `${trackIdx}:${midi}:${Math.round(time * 1e6)}`
+  return `${trackIdx}:${midi}:${Math.round(time * 1e6)}`;
 }
 
-const INITIAL_POOL_SIZE = 512
+const INITIAL_POOL_SIZE = 512;
+
+/** Minimum note rectangle height (px) to show a label inside it. */
+const MIN_HEIGHT_FOR_LABEL = 16;
+
+/** Minimum note height (px) at which we show the fingering label */
+const MIN_HEIGHT_FOR_FINGERING = 14;
+
+/** Circled digit characters for finger numbers 1-5 */
+const CIRCLED_DIGITS: Record<Finger, string> = {
+  1: "\u2460",
+  2: "\u2461",
+  3: "\u2462",
+  4: "\u2463",
+  5: "\u2464",
+};
+
+/** Chromatic note names indexed by (midi % 12). */
+const NOTE_NAMES = [
+  "C",
+  "C#",
+  "D",
+  "D#",
+  "E",
+  "F",
+  "F#",
+  "G",
+  "G#",
+  "A",
+  "A#",
+  "B",
+] as const;
+
+/** Convert a MIDI note number to a short display name (e.g. "C4", "F#5"). */
+function midiToNoteName(midi: number): string {
+  const name = NOTE_NAMES[midi % 12];
+  const octave = Math.floor(midi / 12) - 1;
+  return `${name}${octave}`;
+}
+
+/** Shared text style for note labels on falling note sprites. */
+let _labelStyle: TextStyle | null = null;
+function getLabelStyle(): TextStyle {
+  if (!_labelStyle) {
+    _labelStyle = new TextStyle({
+      fontFamily: "'JetBrains Mono Variable', 'JetBrains Mono', monospace",
+      fontSize: 12,
+      fontWeight: "bold",
+      fill: 0xffffff,
+    });
+  }
+  return _labelStyle;
+}
 
 /** Linearly interpolate between two 0xRRGGBB colors by factor t ∈ [0,1]. */
 function lerpColor(a: number, b: number, t: number): number {
-  const ar = (a >> 16) & 0xff, ag = (a >> 8) & 0xff, ab = a & 0xff
-  const br = (b >> 16) & 0xff, bg = (b >> 8) & 0xff, bb = b & 0xff
-  const r = Math.round(ar + (br - ar) * t)
-  const g = Math.round(ag + (bg - ag) * t)
-  const blue = Math.round(ab + (bb - ab) * t)
-  return (r << 16) | (g << 8) | blue
+  const ar = (a >> 16) & 0xff,
+    ag = (a >> 8) & 0xff,
+    ab = a & 0xff;
+  const br = (b >> 16) & 0xff,
+    bg = (b >> 8) & 0xff,
+    bb = b & 0xff;
+  const r = Math.round(ar + (br - ar) * t);
+  const g = Math.round(ag + (bg - ag) * t);
+  const blue = Math.round(ab + (bb - ab) * t);
+  return (r << 16) | (g << 8) | blue;
 }
 
 export class NoteRenderer {
-  private container: Container
-  private pool: Sprite[] = []
-  private active = new Map<string, Sprite>()
-  private nextActive = new Map<string, Sprite>()
-  private visibleBuf: ParsedNote[] = []
-  private keyPositions = new Map<number, KeyPosition>()
-  private noteTexture!: Texture
+  private container: Container;
+  private pool: Sprite[] = [];
+  private active = new Map<string, Sprite>();
+  private nextActive = new Map<string, Sprite>();
+  private visibleBuf: ParsedNote[] = [];
+  private keyPositions = new Map<number, KeyPosition>();
+  private noteTexture: Texture = Texture.EMPTY;
 
-  public activeNotes = new Set<number>()
+  /** Tracks in-flight rAF animation handles per sprite to cancel on recycle */
+  private _animHandles = new Map<Sprite, number>();
+  /** Tracks in-flight rAF handles for showCombo text animations (cancelled on destroy) */
+  private _comboHandles = new Set<number>();
+
+  // ── Note label pool (parallel to sprite pool) ──
+  /** Text pool for reusable note labels */
+  private _labelPool: Text[] = [];
+  /** Maps each active sprite to its associated label Text object */
+  private _spriteLabels = new Map<Sprite, Text>();
+  /** Whether note labels on falling notes are enabled */
+  public showNoteLabels = true;
+
+  public activeNotes = new Set<number>();
+
+  // ── Fingering overlay ──────────────────────────────────────────
+  private fingeringEngine = new FingeringEngine();
+  /** Pool of reusable Text objects for fingering labels */
+  private fingeringLabelPool: Text[] = [];
+  /** Currently visible fingering labels (key → Text) */
+  private activeFingeringLabels = new Map<string, Text>();
+  private nextFingeringLabels = new Map<string, Text>();
+  /** Cached fingering results per song, keyed by "trackIdx" */
+  private fingeringCache = new Map<string, Map<number, Finger>>();
+  /** ID of the last song we computed fingering for */
+  private lastSongFileName = "";
 
   constructor(parentContainer: Container) {
-    this.container = new Container()
-    parentContainer.addChild(this.container)
+    this.container = new Container();
+    parentContainer.addChild(this.container);
   }
 
+  /**
+   * Initialize the renderer with canvas width and pre-fill the sprite pool.
+   * Must be called once before any `update()` or `resize()` calls.
+   * @param canvasWidth Canvas pixel width, used to compute key positions
+   */
   init(canvasWidth: number): void {
-    this.keyPositions = buildKeyPositions(canvasWidth)
-    this.noteTexture = Texture.WHITE
+    this.keyPositions = buildKeyPositions(canvasWidth);
+    this.noteTexture = Texture.WHITE;
 
     for (let i = 0; i < INITIAL_POOL_SIZE; i++) {
-      this.pool.push(this.createSprite())
+      this.pool.push(this.createSprite());
+    }
+
+    // Pre-fill label pool (smaller than sprite pool — not every note needs a label)
+    const labelPoolSize = Math.min(256, INITIAL_POOL_SIZE);
+    for (let i = 0; i < labelPoolSize; i++) {
+      this._labelPool.push(this.createLabel());
     }
   }
 
+  /**
+   * Recompute key positions after a canvas resize.
+   * @param canvasWidth New canvas pixel width
+   */
   resize(canvasWidth: number): void {
-    this.keyPositions = buildKeyPositions(canvasWidth)
+    this.keyPositions = buildKeyPositions(canvasWidth);
   }
 
+  /**
+   * Main per-frame update. Positions and shows sprites for all notes
+   * visible in the given viewport, and returns stale sprites to the pool.
+   * Called ~60 times/sec by the ticker loop.
+   * @param song Currently loaded parsed song
+   * @param vp   Current viewport (position + dimensions)
+   */
   update(song: ParsedSong, vp: Viewport): void {
     // Double-buffer swap: reuse nextActive map instead of allocating each frame
-    const nextActive = this.nextActive
-    nextActive.clear()
-    this.activeNotes.clear()
+    const nextActive = this.nextActive;
+    nextActive.clear();
+    this.activeNotes.clear();
 
-    const hitWindow = 0.05
+    const hitWindow = 0.05;
+    const showFingering = useSettingsStore.getState().showFingering;
+    const maxVisibleLabels =
+      vp.height < 200 ? 14 : vp.height < 280 ? 22 : vp.height < 360 ? 30 : 42;
+    let shownLabelCount = 0;
+
+    // Recompute fingering cache when song changes
+    if (showFingering && song.fileName !== this.lastSongFileName) {
+      this.computeFingeringForSong(song);
+      this.lastSongFileName = song.fileName;
+    }
+
+    // Double-buffer for fingering labels
+    const nextFLabels = this.nextFingeringLabels;
+    nextFLabels.clear();
 
     for (let trackIdx = 0; trackIdx < song.tracks.length; trackIdx++) {
-      const track = song.tracks[trackIdx]
-      const color = getTrackColor(trackIdx)
-      const visibleNotes = getVisibleNotes(track.notes, vp, hitWindow, this.visibleBuf)
+      const track = song.tracks[trackIdx];
+      const color = getTrackColor(trackIdx);
+      const visibleNotes = getVisibleNotes(
+        track.notes,
+        vp,
+        hitWindow,
+        this.visibleBuf,
+      );
 
       for (const note of visibleNotes) {
-        const key = noteKey(trackIdx, note.midi, note.time)
-        const kp = this.keyPositions.get(note.midi)
-        if (!kp) continue
+        const key = noteKey(trackIdx, note.midi, note.time);
+        const kp = this.keyPositions.get(note.midi);
+        if (!kp) continue;
 
-        const screenY = noteToScreenY(note.time, vp)
-        const h = durationToHeight(note.duration, vp.pps)
-        const rectY = screenY - h
+        const screenY = noteToScreenY(note.time, vp);
+        const h = durationToHeight(note.duration, vp.pps);
+        const rectY = screenY - h;
 
         // Check both active (from last frame) and nextActive (from this frame, for duplicate keys)
-        let sprite = this.active.get(key) ?? nextActive.get(key)
+        let sprite = this.active.get(key) ?? nextActive.get(key);
         if (!sprite) {
-          sprite = this.allocate()
-          sprite.tint = color
+          sprite = this.allocate();
+          sprite.tint = color;
         }
 
-        sprite.x = kp.x
-        sprite.y = rectY
-        sprite.width = kp.width
-        sprite.height = Math.max(h, 2)
-        sprite.visible = true
-        nextActive.set(key, sprite)
+        sprite.x = kp.x;
+        sprite.y = rectY;
+        sprite.width = kp.width;
+        sprite.height = Math.max(h, 2);
+        sprite.visible = true;
+        nextActive.set(key, sprite);
 
-        if (note.time <= vp.currentTime + hitWindow &&
-            note.time + note.duration >= vp.currentTime - hitWindow) {
-          this.activeNotes.add(note.midi)
+        // ── Note label management ──
+        if (
+          this.showNoteLabels &&
+          h >= MIN_HEIGHT_FOR_LABEL &&
+          shownLabelCount < maxVisibleLabels
+        ) {
+          let label = this._spriteLabels.get(sprite);
+          if (!label) {
+            label = this.allocateLabel();
+            this._spriteLabels.set(sprite, label);
+          }
+          label.text = midiToNoteName(note.midi);
+          label.x = kp.x + kp.width / 2;
+          label.y = rectY + Math.max(h, 2) / 2;
+          label.visible = true;
+          shownLabelCount += 1;
+        } else {
+          // Hide label if note is too small or labels are disabled
+          const existingLabel = this._spriteLabels.get(sprite);
+          if (existingLabel) {
+            this.releaseLabel(existingLabel);
+            this._spriteLabels.delete(sprite);
+          }
+        }
+
+        if (
+          note.time <= vp.currentTime + hitWindow &&
+          note.time + note.duration >= vp.currentTime - hitWindow
+        ) {
+          this.activeNotes.add(note.midi);
+        }
+
+        // ── Fingering label overlay ──────────────────────────────
+        if (showFingering && h >= MIN_HEIGHT_FOR_FINGERING) {
+          const finger = this.getFingerForNote(trackIdx, note);
+          if (finger) {
+            let label =
+              this.activeFingeringLabels.get(key) ?? nextFLabels.get(key);
+            if (!label) {
+              label = this.allocateFingeringLabel();
+            }
+            label.text = CIRCLED_DIGITS[finger];
+            label.x = kp.x + kp.width / 2;
+            label.y = rectY + Math.min(h, 20) / 2 + 1;
+            label.visible = true;
+            nextFLabels.set(key, label);
+          }
         }
       }
     }
 
     for (const [key, sprite] of this.active) {
       if (!nextActive.has(key)) {
-        this.release(sprite)
+        this.release(sprite);
+      }
+    }
+
+    // Release unused fingering labels
+    for (const [key, label] of this.activeFingeringLabels) {
+      if (!nextFLabels.has(key)) {
+        this.releaseFingeringLabel(label);
+      }
+    }
+
+    // Hide all labels if fingering is disabled
+    if (!showFingering) {
+      for (const [, label] of this.activeFingeringLabels) {
+        this.releaseFingeringLabel(label);
       }
     }
 
     // Swap buffers: active ↔ nextActive
-    this.nextActive = this.active
-    this.active = nextActive
+    this.nextActive = this.active;
+    this.active = nextActive;
+
+    // Swap fingering label buffers
+    this.nextFingeringLabels = this.activeFingeringLabels;
+    this.activeFingeringLabels = nextFLabels;
   }
 
+  /**
+   * Cancel all animations and release all sprites.
+   * Call when the canvas is unmounted or a new song is loaded.
+   */
   destroy(): void {
-    this.container.removeChildren()
-    this.pool.length = 0
-    this.active.clear()
-    this.nextActive.clear()
-    this.keyPositions.clear()
+    // Cancel all in-flight animations
+    for (const handle of this._animHandles.values()) {
+      cancelAnimationFrame(handle);
+    }
+    this._animHandles.clear();
+    for (const handle of this._comboHandles) {
+      cancelAnimationFrame(handle);
+    }
+    this._comboHandles.clear();
+
+    this.container.removeChildren();
+    this.pool.length = 0;
+    this.active.clear();
+    this.nextActive.clear();
+    this.activeNotes.clear();
+    this.keyPositions.clear();
+
+    // Clean up label pool
+    this._labelPool.length = 0;
+    this._spriteLabels.clear();
+
+    // Clean up fingering overlay
+    this.fingeringLabelPool.length = 0;
+    this.activeFingeringLabels.clear();
+    this.nextFingeringLabels.clear();
+    this.fingeringCache.clear();
+    this.lastSongFileName = "";
   }
 
   private createSprite(): Sprite {
-    const s = new Sprite(this.noteTexture)
-    s.visible = false
-    this.container.addChild(s)
-    return s
+    const s = new Sprite(this.noteTexture);
+    s.visible = false;
+    this.container.addChild(s);
+    return s;
+  }
+
+  private createLabel(): Text {
+    const t = new Text({ text: "", style: getLabelStyle() });
+    t.anchor.set(0.5);
+    t.visible = false;
+    t.alpha = 0.85;
+    this.container.addChild(t);
+    return t;
   }
 
   private allocate(): Sprite {
     if (this.pool.length === 0) {
-      const grow = Math.max(64, Math.floor(this.active.size * 0.5))
+      const grow = Math.max(64, Math.floor(this.active.size * 0.5));
       for (let i = 0; i < grow; i++) {
-        this.pool.push(this.createSprite())
+        this.pool.push(this.createSprite());
       }
     }
-    return this.pool.pop()!
+    return this.pool.pop()!;
+  }
+
+  private allocateLabel(): Text {
+    if (this._labelPool.length === 0) {
+      const grow = Math.max(32, Math.floor(this._spriteLabels.size * 0.5));
+      for (let i = 0; i < grow; i++) {
+        this._labelPool.push(this.createLabel());
+      }
+    }
+    return this._labelPool.pop()!;
+  }
+
+  private releaseLabel(label: Text): void {
+    label.visible = false;
+    this._labelPool.push(label);
   }
 
   private release(sprite: Sprite): void {
-    sprite.visible = false
-    this.pool.push(sprite)
+    // Cancel any in-flight animation before returning sprite to pool
+    const handle = this._animHandles.get(sprite);
+    if (handle !== undefined) {
+      cancelAnimationFrame(handle);
+      this._animHandles.delete(sprite);
+    }
+    sprite.alpha = 1;
+    sprite.visible = false;
+    this.pool.push(sprite);
+
+    // Release the associated label if present
+    const label = this._spriteLabels.get(sprite);
+    if (label) {
+      this.releaseLabel(label);
+      this._spriteLabels.delete(sprite);
+    }
+  }
+
+  // ── Fingering label pool ──────────────────────────────────────────
+
+  /** Lazily created TextStyle for fingering labels */
+  private _fingeringLabelStyle: TextStyle | null = null;
+  private getFingeringLabelStyle(): TextStyle {
+    if (!this._fingeringLabelStyle) {
+      this._fingeringLabelStyle = new TextStyle({
+        fontFamily: "Nunito Variable, Nunito, sans-serif",
+        fontSize: 12,
+        fontWeight: "700",
+        fill: 0xffffff,
+        align: "center",
+      });
+    }
+    return this._fingeringLabelStyle;
+  }
+
+  private createFingeringLabel(): Text {
+    const label = new Text({ text: "", style: this.getFingeringLabelStyle() });
+    label.anchor.set(0.5);
+    label.visible = false;
+    this.container.addChild(label);
+    return label;
+  }
+
+  private allocateFingeringLabel(): Text {
+    if (this.fingeringLabelPool.length === 0) {
+      const grow = 32;
+      for (let i = 0; i < grow; i++) {
+        this.fingeringLabelPool.push(this.createFingeringLabel());
+      }
+    }
+    return this.fingeringLabelPool.pop()!;
+  }
+
+  private releaseFingeringLabel(label: Text): void {
+    label.visible = false;
+    this.fingeringLabelPool.push(label);
+  }
+
+  /**
+   * Pre-compute fingering for all tracks in a song.
+   */
+  private computeFingeringForSong(song: ParsedSong): void {
+    this.fingeringCache.clear();
+
+    for (let trackIdx = 0; trackIdx < song.tracks.length; trackIdx++) {
+      const track = song.tracks[trackIdx];
+      if (track.notes.length === 0) continue;
+
+      // Heuristic: tracks with mostly lower notes (avg midi < 60) are left hand
+      const avgMidi =
+        track.notes.reduce((sum, n) => sum + n.midi, 0) / track.notes.length;
+      const hand = avgMidi < 60 ? "left" : "right";
+
+      const results = this.fingeringEngine.computeFingering(track.notes, hand);
+      const trackCache = new Map<number, Finger>();
+
+      for (const result of results) {
+        trackCache.set(result.midi, result.finger);
+      }
+
+      this.fingeringCache.set(String(trackIdx), trackCache);
+    }
+  }
+
+  /** Look up the cached finger for a specific note */
+  private getFingerForNote(trackIdx: number, note: ParsedNote): Finger | null {
+    const trackCache = this.fingeringCache.get(String(trackIdx));
+    if (!trackCache) return null;
+    return trackCache.get(note.midi) ?? null;
   }
 
   // ── Practice mode visual feedback ──────────────────────────────────
@@ -144,56 +475,72 @@ export class NoteRenderer {
   /**
    * Flash a bright hit effect on a note sprite.
    * Tint shifts to white and alpha pulses, then restores over ~200ms.
+   * Animation is automatically cancelled if the sprite is recycled.
    */
   flashHit(sprite: Sprite): void {
-    const originalTint = sprite.tint
-    const originalAlpha = sprite.alpha
-    const duration = 200 // ms
-    let start = -1
+    // Cancel any existing animation on this sprite
+    const existing = this._animHandles.get(sprite);
+    if (existing !== undefined) cancelAnimationFrame(existing);
+
+    const originalTint = sprite.tint;
+    const originalAlpha = sprite.alpha;
+    const duration = 200; // ms
+    let start = -1;
 
     const tick = (now: number): void => {
-      if (start < 0) start = now
-      const elapsed = now - start
-      const t = Math.min(elapsed / duration, 1)
+      // Sprite was recycled — stop animating
+      if (!this._animHandles.has(sprite)) return;
+
+      if (start < 0) start = now;
+      const elapsed = now - start;
+      const t = Math.min(elapsed / duration, 1);
 
       // Quick flash up then ease back
-      const flash = t < 0.3 ? t / 0.3 : 1 - (t - 0.3) / 0.7
-      sprite.tint = lerpColor(originalTint, 0xffffff, flash * 0.7)
-      sprite.alpha = originalAlpha + (1 - originalAlpha) * flash * 0.5
+      const flash = t < 0.3 ? t / 0.3 : 1 - (t - 0.3) / 0.7;
+      sprite.tint = lerpColor(originalTint, 0xffffff, flash * 0.7);
+      sprite.alpha = originalAlpha + (1 - originalAlpha) * flash * 0.5;
 
       if (t < 1) {
-        requestAnimationFrame(tick)
+        this._animHandles.set(sprite, requestAnimationFrame(tick));
       } else {
-        sprite.tint = originalTint
-        sprite.alpha = originalAlpha
+        this._animHandles.delete(sprite);
+        sprite.tint = originalTint;
+        sprite.alpha = originalAlpha;
       }
-    }
-    requestAnimationFrame(tick)
+    };
+    this._animHandles.set(sprite, requestAnimationFrame(tick));
   }
 
   /**
    * Mark a note sprite as missed: fade to gray and reduce opacity.
-   * Transition runs over ~150ms.
+   * Transition runs over ~150ms. Cancelled if sprite is recycled.
    */
   markMiss(sprite: Sprite): void {
-    const originalTint = sprite.tint
-    const originalAlpha = sprite.alpha
-    const duration = 150
-    let start = -1
+    const existing = this._animHandles.get(sprite);
+    if (existing !== undefined) cancelAnimationFrame(existing);
+
+    const originalTint = sprite.tint;
+    const originalAlpha = sprite.alpha;
+    const duration = 150;
+    let start = -1;
 
     const tick = (now: number): void => {
-      if (start < 0) start = now
-      const t = Math.min((now - start) / duration, 1)
-      const ease = t * (2 - t) // ease-out quad
+      if (!this._animHandles.has(sprite)) return;
 
-      sprite.tint = lerpColor(originalTint, 0x888888, ease)
-      sprite.alpha = originalAlpha - (originalAlpha - 0.4) * ease
+      if (start < 0) start = now;
+      const t = Math.min((now - start) / duration, 1);
+      const ease = t * (2 - t); // ease-out quad
+
+      sprite.tint = lerpColor(originalTint, 0x888888, ease);
+      sprite.alpha = originalAlpha - (originalAlpha - 0.4) * ease;
 
       if (t < 1) {
-        requestAnimationFrame(tick)
+        this._animHandles.set(sprite, requestAnimationFrame(tick));
+      } else {
+        this._animHandles.delete(sprite);
       }
-    }
-    requestAnimationFrame(tick)
+    };
+    this._animHandles.set(sprite, requestAnimationFrame(tick));
   }
 
   /**
@@ -202,9 +549,9 @@ export class NoteRenderer {
    */
   showCombo(count: number, x: number, y: number): void {
     const style = new TextStyle({
-      fontFamily: 'Nunito Variable, Nunito, sans-serif',
+      fontFamily: "Nunito Variable, Nunito, sans-serif",
       fontSize: 28,
-      fontWeight: '800',
+      fontWeight: "800",
       fill: 0xffffff,
       dropShadow: {
         color: 0x000000,
@@ -212,48 +559,69 @@ export class NoteRenderer {
         distance: 1,
         alpha: 0.35,
       },
-    })
-    const label = new Text({ text: `${count}x`, style })
-    label.anchor.set(0.5)
-    label.x = x
-    label.y = y
-    label.alpha = 0
-    label.scale.set(0.3)
-    this.container.addChild(label)
+    });
+    const label = new Text({ text: `${count}x`, style });
+    label.anchor.set(0.5);
+    label.x = x;
+    label.y = y;
+    label.alpha = 0;
+    label.scale.set(0.3);
+    this.container.addChild(label);
 
-    const duration = 600
-    let start = -1
+    const duration = 600;
+    let start = -1;
 
     const tick = (now: number): void => {
-      if (start < 0) start = now
-      const t = Math.min((now - start) / duration, 1)
+      // Animation was cancelled by destroy() — stop writing to removed label
+      if (!this._comboHandles.has(handle)) return;
+
+      if (start < 0) start = now;
+      const t = Math.min((now - start) / duration, 1);
 
       // Phase 1 (0–0.2): pop in
       // Phase 2 (0.2–0.7): hold + drift
       // Phase 3 (0.7–1.0): fade out
       if (t < 0.2) {
-        const p = t / 0.2
-        const overshoot = 1 + 0.2 * Math.sin(p * Math.PI)
-        label.scale.set(overshoot)
-        label.alpha = p
+        const p = t / 0.2;
+        const overshoot = 1 + 0.2 * Math.sin(p * Math.PI);
+        label.scale.set(overshoot);
+        label.alpha = p;
       } else if (t < 0.7) {
-        label.scale.set(1)
-        label.alpha = 1
+        label.scale.set(1);
+        label.alpha = 1;
       } else {
-        const p = (t - 0.7) / 0.3
-        label.alpha = 1 - p
-        label.scale.set(1 - p * 0.3)
+        const p = (t - 0.7) / 0.3;
+        label.alpha = 1 - p;
+        label.scale.set(1 - p * 0.3);
       }
 
-      label.y = y - 40 * t
+      label.y = y - 40 * t;
 
       if (t < 1) {
-        requestAnimationFrame(tick)
+        this._comboHandles.delete(handle);
+        const next = requestAnimationFrame(tick);
+        this._comboHandles.add(next);
+        handle = next;
       } else {
-        this.container.removeChild(label)
-        label.destroy()
+        this._comboHandles.delete(handle);
+        this.container.removeChild(label);
+        label.destroy();
       }
-    }
-    requestAnimationFrame(tick)
+    };
+    let handle = requestAnimationFrame(tick);
+    this._comboHandles.add(handle);
+  }
+
+  /**
+   * Look up the currently active sprite for a specific note.
+   * Returns null if the note is not currently visible on screen.
+   */
+  findSpriteForNote(
+    trackIdx: number,
+    midi: number,
+    time: number,
+  ): Sprite | null {
+    const key = noteKey(trackIdx, midi, time);
+    return this.active.get(key) ?? null;
   }
 }

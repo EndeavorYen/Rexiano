@@ -1,59 +1,59 @@
 /** A single MIDI note with timing and pitch information */
 export interface ParsedNote {
   /** MIDI note number (0-127, where 60 = Middle C / C4) */
-  midi: number
+  midi: number;
   /** Note name with octave (e.g. "C4", "F#5") */
-  name: string
+  name: string;
   /** Start time in seconds */
-  time: number
+  time: number;
   /** Duration in seconds */
-  duration: number
+  duration: number;
   /** Velocity (0-127) */
-  velocity: number
+  velocity: number;
 }
 
 /** A single track within a MIDI file */
 export interface ParsedTrack {
   /** Track name from MIDI metadata (e.g. "Piano Right Hand") */
-  name: string
+  name: string;
   /** Instrument name if available */
-  instrument: string
+  instrument: string;
   /** MIDI channel number (0-15) */
-  channel: number
+  channel: number;
   /** All notes in this track, sorted by time */
-  notes: ParsedNote[]
+  notes: ParsedNote[];
 }
 
 /** Tempo change event */
 export interface TempoEvent {
   /** Time in seconds when this tempo takes effect */
-  time: number
+  time: number;
   /** Tempo in BPM */
-  bpm: number
+  bpm: number;
 }
 
 /** Time signature event */
 export interface TimeSignatureEvent {
   /** Time in seconds */
-  time: number
+  time: number;
   /** Numerator (e.g. 4 in 4/4) */
-  numerator: number
+  numerator: number;
   /** Denominator (e.g. 4 in 4/4) */
-  denominator: number
+  denominator: number;
 }
 
 /** Complete parsed representation of a MIDI file */
 export interface ParsedSong {
   /** Original file name */
-  fileName: string
+  fileName: string;
   /** Total duration in seconds */
-  duration: number
+  duration: number;
   /** All tracks */
-  tracks: ParsedTrack[]
+  tracks: ParsedTrack[];
   /** Tempo changes throughout the song */
-  tempos: TempoEvent[]
+  tempos: TempoEvent[];
   /** Time signature changes */
-  timeSignatures: TimeSignatureEvent[]
+  timeSignatures: TimeSignatureEvent[];
   /** Total number of notes across all tracks */
-  noteCount: number
+  noteCount: number;
 }
