@@ -53,6 +53,14 @@ export interface BuiltinSongMeta {
   category?: "exercise" | "classical" | "popular" | "holiday";
   durationSeconds: number;
   tags: string[];
+  /**
+   * Granular difficulty level (0–8), aligned with the Rexiano Level Guide.
+   * L0=Pre-Starter, L1=Starter, L2=Early Beginner, L3=Beginner,
+   * L4=Elementary, L5=Pre-Intermediate, L6=Intermediate,
+   * L7=Upper-Intermediate, L8=Advanced.
+   * See docs/midi-level-guide.md for full criteria.
+   */
+  grade?: 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8;
 }
 
 // ─── Phase 5: MIDI Device Connection ─────────────────────────────────

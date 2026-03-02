@@ -5,17 +5,16 @@ import { useTranslation } from "@renderer/i18n/useTranslation";
 const mainPresets = [0.5, 0.75, 1.0] as const;
 
 /** Full range for the continuous slider */
-const SPEED_MIN = 0.25;
-const SPEED_MAX = 2.0;
-const SPEED_STEP = 0.05;
+const SPEED_MIN = 25;
+const SPEED_MAX = 200;
+const SPEED_STEP = 5;
 
 // eslint-disable-next-line react-refresh/only-export-components
 export function formatSpeed(v: number): string {
-  return v === Math.floor(v) ? `${v}.0x` : `${v}x`;
+  return `${Math.round(v * 100)}%`;
 }
 
 function presetLabel(v: number): string {
-  if (v === 1) return "1x";
   return `${Math.round(v * 100)}%`;
 }
 
@@ -24,12 +23,12 @@ export function SpeedSlider(): React.JSX.Element {
   const speed = usePracticeStore((s) => s.speed);
   const setSpeed = usePracticeStore((s) => s.setSpeed);
 
-  const isCustomSpeed = !mainPresets.some((v) => Math.abs(speed - v) < 0.001);
+  const speedPercent = Math.round(speed * 100);
 
   return (
-    <div className="flex items-center gap-2">
+    <div className="flex items-center gap-2.5 min-w-0">
       <span
-        className="text-[10px] font-mono uppercase tracking-wider shrink-0"
+        className="text-[11px] font-body font-medium shrink-0"
         style={{ color: "var(--color-text-muted)" }}
       >
         {t("practice.speed")}
@@ -43,7 +42,7 @@ export function SpeedSlider(): React.JSX.Element {
             <button
               key={v}
               onClick={() => setSpeed(v)}
-              className="px-2.5 py-1 rounded-md text-[11px] font-mono font-semibold cursor-pointer"
+              className="px-2.5 py-1 rounded-md text-[11px] font-body font-semibold tabular-nums cursor-pointer"
               style={{
                 background: isActive
                   ? "var(--color-accent)"
@@ -52,7 +51,7 @@ export function SpeedSlider(): React.JSX.Element {
                 boxShadow: isActive ? "0 1px 4px rgba(0,0,0,0.12)" : "none",
                 transition: "all 0.15s ease",
               }}
-              aria-label={`Set speed to ${v}x`}
+              aria-label={`Set speed to ${presetLabel(v)}`}
               aria-pressed={isActive}
             >
               {presetLabel(v)}
@@ -67,22 +66,19 @@ export function SpeedSlider(): React.JSX.Element {
         min={SPEED_MIN}
         max={SPEED_MAX}
         step={SPEED_STEP}
-        value={speed}
-        onChange={(e) => setSpeed(parseFloat(e.target.value))}
-        className="h-1"
-        style={{ accentColor: "var(--color-accent)", width: 80 }}
-        aria-label="Playback speed"
+        value={speedPercent}
+        onChange={(e) => setSpeed(parseFloat(e.target.value) / 100)}
+        className="speed-slider-input shrink-0"
+        style={{ accentColor: "var(--color-accent)", width: 96 }}
+        aria-label="Playback speed percentage"
       />
 
-      {/* Current speed display (when using slider for custom speed) */}
-      {isCustomSpeed && (
-        <span
-          className="text-[11px] font-mono tabular-nums"
-          style={{ color: "var(--color-accent)" }}
-        >
-          {formatSpeed(speed)}
-        </span>
-      )}
+      <span
+        className="text-[11px] font-mono tabular-nums shrink-0"
+        style={{ color: "var(--color-text)" }}
+      >
+        {formatSpeed(speed)}
+      </span>
     </div>
   );
 }

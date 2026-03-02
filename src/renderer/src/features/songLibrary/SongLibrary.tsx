@@ -48,6 +48,7 @@ export function SongLibrary({
   const isLoading = useSongLibraryStore((s) => s.isLoading);
   const searchQuery = useSongLibraryStore((s) => s.searchQuery);
   const difficultyFilter = useSongLibraryStore((s) => s.difficultyFilter);
+  const gradeFilter = useSongLibraryStore((s) => s.gradeFilter);
   const fetchSongs = useSongLibraryStore((s) => s.fetchSongs);
 
   const loadSong = useSongStore((s) => s.loadSong);
@@ -82,6 +83,9 @@ export function SongLibrary({
     if (difficultyFilter !== "all") {
       result = result.filter((s) => s.difficulty === difficultyFilter);
     }
+    if (gradeFilter !== "all") {
+      result = result.filter((s) => s.grade === gradeFilter);
+    }
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
       result = result.filter(
@@ -91,7 +95,7 @@ export function SongLibrary({
       );
     }
     return result;
-  }, [songs, difficultyFilter, searchQuery]);
+  }, [songs, difficultyFilter, gradeFilter, searchQuery]);
 
   /** Songs grouped by category for section display */
   const categoryGroups = useMemo(

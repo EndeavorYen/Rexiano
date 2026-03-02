@@ -3,16 +3,13 @@ import { formatSpeed } from "./SpeedSlider";
 
 describe("SpeedSlider helpers", () => {
   describe("formatSpeed", () => {
-    test("formats integer speeds with .0x suffix", () => {
-      expect(formatSpeed(1)).toBe("1.0x");
-      expect(formatSpeed(2)).toBe("2.0x");
-    });
-
-    test("formats fractional speeds with x suffix", () => {
-      expect(formatSpeed(0.25)).toBe("0.25x");
-      expect(formatSpeed(0.5)).toBe("0.5x");
-      expect(formatSpeed(0.75)).toBe("0.75x");
-      expect(formatSpeed(1.5)).toBe("1.5x");
+    test("formats multiplier speeds as percentages", () => {
+      expect(formatSpeed(0.25)).toBe("25%");
+      expect(formatSpeed(0.5)).toBe("50%");
+      expect(formatSpeed(0.75)).toBe("75%");
+      expect(formatSpeed(1)).toBe("100%");
+      expect(formatSpeed(1.5)).toBe("150%");
+      expect(formatSpeed(2)).toBe("200%");
     });
   });
 });

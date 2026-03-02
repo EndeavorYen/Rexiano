@@ -33,7 +33,7 @@ test.describe("Playback UI polish guardrails", () => {
     const chipsCenterY = chipsBox.y + chipsBox.height / 2;
 
     expect(Math.abs(titleCenterY - chipsCenterY)).toBeLessThan(14);
-    expect(headerBox.height).toBeLessThan(160);
+    expect(headerBox.height).toBeLessThan(116);
 
     await expect(headerPanel.locator(".progress-rail")).toHaveCount(0);
     await expect(

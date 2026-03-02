@@ -24,12 +24,13 @@ export function PracticeToolbar({
       style={{
         border: "1px solid var(--color-border)",
       }}
+      data-testid="practice-toolbar"
     >
       <div
         className={`flex flex-wrap items-center px-4 ${
           compact ? "gap-2 py-2" : "gap-3 py-2.5"
         }`}
-        style={{ minHeight: compact ? 38 : 42 }}
+        style={{ minHeight: compact ? 42 : 44 }}
       >
         <PracticeModeSelector />
 

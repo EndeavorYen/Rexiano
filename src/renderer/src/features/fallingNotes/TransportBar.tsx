@@ -54,6 +54,7 @@ export function TransportBar({
   const song = useSongStore((s) => s.song);
   const currentTime = usePlaybackStore((s) => s.currentTime);
   const isPlaying = usePlaybackStore((s) => s.isPlaying);
+  const volume = usePlaybackStore((s) => s.volume);
   const setPlaying = usePlaybackStore((s) => s.setPlaying);
   const setCurrentTime = usePlaybackStore((s) => s.setCurrentTime);
   const reset = usePlaybackStore((s) => s.reset);
@@ -74,11 +75,7 @@ export function TransportBar({
 
   const duration = song?.duration ?? 0;
   const loopHighlight = computeLoopHighlight(loopRange, duration);
-
-  const bpm =
-    song?.tempos && song.tempos.length > 0
-      ? Math.round(song.tempos[0].bpm)
-      : null;
+  const volumePercent = Math.round(volume * 100);
 
   const [playPulse, setPlayPulse] = useState(false);
 
@@ -96,6 +93,7 @@ export function TransportBar({
       className={`transport-strip surface-panel mx-3 rounded-2xl sm:px-4 ${
         compact ? "mt-2 px-2.5 py-2" : "mt-3 px-3 py-2.5"
       }`}
+      data-testid="transport-strip"
     >
       <div
         className={`grid lg:grid-cols-[auto_1fr_auto] lg:items-center ${
@@ -338,16 +336,15 @@ export function TransportBar({
             border: "1px solid var(--color-border)",
           }}
         >
-          {bpm && (
-            <span
-              className="control-chip font-mono tabular-nums"
-              style={{
-                color: "var(--color-text-muted)",
-              }}
-            >
-              {bpm} BPM
-            </span>
-          )}
+          <span
+            className="control-chip font-mono tabular-nums"
+            style={{
+              color: "var(--color-text-muted)",
+            }}
+            data-testid="transport-volume-percent"
+          >
+            {volumePercent}%
+          </span>
 
           <VolumeControl />
         </div>

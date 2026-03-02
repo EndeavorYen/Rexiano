@@ -28,6 +28,16 @@ export interface TranslationMap {
   "library.difficulty.beginner": string;
   "library.difficulty.intermediate": string;
   "library.difficulty.advanced": string;
+  "library.grade.all": string;
+  "library.grade.0": string;
+  "library.grade.1": string;
+  "library.grade.2": string;
+  "library.grade.3": string;
+  "library.grade.4": string;
+  "library.grade.5": string;
+  "library.grade.6": string;
+  "library.grade.7": string;
+  "library.grade.8": string;
   "library.greeting.morning": string;
   "library.greeting.afternoon": string;
   "library.greeting.evening": string;

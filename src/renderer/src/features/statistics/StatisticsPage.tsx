@@ -28,7 +28,8 @@ export function StatisticsPage({
   const totalNotes = score.totalNotes;
   const hitRate = totalNotes > 0 ? (score.hitNotes / totalNotes) * 100 : 0;
   const missRate = totalNotes > 0 ? (score.missedNotes / totalNotes) * 100 : 0;
-  const consistency = totalNotes > 0 ? (score.bestStreak / totalNotes) * 100 : 0;
+  const consistency =
+    totalNotes > 0 ? (score.bestStreak / totalNotes) * 100 : 0;
 
   const accuracyColor =
     score.accuracy >= 90
@@ -157,10 +158,7 @@ export function StatisticsPage({
         </div>
 
         <div className="grid grid-cols-3 gap-2.5 mb-6">
-          <ContextCell
-            label={t("stats.mode")}
-            value={t(modeKey(mode))}
-          />
+          <ContextCell label={t("stats.mode")} value={t(modeKey(mode))} />
           <ContextCell
             label={t("stats.speed")}
             value={`${speed.toFixed(2)}x`}
@@ -300,7 +298,9 @@ function ContextCell({
   );
 }
 
-function getRewardTier(accuracy: number):
+function getRewardTier(
+  accuracy: number,
+):
   | "stats.rewardLegend"
   | "stats.rewardGold"
   | "stats.rewardSilver"

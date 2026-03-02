@@ -46,6 +46,7 @@ export function VolumeControl(): React.JSX.Element {
           "color-mix(in srgb, var(--color-surface-alt) 72%, var(--color-surface))",
         border: "1px solid var(--color-border)",
       }}
+      data-testid="volume-control"
     >
       <button
         onClick={handleToggleMute}
@@ -69,10 +70,11 @@ export function VolumeControl(): React.JSX.Element {
         step={1}
         value={displayValue}
         onChange={handleVolumeChange}
-        className="h-1"
+        className="volume-slider-input"
         style={{ accentColor: "var(--color-accent)", width: 84 }}
         aria-label={t("transport.volume")}
         title={`${t("transport.volume")}: ${displayValue}%`}
+        data-testid="volume-slider"
       />
     </div>
   );

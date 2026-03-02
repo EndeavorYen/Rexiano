@@ -27,6 +27,16 @@ export const en: TranslationMap = {
   "library.difficulty.beginner": "Beginner",
   "library.difficulty.intermediate": "Intermediate",
   "library.difficulty.advanced": "Advanced",
+  "library.grade.all": "All Levels",
+  "library.grade.0": "L0 · Pre-Starter",
+  "library.grade.1": "L1 · Starter",
+  "library.grade.2": "L2 · Early Beginner",
+  "library.grade.3": "L3 · Beginner",
+  "library.grade.4": "L4 · Elementary",
+  "library.grade.5": "L5 · Pre-Intermediate",
+  "library.grade.6": "L6 · Intermediate",
+  "library.grade.7": "L7 · Upper-Intermediate",
+  "library.grade.8": "L8 · Advanced",
   "library.greeting.morning": "Good morning! Ready to practice?",
   "library.greeting.afternoon": "Good afternoon! Let's play some music.",
   "library.greeting.evening": "Good evening! Time for some piano practice.",
@@ -237,9 +247,12 @@ export const en: TranslationMap = {
   "stats.modeWatch": "Watch",
   "stats.tipSlowDown": "Drop to 0.75x or 0.5x and lock in clean notes first.",
   "stats.tipUseWaitMode": "Switch to Wait mode to stabilize your accuracy.",
-  "stats.tipTrainStreak": "Your streak is short. Loop one bar with A-B practice.",
-  "stats.tipRaiseSpeed": "Great accuracy. Try increasing speed for the next run.",
-  "stats.tipKeepGoing": "Solid progress. Keep short daily sessions for momentum.",
+  "stats.tipTrainStreak":
+    "Your streak is short. Loop one bar with A-B practice.",
+  "stats.tipRaiseSpeed":
+    "Great accuracy. Try increasing speed for the next run.",
+  "stats.tipKeepGoing":
+    "Solid progress. Keep short daily sessions for momentum.",
   "stats.playAgain": "Play Again",
   "stats.backToLibrary": "Back to Library",
 

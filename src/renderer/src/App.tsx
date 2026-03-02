@@ -1,12 +1,5 @@
 import { useState, useCallback, useRef, useEffect, useMemo } from "react";
-import {
-  ArrowLeft,
-  BarChart3,
-  PanelRightOpen,
-  Pause,
-  Play,
-  X,
-} from "lucide-react";
+import { ArrowLeft, BarChart3, PanelRightOpen, X } from "lucide-react";
 import { parseMidiFile } from "./engines/midi/MidiFileParser";
 import { useSongStore } from "./stores/useSongStore";
 import { usePlaybackStore } from "./stores/usePlaybackStore";
@@ -63,13 +56,6 @@ const MIDI_EXTENSIONS = [".mid", ".midi"];
 const CELEBRATION_DURATION_MS = 2200;
 
 const analyzer = new WeakSpotAnalyzer();
-
-function formatClock(seconds: number): string {
-  if (!Number.isFinite(seconds) || seconds <= 0) return "0:00";
-  const minutes = Math.floor(seconds / 60);
-  const remain = Math.floor(seconds % 60);
-  return `${minutes}:${String(remain).padStart(2, "0")}`;
-}
 
 function App(): React.JSX.Element {
   const { t } = useTranslation();
@@ -749,17 +735,17 @@ function App(): React.JSX.Element {
     applyRoute("menu");
   }, [applyRoute]);
 
-  const progressPercent =
-    song && song.duration > 0
-      ? Math.min(
-          100,
-          Math.max(0, Math.round((currentTime / song.duration) * 100)),
-        )
-      : 0;
   const isSplitMode = displayMode === "split";
-  const splitSheetHeight = isSplitMode ? 168 : undefined;
+  const splitSheetHeight = isSplitMode ? 216 : undefined;
   const fallingCanvasMinHeight = isSplitMode ? 120 : 200;
   const keyboardHeight = isSplitMode ? 84 : 100;
+  const speedPercent = Math.round(speed * 100);
+  const baseBpm =
+    song?.tempos && song.tempos.length > 0
+      ? Math.round(song.tempos[0].bpm)
+      : null;
+  const effectiveBpm =
+    baseBpm !== null ? Math.max(1, Math.round(baseBpm * speed)) : null;
 
   useEffect(() => {
     const token = `${view}:${song?.fileName ?? ""}`;
@@ -866,93 +852,69 @@ function App(): React.JSX.Element {
           className="flex-1 min-h-0 flex flex-col animate-page-enter px-3 pb-3 pt-3"
         >
           <div
-            className={`surface-panel subtle-shadow flex flex-col ${
-              isSplitMode ? "gap-2 px-3 py-2.5 mb-2.5" : "gap-3 px-4 py-3 mb-3"
+            className={`surface-panel subtle-shadow ${
+              isSplitMode ? "px-2.5 py-2 mb-2" : "px-3 py-2.5 mb-2.5"
             }`}
             style={{
               borderRadius: "1.1rem",
             }}
+            data-testid="playback-header-panel"
           >
-            <div className="flex items-start gap-2 justify-between">
-              <div className="min-w-0 flex-1">
-                <span className="kicker-label">{t("app.subtitle")}</span>
+            <div className="flex items-center gap-2 justify-between min-w-0">
+              <div
+                className="min-w-0 flex-1 flex flex-wrap items-center gap-1.25"
+                data-testid="playback-title-meta-row"
+              >
+                <span className="kicker-label shrink-0">
+                  {t("app.subtitle")}
+                </span>
                 <h2
-                  className={`font-semibold font-body truncate ${
-                    isSplitMode ? "text-[0.95rem]" : "text-base"
-                  }`}
+                  className="font-semibold font-body truncate text-[0.98rem] max-w-[34vw]"
+                  data-testid="playback-song-title"
                 >
                   {song.fileName}
                 </h2>
+
+                <div
+                  className="flex flex-wrap items-center gap-1"
+                  data-testid="playback-header-chips"
+                >
+                  <span className="control-chip playback-header-chip">
+                    {song.tracks.length}{" "}
+                    {song.tracks.length > 1
+                      ? t("song.tracks")
+                      : t("song.track")}
+                  </span>
+                  <span className="control-chip playback-header-chip">
+                    {song.noteCount} {t("song.notes")}
+                  </span>
+                  <span className="control-chip playback-header-chip font-mono tabular-nums">
+                    {speedPercent}%
+                  </span>
+                  {effectiveBpm !== null && (
+                    <span className="control-chip playback-header-chip font-mono tabular-nums">
+                      {effectiveBpm} BPM
+                    </span>
+                  )}
+                </div>
               </div>
 
-              <div className="flex items-center gap-2 shrink-0">
+              <div className="flex items-center gap-1.5 shrink-0">
                 <button
                   onClick={() => setShowPlaybackDrawer(true)}
-                  className={`btn-surface-themed flex items-center gap-1.5 rounded-lg font-body cursor-pointer ${
-                    isSplitMode
-                      ? "px-2.5 py-1 text-[11px]"
-                      : "px-3 py-1.5 text-xs"
-                  }`}
+                  className="btn-surface-themed flex items-center gap-1.5 rounded-lg font-body cursor-pointer px-2 py-1 text-[11px]"
                   data-testid="playback-drawer-trigger"
                 >
-                  <PanelRightOpen size={isSplitMode ? 13 : 14} />
+                  <PanelRightOpen size={13} />
                   {t("settings.title")}
                 </button>
                 <button
                   onClick={handleExitPlayback}
-                  className={`btn-surface-themed flex items-center gap-1.5 rounded-lg font-body cursor-pointer ${
-                    isSplitMode
-                      ? "px-2.5 py-1 text-[11px]"
-                      : "px-3 py-1.5 text-xs"
-                  }`}
+                  className="btn-surface-themed flex items-center gap-1.5 rounded-lg font-body cursor-pointer px-2 py-1 text-[11px]"
                 >
-                  <ArrowLeft size={isSplitMode ? 13 : 14} />
+                  <ArrowLeft size={13} />
                   {t("song.backToLibrary")}
                 </button>
-              </div>
-            </div>
-
-            <div
-              className={`flex flex-wrap items-center gap-1.5 ${
-                isSplitMode ? "mt-1" : "mt-1.5"
-              }`}
-            >
-              <span className="control-chip">
-                <span
-                  className={`status-dot ${isPlaying ? "status-dot-live" : "status-dot-idle"}`}
-                />
-                {isPlaying ? <Pause size={11} /> : <Play size={11} />}
-              </span>
-              <span className="control-chip">
-                {song.tracks.length}{" "}
-                {song.tracks.length > 1 ? t("song.tracks") : t("song.track")}
-              </span>
-              <span className="control-chip">
-                {song.noteCount} {t("song.notes")}
-              </span>
-              <span className="control-chip font-mono tabular-nums">
-                {progressPercent}%
-              </span>
-              {song.tempos.length > 0 && (
-                <span className="control-chip font-mono tabular-nums">
-                  {Math.round(song.tempos[0].bpm)} BPM
-                </span>
-              )}
-            </div>
-
-            <div className={isSplitMode ? "mt-1.5" : "mt-2.5"}>
-              <div className="progress-rail">
-                <div
-                  className={`progress-fill ${isPlaying ? "progress-fill-live" : ""}`}
-                  style={{ width: `${progressPercent}%` }}
-                />
-              </div>
-              <div
-                className="mt-1 flex items-center justify-between text-[10px] font-mono tabular-nums"
-                style={{ color: "var(--color-text-muted)" }}
-              >
-                <span>{formatClock(currentTime)}</span>
-                <span>{formatClock(song.duration)}</span>
               </div>
             </div>
           </div>

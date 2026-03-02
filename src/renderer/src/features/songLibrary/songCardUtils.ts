@@ -10,6 +10,43 @@ export const difficultyDescriptions: Record<
   advanced: "Complex rhythms, fast passages, wide range",
 };
 
+/** Short label for each grade level */
+export const gradeLabelShort: Record<number, string> = {
+  0: "L0",
+  1: "L1",
+  2: "L2",
+  3: "L3",
+  4: "L4",
+  5: "L5",
+  6: "L6",
+  7: "L7",
+  8: "L8",
+};
+
+/** Tooltip description for each grade level */
+export const gradeDescriptions: Record<number, string> = {
+  0: "Pre-Starter — 3–5 notes, right hand only (C-E)",
+  1: "Starter — 5-note position, stepwise (C-G)",
+  2: "Early Beginner — full octave, light skips",
+  3: "Beginner — first two-hand, simple bass notes",
+  4: "Elementary — both hands, I-V-I chord bass",
+  5: "Pre-Intermediate — position shifts, light accidentals",
+  6: "Intermediate — arpeggios, Alberti bass, 2 accidentals",
+  7: "Upper-Intermediate — wide range, complex rhythms",
+  8: "Advanced — concert-level technique",
+};
+
+/**
+ * Returns an accent color for the grade badge.
+ * Green family for L0-L2, amber for L3-L4, orange for L5-L6, red for L7-L8.
+ */
+export function getGradeColor(grade: number): string {
+  if (grade <= 2) return "#22c55e"; // green
+  if (grade <= 4) return "#f59e0b"; // amber
+  if (grade <= 6) return "#f97316"; // orange
+  return "#ef4444"; // red
+}
+
 /** Determine the color for a best-score badge based on accuracy */
 export function getBestScoreColor(accuracy: number): string {
   if (accuracy >= 90) return "#22c55e"; // green

@@ -258,11 +258,19 @@
 - [x] 新手引導教學
   - [x] `features/onboarding/OnboardingGuide.tsx` — 4 步驟卡片導覽（開啟歌曲 → 播放 → 練習 → 連接鍵盤）
   - [x] 首次啟動自動顯示（localStorage 記憶），`resetOnboarding()` 可重播
-- [x] 擴充內建曲庫（18 首）
+- [x] 擴充內建曲庫（26 首）
   - [x] Beginner: C Major Scale, Mary Had a Little Lamb, Hot Cross Buns, Twinkle Twinkle, Happy Birthday, London Bridge, Row Row Row Your Boat, Au Clair de la Lune, Chopsticks, Lavender's Blue, Jingle Bells
   - [x] Intermediate: Ode to Joy, Für Elise (simplified), Minuet in G, Prelude in C, Canon in D (simplified)
   - [x] Advanced: Moonlight Sonata (1st mvt), Turkish March
   - [x] SongLibrary 分類顯示（category 欄位 + `groupSongsByCategory()` section headers）
+- [x] L0–L8 分級系統（參考 RCM / ABRSM / Faber 標準）
+  - [x] `docs/midi-level-guide.md` — 完整等級對照指南（L0 啟蒙 ~ L8 高級）
+  - [x] `BuiltinSongMeta.grade` 欄位（可選，0–8 整數）
+  - [x] 新增 8 首兩手練習曲（L3 Frère Jacques / Brahms Lullaby / Yankee Doodle；L4 Amazing Grace / Scarborough Fair / Long Long Ago；L6 Clementi Sonatina / German Dance）
+  - [x] `useSongLibraryStore` — GradeFilter 等級篩選
+  - [x] SongLibraryFilters 等級篩選列（彩色 chip，L0–L8）
+  - [x] SongCard 等級徽章顯示（右下角 L0–L8 色碼標籤）
+  - [x] i18n 等級標籤（en / zh-TW）
 
 ### Sprint 5 — 超越 Synthesia（長期差異化）
 

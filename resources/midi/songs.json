@@ -1,96 +1,14 @@
 [
   {
-    "id": "c-major-scale",
-    "file": "c-major-scale.mid",
-    "title": "C Major Scale",
-    "composer": "Exercise",
-    "difficulty": "beginner",
-    "category": "exercise",
-    "durationSeconds": 8,
-    "tags": [
-      "exercise",
-      "scale"
-    ]
-  },
-  {
-    "id": "mary-had-a-little-lamb",
-    "file": "mary-had-a-little-lamb.mid",
-    "title": "Mary Had a Little Lamb",
-    "composer": "Traditional",
-    "difficulty": "beginner",
-    "category": "popular",
-    "durationSeconds": 18,
-    "tags": [
-      "traditional",
-      "melody",
-      "beginner"
-    ]
-  },
-  {
     "id": "hot-cross-buns",
     "file": "hot-cross-buns.mid",
     "title": "Hot Cross Buns",
     "composer": "Traditional",
     "difficulty": "beginner",
     "category": "popular",
+    "grade": 0,
     "durationSeconds": 14,
-    "tags": [
-      "traditional",
-      "melody",
-      "beginner"
-    ]
-  },
-  {
-    "id": "twinkle-twinkle",
-    "file": "twinkle-twinkle.mid",
-    "title": "Twinkle Twinkle Little Star",
-    "composer": "Traditional",
-    "difficulty": "beginner",
-    "category": "popular",
-    "durationSeconds": 29,
-    "tags": [
-      "traditional",
-      "melody"
-    ]
-  },
-  {
-    "id": "happy-birthday",
-    "file": "happy-birthday.mid",
-    "title": "Happy Birthday",
-    "composer": "Traditional",
-    "difficulty": "beginner",
-    "category": "popular",
-    "durationSeconds": 15,
-    "tags": [
-      "popular",
-      "melody"
-    ]
-  },
-  {
-    "id": "london-bridge",
-    "file": "london-bridge.mid",
-    "title": "London Bridge",
-    "composer": "Traditional",
-    "difficulty": "beginner",
-    "category": "popular",
-    "durationSeconds": 16,
-    "tags": [
-      "traditional",
-      "melody"
-    ]
-  },
-  {
-    "id": "row-row-row",
-    "file": "row-row-row.mid",
-    "title": "Row Row Row Your Boat",
-    "composer": "Traditional",
-    "difficulty": "beginner",
-    "category": "popular",
-    "durationSeconds": 15,
-    "tags": [
-      "traditional",
-      "melody"
-    ]
+    "tags": ["traditional", "melody", "beginner", "level-0"]
   },
   {
     "id": "au-clair-de-la-lune",
@@ -99,40 +17,42 @@
     "composer": "Traditional (French)",
     "difficulty": "beginner",
     "category": "popular",
+    "grade": 0,
     "durationSeconds": 20,
-    "tags": [
-      "traditional",
-      "melody",
-      "french"
-    ]
+    "tags": ["traditional", "melody", "french", "level-0"]
   },
   {
-    "id": "chopsticks",
-    "file": "chopsticks.mid",
-    "title": "Chopsticks",
-    "composer": "Euphemia Allen",
+    "id": "c-major-scale",
+    "file": "c-major-scale.mid",
+    "title": "C Major Scale",
+    "composer": "Exercise",
     "difficulty": "beginner",
-    "category": "popular",
-    "durationSeconds": 12,
-    "tags": [
-      "popular",
-      "duet",
-      "classic"
-    ]
+    "category": "exercise",
+    "grade": 1,
+    "durationSeconds": 8,
+    "tags": ["exercise", "scale", "level-1"]
   },
   {
-    "id": "lavender-blue",
-    "file": "lavender-blue.mid",
-    "title": "Lavender's Blue",
-    "composer": "Traditional (English)",
+    "id": "mary-had-a-little-lamb",
+    "file": "mary-had-a-little-lamb.mid",
+    "title": "Mary Had a Little Lamb",
+    "composer": "Traditional",
     "difficulty": "beginner",
     "category": "popular",
-    "durationSeconds": 22,
-    "tags": [
-      "traditional",
-      "melody",
-      "folk"
-    ]
+    "grade": 1,
+    "durationSeconds": 18,
+    "tags": ["traditional", "melody", "beginner", "level-1"]
+  },
+  {
+    "id": "london-bridge",
+    "file": "london-bridge.mid",
+    "title": "London Bridge",
+    "composer": "Traditional",
+    "difficulty": "beginner",
+    "category": "popular",
+    "grade": 2,
+    "durationSeconds": 16,
+    "tags": ["traditional", "melody", "level-2"]
   },
   {
     "id": "jingle-bells",
@@ -141,12 +61,9 @@
     "composer": "James Lord Pierpont",
     "difficulty": "beginner",
     "category": "holiday",
+    "grade": 2,
     "durationSeconds": 16,
-    "tags": [
-      "holiday",
-      "christmas",
-      "melody"
-    ]
+    "tags": ["holiday", "christmas", "melody", "level-2"]
   },
   {
     "id": "ode-to-joy",
@@ -155,24 +72,141 @@
     "composer": "Ludwig van Beethoven",
     "difficulty": "beginner",
     "category": "classical",
+    "grade": 2,
     "durationSeconds": 16,
-    "tags": [
-      "classical",
-      "melody"
-    ]
+    "tags": ["classical", "melody", "level-2"]
+  },
+  {
+    "id": "happy-birthday",
+    "file": "happy-birthday.mid",
+    "title": "Happy Birthday",
+    "composer": "Traditional",
+    "difficulty": "beginner",
+    "category": "popular",
+    "grade": 2,
+    "durationSeconds": 15,
+    "tags": ["popular", "melody", "level-2"]
+  },
+  {
+    "id": "row-row-row",
+    "file": "row-row-row.mid",
+    "title": "Row Row Row Your Boat",
+    "composer": "Traditional",
+    "difficulty": "beginner",
+    "category": "popular",
+    "grade": 2,
+    "durationSeconds": 15,
+    "tags": ["traditional", "melody", "level-2"]
+  },
+  {
+    "id": "lavender-blue",
+    "file": "lavender-blue.mid",
+    "title": "Lavender's Blue",
+    "composer": "Traditional (English)",
+    "difficulty": "beginner",
+    "category": "popular",
+    "grade": 2,
+    "durationSeconds": 22,
+    "tags": ["traditional", "melody", "folk", "level-2"]
+  },
+  {
+    "id": "twinkle-twinkle",
+    "file": "twinkle-twinkle.mid",
+    "title": "Twinkle Twinkle Little Star",
+    "composer": "Traditional",
+    "difficulty": "beginner",
+    "category": "popular",
+    "grade": 2,
+    "durationSeconds": 29,
+    "tags": ["traditional", "melody", "level-2"]
+  },
+  {
+    "id": "chopsticks",
+    "file": "chopsticks.mid",
+    "title": "Chopsticks",
+    "composer": "Euphemia Allen",
+    "difficulty": "beginner",
+    "category": "popular",
+    "grade": 3,
+    "durationSeconds": 12,
+    "tags": ["popular", "duet", "classic", "two-hands", "level-3"]
+  },
+  {
+    "id": "frere-jacques",
+    "file": "frere-jacques.mid",
+    "title": "Frère Jacques",
+    "composer": "Traditional (French)",
+    "difficulty": "beginner",
+    "category": "popular",
+    "grade": 3,
+    "durationSeconds": 28,
+    "tags": ["traditional", "french", "two-hands", "level-3"]
+  },
+  {
+    "id": "brahms-lullaby",
+    "file": "brahms-lullaby.mid",
+    "title": "Brahms Lullaby",
+    "composer": "Johannes Brahms",
+    "difficulty": "beginner",
+    "category": "classical",
+    "grade": 3,
+    "durationSeconds": 46,
+    "tags": ["classical", "lullaby", "3-4", "two-hands", "level-3"]
+  },
+  {
+    "id": "yankee-doodle",
+    "file": "yankee-doodle.mid",
+    "title": "Yankee Doodle",
+    "composer": "Traditional",
+    "difficulty": "beginner",
+    "category": "popular",
+    "grade": 3,
+    "durationSeconds": 30,
+    "tags": ["traditional", "american", "two-hands", "level-3"]
+  },
+  {
+    "id": "amazing-grace",
+    "file": "amazing-grace.mid",
+    "title": "Amazing Grace",
+    "composer": "Traditional",
+    "difficulty": "intermediate",
+    "category": "popular",
+    "grade": 4,
+    "durationSeconds": 64,
+    "tags": ["traditional", "3-4", "g-major", "two-hands", "level-4"]
+  },
+  {
+    "id": "scarborough-fair",
+    "file": "scarborough-fair.mid",
+    "title": "Scarborough Fair",
+    "composer": "Traditional (English)",
+    "difficulty": "intermediate",
+    "category": "popular",
+    "grade": 4,
+    "durationSeconds": 51,
+    "tags": ["traditional", "english", "a-minor", "3-4", "two-hands", "level-4"]
+  },
+  {
+    "id": "long-long-ago",
+    "file": "long-long-ago.mid",
+    "title": "Long Long Ago",
+    "composer": "Thomas Haynes Bayly",
+    "difficulty": "intermediate",
+    "category": "classical",
+    "grade": 4,
+    "durationSeconds": 45,
+    "tags": ["classical", "lyrical", "two-hands", "level-4"]
   },
   {
     "id": "fur-elise",
     "file": "fur-elise.mid",
-    "title": "Fur Elise",
+    "title": "Für Elise",
     "composer": "Ludwig van Beethoven",
     "difficulty": "intermediate",
     "category": "classical",
+    "grade": 5,
     "durationSeconds": 35,
-    "tags": [
-      "classical",
-      "romantic"
-    ]
+    "tags": ["classical", "romantic", "level-5"]
   },
   {
     "id": "minuet-in-g",
@@ -181,27 +215,9 @@
     "composer": "J.S. Bach",
     "difficulty": "intermediate",
     "category": "classical",
+    "grade": 5,
     "durationSeconds": 15,
-    "tags": [
-      "classical",
-      "baroque",
-      "two-hands"
-    ]
-  },
-  {
-    "id": "prelude-in-c",
-    "file": "prelude-in-c.mid",
-    "title": "Prelude in C Major (BWV 846)",
-    "composer": "J.S. Bach",
-    "difficulty": "intermediate",
-    "category": "classical",
-    "durationSeconds": 14,
-    "tags": [
-      "classical",
-      "baroque",
-      "arpeggiated",
-      "two-hands"
-    ]
+    "tags": ["classical", "baroque", "two-hands", "level-5"]
   },
   {
     "id": "canon-in-d",
@@ -210,12 +226,42 @@
     "composer": "Johann Pachelbel",
     "difficulty": "intermediate",
     "category": "classical",
+    "grade": 5,
     "durationSeconds": 12,
-    "tags": [
-      "classical",
-      "baroque",
-      "two-hands"
-    ]
+    "tags": ["classical", "baroque", "two-hands", "level-5"]
+  },
+  {
+    "id": "prelude-in-c",
+    "file": "prelude-in-c.mid",
+    "title": "Prelude in C Major (BWV 846)",
+    "composer": "J.S. Bach",
+    "difficulty": "intermediate",
+    "category": "classical",
+    "grade": 6,
+    "durationSeconds": 14,
+    "tags": ["classical", "baroque", "arpeggiated", "two-hands", "level-6"]
+  },
+  {
+    "id": "clementi-sonatina",
+    "file": "clementi-sonatina.mid",
+    "title": "Sonatina in C Major (Op. 36 No. 1)",
+    "composer": "Muzio Clementi",
+    "difficulty": "intermediate",
+    "category": "classical",
+    "grade": 6,
+    "durationSeconds": 30,
+    "tags": ["classical", "sonatina", "alberti-bass", "two-hands", "level-6"]
+  },
+  {
+    "id": "german-dance",
+    "file": "german-dance.mid",
+    "title": "German Dance (WoO 8 No. 1)",
+    "composer": "Ludwig van Beethoven",
+    "difficulty": "intermediate",
+    "category": "classical",
+    "grade": 6,
+    "durationSeconds": 35,
+    "tags": ["classical", "dance", "d-major", "3-4", "two-hands", "level-6"]
   },
   {
     "id": "moonlight-sonata",
@@ -224,12 +270,9 @@
     "composer": "Ludwig van Beethoven",
     "difficulty": "advanced",
     "category": "classical",
+    "grade": 7,
     "durationSeconds": 35,
-    "tags": [
-      "classical",
-      "romantic",
-      "two-hands"
-    ]
+    "tags": ["classical", "romantic", "two-hands", "level-7"]
   },
   {
     "id": "turkish-march",
@@ -238,10 +281,8 @@
     "composer": "W.A. Mozart",
     "difficulty": "advanced",
     "category": "classical",
+    "grade": 7,
     "durationSeconds": 7,
-    "tags": [
-      "classical",
-      "fast"
-    ]
+    "tags": ["classical", "fast", "level-7"]
   }
 ]

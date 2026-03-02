@@ -6,8 +6,11 @@
 /* ── Tailwind v4 theme extension ── */
 @theme {
   --font-display:
-    "Nunito Variable", "Nunito", "Avenir Next", "Segoe UI", sans-serif;
-  --font-body: "DM Sans Variable", "DM Sans", "Segoe UI", sans-serif;
+    "Nunito Variable", "Nunito", "Noto Sans TC", "PingFang TC",
+    "Microsoft JhengHei", "Avenir Next", "Segoe UI", sans-serif;
+  --font-body:
+    "DM Sans Variable", "DM Sans", "Noto Sans TC", "PingFang TC",
+    "Microsoft JhengHei", "Segoe UI", sans-serif;
   --font-mono:
     "JetBrains Mono Variable", "JetBrains Mono", ui-monospace, monospace;
 }
@@ -25,7 +28,7 @@
   --color-accent: #1e6e72;
   --color-accent-hover: #165a5d;
   --color-text: #132425;
-  --color-text-muted: #4f686a;
+  --color-text-muted: #435a5d;
   --color-border: #bfd1cf;
   --color-note3: #3d74a6;
   --color-hit-glow: #66c7cb;
@@ -165,10 +168,11 @@ textarea:focus-visible {
   display: inline-flex;
   align-items: center;
   gap: 0.35rem;
-  font-family: var(--font-mono);
-  font-size: 0.65rem;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
+  font-family: var(--font-body);
+  font-size: 0.75rem;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  text-transform: none;
   color: var(--color-text-muted);
 }
 
@@ -196,6 +200,11 @@ textarea:focus-visible {
   );
   background: color-mix(in srgb, var(--color-accent) 10%, var(--color-surface));
   transform: translateY(-1px);
+}
+
+.playback-header-chip {
+  padding: 0.26rem 0.58rem;
+  font-size: 0.68rem;
 }
 
 .status-dot {
@@ -393,7 +402,8 @@ textarea:focus-visible {
 .app-side-drawer {
   width: min(360px, 92vw);
   height: 100%;
-  border-left: 1px solid color-mix(in srgb, var(--color-border) 88%, transparent);
+  border-left: 1px solid
+    color-mix(in srgb, var(--color-border) 88%, transparent);
   background: color-mix(in srgb, var(--color-surface) 92%, transparent);
   box-shadow: -18px 0 46px color-mix(in srgb, #0d1719 20%, transparent);
   display: flex;
@@ -406,7 +416,8 @@ textarea:focus-visible {
   align-items: center;
   justify-content: space-between;
   padding: 0.85rem 0.9rem;
-  border-bottom: 1px solid color-mix(in srgb, var(--color-border) 88%, transparent);
+  border-bottom: 1px solid
+    color-mix(in srgb, var(--color-border) 88%, transparent);
 }
 
 .app-side-drawer-body {
@@ -421,7 +432,11 @@ textarea:focus-visible {
 .app-side-section {
   border-radius: 0.85rem;
   border: 1px solid color-mix(in srgb, var(--color-border) 86%, transparent);
-  background: color-mix(in srgb, var(--color-surface-alt) 42%, var(--color-surface));
+  background: color-mix(
+    in srgb,
+    var(--color-surface-alt) 42%,
+    var(--color-surface)
+  );
   padding: 0.5rem;
 }
 
@@ -558,6 +573,14 @@ input[type="range"]::-moz-range-thumb {
 
 input[type="range"]:disabled::-moz-range-thumb {
   opacity: 0.42;
+}
+
+.speed-slider-input {
+  height: 20px;
+}
+
+.volume-slider-input {
+  height: 20px;
 }
 
 /* ── Skeleton shimmer animation ── */
@@ -1096,6 +1119,10 @@ input[type="range"]:disabled::-moz-range-thumb {
 
 * {
   scrollbar-width: thin;
-  scrollbar-color: color-mix(in srgb, var(--color-accent) 24%, var(--color-border))
+  scrollbar-color: color-mix(
+      in srgb,
+      var(--color-accent) 24%,
+      var(--color-border)
+    )
     color-mix(in srgb, var(--color-surface-alt) 94%, var(--color-bg));
 }

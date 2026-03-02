@@ -24,8 +24,8 @@ import { getMeasureWindow } from "./CursorSync";
 const STAVE_HEIGHT = 80;
 const SYSTEM_GAP = 20;
 const SYSTEM_HEIGHT = STAVE_HEIGHT * 2 + SYSTEM_GAP;
-const LEFT_MARGIN = 10;
-const TOP_MARGIN = 10;
+const LEFT_MARGIN = 18;
+const TOP_MARGIN = 12;
 const DISPLAY_MEASURE_COUNT = 4;
 
 interface SheetMusicPanelProps {
