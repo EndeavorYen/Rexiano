@@ -90,8 +90,6 @@ linux:
   mimeTypes:
     - audio/midi
     - audio/x-midi
-  desktop:
-    MimeType: audio/midi;audio/x-midi;
 appImage:
   artifactName: ${name}-${version}-${arch}.${ext}
 deb:

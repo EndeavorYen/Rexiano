@@ -1,6 +1,6 @@
 # Rexiano — 開發路線圖與追蹤清單
 
-> **最後更新**: 2026-03-01
+> **最後更新**: 2026-03-03
 >
 > 詳細設計請參考 [DESIGN.md](./DESIGN.md)
 
@@ -394,6 +394,8 @@
   - [x] macOS: .dmg
   - [x] Linux: .AppImage / .deb / .snap
   - [x] 自動建立 GitHub Release + 上傳 artifacts
+  - [x] Release Please 自動化版本管理與 CHANGELOG（release-please.yml）
+  - [x] CHANGELOG.md 打包進發佈包（electron-builder.yml extraResources）
 - [ ] 自動更新
   - [ ] 整合 electron-updater
   - [ ] 應用內更新提示
@@ -401,13 +403,13 @@
 - [ ] 程式碼簽章（可延後）
   - [ ] Windows: EV Code Signing Certificate
   - [ ] macOS: Apple Developer + notarization
-- [ ] 檔案關聯
-  - [ ] `.mid` 檔案雙擊以 Rexiano 開啟
-  - [ ] 各平台的 MIME type 註冊
-- [ ] 安裝體驗優化
-  - [ ] Windows: 桌面捷徑、開始選單
+- [x] 檔案關聯
+  - [x] `.mid` 檔案雙擊以 Rexiano 開啟（electron-builder.yml fileAssociations）
+  - [x] 各平台的 MIME type 註冊（Linux mimeTypes: audio/midi, audio/x-midi）
+- [x] 安裝體驗優化
+  - [x] Windows: 桌面捷徑、開始選單（nsis createDesktopShortcut + createStartMenuShortcut）
   - [ ] macOS: DMG 背景圖 + 拖放指示
-  - [ ] Linux: desktop entry
+  - [x] Linux: desktop entry（自動從 mimeTypes + category 產生）
 - [ ] README / 文件完善
   - [ ] 安裝指南（各平台）
   - [ ] Windows BLE MIDI 橋接教學
