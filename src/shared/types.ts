@@ -131,3 +131,9 @@ export interface SessionRecord {
   /** Track indices that were practiced */
   tracksPlayed: number[];
 }
+
+/** App version and changelog, exposed to renderer via IPC. */
+export interface AppInfo {
+  version: string
+  changelog: string
+}
