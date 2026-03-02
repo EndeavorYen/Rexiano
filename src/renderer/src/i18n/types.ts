@@ -208,6 +208,7 @@ export interface TranslationMap {
   "modeSelect.waitDesc": string;
   "modeSelect.freeDesc": string;
   "modeSelect.escToSkip": string;
+  "modeSelect.mustChoose": string;
 
   // ── Statistics ─────────────────────────────────────────────────
   "stats.title": string;
@@ -215,6 +216,27 @@ export interface TranslationMap {
   "stats.notesHit": string;
   "stats.notesMissed": string;
   "stats.streak": string;
+  "stats.totalNotes": string;
+  "stats.hitRate": string;
+  "stats.consistency": string;
+  "stats.mode": string;
+  "stats.speed": string;
+  "stats.duration": string;
+  "stats.nextFocus": string;
+  "stats.missRateSummary": string;
+  "stats.reward": string;
+  "stats.rewardLegend": string;
+  "stats.rewardGold": string;
+  "stats.rewardSilver": string;
+  "stats.rewardBronze": string;
+  "stats.modeWait": string;
+  "stats.modeFree": string;
+  "stats.modeWatch": string;
+  "stats.tipSlowDown": string;
+  "stats.tipUseWaitMode": string;
+  "stats.tipTrainStreak": string;
+  "stats.tipRaiseSpeed": string;
+  "stats.tipKeepGoing": string;
   "stats.playAgain": string;
   "stats.backToLibrary": string;
 

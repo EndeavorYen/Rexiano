@@ -1,6 +1,6 @@
 import { app, shell, BrowserWindow } from "electron";
 import { join } from "path";
-import icon from "../../resources/icon.png?asset";
+import icon from "../../docs/figure/Rexiano_icon.png?asset";
 import { registerFileHandlers } from "./ipc/fileHandlers";
 import { registerMidiDeviceHandlers } from "./ipc/midiDeviceHandlers";
 import { registerProgressHandlers } from "./ipc/progressHandlers";

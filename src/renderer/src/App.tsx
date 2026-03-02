@@ -60,6 +60,7 @@ import {
 
 /** Accepted file extensions for drag-and-drop MIDI import */
 const MIDI_EXTENSIONS = [".mid", ".midi"];
+const CELEBRATION_DURATION_MS = 2200;
 
 const analyzer = new WeakSpotAnalyzer();
 
@@ -123,6 +124,8 @@ function App(): React.JSX.Element {
   const [showModeModal, setShowModeModal] = useState(false);
   const [showCelebration, setShowCelebration] = useState(false);
   const [showStats, setShowStats] = useState(false);
+  const mode = usePracticeStore((s) => s.mode);
+  const speed = usePracticeStore((s) => s.speed);
   const score = usePracticeStore((s) => s.score);
 
   // Show mode selection when a new song loads (subscribe pattern avoids
@@ -142,12 +145,28 @@ function App(): React.JSX.Element {
     return usePlaybackStore.subscribe((state, prev) => {
       if (prev.isPlaying && !state.isPlaying) {
         const currentSong = useSongStore.getState().song;
-        if (currentSong && state.currentTime >= currentSong.duration - 1) {
+        const currentScore = usePracticeStore.getState().score;
+        if (
+          currentSong &&
+          currentScore.totalNotes > 0 &&
+          state.currentTime >= currentSong.duration - 1
+        ) {
           setShowCelebration(true);
+          setShowStats(false);
         }
       }
     });
   }, []);
+
+  // End flow: celebration is shown first, then automatically transition to stats.
+  useEffect(() => {
+    if (!showCelebration) return;
+    const timer = setTimeout(() => {
+      setShowCelebration(false);
+      setShowStats(true);
+    }, CELEBRATION_DURATION_MS);
+    return () => clearTimeout(timer);
+  }, [showCelebration]);
 
   const handleModeSelect = useCallback((mode: PracticeMode) => {
     usePracticeStore.getState().setMode(mode);
@@ -1026,7 +1045,6 @@ function App(): React.JSX.Element {
           {showModeModal && (
             <ModeSelectionModal
               onSelect={handleModeSelect}
-              onClose={() => setShowModeModal(false)}
             />
           )}
 
@@ -1050,6 +1068,9 @@ function App(): React.JSX.Element {
             <StatisticsPage
               score={score}
               songName={song?.fileName ?? ""}
+              mode={mode}
+              speed={speed}
+              durationSeconds={Math.round(currentTime)}
               onPlayAgain={handlePracticeAgain}
               onChooseSong={handleChooseSong}
             />

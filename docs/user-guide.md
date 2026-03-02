@@ -302,16 +302,12 @@ macOS 原生支援藍牙 MIDI，設定最簡單：
 
 #### Windows
 
-Windows 對藍牙 MIDI 的原生支援較弱，需要額外安裝一個免費橋接軟體：
+Rexiano 在 Windows 上可以直接連接藍牙 MIDI 鍵盤，無需安裝任何橋接軟體：
 
-1. 在 Microsoft Store 中搜尋並安裝 [**MIDIberry**](https://www.microsoft.com/store/apps/9n39720h2m05)（免費）
-2. 開啟鍵盤的藍牙功能
-3. 在 Windows 設定中配對你的藍牙鍵盤
-4. 開啟 MIDIberry，它會自動偵測到你的藍牙 MIDI 裝置並建立虛擬 MIDI Port
-5. 回到 Rexiano，在裝置列表中選擇 MIDIberry 創建的虛擬端口
-6. 完成！
-
-> **為什麼需要 MIDIberry？** Windows 傳統的 MIDI API 不原生支援藍牙 MIDI 裝置，MIDIberry 作為橋接軟體，將藍牙 MIDI 訊號轉換為標準 MIDI 端口，讓 Rexiano 可以正常讀取。
+1. 開啟鍵盤的藍牙功能
+2. 在 Windows 設定 > 藍牙與裝置 中配對你的鍵盤
+3. 回到 Rexiano，點選裝置選擇器中的「Bluetooth」掃描按鈕
+4. 從列表中選擇你的鍵盤即可
 
 #### Linux
 
@@ -466,7 +462,7 @@ Rexiano 提供四套精心設計的視覺主題：
 2. **藍牙鍵盤**：
    - 確認鍵盤的藍牙功能已開啟
    - 確認已在作業系統中完成藍牙配對
-   - Windows 使用者：確認 MIDIberry 正在運行
+   - Windows 使用者：確認已在系統藍牙設定中完成配對
    - 嘗試取消配對後重新配對
 
 3. **通用排查**：

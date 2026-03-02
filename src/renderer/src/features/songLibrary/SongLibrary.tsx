@@ -23,7 +23,7 @@ import { ThemePicker } from "../settings/ThemePicker";
 import { groupSongsByCategory } from "./songCardUtils";
 import { DeviceSelector } from "../midiDevice/DeviceSelector";
 import { useTranslation } from "../../i18n/useTranslation";
-import appIcon from "../../assets/icon.png";
+import appIcon from "../../../../../docs/figure/Rexiano_icon.png";
 import type { RecentFile } from "../../../../shared/types";
 
 interface SongLibraryProps {

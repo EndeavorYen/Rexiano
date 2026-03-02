@@ -1,32 +1,20 @@
-import { useEffect } from "react";
-import { Eye, Hand, Music } from "lucide-react";
+import { Hand, Music } from "lucide-react";
 import type { PracticeMode } from "@shared/types";
 import { useTranslation } from "@renderer/i18n/useTranslation";
 
 interface ModeSelectionModalProps {
   onSelect: (mode: PracticeMode) => void;
-  onClose: () => void;
 }
 
 interface ModeOption {
   mode: PracticeMode;
   icon: React.ReactNode;
-  titleKey: "practice.watch" | "practice.wait" | "practice.free";
-  descKey:
-    | "modeSelect.watchDesc"
-    | "modeSelect.waitDesc"
-    | "modeSelect.freeDesc";
+  titleKey: "practice.wait" | "practice.free";
+  descKey: "modeSelect.waitDesc" | "modeSelect.freeDesc";
   accentStyle: React.CSSProperties;
 }
 
 const MODE_OPTIONS: ModeOption[] = [
-  {
-    mode: "watch",
-    icon: <Eye size={28} />,
-    titleKey: "practice.watch",
-    descKey: "modeSelect.watchDesc",
-    accentStyle: { color: "var(--color-accent)" },
-  },
   {
     mode: "wait",
     icon: <Hand size={28} />,
@@ -45,28 +33,15 @@ const MODE_OPTIONS: ModeOption[] = [
 
 /**
  * Synthesia-style mode selection modal shown before playback begins.
- * User picks Watch / Wait / Free to configure how the session will run.
+ * User picks Wait / Free to configure how the session will run.
  */
 export function ModeSelectionModal({
   onSelect,
-  onClose,
 }: ModeSelectionModalProps): React.JSX.Element {
   const { t } = useTranslation();
 
-  // Close on Escape
-  useEffect(() => {
-    const handler = (e: KeyboardEvent): void => {
-      if (e.key === "Escape") onClose();
-    };
-    document.addEventListener("keydown", handler);
-    return () => document.removeEventListener("keydown", handler);
-  }, [onClose]);
-
   return (
-    <div
-      className="fixed inset-0 z-[200] flex items-center justify-center modal-backdrop-cinematic"
-      onClick={onClose}
-    >
+    <div className="fixed inset-0 z-[200] flex items-center justify-center modal-backdrop-cinematic">
       <div
         className="w-[92vw] max-w-[560px] rounded-2xl shadow-2xl modal-card-cinematic p-5 sm:p-6"
         style={{
@@ -74,7 +49,6 @@ export function ModeSelectionModal({
             "color-mix(in srgb, var(--color-surface) 90%, transparent)",
           border: "1px solid var(--color-border)",
         }}
-        onClick={(e) => e.stopPropagation()}
       >
         {/* Title */}
         <div className="flex justify-center mb-1">
@@ -94,7 +68,7 @@ export function ModeSelectionModal({
         </p>
 
         {/* Mode cards */}
-        <div className="grid gap-3 sm:grid-cols-3">
+        <div className="grid gap-3 sm:grid-cols-2">
           {MODE_OPTIONS.map((opt, idx) => (
             <button
               key={opt.mode}
@@ -136,12 +110,11 @@ export function ModeSelectionModal({
           ))}
         </div>
 
-        {/* Skip hint */}
         <p
           className="text-[11px] font-body text-center mt-4"
           style={{ color: "var(--color-text-muted)" }}
         >
-          {t("modeSelect.escToSkip")}
+          {t("modeSelect.mustChoose")}
         </p>
       </div>
     </div>

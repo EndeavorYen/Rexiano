@@ -1,6 +1,10 @@
+<img src="docs/figure/Rexiano_icon.png" alt="Rexiano icon" width="120" align="right">
+
 # Rexiano
 
 A free, open-source piano practice app with falling notes, MIDI keyboard support, and practice tools -- built by a dad for his son, shared with everyone.
+
+[繁體中文](README-zh.md) | **English**
 
 <!-- TODO: Add screenshot or GIF of the app in action -->
 <!-- ![Rexiano Screenshot](docs/screenshot.png) -->
@@ -78,25 +82,15 @@ Download the latest release for your platform from the [Releases](https://github
 
 ---
 
-## Windows Bluetooth MIDI Setup
+## Bluetooth MIDI Setup
 
-Windows does not natively expose Bluetooth MIDI devices to applications through the Web MIDI API. To use a Bluetooth MIDI keyboard (such as a Roland piano) on Windows, you need a BLE-MIDI bridge application that creates a virtual MIDI port.
+Rexiano supports Bluetooth MIDI keyboards directly on Windows, macOS, and Linux — no bridge software required:
 
-### Option A: MIDIberry (free, recommended)
+1. Enable Bluetooth on your keyboard
+2. Pair your keyboard in your OS Bluetooth settings
+3. Open Rexiano and select your keyboard in the device selector
 
-1. Download [MIDIberry](https://apps.microsoft.com/detail/9n39720h2m05) from the Microsoft Store
-2. Pair your Bluetooth MIDI keyboard in Windows Bluetooth settings
-3. Open MIDIberry -- it will detect your BLE MIDI device and create a virtual MIDI port
-4. Open Rexiano -- the virtual MIDI port will appear in the device selector
-
-### Option B: KORG BLE-MIDI Driver
-
-1. Download the [KORG BLE-MIDI Driver](https://www.korg.com/us/support/download/software/0/552/3571/) from KORG's website
-2. Install and run the driver
-3. Connect your Bluetooth MIDI device through the KORG utility
-4. The device will appear as a standard MIDI port in Rexiano
-
-> **Note**: On macOS and Linux, Bluetooth MIDI devices are supported natively through the operating system. No additional software is needed.
+For detailed instructions, see the **[Installation Guide — Bluetooth MIDI](docs/installation-en.md)**.
 
 ---
 
@@ -183,6 +177,19 @@ build/                   # Electron-builder resources (icons, entitlements)
 
 ---
 
+## Documentation
+
+| Document | English | 繁體中文 |
+|----------|---------|---------|
+| **README** | You are here | [README-zh.md](README-zh.md) |
+| **User Guide** | [docs/user-guide-en.md](docs/user-guide-en.md) | [docs/user-guide.md](docs/user-guide.md) |
+| **Installation Guide** | [docs/installation-en.md](docs/installation-en.md) | [docs/installation.md](docs/installation.md) |
+| **Architecture** | [docs/architecture.md](docs/architecture.md) | [docs/architecture-zh.md](docs/architecture-zh.md) |
+| **System Design** | [docs/DESIGN-en.md](docs/DESIGN-en.md) | [docs/DESIGN.md](docs/DESIGN.md) |
+| **Roadmap** | [docs/ROADMAP.md](docs/ROADMAP.md) | [docs/ROADMAP.md](docs/ROADMAP.md) |
+
+---
+
 ## License
 
 Rexiano is licensed under the [GNU General Public License v3.0](LICENSE).
@@ -193,9 +200,11 @@ You are free to use, modify, and distribute this software under the terms of the
 
 ## Contributing
 
-Contributions are welcome! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
+Contributions are welcome! Please read the [Architecture doc](docs/architecture.md) and [System Design doc](docs/DESIGN-en.md) before writing code, and follow the three-layer architecture (engines → stores → features).
 
-Whether you want to fix a bug, add a feature, improve documentation, or translate the UI -- we appreciate your help.
+```bash
+pnpm lint && pnpm typecheck && pnpm test
+```
 
 ---
 

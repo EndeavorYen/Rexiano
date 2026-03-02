@@ -273,7 +273,7 @@ parser.onNoteOn((midi, velocity) => store.recordNoteOn(midi, velocity));
 parser.onNoteOff((midi) => store.recordNoteOff(midi));
 ```
 
-**Bluetooth MIDI**: Web Bluetooth API integration via `BleMidiManager`. On Windows, BLE MIDI requires the MIDIberry bridge app (free from Microsoft Store) because the Windows MIDI API doesn't natively expose BLE MIDI devices.
+**Bluetooth MIDI**: Web Bluetooth API integration via `BleMidiManager`. Rexiano connects directly to BLE MIDI keyboards on Windows, macOS, and Linux — no bridge software required. The OS Bluetooth pairing step is still needed before Rexiano can see the device.
 
 **MIDI Permissions**: Main process auto-grants `midi` permission via `session.setPermissionRequestHandler` so users are never interrupted by browser permission dialogs.
 

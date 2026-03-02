@@ -7,7 +7,7 @@ import {
   SlidersHorizontal,
   ArrowUpRight,
 } from "lucide-react";
-import appIcon from "@renderer/assets/icon.png";
+import appIcon from "../../../../../docs/figure/Rexiano_icon.png";
 import { useTranslation } from "@renderer/i18n/useTranslation";
 import { useProgressStore } from "@renderer/stores/useProgressStore";
 import { useRecentFiles } from "@renderer/hooks/useRecentFiles";
