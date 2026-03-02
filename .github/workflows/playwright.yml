@@ -1,10 +1,7 @@
 name: Playwright E2E
 
 on:
-  push:
-    branches: [main, dev]
-  pull_request:
-    branches: [main, dev]
+  workflow_dispatch:
 
 concurrency:
   group: playwright-${{ github.ref }}
