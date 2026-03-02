@@ -10,6 +10,7 @@ import {
 import appIcon from "../../../../../docs/figure/Rexiano_icon.png";
 import { useTranslation } from "@renderer/i18n/useTranslation";
 import { useProgressStore } from "@renderer/stores/useProgressStore";
+import { useSettingsStore } from "@renderer/stores/useSettingsStore";
 import { useRecentFiles } from "@renderer/hooks/useRecentFiles";
 import { formatRelativeTime } from "@renderer/utils/relativeTime";
 import type { RecentFile } from "@shared/types";
@@ -27,8 +28,15 @@ export function MainMenu({
 }: MainMenuProps): React.JSX.Element {
   const { t } = useTranslation();
   const sessions = useProgressStore((s) => s.sessions);
+  const defaultMode = useSettingsStore((s) => s.defaultMode);
+  const defaultSpeed = useSettingsStore((s) => s.defaultSpeed);
   const { recentFiles: allRecents } = useRecentFiles();
   const recentFiles = allRecents.slice(0, 5);
+  const defaultModeLabel = useMemo(() => {
+    if (defaultMode === "wait") return t("practice.wait");
+    if (defaultMode === "free") return t("practice.free");
+    return t("practice.watch");
+  }, [defaultMode, t]);
 
   const greeting = useMemo(() => {
     const hour = new Date().getHours();
@@ -110,6 +118,25 @@ export function MainMenu({
                   <SlidersHorizontal size={16} />
                   {t("app.openSettings")}
                 </button>
+              </div>
+
+              <div
+                className="inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-body"
+                style={{
+                  color: "var(--color-text-muted)",
+                  background:
+                    "color-mix(in srgb, var(--color-surface-alt) 70%, var(--color-surface))",
+                  border: "1px solid var(--color-border)",
+                }}
+                data-testid="main-menu-last-used-summary"
+              >
+                <Clock3 size={12} />
+                <span>
+                  {t("settings.defaultMode")}: {defaultModeLabel}
+                </span>
+                <span className="font-mono tabular-nums">
+                  {Math.round(defaultSpeed * 100)}%
+                </span>
               </div>
             </section>
 
