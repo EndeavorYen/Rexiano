@@ -256,7 +256,7 @@ export function DeviceSelector(): React.JSX.Element {
               border: "1px solid var(--color-border)",
             }}
           >
-            Retry
+            {t("audio.retry")}
           </button>
           {bleStatus !== "connected" && (
             <button
@@ -270,7 +270,7 @@ export function DeviceSelector(): React.JSX.Element {
                 border: "1px solid var(--color-border)",
               }}
             >
-              Bluetooth
+              {t("midi.bluetooth")}
             </button>
           )}
         </div>

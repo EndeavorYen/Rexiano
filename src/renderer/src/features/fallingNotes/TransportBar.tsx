@@ -282,7 +282,7 @@ export function TransportBar({
               data-testid="audio-status-recovered"
             >
               <span className="status-dot status-dot-live" />
-              Audio Restored
+              {t("audio.restored")}
             </span>
           )}
         </div>

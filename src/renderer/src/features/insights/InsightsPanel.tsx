@@ -13,7 +13,7 @@
 
 import { ProgressChart } from "./ProgressChart";
 import { useTranslation } from "@renderer/i18n/useTranslation";
-import type { TranslationKey } from "@renderer/i18n/types";
+import type { InterpolationParams, TranslationKey } from "@renderer/i18n/types";
 import type { PracticeInsight, WeakSpot } from "./WeakSpotAnalyzer";
 
 interface InsightsPanelProps {
@@ -377,7 +377,7 @@ function buildNextPlan({
   weakSpots: WeakSpot[];
   recentImprovement: number;
   sessionsCount: number;
-  t: (key: TranslationKey) => string;
+  t: (key: TranslationKey, params?: InterpolationParams) => string;
 }): string[] {
   const plan: string[] = [];
 
@@ -390,15 +390,13 @@ function buildNextPlan({
   }
 
   if (weakSpots[0]) {
-    plan.push(
-      `Loop ${weakSpots[0].noteName} focus bars for 5 minutes in A-B mode.`,
-    );
+    plan.push(t("stats.tipLoopFocus", { note: weakSpots[0].noteName }));
   } else {
     plan.push(t("stats.tipKeepGoing"));
   }
 
   if (sessionsCount < 3) {
-    plan.push("Run one short 8-minute session today to build consistency.");
+    plan.push(t("stats.tipShortSession"));
   } else {
     plan.push(t("stats.tipTrainStreak"));
   }

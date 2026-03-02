@@ -62,7 +62,7 @@ export function TrackSelector(): React.JSX.Element {
             border: "1px solid var(--color-border)",
           }}
         >
-          Mute All
+          {t("practice.muteAll")}
         </button>
         <button
           onClick={setAllTracks}
@@ -74,7 +74,7 @@ export function TrackSelector(): React.JSX.Element {
             border: "1px solid var(--color-border)",
           }}
         >
-          Reset
+          {t("practice.resetTracks")}
         </button>
       </div>
 
@@ -128,7 +128,7 @@ export function TrackSelector(): React.JSX.Element {
                   border: "1px solid var(--color-border)",
                 }}
               >
-                Solo
+                {t("practice.solo")}
               </button>
             </label>
           );

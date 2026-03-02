@@ -60,6 +60,7 @@ const CHROME_VERTICAL_PADDING = 34;
 const SPLIT_SHEET_MIN = 168;
 const SPLIT_SHEET_MAX = 272;
 const SPLIT_SHEET_RATIO = 0.31;
+const SPLIT_FALLING_MIN = 72;
 
 function clampNumber(value: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, value));
@@ -210,6 +211,7 @@ function App(): React.JSX.Element {
   // ─── Phase 7: Sheet Music ──────────────────────────────
   const displayMode = usePracticeStore((s) => s.displayMode);
   const isPlaying = usePlaybackStore((s) => s.isPlaying);
+  const currentTime = usePlaybackStore((s) => s.currentTime);
 
   const notationData = useMemo(() => {
     if (!song) return null;
@@ -782,16 +784,20 @@ function App(): React.JSX.Element {
         ),
       )
     : undefined;
+  const splitFallingAvailableHeight =
+    isSplitMode && splitSheetHeight !== undefined
+      ? Math.max(0, estimatedWorkspaceHeight - splitSheetHeight)
+      : 0;
   const splitFallingMinHeight = isSplitMode
-    ? Math.max(
-        96,
-        Math.min(
+    ? Math.min(
+        Math.max(
+          SPLIT_FALLING_MIN,
           Math.round(estimatedWorkspaceHeight * 0.42),
-          estimatedWorkspaceHeight - splitSheetHeight!,
         ),
+        splitFallingAvailableHeight,
       )
     : null;
-  const fallingCanvasMinHeight = isSplitMode ? splitFallingMinHeight! : 200;
+  const fallingCanvasMinHeight = isSplitMode ? (splitFallingMinHeight ?? 0) : 200;
   const speedPercent = Math.round(speed * 100);
   const baseBpm =
     song?.tempos && song.tempos.length > 0
@@ -1133,9 +1139,7 @@ function App(): React.JSX.Element {
               songName={song?.fileName ?? ""}
               mode={mode}
               speed={speed}
-              durationSeconds={Math.round(
-                usePlaybackStore.getState().currentTime,
-              )}
+              durationSeconds={Math.round(currentTime)}
               onPlayAgain={handlePracticeAgain}
               onChooseSong={handleChooseSong}
             />

@@ -98,6 +98,9 @@ export const en: TranslationMap = {
   "practice.tracks": "Tracks",
   "practice.trackN": "Track {n}",
   "practice.notesCount": "{count} notes",
+  "practice.muteAll": "Mute All",
+  "practice.resetTracks": "Reset",
+  "practice.solo": "Solo",
   "practice.accuracy": "Acc",
   "practice.combo": "combo",
   "practice.abLoop": "A\u2013B Loop",
@@ -174,6 +177,13 @@ export const en: TranslationMap = {
   "settings.shortcut.closeBack": "Close / Back",
   "settings.basicMode": "Basic",
   "settings.advancedMode": "Advanced",
+  "settings.searchTabs": "Search tabs...",
+  "settings.searchTabsAria": "Search settings tabs",
+  "settings.noMatchingTab": "No matching tab",
+  "settings.common": "Common",
+  "settings.compactKeyLabels": "Compact key labels",
+  "settings.compactKeyLabelsDesc":
+    "Show fewer key names on narrow keyboards",
 
   // ── Fingering ──────────────────────────────────────────────────
   "fingering.label": "Fingering",
@@ -257,6 +267,9 @@ export const en: TranslationMap = {
     "Great accuracy. Try increasing speed for the next run.",
   "stats.tipKeepGoing":
     "Solid progress. Keep short daily sessions for momentum.",
+  "stats.tipLoopFocus": "Loop {note} focus bars for 5 minutes in A-B mode.",
+  "stats.tipShortSession":
+    "Run one short 8-minute session today to build consistency.",
   "stats.playAgain": "Play Again",
   "stats.backToLibrary": "Back to Library",
 
@@ -264,6 +277,7 @@ export const en: TranslationMap = {
   "audio.mute": "Mute",
   "audio.unmute": "Unmute",
   "audio.recovering": "Recovering audio ({attempt}/{max})...",
+  "audio.restored": "Audio Restored",
   "audio.recoveryFailed": "Audio recovery failed",
   "audio.retry": "Retry",
 

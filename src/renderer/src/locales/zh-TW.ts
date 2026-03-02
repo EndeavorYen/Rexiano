@@ -97,6 +97,9 @@ export const zhTW: TranslationMap = {
   "practice.tracks": "軌道",
   "practice.trackN": "軌道 {n}",
   "practice.notesCount": "{count} 個音符",
+  "practice.muteAll": "全部靜音",
+  "practice.resetTracks": "重設",
+  "practice.solo": "獨奏",
   "practice.accuracy": "準確率",
   "practice.combo": "連擊",
   "practice.abLoop": "A–B 循環",
@@ -170,6 +173,12 @@ export const zhTW: TranslationMap = {
   "settings.shortcut.closeBack": "關閉 / 返回",
   "settings.basicMode": "基本",
   "settings.advancedMode": "進階",
+  "settings.searchTabs": "搜尋分頁…",
+  "settings.searchTabsAria": "搜尋設定分頁",
+  "settings.noMatchingTab": "找不到符合的分頁",
+  "settings.common": "常用",
+  "settings.compactKeyLabels": "精簡鍵名標籤",
+  "settings.compactKeyLabelsDesc": "在窄鍵盤上顯示較少鍵名",
 
   // ── Fingering ──────────────────────────────────────────────────
   "fingering.label": "指法",
@@ -250,6 +259,8 @@ export const zhTW: TranslationMap = {
   "stats.tipTrainStreak": "連擊偏短，試著用 A-B 循環練同一小節。",
   "stats.tipRaiseSpeed": "準確率很高，可以嘗試提高速度挑戰自己。",
   "stats.tipKeepGoing": "表現穩定，維持每天短時間練習就會持續進步。",
+  "stats.tipLoopFocus": "針對 {note} 的弱點小節進行 5 分鐘 A-B 循環練習。",
+  "stats.tipShortSession": "今天先做一段 8 分鐘短練習，建立連續性。",
   "stats.playAgain": "再玩一次",
   "stats.backToLibrary": "返回曲庫",
 
@@ -257,6 +268,7 @@ export const zhTW: TranslationMap = {
   "audio.mute": "靜音",
   "audio.unmute": "取消靜音",
   "audio.recovering": "音訊修復中（{attempt}/{max}）…",
+  "audio.restored": "音訊已恢復",
   "audio.recoveryFailed": "音訊自動修復失敗",
   "audio.retry": "重試",
 

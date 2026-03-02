@@ -99,6 +99,9 @@ export interface TranslationMap {
   "practice.tracks": string;
   "practice.trackN": string;
   "practice.notesCount": string;
+  "practice.muteAll": string;
+  "practice.resetTracks": string;
+  "practice.solo": string;
   "practice.accuracy": string;
   "practice.combo": string;
   "practice.abLoop": string;
@@ -171,6 +174,12 @@ export interface TranslationMap {
   "settings.shortcut.closeBack": string;
   "settings.basicMode": string;
   "settings.advancedMode": string;
+  "settings.searchTabs": string;
+  "settings.searchTabsAria": string;
+  "settings.noMatchingTab": string;
+  "settings.common": string;
+  "settings.compactKeyLabels": string;
+  "settings.compactKeyLabelsDesc": string;
 
   // ── Fingering ──────────────────────────────────────────────────
   "fingering.label": string;
@@ -251,6 +260,8 @@ export interface TranslationMap {
   "stats.tipTrainStreak": string;
   "stats.tipRaiseSpeed": string;
   "stats.tipKeepGoing": string;
+  "stats.tipLoopFocus": string;
+  "stats.tipShortSession": string;
   "stats.playAgain": string;
   "stats.backToLibrary": string;
 
@@ -258,6 +269,7 @@ export interface TranslationMap {
   "audio.mute": string;
   "audio.unmute": string;
   "audio.recovering": string;
+  "audio.restored": string;
   "audio.recoveryFailed": string;
   "audio.retry": string;
 

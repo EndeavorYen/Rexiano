@@ -261,9 +261,9 @@ export function SettingsPanel({
                 <input
                   value={settingsSearch}
                   onChange={(e) => setSettingsSearch(e.target.value)}
-                  placeholder="Search tabs..."
+                  placeholder={t("settings.searchTabs")}
                   className="input-themed w-[120px] px-2 py-1 text-[11px] font-body"
-                  aria-label="Search settings tabs"
+                  aria-label={t("settings.searchTabsAria")}
                 />
                 <button
                   onClick={() => {
@@ -346,7 +346,7 @@ export function SettingsPanel({
                   className="px-3 py-2 text-xs font-body"
                   style={{ color: "var(--color-text-muted)" }}
                 >
-                  No matching tab
+                  {t("settings.noMatchingTab")}
                 </span>
               )}
             </div>
@@ -366,7 +366,7 @@ export function SettingsPanel({
                   className="text-[10px] font-mono uppercase tracking-wider mb-2"
                   style={{ color: "var(--color-text-muted)" }}
                 >
-                  Common
+                  {t("settings.common")}
                 </div>
                 <div className="flex flex-wrap gap-1.5">
                   <button
@@ -501,8 +501,8 @@ export function SettingsPanel({
                       testId="toggle-fingering"
                     />
                     <ToggleRow
-                      label="Compact key labels"
-                      description="Show fewer key names on narrow keyboards"
+                      label={t("settings.compactKeyLabels")}
+                      description={t("settings.compactKeyLabelsDesc")}
                       checked={compactKeyLabels}
                       onChange={setCompactKeyLabels}
                       testId="toggle-compact-key-labels"
