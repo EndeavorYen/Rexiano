@@ -1,6 +1,6 @@
 {
   "name": "rexiano",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "description": "An open-source, cross-platform Synthesia alternative for piano practice",
   "main": "./out/main/index.js",
   "author": "Rexiano Contributors",
