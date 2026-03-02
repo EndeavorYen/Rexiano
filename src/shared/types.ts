@@ -134,6 +134,6 @@ export interface SessionRecord {
 
 /** App version and changelog, exposed to renderer via IPC. */
 export interface AppInfo {
-  version: string
-  changelog: string
+  version: string;
+  changelog: string;
 }

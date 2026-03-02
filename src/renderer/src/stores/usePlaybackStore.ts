@@ -22,6 +22,8 @@ interface PlaybackState {
   audioRecoveryAttempt: number;
   /** Max retry attempts for the current recovery cycle */
   audioRecoveryMaxAttempts: number;
+  /** Temporary success badge state after recovery */
+  audioRecoverySuccessVisible: boolean;
   /** Monotonic trigger value for user-initiated recovery */
   audioRecoverySignal: number;
 
@@ -32,11 +34,14 @@ interface PlaybackState {
   setVolume: (volume: number) => void;
   setAudioRecovering: (attempt: number, maxAttempts: number) => void;
   setAudioRecoveryFailed: (maxAttempts: number) => void;
+  setAudioRecoverySucceeded: () => void;
   clearAudioRecovery: () => void;
   requestAudioRecovery: () => void;
   /** Reset to beginning */
   reset: () => void;
 }
+
+let recoverySuccessTimer: ReturnType<typeof setTimeout> | null = null;
 
 export const usePlaybackStore = create<PlaybackState>()((set) => ({
   currentTime: 0,
@@ -49,6 +54,7 @@ export const usePlaybackStore = create<PlaybackState>()((set) => ({
   audioRecoveryState: "idle",
   audioRecoveryAttempt: 0,
   audioRecoveryMaxAttempts: 0,
+  audioRecoverySuccessVisible: false,
   audioRecoverySignal: 0,
 
   setCurrentTime: (time) => set({ currentTime: time }),
@@ -61,13 +67,25 @@ export const usePlaybackStore = create<PlaybackState>()((set) => ({
       audioRecoveryState: "recovering",
       audioRecoveryAttempt: Math.max(1, Math.floor(attempt)),
       audioRecoveryMaxAttempts: Math.max(1, Math.floor(maxAttempts)),
+      audioRecoverySuccessVisible: false,
     }),
   setAudioRecoveryFailed: (maxAttempts) =>
     set({
       audioRecoveryState: "failed",
       audioRecoveryAttempt: Math.max(1, Math.floor(maxAttempts)),
       audioRecoveryMaxAttempts: Math.max(1, Math.floor(maxAttempts)),
+      audioRecoverySuccessVisible: false,
     }),
+  setAudioRecoverySucceeded: () => {
+    set({ audioRecoverySuccessVisible: true });
+    if (recoverySuccessTimer) {
+      clearTimeout(recoverySuccessTimer);
+    }
+    recoverySuccessTimer = setTimeout(() => {
+      set({ audioRecoverySuccessVisible: false });
+      recoverySuccessTimer = null;
+    }, 1800);
+  },
   clearAudioRecovery: () =>
     set({
       audioRecoveryState: "idle",
@@ -76,12 +94,18 @@ export const usePlaybackStore = create<PlaybackState>()((set) => ({
     }),
   requestAudioRecovery: () =>
     set((state) => ({ audioRecoverySignal: state.audioRecoverySignal + 1 })),
-  reset: () =>
+  reset: () => {
+    if (recoverySuccessTimer) {
+      clearTimeout(recoverySuccessTimer);
+      recoverySuccessTimer = null;
+    }
     set({
       currentTime: 0,
       isPlaying: false,
       audioRecoveryState: "idle",
       audioRecoveryAttempt: 0,
       audioRecoveryMaxAttempts: 0,
-    }),
+      audioRecoverySuccessVisible: false,
+    });
+  },
 }));

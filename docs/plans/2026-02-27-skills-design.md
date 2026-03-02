@@ -11,12 +11,12 @@
 
 ### Skill 清單
 
-| 優先級 | Skill | 用途 |
-|--------|-------|------|
-| P0 | `code-review` | 深度檔案審查，30 項 Rexiano 專屬 checklist |
-| P1 | `scaffold-feature` | 按 DESIGN.md 自動建立 engine/store/feature 骨架 |
-| P2 | `test-gen` | 分析模組後產生 Vitest 測試骨架 |
-| P3 | `design-check` | 驗證實作是否符合 DESIGN.md |
+| 優先級 | Skill              | 用途                                            |
+| ------ | ------------------ | ----------------------------------------------- |
+| P0     | `code-review`      | 深度檔案審查，30 項 Rexiano 專屬 checklist      |
+| P1     | `scaffold-feature` | 按 DESIGN.md 自動建立 engine/store/feature 骨架 |
+| P2     | `test-gen`         | 分析模組後產生 Vitest 測試骨架                  |
+| P3     | `design-check`     | 驗證實作是否符合 DESIGN.md                      |
 
 ### 工作流
 

@@ -5,12 +5,12 @@
 
 ## Decision Record
 
-| Decision | Choice | Rationale |
-|----------|--------|-----------|
-| Sprint 5 | Deferred | Fingering, insights, i18n are large; focus on core first |
-| SoundFont | Salamander Grand Piano | User preference for better piano tone |
-| Song library | Generate MIDI programmatically | No dependency on external file sourcing |
-| BLE MIDI docs | Deferred to Phase 9 | Per ROADMAP |
+| Decision      | Choice                         | Rationale                                                |
+| ------------- | ------------------------------ | -------------------------------------------------------- |
+| Sprint 5      | Deferred                       | Fingering, insights, i18n are large; focus on core first |
+| SoundFont     | Salamander Grand Piano         | User preference for better piano tone                    |
+| Song library  | Generate MIDI programmatically | No dependency on external file sourcing                  |
+| BLE MIDI docs | Deferred to Phase 9            | Per ROADMAP                                              |
 
 ## Work Items (15 total)
 
@@ -55,6 +55,7 @@
 ## Implementation Approach
 
 Follow AGENT_TEAMS.md Stage 1-2-3 workflow:
+
 - Stage 1: Lead downloads SF2, adds types for latency compensation, scaffolds
 - Stage 2: Parallel agent work on categories A-D
 - Stage 3: Integration test, ROADMAP checkbox updates

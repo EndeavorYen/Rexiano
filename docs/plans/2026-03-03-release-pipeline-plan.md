@@ -13,6 +13,7 @@
 ## Task 1: Create release-please config files
 
 **Files:**
+
 - Create: `release-please-config.json`
 - Create: `.release-please-manifest.json`
 - Create: `CHANGELOG.md`
@@ -64,6 +65,7 @@ git commit -m "chore: add release-please config and initial CHANGELOG"
 ## Task 2: Add release-please GitHub Actions workflow
 
 **Files:**
+
 - Create: `.github/workflows/release-please.yml`
 
 No tests needed (GitHub Actions YAML).
@@ -96,12 +98,14 @@ jobs:
 **Step 2: Verify the existing `release.yml` still triggers correctly**
 
 Open `.github/workflows/release.yml` and confirm it starts with:
+
 ```yaml
 on:
   push:
     tags:
-      - 'v*'
+      - "v*"
 ```
+
 No changes needed — release-please will push `v*` tags which trigger this existing workflow.
 
 **Step 3: Commit**
@@ -116,13 +120,14 @@ git commit -m "ci: add release-please workflow for automated versioning"
 ## Task 3: Bundle CHANGELOG.md into the Electron app
 
 **Files:**
+
 - Modify: `electron-builder.yml`
 
 **Step 1: Open `electron-builder.yml` and find line 9**
 
 ```yaml
 # Current (excludes CHANGELOG.md from the build):
-- '!{.eslintcache,eslint.config.mjs,.prettierignore,.prettierrc.yaml,dev-app-update.yml,CHANGELOG.md,README.md}'
+- "!{.eslintcache,eslint.config.mjs,.prettierignore,.prettierrc.yaml,dev-app-update.yml,CHANGELOG.md,README.md}"
 ```
 
 **Step 2: Remove `CHANGELOG.md` from that exclusion and add `extraResources`**
@@ -140,6 +145,7 @@ extraResources:
 ```
 
 After this change, the built app will have `CHANGELOG.md` at:
+
 - Production: `process.resourcesPath/CHANGELOG.md`
 - Development: `app.getAppPath()/CHANGELOG.md` (repo root)
 
@@ -155,6 +161,7 @@ git commit -m "build: bundle CHANGELOG.md as extra resource in Electron app"
 ## Task 4: Add `AppInfo` shared type
 
 **Files:**
+
 - Modify: `src/shared/types.ts`
 
 **Step 1: Open `src/shared/types.ts` and append the new interface**
@@ -164,8 +171,8 @@ Add at the end of the file:
 ```typescript
 /** App version and changelog, exposed to renderer via IPC. */
 export interface AppInfo {
-  version: string
-  changelog: string
+  version: string;
+  changelog: string;
 }
 ```
 
@@ -181,6 +188,7 @@ git commit -m "feat: add AppInfo shared type"
 ## Task 5: Create IPC handler for app info
 
 **Files:**
+
 - Create: `src/main/ipc/appInfoHandlers.ts`
 - Modify: `src/main/index.ts`
 
@@ -189,11 +197,11 @@ git commit -m "feat: add AppInfo shared type"
 Look at `src/main/ipc/fileHandlers.ts` first to understand the pattern (how handlers are registered and how `is` from `@electron-toolkit/utils` is used for dev detection).
 
 ```typescript
-import { app, ipcMain } from 'electron'
-import { is } from '@electron-toolkit/utils'
-import * as path from 'path'
-import * as fs from 'fs'
-import type { AppInfo } from '../../shared/types'
+import { app, ipcMain } from "electron";
+import { is } from "@electron-toolkit/utils";
+import * as path from "path";
+import * as fs from "fs";
+import type { AppInfo } from "../../shared/types";
 
 /**
  * Registers IPC handler for app metadata.
@@ -206,19 +214,19 @@ import type { AppInfo } from '../../shared/types'
  * In prod: read from process.resourcesPath.
  */
 export function registerAppInfoHandlers(): void {
-  ipcMain.handle('app:getAppInfo', async (): Promise<AppInfo> => {
-    const version = app.getVersion()
+  ipcMain.handle("app:getAppInfo", async (): Promise<AppInfo> => {
+    const version = app.getVersion();
 
     const changelogPath = is.dev
-      ? path.join(app.getAppPath(), 'CHANGELOG.md')
-      : path.join(process.resourcesPath, 'CHANGELOG.md')
+      ? path.join(app.getAppPath(), "CHANGELOG.md")
+      : path.join(process.resourcesPath, "CHANGELOG.md");
 
     const changelog = await fs.promises
-      .readFile(changelogPath, 'utf-8')
-      .catch(() => '')
+      .readFile(changelogPath, "utf-8")
+      .catch(() => "");
 
-    return { version, changelog }
-  })
+    return { version, changelog };
+  });
 }
 ```
 
@@ -227,10 +235,10 @@ export function registerAppInfoHandlers(): void {
 Open `src/main/index.ts` and find where other handlers are registered (search for `register` or `ipcMain`). Add alongside the existing registrations:
 
 ```typescript
-import { registerAppInfoHandlers } from './ipc/appInfoHandlers'
+import { registerAppInfoHandlers } from "./ipc/appInfoHandlers";
 
 // In the app ready / setup section:
-registerAppInfoHandlers()
+registerAppInfoHandlers();
 ```
 
 **Step 3: Commit**
@@ -245,6 +253,7 @@ git commit -m "feat: add app:getAppInfo IPC handler for version and changelog"
 ## Task 6: Expose IPC in preload
 
 **Files:**
+
 - Modify: `src/preload/index.ts` (or wherever the contextBridge is configured)
 
 **Step 1: Open the preload file**
@@ -252,10 +261,10 @@ git commit -m "feat: add app:getAppInfo IPC handler for version and changelog"
 Search for `contextBridge` to find the preload. Look at how existing channels like `fileHandlers` are exposed. The pattern is typically:
 
 ```typescript
-contextBridge.exposeInMainWorld('api', {
+contextBridge.exposeInMainWorld("api", {
   // existing channels...
-  getAppInfo: () => ipcRenderer.invoke('app:getAppInfo'),
-})
+  getAppInfo: () => ipcRenderer.invoke("app:getAppInfo"),
+});
 ```
 
 **Step 2: Add `getAppInfo` to the exposed API**
@@ -269,7 +278,7 @@ getAppInfo: (): Promise<AppInfo> => ipcRenderer.invoke('app:getAppInfo'),
 Also update the TypeScript type declaration for `window.api` (usually in `src/preload/index.d.ts` or `src/renderer/src/env.d.ts`) to include:
 
 ```typescript
-getAppInfo: () => Promise<AppInfo>
+getAppInfo: () => Promise<AppInfo>;
 ```
 
 Import `AppInfo` from `'../../shared/types'`.
@@ -286,6 +295,7 @@ git commit -m "feat: expose getAppInfo in preload contextBridge"
 ## Task 7: Add i18n keys for About tab
 
 **Files:**
+
 - Modify: `src/renderer/src/i18n/types.ts`
 - Modify: `src/renderer/src/locales/en.ts`
 - Modify: `src/renderer/src/locales/zh-TW.ts`
@@ -339,6 +349,7 @@ git commit -m "feat: add i18n keys for settings About tab"
 ## Task 8: Add version badge to MainMenu
 
 **Files:**
+
 - Modify: `src/renderer/src/features/mainMenu/MainMenu.tsx`
 
 **Step 1: Read `MainMenu.tsx` in full**
@@ -350,11 +361,11 @@ Understand where the app title `h1` element is rendered (around line 62-71). The
 Add state and effect at the top of the `MainMenu` component:
 
 ```typescript
-const [appVersion, setAppVersion] = useState<string>('')
+const [appVersion, setAppVersion] = useState<string>("");
 
 useEffect(() => {
-  window.api.getAppInfo().then(({ version }) => setAppVersion(version))
-}, [])
+  window.api.getAppInfo().then(({ version }) => setAppVersion(version));
+}, []);
 ```
 
 **Step 3: Add version badge in JSX**
@@ -362,14 +373,16 @@ useEffect(() => {
 Directly after the `<p>` greeting element (around line 67-70), add:
 
 ```tsx
-{appVersion && (
-  <p
-    className="text-[11px] font-mono mt-0.5"
-    style={{ color: 'var(--color-text-muted)' }}
-  >
-    v{appVersion}
-  </p>
-)}
+{
+  appVersion && (
+    <p
+      className="text-[11px] font-mono mt-0.5"
+      style={{ color: "var(--color-text-muted)" }}
+    >
+      v{appVersion}
+    </p>
+  );
+}
 ```
 
 **Step 4: Run dev to verify it renders**
@@ -392,11 +405,13 @@ git commit -m "feat: show app version badge in MainMenu"
 ## Task 9: Add About tab to SettingsPanel
 
 **Files:**
+
 - Modify: `src/renderer/src/features/settings/SettingsPanel.tsx`
 
 **Step 1: Read the full `SettingsPanel.tsx`**
 
 Note the existing structure:
+
 - `SettingsTab` union type (line 24-31)
 - `tabKeys` array (line 32-39) — i18n keys for tab labels
 - `tabIds` array (line 41-48) — tab identifiers
@@ -424,13 +439,16 @@ Note the existing structure:
 Near the top of the component (alongside other `useState` calls):
 
 ```typescript
-const [appInfo, setAppInfo] = useState<{ version: string; changelog: string } | null>(null)
+const [appInfo, setAppInfo] = useState<{
+  version: string;
+  changelog: string;
+} | null>(null);
 
 useEffect(() => {
-  if (activeTab === 'about' && !appInfo) {
-    window.api.getAppInfo().then(setAppInfo)
+  if (activeTab === "about" && !appInfo) {
+    window.api.getAppInfo().then(setAppInfo);
   }
-}, [activeTab, appInfo])
+}, [activeTab, appInfo]);
 ```
 
 **Step 4: Add About tab content**
@@ -438,46 +456,51 @@ useEffect(() => {
 Find where tab content is rendered (the `switch`/`if` on `activeTab`). Add a case for `'about'`:
 
 ```tsx
-{activeTab === 'about' && (
-  <div className="space-y-4">
-    <div className="flex items-center justify-between">
-      <span className="text-sm font-medium" style={{ color: 'var(--color-text)' }}>
-        {t('about.version')}
-      </span>
-      <span
-        className="font-mono text-sm px-2 py-0.5 rounded"
-        style={{
-          background: 'color-mix(in srgb, var(--color-accent) 10%, var(--color-surface))',
-          color: 'var(--color-accent)',
-        }}
-      >
-        {appInfo ? `v${appInfo.version}` : '…'}
-      </span>
-    </div>
+{
+  activeTab === "about" && (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <span
+          className="text-sm font-medium"
+          style={{ color: "var(--color-text)" }}
+        >
+          {t("about.version")}
+        </span>
+        <span
+          className="font-mono text-sm px-2 py-0.5 rounded"
+          style={{
+            background:
+              "color-mix(in srgb, var(--color-accent) 10%, var(--color-surface))",
+            color: "var(--color-accent)",
+          }}
+        >
+          {appInfo ? `v${appInfo.version}` : "…"}
+        </span>
+      </div>
 
-    <div>
-      <p
-        className="text-xs font-mono uppercase tracking-widest mb-2"
-        style={{ color: 'var(--color-text-muted)' }}
-      >
-        {t('about.changelog')}
-      </p>
-      <pre
-        className="text-xs leading-relaxed rounded-lg p-3 overflow-auto max-h-72 whitespace-pre-wrap"
-        style={{
-          background: 'color-mix(in srgb, var(--color-surface) 70%, transparent)',
-          border: '1px solid var(--color-border)',
-          color: 'var(--color-text-muted)',
-          fontFamily: 'var(--font-mono)',
-        }}
-      >
-        {appInfo
-          ? appInfo.changelog || t('about.noChangelog')
-          : '…'}
-      </pre>
+      <div>
+        <p
+          className="text-xs font-mono uppercase tracking-widest mb-2"
+          style={{ color: "var(--color-text-muted)" }}
+        >
+          {t("about.changelog")}
+        </p>
+        <pre
+          className="text-xs leading-relaxed rounded-lg p-3 overflow-auto max-h-72 whitespace-pre-wrap"
+          style={{
+            background:
+              "color-mix(in srgb, var(--color-surface) 70%, transparent)",
+            border: "1px solid var(--color-border)",
+            color: "var(--color-text-muted)",
+            fontFamily: "var(--font-mono)",
+          }}
+        >
+          {appInfo ? appInfo.changelog || t("about.noChangelog") : "…"}
+        </pre>
+      </div>
     </div>
-  </div>
-)}
+  );
+}
 ```
 
 **Step 5: Run dev and open Settings → About tab**
@@ -540,9 +563,9 @@ git commit -m "docs: mark release pipeline tasks as complete in ROADMAP"
 
 From this point forward, commit messages must follow Conventional Commits so release-please can calculate version bumps:
 
-| Prefix | Triggers | Example |
-|--------|----------|---------|
-| `feat:` | minor (0.x.0) | `feat: add sheet music panel` |
-| `fix:` | patch (0.0.x) | `fix: sustain pedal off-by-one` |
-| `BREAKING CHANGE:` | major (x.0.0) | footer in commit body |
-| `docs:` `chore:` `refactor:` `test:` | no release | `chore: update deps` |
+| Prefix                               | Triggers      | Example                         |
+| ------------------------------------ | ------------- | ------------------------------- |
+| `feat:`                              | minor (0.x.0) | `feat: add sheet music panel`   |
+| `fix:`                               | patch (0.0.x) | `fix: sustain pedal off-by-one` |
+| `BREAKING CHANGE:`                   | major (x.0.0) | footer in commit body           |
+| `docs:` `chore:` `refactor:` `test:` | no release    | `chore: update deps`            |

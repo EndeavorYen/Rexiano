@@ -33,14 +33,14 @@ Rexiano (Rex + Piano) is an open-source, cross-platform piano practice applicati
 
 ### Six Core Features
 
-| # | Feature | Description |
-|---|---------|-------------|
-| 1 | MIDI Import | Load `.mid` files and parse into structured data |
-| 2 | Visual Display | Falling notes (rhythm game style) + piano keyboard + sheet music |
-| 3 | MIDI Device Connection | Bluetooth / USB MIDI keyboards (e.g., Roland) for input and output |
-| 4 | Cross-Platform | Native installers for Windows / macOS / Linux |
-| 5 | Score Editor | (Extra) Import, create, and edit MIDI / MusicXML |
-| 6 | Practice Mode | Speed control, loop sections, split-hand practice, scoring feedback |
+| #   | Feature                | Description                                                         |
+| --- | ---------------------- | ------------------------------------------------------------------- |
+| 1   | MIDI Import            | Load `.mid` files and parse into structured data                    |
+| 2   | Visual Display         | Falling notes (rhythm game style) + piano keyboard + sheet music    |
+| 3   | MIDI Device Connection | Bluetooth / USB MIDI keyboards (e.g., Roland) for input and output  |
+| 4   | Cross-Platform         | Native installers for Windows / macOS / Linux                       |
+| 5   | Score Editor           | (Extra) Import, create, and edit MIDI / MusicXML                    |
+| 6   | Practice Mode          | Speed control, loop sections, split-hand practice, scoring feedback |
 
 ### Why Electron + React?
 
@@ -57,18 +57,18 @@ Electron + React was chosen over Python (PyQt/Pygame) for these reasons:
 
 ### Tech Stack
 
-| Layer | Technology | Purpose |
-|-------|-----------|---------|
-| Desktop shell | Electron 33 | Cross-platform window, system APIs, packaging |
-| Build tooling | electron-vite 5 + Vite 7 | Fast HMR, module bundling |
-| UI framework | React 19 + TypeScript 5.9 | Component-based UI |
-| Styling | Tailwind CSS 4 + CSS Custom Properties | Theme system |
-| State management | Zustand 5 | Lightweight global state |
-| Canvas rendering | PixiJS 8 | WebGL high-performance rendering |
-| MIDI parsing | @tonejs/midi | Parse `.mid` files |
-| Fonts | @fontsource (Nunito, DM Sans, JetBrains Mono) | Offline fonts, no CDN dependency |
-| Testing | Vitest 4 | Unit tests |
-| Packaging | electron-builder 26 | Produce installers |
+| Layer            | Technology                                    | Purpose                                       |
+| ---------------- | --------------------------------------------- | --------------------------------------------- |
+| Desktop shell    | Electron 33                                   | Cross-platform window, system APIs, packaging |
+| Build tooling    | electron-vite 5 + Vite 7                      | Fast HMR, module bundling                     |
+| UI framework     | React 19 + TypeScript 5.9                     | Component-based UI                            |
+| Styling          | Tailwind CSS 4 + CSS Custom Properties        | Theme system                                  |
+| State management | Zustand 5                                     | Lightweight global state                      |
+| Canvas rendering | PixiJS 8                                      | WebGL high-performance rendering              |
+| MIDI parsing     | @tonejs/midi                                  | Parse `.mid` files                            |
+| Fonts            | @fontsource (Nunito, DM Sans, JetBrains Mono) | Offline fonts, no CDN dependency              |
+| Testing          | Vitest 4                                      | Unit tests                                    |
+| Packaging        | electron-builder 26                           | Produce installers                            |
 
 ### Process Architecture
 
@@ -114,6 +114,7 @@ graph TB
 ```
 
 **Rules:**
+
 1. Engines never import React — pure TypeScript classes/functions
 2. Stores bridge engines to React via module-level singleton management
 3. Features never instantiate engines directly — go through stores
@@ -262,6 +263,7 @@ engines/midi/
 **MidiDeviceManager** uses the Singleton pattern because the Web MIDI API's `MIDIAccess` object is globally unique.
 
 **MidiInputParser** uses the callback pattern:
+
 ```typescript
 parser.onNoteOn((midi, velocity) => store.recordNoteOn(midi, velocity));
 parser.onNoteOff((midi) => store.recordNoteOff(midi));
@@ -304,6 +306,7 @@ stateDiagram-v2
 ### Score System
 
 `ScoreCalculator` accumulates:
+
 - `hits`: correctly pressed notes
 - `misses`: wrong or missed notes
 - `currentStreak`: consecutive hits
@@ -324,21 +327,21 @@ Phase 6.5 focuses on making Rexiano accessible to children aged 6–10 (Rex's ag
 
 ### Features
 
-| Feature | Description |
-|---------|-------------|
-| Keyboard shortcuts | Space=play, R=reset, 1/2/3=mode switch, ↑↓=speed, M=mute |
-| Note labels | Display note names (C4, F#5) on falling note rectangles |
-| Piano key labels | Display key names on white keys with octave numbers on C keys |
-| Onboarding guide | 4-step interactive guide for first-time users |
-| Song library | Browse 18 built-in songs with difficulty ratings and best-score badges |
-| Recent files | Quick access to the 10 most recently opened MIDI files |
-| Celebration overlay | Full-screen celebration animation at ≥90% accuracy |
-| Metronome | Visual beat pulse + audio click with count-in support |
-| MIDI test button | Test keyboard connection without loading a song |
-| Latency compensation | 0–100ms slider to compensate for BLE MIDI latency |
-| Settings panel | Gear icon overlay with display, audio, and practice defaults |
-| 4 themes | Lavender / Ocean / Peach / Midnight |
-| Mode selection modal | Synthesia-style modal to select Watch/Wait/Free before playback |
+| Feature              | Description                                                            |
+| -------------------- | ---------------------------------------------------------------------- |
+| Keyboard shortcuts   | Space=play, R=reset, 1/2/3=mode switch, ↑↓=speed, M=mute               |
+| Note labels          | Display note names (C4, F#5) on falling note rectangles                |
+| Piano key labels     | Display key names on white keys with octave numbers on C keys          |
+| Onboarding guide     | 4-step interactive guide for first-time users                          |
+| Song library         | Browse 18 built-in songs with difficulty ratings and best-score badges |
+| Recent files         | Quick access to the 10 most recently opened MIDI files                 |
+| Celebration overlay  | Full-screen celebration animation at ≥90% accuracy                     |
+| Metronome            | Visual beat pulse + audio click with count-in support                  |
+| MIDI test button     | Test keyboard connection without loading a song                        |
+| Latency compensation | 0–100ms slider to compensate for BLE MIDI latency                      |
+| Settings panel       | Gear icon overlay with display, audio, and practice defaults           |
+| 4 themes             | Lavender / Ocean / Peach / Midnight                                    |
+| Mode selection modal | Synthesia-style modal to select Watch/Wait/Free before playback        |
 
 ---
 
@@ -352,11 +355,11 @@ Add a scrolling sheet music panel (five-line staff) alongside or in place of the
 
 ### Display Modes
 
-| Mode | Description |
-|------|-------------|
-| Falling notes only | Current default view |
-| Dual view | Sheet music (top 40%) + falling notes (bottom 60%) |
-| Sheet music only | Full-height sheet music panel |
+| Mode               | Description                                        |
+| ------------------ | -------------------------------------------------- |
+| Falling notes only | Current default view                               |
+| Dual view          | Sheet music (top 40%) + falling notes (bottom 60%) |
+| Sheet music only   | Full-height sheet music panel                      |
 
 ### Cursor Sync
 
@@ -365,6 +368,7 @@ A cursor in the sheet music panel tracks the current playback position in real t
 ### MusicXML Generation
 
 To render sheet music from MIDI data, Rexiano will convert `ParsedSong` to a minimal MusicXML document using a custom `MidiToMusicXML` converter that handles:
+
 - Time signature and tempo from MIDI meta events
 - Note pitch (MIDI number → note name + octave)
 - Note duration (seconds → note value using current tempo)
@@ -377,6 +381,7 @@ To render sheet music from MIDI data, Rexiano will convert `ParsedSong` to a min
 **Status**: 🔲 Planned | **Target**: v1.0.0
 
 A basic sheet music editor allowing users to:
+
 - Import MusicXML and render it as an editable score
 - Create new scores from scratch using a note input tool
 - Export edited scores as MIDI or MusicXML
@@ -391,15 +396,16 @@ This phase is marked "Extra" — it depends on community interest and developmen
 
 ### Targets
 
-| Platform | Format | Notes |
-|----------|--------|-------|
-| Windows | `.exe` (NSIS installer) | Requires code signing for SmartScreen |
-| macOS | `.dmg` (Universal Binary) | Requires notarization for Gatekeeper |
-| Linux | `.AppImage` + `.deb` + `.rpm` | AppImage preferred for portability |
+| Platform | Format                        | Notes                                 |
+| -------- | ----------------------------- | ------------------------------------- |
+| Windows  | `.exe` (NSIS installer)       | Requires code signing for SmartScreen |
+| macOS    | `.dmg` (Universal Binary)     | Requires notarization for Gatekeeper  |
+| Linux    | `.AppImage` + `.deb` + `.rpm` | AppImage preferred for portability    |
 
 ### CI/CD
 
 GitHub Actions pipeline:
+
 1. Push to `main` → lint + typecheck + test
 2. Tag `v*.*.*` → build all three platform installers → publish to GitHub Releases
 
@@ -411,21 +417,21 @@ electron-updater integration: checks GitHub Releases for newer versions on launc
 
 ## 13. Synthesia Feature Comparison
 
-| Feature | Synthesia | Rexiano |
-|---------|-----------|---------|
-| Falling notes | ✅ | ✅ |
-| MIDI import | ✅ | ✅ |
-| USB MIDI keyboard | ✅ | ✅ |
-| Bluetooth MIDI | ✅ | ✅ |
-| Wait mode | ✅ | ✅ |
-| Speed control | ✅ | ✅ |
-| A-B loop | ✅ | ✅ |
-| Split-hand practice | ✅ | ✅ |
-| Sheet music view | ✅ | 🔲 Phase 7 |
-| Score editor | ✅ | 🔲 Phase 8 Extra |
-| Song library | Paid | ✅ Free (18 built-in) |
-| Price | $39/year | Free & Open Source |
-| Source available | ❌ | ✅ GPL-3.0 |
+| Feature             | Synthesia | Rexiano               |
+| ------------------- | --------- | --------------------- |
+| Falling notes       | ✅        | ✅                    |
+| MIDI import         | ✅        | ✅                    |
+| USB MIDI keyboard   | ✅        | ✅                    |
+| Bluetooth MIDI      | ✅        | ✅                    |
+| Wait mode           | ✅        | ✅                    |
+| Speed control       | ✅        | ✅                    |
+| A-B loop            | ✅        | ✅                    |
+| Split-hand practice | ✅        | ✅                    |
+| Sheet music view    | ✅        | 🔲 Phase 7            |
+| Score editor        | ✅        | 🔲 Phase 8 Extra      |
+| Song library        | Paid      | ✅ Free (18 built-in) |
+| Price               | $39/year  | Free & Open Source    |
+| Source available    | ❌        | ✅ GPL-3.0            |
 
 ---
 
@@ -434,6 +440,7 @@ electron-updater integration: checks GitHub Releases for newer versions on launc
 ### Offline-First
 
 Rexiano is designed to work completely offline:
+
 - Piano SoundFont bundled with the app (`resources/piano.sf2`)
 - Fonts bundled via `@fontsource` (no Google Fonts CDN)
 - Song library stored in `resources/songs/`
@@ -463,5 +470,5 @@ pnpm lint && pnpm typecheck && pnpm test
 
 ---
 
-*For implementation details, see [architecture.md](./architecture.md) (engine catalog, store catalog, data flows).*
-*For the development task checklist, see [ROADMAP.md](./ROADMAP.md).*
+_For implementation details, see [architecture.md](./architecture.md) (engine catalog, store catalog, data flows)._
+_For the development task checklist, see [ROADMAP.md](./ROADMAP.md)._

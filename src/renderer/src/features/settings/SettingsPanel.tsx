@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import {
   X,
   Settings,
@@ -101,14 +101,11 @@ export function SettingsPanel({
           const i = tabIds.indexOf(id);
           return t(tabKeys[i]).toLowerCase().includes(normalizedSettingsSearch);
         });
-  const panelRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (filteredTabIds.length === 0) return;
-    if (!filteredTabIds.includes(activeTab)) {
-      setActiveTab(filteredTabIds[0]);
-    }
+  const resolvedActiveTab = useMemo<SettingsTab>(() => {
+    if (filteredTabIds.includes(activeTab)) return activeTab;
+    return filteredTabIds[0] ?? "theme";
   }, [activeTab, filteredTabIds]);
+  const panelRef = useRef<HTMLDivElement>(null);
 
   // Theme state
   const currentThemeId = useThemeStore((s) => s.themeId);
@@ -207,10 +204,10 @@ export function SettingsPanel({
   } | null>(null);
 
   useEffect(() => {
-    if (activeTab === "about" && !appInfo) {
+    if (resolvedActiveTab === "about" && !appInfo) {
       window.api.getAppInfo().then(setAppInfo);
     }
-  }, [activeTab, appInfo]);
+  }, [resolvedActiveTab, appInfo]);
 
   return (
     <>
@@ -269,7 +266,10 @@ export function SettingsPanel({
                   onClick={() => {
                     const goingBasic = !isBasicMode;
                     setIsBasicMode(goingBasic);
-                    if (goingBasic && !basicTabIds.includes(activeTab)) {
+                    if (
+                      goingBasic &&
+                      !basicTabIds.includes(resolvedActiveTab)
+                    ) {
                       setActiveTab("theme");
                     }
                   }}
@@ -320,11 +320,11 @@ export function SettingsPanel({
                     className="flex items-center gap-1.5 px-3 py-2 text-xs font-body font-medium rounded-t-lg cursor-pointer transition-colors relative whitespace-nowrap"
                     style={{
                       color:
-                        activeTab === id
+                        resolvedActiveTab === id
                           ? "var(--color-accent)"
                           : "var(--color-text-muted)",
                       background:
-                        activeTab === id
+                        resolvedActiveTab === id
                           ? "color-mix(in srgb, var(--color-accent) 9%, var(--color-surface))"
                           : "transparent",
                     }}
@@ -332,7 +332,7 @@ export function SettingsPanel({
                   >
                     {tabIcons[i]}
                     {t(tabKeys[i])}
-                    {activeTab === id && (
+                    {resolvedActiveTab === id && (
                       <div
                         className="absolute bottom-0 left-2 right-2 h-0.5 rounded-full"
                         style={{ background: "var(--color-accent)" }}
@@ -412,7 +412,7 @@ export function SettingsPanel({
                 </div>
               </div>
 
-              {activeTab === "theme" && (
+              {resolvedActiveTab === "theme" && (
                 <TabContent>
                   <SectionTitle>{t("settings.chooseTheme")}</SectionTitle>
                   <div className="flex gap-4 mt-3">
@@ -475,7 +475,7 @@ export function SettingsPanel({
                 </TabContent>
               )}
 
-              {activeTab === "display" && (
+              {resolvedActiveTab === "display" && (
                 <TabContent>
                   <SectionTitle>{t("settings.displayOptions")}</SectionTitle>
                   <div className="flex flex-col gap-4 mt-3">
@@ -511,7 +511,7 @@ export function SettingsPanel({
                 </TabContent>
               )}
 
-              {activeTab === "audio" && (
+              {resolvedActiveTab === "audio" && (
                 <TabContent>
                   <SectionTitle>{t("settings.audioSettings")}</SectionTitle>
                   <div className="flex flex-col gap-4 mt-3">
@@ -559,7 +559,7 @@ export function SettingsPanel({
                 </TabContent>
               )}
 
-              {activeTab === "practice" && (
+              {resolvedActiveTab === "practice" && (
                 <TabContent>
                   <SectionTitle>{t("settings.practiceDefaults")}</SectionTitle>
                   <div className="flex flex-col gap-4 mt-3">
@@ -707,7 +707,7 @@ export function SettingsPanel({
                 </TabContent>
               )}
 
-              {activeTab === "shortcuts" && (
+              {resolvedActiveTab === "shortcuts" && (
                 <TabContent>
                   <SectionTitle>{t("settings.keyboardShortcuts")}</SectionTitle>
                   <div className="flex flex-col gap-2.5 mt-3">
@@ -743,7 +743,7 @@ export function SettingsPanel({
                 </TabContent>
               )}
 
-              {activeTab === "language" && (
+              {resolvedActiveTab === "language" && (
                 <TabContent>
                   <SectionTitle>{t("settings.language")}</SectionTitle>
                   <div className="flex flex-col gap-2 mt-3">
@@ -804,7 +804,7 @@ export function SettingsPanel({
                 </TabContent>
               )}
 
-              {activeTab === "about" && (
+              {resolvedActiveTab === "about" && (
                 <TabContent>
                   <div className="space-y-4">
                     <div className="flex items-center justify-between">

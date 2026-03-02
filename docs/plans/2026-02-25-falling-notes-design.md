@@ -53,9 +53,9 @@ Y axis = time (seconds → screen y, up = future)
 
 ```typescript
 class NoteRenderer {
-  pool: Graphics[]                    // pre-allocated
-  active: Map<string, Graphics>       // currently displayed
-  poolSize = 512                      // initial pool
+  pool: Graphics[]; // pre-allocated
+  active: Map<string, Graphics>; // currently displayed
+  poolSize = 512; // initial pool
 
   update(currentTime: number, viewport: Viewport): void {
     // 1. Compute visible time range [currentTime, currentTime + windowSeconds]
@@ -73,21 +73,25 @@ Pool avoids GPU buffer allocation/deallocation. Keeps stable 60 FPS.
 
 Light background requires saturated, high-contrast colors:
 
-| Context | Color |
-|---------|-------|
-| Track 1 (right hand) | `#3B82F6` blue |
-| Track 2 (left hand) | `#F97316` orange |
-| Extra tracks | `#8B5CF6` purple, `#10B981` green |
-| Keyboard active | `#38BDF8` sky (existing) |
+| Context              | Color                             |
+| -------------------- | --------------------------------- |
+| Track 1 (right hand) | `#3B82F6` blue                    |
+| Track 2 (left hand)  | `#F97316` orange                  |
+| Extra tracks         | `#8B5CF6` purple, `#10B981` green |
+| Keyboard active      | `#38BDF8` sky (existing)          |
 
 ## State Management — Zustand
 
 **useSongStore**:
+
 ```typescript
-{ song: ParsedSong | null, loadSong, clearSong }
+{
+  song: (ParsedSong | null, loadSong, clearSong);
+}
 ```
 
 **usePlaybackStore**:
+
 ```typescript
 { currentTime: number, isPlaying: boolean, pixelsPerSecond: number,
   setCurrentTime, setPlaying }

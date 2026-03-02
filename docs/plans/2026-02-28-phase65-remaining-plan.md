@@ -15,6 +15,7 @@
 ### Task 1: Download Salamander Grand Piano SF2
 
 **Files:**
+
 - Replace: `resources/piano.sf2`
 
 **Step 1: Download Salamander Grand Piano SF2**
@@ -27,6 +28,7 @@ curl -L -o resources/piano.sf2 "https://raw.githubusercontent.com/sfzinstruments
 ```
 
 If the above URL doesn't work, try alternative sources or use the MuseScore General Lite SF2 (~30MB) from GitHub:
+
 ```bash
 curl -L -o resources/piano.sf2 "https://ftp.osuosl.org/pub/musescore/soundfont/MuseScore_General/MuseScore_General_Lite.sf2"
 ```
@@ -50,6 +52,7 @@ git commit -m "chore: replace TimGM6mb with Salamander Grand Piano SF2"
 ### Task 2: Add latencyCompensation to useSettingsStore
 
 **Files:**
+
 - Modify: `src/renderer/src/stores/useSettingsStore.ts`
 - Modify: `src/renderer/src/stores/useSettingsStore.test.ts`
 
@@ -63,11 +66,13 @@ setLatencyCompensation: (ms: number) => void;
 ```
 
 Add to defaults:
+
 ```typescript
 latencyCompensation: 0,
 ```
 
 Add setter (following existing clamping pattern):
+
 ```typescript
 setLatencyCompensation: (ms) => {
   const clamped = Math.max(0, Math.min(100, Math.round(ms)));
@@ -83,12 +88,12 @@ Add to the PersistedSettings type and the localStorage serialization/deserializa
 In `useSettingsStore.test.ts`, add:
 
 ```typescript
-describe('latencyCompensation', () => {
-  it('defaults to 0', () => {
+describe("latencyCompensation", () => {
+  it("defaults to 0", () => {
     expect(useSettingsStore.getState().latencyCompensation).toBe(0);
   });
 
-  it('clamps to 0-100 range', () => {
+  it("clamps to 0-100 range", () => {
     const { setLatencyCompensation } = useSettingsStore.getState();
     setLatencyCompensation(-10);
     expect(useSettingsStore.getState().latencyCompensation).toBe(0);
@@ -116,6 +121,7 @@ git commit -m "feat: add latencyCompensation to settings store"
 ### Task 3: Add category field to BuiltinSongMeta
 
 **Files:**
+
 - Modify: `src/shared/types.ts` (if BuiltinSongMeta is here) OR `src/renderer/src/features/songLibrary/` types
 
 **Step 1: Add optional category field**
@@ -142,6 +148,7 @@ git commit -m "chore(phase6.5): scaffold settings + types for remaining items"
 ### Task 4: TransportBar Audio Loading Status
 
 **Files:**
+
 - Modify: `src/renderer/src/features/fallingNotes/TransportBar.tsx`
 - Test: `src/renderer/src/features/fallingNotes/TransportBar.test.tsx`
 
@@ -157,21 +164,28 @@ Add a small loading spinner/text next to the play button when `audioStatus === '
 const audioStatus = usePlaybackStore((s) => s.audioStatus);
 
 // In JSX, near the play button:
-{audioStatus === 'loading' && (
-  <span className="text-xs opacity-60 animate-pulse" style={{ color: 'var(--color-text-secondary)' }}>
-    Loading audio...
-  </span>
-)}
-{audioStatus === 'error' && (
-  <span className="text-xs text-red-400">Audio error</span>
-)}
+{
+  audioStatus === "loading" && (
+    <span
+      className="text-xs opacity-60 animate-pulse"
+      style={{ color: "var(--color-text-secondary)" }}
+    >
+      Loading audio...
+    </span>
+  );
+}
+{
+  audioStatus === "error" && (
+    <span className="text-xs text-red-400">Audio error</span>
+  );
+}
 ```
 
 **Step 3: Write test**
 
 ```typescript
-it('shows loading indicator when audio is loading', () => {
-  usePlaybackStore.setState({ audioStatus: 'loading' });
+it("shows loading indicator when audio is loading", () => {
+  usePlaybackStore.setState({ audioStatus: "loading" });
   // render TransportBar and assert "Loading audio..." text is present
 });
 ```
@@ -189,6 +203,7 @@ git commit -m "feat: show audio loading status in TransportBar"
 ### Task 5: A-B Loop Seek Bar Highlight
 
 **Files:**
+
 - Modify: `src/renderer/src/features/fallingNotes/TransportBar.tsx`
 
 **Step 1: Read current seek bar implementation**
@@ -204,8 +219,10 @@ const loopRange = usePracticeStore((s) => s.loopRange);
 const duration = useSongStore((s) => s.song?.duration ?? 0);
 
 // Compute percentage positions
-const loopStartPct = loopRange && duration > 0 ? (loopRange[0] / duration) * 100 : 0;
-const loopEndPct = loopRange && duration > 0 ? (loopRange[1] / duration) * 100 : 100;
+const loopStartPct =
+  loopRange && duration > 0 ? (loopRange[0] / duration) * 100 : 0;
+const loopEndPct =
+  loopRange && duration > 0 ? (loopRange[1] / duration) * 100 : 100;
 ```
 
 Wrap the seek bar `<input>` in a relative container and add an absolute-positioned overlay:
@@ -236,7 +253,7 @@ pnpm dev
 **Step 4: Write unit test**
 
 ```typescript
-it('renders loop highlight when loopRange is set', () => {
+it("renders loop highlight when loopRange is set", () => {
   usePracticeStore.setState({ loopRange: [10, 30] });
   useSongStore.setState({ song: { duration: 60 } });
   // render TransportBar, assert overlay div exists with correct style
@@ -255,6 +272,7 @@ git commit -m "feat: add A-B loop highlight overlay on seek bar"
 ### Task 6: SongCard Difficulty Tooltip
 
 **Files:**
+
 - Modify: `src/renderer/src/features/songLibrary/SongCard.tsx`
 
 **Step 1: Read current difficulty badge**
@@ -265,25 +283,25 @@ The difficulty badge is at lines ~72-80. It shows text like "Beginner" but has n
 
 ```tsx
 const difficultyDescriptions: Record<string, string> = {
-  beginner: 'Simple melodies, single hand, slow tempo',
-  intermediate: 'Both hands, moderate tempo, basic chords',
-  advanced: 'Complex rhythms, fast passages, wide range',
+  beginner: "Simple melodies, single hand, slow tempo",
+  intermediate: "Both hands, moderate tempo, basic chords",
+  advanced: "Complex rhythms, fast passages, wide range",
 };
 
 // On the badge element:
 <span
-  title={difficultyDescriptions[song.difficulty] ?? ''}
+  title={difficultyDescriptions[song.difficulty] ?? ""}
   aria-label={`Difficulty: ${difficultyLabels[song.difficulty]} — ${difficultyDescriptions[song.difficulty]}`}
   className={/* existing classes */}
 >
   {difficultyLabels[song.difficulty]}
-</span>
+</span>;
 ```
 
 **Step 3: Write test**
 
 ```typescript
-it('renders difficulty tooltip', () => {
+it("renders difficulty tooltip", () => {
   // render SongCard with difficulty='beginner'
   // assert title attribute contains description text
 });
@@ -301,6 +319,7 @@ git commit -m "feat: add difficulty tooltip to SongCard badge"
 ### Task 7: SongCard Best Score Badge
 
 **Files:**
+
 - Modify: `src/renderer/src/features/songLibrary/SongCard.tsx`
 
 **Step 1: Add best score display**
@@ -308,7 +327,7 @@ git commit -m "feat: add difficulty tooltip to SongCard badge"
 Import `useProgressStore` and query best score:
 
 ```tsx
-import { useProgressStore } from '@renderer/stores/useProgressStore';
+import { useProgressStore } from "@renderer/stores/useProgressStore";
 
 // Inside SongCard component:
 const bestScore = useProgressStore((s) => s.getBestScore(song.id));
@@ -317,29 +336,32 @@ const bestScore = useProgressStore((s) => s.getBestScore(song.id));
 Add badge in the card footer, next to difficulty:
 
 ```tsx
-{bestScore && (
-  <span
-    className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full"
-    style={{
-      backgroundColor: bestScore.score.accuracy >= 90
-        ? 'var(--color-success, #22c55e)'
-        : bestScore.score.accuracy >= 70
-          ? 'var(--color-accent)'
-          : 'var(--color-text-secondary)',
-      color: 'white',
-    }}
-  >
-    {Math.round(bestScore.score.accuracy)}%
-  </span>
-)}
+{
+  bestScore && (
+    <span
+      className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full"
+      style={{
+        backgroundColor:
+          bestScore.score.accuracy >= 90
+            ? "var(--color-success, #22c55e)"
+            : bestScore.score.accuracy >= 70
+              ? "var(--color-accent)"
+              : "var(--color-text-secondary)",
+        color: "white",
+      }}
+    >
+      {Math.round(bestScore.score.accuracy)}%
+    </span>
+  );
+}
 ```
 
 **Step 2: Write test**
 
 ```typescript
-it('shows best score badge when progress exists', () => {
+it("shows best score badge when progress exists", () => {
   useProgressStore.setState({
-    sessions: [{ songId: 'test', score: { accuracy: 85 }, /* ... */ }],
+    sessions: [{ songId: "test", score: { accuracy: 85 } /* ... */ }],
   });
   // render SongCard with song.id='test', assert "85%" badge visible
 });
@@ -357,6 +379,7 @@ git commit -m "feat: display best score badge on SongCard"
 ### Task 8: CelebrationOverlay "New Record!" Indicator
 
 **Files:**
+
 - Modify: `src/renderer/src/features/practice/CelebrationOverlay.tsx`
 
 **Step 1: Read current CelebrationOverlay**
@@ -366,10 +389,11 @@ Note the props interface and where the tier subtitle is displayed (~line 156).
 **Step 2: Add songId prop and new record detection**
 
 Extend props:
+
 ```typescript
 interface CelebrationOverlayProps {
   score: PracticeScore;
-  songId: string;  // NEW
+  songId: string; // NEW
   visible: boolean;
   onPracticeAgain: () => void;
   onChooseSong: () => void;
@@ -377,23 +401,28 @@ interface CelebrationOverlayProps {
 ```
 
 Inside the component:
+
 ```tsx
-import { useProgressStore } from '@renderer/stores/useProgressStore';
+import { useProgressStore } from "@renderer/stores/useProgressStore";
 
 const previousBest = useProgressStore((s) => s.getBestScore(songId));
-const isNewRecord = !previousBest || score.accuracy > previousBest.score.accuracy;
+const isNewRecord =
+  !previousBest || score.accuracy > previousBest.score.accuracy;
 ```
 
 After the tier subtitle, add:
+
 ```tsx
-{isNewRecord && score.totalNotes > 0 && (
-  <div
-    className="mt-2 text-sm font-bold tracking-wide animate-bounce"
-    style={{ color: 'var(--color-accent)' }}
-  >
-    New Record!
-  </div>
-)}
+{
+  isNewRecord && score.totalNotes > 0 && (
+    <div
+      className="mt-2 text-sm font-bold tracking-wide animate-bounce"
+      style={{ color: "var(--color-accent)" }}
+    >
+      New Record!
+    </div>
+  );
+}
 ```
 
 **Step 3: Update all call sites to pass songId prop**
@@ -404,13 +433,17 @@ In App.tsx or wherever CelebrationOverlay is rendered, pass `songId={song?.id ??
 
 ```typescript
 it('shows "New Record!" when score beats previous best', () => {
-  useProgressStore.setState({ sessions: [{ songId: 's1', score: { accuracy: 70 } }] });
+  useProgressStore.setState({
+    sessions: [{ songId: "s1", score: { accuracy: 70 } }],
+  });
   // render CelebrationOverlay with songId='s1', score.accuracy=85
   // assert "New Record!" text visible
 });
 
 it('does not show "New Record!" when score is lower', () => {
-  useProgressStore.setState({ sessions: [{ songId: 's1', score: { accuracy: 90 } }] });
+  useProgressStore.setState({
+    sessions: [{ songId: "s1", score: { accuracy: 90 } }],
+  });
   // render with score.accuracy=80
   // assert "New Record!" text NOT visible
 });
@@ -428,13 +461,14 @@ git commit -m "feat: show 'New Record!' indicator in CelebrationOverlay"
 ### Task 9: Recent Files UI Section in SongLibrary
 
 **Files:**
+
 - Create: `src/renderer/src/hooks/useRecentFiles.ts`
 - Modify: `src/renderer/src/features/songLibrary/SongLibrary.tsx`
 
 **Step 1: Create useRecentFiles hook**
 
 ```typescript
-import { useState, useEffect } from 'react';
+import { useState, useEffect } from "react";
 
 interface RecentFile {
   path: string;
@@ -463,34 +497,39 @@ export function useRecentFiles() {
 In SongLibrary.tsx, after the header/subtitle, before the song grid:
 
 ```tsx
-import { useRecentFiles } from '@renderer/hooks/useRecentFiles';
+import { useRecentFiles } from "@renderer/hooks/useRecentFiles";
 
 const { recentFiles } = useRecentFiles();
 
 // In JSX, before filters:
-{recentFiles.length > 0 && (
-  <div className="mb-6">
-    <h3 className="text-sm font-semibold mb-2" style={{ color: 'var(--color-text-secondary)' }}>
-      Recently Played
-    </h3>
-    <div className="flex gap-2 overflow-x-auto pb-2">
-      {recentFiles.slice(0, 5).map((file) => (
-        <button
-          key={file.path}
-          onClick={() => onLoadRecent(file.path)}
-          className="shrink-0 px-3 py-1.5 rounded-lg text-xs truncate max-w-[160px]"
-          style={{
-            backgroundColor: 'var(--color-surface)',
-            color: 'var(--color-text)',
-          }}
-          title={file.name}
-        >
-          {file.name}
-        </button>
-      ))}
+{
+  recentFiles.length > 0 && (
+    <div className="mb-6">
+      <h3
+        className="text-sm font-semibold mb-2"
+        style={{ color: "var(--color-text-secondary)" }}
+      >
+        Recently Played
+      </h3>
+      <div className="flex gap-2 overflow-x-auto pb-2">
+        {recentFiles.slice(0, 5).map((file) => (
+          <button
+            key={file.path}
+            onClick={() => onLoadRecent(file.path)}
+            className="shrink-0 px-3 py-1.5 rounded-lg text-xs truncate max-w-[160px]"
+            style={{
+              backgroundColor: "var(--color-surface)",
+              color: "var(--color-text)",
+            }}
+            title={file.name}
+          >
+            {file.name}
+          </button>
+        ))}
+      </div>
     </div>
-  </div>
-)}
+  );
+}
 ```
 
 **Step 3: Implement direct path loading**
@@ -505,7 +544,7 @@ const onLoadRecent = async (path: string) => {
       useSongStore.getState().setSong(result);
     }
   } catch (err) {
-    console.error('Failed to load recent file:', err);
+    console.error("Failed to load recent file:", err);
   }
 };
 ```
@@ -515,10 +554,10 @@ Check if `window.api.loadMidiFile(path)` exists in preload. If not, the IPC hand
 **Step 4: Write tests**
 
 ```typescript
-describe('useRecentFiles', () => {
-  it('loads recent files from IPC', async () => {
-    vi.spyOn(window.api, 'loadRecentFiles').mockResolvedValue([
-      { path: '/test.mid', name: 'Test', timestamp: Date.now() },
+describe("useRecentFiles", () => {
+  it("loads recent files from IPC", async () => {
+    vi.spyOn(window.api, "loadRecentFiles").mockResolvedValue([
+      { path: "/test.mid", name: "Test", timestamp: Date.now() },
     ]);
     // render hook, assert recentFiles has 1 entry
   });
@@ -537,14 +576,17 @@ git commit -m "feat: add recent files section to SongLibrary with direct loading
 ### Task 10: MIDI Connection Test Button
 
 **Files:**
+
 - Modify: `src/renderer/src/features/midiDevice/DeviceSelector.tsx`
 
 **Step 1: Add test button after output selector**
 
 ```tsx
-import { MidiOutputSender } from '@renderer/engines/midi/MidiOutputSender';
+import { MidiOutputSender } from "@renderer/engines/midi/MidiOutputSender";
 
-const [testFeedback, setTestFeedback] = useState<'idle' | 'playing' | 'done'>('idle');
+const [testFeedback, setTestFeedback] = useState<"idle" | "playing" | "done">(
+  "idle",
+);
 
 const handleTestNote = async () => {
   const outputId = useMidiDeviceStore.getState().selectedOutputId;
@@ -552,40 +594,50 @@ const handleTestNote = async () => {
   const output = outputs.find((o) => o.id === outputId);
   if (!output) return;
 
-  setTestFeedback('playing');
+  setTestFeedback("playing");
   const sender = new MidiOutputSender();
   sender.attach(output as unknown as MIDIOutput, 0);
   sender.noteOn(60, 100); // Middle C
   setTimeout(() => {
     sender.noteOff(60);
     sender.detach();
-    setTestFeedback('done');
-    setTimeout(() => setTestFeedback('idle'), 1500);
+    setTestFeedback("done");
+    setTimeout(() => setTestFeedback("idle"), 1500);
   }, 300);
 };
 ```
 
 Button JSX (after output selector):
+
 ```tsx
-{selectedOutputId && (
-  <button
-    onClick={handleTestNote}
-    disabled={testFeedback === 'playing'}
-    className="text-xs px-2 py-1 rounded"
-    style={{
-      backgroundColor: testFeedback === 'done' ? 'var(--color-success, #22c55e)' : 'var(--color-surface)',
-      color: 'var(--color-text)',
-    }}
-  >
-    {testFeedback === 'playing' ? 'Playing...' : testFeedback === 'done' ? 'OK!' : 'Test'}
-  </button>
-)}
+{
+  selectedOutputId && (
+    <button
+      onClick={handleTestNote}
+      disabled={testFeedback === "playing"}
+      className="text-xs px-2 py-1 rounded"
+      style={{
+        backgroundColor:
+          testFeedback === "done"
+            ? "var(--color-success, #22c55e)"
+            : "var(--color-surface)",
+        color: "var(--color-text)",
+      }}
+    >
+      {testFeedback === "playing"
+        ? "Playing..."
+        : testFeedback === "done"
+          ? "OK!"
+          : "Test"}
+    </button>
+  );
+}
 ```
 
 **Step 2: Write test**
 
 ```typescript
-it('sends test note when test button is clicked', () => {
+it("sends test note when test button is clicked", () => {
   // mock MidiOutputSender, set selectedOutputId, click test button
   // assert noteOn(60, 100) was called
 });
@@ -603,6 +655,7 @@ git commit -m "feat: add MIDI connection test button to DeviceSelector"
 ### Task 11: Latency Compensation UI in SettingsPanel
 
 **Files:**
+
 - Modify: `src/renderer/src/features/settings/SettingsPanel.tsx`
 
 **Step 1: Add latency slider to Practice section**
@@ -611,11 +664,16 @@ In the Practice section of SettingsPanel.tsx, after count-in beats:
 
 ```tsx
 const latencyCompensation = useSettingsStore((s) => s.latencyCompensation);
-const setLatencyCompensation = useSettingsStore((s) => s.setLatencyCompensation);
+const setLatencyCompensation = useSettingsStore(
+  (s) => s.setLatencyCompensation,
+);
 
 // JSX in Practice section:
 <div>
-  <label className="text-xs font-medium" style={{ color: 'var(--color-text-secondary)' }}>
+  <label
+    className="text-xs font-medium"
+    style={{ color: "var(--color-text-secondary)" }}
+  >
     Latency Compensation
   </label>
   <div className="flex items-center gap-2">
@@ -627,11 +685,14 @@ const setLatencyCompensation = useSettingsStore((s) => s.setLatencyCompensation)
       onChange={(e) => setLatencyCompensation(Number(e.target.value))}
       className="flex-1"
     />
-    <span className="text-xs w-10 text-right" style={{ color: 'var(--color-text)' }}>
+    <span
+      className="text-xs w-10 text-right"
+      style={{ color: "var(--color-text)" }}
+    >
       {latencyCompensation}ms
     </span>
   </div>
-</div>
+</div>;
 ```
 
 **Step 2: Wire latency to WaitMode hit detection**
@@ -639,7 +700,7 @@ const setLatencyCompensation = useSettingsStore((s) => s.setLatencyCompensation)
 In `engines/practice/WaitMode.ts`, read the setting:
 
 ```typescript
-import { useSettingsStore } from '@renderer/stores/useSettingsStore';
+import { useSettingsStore } from "@renderer/stores/useSettingsStore";
 
 // In the hit detection window check:
 const latency = useSettingsStore.getState().latencyCompensation / 1000; // convert to seconds
@@ -650,7 +711,7 @@ const adjustedTime = inputTime - latency;
 **Step 3: Write test**
 
 ```typescript
-it('applies latency compensation to hit detection window', () => {
+it("applies latency compensation to hit detection window", () => {
   useSettingsStore.setState({ latencyCompensation: 50 });
   // Test WaitMode with 50ms compensation
   // A note hit at time T should be evaluated as if at T - 0.05
@@ -669,14 +730,15 @@ git commit -m "feat: add latency compensation setting + WaitMode integration"
 ### Task 12: Metronome Visual Pulse Component
 
 **Files:**
+
 - Create: `src/renderer/src/features/metronome/MetronomePulse.tsx`
 - Create: `src/renderer/src/features/metronome/MetronomePulse.test.tsx`
 
 **Step 1: Create MetronomePulse component**
 
 ```tsx
-import { useState, useEffect, useCallback } from 'react';
-import { useSettingsStore } from '@renderer/stores/useSettingsStore';
+import { useState, useEffect, useCallback } from "react";
+import { useSettingsStore } from "@renderer/stores/useSettingsStore";
 
 interface MetronomePulseProps {
   isPlaying: boolean;
@@ -684,7 +746,11 @@ interface MetronomePulseProps {
   beatsPerMeasure: number;
 }
 
-export function MetronomePulse({ isPlaying, currentBeat, beatsPerMeasure }: MetronomePulseProps) {
+export function MetronomePulse({
+  isPlaying,
+  currentBeat,
+  beatsPerMeasure,
+}: MetronomePulseProps) {
   const enabled = useSettingsStore((s) => s.metronomeEnabled);
 
   if (!enabled || !isPlaying) return null;
@@ -696,13 +762,15 @@ export function MetronomePulse({ isPlaying, currentBeat, beatsPerMeasure }: Metr
           key={i}
           className="w-2 h-2 rounded-full transition-all duration-100"
           style={{
-            backgroundColor: i === currentBeat % beatsPerMeasure
-              ? i === 0
-                ? 'var(--color-accent)'           // Strong beat
-                : 'var(--color-text)'              // Weak beat
-              : 'var(--color-text-secondary)',      // Inactive
+            backgroundColor:
+              i === currentBeat % beatsPerMeasure
+                ? i === 0
+                  ? "var(--color-accent)" // Strong beat
+                  : "var(--color-text)" // Weak beat
+                : "var(--color-text-secondary)", // Inactive
             opacity: i === currentBeat % beatsPerMeasure ? 1 : 0.3,
-            transform: i === currentBeat % beatsPerMeasure ? 'scale(1.4)' : 'scale(1)',
+            transform:
+              i === currentBeat % beatsPerMeasure ? "scale(1.4)" : "scale(1)",
           }}
         />
       ))}
@@ -714,13 +782,13 @@ export function MetronomePulse({ isPlaying, currentBeat, beatsPerMeasure }: Metr
 **Step 2: Write test**
 
 ```typescript
-describe('MetronomePulse', () => {
-  it('renders nothing when metronome is disabled', () => {
+describe("MetronomePulse", () => {
+  it("renders nothing when metronome is disabled", () => {
     useSettingsStore.setState({ metronomeEnabled: false });
     // render with isPlaying=true, assert null output
   });
 
-  it('highlights current beat dot', () => {
+  it("highlights current beat dot", () => {
     useSettingsStore.setState({ metronomeEnabled: true });
     // render with isPlaying=true, currentBeat=2, beatsPerMeasure=4
     // assert 3rd dot has scale(1.4) and full opacity
@@ -741,6 +809,7 @@ git commit -m "feat: add MetronomePulse visual beat indicator"
 ### Task 13: TransportBar Metronome Toggle
 
 **Files:**
+
 - Modify: `src/renderer/src/features/fallingNotes/TransportBar.tsx`
 
 **Step 1: Add metronome toggle button**
@@ -748,9 +817,9 @@ git commit -m "feat: add MetronomePulse visual beat indicator"
 Import settings store and MetronomePulse:
 
 ```tsx
-import { useSettingsStore } from '@renderer/stores/useSettingsStore';
-import { MetronomePulse } from '@renderer/features/metronome/MetronomePulse';
-import { Timer } from 'lucide-react'; // or appropriate metronome icon
+import { useSettingsStore } from "@renderer/stores/useSettingsStore";
+import { MetronomePulse } from "@renderer/features/metronome/MetronomePulse";
+import { Timer } from "lucide-react"; // or appropriate metronome icon
 ```
 
 Add toggle button near play controls:
@@ -762,17 +831,21 @@ const setMetronomeEnabled = useSettingsStore((s) => s.setMetronomeEnabled);
 // In JSX, after reset button:
 <button
   onClick={() => setMetronomeEnabled(!metronomeEnabled)}
-  title={metronomeEnabled ? 'Disable metronome' : 'Enable metronome'}
+  title={metronomeEnabled ? "Disable metronome" : "Enable metronome"}
   className="p-1.5 rounded-md transition-colors"
   style={{
-    color: metronomeEnabled ? 'var(--color-accent)' : 'var(--color-text-secondary)',
+    color: metronomeEnabled
+      ? "var(--color-accent)"
+      : "var(--color-text-secondary)",
   }}
 >
   <Timer size={16} />
-</button>
+</button>;
 
-{/* MetronomePulse near time display */}
-<MetronomePulse isPlaying={isPlaying} currentBeat={0} beatsPerMeasure={4} />
+{
+  /* MetronomePulse near time display */
+}
+<MetronomePulse isPlaying={isPlaying} currentBeat={0} beatsPerMeasure={4} />;
 ```
 
 Note: The `currentBeat` needs to come from MetronomeEngine. Check how MetronomeEngine exposes beat state — likely through a callback or `currentBeat` getter. Wire this through a React state or ref updated by the engine's beat callback.
@@ -780,7 +853,7 @@ Note: The `currentBeat` needs to come from MetronomeEngine. Check how MetronomeE
 **Step 2: Write test**
 
 ```typescript
-it('toggles metronome on button click', () => {
+it("toggles metronome on button click", () => {
   useSettingsStore.setState({ metronomeEnabled: false });
   // render TransportBar, click metronome button
   // assert metronomeEnabled is now true
@@ -799,6 +872,7 @@ git commit -m "feat: add metronome toggle button to TransportBar"
 ### Task 14: Generate Built-in MIDI Songs
 
 **Files:**
+
 - Create: `scripts/generate-songs.ts`
 - Create: Multiple `.mid` files in `resources/midi/`
 - Modify: `resources/midi/songs.json`
@@ -808,19 +882,19 @@ git commit -m "feat: add metronome toggle button to TransportBar"
 Create `scripts/generate-songs.ts` using @tonejs/midi:
 
 ```typescript
-import { Midi } from '@tonejs/midi';
-import * as fs from 'fs';
-import * as path from 'path';
+import { Midi } from "@tonejs/midi";
+import * as fs from "fs";
+import * as path from "path";
 
-const OUTPUT_DIR = path.resolve(__dirname, '../resources/midi');
+const OUTPUT_DIR = path.resolve(__dirname, "../resources/midi");
 
 interface SongDef {
   id: string;
   file: string;
   title: string;
   composer: string;
-  difficulty: 'beginner' | 'intermediate' | 'advanced';
-  category: 'exercise' | 'classical' | 'popular' | 'holiday';
+  difficulty: "beginner" | "intermediate" | "advanced";
+  category: "exercise" | "classical" | "popular" | "holiday";
   tags: string[];
   bpm: number;
   timeSignature: [number, number];
@@ -842,7 +916,7 @@ function generateMidi(song: SongDef): void {
 
   // Right hand track
   const rhTrack = midi.addTrack();
-  rhTrack.name = 'Right Hand';
+  rhTrack.name = "Right Hand";
   rhTrack.channel = 0;
   for (const [midi_note, startBeat, durBeats] of song.rightHand) {
     rhTrack.addNote({
@@ -856,7 +930,7 @@ function generateMidi(song: SongDef): void {
   // Left hand track (optional)
   if (song.leftHand && song.leftHand.length > 0) {
     const lhTrack = midi.addTrack();
-    lhTrack.name = 'Left Hand';
+    lhTrack.name = "Left Hand";
     lhTrack.channel = 1;
     for (const [midi_note, startBeat, durBeats] of song.leftHand) {
       lhTrack.addNote({
@@ -868,13 +942,17 @@ function generateMidi(song: SongDef): void {
     }
   }
 
-  fs.writeFileSync(path.join(OUTPUT_DIR, song.file), Buffer.from(midi.toArray()));
+  fs.writeFileSync(
+    path.join(OUTPUT_DIR, song.file),
+    Buffer.from(midi.toArray()),
+  );
 }
 ```
 
 Then define 12+ songs with note data. Here are the melodies (use MIDI note numbers):
 
 **Beginner songs:**
+
 - Mary Had a Little Lamb (E4=64, D4=62, C4=60): 64,62,60,62,64,64,64...
 - Hot Cross Buns: 64,62,60, 64,62,60, 60,60,60,60, 62,62,62,62, 64,62,60
 - Jingle Bells: 64,64,64, 64,64,64, 64,67,60,62,64...
@@ -883,12 +961,14 @@ Then define 12+ songs with note data. Here are the melodies (use MIDI note numbe
 - Row Row Row Your Boat: 60,60,60,62,64, 64,62,64,65,67...
 
 **Intermediate songs:**
+
 - Für Elise (simplified): 76,75,76,75,76,71,74,72,69...
 - Minuet in G (Bach): 67,66,65,64,63,62,64...
 - Prelude in C (Bach): Arpeggiated chords C-E-G-C-E...
 - Canon in D (simplified): 74,72,69,71,67,69,64,67...
 
 **Advanced songs:**
+
 - Moonlight Sonata mvt1 (simplified): Triplet arpeggios
 - Turkish March (simplified): 71,72,71,69,67,71,72,71,69,67...
 
@@ -931,6 +1011,7 @@ git commit -m "feat: expand built-in song library to 15 songs with categories"
 ### Task 15: SongLibrary Category Display
 
 **Files:**
+
 - Modify: `src/renderer/src/features/songLibrary/SongLibrary.tsx`
 
 **Step 1: Group songs by category**
@@ -941,7 +1022,7 @@ After filtering, group songs:
 const grouped = useMemo(() => {
   const groups: Record<string, BuiltinSongMeta[]> = {};
   for (const song of filteredSongs) {
-    const cat = song.category ?? 'uncategorized';
+    const cat = song.category ?? "uncategorized";
     (groups[cat] ??= []).push(song);
   }
   return groups;
@@ -951,18 +1032,28 @@ const grouped = useMemo(() => {
 **Step 2: Render grouped sections**
 
 ```tsx
-{Object.entries(grouped).map(([category, songs]) => (
-  <div key={category} className="mb-6">
-    <h3 className="text-sm font-semibold capitalize mb-2" style={{ color: 'var(--color-text-secondary)' }}>
-      {category}
-    </h3>
-    <div className="grid grid-cols-2 gap-3">
-      {songs.map((song, i) => (
-        <SongCard key={song.id} song={song} onSelect={handleSelect} colorIndex={i} />
-      ))}
+{
+  Object.entries(grouped).map(([category, songs]) => (
+    <div key={category} className="mb-6">
+      <h3
+        className="text-sm font-semibold capitalize mb-2"
+        style={{ color: "var(--color-text-secondary)" }}
+      >
+        {category}
+      </h3>
+      <div className="grid grid-cols-2 gap-3">
+        {songs.map((song, i) => (
+          <SongCard
+            key={song.id}
+            song={song}
+            onSelect={handleSelect}
+            colorIndex={i}
+          />
+        ))}
+      </div>
     </div>
-  </div>
-))}
+  ));
+}
 ```
 
 **Step 3: Commit**
@@ -1009,6 +1100,7 @@ pnpm dev
 ```
 
 Verify:
+
 - [ ] Salamander SF2 loads (piano sounds good)
 - [ ] Audio loading spinner shows briefly
 - [ ] SongLibrary shows 15+ songs grouped by category
@@ -1028,31 +1120,38 @@ Verify:
 ### Task 17: Update ROADMAP.md Checkboxes
 
 **Files:**
+
 - Modify: `docs/ROADMAP.md`
 
 Check off all completed items:
 
 **Phase 4:**
+
 - [x] 鋼琴 SoundFont 檔案
 
 **Phase 5:**
+
 - [x] 連線測試按鈕
 - [x] 延遲補償設定
 
 **Phase 6:**
+
 - [x] seek bar 彩色高亮區段
 
 **Phase 6.5 Sprint 1:**
+
 - [x] 真實鋼琴音色 (all sub-items)
 - [x] 難度說明
 
 **Phase 6.5 Sprint 3:**
+
 - [x] SongCard 最佳成績 badge
 - [x] 結算畫面「新紀錄！」
 - [x] SongLibrary「最近」section
 - [x] 直接路徑載入
 
 **Phase 6.5 Sprint 4:**
+
 - [x] Metronome.tsx 視覺脈衝
 - [x] TransportBar 開關按鈕
 - [x] 擴充內建曲庫

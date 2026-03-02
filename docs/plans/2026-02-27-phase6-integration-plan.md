@@ -13,6 +13,7 @@
 ### Task 1: Create practiceManager.ts — Singleton Engine Manager
 
 **Files:**
+
 - Create: `src/renderer/src/engines/practice/practiceManager.ts`
 - Test: `src/renderer/src/engines/practice/practiceManager.test.ts`
 
@@ -20,19 +21,19 @@
 
 ```typescript
 // practiceManager.test.ts
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach } from "vitest";
 import {
   initPracticeEngines,
   getPracticeEngines,
   disposePracticeEngines,
-} from './practiceManager';
+} from "./practiceManager";
 
-describe('practiceManager', () => {
+describe("practiceManager", () => {
   beforeEach(() => {
     disposePracticeEngines();
   });
 
-  it('returns null engines before init', () => {
+  it("returns null engines before init", () => {
     const e = getPracticeEngines();
     expect(e.waitMode).toBeNull();
     expect(e.speedController).toBeNull();
@@ -40,7 +41,7 @@ describe('practiceManager', () => {
     expect(e.scoreCalculator).toBeNull();
   });
 
-  it('initializes all four engines', () => {
+  it("initializes all four engines", () => {
     initPracticeEngines();
     const e = getPracticeEngines();
     expect(e.waitMode).not.toBeNull();
@@ -49,14 +50,14 @@ describe('practiceManager', () => {
     expect(e.scoreCalculator).not.toBeNull();
   });
 
-  it('dispose nulls everything', () => {
+  it("dispose nulls everything", () => {
     initPracticeEngines();
     disposePracticeEngines();
     const e = getPracticeEngines();
     expect(e.waitMode).toBeNull();
   });
 
-  it('idempotent init does not create duplicates', () => {
+  it("idempotent init does not create duplicates", () => {
     initPracticeEngines();
     const first = getPracticeEngines().waitMode;
     initPracticeEngines();
@@ -74,10 +75,10 @@ Expected: FAIL — module not found
 
 ```typescript
 // practiceManager.ts
-import { WaitMode } from './WaitMode';
-import { SpeedController } from './SpeedController';
-import { LoopController } from './LoopController';
-import { ScoreCalculator } from './ScoreCalculator';
+import { WaitMode } from "./WaitMode";
+import { SpeedController } from "./SpeedController";
+import { LoopController } from "./LoopController";
+import { ScoreCalculator } from "./ScoreCalculator";
 
 let _waitMode: WaitMode | null = null;
 let _speedController: SpeedController | null = null;
@@ -129,6 +130,7 @@ git commit -m "feat(practice): add practiceManager singleton"
 ### Task 2: Add findSpriteForNote() to NoteRenderer
 
 **Files:**
+
 - Modify: `src/renderer/src/engines/fallingNotes/NoteRenderer.ts`
 - Modify: `src/renderer/src/engines/fallingNotes/NoteRenderer.test.ts`
 
@@ -139,8 +141,8 @@ git commit -m "feat(practice): add practiceManager singleton"
 Add to existing `NoteRenderer.test.ts`:
 
 ```typescript
-describe('findSpriteForNote', () => {
-  it('returns sprite for a note in the active map', () => {
+describe("findSpriteForNote", () => {
+  it("returns sprite for a note in the active map", () => {
     // After calling update() with a song, findSpriteForNote should return the sprite
     const renderer = new NoteRenderer(container);
     renderer.init(800);
@@ -151,7 +153,7 @@ describe('findSpriteForNote', () => {
     expect(sprite).not.toBeNull();
   });
 
-  it('returns null for non-existent note', () => {
+  it("returns null for non-existent note", () => {
     const renderer = new NoteRenderer(container);
     renderer.init(800);
     renderer.update(mockSong, mockViewport);
@@ -200,16 +202,19 @@ git commit -m "feat(practice): add NoteRenderer.findSpriteForNote()"
 ### Task 3: Integrate practice logic into tickerLoop.ts
 
 **Files:**
+
 - Modify: `src/renderer/src/engines/fallingNotes/tickerLoop.ts`
 - Create: `src/renderer/src/engines/fallingNotes/tickerLoop.test.ts` (if doesn't exist, or add to existing)
 
 **Context:** `createTickerUpdate` currently:
+
 1. Reads playback state from stores
 2. Advances time (audio-based or delta-based)
 3. Updates NoteRenderer
 4. Notifies on active notes change
 
 We add three integration points after time computation:
+
 - Speed: multiply `pps` by practice speed
 - WaitMode: gate time advancement (return false → freeze)
 - Loop: auto-seek when reaching B point
@@ -263,7 +268,9 @@ export function createTickerUpdate(
           // Still update renderer so notes stay visible
           const screen = getScreenSize();
           const effectivePps = speedController
-            ? speedController.effectivePixelsPerSecond(playState.pixelsPerSecond)
+            ? speedController.effectivePixelsPerSecond(
+                playState.pixelsPerSecond,
+              )
             : playState.pixelsPerSecond;
           const vp: Viewport = {
             width: screen.width,
@@ -291,7 +298,10 @@ export function createTickerUpdate(
       playState.setCurrentTime(effectiveTime);
 
       // ── Loop check: auto-seek at B point ──
-      if (loopController?.isActive && loopController.shouldLoop(effectiveTime)) {
+      if (
+        loopController?.isActive &&
+        loopController.shouldLoop(effectiveTime)
+      ) {
         const loopStart = loopController.getLoopStart();
         playState.setCurrentTime(loopStart);
         effectiveTime = loopStart;
@@ -345,6 +355,7 @@ git commit -m "feat(practice): integrate WaitMode, speed, and loop into tickerLo
 ### Task 4: Expose NoteRenderer ref from FallingNotesCanvas
 
 **Files:**
+
 - Modify: `src/renderer/src/features/fallingNotes/FallingNotesCanvas.tsx`
 
 **Context:** App.tsx needs access to the NoteRenderer instance to call `flashHit`/`markMiss` from WaitMode callbacks. Use a callback ref pattern (like `onActiveNotesChange`).
@@ -401,9 +412,11 @@ git commit -m "feat(practice): expose NoteRenderer ref from FallingNotesCanvas"
 ### Task 5: Wire practice engines in App.tsx
 
 **Files:**
+
 - Modify: `src/renderer/src/App.tsx`
 
 **Context:** This is the main integration task. App.tsx needs to:
+
 1. Initialize practice engines when a song loads
 2. Sync usePracticeStore changes → engine singletons
 3. Wire MIDI activeNotes → WaitMode.checkInput()
@@ -474,10 +487,7 @@ useEffect(() => {
       }
       // Show combo at milestones
       const score = usePracticeStore.getState().score;
-      if (
-        nr &&
-        [5, 10, 25, 50, 100].includes(score.currentStreak)
-      ) {
+      if (nr && [5, 10, 25, 50, 100].includes(score.currentStreak)) {
         nr.showCombo(score.currentStreak, 400, 200);
       }
     },
@@ -506,7 +516,9 @@ useEffect(() => {
       const { scheduler } = audioRef.current;
       const time = usePlaybackStore.getState().currentTime;
       if (scheduler) {
-        void audioRef.current.engine?.resume().then(() => scheduler.start(time));
+        void audioRef.current.engine
+          ?.resume()
+          .then(() => scheduler.start(time));
       }
     },
   });
@@ -632,6 +644,7 @@ git commit -m "feat(practice): wire practice engines in App.tsx"
 ### Task 6: Embed Practice UI in App.tsx layout
 
 **Files:**
+
 - Modify: `src/renderer/src/App.tsx`
 - Create: `src/renderer/src/features/practice/PracticeToolbar.tsx`
 
@@ -729,6 +742,7 @@ git commit -m "feat(practice): embed practice UI toolbar and score overlay"
 ### Task 7: Update ROADMAP.md checkboxes
 
 **Files:**
+
 - Modify: `docs/ROADMAP.md`
 
 **Step 1: Update all Phase 6 checkboxes to [x]**

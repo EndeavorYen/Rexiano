@@ -74,30 +74,30 @@ Squad 是一個 Claude Code Plugin，在官方 Agent Teams 原語之上疊加自
 
 ### 各階段職責
 
-| 階段 | 誰做 | 做什麼 | 產出 |
-|------|------|--------|------|
-| **RECON** | 參謀總長 | 讀 codebase、CLAUDE.md、DESIGN.md、git log、知識庫 | 內部情報 |
-| **PLAN** | 參謀總長 | 分解任務、鍛造角色 persona、規劃依賴與並行策略 | 作戰計畫（呈報） |
-| **EXECUTE** | 參謀總長 + 隊員 | spawn 隊員、分配任務、隊員在 worktree 中作業 | 程式碼變更 |
-| **VERIFY** | 參謀總長（或指派驗證員） | lint + typecheck + test、code review、完整性確認 | 驗證報告 |
-| **DEBRIEF** | 參謀總長 | 彙整成果、產出結構化報告、更新 ROADMAP | 任務報告檔 |
-| **RETRO** | 參謀總長 | 反思效率/角色/工具/流程，更新知識庫，建立新工具 | 知識庫更新 |
+| 階段        | 誰做                     | 做什麼                                             | 產出             |
+| ----------- | ------------------------ | -------------------------------------------------- | ---------------- |
+| **RECON**   | 參謀總長                 | 讀 codebase、CLAUDE.md、DESIGN.md、git log、知識庫 | 內部情報         |
+| **PLAN**    | 參謀總長                 | 分解任務、鍛造角色 persona、規劃依賴與並行策略     | 作戰計畫（呈報） |
+| **EXECUTE** | 參謀總長 + 隊員          | spawn 隊員、分配任務、隊員在 worktree 中作業       | 程式碼變更       |
+| **VERIFY**  | 參謀總長（或指派驗證員） | lint + typecheck + test、code review、完整性確認   | 驗證報告         |
+| **DEBRIEF** | 參謀總長                 | 彙整成果、產出結構化報告、更新 ROADMAP             | 任務報告檔       |
+| **RETRO**   | 參謀總長                 | 反思效率/角色/工具/流程，更新知識庫，建立新工具    | 知識庫更新       |
 
 ### 閘門配置
 
 ```yaml
 gates:
-  supervised:       # 每步都確認
+  supervised: # 每步都確認
     after_plan: true
     after_execute: true
     after_verify: true
 
-  standard:         # 只在計畫和驗收時確認（預設）
+  standard: # 只在計畫和驗收時確認（預設）
     after_plan: true
     after_execute: false
     after_verify: true
 
-  autonomous:       # 全自動，只交最終報告
+  autonomous: # 全自動，只交最終報告
     after_plan: false
     after_execute: false
     after_verify: false
@@ -143,15 +143,18 @@ gates:
 隊伍在執行中發現缺少工具時，自己建造：
 
 **即時生效：**
+
 - Bash 腳本 → `.claude/squad/tools/*.sh`
 - 知識文件 → `.claude/squad/knowledge/*.md`
 - 程式碼模組 → 專案內可直接 import 的 utils
 
 **下次任務生效：**
+
 - 新 Skill → `skills/*/SKILL.md`
 - Hook 更新 → `hooks/hooks.json`
 
 **範例：** 隊伍發現每次都要手動檢查 DESIGN.md 合規性 →
+
 1. 即時：寫 `check-design-compliance.sh`，本次任務就能用
 2. 任務後：提升為正式 skill `design-compliance/SKILL.md`
 
@@ -198,29 +201,36 @@ DEBRIEF 階段產出 markdown 報告，固定路徑 `.claude/squad/reports/`：
 
 ```markdown
 # Mission Report: {任務名稱}
+
 > Date: YYYY-MM-DD | Gate: {level} | Duration: ~N min
 
 ## Objective
+
 {原始目標}
 
 ## Squad Composition
-| Callsign | Role | Tasks Completed |
-|----------|------|-----------------|
-| Alpha | {動態鍛造的角色} | #1, #3 |
-| Bravo | {動態鍛造的角色} | #2 |
+
+| Callsign | Role             | Tasks Completed |
+| -------- | ---------------- | --------------- |
+| Alpha    | {動態鍛造的角色} | #1, #3          |
+| Bravo    | {動態鍛造的角色} | #2              |
 
 ## Execution Summary
+
 {每個階段的關鍵決策和結果}
 
 ## Changes Made
+
 {變更檔案清單}
 
 ## Verification
+
 - lint: ✅/❌
 - typecheck: ✅/❌
 - test: ✅/❌ (N → M tests)
 
 ## Lessons Learned
+
 {同步寫入 knowledge/lessons.md}
 ```
 
@@ -290,6 +300,7 @@ squad/
 ### 自然語言觸發
 
 除了 `/squad` 命令，也可以用自然語言觸發：
+
 - 「組隊做 X」「派隊伍處理 X」「squad X」
 - 「出動」「編組」「assign team」
 
@@ -330,19 +341,23 @@ verify_commands:
     "TaskCompleted": [
       {
         "matcher": "*",
-        "hooks": [{
-          "type": "prompt",
-          "prompt": "一個 squad 任務剛完成。檢查：1) 是否有依賴此任務的下游任務可以解鎖 2) 是否需要向 lead 回報特殊狀況 3) 整體進度百分比。產出簡短狀態更新。"
-        }]
+        "hooks": [
+          {
+            "type": "prompt",
+            "prompt": "一個 squad 任務剛完成。檢查：1) 是否有依賴此任務的下游任務可以解鎖 2) 是否需要向 lead 回報特殊狀況 3) 整體進度百分比。產出簡短狀態更新。"
+          }
+        ]
       }
     ],
     "Stop": [
       {
         "matcher": "*",
-        "hooks": [{
-          "type": "prompt",
-          "prompt": "Squad 任務即將結束。驗證：1) 所有 task 是否已完成或有明確原因未完成 2) 報告檔是否已寫入 .claude/squad/reports/ 3) RETRO 知識是否已更新。如果缺少任何一項，return 'block' 並說明原因。"
-        }]
+        "hooks": [
+          {
+            "type": "prompt",
+            "prompt": "Squad 任務即將結束。驗證：1) 所有 task 是否已完成或有明確原因未完成 2) 報告檔是否已寫入 .claude/squad/reports/ 3) RETRO 知識是否已更新。如果缺少任何一項，return 'block' 並說明原因。"
+          }
+        ]
       }
     ]
   }
@@ -353,14 +368,14 @@ verify_commands:
 
 ## 9. 技術約束與已知限制
 
-| 約束 | 影響 | 對策 |
-|------|------|------|
-| Teammates 不能 spawn teammates | 參謀總長必須是 team lead | 參謀總長 = team lead，直接 spawn 所有隊員 |
-| Skills/Agents 在 session 開始時載入 | 新建的 skill 下次才生效 | 區分即時工具（bash 腳本）和延遲工具（skill） |
-| Agent Teams 仍為實驗性功能 | 可能有 session resumption 等問題 | 報告檔持久化，即使 session 中斷也保留成果 |
-| 無真正定時器 | 無法「每 10 分鐘回報」 | 用事件驅動（階段轉換、任務完成）代替定時 |
-| Split pane 不支援 VS Code terminal | Windows 使用者受限 | 預設 in-process mode，用 Shift+Down 切換 |
-| 每個 session 只能有一個 team | 不能同時跑兩個 squad | 設計為序列化任務，一個完成再啟動下一個 |
+| 約束                                | 影響                             | 對策                                         |
+| ----------------------------------- | -------------------------------- | -------------------------------------------- |
+| Teammates 不能 spawn teammates      | 參謀總長必須是 team lead         | 參謀總長 = team lead，直接 spawn 所有隊員    |
+| Skills/Agents 在 session 開始時載入 | 新建的 skill 下次才生效          | 區分即時工具（bash 腳本）和延遲工具（skill） |
+| Agent Teams 仍為實驗性功能          | 可能有 session resumption 等問題 | 報告檔持久化，即使 session 中斷也保留成果    |
+| 無真正定時器                        | 無法「每 10 分鐘回報」           | 用事件驅動（階段轉換、任務完成）代替定時     |
+| Split pane 不支援 VS Code terminal  | Windows 使用者受限               | 預設 in-process mode，用 Shift+Down 切換     |
+| 每個 session 只能有一個 team        | 不能同時跑兩個 squad             | 設計為序列化任務，一個完成再啟動下一個       |
 
 ---
 

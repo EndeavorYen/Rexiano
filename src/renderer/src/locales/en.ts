@@ -135,10 +135,10 @@ export const en: TranslationMap = {
   "settings.tab.practice": "Practice",
   "settings.tab.keys": "Keys",
   "settings.tab.lang": "Lang",
-  "settings.tab.about": 'About',
-  "about.version": 'Version',
+  "settings.tab.about": "About",
+  "about.version": "Version",
   "about.changelog": "What's New",
-  "about.noChangelog": 'No changelog available.',
+  "about.noChangelog": "No changelog available.",
   "settings.chooseTheme": "Choose a Theme",
   "settings.themeDesc":
     "Themes change all colors across the app, including the falling notes and keyboard.",
@@ -182,8 +182,7 @@ export const en: TranslationMap = {
   "settings.noMatchingTab": "No matching tab",
   "settings.common": "Common",
   "settings.compactKeyLabels": "Compact key labels",
-  "settings.compactKeyLabelsDesc":
-    "Show fewer key names on narrow keyboards",
+  "settings.compactKeyLabelsDesc": "Show fewer key names on narrow keyboards",
 
   // ── Fingering ──────────────────────────────────────────────────
   "fingering.label": "Fingering",

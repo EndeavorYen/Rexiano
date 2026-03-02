@@ -20,13 +20,13 @@
 
 ## 1. System Requirements
 
-| Item | Minimum | Recommended |
-|------|---------|-------------|
-| OS | Windows 10 / macOS 12 / Ubuntu 20.04 | Latest version |
-| RAM | 4 GB | 8 GB or more |
-| Storage | 200 MB | 500 MB |
-| GPU | OpenGL 2.0 support | Dedicated GPU |
-| Network | Not required (fully offline) | — |
+| Item    | Minimum                              | Recommended    |
+| ------- | ------------------------------------ | -------------- |
+| OS      | Windows 10 / macOS 12 / Ubuntu 20.04 | Latest version |
+| RAM     | 4 GB                                 | 8 GB or more   |
+| Storage | 200 MB                               | 500 MB         |
+| GPU     | OpenGL 2.0 support                   | Dedicated GPU  |
+| Network | Not required (fully offline)         | —              |
 
 > **Note**: Rexiano uses WebGL for rendering falling notes. Outdated GPU drivers may affect performance. Updating to the latest drivers is recommended.
 
@@ -47,6 +47,7 @@ On first install, Windows Defender SmartScreen may show a "Windows protected you
 Why this happens: Rexiano currently does not have an EV Code Signing Certificate for Windows. SmartScreen flags all unsigned applications. Rexiano is fully open-source — you can review every line of source code on [GitHub](https://github.com/nickhsu-endea/Rexiano).
 
 How to proceed:
+
 1. Click **"More info"**
 2. Click **"Run anyway"**
 3. Follow the installer wizard to complete installation
@@ -71,6 +72,7 @@ A Rexiano shortcut will appear on your desktop. You can also find Rexiano in the
 On first launch, macOS Gatekeeper may show an **"unidentified developer"** warning.
 
 How to proceed:
+
 1. Go to **System Settings** > **Privacy & Security**
 2. Scroll to the bottom to find the Rexiano notice
 3. Click **"Open Anyway"**
@@ -103,6 +105,7 @@ chmod +x rexiano-x.x.x.AppImage
 ```
 
 If it doesn't run, you may need to install FUSE:
+
 ```bash
 # Ubuntu / Debian
 sudo apt install fuse libfuse2
@@ -178,6 +181,7 @@ If SoundFont loading fails, Rexiano automatically falls back to a sine-wave synt
 3. Click **Uninstall**
 
 User data (practice progress, settings) is stored separately and must be deleted manually:
+
 - Windows: `%APPDATA%\Rexiano` (e.g., `C:\Users\YourName\AppData\Roaming\Rexiano`)
 
 ### macOS
@@ -207,11 +211,11 @@ If you want to build Rexiano from source or contribute to development, follow th
 
 ### Prerequisites
 
-| Tool | Version | Installation |
-|------|---------|-------------|
-| Node.js | 20+ | [nodejs.org](https://nodejs.org/) |
-| pnpm | 9+ | `npm install -g pnpm` |
-| Git | Any | [git-scm.com](https://git-scm.com/) |
+| Tool    | Version | Installation                        |
+| ------- | ------- | ----------------------------------- |
+| Node.js | 20+     | [nodejs.org](https://nodejs.org/)   |
+| pnpm    | 9+      | `npm install -g pnpm`               |
+| Git     | Any     | [git-scm.com](https://git-scm.com/) |
 
 ### Clone and Start
 
@@ -252,5 +256,5 @@ NO_SANDBOX=1 pnpm dev
 
 ---
 
-*Rexiano is free, open-source software released under GPL-3.0.*
-*Source code: [github.com/nickhsu-endea/Rexiano](https://github.com/nickhsu-endea/Rexiano)*
+_Rexiano is free, open-source software released under GPL-3.0._
+_Source code: [github.com/nickhsu-endea/Rexiano](https://github.com/nickhsu-endea/Rexiano)_

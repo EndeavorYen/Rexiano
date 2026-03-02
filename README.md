@@ -14,22 +14,26 @@ A free, open-source piano practice app with falling notes, MIDI keyboard support
 ## Features
 
 **Visual Learning**
+
 - Falling notes display (rhythm game style) rendered at 60 FPS via WebGL
 - 88-key piano keyboard with real-time highlighting
 - Per-track note coloring for left/right hand distinction
 
 **Audio**
+
 - SoundFont-based piano playback (Web Audio API)
 - Volume control with master slider
 - Synthesizer fallback when SoundFont is unavailable
 
 **MIDI Connectivity**
+
 - USB and Bluetooth MIDI keyboard input/output
 - Hot-plug detection (connect/disconnect devices while running)
 - Auto-reconnect to last used device
 - Sustain pedal (CC64) support
 
 **Practice Mode**
+
 - **Watch Mode** -- sit back and observe the playback
 - **Wait Mode** -- playback pauses until you play the correct notes
 - **Free Mode** -- play along at your own pace
@@ -39,10 +43,12 @@ A free, open-source piano practice app with falling notes, MIDI keyboard support
 - Real-time scoring with accuracy and streak tracking
 
 **Themes**
+
 - Four built-in themes: Lavender, Ocean, Peach, and Midnight (dark)
 - All colors driven by CSS custom properties for full consistency
 
 **File Handling**
+
 - Import any `.mid` / `.midi` file
 - Drag-and-drop support
 - Built-in song library with difficulty ratings
@@ -72,11 +78,13 @@ Download the latest release for your platform from the [Releases](https://github
 ### Linux
 
 **AppImage** (recommended -- no installation required):
+
 1. Download `Rexiano-x.x.x-x86_64.AppImage`
 2. Make it executable: `chmod +x Rexiano-*.AppImage`
 3. Run it: `./Rexiano-*.AppImage`
 
 **Debian / Ubuntu**:
+
 1. Download `Rexiano-x.x.x-amd64.deb`
 2. Install: `sudo dpkg -i Rexiano-*.deb`
 
@@ -121,21 +129,21 @@ pnpm dev:sandbox
 
 ### Scripts
 
-| Command | Description |
-|---------|-------------|
-| `pnpm dev` | Start Electron in development mode with HMR |
-| `pnpm build` | Typecheck + production build |
-| `pnpm build:win` | Build Windows installer (.exe) |
-| `pnpm build:mac` | Build macOS disk image (.dmg) |
-| `pnpm build:linux` | Build Linux packages (.AppImage, .deb) |
-| `pnpm test` | Run all tests with Vitest |
-| `pnpm test:watch` | Run tests in watch mode |
-| `pnpm test:e2e` | Build app and run Playwright Electron E2E tests |
-| `pnpm test:e2e:update` | Build app and update Playwright visual snapshots |
-| `pnpm test:visual` | Build app and run visual regression snapshot tests |
-| `pnpm lint` | Run ESLint |
-| `pnpm typecheck` | Run TypeScript compiler checks |
-| `pnpm format` | Format code with Prettier |
+| Command                | Description                                        |
+| ---------------------- | -------------------------------------------------- |
+| `pnpm dev`             | Start Electron in development mode with HMR        |
+| `pnpm build`           | Typecheck + production build                       |
+| `pnpm build:win`       | Build Windows installer (.exe)                     |
+| `pnpm build:mac`       | Build macOS disk image (.dmg)                      |
+| `pnpm build:linux`     | Build Linux packages (.AppImage, .deb)             |
+| `pnpm test`            | Run all tests with Vitest                          |
+| `pnpm test:watch`      | Run tests in watch mode                            |
+| `pnpm test:e2e`        | Build app and run Playwright Electron E2E tests    |
+| `pnpm test:e2e:update` | Build app and update Playwright visual snapshots   |
+| `pnpm test:visual`     | Build app and run visual regression snapshot tests |
+| `pnpm lint`            | Run ESLint                                         |
+| `pnpm typecheck`       | Run TypeScript compiler checks                     |
+| `pnpm format`          | Format code with Prettier                          |
 
 ### Project Structure
 
@@ -161,32 +169,32 @@ build/                   # Electron-builder resources (icons, entitlements)
 
 ## Tech Stack
 
-| Layer | Technology | Purpose |
-|-------|-----------|---------|
-| Desktop | Electron 33 | Cross-platform shell, system APIs, packaging |
-| Build | electron-vite 5 + Vite 7 | Fast HMR, module bundling |
-| UI | React 19 + TypeScript 5.9 | Component-based interface |
-| Styling | Tailwind CSS 4 + CSS Custom Properties | Theme system |
-| State | Zustand 5 | Lightweight global state (6 stores) |
-| Rendering | PixiJS 8 | WebGL canvas for falling notes at 60 FPS |
-| MIDI | @tonejs/midi + Web MIDI API | File parsing + live device I/O |
-| Audio | Web Audio API + SoundFont (soundfont2) | Piano playback |
-| Fonts | @fontsource (Nunito, DM Sans, JetBrains Mono) | Offline, no CDN |
-| Testing | Vitest 4 + Playwright 1.58 | Unit tests + Electron E2E + visual regression |
-| Packaging | electron-builder 26 | Installers for Win / Mac / Linux |
+| Layer     | Technology                                    | Purpose                                       |
+| --------- | --------------------------------------------- | --------------------------------------------- |
+| Desktop   | Electron 33                                   | Cross-platform shell, system APIs, packaging  |
+| Build     | electron-vite 5 + Vite 7                      | Fast HMR, module bundling                     |
+| UI        | React 19 + TypeScript 5.9                     | Component-based interface                     |
+| Styling   | Tailwind CSS 4 + CSS Custom Properties        | Theme system                                  |
+| State     | Zustand 5                                     | Lightweight global state (6 stores)           |
+| Rendering | PixiJS 8                                      | WebGL canvas for falling notes at 60 FPS      |
+| MIDI      | @tonejs/midi + Web MIDI API                   | File parsing + live device I/O                |
+| Audio     | Web Audio API + SoundFont (soundfont2)        | Piano playback                                |
+| Fonts     | @fontsource (Nunito, DM Sans, JetBrains Mono) | Offline, no CDN                               |
+| Testing   | Vitest 4 + Playwright 1.58                    | Unit tests + Electron E2E + visual regression |
+| Packaging | electron-builder 26                           | Installers for Win / Mac / Linux              |
 
 ---
 
 ## Documentation
 
-| Document | English | 繁體中文 |
-|----------|---------|---------|
-| **README** | You are here | [README-zh.md](README-zh.md) |
-| **User Guide** | [docs/user-guide-en.md](docs/user-guide-en.md) | [docs/user-guide.md](docs/user-guide.md) |
-| **Installation Guide** | [docs/installation-en.md](docs/installation-en.md) | [docs/installation.md](docs/installation.md) |
-| **Architecture** | [docs/architecture.md](docs/architecture.md) | [docs/architecture-zh.md](docs/architecture-zh.md) |
-| **System Design** | [docs/DESIGN-en.md](docs/DESIGN-en.md) | [docs/DESIGN.md](docs/DESIGN.md) |
-| **Roadmap** | [docs/ROADMAP.md](docs/ROADMAP.md) | [docs/ROADMAP.md](docs/ROADMAP.md) |
+| Document               | English                                            | 繁體中文                                           |
+| ---------------------- | -------------------------------------------------- | -------------------------------------------------- |
+| **README**             | You are here                                       | [README-zh.md](README-zh.md)                       |
+| **User Guide**         | [docs/user-guide-en.md](docs/user-guide-en.md)     | [docs/user-guide.md](docs/user-guide.md)           |
+| **Installation Guide** | [docs/installation-en.md](docs/installation-en.md) | [docs/installation.md](docs/installation.md)       |
+| **Architecture**       | [docs/architecture.md](docs/architecture.md)       | [docs/architecture-zh.md](docs/architecture-zh.md) |
+| **System Design**      | [docs/DESIGN-en.md](docs/DESIGN-en.md)             | [docs/DESIGN.md](docs/DESIGN.md)                   |
+| **Roadmap**            | [docs/ROADMAP.md](docs/ROADMAP.md)                 | [docs/ROADMAP.md](docs/ROADMAP.md)                 |
 
 ---
 

@@ -51,6 +51,7 @@ Pass `rendererRef` up to App via callback so WaitMode callbacks can trigger `fla
 ### 5. AudioScheduler — Speed Sync
 
 AudioScheduler needs no structural changes. Speed control works by:
+
 - Adjusting `pixelsPerSecond` (visual speed)
 - Adjusting scheduler interval timing (audio speed) — or restarting with scaled time
 
@@ -68,12 +69,12 @@ Practice controls embed below TransportBar as a collapsible practice toolbar:
 
 ## Files Changed
 
-| File | Change |
-|------|--------|
-| `engines/practice/practiceManager.ts` | NEW — singleton manager |
-| `engines/fallingNotes/tickerLoop.ts` | Add practice logic |
-| `engines/fallingNotes/NoteRenderer.ts` | Add findSpriteForNote() |
-| `features/fallingNotes/FallingNotesCanvas.tsx` | Expose noteRenderer ref |
-| `App.tsx` | Init engines, embed UI, wire callbacks |
-| `features/fallingNotes/TransportBar.tsx` | Minor: add practice toolbar trigger |
-| `docs/ROADMAP.md` | Update checkboxes |
+| File                                           | Change                                 |
+| ---------------------------------------------- | -------------------------------------- |
+| `engines/practice/practiceManager.ts`          | NEW — singleton manager                |
+| `engines/fallingNotes/tickerLoop.ts`           | Add practice logic                     |
+| `engines/fallingNotes/NoteRenderer.ts`         | Add findSpriteForNote()                |
+| `features/fallingNotes/FallingNotesCanvas.tsx` | Expose noteRenderer ref                |
+| `App.tsx`                                      | Init engines, embed UI, wire callbacks |
+| `features/fallingNotes/TransportBar.tsx`       | Minor: add practice toolbar trigger    |
+| `docs/ROADMAP.md`                              | Update checkboxes                      |

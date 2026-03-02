@@ -46,21 +46,21 @@ graph TB
 
 ## 2. 技術堆疊
 
-| 層級 | 技術 | 版本 | 用途 |
-|------|------|------|------|
-| 桌面框架 | Electron | 33 | 跨平台視窗、系統 API、打包 |
-| 建置工具 | electron-vite + Vite | 5 / 7 | 快速 HMR、模組打包 |
-| UI 框架 | React + TypeScript | 19 / 5.9 | 元件化 UI |
-| 樣式 | Tailwind CSS + CSS Custom Properties | 4 | 工具類別 + 主題系統 |
-| 狀態管理 | Zustand | 5 | 輕量全域狀態 |
-| Canvas 渲染 | PixiJS | 8 | WebGL 下落音符（60 FPS） |
-| MIDI 解析 | @tonejs/midi | 2 | 解析 `.mid` 檔案為結構化資料 |
-| 音頻 | Web Audio API + soundfont2 | — | SoundFont 播放，含合成器 fallback |
-| 圖示 | Lucide React | — | SVG 圖示庫 |
-| 字型 | @fontsource (Nunito, DM Sans, JetBrains Mono) | — | 離線字型，無 CDN 依賴 |
-| 測試 | Vitest | 4 | 單元測試與元件測試 |
-| 打包 | electron-builder | 26 | Windows/macOS/Linux 安裝檔 |
-| 套件管理 | pnpm | — | 快速、節省磁碟空間 |
+| 層級        | 技術                                          | 版本     | 用途                              |
+| ----------- | --------------------------------------------- | -------- | --------------------------------- |
+| 桌面框架    | Electron                                      | 33       | 跨平台視窗、系統 API、打包        |
+| 建置工具    | electron-vite + Vite                          | 5 / 7    | 快速 HMR、模組打包                |
+| UI 框架     | React + TypeScript                            | 19 / 5.9 | 元件化 UI                         |
+| 樣式        | Tailwind CSS + CSS Custom Properties          | 4        | 工具類別 + 主題系統               |
+| 狀態管理    | Zustand                                       | 5        | 輕量全域狀態                      |
+| Canvas 渲染 | PixiJS                                        | 8        | WebGL 下落音符（60 FPS）          |
+| MIDI 解析   | @tonejs/midi                                  | 2        | 解析 `.mid` 檔案為結構化資料      |
+| 音頻        | Web Audio API + soundfont2                    | —        | SoundFont 播放，含合成器 fallback |
+| 圖示        | Lucide React                                  | —        | SVG 圖示庫                        |
+| 字型        | @fontsource (Nunito, DM Sans, JetBrains Mono) | —        | 離線字型，無 CDN 依賴             |
+| 測試        | Vitest                                        | 4        | 單元測試與元件測試                |
+| 打包        | electron-builder                              | 26       | Windows/macOS/Linux 安裝檔        |
+| 套件管理    | pnpm                                          | —        | 快速、節省磁碟空間                |
 
 ---
 
@@ -141,6 +141,7 @@ graph TB
 ```
 
 **規則**：
+
 1. **引擎絕不匯入 React** — 純 TypeScript 類別/函式
 2. **Store 橋接引擎與 React** — 管理模組級引擎參考，接線回調
 3. **Features 不直接實例化引擎** — 透過 store 存取
@@ -254,16 +255,16 @@ flowchart TD
 
 Rexiano 使用 8 個 Zustand Store，全部以 `create<T>()()` 建立（Zustand v5 語法）。
 
-| Store | 檔案 | 主要欄位 | 持久化 |
-|-------|------|---------|--------|
-| `useSongStore` | `stores/useSongStore.ts` | `song: ParsedSong \| null`, `loadSong()`, `clearSong()` | 無 |
-| `usePlaybackStore` | `stores/usePlaybackStore.ts` | `currentTime`, `isPlaying`, `pixelsPerSecond`, `audioStatus`, `volume` | 無 |
-| `useThemeStore` | `stores/useThemeStore.ts` | `themeId: ThemeId`, `theme: ThemeTokens`, `setTheme()` | localStorage（`rexiano-theme`） |
-| `useMidiDeviceStore` | `stores/useMidiDeviceStore.ts` | `inputs[]`, `outputs[]`, `selectedInputId`, `isConnected`, `activeNotes: Set<number>`, `bleStatus` | 無 |
-| `usePracticeStore` | `stores/usePracticeStore.ts` | `mode: PracticeMode`, `speed`, `loopRange`, `activeTracks: Set<number>`, `score: PracticeScore`, `noteResults: Map` | 無 |
-| `useSettingsStore` | `stores/useSettingsStore.ts` | `showNoteLabels`, `showFallingNoteLabels`, `volume`, `muted`, `defaultSpeed`, `defaultMode`, `metronomeEnabled`, `countInBeats`, `latencyCompensation` | localStorage（`rexiano-settings`） |
-| `useProgressStore` | `stores/useProgressStore.ts` | `sessions: SessionRecord[]`, `isLoaded`, `addSession()`, `getBestScore()` | IPC → `progress.json`（userData） |
-| `useSongLibraryStore` | `stores/useSongLibraryStore.ts` | `songs: BuiltinSongMeta[]`, `isLoading`, `searchQuery`, `difficultyFilter` | 無 |
+| Store                 | 檔案                            | 主要欄位                                                                                                                                               | 持久化                             |
+| --------------------- | ------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------- |
+| `useSongStore`        | `stores/useSongStore.ts`        | `song: ParsedSong \| null`, `loadSong()`, `clearSong()`                                                                                                | 無                                 |
+| `usePlaybackStore`    | `stores/usePlaybackStore.ts`    | `currentTime`, `isPlaying`, `pixelsPerSecond`, `audioStatus`, `volume`                                                                                 | 無                                 |
+| `useThemeStore`       | `stores/useThemeStore.ts`       | `themeId: ThemeId`, `theme: ThemeTokens`, `setTheme()`                                                                                                 | localStorage（`rexiano-theme`）    |
+| `useMidiDeviceStore`  | `stores/useMidiDeviceStore.ts`  | `inputs[]`, `outputs[]`, `selectedInputId`, `isConnected`, `activeNotes: Set<number>`, `bleStatus`                                                     | 無                                 |
+| `usePracticeStore`    | `stores/usePracticeStore.ts`    | `mode: PracticeMode`, `speed`, `loopRange`, `activeTracks: Set<number>`, `score: PracticeScore`, `noteResults: Map`                                    | 無                                 |
+| `useSettingsStore`    | `stores/useSettingsStore.ts`    | `showNoteLabels`, `showFallingNoteLabels`, `volume`, `muted`, `defaultSpeed`, `defaultMode`, `metronomeEnabled`, `countInBeats`, `latencyCompensation` | localStorage（`rexiano-settings`） |
+| `useProgressStore`    | `stores/useProgressStore.ts`    | `sessions: SessionRecord[]`, `isLoaded`, `addSession()`, `getBestScore()`                                                                              | IPC → `progress.json`（userData）  |
+| `useSongLibraryStore` | `stores/useSongLibraryStore.ts` | `songs: BuiltinSongMeta[]`, `isLoading`, `searchQuery`, `difficultyFilter`                                                                             | 無                                 |
 
 **注意**：`usePracticeStore` 和 `useMidiDeviceStore` 使用模組級變數（`_parser`、`_bleManager`）在 store 外部管理引擎單例實例。
 
@@ -275,48 +276,48 @@ Rexiano 使用 8 個 Zustand Store，全部以 `create<T>()()` 建立（Zustand 
 
 ### audio/（音頻引擎）
 
-| 檔案 | 類別/模組 | 用途 |
-|------|---------|------|
-| `AudioEngine.ts` | `AudioEngine` | Web Audio API 封裝。`init()` 建立 AudioContext 並載入 SoundFont。`noteOn()`/`noteOff()` 排程音頻事件。`setVolume()` 控制主 gain。 |
-| `AudioScheduler.ts` | `AudioScheduler` | Look-ahead 排程器。執行 25ms interval 迴圈，預先排程 100ms 內的音符。提供從 `AudioContext.currentTime`（硬體時鐘）導出的 `getCurrentTime()`。 |
-| `SoundFontLoader.ts` | `SoundFontLoader` | 使用 `soundfont2` 函式庫解析 SF2 檔案。若載入失敗則退回正弦波振盪器合成。 |
+| 檔案                 | 類別/模組         | 用途                                                                                                                                          |
+| -------------------- | ----------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
+| `AudioEngine.ts`     | `AudioEngine`     | Web Audio API 封裝。`init()` 建立 AudioContext 並載入 SoundFont。`noteOn()`/`noteOff()` 排程音頻事件。`setVolume()` 控制主 gain。             |
+| `AudioScheduler.ts`  | `AudioScheduler`  | Look-ahead 排程器。執行 25ms interval 迴圈，預先排程 100ms 內的音符。提供從 `AudioContext.currentTime`（硬體時鐘）導出的 `getCurrentTime()`。 |
+| `SoundFontLoader.ts` | `SoundFontLoader` | 使用 `soundfont2` 函式庫解析 SF2 檔案。若載入失敗則退回正弦波振盪器合成。                                                                     |
 
 ### fallingNotes/（下落音符引擎）
 
-| 檔案 | 類別/模組 | 用途 |
-|------|---------|------|
-| `NoteRenderer.ts` | `NoteRenderer` | 管理 PixiJS sprite 物件池（512 初始，不足時成長 50%）。處理 `acquire()`/`release()` 生命週期。同時管理音名標籤的平行 text pool。提供 `flashHit()`、`markMiss()`、`showCombo()` 用於練習視覺回饋。 |
-| `ViewportManager.ts` | `ViewportManager` | 映射時間座標（秒）與螢幕座標（像素）。計算可見時間窗口、音符 Y 位置與 hit line 偵測。 |
-| `keyPositions.ts` | `keyPositions` | 將 MIDI 音符號（21-108）映射到 88 鍵鋼琴佈局的 X 座標。處理白鍵/黑鍵寬度與偏移。 |
-| `noteColors.ts` | `noteColors` | 根據音軌索引和當前主題 token 為音符分配顏色。 |
-| `tickerLoop.ts` | `tickerLoop` | 附加到 PixiJS Ticker 的主渲染迴圈回調，60 FPS 運行。處理時間推進、可見音符剪裁（binary search）、sprite 更新、hit line 偵測、WaitMode 閘控、速度乘數與循環偵測。 |
+| 檔案                 | 類別/模組         | 用途                                                                                                                                                                                              |
+| -------------------- | ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `NoteRenderer.ts`    | `NoteRenderer`    | 管理 PixiJS sprite 物件池（512 初始，不足時成長 50%）。處理 `acquire()`/`release()` 生命週期。同時管理音名標籤的平行 text pool。提供 `flashHit()`、`markMiss()`、`showCombo()` 用於練習視覺回饋。 |
+| `ViewportManager.ts` | `ViewportManager` | 映射時間座標（秒）與螢幕座標（像素）。計算可見時間窗口、音符 Y 位置與 hit line 偵測。                                                                                                             |
+| `keyPositions.ts`    | `keyPositions`    | 將 MIDI 音符號（21-108）映射到 88 鍵鋼琴佈局的 X 座標。處理白鍵/黑鍵寬度與偏移。                                                                                                                  |
+| `noteColors.ts`      | `noteColors`      | 根據音軌索引和當前主題 token 為音符分配顏色。                                                                                                                                                     |
+| `tickerLoop.ts`      | `tickerLoop`      | 附加到 PixiJS Ticker 的主渲染迴圈回調，60 FPS 運行。處理時間推進、可見音符剪裁（binary search）、sprite 更新、hit line 偵測、WaitMode 閘控、速度乘數與循環偵測。                                  |
 
 ### midi/（MIDI 引擎）
 
-| 檔案 | 類別/模組 | 用途 |
-|------|---------|------|
-| `MidiFileParser.ts` | `parseMidiFile()` | 使用 `@tonejs/midi` 將原始 MIDI 位元組轉換為 `ParsedSong`。過濾空音軌，將時間正規化為秒。 |
+| 檔案                   | 類別/模組                        | 用途                                                                                                                            |
+| ---------------------- | -------------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| `MidiFileParser.ts`    | `parseMidiFile()`                | 使用 `@tonejs/midi` 將原始 MIDI 位元組轉換為 `ParsedSong`。過濾空音軌，將時間正規化為秒。                                       |
 | `MidiDeviceManager.ts` | `MidiDeviceManager`（Singleton） | 封裝 `navigator.requestMIDIAccess()`。追蹤可用輸入/輸出，透過 `onstatechange` 處理裝置熱插拔。支援透過 `lastInputId` 自動重連。 |
-| `MidiInputParser.ts` | `MidiInputParser` | 解碼原始 MIDI 訊息（3-byte 陣列）。觸發 `onNoteOn`/`onNoteOff`/`onCC` 回調。處理 velocity-0 Note On（= Note Off）等邊界情況。 |
-| `MidiOutputSender.ts` | `MidiOutputSender` | 向輸出裝置發送 MIDI 訊息。`noteOn()`、`noteOff()`、`sendCC()`、`allNotesOff()`，以及示範模式用的 `sendParsedNote()`。 |
-| `BleMidiManager.ts` | `BleMidiManager` | Web Bluetooth API 整合，用於直接 BLE MIDI 連接。處理 GATT 服務/特性發現與 BLE 封包的 MIDI 訊息解析。 |
+| `MidiInputParser.ts`   | `MidiInputParser`                | 解碼原始 MIDI 訊息（3-byte 陣列）。觸發 `onNoteOn`/`onNoteOff`/`onCC` 回調。處理 velocity-0 Note On（= Note Off）等邊界情況。   |
+| `MidiOutputSender.ts`  | `MidiOutputSender`               | 向輸出裝置發送 MIDI 訊息。`noteOn()`、`noteOff()`、`sendCC()`、`allNotesOff()`，以及示範模式用的 `sendParsedNote()`。           |
+| `BleMidiManager.ts`    | `BleMidiManager`                 | Web Bluetooth API 整合，用於直接 BLE MIDI 連接。處理 GATT 服務/特性發現與 BLE 封包的 MIDI 訊息解析。                            |
 
 ### practice/（練習模式引擎）
 
-| 檔案 | 類別/模組 | 用途 |
-|------|---------|------|
-| `WaitMode.ts` | `WaitMode` | 狀態機（`playing` / `waiting` / `idle`），在下一個和弦到達時暫停播放。在 ±200ms 窗口內收集音符作為一個和弦組合。觸發 `onWait`/`onResume`/`onHit`/`onMiss` 回調。 |
-| `SpeedController.ts` | `SpeedController` | 速度乘數管理（0.25x-2.0x），含 clamping 和驗證。 |
-| `LoopController.ts` | `LoopController` | A-B 循環邏輯。`shouldLoop(currentTime)` 在超過 B 點時回傳 true。提供跳回目標的 `getLoopStart()`。 |
-| `ScoreCalculator.ts` | `ScoreCalculator` | 累加 hit/miss 計數，計算準確率百分比，追蹤當前和最佳連擊。 |
+| 檔案                 | 類別/模組         | 用途                                                                                                                                                                             |
+| -------------------- | ----------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `WaitMode.ts`        | `WaitMode`        | 狀態機（`playing` / `waiting` / `idle`），在下一個和弦到達時暫停播放。在 ±200ms 窗口內收集音符作為一個和弦組合。觸發 `onWait`/`onResume`/`onHit`/`onMiss` 回調。                 |
+| `SpeedController.ts` | `SpeedController` | 速度乘數管理（0.25x-2.0x），含 clamping 和驗證。                                                                                                                                 |
+| `LoopController.ts`  | `LoopController`  | A-B 循環邏輯。`shouldLoop(currentTime)` 在超過 B 點時回傳 true。提供跳回目標的 `getLoopStart()`。                                                                                |
+| `ScoreCalculator.ts` | `ScoreCalculator` | 累加 hit/miss 計數，計算準確率百分比，追蹤當前和最佳連擊。                                                                                                                       |
 | `practiceManager.ts` | `practiceManager` | 模組級單例管理器。`initPracticeEngines()` 建立 WaitMode + SpeedController + LoopController + ScoreCalculator。`getPracticeEngines()` 回傳它們。`disposePracticeEngines()` 拆除。 |
 
 ### metronome/（節拍器引擎）
 
-| 檔案 | 類別/模組 | 用途 |
-|------|---------|------|
-| `MetronomeEngine.ts` | `MetronomeEngine` | 透過 Web Audio API 振盪器產生節拍器點擊聲。支援第 1 拍的強拍。提供可設定拍數的預備拍功能。 |
-| `metronomeManager.ts` | `metronomeManager` | MetronomeEngine 生命週期的模組級單例管理器。 |
+| 檔案                  | 類別/模組          | 用途                                                                                       |
+| --------------------- | ------------------ | ------------------------------------------------------------------------------------------ |
+| `MetronomeEngine.ts`  | `MetronomeEngine`  | 透過 Web Audio API 振盪器產生節拍器點擊聲。支援第 1 拍的強拍。提供可設定拍數的預備拍功能。 |
+| `metronomeManager.ts` | `metronomeManager` | MetronomeEngine 生命週期的模組級單例管理器。                                               |
 
 ---
 
@@ -334,7 +335,9 @@ Rexiano 使用 8 個 Zustand Store，全部以 `create<T>()()` 建立（Zustand 
 // 引擎
 class WaitMode {
   private _onHit: ((noteKey: string) => void) | null = null;
-  onHit(cb: (noteKey: string) => void): void { this._onHit = cb; }
+  onHit(cb: (noteKey: string) => void): void {
+    this._onHit = cb;
+  }
 }
 
 // 消費端
@@ -342,6 +345,7 @@ waitMode.onHit((noteKey) => practiceStore.recordHit(noteKey));
 ```
 
 相較於 EventEmitter 的優勢：
+
 - **型別安全**：回調在登記處即完整型別化
 - **簡潔**：無字串型別的事件名稱，無監聽器管理複雜度
 - **可預期**：每個事件類型一個回調（無多監聽器排序問題）
@@ -354,7 +358,7 @@ Electron 的 structured clone 演算法在跨 IPC 邊界序列化時會丟失 `U
 ```typescript
 interface MidiFileResult {
   fileName: string;
-  data: number[];  // 非 Uint8Array
+  data: number[]; // 非 Uint8Array
 }
 ```
 
@@ -391,6 +395,7 @@ export function disposePracticeEngines() { _waitMode = null; ... }
 ```
 
 選擇此模式而非 class-based singleton 的原因：
+
 - 更簡單的生命週期（init/get/dispose vs. getInstance 含 lazy init）
 - 多個相關實例可以一起建立和拆除
 - 基於 import 的存取比 `.getInstance()` 鏈更符合人體工學
@@ -419,13 +424,13 @@ stores/usePracticeStore.test.ts       ← 緊鄰原始碼
 
 ### 測試對象
 
-| 層級 | 測試內容 | 範例 |
-|------|---------|------|
-| 引擎 | 純邏輯類別 | WaitMode 狀態轉換、ScoreCalculator 準確率、SpeedController clamping、LoopController 邊界、MidiInputParser 訊息解碼 |
-| Store | Zustand store actions | recordHit/recordMiss 更新、裝置列表同步、設定持久化 |
-| Features | React 元件（渲染 + 互動） | PianoKeyboard 琴鍵高亮、TransportBar 控制、CelebrationOverlay 閾值 |
-| IPC handlers | 主程序處理器 | 進度檔案讀寫、最近檔案管理 |
-| Integration | 跨模組流程 | 完整播放整合測試（`integration.test.ts`） |
+| 層級         | 測試內容                  | 範例                                                                                                               |
+| ------------ | ------------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| 引擎         | 純邏輯類別                | WaitMode 狀態轉換、ScoreCalculator 準確率、SpeedController clamping、LoopController 邊界、MidiInputParser 訊息解碼 |
+| Store        | Zustand store actions     | recordHit/recordMiss 更新、裝置列表同步、設定持久化                                                                |
+| Features     | React 元件（渲染 + 互動） | PianoKeyboard 琴鍵高亮、TransportBar 控制、CelebrationOverlay 閾值                                                 |
+| IPC handlers | 主程序處理器              | 進度檔案讀寫、最近檔案管理                                                                                         |
+| Integration  | 跨模組流程                | 完整播放整合測試（`integration.test.ts`）                                                                          |
 
 ### Mock 模式
 
@@ -442,6 +447,7 @@ pnpm lint && pnpm typecheck && pnpm test
 ```
 
 此指令在每次變更後執行，依序檢查：
+
 1. ESLint 規則（程式碼風格、React hooks 規則等）
 2. TypeScript 型別檢查（`tsconfig.node.json` 和 `tsconfig.web.json` 兩者）
 3. 所有 Vitest 測試套件
@@ -467,12 +473,12 @@ pnpm dev          # 以開發模式啟動 Electron，含 HMR
 
 ### 分支策略
 
-| 分支 | 用途 |
-|------|------|
-| `main` | 穩定發佈分支 |
-| `dev` | 開發整合分支 |
-| `feature/*` | 功能分支（從 `dev` 建立） |
-| `fix/*` | Bug 修復分支（從 `dev` 建立） |
+| 分支        | 用途                          |
+| ----------- | ----------------------------- |
+| `main`      | 穩定發佈分支                  |
+| `dev`       | 開發整合分支                  |
+| `feature/*` | 功能分支（從 `dev` 建立）     |
+| `fix/*`     | Bug 修復分支（從 `dev` 建立） |
 
 ### Pull Request 流程
 
@@ -512,4 +518,4 @@ pnpm dev          # 以開發模式啟動 Electron，含 HMR
 
 ---
 
-*Rexiano 以 GPL-3.0 授權釋出。詳見 [LICENSE](../LICENSE)。*
+_Rexiano 以 GPL-3.0 授權釋出。詳見 [LICENSE](../LICENSE)。_

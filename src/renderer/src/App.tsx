@@ -351,6 +351,7 @@ function App(): React.JSX.Element {
                 await engine.resume();
               }
             }
+            usePlaybackStore.getState().setAudioRecoverySucceeded();
             return;
           } catch (err) {
             console.error(
@@ -759,12 +760,8 @@ function App(): React.JSX.Element {
   }, [applyRoute]);
 
   const isSplitMode = displayMode === "split";
+  const splitFocus = isSplitMode ? splitFocusPanel : "sheet";
   const keyboardHeight = isSplitMode ? 84 : 100;
-  useEffect(() => {
-    if (!isSplitMode) {
-      setSplitFocusPanel("sheet");
-    }
-  }, [isSplitMode]);
   const reservedChromeHeight =
     HEADER_ESTIMATED_HEIGHT +
     TRANSPORT_ESTIMATED_HEIGHT +
@@ -797,7 +794,9 @@ function App(): React.JSX.Element {
         splitFallingAvailableHeight,
       )
     : null;
-  const fallingCanvasMinHeight = isSplitMode ? (splitFallingMinHeight ?? 0) : 200;
+  const fallingCanvasMinHeight = isSplitMode
+    ? (splitFallingMinHeight ?? 0)
+    : 200;
   const speedPercent = Math.round(speed * 100);
   const baseBpm =
     song?.tempos && song.tempos.length > 0
@@ -1040,7 +1039,7 @@ function App(): React.JSX.Element {
                 isSplitMode
                   ? {
                       filter:
-                        splitFocusPanel === "sheet"
+                        splitFocus === "sheet"
                           ? "saturate(1.03) brightness(1.015)"
                           : "saturate(0.9) brightness(0.965)",
                       transition: "filter 160ms ease",
@@ -1065,7 +1064,7 @@ function App(): React.JSX.Element {
               style={{
                 display: displayMode === "sheet" ? "none" : "flex",
                 filter:
-                  isSplitMode && splitFocusPanel === "sheet"
+                  isSplitMode && splitFocus === "sheet"
                     ? "saturate(0.9) brightness(0.965)"
                     : undefined,
                 transition: isSplitMode ? "filter 160ms ease" : undefined,

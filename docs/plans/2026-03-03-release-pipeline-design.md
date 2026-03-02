@@ -38,6 +38,7 @@ dev branch  ──merge──▶  main  ──push──▶  release-please.yml
 ```
 
 **Conventional Commits mapping:**
+
 - `feat:` → minor bump (0.x.0)
 - `fix:`, `perf:` → patch bump (0.0.x)
 - `BREAKING CHANGE:` footer → major bump (x.0.0)
@@ -101,6 +102,7 @@ Placed at repo root. release-please will populate it on first Release PR.
 ### 5. `electron-builder.yml` (MODIFY)
 
 Two changes:
+
 - Remove `CHANGELOG.md` from the `files` exclusion list
 - Add `CHANGELOG.md` to `extraResources`
 
@@ -121,22 +123,22 @@ At runtime: available at `process.resourcesPath/CHANGELOG.md` (production) or `a
 IPC handler exposing `{ version, changelog }` to renderer.
 
 ```typescript
-import { app, ipcMain } from 'electron'
-import { is } from '@electron-toolkit/utils'
-import * as path from 'path'
-import * as fs from 'fs'
+import { app, ipcMain } from "electron";
+import { is } from "@electron-toolkit/utils";
+import * as path from "path";
+import * as fs from "fs";
 
 export function registerAppInfoHandlers(): void {
-  ipcMain.handle('app:getAppInfo', async () => {
-    const version = app.getVersion()
+  ipcMain.handle("app:getAppInfo", async () => {
+    const version = app.getVersion();
     const changelogPath = is.dev
-      ? path.join(app.getAppPath(), 'CHANGELOG.md')
-      : path.join(process.resourcesPath, 'CHANGELOG.md')
+      ? path.join(app.getAppPath(), "CHANGELOG.md")
+      : path.join(process.resourcesPath, "CHANGELOG.md");
     const changelog = await fs.promises
-      .readFile(changelogPath, 'utf-8')
-      .catch(() => '')
-    return { version, changelog }
-  })
+      .readFile(changelogPath, "utf-8")
+      .catch(() => "");
+    return { version, changelog };
+  });
 }
 ```
 
@@ -148,8 +150,8 @@ Add interface:
 
 ```typescript
 export interface AppInfo {
-  version: string
-  changelog: string
+  version: string;
+  changelog: string;
 }
 ```
 
@@ -161,6 +163,7 @@ Display as small muted text: `v0.1.0`
 ### 9. `src/renderer/src/features/settings/SettingsPanel.tsx` (MODIFY)
 
 Add `"about"` as the 7th tab:
+
 - Tab icon: `Info` (lucide)
 - i18n key: `settings.tab.about`
 - Content: version number + build date + `CHANGELOG.md` rendered as `<pre>` (monospace, scrollable)
@@ -169,10 +172,10 @@ Add `"about"` as the 7th tab:
 
 ## IPC Contract
 
-| Channel | Direction | Payload |
-|---------|-----------|---------|
-| `app:getAppInfo` | renderer → main | — |
-| (response) | main → renderer | `AppInfo { version: string, changelog: string }` |
+| Channel          | Direction       | Payload                                          |
+| ---------------- | --------------- | ------------------------------------------------ |
+| `app:getAppInfo` | renderer → main | —                                                |
+| (response)       | main → renderer | `AppInfo { version: string, changelog: string }` |
 
 ---
 
@@ -205,18 +208,18 @@ Add `"about"` as the 7th tab:
 
 ## Files Summary
 
-| File | Action |
-|------|--------|
-| `.github/workflows/release-please.yml` | CREATE |
-| `release-please-config.json` | CREATE |
-| `.release-please-manifest.json` | CREATE |
-| `CHANGELOG.md` | CREATE (empty) |
-| `electron-builder.yml` | MODIFY (2 lines) |
-| `src/main/ipc/appInfoHandlers.ts` | CREATE |
-| `src/main/index.ts` | MODIFY (register handler) |
-| `src/shared/types.ts` | MODIFY (AppInfo) |
-| `src/renderer/src/features/mainMenu/MainMenu.tsx` | MODIFY (version badge) |
-| `src/renderer/src/features/settings/SettingsPanel.tsx` | MODIFY (About tab) |
-| `src/renderer/src/i18n/types.ts` | MODIFY (new keys) |
-| `src/renderer/src/locales/en.ts` | MODIFY (new keys) |
-| `src/renderer/src/locales/zh-TW.ts` | MODIFY (new keys) |
+| File                                                   | Action                    |
+| ------------------------------------------------------ | ------------------------- |
+| `.github/workflows/release-please.yml`                 | CREATE                    |
+| `release-please-config.json`                           | CREATE                    |
+| `.release-please-manifest.json`                        | CREATE                    |
+| `CHANGELOG.md`                                         | CREATE (empty)            |
+| `electron-builder.yml`                                 | MODIFY (2 lines)          |
+| `src/main/ipc/appInfoHandlers.ts`                      | CREATE                    |
+| `src/main/index.ts`                                    | MODIFY (register handler) |
+| `src/shared/types.ts`                                  | MODIFY (AppInfo)          |
+| `src/renderer/src/features/mainMenu/MainMenu.tsx`      | MODIFY (version badge)    |
+| `src/renderer/src/features/settings/SettingsPanel.tsx` | MODIFY (About tab)        |
+| `src/renderer/src/i18n/types.ts`                       | MODIFY (new keys)         |
+| `src/renderer/src/locales/en.ts`                       | MODIFY (new keys)         |
+| `src/renderer/src/locales/zh-TW.ts`                    | MODIFY (new keys)         |

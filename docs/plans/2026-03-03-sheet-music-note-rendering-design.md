@@ -22,9 +22,9 @@ After creating `StaveNote[]` for each voice, call `Beam.generateBeams()` and dra
 
 ```ts
 const trebleBeams = Beam.generateBeams(trebleVexNotes, { beam_rests: false });
-const bassBeams   = Beam.generateBeams(bassVexNotes,   { beam_rests: false });
-trebleBeams.forEach(b => b.setContext(context).draw());
-bassBeams.forEach(b   => b.setContext(context).draw());
+const bassBeams = Beam.generateBeams(bassVexNotes, { beam_rests: false });
+trebleBeams.forEach((b) => b.setContext(context).draw());
+bassBeams.forEach((b) => b.setContext(context).draw());
 ```
 
 `beam_rests: false` prevents rest notes from being pulled into a beam group.
@@ -36,8 +36,8 @@ Extract a helper `addAccidentals(note, keys)` that iterates over each key in a c
 ```ts
 function addAccidentals(note: any, keys: string[]): void {
   keys.forEach((key, idx) => {
-    if (key.includes('#'))       note.addModifier(new Accidental('#'), idx);
-    else if (/[a-g]b/.test(key)) note.addModifier(new Accidental('b'), idx);
+    if (key.includes("#")) note.addModifier(new Accidental("#"), idx);
+    else if (/[a-g]b/.test(key)) note.addModifier(new Accidental("b"), idx);
   });
 }
 ```
@@ -54,18 +54,18 @@ function calcMeasureWidths(
   totalWidth: number,
 ): number[] {
   const MIN = 120; // px — minimum width even for an empty/sparse measure
-  const noteCounts = slots.map(m =>
-    m ? Math.max(m.trebleNotes.length, m.bassNotes.length, 1) : 1
+  const noteCounts = slots.map((m) =>
+    m ? Math.max(m.trebleNotes.length, m.bassNotes.length, 1) : 1,
   );
   const sum = noteCounts.reduce((a, b) => a + b, 0);
-  const raw = noteCounts.map(c => (c / sum) * totalWidth);
+  const raw = noteCounts.map((c) => (c / sum) * totalWidth);
   // Clamp to minimum, redistribute leftover proportionally
-  const clamped = raw.map(w => Math.max(w, MIN));
+  const clamped = raw.map((w) => Math.max(w, MIN));
   const overflow = clamped.reduce((a, b) => a + b, 0) - totalWidth;
   if (overflow > 0) {
     // If total exceeds container, scale down uniformly
     const scale = totalWidth / clamped.reduce((a, b) => a + b, 0);
-    return clamped.map(w => Math.floor(w * scale));
+    return clamped.map((w) => Math.floor(w * scale));
   }
   return clamped.map(Math.floor);
 }
@@ -75,8 +75,8 @@ The `x` position of each slot is the cumulative sum of prior widths (not `slot *
 
 ## Files Modified
 
-| File | Change |
-|------|--------|
+| File                                                       | Change                                                |
+| ---------------------------------------------------------- | ----------------------------------------------------- |
 | `src/renderer/src/features/sheetMusic/SheetMusicPanel.tsx` | Add beams, accidentals helper, dynamic width function |
 
 ## Constraints

@@ -21,19 +21,19 @@ pnpm dev
 
 ### Useful Commands
 
-| Command | Description |
-|---------|-------------|
-| `pnpm dev` | Start in development mode with HMR |
+| Command            | Description                               |
+| ------------------ | ----------------------------------------- |
+| `pnpm dev`         | Start in development mode with HMR        |
 | `pnpm dev:sandbox` | Start in dev mode (non-WSL2 environments) |
-| `pnpm test` | Run all tests with Vitest |
-| `pnpm test:watch` | Run tests in watch mode |
-| `pnpm lint` | Lint the codebase with ESLint |
-| `pnpm typecheck` | Run TypeScript compiler checks |
-| `pnpm format` | Format code with Prettier |
-| `pnpm build` | Typecheck + production build |
-| `pnpm build:win` | Build Windows installer (.exe) |
-| `pnpm build:mac` | Build macOS disk image (.dmg) |
-| `pnpm build:linux` | Build Linux packages (.AppImage, .deb) |
+| `pnpm test`        | Run all tests with Vitest                 |
+| `pnpm test:watch`  | Run tests in watch mode                   |
+| `pnpm lint`        | Lint the codebase with ESLint             |
+| `pnpm typecheck`   | Run TypeScript compiler checks            |
+| `pnpm format`      | Format code with Prettier                 |
+| `pnpm build`       | Typecheck + production build              |
+| `pnpm build:win`   | Build Windows installer (.exe)            |
+| `pnpm build:mac`   | Build macOS disk image (.dmg)             |
+| `pnpm build:linux` | Build Linux packages (.AppImage, .deb)    |
 
 ### Verify Before Submitting
 
@@ -81,11 +81,11 @@ test: add coverage for AB loop selector
 
 See [docs/DESIGN.md](docs/DESIGN.md) for the full system design. The codebase follows a strict three-layer architecture:
 
-| Layer | Location | Rules |
-|-------|----------|-------|
-| **Engines** | `src/renderer/src/engines/` | Pure logic. No React imports. No DOM access. |
-| **Stores** | `src/renderer/src/stores/` | Zustand stores. Bridge between engines and React. |
-| **Features** | `src/renderer/src/features/` | React UI components. |
+| Layer        | Location                     | Rules                                             |
+| ------------ | ---------------------------- | ------------------------------------------------- |
+| **Engines**  | `src/renderer/src/engines/`  | Pure logic. No React imports. No DOM access.      |
+| **Stores**   | `src/renderer/src/stores/`   | Zustand stores. Bridge between engines and React. |
+| **Features** | `src/renderer/src/features/` | React UI components.                              |
 
 ### Key Conventions
 

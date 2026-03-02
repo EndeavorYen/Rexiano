@@ -13,6 +13,7 @@
 ### Task 1: Extract and test `calcMeasureWidths`
 
 **Files:**
+
 - Modify: `src/renderer/src/features/sheetMusic/SheetMusicPanel.tsx`
 - Create: `src/renderer/src/features/sheetMusic/SheetMusicPanel.test.ts`
 
@@ -132,6 +133,7 @@ git commit -m "feat(sheetMusic): add calcMeasureWidths with proportional allocat
 ### Task 2: Wire dynamic widths into the render loop
 
 **Files:**
+
 - Modify: `src/renderer/src/features/sheetMusic/SheetMusicPanel.tsx`
 
 **Step 1: Locate the slot width calculation in the `useEffect`**
@@ -145,6 +147,7 @@ const slotWidth = Math.floor(
 ```
 
 And the loop:
+
 ```ts
 for (let slot = 0; slot < DISPLAY_MEASURE_COUNT; slot++) {
   const measureIndex = visibleMeasures[slot];
@@ -155,12 +158,16 @@ for (let slot = 0; slot < DISPLAY_MEASURE_COUNT; slot++) {
 
 ```ts
 // Build per-slot note counts for dynamic width allocation
-const slotNoteCounts = Array.from({ length: DISPLAY_MEASURE_COUNT }, (_, slot) => {
-  const measureIndex = visibleMeasures[slot];
-  if (measureIndex === undefined || !notationData.measures[measureIndex]) return 1;
-  const m = notationData.measures[measureIndex];
-  return Math.max(m.trebleNotes.length, m.bassNotes.length, 1);
-});
+const slotNoteCounts = Array.from(
+  { length: DISPLAY_MEASURE_COUNT },
+  (_, slot) => {
+    const measureIndex = visibleMeasures[slot];
+    if (measureIndex === undefined || !notationData.measures[measureIndex])
+      return 1;
+    const m = notationData.measures[measureIndex];
+    return Math.max(m.trebleNotes.length, m.bassNotes.length, 1);
+  },
+);
 
 const usableWidth = containerWidth - LEFT_MARGIN * 2;
 const slotWidths = calcMeasureWidths(slotNoteCounts, usableWidth);
@@ -205,6 +212,7 @@ git commit -m "feat(sheetMusic): dynamic measure widths proportional to note den
 ### Task 3: Add accidentals helper
 
 **Files:**
+
 - Modify: `src/renderer/src/features/sheetMusic/SheetMusicPanel.tsx`
 
 **Step 1: Add the helper function**
@@ -266,7 +274,9 @@ const trebleVexNotes: any[] =
         }
         return note;
       })
-    : [/* rest note unchanged */];
+    : [
+        /* rest note unchanged */
+      ];
 ```
 
 Same for the bass note map (around line 166):
@@ -300,6 +310,7 @@ git commit -m "feat(sheetMusic): add accidental modifiers to sharp notes"
 ### Task 4: Add beaming
 
 **Files:**
+
 - Modify: `src/renderer/src/features/sheetMusic/SheetMusicPanel.tsx`
 
 **Step 1: Destructure `Beam` from VexFlow**
@@ -311,7 +322,8 @@ In `renderMeasure`, update the destructuring:
 const { Stave, StaveNote, Voice, Formatter, StaveConnector, Accidental } = VF;
 
 // After:
-const { Stave, StaveNote, Voice, Formatter, StaveConnector, Accidental, Beam } = VF;
+const { Stave, StaveNote, Voice, Formatter, StaveConnector, Accidental, Beam } =
+  VF;
 ```
 
 **Step 2: Generate and draw beams after voices are drawn**
@@ -362,6 +374,7 @@ pnpm dev
 ```
 
 Expected:
+
 - Eighth notes group into pairs under a single beam
 - Sixteenth notes group into fours under a double beam
 - Sharp notes show `#` symbols (e.g. F# displays with an accidental)
@@ -386,12 +399,12 @@ git commit -m "feat(sheetMusic): beam eighth/sixteenth notes with Beam.generateB
 
 ## Summary of All Changes
 
-| Task | File | Lines changed (approx) |
-|------|------|------------------------|
-| 1 | `SheetMusicPanel.tsx` — add `calcMeasureWidths` | +35 |
-| 1 | `SheetMusicPanel.test.ts` — new test file | +40 |
-| 2 | `SheetMusicPanel.tsx` — wire dynamic widths | +15, -5 |
-| 3 | `SheetMusicPanel.tsx` — `addAccidentals` helper + calls | +20 |
-| 4 | `SheetMusicPanel.tsx` — beaming | +15 |
+| Task | File                                                    | Lines changed (approx) |
+| ---- | ------------------------------------------------------- | ---------------------- |
+| 1    | `SheetMusicPanel.tsx` — add `calcMeasureWidths`         | +35                    |
+| 1    | `SheetMusicPanel.test.ts` — new test file               | +40                    |
+| 2    | `SheetMusicPanel.tsx` — wire dynamic widths             | +15, -5                |
+| 3    | `SheetMusicPanel.tsx` — `addAccidentals` helper + calls | +20                    |
+| 4    | `SheetMusicPanel.tsx` — beaming                         | +15                    |
 
 Total: ~120 lines added, ~5 lines removed. All in `sheetMusic/` feature folder.

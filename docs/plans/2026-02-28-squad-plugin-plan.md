@@ -15,6 +15,7 @@
 ### Task 1: Plugin scaffold — manifest and directory structure
 
 **Files:**
+
 - Create: `d:\Code\squad\.claude-plugin\plugin.json`
 - Create: `d:\Code\squad\commands\` (directory)
 - Create: `d:\Code\squad\skills\` (directory)
@@ -68,6 +69,7 @@ git add -A && git commit -m "chore: scaffold squad plugin directory structure"
 ### Task 2: /squad command — the entry point
 
 **Files:**
+
 - Create: `d:\Code\squad\commands\squad.md`
 
 This is the most critical file. It's the main orchestration prompt that transforms the session into the 參謀總長, defining the full 6-stage pipeline.
@@ -95,12 +97,14 @@ Execute the following 6-stage pipeline in order. At each gate point, pause and p
 ### Parse Arguments
 
 Extract from `$ARGUMENTS`:
+
 - **objective**: The mission description (required)
 - **gate**: One of `supervised`, `standard` (default), `autonomous`
 
 If no gate is specified, check `.claude/squad/config.yaml` for `default_gate`. If that doesn't exist, default to `standard`.
 
 Gate definitions:
+
 - `supervised`: Pause after PLAN, EXECUTE, and VERIFY
 - `standard`: Pause after PLAN and VERIFY
 - `autonomous`: No pauses, deliver final report only
@@ -136,9 +140,11 @@ Produce a battle plan containing:
 Present the battle plan to the 總統 in a clear, structured format.
 
 **Gate check (if `after_plan` is true):**
+
 ```
 ⏸ 作戰計畫已擬定。請確認或提出修改。
 ```
+
 Wait for approval before proceeding. If the user provides feedback, revise the plan and re-present.
 
 ---
@@ -164,6 +170,7 @@ Wait for approval before proceeding. If the user provides feedback, revise the p
    - Escalate to the 總統
 
 **Gate check (if `after_execute` is true):**
+
 ```
 ⏸ 執行階段完成。以下是各隊員成果摘要：[summary]。確認進入驗收？
 ```
@@ -184,6 +191,7 @@ Wait for approval before proceeding. If the user provides feedback, revise the p
    - No unintended side effects
 
 **Gate check (if `after_verify` is true):**
+
 ```
 ⏸ 驗收結果：
 - lint: ✅/❌
@@ -226,6 +234,7 @@ Use the `retrospective` skill to conduct the post-mission review.
 4. Update `.claude/squad/metrics.md` with mission stats
 
 **Final output:**
+
 ```
 ✅ 任務完成。
 📄 報告：.claude/squad/reports/YYYY-MM-DD-{slug}.md
@@ -248,6 +257,7 @@ If `$ARGUMENTS` matches these patterns, handle them directly instead of running 
 ### First-Run Bootstrap
 
 If `.claude/squad/` does not exist, create the initial structure:
+
 ```
 .claude/squad/
 ├── config.yaml        (copy from ${CLAUDE_PLUGIN_ROOT}/config/defaults.yaml)
@@ -272,6 +282,7 @@ git add commands/squad.md && git commit -m "feat: add /squad command — main or
 ### Task 3: mission-planning skill
 
 **Files:**
+
 - Create: `d:\Code\squad\skills\mission-planning\SKILL.md`
 
 **Step 1: Write the skill**
@@ -297,6 +308,7 @@ From the objective, list concrete deliverables (files to create/modify, tests to
 ### 2. Map Dependencies
 
 For each deliverable, determine:
+
 - What must exist before this can start? (blocking dependencies)
 - What can be done in parallel? (independent work streams)
 - What is the critical path? (longest sequential chain)
@@ -304,6 +316,7 @@ For each deliverable, determine:
 ### 3. Size Tasks
 
 Each task should be:
+
 - **Completable by one agent** in a single session
 - **Independently verifiable** (can run tests or check output without other tasks)
 - **Bounded** — clear start and end, no open-ended exploration
@@ -314,6 +327,7 @@ Good task: "Create KeyboardShortcutManager class in engines/keyboard/KeyboardSho
 ### 4. Assign Priority and Parallelism
 
 Group tasks into waves:
+
 - **Wave 1**: Independent foundation tasks (can all run in parallel)
 - **Wave 2**: Tasks depending on Wave 1 (run after Wave 1 completes)
 - **Wave 3**: Integration and verification tasks
@@ -321,6 +335,7 @@ Group tasks into waves:
 ### 5. Estimate Squad Size
 
 Rules of thumb:
+
 - 1-2 tasks → No squad needed, 參謀總長 handles directly
 - 3-5 independent tasks → 2-3 squad members
 - 6+ tasks with parallelism → 3-5 squad members (max_members from config)
@@ -365,6 +380,7 @@ git add skills/mission-planning/ && git commit -m "feat: add mission-planning sk
 ### Task 4: role-forging skill
 
 **Files:**
+
 - Create: `d:\Code\squad\skills\role-forging\SKILL.md`
 
 **Step 1: Write the skill**
@@ -386,6 +402,7 @@ You need to forge a bespoke persona for each squad member. Do NOT use generic ro
 ### 1. Analyze Required Expertise
 
 From the task assignment, identify:
+
 - What domain knowledge does this person need? (e.g., PixiJS 8 particle systems, Zustand 5 store patterns)
 - What project conventions must they follow? (from CLAUDE.md / DESIGN.md)
 - What constraints apply? (performance budgets, architecture rules, file boundaries)
@@ -427,6 +444,7 @@ Structure each persona prompt with these sections:
 ### 4. Quality Checklist
 
 Before finalizing each persona, verify:
+
 - [ ] Expert identity is specific (not "developer" but "PixiJS 8 animation specialist")
 - [ ] Task assignments reference exact file paths
 - [ ] Project conventions are included (not just "follow conventions" but the actual rules)
@@ -457,6 +475,7 @@ git add skills/role-forging/ && git commit -m "feat: add role-forging skill — 
 ### Task 5: tool-forging skill
 
 **Files:**
+
 - Create: `d:\Code\squad\skills\tool-forging\SKILL.md`
 
 **Step 1: Write the skill**
@@ -475,11 +494,11 @@ You've identified a tool gap — something the squad does manually that should b
 
 ## Decision: Immediate vs Persistent
 
-| Need | Tool Type | Location | Available |
-|------|-----------|----------|-----------|
-| Use it right now this session | Bash script | `.claude/squad/tools/{name}.sh` | Immediately |
-| Reuse across future sessions | Skill SKILL.md | `${CLAUDE_PLUGIN_ROOT}/skills/{name}/SKILL.md` | Next session |
-| Auto-run on events | Hook entry | `${CLAUDE_PLUGIN_ROOT}/hooks/hooks.json` | Next session |
+| Need                          | Tool Type      | Location                                       | Available    |
+| ----------------------------- | -------------- | ---------------------------------------------- | ------------ |
+| Use it right now this session | Bash script    | `.claude/squad/tools/{name}.sh`                | Immediately  |
+| Reuse across future sessions  | Skill SKILL.md | `${CLAUDE_PLUGIN_ROOT}/skills/{name}/SKILL.md` | Next session |
+| Auto-run on events            | Hook entry     | `${CLAUDE_PLUGIN_ROOT}/hooks/hooks.json`       | Next session |
 
 **Default to immediate** (bash script). Only create a persistent skill/hook if the tool has been useful across 2+ missions.
 
@@ -513,7 +532,7 @@ Only when a tool has proven useful across multiple missions:
 
 ```yaml
 ---
-name: {skill-name}
+name: { skill-name }
 description: Use when {specific trigger condition}. {What it does}.
 ---
 ```
@@ -526,6 +545,7 @@ Note: New skills take effect in the next Claude Code session, not the current on
 ## Identifying Tool Gaps
 
 During RETRO, look for:
+
 - Actions performed 3+ times manually during the mission
 - Verification steps that could be automated
 - Information gathering that follows a repeatable pattern
@@ -543,6 +563,7 @@ git add skills/tool-forging/ && git commit -m "feat: add tool-forging skill — 
 ### Task 6: gate-check skill
 
 **Files:**
+
 - Create: `d:\Code\squad\skills\gate-check\SKILL.md`
 
 **Step 1: Write the skill**
@@ -561,17 +582,18 @@ You've reached a gate point in the mission pipeline. Determine whether to pause 
 
 ## Gate Levels
 
-| Level | after_plan | after_execute | after_verify |
-|-------|-----------|---------------|--------------|
-| `supervised` | ⏸ Pause | ⏸ Pause | ⏸ Pause |
-| `standard` | ⏸ Pause | ▶ Continue | ⏸ Pause |
-| `autonomous` | ▶ Continue | ▶ Continue | ▶ Continue |
+| Level        | after_plan | after_execute | after_verify |
+| ------------ | ---------- | ------------- | ------------ |
+| `supervised` | ⏸ Pause    | ⏸ Pause       | ⏸ Pause      |
+| `standard`   | ⏸ Pause    | ▶ Continue    | ⏸ Pause      |
+| `autonomous` | ▶ Continue | ▶ Continue    | ▶ Continue   |
 
 ## When Pausing
 
 Present a structured summary of the completed stage:
 
 **After PLAN:**
+
 ```
 ⏸ 作戰計畫已擬定。
 
@@ -581,6 +603,7 @@ Present a structured summary of the completed stage:
 ```
 
 **After EXECUTE:**
+
 ```
 ⏸ 執行階段完成。
 
@@ -593,6 +616,7 @@ Present a structured summary of the completed stage:
 ```
 
 **After VERIFY:**
+
 ```
 ⏸ 驗收結果：
 - lint: ✅/❌
@@ -606,6 +630,7 @@ Present a structured summary of the completed stage:
 ## Override Rules
 
 Even in `autonomous` mode, ALWAYS pause if:
+
 - Verification fails and cannot be auto-fixed
 - A squad member reports an unresolvable blocker
 - The mission scope appears to have changed during execution
@@ -623,6 +648,7 @@ git add skills/gate-check/ && git commit -m "feat: add gate-check skill — conf
 ### Task 7: status-report skill
 
 **Files:**
+
 - Create: `d:\Code\squad\skills\status-report\SKILL.md`
 
 **Step 1: Write the skill**
@@ -643,45 +669,57 @@ Write to `.claude/squad/reports/YYYY-MM-DD-{mission-slug}.md`:
 
 ```markdown
 # Mission Report: {Mission Name}
+
 > Date: {YYYY-MM-DD} | Gate: {level} | Duration: ~{N} min
 
 ## Objective
+
 {Original objective as given by the 總統}
 
 ## Squad Composition
-| Callsign | Forged Role | Tasks | Status |
-|----------|-------------|-------|--------|
-| Alpha | {specific role} | #1, #3 | ✅ Complete |
-| Bravo | {specific role} | #2 | ✅ Complete |
+
+| Callsign | Forged Role     | Tasks  | Status      |
+| -------- | --------------- | ------ | ----------- |
+| Alpha    | {specific role} | #1, #3 | ✅ Complete |
+| Bravo    | {specific role} | #2     | ✅ Complete |
 
 ## Task Breakdown
-| # | Description | Owner | Status | Notes |
-|---|-------------|-------|--------|-------|
-| 1 | {task} | Alpha | ✅ | {any relevant notes} |
-| 2 | {task} | Bravo | ✅ | |
+
+| #   | Description | Owner | Status | Notes                |
+| --- | ----------- | ----- | ------ | -------------------- |
+| 1   | {task}      | Alpha | ✅     | {any relevant notes} |
+| 2   | {task}      | Bravo | ✅     |                      |
 
 ## Execution Summary
+
 ### RECON
+
 {What was discovered about the codebase}
 
 ### PLAN
+
 {Key planning decisions — why this decomposition, why these roles}
 
 ### EXECUTE
+
 {How execution went — any blockers, pivots, or surprises}
 
 ### VERIFY
+
 {Verification results and any fixes applied}
 
 ## Changes Made
+
 {List all files created or modified, grouped by purpose}
 
 ## Verification Results
+
 - lint: ✅/❌ {details if failed}
 - typecheck: ✅/❌
 - test: ✅/❌ ({before} → {after} tests)
 
 ## Lessons Learned
+
 {Insights to carry forward — also written to knowledge/lessons.md}
 ```
 
@@ -729,6 +767,7 @@ git add skills/status-report/ && git commit -m "feat: add status-report skill �
 ### Task 8: retrospective skill
 
 **Files:**
+
 - Create: `d:\Code\squad\skills\retrospective\SKILL.md`
 
 **Step 1: Write the skill**
@@ -750,24 +789,28 @@ The mission is complete. Now reflect and evolve.
 Analyze the mission across four dimensions:
 
 ### 1. Efficiency (效率)
+
 - Which tasks took longer than expected? Root cause?
 - Was the task decomposition granularity appropriate?
 - Were there unnecessary sequential dependencies that could have been parallel?
 - Token/cost efficiency: did any squad member's context grow too large?
 
 ### 2. Roles (角色)
+
 - Which persona designs produced focused, effective work?
 - Which were too vague, causing the member to make unnecessary decisions?
 - Were boundaries (禁止事項) respected? If not, what was missing?
 - Record effective persona designs as **patterns** in `role-patterns.md`
 
 ### 3. Tools (工具)
+
 - Were there actions performed 3+ times manually that should be scripted?
 - Did verification commands cover all necessary checks?
 - Are there project-specific checks that should become permanent tools?
 - If gaps found → invoke the `tool-forging` skill
 
 ### 4. Process (流程)
+
 - Was the gate level appropriate? Too many pauses (slowed down) or too few (missed issues)?
 - Did the 6-stage pipeline flow smoothly, or were stages skipped/repeated?
 - Was communication between squad members and lead sufficient?
@@ -777,17 +820,23 @@ Analyze the mission across four dimensions:
 After reflection, update these files:
 
 ### lessons.md
+
 Append a dated entry:
+
 ```markdown
 ## {YYYY-MM-DD} — {Mission Name}
+
 - {Lesson 1}
 - {Lesson 2}
 ```
 
 ### role-patterns.md
+
 If an effective persona was discovered, add it:
+
 ```markdown
 ## Pattern: {Pattern Name}
+
 **When to use:** {Situation description}
 **Persona template:**
 {The effective prompt structure, with placeholders for mission-specific details}
@@ -795,18 +844,24 @@ If an effective persona was discovered, add it:
 ```
 
 ### tool-patterns.md
+
 If a useful tool was created or identified:
+
 ```markdown
 ## Tool: {Tool Name}
+
 **Location:** {path}
 **Purpose:** {what it automates}
 **Created:** {date} | **Used in:** {mission count} missions
 ```
 
 ### metrics.md
+
 Append mission metrics:
+
 ```markdown
 ## {YYYY-MM-DD} — {Mission Name}
+
 - Squad size: {N}
 - Tasks: {completed}/{total}
 - Verification: {pass/fail}
@@ -818,6 +873,7 @@ Append mission metrics:
 ## Evolution Trigger
 
 After updating the knowledge base, check if any of these thresholds are met:
+
 - Same lesson appears 3+ times → Consider creating a permanent skill or hook
 - Same tool pattern used 2+ times → Promote from bash script to formal skill
 - Same role pattern used 3+ times → It's now a proven pattern, mark as "stable" in role-patterns.md
@@ -834,6 +890,7 @@ git add skills/retrospective/ && git commit -m "feat: add retrospective skill �
 ### Task 9: hooks.json
 
 **Files:**
+
 - Create: `d:\Code\squad\hooks\hooks.json`
 
 **Step 1: Write hooks configuration**
@@ -869,6 +926,7 @@ git add hooks/ && git commit -m "feat: add Stop hook — prevent premature missi
 ### Task 10: defaults.yaml
 
 **Files:**
+
 - Create: `d:\Code\squad\config\defaults.yaml`
 
 **Step 1: Write default configuration**
@@ -888,15 +946,16 @@ knowledge_dir: .claude/squad/knowledge
 
 # Evolution settings
 evolution:
-  retro_enabled: true          # Run RETRO stage after each mission
-  auto_create_tools: true      # Allow squad to create bash scripts in tools/
-  auto_create_skills: true     # Allow squad to create new SKILL.md files
+  retro_enabled: true # Run RETRO stage after each mission
+  auto_create_tools: true # Allow squad to create bash scripts in tools/
+  auto_create_skills: true # Allow squad to create new SKILL.md files
 
 # Team constraints
 team:
-  max_members: 5               # Maximum concurrent squad members
-  default_model: inherit       # Model for squad members (inherit | sonnet | haiku | opus)
-  use_worktrees: true          # Isolate squad members in git worktrees
+  max_members: 5 # Maximum concurrent squad members
+  default_model: inherit # Model for squad members (inherit | sonnet | haiku | opus)
+  use_worktrees: true # Isolate squad members in git worktrees
+
 
 # Verification commands (auto-detected from project if empty)
 # Uncomment and customize for your project:
@@ -917,6 +976,7 @@ git add config/ && git commit -m "feat: add default configuration template"
 ### Task 11: Knowledge base bootstrap templates
 
 **Files:**
+
 - Create: `d:\Code\squad\config\bootstrap\lessons.md`
 - Create: `d:\Code\squad\config\bootstrap\role-patterns.md`
 - Create: `d:\Code\squad\config\bootstrap\tool-patterns.md`
@@ -931,6 +991,7 @@ mkdir -p /d/Code/squad/config/bootstrap
 ```
 
 Write to `d:\Code\squad\config\bootstrap\lessons.md`:
+
 ```markdown
 # Squad Lessons Learned
 
@@ -940,6 +1001,7 @@ Accumulated insights from past missions. Read during RECON to avoid repeating mi
 ```
 
 Write to `d:\Code\squad\config\bootstrap\role-patterns.md`:
+
 ```markdown
 # Squad Role Patterns
 
@@ -949,6 +1011,7 @@ Proven persona designs that produced effective squad members. Reference during P
 ```
 
 Write to `d:\Code\squad\config\bootstrap\tool-patterns.md`:
+
 ```markdown
 # Squad Tool Patterns
 
@@ -958,6 +1021,7 @@ Tools and scripts created by the squad. Tracks usage across missions to identify
 ```
 
 Write to `d:\Code\squad\config\bootstrap\metrics.md`:
+
 ```markdown
 # Squad Mission Metrics
 
@@ -983,6 +1047,7 @@ cd /d/Code/squad && find . -type f | grep -v .git/ | sort
 ```
 
 Expected output:
+
 ```
 ./.claude-plugin/plugin.json
 ./commands/squad.md
@@ -1009,6 +1074,7 @@ Expected output:
 **Step 3: Verify plugin loads**
 
 Start a new Claude Code session and check:
+
 - `/squad --help` or `/squad "test"` is available as a command
 - Skills appear in the skill list
 - Hook is registered
@@ -1031,19 +1097,19 @@ git add -A && git commit -m "chore: finalize squad plugin v0.1.0"
 
 ## Summary
 
-| Task | Files | Purpose |
-|------|-------|---------|
-| 1 | plugin.json + dirs | Plugin scaffold |
-| 2 | commands/squad.md | Main orchestration command (~200 lines of prompt) |
-| 3 | skills/mission-planning/SKILL.md | Task decomposition methodology |
-| 4 | skills/role-forging/SKILL.md | Dynamic persona design |
-| 5 | skills/tool-forging/SKILL.md | Self-developing tools |
-| 6 | skills/gate-check/SKILL.md | Configurable approval gates |
-| 7 | skills/status-report/SKILL.md | Reporting formats |
-| 8 | skills/retrospective/SKILL.md | Post-mission reflection + evolution |
-| 9 | hooks/hooks.json | Stop hook for mission completion |
-| 10 | config/defaults.yaml | Default configuration |
-| 11 | config/bootstrap/*.md | Knowledge base templates |
-| 12 | — | Integration test |
+| Task | Files                            | Purpose                                           |
+| ---- | -------------------------------- | ------------------------------------------------- |
+| 1    | plugin.json + dirs               | Plugin scaffold                                   |
+| 2    | commands/squad.md                | Main orchestration command (~200 lines of prompt) |
+| 3    | skills/mission-planning/SKILL.md | Task decomposition methodology                    |
+| 4    | skills/role-forging/SKILL.md     | Dynamic persona design                            |
+| 5    | skills/tool-forging/SKILL.md     | Self-developing tools                             |
+| 6    | skills/gate-check/SKILL.md       | Configurable approval gates                       |
+| 7    | skills/status-report/SKILL.md    | Reporting formats                                 |
+| 8    | skills/retrospective/SKILL.md    | Post-mission reflection + evolution               |
+| 9    | hooks/hooks.json                 | Stop hook for mission completion                  |
+| 10   | config/defaults.yaml             | Default configuration                             |
+| 11   | config/bootstrap/\*.md           | Knowledge base templates                          |
+| 12   | —                                | Integration test                                  |
 
 Total: **14 files** to create. All markdown/JSON/YAML — zero compiled code.

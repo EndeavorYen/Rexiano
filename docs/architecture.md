@@ -44,21 +44,21 @@ graph TB
 
 ## 2. Tech Stack
 
-| Layer | Technology | Version | Purpose |
-|-------|-----------|---------|---------|
-| Desktop shell | Electron | 33 | Cross-platform window, system APIs, packaging |
-| Build tooling | electron-vite + Vite | 5 / 7 | Fast HMR, module bundling |
-| UI framework | React + TypeScript | 19 / 5.9 | Component-based UI |
-| Styling | Tailwind CSS + CSS Custom Properties | 4 | Utility classes + theme system |
-| State management | Zustand | 5 | Lightweight global stores |
-| Canvas rendering | PixiJS | 8 | WebGL falling notes at 60 FPS |
-| MIDI parsing | @tonejs/midi | 2 | Parse `.mid` files into structured data |
-| Audio | Web Audio API + soundfont2 | -- | SoundFont playback with synth fallback |
-| Icons | Lucide React | -- | SVG icon library |
-| Fonts | @fontsource (Nunito, DM Sans, JetBrains Mono) | -- | Offline-bundled, no CDN dependency |
-| Testing | Vitest | 4 | Unit and component tests |
-| Packaging | electron-builder | 26 | Windows/macOS/Linux installers |
-| Package manager | pnpm | -- | Fast, disk-efficient |
+| Layer            | Technology                                    | Version  | Purpose                                       |
+| ---------------- | --------------------------------------------- | -------- | --------------------------------------------- |
+| Desktop shell    | Electron                                      | 33       | Cross-platform window, system APIs, packaging |
+| Build tooling    | electron-vite + Vite                          | 5 / 7    | Fast HMR, module bundling                     |
+| UI framework     | React + TypeScript                            | 19 / 5.9 | Component-based UI                            |
+| Styling          | Tailwind CSS + CSS Custom Properties          | 4        | Utility classes + theme system                |
+| State management | Zustand                                       | 5        | Lightweight global stores                     |
+| Canvas rendering | PixiJS                                        | 8        | WebGL falling notes at 60 FPS                 |
+| MIDI parsing     | @tonejs/midi                                  | 2        | Parse `.mid` files into structured data       |
+| Audio            | Web Audio API + soundfont2                    | --       | SoundFont playback with synth fallback        |
+| Icons            | Lucide React                                  | --       | SVG icon library                              |
+| Fonts            | @fontsource (Nunito, DM Sans, JetBrains Mono) | --       | Offline-bundled, no CDN dependency            |
+| Testing          | Vitest                                        | 4        | Unit and component tests                      |
+| Packaging        | electron-builder                              | 26       | Windows/macOS/Linux installers                |
+| Package manager  | pnpm                                          | --       | Fast, disk-efficient                          |
 
 ---
 
@@ -139,6 +139,7 @@ graph TB
 ```
 
 **Rules**:
+
 1. **Engines never import React** — they are pure TypeScript classes/functions
 2. **Stores bridge engines to React** — they hold module-level engine references and wire callbacks
 3. **Features never instantiate engines directly** — they go through stores
@@ -252,16 +253,16 @@ flowchart TD
 
 Rexiano uses 8 Zustand stores. All are created with `create<T>()()` (Zustand v5 syntax).
 
-| Store | File | Key Fields | Persistence |
-|-------|------|-----------|-------------|
-| `useSongStore` | `stores/useSongStore.ts` | `song: ParsedSong \| null`, `loadSong()`, `clearSong()` | None |
-| `usePlaybackStore` | `stores/usePlaybackStore.ts` | `currentTime`, `isPlaying`, `pixelsPerSecond`, `audioStatus`, `volume` | None |
-| `useThemeStore` | `stores/useThemeStore.ts` | `themeId: ThemeId`, `theme: ThemeTokens`, `setTheme()` | localStorage (`rexiano-theme`) |
-| `useMidiDeviceStore` | `stores/useMidiDeviceStore.ts` | `inputs[]`, `outputs[]`, `selectedInputId`, `isConnected`, `activeNotes: Set<number>`, `bleStatus` | None |
-| `usePracticeStore` | `stores/usePracticeStore.ts` | `mode: PracticeMode`, `speed`, `loopRange`, `activeTracks: Set<number>`, `score: PracticeScore`, `noteResults: Map` | None |
-| `useSettingsStore` | `stores/useSettingsStore.ts` | `showNoteLabels`, `showFallingNoteLabels`, `volume`, `muted`, `defaultSpeed`, `defaultMode`, `metronomeEnabled`, `countInBeats`, `latencyCompensation` | localStorage (`rexiano-settings`) |
-| `useProgressStore` | `stores/useProgressStore.ts` | `sessions: SessionRecord[]`, `isLoaded`, `addSession()`, `getBestScore()` | IPC → `progress.json` in userData |
-| `useSongLibraryStore` | `stores/useSongLibraryStore.ts` | `songs: BuiltinSongMeta[]`, `isLoading`, `searchQuery`, `difficultyFilter` | None |
+| Store                 | File                            | Key Fields                                                                                                                                             | Persistence                       |
+| --------------------- | ------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ | --------------------------------- |
+| `useSongStore`        | `stores/useSongStore.ts`        | `song: ParsedSong \| null`, `loadSong()`, `clearSong()`                                                                                                | None                              |
+| `usePlaybackStore`    | `stores/usePlaybackStore.ts`    | `currentTime`, `isPlaying`, `pixelsPerSecond`, `audioStatus`, `volume`                                                                                 | None                              |
+| `useThemeStore`       | `stores/useThemeStore.ts`       | `themeId: ThemeId`, `theme: ThemeTokens`, `setTheme()`                                                                                                 | localStorage (`rexiano-theme`)    |
+| `useMidiDeviceStore`  | `stores/useMidiDeviceStore.ts`  | `inputs[]`, `outputs[]`, `selectedInputId`, `isConnected`, `activeNotes: Set<number>`, `bleStatus`                                                     | None                              |
+| `usePracticeStore`    | `stores/usePracticeStore.ts`    | `mode: PracticeMode`, `speed`, `loopRange`, `activeTracks: Set<number>`, `score: PracticeScore`, `noteResults: Map`                                    | None                              |
+| `useSettingsStore`    | `stores/useSettingsStore.ts`    | `showNoteLabels`, `showFallingNoteLabels`, `volume`, `muted`, `defaultSpeed`, `defaultMode`, `metronomeEnabled`, `countInBeats`, `latencyCompensation` | localStorage (`rexiano-settings`) |
+| `useProgressStore`    | `stores/useProgressStore.ts`    | `sessions: SessionRecord[]`, `isLoaded`, `addSession()`, `getBestScore()`                                                                              | IPC → `progress.json` in userData |
+| `useSongLibraryStore` | `stores/useSongLibraryStore.ts` | `songs: BuiltinSongMeta[]`, `isLoading`, `searchQuery`, `difficultyFilter`                                                                             | None                              |
 
 **Note**: `usePracticeStore` and `useMidiDeviceStore` use module-level variables (`_parser`, `_bleManager`) to manage engine singleton instances outside of the store itself.
 
@@ -273,48 +274,48 @@ All engines live under `src/renderer/src/engines/` and have **zero React depende
 
 ### audio/
 
-| File | Class/Module | Purpose |
-|------|-------------|---------|
-| `AudioEngine.ts` | `AudioEngine` | Web Audio API wrapper. `init()` creates AudioContext, loads SoundFont. `noteOn()`/`noteOff()` schedule audio events. `setVolume()` controls master gain. |
-| `AudioScheduler.ts` | `AudioScheduler` | Look-ahead scheduler. Runs a 25ms interval loop that pre-schedules notes 100ms ahead. Provides `getCurrentTime()` derived from `AudioContext.currentTime` (hardware clock). |
-| `SoundFontLoader.ts` | `SoundFontLoader` | Parses SF2 files using the `soundfont2` library. Falls back to sine-wave oscillator synthesis if loading fails. |
+| File                 | Class/Module      | Purpose                                                                                                                                                                     |
+| -------------------- | ----------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `AudioEngine.ts`     | `AudioEngine`     | Web Audio API wrapper. `init()` creates AudioContext, loads SoundFont. `noteOn()`/`noteOff()` schedule audio events. `setVolume()` controls master gain.                    |
+| `AudioScheduler.ts`  | `AudioScheduler`  | Look-ahead scheduler. Runs a 25ms interval loop that pre-schedules notes 100ms ahead. Provides `getCurrentTime()` derived from `AudioContext.currentTime` (hardware clock). |
+| `SoundFontLoader.ts` | `SoundFontLoader` | Parses SF2 files using the `soundfont2` library. Falls back to sine-wave oscillator synthesis if loading fails.                                                             |
 
 ### fallingNotes/
 
-| File | Class/Module | Purpose |
-|------|-------------|---------|
-| `NoteRenderer.ts` | `NoteRenderer` | Manages a PixiJS sprite object pool (512 initial, grows by 50% when exhausted). Handles `acquire()`/`release()` lifecycle. Also manages a parallel text label pool for note names. Provides `flashHit()`, `markMiss()`, `showCombo()` for practice visual feedback. |
-| `ViewportManager.ts` | `ViewportManager` | Maps between time coordinates (seconds) and screen coordinates (pixels). Computes visible time window, note Y positions, and hit line detection. |
-| `keyPositions.ts` | `keyPositions` | Maps MIDI note numbers (21-108) to screen X coordinates for an 88-key piano layout. Handles white/black key widths and offsets. |
-| `noteColors.ts` | `noteColors` | Assigns colors to notes based on track index, reading from the current theme tokens. |
-| `tickerLoop.ts` | `tickerLoop` | The main render loop callback attached to PixiJS Ticker. Runs at 60 FPS. Handles time advancement, visible note culling (binary search), sprite updates, hit-line detection, WaitMode gating, speed multiplication, and loop-range detection. |
+| File                 | Class/Module      | Purpose                                                                                                                                                                                                                                                             |
+| -------------------- | ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `NoteRenderer.ts`    | `NoteRenderer`    | Manages a PixiJS sprite object pool (512 initial, grows by 50% when exhausted). Handles `acquire()`/`release()` lifecycle. Also manages a parallel text label pool for note names. Provides `flashHit()`, `markMiss()`, `showCombo()` for practice visual feedback. |
+| `ViewportManager.ts` | `ViewportManager` | Maps between time coordinates (seconds) and screen coordinates (pixels). Computes visible time window, note Y positions, and hit line detection.                                                                                                                    |
+| `keyPositions.ts`    | `keyPositions`    | Maps MIDI note numbers (21-108) to screen X coordinates for an 88-key piano layout. Handles white/black key widths and offsets.                                                                                                                                     |
+| `noteColors.ts`      | `noteColors`      | Assigns colors to notes based on track index, reading from the current theme tokens.                                                                                                                                                                                |
+| `tickerLoop.ts`      | `tickerLoop`      | The main render loop callback attached to PixiJS Ticker. Runs at 60 FPS. Handles time advancement, visible note culling (binary search), sprite updates, hit-line detection, WaitMode gating, speed multiplication, and loop-range detection.                       |
 
 ### midi/
 
-| File | Class/Module | Purpose |
-|------|-------------|---------|
-| `MidiFileParser.ts` | `parseMidiFile()` | Converts raw MIDI bytes into a `ParsedSong` using `@tonejs/midi`. Filters empty tracks, normalizes time to seconds. |
+| File                   | Class/Module                    | Purpose                                                                                                                                                         |
+| ---------------------- | ------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `MidiFileParser.ts`    | `parseMidiFile()`               | Converts raw MIDI bytes into a `ParsedSong` using `@tonejs/midi`. Filters empty tracks, normalizes time to seconds.                                             |
 | `MidiDeviceManager.ts` | `MidiDeviceManager` (Singleton) | Wraps `navigator.requestMIDIAccess()`. Tracks available inputs/outputs, handles device hot-plug via `onstatechange`. Supports auto-reconnect via `lastInputId`. |
-| `MidiInputParser.ts` | `MidiInputParser` | Decodes raw MIDI messages (3-byte arrays). Fires `onNoteOn`/`onNoteOff`/`onCC` callbacks. Handles edge cases like velocity-0 Note On (= Note Off). |
-| `MidiOutputSender.ts` | `MidiOutputSender` | Sends MIDI messages to an output device. `noteOn()`, `noteOff()`, `sendCC()`, `allNotesOff()`, and `sendParsedNote()` for demo mode. |
-| `BleMidiManager.ts` | `BleMidiManager` | Web Bluetooth API integration for direct BLE MIDI connections. Handles GATT service/characteristic discovery and MIDI message parsing from BLE packets. |
+| `MidiInputParser.ts`   | `MidiInputParser`               | Decodes raw MIDI messages (3-byte arrays). Fires `onNoteOn`/`onNoteOff`/`onCC` callbacks. Handles edge cases like velocity-0 Note On (= Note Off).              |
+| `MidiOutputSender.ts`  | `MidiOutputSender`              | Sends MIDI messages to an output device. `noteOn()`, `noteOff()`, `sendCC()`, `allNotesOff()`, and `sendParsedNote()` for demo mode.                            |
+| `BleMidiManager.ts`    | `BleMidiManager`                | Web Bluetooth API integration for direct BLE MIDI connections. Handles GATT service/characteristic discovery and MIDI message parsing from BLE packets.         |
 
 ### practice/
 
-| File | Class/Module | Purpose |
-|------|-------------|---------|
-| `WaitMode.ts` | `WaitMode` | State machine (`playing` / `waiting` / `idle`) that pauses playback when the next chord arrives. Collects notes within a +/-200ms window as a chord group. Fires `onWait`/`onResume`/`onHit`/`onMiss` callbacks. |
-| `SpeedController.ts` | `SpeedController` | Speed multiplier management (0.25x-2.0x) with clamping and validation. |
-| `LoopController.ts` | `LoopController` | A-B loop logic. `shouldLoop(currentTime)` returns true when past B point. Provides `getLoopStart()` for jump-back target. |
-| `ScoreCalculator.ts` | `ScoreCalculator` | Accumulates hit/miss counts, computes accuracy percentage, tracks current and best streak. |
-| `practiceManager.ts` | `practiceManager` | Module-level singleton manager. `initPracticeEngines()` creates WaitMode + SpeedController + LoopController + ScoreCalculator. `getPracticeEngines()` returns them. `disposePracticeEngines()` tears down. |
+| File                 | Class/Module      | Purpose                                                                                                                                                                                                          |
+| -------------------- | ----------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `WaitMode.ts`        | `WaitMode`        | State machine (`playing` / `waiting` / `idle`) that pauses playback when the next chord arrives. Collects notes within a +/-200ms window as a chord group. Fires `onWait`/`onResume`/`onHit`/`onMiss` callbacks. |
+| `SpeedController.ts` | `SpeedController` | Speed multiplier management (0.25x-2.0x) with clamping and validation.                                                                                                                                           |
+| `LoopController.ts`  | `LoopController`  | A-B loop logic. `shouldLoop(currentTime)` returns true when past B point. Provides `getLoopStart()` for jump-back target.                                                                                        |
+| `ScoreCalculator.ts` | `ScoreCalculator` | Accumulates hit/miss counts, computes accuracy percentage, tracks current and best streak.                                                                                                                       |
+| `practiceManager.ts` | `practiceManager` | Module-level singleton manager. `initPracticeEngines()` creates WaitMode + SpeedController + LoopController + ScoreCalculator. `getPracticeEngines()` returns them. `disposePracticeEngines()` tears down.       |
 
 ### metronome/
 
-| File | Class/Module | Purpose |
-|------|-------------|---------|
-| `MetronomeEngine.ts` | `MetronomeEngine` | Generates metronome click sounds via Web Audio API oscillator. Supports accent on beat 1. Provides count-in functionality (configurable beat count). |
-| `metronomeManager.ts` | `metronomeManager` | Module-level singleton manager for MetronomeEngine lifecycle. |
+| File                  | Class/Module       | Purpose                                                                                                                                              |
+| --------------------- | ------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `MetronomeEngine.ts`  | `MetronomeEngine`  | Generates metronome click sounds via Web Audio API oscillator. Supports accent on beat 1. Provides count-in functionality (configurable beat count). |
+| `metronomeManager.ts` | `metronomeManager` | Module-level singleton manager for MetronomeEngine lifecycle.                                                                                        |
 
 ---
 
@@ -332,7 +333,9 @@ Engines use a simple callback registration pattern (`onSomething(cb: (arg) => vo
 // Engine
 class WaitMode {
   private _onHit: ((noteKey: string) => void) | null = null;
-  onHit(cb: (noteKey: string) => void): void { this._onHit = cb; }
+  onHit(cb: (noteKey: string) => void): void {
+    this._onHit = cb;
+  }
 }
 
 // Consumer
@@ -340,6 +343,7 @@ waitMode.onHit((noteKey) => practiceStore.recordHit(noteKey));
 ```
 
 Advantages over EventEmitter:
+
 - **Type safety**: callbacks are fully typed at the registration site
 - **Simplicity**: no string-based event names, no listener management complexity
 - **Predictability**: one callback per event type (no multi-listener ordering issues)
@@ -352,7 +356,7 @@ Electron's structured clone algorithm loses the `Uint8Array` type when serializi
 ```typescript
 interface MidiFileResult {
   fileName: string;
-  data: number[];  // not Uint8Array
+  data: number[]; // not Uint8Array
 }
 ```
 
@@ -389,6 +393,7 @@ export function disposePracticeEngines() { _waitMode = null; ... }
 ```
 
 This pattern was chosen over class-based singletons because:
+
 - Simpler lifecycle (init/get/dispose vs. getInstance with lazy init)
 - Multiple related instances can be created and disposed together
 - Import-based access is more ergonomic than `.getInstance()` chains
@@ -417,13 +422,13 @@ stores/usePracticeStore.test.ts       ← right next to it
 
 ### What Gets Tested
 
-| Layer | What | Examples |
-|-------|------|---------|
-| Engines | Pure logic classes | WaitMode state transitions, ScoreCalculator accuracy, SpeedController clamping, LoopController boundaries, MidiInputParser message decoding |
-| Stores | Zustand store actions | recordHit/recordMiss updates, device list sync, settings persistence |
-| Features | React components (render + interaction) | PianoKeyboard key highlighting, TransportBar controls, CelebrationOverlay thresholds |
-| IPC handlers | Main process handlers | Progress file read/write, recent files management |
-| Integration | Cross-module flows | Full playback integration test (`integration.test.ts`) |
+| Layer        | What                                    | Examples                                                                                                                                    |
+| ------------ | --------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| Engines      | Pure logic classes                      | WaitMode state transitions, ScoreCalculator accuracy, SpeedController clamping, LoopController boundaries, MidiInputParser message decoding |
+| Stores       | Zustand store actions                   | recordHit/recordMiss updates, device list sync, settings persistence                                                                        |
+| Features     | React components (render + interaction) | PianoKeyboard key highlighting, TransportBar controls, CelebrationOverlay thresholds                                                        |
+| IPC handlers | Main process handlers                   | Progress file read/write, recent files management                                                                                           |
+| Integration  | Cross-module flows                      | Full playback integration test (`integration.test.ts`)                                                                                      |
 
 ### Mocking Patterns
 
@@ -440,6 +445,7 @@ pnpm lint && pnpm typecheck && pnpm test
 ```
 
 This is the standard verification command run after every change. It checks:
+
 1. ESLint rules (code style, React hooks rules, etc.)
 2. TypeScript type checking (both `tsconfig.node.json` and `tsconfig.web.json`)
 3. All Vitest test suites
@@ -465,12 +471,12 @@ pnpm dev          # starts Electron in development mode with HMR
 
 ### Branch Strategy
 
-| Branch | Purpose |
-|--------|---------|
-| `main` | Stable release branch |
-| `dev` | Development integration branch |
+| Branch      | Purpose                              |
+| ----------- | ------------------------------------ |
+| `main`      | Stable release branch                |
+| `dev`       | Development integration branch       |
 | `feature/*` | Feature branches (branch from `dev`) |
-| `fix/*` | Bug fix branches (branch from `dev`) |
+| `fix/*`     | Bug fix branches (branch from `dev`) |
 
 ### Pull Request Process
 
@@ -510,4 +516,4 @@ pnpm dev          # starts Electron in development mode with HMR
 
 ---
 
-*Rexiano is licensed under GPL-3.0. See [LICENSE](../LICENSE) for details.*
+_Rexiano is licensed under GPL-3.0. See [LICENSE](../LICENSE) for details._

@@ -1,7 +1,7 @@
-import { app, ipcMain } from 'electron'
-import * as path from 'path'
-import * as fs from 'fs'
-import type { AppInfo } from '../../shared/types'
+import { app, ipcMain } from "electron";
+import * as path from "path";
+import * as fs from "fs";
+import type { AppInfo } from "../../shared/types";
 
 /**
  * Registers IPC handler for app metadata.
@@ -14,17 +14,17 @@ import type { AppInfo } from '../../shared/types'
  * In prod: read from process.resourcesPath.
  */
 export function registerAppInfoHandlers(): void {
-  ipcMain.handle('app:getAppInfo', async (): Promise<AppInfo> => {
-    const version = app.getVersion()
+  ipcMain.handle("app:getAppInfo", async (): Promise<AppInfo> => {
+    const version = app.getVersion();
 
     const changelogPath = !app.isPackaged
-      ? path.join(app.getAppPath(), 'CHANGELOG.md')
-      : path.join(process.resourcesPath, 'CHANGELOG.md')
+      ? path.join(app.getAppPath(), "CHANGELOG.md")
+      : path.join(process.resourcesPath, "CHANGELOG.md");
 
     const changelog = await fs.promises
-      .readFile(changelogPath, 'utf-8')
-      .catch(() => '')
+      .readFile(changelogPath, "utf-8")
+      .catch(() => "");
 
-    return { version, changelog }
-  })
+    return { version, changelog };
+  });
 }

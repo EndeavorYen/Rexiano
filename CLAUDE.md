@@ -21,13 +21,13 @@
 
 ## 當前進度快照
 
-| Phase | 狀態 | 說明 |
-|-------|------|------|
-| 1~3 | ✅ 完成 | 專案骨架、下落音符引擎、主題系統 |
-| 4 | ✅ 完成 | 音頻播放（合成音色 fallback，`resources/piano.sf2` 已存在） |
-| 5 | ✅ 完成 | MIDI 裝置連接（Input/Output/Store/UI） |
-| 6 | ✅ 完成 | 練習模式（引擎 + Store + UI + 整合：tickerLoop / App.tsx / 視覺回饋） |
-| 6.5+ | 🔲 未開始 | 兒童可用性增強、樂譜顯示、打包發佈 |
+| Phase | 狀態      | 說明                                                                  |
+| ----- | --------- | --------------------------------------------------------------------- |
+| 1~3   | ✅ 完成   | 專案骨架、下落音符引擎、主題系統                                      |
+| 4     | ✅ 完成   | 音頻播放（合成音色 fallback，`resources/piano.sf2` 已存在）           |
+| 5     | ✅ 完成   | MIDI 裝置連接（Input/Output/Store/UI）                                |
+| 6     | ✅ 完成   | 練習模式（引擎 + Store + UI + 整合：tickerLoop / App.tsx / 視覺回饋） |
+| 6.5+  | 🔲 未開始 | 兒童可用性增強、樂譜顯示、打包發佈                                    |
 
 ## 技術堆疊速查
 
@@ -54,6 +54,7 @@ Motion: Use animations for effects and micro-interactions. Prioritize CSS-only s
 Backgrounds: Create atmosphere and depth rather than defaulting to solid colors. Layer CSS gradients, use geometric patterns, or add contextual effects that match the overall aesthetic.
 
 Avoid generic AI-generated aesthetics:
+
 - Overused font families (Inter, Roboto, Arial, system fonts)
 - Clichéd color schemes (particularly purple gradients on white backgrounds)
 - Predictable layouts and component patterns
@@ -70,14 +71,14 @@ Interpret creatively and make unexpected choices that feel genuinely designed fo
 
 ## Zustand Store 一覽
 
-| Store | 檔案 | 用途 |
-|-------|------|------|
-| `useSongStore` | `stores/useSongStore.ts` | 當前載入的歌曲（ParsedSong） |
-| `usePlaybackStore` | `stores/usePlaybackStore.ts` | 播放狀態（currentTime, isPlaying, pixelsPerSecond） |
-| `useThemeStore` | `stores/useThemeStore.ts` | 主題選擇 + localStorage 持久化 |
-| `useMidiDeviceStore` | `stores/useMidiDeviceStore.ts` | MIDI 裝置連接狀態 |
-| `useSongLibraryStore` | `stores/useSongLibraryStore.ts` | 曲庫元資料 |
-| `usePracticeStore` | `stores/usePracticeStore.ts` | 練習模式狀態（mode / speed / loopRange / activeTracks / score） |
+| Store                 | 檔案                            | 用途                                                            |
+| --------------------- | ------------------------------- | --------------------------------------------------------------- |
+| `useSongStore`        | `stores/useSongStore.ts`        | 當前載入的歌曲（ParsedSong）                                    |
+| `usePlaybackStore`    | `stores/usePlaybackStore.ts`    | 播放狀態（currentTime, isPlaying, pixelsPerSecond）             |
+| `useThemeStore`       | `stores/useThemeStore.ts`       | 主題選擇 + localStorage 持久化                                  |
+| `useMidiDeviceStore`  | `stores/useMidiDeviceStore.ts`  | MIDI 裝置連接狀態                                               |
+| `useSongLibraryStore` | `stores/useSongLibraryStore.ts` | 曲庫元資料                                                      |
+| `usePracticeStore`    | `stores/usePracticeStore.ts`    | 練習模式狀態（mode / speed / loopRange / activeTracks / score） |
 
 ## 開發慣例
 

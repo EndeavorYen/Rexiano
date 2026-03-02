@@ -22,16 +22,16 @@
 
 ### 1.1 為何選擇 VexFlow
 
-| 評估項目 | VexFlow | OSMD | abcjs |
-|----------|---------|------|-------|
-| 輸入格式 | 程式化 API（StaveNote 物件） | MusicXML | ABC Notation |
-| 自訂彈性 | **極高** — 逐音符控制渲染 | 中等 — MusicXML 驅動 | 低 |
-| 與 MIDI 整合 | **直接** — 我們控制轉換邏輯 | 需先轉 MusicXML（額外步驟） | 需先轉 ABC（非主流） |
-| 互動性 | **支援** — 可標記、高亮、動態更新 | 有限 | 有限 |
-| 套件大小 | ~300KB gzipped | ~1.5MB | ~200KB |
-| 社群活躍度 | 高（GitHub 3.8k stars，持續更新至 v5） | 中 | 低 |
-| TypeScript 支援 | **原生**（v5 以 TypeScript 撰寫） | 有型別定義 | 有限 |
-| 授權 | MIT | AGPL-3.0 | MIT |
+| 評估項目        | VexFlow                                | OSMD                        | abcjs                |
+| --------------- | -------------------------------------- | --------------------------- | -------------------- |
+| 輸入格式        | 程式化 API（StaveNote 物件）           | MusicXML                    | ABC Notation         |
+| 自訂彈性        | **極高** — 逐音符控制渲染              | 中等 — MusicXML 驅動        | 低                   |
+| 與 MIDI 整合    | **直接** — 我們控制轉換邏輯            | 需先轉 MusicXML（額外步驟） | 需先轉 ABC（非主流） |
+| 互動性          | **支援** — 可標記、高亮、動態更新      | 有限                        | 有限                 |
+| 套件大小        | ~300KB gzipped                         | ~1.5MB                      | ~200KB               |
+| 社群活躍度      | 高（GitHub 3.8k stars，持續更新至 v5） | 中                          | 低                   |
+| TypeScript 支援 | **原生**（v5 以 TypeScript 撰寫）      | 有型別定義                  | 有限                 |
+| 授權            | MIT                                    | AGPL-3.0                    | MIT                  |
 
 **核心決策理由**：
 
@@ -45,8 +45,19 @@
 VexFlow 提供兩層 API：
 
 **低階 API**（精確控制）：
+
 ```typescript
-import { Renderer, Stave, StaveNote, Voice, Formatter, Accidental, Beam, Dot, StaveTie } from 'vexflow';
+import {
+  Renderer,
+  Stave,
+  StaveNote,
+  Voice,
+  Formatter,
+  Accidental,
+  Beam,
+  Dot,
+  StaveTie,
+} from "vexflow";
 
 // 1. 建立渲染器（SVG 模式）
 const renderer = new Renderer(divElement, Renderer.Backends.SVG);
@@ -55,22 +66,22 @@ const context = renderer.getContext();
 
 // 2. 建立五線譜
 const stave = new Stave(x, y, width);
-stave.addClef('treble').addTimeSignature('4/4').addKeySignature('C');
+stave.addClef("treble").addTimeSignature("4/4").addKeySignature("C");
 stave.setContext(context).draw();
 
 // 3. 建立音符
 const notes = [
-  new StaveNote({ keys: ['c/4'], duration: 'q' }),           // 四分音符 C4
-  new StaveNote({ keys: ['d/4'], duration: '8' }),            // 八分音符 D4
-  new StaveNote({ keys: ['e/4', 'g/4', 'b/4'], duration: 'h' }), // 和弦（二分音符）
-  new StaveNote({ keys: ['b/4'], duration: 'qr' }),           // 四分休止符
+  new StaveNote({ keys: ["c/4"], duration: "q" }), // 四分音符 C4
+  new StaveNote({ keys: ["d/4"], duration: "8" }), // 八分音符 D4
+  new StaveNote({ keys: ["e/4", "g/4", "b/4"], duration: "h" }), // 和弦（二分音符）
+  new StaveNote({ keys: ["b/4"], duration: "qr" }), // 四分休止符
 ];
 
 // 4. 附點音符
-Dot.buildAndAttach([notes[1]]);  // 將 D4 變成附點八分音符
+Dot.buildAndAttach([notes[1]]); // 將 D4 變成附點八分音符
 
 // 5. 升降記號
-notes[0].addModifier(new Accidental('#'));  // C#4
+notes[0].addModifier(new Accidental("#")); // C#4
 
 // 6. 建立聲部（Voice）+ 格式化 + 繪製
 const voice = new Voice({ numBeats: 4, beatValue: 4 });
@@ -80,58 +91,74 @@ voice.draw(context, stave);
 
 // 7. 自動連桿（Beam）
 const beams = Beam.generateBeams(notes);
-beams.forEach(b => b.setContext(context).draw());
+beams.forEach((b) => b.setContext(context).draw());
 
 // 8. 連結線（Tie）
 const tie = new StaveTie({
-  first_note: notes[0], last_note: notes[1],
-  first_indices: [0], last_indices: [0],
+  first_note: notes[0],
+  last_note: notes[1],
+  first_indices: [0],
+  last_indices: [0],
 });
 tie.setContext(context).draw();
 ```
 
 **高階 API（Factory + EasyScore）**（適合原型開發）：
-```typescript
-import { Factory } from 'vexflow';
 
-const vf = new Factory({ renderer: { elementId: 'output', width: 600, height: 300 } });
+```typescript
+import { Factory } from "vexflow";
+
+const vf = new Factory({
+  renderer: { elementId: "output", width: 600, height: 300 },
+});
 const score = vf.EasyScore();
 const system = vf.System();
 
 // 大譜表（鋼琴：高音譜號 + 低音譜號）
-system.addStave({
-  voices: [
-    score.voice(score.notes('C#5/q, B4, A4, G#4', { stem: 'up' })),
-    score.voice(score.notes('C#4/h, C#4', { stem: 'down' })),
-  ]
-}).addClef('treble').addTimeSignature('4/4');
+system
+  .addStave({
+    voices: [
+      score.voice(score.notes("C#5/q, B4, A4, G#4", { stem: "up" })),
+      score.voice(score.notes("C#4/h, C#4", { stem: "down" })),
+    ],
+  })
+  .addClef("treble")
+  .addTimeSignature("4/4");
 
-system.addStave({
-  voices: [
-    score.voice(score.notes('C#3/q, B2, A2/8, B2, C#3, D3', { clef: 'bass', stem: 'up' })),
-    score.voice(score.notes('C#2/h, C#2', { clef: 'bass', stem: 'down' })),
-  ]
-}).addClef('bass').addTimeSignature('4/4');
+system
+  .addStave({
+    voices: [
+      score.voice(
+        score.notes("C#3/q, B2, A2/8, B2, C#3, D3", {
+          clef: "bass",
+          stem: "up",
+        }),
+      ),
+      score.voice(score.notes("C#2/h, C#2", { clef: "bass", stem: "down" })),
+    ],
+  })
+  .addClef("bass")
+  .addTimeSignature("4/4");
 
-system.addConnector('brace');       // 大括號
-system.addConnector('singleLeft');  // 左邊線
-system.addConnector('singleRight'); // 右邊線
+system.addConnector("brace"); // 大括號
+system.addConnector("singleLeft"); // 左邊線
+system.addConnector("singleRight"); // 右邊線
 
 vf.draw();
 ```
 
 **VexFlow 時值代碼**：
 
-| 代碼 | 時值 | 拍數（4/4） |
-|------|------|-------------|
-| `w` | 全音符 | 4 |
-| `h` | 二分音符 | 2 |
-| `q` | 四分音符 | 1 |
-| `8` | 八分音符 | 0.5 |
-| `16` | 十六分音符 | 0.25 |
-| `32` | 三十二分音符 | 0.125 |
-| 加 `d` | 附點（+50% 時值） | - |
-| 加 `r` | 休止符 | - |
+| 代碼   | 時值              | 拍數（4/4） |
+| ------ | ----------------- | ----------- |
+| `w`    | 全音符            | 4           |
+| `h`    | 二分音符          | 2           |
+| `q`    | 四分音符          | 1           |
+| `8`    | 八分音符          | 0.5         |
+| `16`   | 十六分音符        | 0.25        |
+| `32`   | 三十二分音符      | 0.125       |
+| 加 `d` | 附點（+50% 時值） | -           |
+| 加 `r` | 休止符            | -           |
 
 ### 1.3 安裝
 
@@ -234,10 +261,7 @@ ParsedSong (MIDI)
  *   對每段恆定 tempo 區間：
  *     beats += (segmentDuration_seconds) * (bpm / 60)
  */
-function secondsToBeats(
-  timeInSeconds: number,
-  tempoMap: TempoEvent[]
-): number {
+function secondsToBeats(timeInSeconds: number, tempoMap: TempoEvent[]): number {
   let totalBeats = 0;
   let prevTime = 0;
   let prevBpm = tempoMap[0]?.bpm ?? 120; // 預設 120 BPM
@@ -275,17 +299,17 @@ function secondsToBeats(
 ```typescript
 /** 支援的量化格線精度（以 beat 為單位） */
 const QUANTIZE_GRIDS = [
-  1.0,    // 四分音符
-  0.5,    // 八分音符
-  0.25,   // 十六分音符
-  0.125,  // 三十二分音符
+  1.0, // 四分音符
+  0.5, // 八分音符
+  0.25, // 十六分音符
+  0.125, // 三十二分音符
   // 三連音格線
-  1/3,    // 四分音符三連音（一拍分三等份）
-  1/6,    // 八分音符三連音
+  1 / 3, // 四分音符三連音（一拍分三等份）
+  1 / 6, // 八分音符三連音
 ];
 
 /** 量化容忍度：距離格線 ±20% 以內才 snap */
-const QUANTIZE_TOLERANCE = 0.20;
+const QUANTIZE_TOLERANCE = 0.2;
 ```
 
 **演算法**：
@@ -331,25 +355,29 @@ function quantizeOnsetMultiGrid(beatPosition: number): number {
 **標準時值表（以 beat 為單位）**：
 
 ```typescript
-const STANDARD_DURATIONS: { beats: number; vexDuration: string; isDotted: boolean }[] = [
+const STANDARD_DURATIONS: {
+  beats: number;
+  vexDuration: string;
+  isDotted: boolean;
+}[] = [
   // 基本時值
-  { beats: 4.0,   vexDuration: 'w',   isDotted: false },  // 全音符
-  { beats: 2.0,   vexDuration: 'h',   isDotted: false },  // 二分音符
-  { beats: 1.0,   vexDuration: 'q',   isDotted: false },  // 四分音符
-  { beats: 0.5,   vexDuration: '8',   isDotted: false },  // 八分音符
-  { beats: 0.25,  vexDuration: '16',  isDotted: false },  // 十六分音符
-  { beats: 0.125, vexDuration: '32',  isDotted: false },  // 三十二分音符
+  { beats: 4.0, vexDuration: "w", isDotted: false }, // 全音符
+  { beats: 2.0, vexDuration: "h", isDotted: false }, // 二分音符
+  { beats: 1.0, vexDuration: "q", isDotted: false }, // 四分音符
+  { beats: 0.5, vexDuration: "8", isDotted: false }, // 八分音符
+  { beats: 0.25, vexDuration: "16", isDotted: false }, // 十六分音符
+  { beats: 0.125, vexDuration: "32", isDotted: false }, // 三十二分音符
 
   // 附點時值（基礎 * 1.5）
-  { beats: 6.0,   vexDuration: 'wd',  isDotted: true },   // 附點全音符
-  { beats: 3.0,   vexDuration: 'hd',  isDotted: true },   // 附點二分音符
-  { beats: 1.5,   vexDuration: 'qd',  isDotted: true },   // 附點四分音符
-  { beats: 0.75,  vexDuration: '8d',  isDotted: true },   // 附點八分音符
-  { beats: 0.375, vexDuration: '16d', isDotted: true },   // 附點十六分音符
+  { beats: 6.0, vexDuration: "wd", isDotted: true }, // 附點全音符
+  { beats: 3.0, vexDuration: "hd", isDotted: true }, // 附點二分音符
+  { beats: 1.5, vexDuration: "qd", isDotted: true }, // 附點四分音符
+  { beats: 0.75, vexDuration: "8d", isDotted: true }, // 附點八分音符
+  { beats: 0.375, vexDuration: "16d", isDotted: true }, // 附點十六分音符
 
   // 三連音時值
-  { beats: 2/3,   vexDuration: 'q',   isDotted: false },  // 四分音符三連音
-  { beats: 1/3,   vexDuration: '8',   isDotted: false },  // 八分音符三連音
+  { beats: 2 / 3, vexDuration: "q", isDotted: false }, // 四分音符三連音
+  { beats: 1 / 3, vexDuration: "8", isDotted: false }, // 八分音符三連音
 ];
 ```
 
@@ -358,8 +386,13 @@ const STANDARD_DURATIONS: { beats: number; vexDuration: string; isDotted: boolea
 ```typescript
 function quantizeDuration(
   durationBeats: number,
-  tolerance: number = QUANTIZE_TOLERANCE
-): { vexDuration: string; isDotted: boolean; actualBeats: number; isTriplet: boolean } {
+  tolerance: number = QUANTIZE_TOLERANCE,
+): {
+  vexDuration: string;
+  isDotted: boolean;
+  actualBeats: number;
+  isTriplet: boolean;
+} {
   let bestMatch = STANDARD_DURATIONS[0];
   let bestError = Infinity;
 
@@ -372,8 +405,8 @@ function quantizeDuration(
   }
 
   // 判斷是否為三連音
-  const isTriplet = [2/3, 1/3, 4/3].some(
-    t => Math.abs(durationBeats - t) / t < tolerance
+  const isTriplet = [2 / 3, 1 / 3, 4 / 3].some(
+    (t) => Math.abs(durationBeats - t) / t < tolerance,
   );
 
   return {
@@ -401,24 +434,24 @@ function quantizeDuration(
  * 3. 總和接近一個標準時值（1 beat, 0.5 beat 等）
  */
 function detectTripletGroups(
-  notes: { startBeat: number; durationBeats: number }[]
+  notes: { startBeat: number; durationBeats: number }[],
 ): TripletGroup[] {
   const groups: TripletGroup[] = [];
 
   for (let i = 0; i < notes.length - 2; i++) {
     const trio = [notes[i], notes[i + 1], notes[i + 2]];
-    const durations = trio.map(n => n.durationBeats);
+    const durations = trio.map((n) => n.durationBeats);
     const avg = durations.reduce((a, b) => a + b, 0) / 3;
 
     // 三個音符時值相近
-    const isUniform = durations.every(d => Math.abs(d - avg) / avg < 0.15);
+    const isUniform = durations.every((d) => Math.abs(d - avg) / avg < 0.15);
     if (!isUniform) continue;
 
     // 總和接近標準時值
     const total = durations.reduce((a, b) => a + b, 0);
     const standardTotals = [1.0, 0.5, 2.0]; // 一拍、半拍、兩拍
     const isStandardTotal = standardTotals.some(
-      s => Math.abs(total - s) / s < 0.15
+      (s) => Math.abs(total - s) / s < 0.15,
     );
 
     if (isStandardTotal) {
@@ -460,20 +493,20 @@ function assignClef(
   midi: number,
   trackIndex: number,
   trackCount: number,
-  trackName: string
-): 'treble' | 'bass' {
+  trackName: string,
+): "treble" | "bass" {
   // 策略一：按 track（多數鋼琴 MIDI 使用雙軌）
   if (trackCount === 2) {
-    return trackIndex === 0 ? 'treble' : 'bass';
+    return trackIndex === 0 ? "treble" : "bass";
   }
 
   // 策略一 variant：按 track name
   const nameLower = trackName.toLowerCase();
-  if (/right|treble|melody|soprano/.test(nameLower)) return 'treble';
-  if (/left|bass|accomp|tenor/.test(nameLower)) return 'bass';
+  if (/right|treble|melody|soprano/.test(nameLower)) return "treble";
+  if (/left|bass|accomp|tenor/.test(nameLower)) return "bass";
 
   // 策略二：按音高
-  return midi >= 60 ? 'treble' : 'bass';
+  return midi >= 60 ? "treble" : "bass";
 }
 ```
 
@@ -496,7 +529,7 @@ function assignClef(
  */
 function computeMeasureBoundaries(
   totalBeats: number,
-  timeSignatures: { beat: number; numerator: number; denominator: number }[]
+  timeSignatures: { beat: number; numerator: number; denominator: number }[],
 ): MeasureBoundary[] {
   const measures: MeasureBoundary[] = [];
   let currentBeat = 0;
@@ -505,8 +538,10 @@ function computeMeasureBoundaries(
 
   while (currentBeat < totalBeats) {
     // 找到當前生效的拍號
-    while (tsIndex < timeSignatures.length - 1
-           && timeSignatures[tsIndex + 1].beat <= currentBeat) {
+    while (
+      tsIndex < timeSignatures.length - 1 &&
+      timeSignatures[tsIndex + 1].beat <= currentBeat
+    ) {
       tsIndex++;
     }
 
@@ -538,7 +573,7 @@ function computeMeasureBoundaries(
  */
 function splitAtMeasureBoundaries(
   note: QuantizedNote,
-  measures: MeasureBoundary[]
+  measures: MeasureBoundary[],
 ): QuantizedNote[] {
   const results: QuantizedNote[] = [];
   let remaining = note.durationBeats;
@@ -598,14 +633,16 @@ function splitAtMeasureBoundaries(
 function inferDuration(durationBeats: number): DurationResult[] {
   // Step 1: 嘗試精確匹配
   const exact = STANDARD_DURATIONS.find(
-    s => Math.abs(s.beats - durationBeats) / s.beats < 0.05
+    (s) => Math.abs(s.beats - durationBeats) / s.beats < 0.05,
   );
   if (exact) {
-    return [{
-      vexDuration: exact.vexDuration,
-      isDotted: exact.isDotted,
-      beats: exact.beats,
-    }];
+    return [
+      {
+        vexDuration: exact.vexDuration,
+        isDotted: exact.isDotted,
+        beats: exact.beats,
+      },
+    ];
   }
 
   // Step 2: 貪心分解 — 從最大的標準時值開始填充
@@ -643,28 +680,54 @@ function inferDuration(durationBeats: number): DurationResult[] {
  * 3. VexFlow key 格式: "c/4", "c#/4", "bb/5" 等
  */
 
-const SHARP_NAMES = ['c', 'c#', 'd', 'd#', 'e', 'f', 'f#', 'g', 'g#', 'a', 'a#', 'b'];
-const FLAT_NAMES  = ['c', 'db', 'd', 'eb', 'e', 'f', 'gb', 'g', 'ab', 'a', 'bb', 'b'];
+const SHARP_NAMES = [
+  "c",
+  "c#",
+  "d",
+  "d#",
+  "e",
+  "f",
+  "f#",
+  "g",
+  "g#",
+  "a",
+  "a#",
+  "b",
+];
+const FLAT_NAMES = [
+  "c",
+  "db",
+  "d",
+  "eb",
+  "e",
+  "f",
+  "gb",
+  "g",
+  "ab",
+  "a",
+  "bb",
+  "b",
+];
 
 /** 各調號中已內含的升降音（不需要臨時記號） */
 const KEY_SIGNATURE_MAP: Record<string, Set<string>> = {
-  'C':  new Set([]),
-  'G':  new Set(['f#']),
-  'D':  new Set(['f#', 'c#']),
-  'A':  new Set(['f#', 'c#', 'g#']),
-  'E':  new Set(['f#', 'c#', 'g#', 'd#']),
-  'B':  new Set(['f#', 'c#', 'g#', 'd#', 'a#']),
-  'F':  new Set(['bb']),
-  'Bb': new Set(['bb', 'eb']),
-  'Eb': new Set(['bb', 'eb', 'ab']),
-  'Ab': new Set(['bb', 'eb', 'ab', 'db']),
+  C: new Set([]),
+  G: new Set(["f#"]),
+  D: new Set(["f#", "c#"]),
+  A: new Set(["f#", "c#", "g#"]),
+  E: new Set(["f#", "c#", "g#", "d#"]),
+  B: new Set(["f#", "c#", "g#", "d#", "a#"]),
+  F: new Set(["bb"]),
+  Bb: new Set(["bb", "eb"]),
+  Eb: new Set(["bb", "eb", "ab"]),
+  Ab: new Set(["bb", "eb", "ab", "db"]),
   // ... 更多調號
 };
 
 function midiToVexFlowKey(
   midi: number,
-  keySignature: string = 'C',
-  preferFlats: boolean = false
+  keySignature: string = "C",
+  preferFlats: boolean = false,
 ): { key: string; accidental?: string } {
   const pitchClass = midi % 12;
   const octave = Math.floor(midi / 12) - 1;
@@ -701,9 +764,9 @@ function midiToVexFlowKey(
  * 當一個譜號沒有任何音符時，整個小節為全休止符。
  */
 function insertRests(
-  notes: NotatedNote[],       // 已排序的小節內音符
+  notes: NotatedNote[], // 已排序的小節內音符
   measureStartBeat: number,
-  beatsPerMeasure: number
+  beatsPerMeasure: number,
 ): NotatedRest[] {
   const rests: NotatedRest[] = [];
   let cursor = measureStartBeat;
@@ -718,7 +781,7 @@ function insertRests(
       for (const r of gapRests) {
         rests.push({
           beat: restBeat - measureStartBeat, // 小節內相對位置
-          duration: r.vexDuration + 'r',     // VexFlow 休止符格式
+          duration: r.vexDuration + "r", // VexFlow 休止符格式
           beats: r.beats,
         });
         restBeat += r.beats;
@@ -737,7 +800,7 @@ function insertRests(
     for (const r of tailRests) {
       rests.push({
         beat: restBeat - measureStartBeat,
-        duration: r.vexDuration + 'r',
+        duration: r.vexDuration + "r",
         beats: r.beats,
       });
       restBeat += r.beats;
@@ -798,7 +861,7 @@ interface NotatedNote {
   /** 是否為三連音 */
   isTriplet: boolean;
   /** 所屬譜號 */
-  clef: 'treble' | 'bass';
+  clef: "treble" | "bass";
   /** VexFlow key 字串 (e.g. "c/4", "f#/5") */
   vexKey: string;
   /** 臨時記號 ('#', 'b', 'n', '##', 'bb') 或 undefined */
@@ -822,7 +885,7 @@ interface NotatedRest {
   /** 佔用的 beat 數 */
   beats: number;
   /** 所屬譜號 */
-  clef: 'treble' | 'bass';
+  clef: "treble" | "bass";
 }
 
 /** 一個小節的完整記譜資料 */
@@ -866,15 +929,15 @@ interface NotatedScore {
 
 ### 3.2 與 VexFlow 的映射關係
 
-| NotatedNote 欄位 | VexFlow 對應 |
-|---|---|
-| `vexKey` | `StaveNote({ keys: [vexKey] })` |
-| `duration` | `StaveNote({ duration })` |
-| `isDotted` | `Dot.buildAndAttach([note])` |
-| `accidental` | `note.addModifier(new Accidental(accidental))` |
-| `isTiedForward` / `isTiedBack` | `new StaveTie({ first_note, last_note })` |
-| `isTriplet` | `new Tuplet(notes, { num_notes: 3, notes_occupied: 2 })` |
-| `clef` | `stave.addClef(clef)` |
+| NotatedNote 欄位               | VexFlow 對應                                             |
+| ------------------------------ | -------------------------------------------------------- |
+| `vexKey`                       | `StaveNote({ keys: [vexKey] })`                          |
+| `duration`                     | `StaveNote({ duration })`                                |
+| `isDotted`                     | `Dot.buildAndAttach([note])`                             |
+| `accidental`                   | `note.addModifier(new Accidental(accidental))`           |
+| `isTiedForward` / `isTiedBack` | `new StaveTie({ first_note, last_note })`                |
+| `isTriplet`                    | `new Tuplet(notes, { num_notes: 3, notes_occupied: 2 })` |
+| `clef`                         | `stave.addClef(clef)`                                    |
 
 ---
 
@@ -961,11 +1024,11 @@ src/renderer/src/
 
 class CursorSync {
   private _measures: NotatedMeasure[];
-  private _startTimes: number[];  // binary search 用
+  private _startTimes: number[]; // binary search 用
 
   constructor(score: NotatedScore) {
     this._measures = score.measures;
-    this._startTimes = score.measures.map(m => m.startTime);
+    this._startTimes = score.measures.map((m) => m.startTime);
   }
 
   getPosition(currentTime: number): CursorPosition {
@@ -974,11 +1037,12 @@ class CursorSync {
     const measure = this._measures[measureIndex];
 
     // 計算小節內進度 (0 ~ 1)
-    const nextMeasureTime = measureIndex < this._measures.length - 1
-      ? this._measures[measureIndex + 1].startTime
-      : measure.startTime + 999; // 最後一小節
-    const progress = (currentTime - measure.startTime)
-      / (nextMeasureTime - measure.startTime);
+    const nextMeasureTime =
+      measureIndex < this._measures.length - 1
+        ? this._measures[measureIndex + 1].startTime
+        : measure.startTime + 999; // 最後一小節
+    const progress =
+      (currentTime - measure.startTime) / (nextMeasureTime - measure.startTime);
 
     return {
       measureIndex,
@@ -989,7 +1053,8 @@ class CursorSync {
   }
 
   private _binarySearch(time: number): number {
-    let lo = 0, hi = this._startTimes.length - 1;
+    let lo = 0,
+      hi = this._startTimes.length - 1;
     while (lo < hi) {
       const mid = (lo + hi + 1) >> 1;
       if (this._startTimes[mid] <= time) lo = mid;
@@ -1020,11 +1085,11 @@ class CursorSync {
 
 **佈局切換**：
 
-| 模式 | 上方區域 | 下方區域 |
-|------|---------|---------|
-| `split` | SheetMusicPanel (40%) | FallingNotesCanvas (60%) + PianoKeyboard |
-| `sheetOnly` | SheetMusicPanel (100%) | PianoKeyboard |
-| `fallingOnly` | FallingNotesCanvas (100%) + PianoKeyboard | （現有預設） |
+| 模式          | 上方區域                                  | 下方區域                                 |
+| ------------- | ----------------------------------------- | ---------------------------------------- |
+| `split`       | SheetMusicPanel (40%)                     | FallingNotesCanvas (60%) + PianoKeyboard |
+| `sheetOnly`   | SheetMusicPanel (100%)                    | PianoKeyboard                            |
+| `fallingOnly` | FallingNotesCanvas (100%) + PianoKeyboard | （現有預設）                             |
 
 ### 4.5 自適應排版
 
@@ -1048,146 +1113,146 @@ class CursorSync {
 
 ### Task 1：VexFlow 整合基礎建設
 
-| 項目 | 內容 |
-|------|------|
-| **名稱** | 安裝 VexFlow + 建立基礎渲染元件 |
-| **輸入** | 無 |
-| **輸出** | `SheetMusicPanel.tsx` 能渲染硬編碼的 C 大調音階 |
-| **複雜度** | 低 |
-| **前置依賴** | 無 |
-| **驗證方式** | 在 App 中嵌入 SheetMusicPanel，看到正確的五線譜 |
-| **細節** | `pnpm add vexflow`；建立 `features/sheetMusic/SheetMusicPanel.tsx`；使用 `useRef` 管理 SVG 容器；VexFlow `Renderer.Backends.SVG`；渲染一個 treble stave + 4 個四分音符 |
+| 項目         | 內容                                                                                                                                                                   |
+| ------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **名稱**     | 安裝 VexFlow + 建立基礎渲染元件                                                                                                                                        |
+| **輸入**     | 無                                                                                                                                                                     |
+| **輸出**     | `SheetMusicPanel.tsx` 能渲染硬編碼的 C 大調音階                                                                                                                        |
+| **複雜度**   | 低                                                                                                                                                                     |
+| **前置依賴** | 無                                                                                                                                                                     |
+| **驗證方式** | 在 App 中嵌入 SheetMusicPanel，看到正確的五線譜                                                                                                                        |
+| **細節**     | `pnpm add vexflow`；建立 `features/sheetMusic/SheetMusicPanel.tsx`；使用 `useRef` 管理 SVG 容器；VexFlow `Renderer.Backends.SVG`；渲染一個 treble stave + 4 個四分音符 |
 
 ### Task 2：資料模型與型別定義
 
-| 項目 | 內容 |
-|------|------|
-| **名稱** | 定義 notation 中間表示型別 |
-| **輸入** | 設計文件中的型別規格 |
-| **輸出** | `engines/notation/types.ts` 完整型別定義 |
-| **複雜度** | 低 |
-| **前置依賴** | 無 |
-| **驗證方式** | `pnpm typecheck` 通過 |
+| 項目         | 內容                                     |
+| ------------ | ---------------------------------------- |
+| **名稱**     | 定義 notation 中間表示型別               |
+| **輸入**     | 設計文件中的型別規格                     |
+| **輸出**     | `engines/notation/types.ts` 完整型別定義 |
+| **複雜度**   | 低                                       |
+| **前置依賴** | 無                                       |
+| **驗證方式** | `pnpm typecheck` 通過                    |
 
 ### Task 3：時間轉換 + 量化引擎
 
-| 項目 | 內容 |
-|------|------|
-| **名稱** | 實作 secondsToBeats + quantizer |
-| **輸入** | `ParsedNote[]`、`TempoEvent[]` |
-| **輸出** | `QuantizedNote[]`（量化後的音符陣列） |
-| **複雜度** | **高** |
-| **前置依賴** | Task 2 |
-| **驗證方式** | 單元測試：已知 MIDI 時間 + BPM → 預期 beat 位置；格線吸附誤差 < 5% |
-| **細節** | 實作 `quantizer.ts`：`secondsToBeats()`、`quantizeOnsetMultiGrid()`、`quantizeDuration()`、`detectTripletGroups()`；至少 15 個測試案例覆蓋正常/變速/三連音 |
+| 項目         | 內容                                                                                                                                                       |
+| ------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **名稱**     | 實作 secondsToBeats + quantizer                                                                                                                            |
+| **輸入**     | `ParsedNote[]`、`TempoEvent[]`                                                                                                                             |
+| **輸出**     | `QuantizedNote[]`（量化後的音符陣列）                                                                                                                      |
+| **複雜度**   | **高**                                                                                                                                                     |
+| **前置依賴** | Task 2                                                                                                                                                     |
+| **驗證方式** | 單元測試：已知 MIDI 時間 + BPM → 預期 beat 位置；格線吸附誤差 < 5%                                                                                         |
+| **細節**     | 實作 `quantizer.ts`：`secondsToBeats()`、`quantizeOnsetMultiGrid()`、`quantizeDuration()`、`detectTripletGroups()`；至少 15 個測試案例覆蓋正常/變速/三連音 |
 
 ### Task 4：小節切割引擎
 
-| 項目 | 內容 |
-|------|------|
-| **名稱** | 實作 measureSplitter + 跨小節連結線 |
-| **輸入** | `QuantizedNote[]`、`TimeSignatureEvent[]` |
-| **輸出** | `NotatedMeasure[]`（按小節分組的音符） |
-| **複雜度** | 中 |
-| **前置依賴** | Task 3 |
-| **驗證方式** | 單元測試：4/4 拍 + 跨小節音符 → 正確分割 + tie 標記 |
-| **細節** | 實作 `measureSplitter.ts`：`computeMeasureBoundaries()`、`splitAtMeasureBoundaries()`、`assignToMeasures()` |
+| 項目         | 內容                                                                                                        |
+| ------------ | ----------------------------------------------------------------------------------------------------------- |
+| **名稱**     | 實作 measureSplitter + 跨小節連結線                                                                         |
+| **輸入**     | `QuantizedNote[]`、`TimeSignatureEvent[]`                                                                   |
+| **輸出**     | `NotatedMeasure[]`（按小節分組的音符）                                                                      |
+| **複雜度**   | 中                                                                                                          |
+| **前置依賴** | Task 3                                                                                                      |
+| **驗證方式** | 單元測試：4/4 拍 + 跨小節音符 → 正確分割 + tie 標記                                                         |
+| **細節**     | 實作 `measureSplitter.ts`：`computeMeasureBoundaries()`、`splitAtMeasureBoundaries()`、`assignToMeasures()` |
 
 ### Task 5：時值推斷 + 休止符插入
 
-| 項目 | 內容 |
-|------|------|
-| **名稱** | 實作 durationInfer + 休止符邏輯 |
-| **輸入** | `QuantizedNote.durationBeats` |
-| **輸出** | VexFlow duration string + isDotted + 休止符列表 |
-| **複雜度** | 中 |
-| **前置依賴** | Task 3 |
-| **驗證方式** | 單元測試：各種 beat 長度 → 正確的時值字串；空白段落 → 正確的休止符組合 |
-| **細節** | 實作 `durationInfer.ts`：`inferDuration()`、`insertRests()`；覆蓋附點音符、複合時值、全休止符 |
+| 項目         | 內容                                                                                          |
+| ------------ | --------------------------------------------------------------------------------------------- |
+| **名稱**     | 實作 durationInfer + 休止符邏輯                                                               |
+| **輸入**     | `QuantizedNote.durationBeats`                                                                 |
+| **輸出**     | VexFlow duration string + isDotted + 休止符列表                                               |
+| **複雜度**   | 中                                                                                            |
+| **前置依賴** | Task 3                                                                                        |
+| **驗證方式** | 單元測試：各種 beat 長度 → 正確的時值字串；空白段落 → 正確的休止符組合                        |
+| **細節**     | 實作 `durationInfer.ts`：`inferDuration()`、`insertRests()`；覆蓋附點音符、複合時值、全休止符 |
 
 ### Task 6：升降記號推斷
 
-| 項目 | 內容 |
-|------|------|
-| **名稱** | 實作 accidentalInfer + 調號處理 |
-| **輸入** | `midi: number`、`keySignature: string` |
-| **輸出** | VexFlow key string + accidental |
-| **複雜度** | 低 |
-| **前置依賴** | Task 2 |
-| **驗證方式** | 單元測試：各調號下的音名轉換正確性 |
-| **細節** | 實作 `accidentalInfer.ts`：`midiToVexFlowKey()`、`detectKeySignature()`（分析曲目中最常出現的升降音） |
+| 項目         | 內容                                                                                                  |
+| ------------ | ----------------------------------------------------------------------------------------------------- |
+| **名稱**     | 實作 accidentalInfer + 調號處理                                                                       |
+| **輸入**     | `midi: number`、`keySignature: string`                                                                |
+| **輸出**     | VexFlow key string + accidental                                                                       |
+| **複雜度**   | 低                                                                                                    |
+| **前置依賴** | Task 2                                                                                                |
+| **驗證方式** | 單元測試：各調號下的音名轉換正確性                                                                    |
+| **細節**     | 實作 `accidentalInfer.ts`：`midiToVexFlowKey()`、`detectKeySignature()`（分析曲目中最常出現的升降音） |
 
 ### Task 7：主轉換管線整合
 
-| 項目 | 內容 |
-|------|------|
-| **名稱** | 整合 6 個 Stage 為 MidiToNotation 管線 |
-| **輸入** | `ParsedSong` |
-| **輸出** | `NotatedScore` |
-| **複雜度** | **高** |
-| **前置依賴** | Task 3, 4, 5, 6 |
-| **驗證方式** | 使用真實 MIDI 檔案（Twinkle Twinkle, Ode to Joy）測試，手動驗證產出的 NotatedScore 正確性 |
-| **細節** | 實作 `MidiToNotation.ts`：`convertSongToScore(song: ParsedSong): NotatedScore`；串接所有 stage；處理邊界情況（空 track、無 tempo event、單音旋律） |
+| 項目         | 內容                                                                                                                                               |
+| ------------ | -------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **名稱**     | 整合 6 個 Stage 為 MidiToNotation 管線                                                                                                             |
+| **輸入**     | `ParsedSong`                                                                                                                                       |
+| **輸出**     | `NotatedScore`                                                                                                                                     |
+| **複雜度**   | **高**                                                                                                                                             |
+| **前置依賴** | Task 3, 4, 5, 6                                                                                                                                    |
+| **驗證方式** | 使用真實 MIDI 檔案（Twinkle Twinkle, Ode to Joy）測試，手動驗證產出的 NotatedScore 正確性                                                          |
+| **細節**     | 實作 `MidiToNotation.ts`：`convertSongToScore(song: ParsedSong): NotatedScore`；串接所有 stage；處理邊界情況（空 track、無 tempo event、單音旋律） |
 
 ### Task 8：VexFlow 小節渲染器
 
-| 項目 | 內容 |
-|------|------|
-| **名稱** | 實作 MeasureRenderer — NotatedMeasure → VexFlow 繪製 |
-| **輸入** | `NotatedMeasure` |
-| **輸出** | 在指定 SVG context 上渲染大譜表（treble + bass） |
-| **複雜度** | **高** |
-| **前置依賴** | Task 1, 7 |
-| **驗證方式** | 在 SheetMusicPanel 中渲染真實 MIDI 轉換後的小節 |
-| **細節** | 實作 `MeasureRenderer.ts`：建立 treble/bass Stave；建立 Voice + StaveNote（含和弦、附點、臨時記號）；Beam 自動連桿；Tie 連結線；Tuplet 三連音標記；brace connector |
+| 項目         | 內容                                                                                                                                                               |
+| ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **名稱**     | 實作 MeasureRenderer — NotatedMeasure → VexFlow 繪製                                                                                                               |
+| **輸入**     | `NotatedMeasure`                                                                                                                                                   |
+| **輸出**     | 在指定 SVG context 上渲染大譜表（treble + bass）                                                                                                                   |
+| **複雜度**   | **高**                                                                                                                                                             |
+| **前置依賴** | Task 1, 7                                                                                                                                                          |
+| **驗證方式** | 在 SheetMusicPanel 中渲染真實 MIDI 轉換後的小節                                                                                                                    |
+| **細節**     | 實作 `MeasureRenderer.ts`：建立 treble/bass Stave；建立 Voice + StaveNote（含和弦、附點、臨時記號）；Beam 自動連桿；Tie 連結線；Tuplet 三連音標記；brace connector |
 
 ### Task 9：SheetMusicPanel 完整化
 
-| 項目 | 內容 |
-|------|------|
-| **名稱** | 完整的五線譜面板（多行渲染 + resize） |
-| **輸入** | `NotatedScore` |
-| **輸出** | 可捲動的完整五線譜 |
-| **複雜度** | 中 |
-| **前置依賴** | Task 8 |
-| **驗證方式** | 載入完整曲目，看到多行大譜表，resize 視窗時自動重排 |
-| **細節** | 多行排版（每行 N 個小節，依寬度計算）；SVG 容器高度動態計算；`ResizeObserver` 監聽容器寬度變化 |
+| 項目         | 內容                                                                                           |
+| ------------ | ---------------------------------------------------------------------------------------------- |
+| **名稱**     | 完整的五線譜面板（多行渲染 + resize）                                                          |
+| **輸入**     | `NotatedScore`                                                                                 |
+| **輸出**     | 可捲動的完整五線譜                                                                             |
+| **複雜度**   | 中                                                                                             |
+| **前置依賴** | Task 8                                                                                         |
+| **驗證方式** | 載入完整曲目，看到多行大譜表，resize 視窗時自動重排                                            |
+| **細節**     | 多行排版（每行 N 個小節，依寬度計算）；SVG 容器高度動態計算；`ResizeObserver` 監聽容器寬度變化 |
 
 ### Task 10：游標同步 + 音符高亮
 
-| 項目 | 內容 |
-|------|------|
-| **名稱** | CursorSync + 自動捲動 + 當前音符高亮 |
-| **輸入** | `currentTime`（從 playbackStore） |
-| **輸出** | 游標跟隨播放位置、當前音符變色、自動捲到可見區域 |
-| **複雜度** | 中 |
-| **前置依賴** | Task 9 |
-| **驗證方式** | 播放歌曲時，游標平滑移動，當前音符高亮，翻行時自動捲動 |
-| **細節** | 實作 `CursorSync.ts`；游標使用 SVG `<rect>` overlay（CSS transform 移動，不重繪）；音符高亮使用 SVG class 切換（`note-active`）；自動捲動使用 `scrollIntoView({ behavior: 'smooth' })` |
+| 項目         | 內容                                                                                                                                                                                   |
+| ------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **名稱**     | CursorSync + 自動捲動 + 當前音符高亮                                                                                                                                                   |
+| **輸入**     | `currentTime`（從 playbackStore）                                                                                                                                                      |
+| **輸出**     | 游標跟隨播放位置、當前音符變色、自動捲到可見區域                                                                                                                                       |
+| **複雜度**   | 中                                                                                                                                                                                     |
+| **前置依賴** | Task 9                                                                                                                                                                                 |
+| **驗證方式** | 播放歌曲時，游標平滑移動，當前音符高亮，翻行時自動捲動                                                                                                                                 |
+| **細節**     | 實作 `CursorSync.ts`；游標使用 SVG `<rect>` overlay（CSS transform 移動，不重繪）；音符高亮使用 SVG class 切換（`note-active`）；自動捲動使用 `scrollIntoView({ behavior: 'smooth' })` |
 
 ### Task 11：顯示模式切換 + Store
 
-| 項目 | 內容 |
-|------|------|
-| **名稱** | 三種顯示模式 + useSheetMusicStore |
-| **輸入** | 使用者切換操作 |
-| **輸出** | `split`/`sheetOnly`/`fallingOnly` 模式正確切換 |
-| **複雜度** | 低 |
-| **前置依賴** | Task 9, 10 |
-| **驗證方式** | 切換模式時佈局正確變化，不閃爍 |
-| **細節** | 建立 `useSheetMusicStore.ts`；修改 `App.tsx` 佈局（flexbox 切換比例）；TransportBar 新增切換按鈕 |
+| 項目         | 內容                                                                                             |
+| ------------ | ------------------------------------------------------------------------------------------------ |
+| **名稱**     | 三種顯示模式 + useSheetMusicStore                                                                |
+| **輸入**     | 使用者切換操作                                                                                   |
+| **輸出**     | `split`/`sheetOnly`/`fallingOnly` 模式正確切換                                                   |
+| **複雜度**   | 低                                                                                               |
+| **前置依賴** | Task 9, 10                                                                                       |
+| **驗證方式** | 切換模式時佈局正確變化，不閃爍                                                                   |
+| **細節**     | 建立 `useSheetMusicStore.ts`；修改 `App.tsx` 佈局（flexbox 切換比例）；TransportBar 新增切換按鈕 |
 
 ### Task 12：測試與調校
 
-| 項目 | 內容 |
-|------|------|
-| **名稱** | 整合測試 + 量化精度調校 + 邊界處理 |
-| **輸入** | 18 首內建曲目 |
-| **輸出** | 全部曲目可正確顯示五線譜 |
-| **複雜度** | **高** |
-| **前置依賴** | Task 1-11 |
-| **驗證方式** | 逐曲手動驗證；`pnpm lint && pnpm typecheck && pnpm test` 通過 |
-| **細節** | 量化參數微調（tolerance、grid 選擇策略）；處理邊界案例（pick-up bar / anacrusis、tempo rubato、grace notes）；效能壓測（> 200 小節的曲目） |
+| 項目         | 內容                                                                                                                                       |
+| ------------ | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| **名稱**     | 整合測試 + 量化精度調校 + 邊界處理                                                                                                         |
+| **輸入**     | 18 首內建曲目                                                                                                                              |
+| **輸出**     | 全部曲目可正確顯示五線譜                                                                                                                   |
+| **複雜度**   | **高**                                                                                                                                     |
+| **前置依賴** | Task 1-11                                                                                                                                  |
+| **驗證方式** | 逐曲手動驗證；`pnpm lint && pnpm typecheck && pnpm test` 通過                                                                              |
+| **細節**     | 量化參數微調（tolerance、grid 選擇策略）；處理邊界案例（pick-up bar / anacrusis、tempo rubato、grace notes）；效能壓測（> 200 小節的曲目） |
 
 ### 任務依賴圖
 
@@ -1222,11 +1287,13 @@ Task 1 (VexFlow 基礎) ──── Task 8 (小節渲染器)
 ### 6.1 量化精度風險 — **高**
 
 **問題**：MIDI 演奏資料的時間戳包含人為演奏的微小誤差（rubato、不精確的節奏）。量化演算法可能：
+
 - 將連續的十六分音符誤判為八分音符
 - 無法正確辨識三連音
 - 在 tempo 變化處產生錯誤對齊
 
 **緩解措施**：
+
 1. **多層級格線策略**：從粗到細嘗試，優先匹配四分音符，避免過度量化
 2. **可調參數**：量化閾值（tolerance）暴露為 `NotationSettings`，讓進階使用者微調
 3. **漸進式精度**：Phase 7 初版只支援機器生成的 MIDI（精準時間），Phase 7.5 再處理人工演奏的 MIDI
@@ -1235,6 +1302,7 @@ Task 1 (VexFlow 基礎) ──── Task 8 (小節渲染器)
 ### 6.2 效能風險 — **中**
 
 **問題**：
+
 - VexFlow SVG 渲染大量小節時可能緩慢
 - 200+ 小節的曲目可能產生巨大的 SVG DOM
 
@@ -1246,6 +1314,7 @@ Task 1 (VexFlow 基礎) ──── Task 8 (小節渲染器)
 | Moonlight Sonata (1st) | 200 | 800 | ~8000 |
 
 **緩解措施**：
+
 1. **虛擬化渲染**：只渲染可見區域的行（±1 行緩衝），使用 `IntersectionObserver`
 2. **增量渲染**：首屏立即渲染（前 8 小節），其餘在背景渲染
 3. **SVG 快取**：每小節渲染後快取 SVG 片段，resize 時才重繪
@@ -1254,11 +1323,13 @@ Task 1 (VexFlow 基礎) ──── Task 8 (小節渲染器)
 ### 6.3 VexFlow 限制 — **中**
 
 **已知限制**：
+
 1. **Voice 拍數驗證**：VexFlow `Voice` 預設啟用嚴格的拍數檢查，如果音符總拍數不等於 time signature，會拋出錯誤。需要使用 `Voice.Mode.SOFT` 關閉嚴格模式。
 2. **多聲部排版**：同一 stave 上的兩個 voice（如右手的旋律 + 和弦分解）需要仔細處理 stem direction，否則符桿方向可能衝突。
 3. **中文文字**：VexFlow 的 SVG 文字渲染可能不完美支援中文歌詞（Phase 7 不涉及歌詞，但未來可能需要）。
 
 **緩解措施**：
+
 1. 使用 `Voice.Mode.SOFT` 並在轉換管線中確保拍數正確
 2. Phase 7 初版只支援單聲部（每個 clef 一個 voice），多聲部（如複雜古典曲目）延後處理
 3. 預留 VexFlow 版本升級的兼容層
@@ -1266,24 +1337,26 @@ Task 1 (VexFlow 基礎) ──── Task 8 (小節渲染器)
 ### 6.4 MIDI 資料品質風險 — **低**
 
 **問題**：不同來源的 MIDI 檔案品質差異大：
+
 - 機器生成（GarageBand、MuseScore 匯出）→ 時間精確，容易量化
 - 人工演奏錄製 → 時間不精確，rubato 多
 - 某些 MIDI 缺少 tempo / time signature 事件
 
 **緩解措施**：
+
 1. Phase 7 優先支援機器生成的 MIDI（內建曲庫全是機器生成的）
 2. 缺少 tempo 事件時預設 120 BPM、缺少 time signature 時預設 4/4
 3. 未來可考慮引入 beat tracking 演算法（如學術論文中的 HMM / Transformer 方法）
 
 ### 6.5 風險優先矩陣
 
-| 風險 | 機率 | 影響 | 優先處理 |
-|------|------|------|---------|
-| 量化精度不足 | 高 | 高 | **是** — Task 3, 12 重點投入 |
-| SVG 效能 | 中 | 中 | 是 — Task 9 實作虛擬化 |
-| VexFlow Voice 嚴格模式 | 高 | 低 | 是 — Task 8 使用 SOFT mode |
-| MIDI 品質差異 | 低 | 中 | 否 — Phase 7.5 處理 |
-| 多聲部排版 | 中 | 低 | 否 — Phase 7 只支援單聲部 |
+| 風險                   | 機率 | 影響 | 優先處理                     |
+| ---------------------- | ---- | ---- | ---------------------------- |
+| 量化精度不足           | 高   | 高   | **是** — Task 3, 12 重點投入 |
+| SVG 效能               | 中   | 中   | 是 — Task 9 實作虛擬化       |
+| VexFlow Voice 嚴格模式 | 高   | 低   | 是 — Task 8 使用 SOFT mode   |
+| MIDI 品質差異          | 低   | 中   | 否 — Phase 7.5 處理          |
+| 多聲部排版             | 中   | 低   | 否 — Phase 7 只支援單聲部    |
 
 ---
 

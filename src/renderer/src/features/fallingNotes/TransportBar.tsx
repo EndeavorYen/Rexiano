@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 import {
   Play,
   Pause,
@@ -64,6 +64,9 @@ export function TransportBar({
   const audioRecoveryMaxAttempts = usePlaybackStore(
     (s) => s.audioRecoveryMaxAttempts,
   );
+  const audioRecoverySuccessVisible = usePlaybackStore(
+    (s) => s.audioRecoverySuccessVisible,
+  );
   const requestAudioRecovery = usePlaybackStore((s) => s.requestAudioRecovery);
 
   const loopRange = usePracticeStore((s) => s.loopRange);
@@ -78,23 +81,6 @@ export function TransportBar({
   const volumePercent = Math.round(volume * 100);
 
   const [playPulse, setPlayPulse] = useState(false);
-  const [showRecoveryOk, setShowRecoveryOk] = useState(false);
-  const prevRecoveryStateRef = useRef(audioRecoveryState);
-
-  useEffect(() => {
-    let timer: ReturnType<typeof setTimeout> | null = null;
-    const prev = prevRecoveryStateRef.current;
-    if (prev === "recovering" && audioRecoveryState === "idle") {
-      setShowRecoveryOk(true);
-      prevRecoveryStateRef.current = audioRecoveryState;
-      timer = setTimeout(() => setShowRecoveryOk(false), 1800);
-    } else {
-      prevRecoveryStateRef.current = audioRecoveryState;
-    }
-    return () => {
-      if (timer) clearTimeout(timer);
-    };
-  }, [audioRecoveryState]);
 
   const handlePlayPause = (): void => {
     setPlaying(!isPlaying);
@@ -275,7 +261,7 @@ export function TransportBar({
               {t("general.error")}
             </span>
           )}
-          {showRecoveryOk && (
+          {audioRecoverySuccessVisible && (
             <span
               className="control-chip text-xs font-body"
               style={{ color: "var(--color-accent)" }}

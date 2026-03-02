@@ -24,6 +24,7 @@
 ## Task 1: Install Font Packages
 
 **Files:**
+
 - Modify: `package.json`
 
 **Step 1: Install @fontsource packages**
@@ -56,6 +57,7 @@ git commit -m "feat: add Nunito, DM Sans, JetBrains Mono font packages"
 ## Task 2: Theme Definitions + Store
 
 **Files:**
+
 - Create: `src/renderer/src/stores/useThemeStore.ts`
 - Create: `src/renderer/src/themes/tokens.ts`
 
@@ -66,126 +68,126 @@ This file defines all three theme palettes as plain objects. It is the single so
 Write `src/renderer/src/themes/tokens.ts`:
 
 ```typescript
-export type ThemeId = 'lavender' | 'ocean' | 'peach'
+export type ThemeId = "lavender" | "ocean" | "peach";
 
 export interface ThemeTokens {
-  id: ThemeId
-  label: string
+  id: ThemeId;
+  label: string;
   /** Dot color shown in theme picker */
-  dot: string
+  dot: string;
   colors: {
-    bg: string
-    surface: string
-    surfaceAlt: string
-    accent: string
-    accentHover: string
-    text: string
-    textMuted: string
-    border: string
-    canvasBg: string
-    gridLine: string
-    hitLine: string
-    note1: string
-    note2: string
-    note3: string
-    note4: string
-    keyActive: string
-    keyWhite: string
-    keyWhiteBottom: string
-    keyBlack: string
-    keyBlackTop: string
-  }
+    bg: string;
+    surface: string;
+    surfaceAlt: string;
+    accent: string;
+    accentHover: string;
+    text: string;
+    textMuted: string;
+    border: string;
+    canvasBg: string;
+    gridLine: string;
+    hitLine: string;
+    note1: string;
+    note2: string;
+    note3: string;
+    note4: string;
+    keyActive: string;
+    keyWhite: string;
+    keyWhiteBottom: string;
+    keyBlack: string;
+    keyBlackTop: string;
+  };
 }
 
 export const themes: Record<ThemeId, ThemeTokens> = {
   lavender: {
-    id: 'lavender',
-    label: 'Lavender',
-    dot: '#8B6CC1',
+    id: "lavender",
+    label: "Lavender",
+    dot: "#8B6CC1",
     colors: {
-      bg: '#F8F6FC',
-      surface: '#EEEBF5',
-      surfaceAlt: '#E4E0F0',
-      accent: '#8B6CC1',
-      accentHover: '#7B5CB1',
-      text: '#2D2640',
-      textMuted: '#7B7394',
-      border: '#D8D3E8',
-      canvasBg: '#F3F0FA',
-      gridLine: '#E8E4F2',
-      hitLine: '#8B6CC1',
-      note1: '#9B7FD4',
-      note2: '#C084CF',
-      note3: '#7BA4D9',
-      note4: '#A8D4A0',
-      keyActive: '#B49AE0',
-      keyWhite: '#FFFFFF',
-      keyWhiteBottom: '#F0EDF5',
-      keyBlack: '#3D3556',
-      keyBlackTop: '#4D4566',
+      bg: "#F8F6FC",
+      surface: "#EEEBF5",
+      surfaceAlt: "#E4E0F0",
+      accent: "#8B6CC1",
+      accentHover: "#7B5CB1",
+      text: "#2D2640",
+      textMuted: "#7B7394",
+      border: "#D8D3E8",
+      canvasBg: "#F3F0FA",
+      gridLine: "#E8E4F2",
+      hitLine: "#8B6CC1",
+      note1: "#9B7FD4",
+      note2: "#C084CF",
+      note3: "#7BA4D9",
+      note4: "#A8D4A0",
+      keyActive: "#B49AE0",
+      keyWhite: "#FFFFFF",
+      keyWhiteBottom: "#F0EDF5",
+      keyBlack: "#3D3556",
+      keyBlackTop: "#4D4566",
     },
   },
   ocean: {
-    id: 'ocean',
-    label: 'Ocean',
-    dot: '#4A9EAD',
+    id: "ocean",
+    label: "Ocean",
+    dot: "#4A9EAD",
     colors: {
-      bg: '#F5F9FA',
-      surface: '#E8F0F2',
-      surfaceAlt: '#DCE8EC',
-      accent: '#4A9EAD',
-      accentHover: '#3A8E9D',
-      text: '#1D2F36',
-      textMuted: '#6B8A94',
-      border: '#C8DAE0',
-      canvasBg: '#EFF5F7',
-      gridLine: '#E0ECF0',
-      hitLine: '#4A9EAD',
-      note1: '#5BB5C5',
-      note2: '#7EC8A0',
-      note3: '#5A9ED6',
-      note4: '#D4A05A',
-      keyActive: '#7DD4E0',
-      keyWhite: '#FFFFFF',
-      keyWhiteBottom: '#EDF3F5',
-      keyBlack: '#2A3D44',
-      keyBlackTop: '#3A4D54',
+      bg: "#F5F9FA",
+      surface: "#E8F0F2",
+      surfaceAlt: "#DCE8EC",
+      accent: "#4A9EAD",
+      accentHover: "#3A8E9D",
+      text: "#1D2F36",
+      textMuted: "#6B8A94",
+      border: "#C8DAE0",
+      canvasBg: "#EFF5F7",
+      gridLine: "#E0ECF0",
+      hitLine: "#4A9EAD",
+      note1: "#5BB5C5",
+      note2: "#7EC8A0",
+      note3: "#5A9ED6",
+      note4: "#D4A05A",
+      keyActive: "#7DD4E0",
+      keyWhite: "#FFFFFF",
+      keyWhiteBottom: "#EDF3F5",
+      keyBlack: "#2A3D44",
+      keyBlackTop: "#3A4D54",
     },
   },
   peach: {
-    id: 'peach',
-    label: 'Peach',
-    dot: '#D4845C',
+    id: "peach",
+    label: "Peach",
+    dot: "#D4845C",
     colors: {
-      bg: '#FDF8F4',
-      surface: '#F6EDE4',
-      surfaceAlt: '#EEE2D6',
-      accent: '#D4845C',
-      accentHover: '#C4744C',
-      text: '#3B2F2F',
-      textMuted: '#9A8478',
-      border: '#E4D4C6',
-      canvasBg: '#FAF4EF',
-      gridLine: '#F0E8E0',
-      hitLine: '#D4845C',
-      note1: '#E8845C',
-      note2: '#D4A574',
-      note3: '#C07878',
-      note4: '#8DB88A',
-      keyActive: '#F0A880',
-      keyWhite: '#FFFFFF',
-      keyWhiteBottom: '#F5EDE6',
-      keyBlack: '#3B2F2F',
-      keyBlackTop: '#4B3F3F',
+      bg: "#FDF8F4",
+      surface: "#F6EDE4",
+      surfaceAlt: "#EEE2D6",
+      accent: "#D4845C",
+      accentHover: "#C4744C",
+      text: "#3B2F2F",
+      textMuted: "#9A8478",
+      border: "#E4D4C6",
+      canvasBg: "#FAF4EF",
+      gridLine: "#F0E8E0",
+      hitLine: "#D4845C",
+      note1: "#E8845C",
+      note2: "#D4A574",
+      note3: "#C07878",
+      note4: "#8DB88A",
+      keyActive: "#F0A880",
+      keyWhite: "#FFFFFF",
+      keyWhiteBottom: "#F5EDE6",
+      keyBlack: "#3B2F2F",
+      keyBlackTop: "#4B3F3F",
     },
   },
-}
+};
 
 /**
  * Convert a hex color string like "#9B7FD4" to a PixiJS-compatible number 0x9B7FD4.
  */
 export function hexToPixi(hex: string): number {
-  return parseInt(hex.replace('#', ''), 16)
+  return parseInt(hex.replace("#", ""), 16);
 }
 ```
 
@@ -194,71 +196,77 @@ export function hexToPixi(hex: string): number {
 Write `src/renderer/src/stores/useThemeStore.ts`:
 
 ```typescript
-import { create } from 'zustand'
-import { themes, type ThemeId, type ThemeTokens } from '@renderer/themes/tokens'
+import { create } from "zustand";
+import {
+  themes,
+  type ThemeId,
+  type ThemeTokens,
+} from "@renderer/themes/tokens";
 
-const STORAGE_KEY = 'rexiano-theme'
+const STORAGE_KEY = "rexiano-theme";
 
 function loadSavedTheme(): ThemeId {
   try {
-    const saved = localStorage.getItem(STORAGE_KEY)
-    if (saved && saved in themes) return saved as ThemeId
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (saved && saved in themes) return saved as ThemeId;
   } catch {
     // localStorage might not be available
   }
-  return 'lavender'
+  return "lavender";
 }
 
 /** Apply theme CSS custom properties to document root */
 function applyThemeToDOM(tokens: ThemeTokens): void {
-  const root = document.documentElement
-  const c = tokens.colors
-  root.style.setProperty('--color-bg', c.bg)
-  root.style.setProperty('--color-surface', c.surface)
-  root.style.setProperty('--color-surface-alt', c.surfaceAlt)
-  root.style.setProperty('--color-accent', c.accent)
-  root.style.setProperty('--color-accent-hover', c.accentHover)
-  root.style.setProperty('--color-text', c.text)
-  root.style.setProperty('--color-text-muted', c.textMuted)
-  root.style.setProperty('--color-border', c.border)
-  root.style.setProperty('--color-canvas-bg', c.canvasBg)
-  root.style.setProperty('--color-grid-line', c.gridLine)
-  root.style.setProperty('--color-hit-line', c.hitLine)
-  root.style.setProperty('--color-note-1', c.note1)
-  root.style.setProperty('--color-note-2', c.note2)
-  root.style.setProperty('--color-note-3', c.note3)
-  root.style.setProperty('--color-note-4', c.note4)
-  root.style.setProperty('--color-key-active', c.keyActive)
-  root.style.setProperty('--color-key-white', c.keyWhite)
-  root.style.setProperty('--color-key-white-bottom', c.keyWhiteBottom)
-  root.style.setProperty('--color-key-black', c.keyBlack)
-  root.style.setProperty('--color-key-black-top', c.keyBlackTop)
+  const root = document.documentElement;
+  const c = tokens.colors;
+  root.style.setProperty("--color-bg", c.bg);
+  root.style.setProperty("--color-surface", c.surface);
+  root.style.setProperty("--color-surface-alt", c.surfaceAlt);
+  root.style.setProperty("--color-accent", c.accent);
+  root.style.setProperty("--color-accent-hover", c.accentHover);
+  root.style.setProperty("--color-text", c.text);
+  root.style.setProperty("--color-text-muted", c.textMuted);
+  root.style.setProperty("--color-border", c.border);
+  root.style.setProperty("--color-canvas-bg", c.canvasBg);
+  root.style.setProperty("--color-grid-line", c.gridLine);
+  root.style.setProperty("--color-hit-line", c.hitLine);
+  root.style.setProperty("--color-note-1", c.note1);
+  root.style.setProperty("--color-note-2", c.note2);
+  root.style.setProperty("--color-note-3", c.note3);
+  root.style.setProperty("--color-note-4", c.note4);
+  root.style.setProperty("--color-key-active", c.keyActive);
+  root.style.setProperty("--color-key-white", c.keyWhite);
+  root.style.setProperty("--color-key-white-bottom", c.keyWhiteBottom);
+  root.style.setProperty("--color-key-black", c.keyBlack);
+  root.style.setProperty("--color-key-black-top", c.keyBlackTop);
 }
 
 interface ThemeState {
-  themeId: ThemeId
-  theme: ThemeTokens
-  setTheme: (id: ThemeId) => void
+  themeId: ThemeId;
+  theme: ThemeTokens;
+  setTheme: (id: ThemeId) => void;
 }
 
 export const useThemeStore = create<ThemeState>()((set) => {
-  const initialId = loadSavedTheme()
-  const initialTheme = themes[initialId]
+  const initialId = loadSavedTheme();
+  const initialTheme = themes[initialId];
 
   // Apply on store creation
-  applyThemeToDOM(initialTheme)
+  applyThemeToDOM(initialTheme);
 
   return {
     themeId: initialId,
     theme: initialTheme,
     setTheme: (id) => {
-      const t = themes[id]
-      applyThemeToDOM(t)
-      try { localStorage.setItem(STORAGE_KEY, id) } catch {}
-      set({ themeId: id, theme: t })
+      const t = themes[id];
+      applyThemeToDOM(t);
+      try {
+        localStorage.setItem(STORAGE_KEY, id);
+      } catch {}
+      set({ themeId: id, theme: t });
     },
-  }
-})
+  };
+});
 ```
 
 **Step 3: Verify**
@@ -281,6 +289,7 @@ git commit -m "feat: add theme tokens and useThemeStore with localStorage persis
 ## Task 3: CSS Foundation — Fonts + Custom Properties
 
 **Files:**
+
 - Modify: `src/renderer/src/assets/main.css`
 - Modify: `src/renderer/index.html` (update CSP for font-src)
 
@@ -302,7 +311,8 @@ Replace the ENTIRE content of `src/renderer/src/assets/main.css` with:
 @theme {
   --font-display: "Nunito Variable", "Nunito", system-ui, sans-serif;
   --font-body: "DM Sans Variable", "DM Sans", system-ui, sans-serif;
-  --font-mono: "JetBrains Mono Variable", "JetBrains Mono", ui-monospace, monospace;
+  --font-mono:
+    "JetBrains Mono Variable", "JetBrains Mono", ui-monospace, monospace;
 }
 
 /* ── Base resets ── */
@@ -367,6 +377,7 @@ git commit -m "feat: add font imports, Tailwind v4 theme, and slider styling"
 ## Task 4: Theme Picker Component
 
 **Files:**
+
 - Create: `src/renderer/src/features/settings/ThemePicker.tsx`
 
 **Step 1: Write ThemePicker**
@@ -374,63 +385,99 @@ git commit -m "feat: add font imports, Tailwind v4 theme, and slider styling"
 Write `src/renderer/src/features/settings/ThemePicker.tsx`:
 
 ```tsx
-import { useState, useRef, useEffect } from 'react'
-import { useThemeStore } from '@renderer/stores/useThemeStore'
-import { themes, type ThemeId } from '@renderer/themes/tokens'
+import { useState, useRef, useEffect } from "react";
+import { useThemeStore } from "@renderer/stores/useThemeStore";
+import { themes, type ThemeId } from "@renderer/themes/tokens";
 
-const themeList: ThemeId[] = ['lavender', 'ocean', 'peach']
+const themeList: ThemeId[] = ["lavender", "ocean", "peach"];
 
 export function ThemePicker(): React.JSX.Element {
-  const [open, setOpen] = useState(false)
-  const currentId = useThemeStore((s) => s.themeId)
-  const setTheme = useThemeStore((s) => s.setTheme)
-  const popoverRef = useRef<HTMLDivElement>(null)
+  const [open, setOpen] = useState(false);
+  const currentId = useThemeStore((s) => s.themeId);
+  const setTheme = useThemeStore((s) => s.setTheme);
+  const popoverRef = useRef<HTMLDivElement>(null);
 
   // Close on outside click
   useEffect(() => {
-    if (!open) return
+    if (!open) return;
     const handler = (e: MouseEvent): void => {
-      if (popoverRef.current && !popoverRef.current.contains(e.target as Node)) {
-        setOpen(false)
+      if (
+        popoverRef.current &&
+        !popoverRef.current.contains(e.target as Node)
+      ) {
+        setOpen(false);
       }
-    }
-    document.addEventListener('mousedown', handler)
-    return () => document.removeEventListener('mousedown', handler)
-  }, [open])
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [open]);
 
   return (
     <div className="relative" ref={popoverRef}>
       <button
         onClick={() => setOpen(!open)}
         className="w-8 h-8 flex items-center justify-center rounded-full transition-colors cursor-pointer"
-        style={{ background: 'var(--color-surface-alt)' }}
+        style={{ background: "var(--color-surface-alt)" }}
         title="Change theme"
       >
         <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-          <circle cx="8" cy="8" r="3" stroke="var(--color-text-muted)" strokeWidth="1.5" fill="none" />
-          <path d="M8 1v2M8 13v2M1 8h2M13 8h2M3.05 3.05l1.41 1.41M11.54 11.54l1.41 1.41M3.05 12.95l1.41-1.41M11.54 4.46l1.41-1.41" stroke="var(--color-text-muted)" strokeWidth="1.5" strokeLinecap="round" />
+          <circle
+            cx="8"
+            cy="8"
+            r="3"
+            stroke="var(--color-text-muted)"
+            strokeWidth="1.5"
+            fill="none"
+          />
+          <path
+            d="M8 1v2M8 13v2M1 8h2M13 8h2M3.05 3.05l1.41 1.41M11.54 11.54l1.41 1.41M3.05 12.95l1.41-1.41M11.54 4.46l1.41-1.41"
+            stroke="var(--color-text-muted)"
+            strokeWidth="1.5"
+            strokeLinecap="round"
+          />
         </svg>
       </button>
 
       {open && (
         <div
           className="absolute bottom-full mb-2 right-0 flex gap-2 p-2 rounded-lg shadow-lg"
-          style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)' }}
+          style={{
+            background: "var(--color-surface)",
+            border: "1px solid var(--color-border)",
+          }}
         >
           {themeList.map((id) => (
             <button
               key={id}
-              onClick={() => { setTheme(id); setOpen(false) }}
+              onClick={() => {
+                setTheme(id);
+                setOpen(false);
+              }}
               className="w-7 h-7 rounded-full relative cursor-pointer transition-transform hover:scale-110"
               style={{
                 background: themes[id].dot,
-                boxShadow: id === currentId ? '0 0 0 2px var(--color-bg), 0 0 0 4px var(--color-accent)' : 'none',
+                boxShadow:
+                  id === currentId
+                    ? "0 0 0 2px var(--color-bg), 0 0 0 4px var(--color-accent)"
+                    : "none",
               }}
               title={themes[id].label}
             >
               {id === currentId && (
-                <svg className="absolute inset-0 m-auto" width="12" height="12" viewBox="0 0 12 12" fill="none">
-                  <path d="M2.5 6L5 8.5L9.5 3.5" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                <svg
+                  className="absolute inset-0 m-auto"
+                  width="12"
+                  height="12"
+                  viewBox="0 0 12 12"
+                  fill="none"
+                >
+                  <path
+                    d="M2.5 6L5 8.5L9.5 3.5"
+                    stroke="white"
+                    strokeWidth="1.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
                 </svg>
               )}
             </button>
@@ -438,7 +485,7 @@ export function ThemePicker(): React.JSX.Element {
         </div>
       )}
     </div>
-  )
+  );
 }
 ```
 
@@ -462,6 +509,7 @@ git commit -m "feat: add ThemePicker component with three-dot popover"
 ## Task 5: Restyle Welcome Screen
 
 **Files:**
+
 - Modify: `src/renderer/src/App.tsx`
 
 **Context:** Replace the generic stone-gray welcome screen with themed typography, accent-colored button, and theme picker. The welcome screen is the `!song` branch in App.tsx (lines 27-39).
@@ -471,7 +519,7 @@ git commit -m "feat: add ThemePicker component with three-dot popover"
 In `src/renderer/src/App.tsx`, add the ThemePicker import at the top (after existing imports):
 
 ```typescript
-import { ThemePicker } from './features/settings/ThemePicker'
+import { ThemePicker } from "./features/settings/ThemePicker";
 ```
 
 Then replace the welcome screen section. Change lines 24-39 from:
@@ -650,6 +698,7 @@ git commit -m "feat: restyle welcome screen and song header with theme system"
 ## Task 6: Restyle PianoKeyboard with Micro-3D
 
 **Files:**
+
 - Modify: `src/renderer/src/features/fallingNotes/PianoKeyboard.tsx`
 
 **Step 1: Add theme store import and update key styles**
@@ -657,71 +706,87 @@ git commit -m "feat: restyle welcome screen and song header with theme system"
 Replace the ENTIRE content of `src/renderer/src/features/fallingNotes/PianoKeyboard.tsx` with:
 
 ```tsx
-import { useMemo } from 'react'
+import { useMemo } from "react";
 
 /** MIDI range for a standard 88-key piano: A0 (21) to C8 (108) */
-const FIRST_NOTE = 21
-const LAST_NOTE = 108
+const FIRST_NOTE = 21;
+const LAST_NOTE = 108;
 
 /** For each chromatic note (0-11), whether it is a black key. */
-const IS_BLACK_NOTE = [false, true, false, true, false, false, true, false, true, false, true, false]
+const IS_BLACK_NOTE = [
+  false,
+  true,
+  false,
+  true,
+  false,
+  false,
+  true,
+  false,
+  true,
+  false,
+  true,
+  false,
+];
 
 /** Black key width as a fraction of white key width */
-const BLACK_KEY_WIDTH_RATIO = 0.58
+const BLACK_KEY_WIDTH_RATIO = 0.58;
 /** Black key height as a fraction of total keyboard height */
-const BLACK_KEY_HEIGHT_RATIO = 0.64
+const BLACK_KEY_HEIGHT_RATIO = 0.64;
 
 interface WhiteKeyInfo {
-  midi: number
-  index: number
+  midi: number;
+  index: number;
 }
 
 interface BlackKeyInfo {
-  midi: number
-  leftWhiteIndex: number
+  midi: number;
+  leftWhiteIndex: number;
 }
 
 interface Layout {
-  whiteKeys: WhiteKeyInfo[]
-  blackKeys: BlackKeyInfo[]
-  whiteKeyCount: number
+  whiteKeys: WhiteKeyInfo[];
+  blackKeys: BlackKeyInfo[];
+  whiteKeyCount: number;
 }
 
 function buildLayout(): Layout {
-  const whiteKeys: WhiteKeyInfo[] = []
-  const blackKeys: BlackKeyInfo[] = []
-  let whiteIndex = 0
+  const whiteKeys: WhiteKeyInfo[] = [];
+  const blackKeys: BlackKeyInfo[] = [];
+  let whiteIndex = 0;
 
   for (let midi = FIRST_NOTE; midi <= LAST_NOTE; midi++) {
-    const noteInOctave = midi % 12
+    const noteInOctave = midi % 12;
     if (IS_BLACK_NOTE[noteInOctave]) {
-      blackKeys.push({ midi, leftWhiteIndex: whiteIndex - 1 })
+      blackKeys.push({ midi, leftWhiteIndex: whiteIndex - 1 });
     } else {
-      whiteKeys.push({ midi, index: whiteIndex })
-      whiteIndex++
+      whiteKeys.push({ midi, index: whiteIndex });
+      whiteIndex++;
     }
   }
 
-  return { whiteKeys, blackKeys, whiteKeyCount: whiteIndex }
+  return { whiteKeys, blackKeys, whiteKeyCount: whiteIndex };
 }
 
 interface PianoKeyboardProps {
-  activeNotes?: Set<number>
-  height?: number
+  activeNotes?: Set<number>;
+  height?: number;
 }
 
-export function PianoKeyboard({ activeNotes, height = 120 }: PianoKeyboardProps): React.JSX.Element {
-  const layout = useMemo(() => buildLayout(), [])
-  const wPct = 100 / layout.whiteKeyCount
+export function PianoKeyboard({
+  activeNotes,
+  height = 120,
+}: PianoKeyboardProps): React.JSX.Element {
+  const layout = useMemo(() => buildLayout(), []);
+  const wPct = 100 / layout.whiteKeyCount;
 
   return (
     <div
       className="relative w-full select-none overflow-hidden"
-      style={{ height, background: 'var(--color-surface)' }}
+      style={{ height, background: "var(--color-surface)" }}
     >
       {/* White keys */}
       {layout.whiteKeys.map((key) => {
-        const active = activeNotes?.has(key.midi)
+        const active = activeNotes?.has(key.midi);
         return (
           <div
             key={key.midi}
@@ -729,26 +794,26 @@ export function PianoKeyboard({ activeNotes, height = 120 }: PianoKeyboardProps)
             style={{
               left: `${key.index * wPct}%`,
               width: `${wPct}%`,
-              height: '100%',
-              boxSizing: 'border-box',
+              height: "100%",
+              boxSizing: "border-box",
               background: active
-                ? 'var(--color-key-active)'
+                ? "var(--color-key-active)"
                 : `linear-gradient(to bottom, var(--color-key-white), var(--color-key-white-bottom))`,
-              borderRight: '1px solid var(--color-border)',
-              borderRadius: '0 0 4px 4px',
+              borderRight: "1px solid var(--color-border)",
+              borderRadius: "0 0 4px 4px",
               boxShadow: active
-                ? '0 1px 8px color-mix(in srgb, var(--color-accent) 30%, transparent)'
-                : '0 2px 4px rgba(0,0,0,0.08)',
+                ? "0 1px 8px color-mix(in srgb, var(--color-accent) 30%, transparent)"
+                : "0 2px 4px rgba(0,0,0,0.08)",
             }}
           />
-        )
+        );
       })}
 
       {/* Black keys */}
       {layout.blackKeys.map((key) => {
-        const active = activeNotes?.has(key.midi)
-        const bWidth = wPct * BLACK_KEY_WIDTH_RATIO
-        const centerX = (key.leftWhiteIndex + 1) * wPct
+        const active = activeNotes?.has(key.midi);
+        const bWidth = wPct * BLACK_KEY_WIDTH_RATIO;
+        const centerX = (key.leftWhiteIndex + 1) * wPct;
         return (
           <div
             key={key.midi}
@@ -759,18 +824,18 @@ export function PianoKeyboard({ activeNotes, height = 120 }: PianoKeyboardProps)
               height: `${BLACK_KEY_HEIGHT_RATIO * 100}%`,
               zIndex: 1,
               background: active
-                ? 'var(--color-key-active)'
+                ? "var(--color-key-active)"
                 : `linear-gradient(to bottom, var(--color-key-black-top), var(--color-key-black))`,
-              borderRadius: '0 0 3px 3px',
+              borderRadius: "0 0 3px 3px",
               boxShadow: active
-                ? '0 1px 6px color-mix(in srgb, var(--color-accent) 40%, transparent)'
-                : '0 2px 3px rgba(0,0,0,0.25), inset 0 -1px 1px rgba(255,255,255,0.05)',
+                ? "0 1px 6px color-mix(in srgb, var(--color-accent) 40%, transparent)"
+                : "0 2px 3px rgba(0,0,0,0.25), inset 0 -1px 1px rgba(255,255,255,0.05)",
             }}
           />
-        )
+        );
       })}
     </div>
-  )
+  );
 }
 ```
 
@@ -794,6 +859,7 @@ git commit -m "feat: restyle PianoKeyboard with micro-3D gradients and theme col
 ## Task 7: Update noteColors.ts to Read Theme
 
 **Files:**
+
 - Modify: `src/renderer/src/engines/fallingNotes/noteColors.ts` (from Phase 3 plan Task 3)
 
 **Context:** The Phase 3 plan creates `noteColors.ts` with hardcoded hex values. We need it to read from the current theme instead, so note colors change when the theme switches.
@@ -805,31 +871,31 @@ This file will be created by Phase 3 Task 3. If it already exists, replace its c
 Write `src/renderer/src/engines/fallingNotes/noteColors.ts`:
 
 ```typescript
-import { useThemeStore } from '@renderer/stores/useThemeStore'
-import { hexToPixi } from '@renderer/themes/tokens'
+import { useThemeStore } from "@renderer/stores/useThemeStore";
+import { hexToPixi } from "@renderer/themes/tokens";
 
 /**
  * Get the PixiJS tint color for a given track index.
  * Reads from the current active theme.
  */
 export function getTrackColor(trackIndex: number): number {
-  const colors = useThemeStore.getState().theme.colors
-  const palette = [colors.note1, colors.note2, colors.note3, colors.note4]
-  return hexToPixi(palette[trackIndex % palette.length])
+  const colors = useThemeStore.getState().theme.colors;
+  const palette = [colors.note1, colors.note2, colors.note3, colors.note4];
+  return hexToPixi(palette[trackIndex % palette.length]);
 }
 
 /**
  * Get the canvas background color as a PixiJS number.
  */
 export function getCanvasBgColor(): number {
-  return hexToPixi(useThemeStore.getState().theme.colors.canvasBg)
+  return hexToPixi(useThemeStore.getState().theme.colors.canvasBg);
 }
 
 /**
  * Get the hit line color as a PixiJS number.
  */
 export function getHitLineColor(): number {
-  return hexToPixi(useThemeStore.getState().theme.colors.hitLine)
+  return hexToPixi(useThemeStore.getState().theme.colors.hitLine);
 }
 ```
 
@@ -853,6 +919,7 @@ git commit -m "feat: make noteColors theme-aware via useThemeStore"
 ## Task 8: Initialize Theme on App Mount
 
 **Files:**
+
 - Modify: `src/renderer/src/main.tsx`
 
 **Context:** The theme store auto-applies CSS variables when created. We need to ensure it's imported early so the theme is applied before first render.
@@ -866,7 +933,7 @@ Check what's in `src/renderer/src/main.tsx` to know how to modify it.
 At the top of `src/renderer/src/main.tsx`, add this import (which triggers store creation and CSS variable injection):
 
 ```typescript
-import './stores/useThemeStore'
+import "./stores/useThemeStore";
 ```
 
 This must come BEFORE the React render call, and AFTER the CSS import.
@@ -930,16 +997,16 @@ Expected: Electron window opens with Lavender theme applied.
 
 ## Summary
 
-| Task | Files | Key Output |
-|------|-------|------------|
-| 1 | package.json | @fontsource fonts installed |
-| 2 | themes/tokens.ts, stores/useThemeStore.ts | Theme definitions + Zustand store |
-| 3 | assets/main.css | Font imports, Tailwind theme, slider styling |
-| 4 | features/settings/ThemePicker.tsx | Theme switcher UI |
-| 5 | App.tsx | Themed welcome screen + song header |
-| 6 | PianoKeyboard.tsx | Micro-3D themed keyboard |
-| 7 | engines/fallingNotes/noteColors.ts | Theme-aware PixiJS colors |
-| 8 | main.tsx | Early theme initialization |
-| 9 | — | Visual verification |
+| Task | Files                                     | Key Output                                   |
+| ---- | ----------------------------------------- | -------------------------------------------- |
+| 1    | package.json                              | @fontsource fonts installed                  |
+| 2    | themes/tokens.ts, stores/useThemeStore.ts | Theme definitions + Zustand store            |
+| 3    | assets/main.css                           | Font imports, Tailwind theme, slider styling |
+| 4    | features/settings/ThemePicker.tsx         | Theme switcher UI                            |
+| 5    | App.tsx                                   | Themed welcome screen + song header          |
+| 6    | PianoKeyboard.tsx                         | Micro-3D themed keyboard                     |
+| 7    | engines/fallingNotes/noteColors.ts        | Theme-aware PixiJS colors                    |
+| 8    | main.tsx                                  | Early theme initialization                   |
+| 9    | —                                         | Visual verification                          |
 
 **Dependencies:** 1 → 2 → 3 → 4 → 5, 6, 7 (parallel) → 8 → 9

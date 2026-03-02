@@ -48,6 +48,7 @@ Whether you're a parent looking for a practice tool for your child, or an adult 
 For complete installation instructions including system requirements and developer setup, see the dedicated **[Installation Guide](./installation-en.md)**.
 
 **Quick links:**
+
 - [Windows Installation](./installation-en.md#2-windows-installation)
 - [macOS Installation](./installation-en.md#3-macos-installation)
 - [Linux Installation](./installation-en.md#4-linux-installation)
@@ -63,11 +64,11 @@ Up and running in 5 minutes! Follow these steps to start your first practice ses
 
 When Rexiano launches, you'll see the **Song Library** screen. It lists 18 built-in songs organized by difficulty:
 
-| Difficulty | Good for | Example songs |
-|-----------|---------|---------------|
-| Beginner | Just starting out | Twinkle Twinkle, Mary Had a Little Lamb, Happy Birthday |
-| Intermediate | Some experience | Ode to Joy, On Wings of Song, Minuet in G |
-| Advanced | Looking for a challenge | Moonlight Sonata, Für Elise |
+| Difficulty   | Good for                | Example songs                                           |
+| ------------ | ----------------------- | ------------------------------------------------------- |
+| Beginner     | Just starting out       | Twinkle Twinkle, Mary Had a Little Lamb, Happy Birthday |
+| Intermediate | Some experience         | Ode to Joy, On Wings of Song, Minuet in G               |
+| Advanced     | Looking for a challenge | Moonlight Sonata, Für Elise                             |
 
 Click any song card to load it.
 
@@ -129,20 +130,21 @@ The core of Rexiano is the **Falling Notes** view. It works like a piano roll tu
 
 The TransportBar at the bottom provides:
 
-| Element | Description |
-|---------|-------------|
-| Play/Pause button | Start or pause playback (or press Space) |
-| Time display | Shows current position / total duration |
-| Seek bar | Drag to jump to any position |
-| Volume control | Adjust playback volume |
-| Metronome button | Toggle metronome on/off (clock icon) |
-| Audio status | Spinning icon while loading; warning icon on error |
+| Element           | Description                                        |
+| ----------------- | -------------------------------------------------- |
+| Play/Pause button | Start or pause playback (or press Space)           |
+| Time display      | Shows current position / total duration            |
+| Seek bar          | Drag to jump to any position                       |
+| Volume control    | Adjust playback volume                             |
+| Metronome button  | Toggle metronome on/off (clock icon)               |
+| Audio status      | Spinning icon while loading; warning icon on error |
 
 ### 4.3 Practice Modes
 
 #### Watch Mode
 
 Music plays automatically. You just watch and listen. Best for:
+
 - Hearing a new song for the first time
 - Observing how notes are distributed between hands
 - Pure enjoyment
@@ -162,6 +164,7 @@ This mode lets you practice at your own pace — you're never rushed by the musi
 #### Free Mode
 
 Music plays continuously without pausing. Play along in real time:
+
 - Hit a note: it briefly glows
 - Miss a note: it turns gray
 
@@ -205,6 +208,7 @@ Typical practice order: right hand first → left hand next → both hands toget
 In Wait and Free modes, Rexiano tracks your performance:
 
 **Real-time feedback:**
+
 - The **Score Overlay** in the top-right shows live accuracy and combo count
 - Hitting a note makes it **briefly glow**
 - Missing or hitting the wrong note makes it **turn gray**
@@ -213,13 +217,14 @@ In Wait and Free modes, Rexiano tracks your performance:
 **End-of-session results:**
 When you finish a song (or stop playback), a results screen appears based on accuracy:
 
-| Accuracy | Effect |
-|---------|--------|
+| Accuracy     | Effect                                           |
+| ------------ | ------------------------------------------------ |
 | 90% or above | Full-screen celebration animation + "Excellent!" |
-| 70%–89% | Star effect + "Well done!" |
-| Below 70% | Encouraging text + "Try again?" |
+| 70%–89%      | Star effect + "Well done!"                       |
+| Below 70%    | Encouraging text + "Try again?"                  |
 
 Every session's score is automatically saved. In the song library, you'll see best-score badges:
+
 - Gold badge: 90%+ accuracy
 - Silver badge: 70%–89% accuracy
 - Green badge: below 70% accuracy
@@ -306,11 +311,11 @@ Bluetooth connections can introduce a small delay. If Wait mode judgments feel o
 
 A small dot next to the device selector shows connection status:
 
-| Color | Meaning |
-|-------|---------|
-| Green | Connected, all good |
-| Gray | No device connected |
-| Red | Connection error (check cables or re-pair) |
+| Color | Meaning                                    |
+| ----- | ------------------------------------------ |
+| Green | Connected, all good                        |
+| Gray  | No device connected                        |
+| Red   | Connection error (check cables or re-pair) |
 
 ---
 
@@ -320,47 +325,47 @@ Click the **gear icon** in the top-right of the song view to open Settings.
 
 ### 6.1 Display Settings
 
-| Setting | Description | Default |
-|---------|-------------|---------|
-| Piano key labels | Show note names (C, D, E, etc.) on white keys; C keys show octave numbers (e.g., C4) | On |
-| Note name labels | Show note names (e.g., C4, F#5) on falling note rectangles | On |
+| Setting          | Description                                                                          | Default |
+| ---------------- | ------------------------------------------------------------------------------------ | ------- |
+| Piano key labels | Show note names (C, D, E, etc.) on white keys; C keys show octave numbers (e.g., C4) | On      |
+| Note name labels | Show note names (e.g., C4, F#5) on falling note rectangles                           | On      |
 
 ### 6.2 Audio Settings
 
-| Setting | Description | Default |
-|---------|-------------|---------|
-| Volume | Master volume, 0–100% | 80% |
-| Mute | One-click mute (shortcut: M) | Off |
+| Setting | Description                  | Default |
+| ------- | ---------------------------- | ------- |
+| Volume  | Master volume, 0–100%        | 80%     |
+| Mute    | One-click mute (shortcut: M) | Off     |
 
 ### 6.3 Practice Defaults
 
-| Setting | Description | Default |
-|---------|-------------|---------|
+| Setting       | Description                               | Default     |
+| ------------- | ----------------------------------------- | ----------- |
 | Default speed | Initial speed when starting a new session | 100% (1.0x) |
-| Default mode | Initial mode when starting a new session | Watch |
+| Default mode  | Initial mode when starting a new session  | Watch       |
 
 ### 6.4 Metronome Settings
 
-| Setting | Description | Default |
-|---------|-------------|---------|
-| Metronome | Toggle metronome on/off | Off |
+| Setting        | Description                                     | Default |
+| -------------- | ----------------------------------------------- | ------- |
+| Metronome      | Toggle metronome on/off                         | Off     |
 | Count-in beats | Number of beats to count before playback starts | 4 beats |
 
 ### 6.5 Latency Compensation
 
-| Setting | Description | Default |
-|---------|-------------|---------|
-| Latency compensation | Compensate for MIDI keyboard input delay (0–100 ms) | 0 ms |
+| Setting              | Description                                         | Default |
+| -------------------- | --------------------------------------------------- | ------- |
+| Latency compensation | Compensate for MIDI keyboard input delay (0–100 ms) | 0 ms    |
 
 ### 6.6 Theme Selection
 
 Rexiano offers four carefully designed visual themes:
 
-| Theme | Style | Best for |
-|-------|-------|---------|
-| **Lavender** | Soft purple, warm and elegant | Daytime practice |
-| **Ocean** | Serene ocean blue, clean and open | Daytime practice |
-| **Peach** | Warm sunset orange, energetic | Daytime practice |
+| Theme        | Style                                     | Best for                         |
+| ------------ | ----------------------------------------- | -------------------------------- |
+| **Lavender** | Soft purple, warm and elegant             | Daytime practice                 |
+| **Ocean**    | Serene ocean blue, clean and open         | Daytime practice                 |
+| **Peach**    | Warm sunset orange, energetic             | Daytime practice                 |
 | **Midnight** | Deep starry black with neon-colored notes | Night practice, dim environments |
 
 Your selected theme is automatically saved and restored on the next launch.
@@ -373,33 +378,33 @@ Below are all keyboard shortcuts. Press **?** at any time to show/hide the short
 
 ### Playback Controls
 
-| Shortcut | Action |
-|----------|--------|
-| `Space` | Play / Pause |
-| `R` | Reset to beginning |
-| `←` | Rewind 5 seconds |
-| `→` | Fast forward 5 seconds |
-| `Shift + ←` | Rewind 15 seconds |
+| Shortcut    | Action                  |
+| ----------- | ----------------------- |
+| `Space`     | Play / Pause            |
+| `R`         | Reset to beginning      |
+| `←`         | Rewind 5 seconds        |
+| `→`         | Fast forward 5 seconds  |
+| `Shift + ←` | Rewind 15 seconds       |
 | `Shift + →` | Fast forward 15 seconds |
 
 ### Practice Controls
 
-| Shortcut | Action |
-|----------|--------|
-| `↑` | Increase speed by 25% (e.g., 1.0x → 1.25x) |
-| `↓` | Decrease speed by 25% (e.g., 1.0x → 0.75x) |
-| `1` | Switch to Watch mode |
-| `2` | Switch to Wait mode |
-| `3` | Switch to Free mode |
-| `L` | Clear A-B loop |
+| Shortcut | Action                                     |
+| -------- | ------------------------------------------ |
+| `↑`      | Increase speed by 25% (e.g., 1.0x → 1.25x) |
+| `↓`      | Decrease speed by 25% (e.g., 1.0x → 0.75x) |
+| `1`      | Switch to Watch mode                       |
+| `2`      | Switch to Wait mode                        |
+| `3`      | Switch to Free mode                        |
+| `L`      | Clear A-B loop                             |
 
 ### Other
 
-| Shortcut | Action |
-|----------|--------|
-| `M` | Mute / Unmute |
-| `Ctrl+O` (Win/Linux) or `Cmd+O` (macOS) | Open MIDI file |
-| `?` | Show / hide shortcut reference |
+| Shortcut                                | Action                         |
+| --------------------------------------- | ------------------------------ |
+| `M`                                     | Mute / Unmute                  |
+| `Ctrl+O` (Win/Linux) or `Cmd+O` (macOS) | Open MIDI file                 |
+| `?`                                     | Show / hide shortcut reference |
 
 ---
 
@@ -416,18 +421,21 @@ Below are all keyboard shortcuts. Press **?** at any time to show/hide the short
 ### Q: My keyboard isn't being detected. What should I do?
 
 **USB keyboard:**
+
 - Unplug the USB cable, wait 3 seconds, plug it back in
 - Try a different USB port
 - Make sure the keyboard is powered on
 - Reselect your keyboard in Rexiano's device selector
 
 **Bluetooth keyboard:**
+
 - Make sure Bluetooth is enabled on your keyboard
 - Make sure you've completed OS-level Bluetooth pairing
 - Windows users: make sure the keyboard was paired in OS Bluetooth settings first
 - Try unpairing and re-pairing
 
 **General troubleshooting:**
+
 - Restart Rexiano
 - Check that no other application (e.g., a DAW) is using the MIDI device
 
@@ -440,6 +448,7 @@ Three ways:
 3. **"Open File" button**: Click the button in the top-right of the song library
 
 Good sources for MIDI files:
+
 - [MuseScore](https://musescore.com/) — large library of free sheet music with MIDI export
 - [IMSLP](https://imslp.org/) — public domain classical music MIDI
 - Any MIDI-capable software (GarageBand, FL Studio, etc.)
@@ -449,6 +458,7 @@ Good sources for MIDI files:
 Rexiano doesn't currently have a Windows Code Signing Certificate, so SmartScreen may warn you on first install. **Rexiano is not malware.**
 
 Steps:
+
 1. When you see "Windows protected your PC", click **"More info"**
 2. Click **"Run anyway"**
 3. Continue with installation
@@ -466,6 +476,7 @@ If a note's duration is very short (rectangle height smaller than 16 pixels), Re
 ### Q: Which MIDI keyboards are supported?
 
 Rexiano supports any MIDI-standard keyboard, including but not limited to:
+
 - Roland (FP-30X, FP-60X, GO:KEYS, etc.)
 - Yamaha (P-125, CLP series, etc.)
 - Casio (PX series, CDP series, etc.)
@@ -488,9 +499,9 @@ For children aged 6–10, 15–20 minutes of focused daily practice is far more 
 
 Rexiano's built-in songs are organized by difficulty level. Always start with **Beginner** songs:
 
-- *Twinkle Twinkle Little Star* — the classic first song
-- *Mary Had a Little Lamb* — only a few notes
-- *Hot Cross Buns* — playable with just three notes
+- _Twinkle Twinkle Little Star_ — the classic first song
+- _Mary Had a Little Lamb_ — only a few notes
+- _Hot Cross Buns_ — playable with just three notes
 
 Let your child build confidence with easy songs before moving to harder ones.
 
@@ -524,5 +535,5 @@ We hope you and your child find the joy of music in Rexiano!
 
 ---
 
-*Rexiano is free, open-source software released under GPL-3.0.*
-*Source code: [github.com/nickhsu-endea/Rexiano](https://github.com/nickhsu-endea/Rexiano)*
+_Rexiano is free, open-source software released under GPL-3.0._
+_Source code: [github.com/nickhsu-endea/Rexiano](https://github.com/nickhsu-endea/Rexiano)_
