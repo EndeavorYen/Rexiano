@@ -47,4 +47,30 @@ test.describe("UI visual regression", () => {
     await waitForUiSettled(appPage);
     await expect(drawer).toHaveScreenshot("playback-drawer-desktop.png");
   });
+
+  test("playback header and control bars desktop snapshot", async ({
+    appPage,
+  }) => {
+    await appPage.setViewportSize({ width: 1440, height: 900 });
+    await gotoLibrary(appPage);
+    await loadFirstBuiltInSong(appPage);
+
+    // Pause playback for stable visual baselines.
+    await appPage
+      .getByTestId("transport-strip")
+      .locator("button")
+      .first()
+      .click();
+
+    await waitForUiSettled(appPage);
+    await expect(appPage.getByTestId("playback-header-panel")).toHaveScreenshot(
+      "playback-header-desktop.png",
+    );
+    await expect(appPage.getByTestId("transport-strip")).toHaveScreenshot(
+      "playback-transport-desktop.png",
+    );
+    await expect(appPage.getByTestId("practice-toolbar")).toHaveScreenshot(
+      "playback-practice-toolbar-desktop.png",
+    );
+  });
 });
