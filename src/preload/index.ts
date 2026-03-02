@@ -1,6 +1,6 @@
 import { contextBridge, ipcRenderer } from "electron";
 import { IpcChannels } from "../shared/types";
-import type { SessionRecord, RecentFile } from "../shared/types";
+import type { SessionRecord, RecentFile, AppInfo } from "../shared/types";
 
 const api = {
   openMidiFile: () => ipcRenderer.invoke(IpcChannels.OPEN_MIDI_FILE),
@@ -25,6 +25,9 @@ const api = {
   // Phase 6.5: Load MIDI file by path (for recent files direct loading)
   loadMidiPath: (filePath: string) =>
     ipcRenderer.invoke(IpcChannels.LOAD_MIDI_PATH, filePath),
+
+  // Release pipeline: app version + changelog
+  getAppInfo: (): Promise<AppInfo> => ipcRenderer.invoke('app:getAppInfo'),
 };
 
 if (process.contextIsolated) {

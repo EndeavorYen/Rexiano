@@ -5,6 +5,7 @@ import type {
   BuiltinSongMeta,
   SessionRecord,
   RecentFile,
+  AppInfo,
 } from "../shared/types";
 
 declare global {
@@ -30,6 +31,8 @@ declare global {
       saveRecentFile: (file: RecentFile) => Promise<void>;
       /** Phase 6.5: Load a MIDI file by absolute path (for recent files) */
       loadMidiPath: (filePath: string) => Promise<MidiFileResult | null>;
+      /** Release pipeline: get app version and changelog */
+      getAppInfo: () => Promise<AppInfo>;
     };
   }
 }
