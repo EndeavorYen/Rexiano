@@ -10,5 +10,18 @@ export default defineConfig({
   },
   test: {
     include: ["src/**/*.test.ts"],
+    coverage: {
+      provider: "v8",
+      reporter: ["text", "json-summary", "html"],
+      reportsDirectory: "./coverage",
+      include: ["src/**/*.ts", "src/**/*.tsx"],
+      exclude: [
+        "src/**/*.test.ts",
+        "src/**/*.d.ts",
+        "src/**/index.ts",
+        "src/preload/**",
+        "src/main/index.ts",
+      ],
+    },
   },
 });

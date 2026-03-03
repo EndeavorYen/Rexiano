@@ -70,6 +70,7 @@ export function PracticeToolbar({
             aria-label={
               expanded ? t("practice.hideAdvanced") : t("practice.showAdvanced")
             }
+            data-testid="practice-toolbar-advanced-toggle"
           >
             <span
               className={`status-dot ${expanded ? "status-dot-live" : "status-dot-idle"}`}

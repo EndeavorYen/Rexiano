@@ -41,7 +41,10 @@ export function ModeSelectionModal({
   const { t } = useTranslation();
 
   return (
-    <div className="fixed inset-0 z-[200] flex items-center justify-center modal-backdrop-cinematic">
+    <div
+      className="fixed inset-0 z-[200] flex items-center justify-center modal-backdrop-cinematic"
+      data-testid="mode-selection-modal-backdrop"
+    >
       <div
         className="w-[92vw] max-w-[560px] rounded-2xl shadow-2xl modal-card-cinematic p-5 sm:p-6"
         style={{
@@ -49,6 +52,10 @@ export function ModeSelectionModal({
             "color-mix(in srgb, var(--color-surface) 90%, transparent)",
           border: "1px solid var(--color-border)",
         }}
+        role="dialog"
+        aria-modal="true"
+        aria-label={t("modeSelect.title")}
+        data-testid="mode-selection-modal"
       >
         {/* Title */}
         <div className="flex justify-center mb-1">

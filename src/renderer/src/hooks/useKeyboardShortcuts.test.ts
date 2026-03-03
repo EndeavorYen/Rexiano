@@ -75,6 +75,7 @@ function makeKeyEvent(
   code: string,
   opts: {
     key?: string;
+    defaultPrevented?: boolean;
     ctrlKey?: boolean;
     metaKey?: boolean;
     shiftKey?: boolean;
@@ -85,6 +86,7 @@ function makeKeyEvent(
   return {
     code,
     key: opts.key ?? code,
+    defaultPrevented: opts.defaultPrevented ?? false,
     ctrlKey: opts.ctrlKey ?? false,
     metaKey: opts.metaKey ?? false,
     shiftKey: opts.shiftKey ?? false,
@@ -112,6 +114,7 @@ function fireKey(
 describe("useKeyboardShortcuts", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.unstubAllGlobals();
     (usePlaybackStore.getState() as { currentTime: number }).currentTime = 10;
     (usePlaybackStore.getState() as { isPlaying: boolean }).isPlaying = false;
     (usePracticeStore.getState() as { speed: number }).speed = 1.0;
@@ -119,6 +122,21 @@ describe("useKeyboardShortcuts", () => {
       usePracticeStore.getState() as { loopRange: [number, number] | null }
     ).loopRange = null;
     setupHandler();
+  });
+
+  describe("global guards", () => {
+    test("does nothing when event is already prevented", () => {
+      fireKey("Space", { defaultPrevented: true });
+      expect(usePlaybackStore.getState().setPlaying).not.toHaveBeenCalled();
+    });
+
+    test("does nothing while blocking overlays are open", () => {
+      vi.stubGlobal("document", {
+        querySelector: vi.fn(() => ({})),
+      });
+      fireKey("Space");
+      expect(usePlaybackStore.getState().setPlaying).not.toHaveBeenCalled();
+    });
   });
 
   // ─── isTextInput ────────────────────────────────────────

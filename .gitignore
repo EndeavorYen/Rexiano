@@ -9,3 +9,4 @@ Thumbs.db
 .claude/
 playwright-report/
 test-results/
+coverage/

@@ -69,6 +69,17 @@ export function SongLibrary({
   const [showDeviceDrawer, setShowDeviceDrawer] = useState(false);
 
   useEffect(() => {
+    if (!showDeviceDrawer) return;
+    const onKeyDown = (event: KeyboardEvent): void => {
+      if (event.key !== "Escape") return;
+      event.preventDefault();
+      setShowDeviceDrawer(false);
+    };
+    window.addEventListener("keydown", onKeyDown, true);
+    return () => window.removeEventListener("keydown", onKeyDown, true);
+  }, [showDeviceDrawer]);
+
+  useEffect(() => {
     fetchSongs();
   }, [fetchSongs]);
 
@@ -190,9 +201,15 @@ export function SongLibrary({
   );
 
   return (
-    <div className="flex-1 min-h-0 app-shell overflow-y-auto overflow-x-hidden">
+    <div
+      className="flex-1 min-h-0 app-shell overflow-y-auto overflow-x-hidden"
+      data-testid="song-library-view"
+    >
       <div className="mx-auto w-full max-w-6xl px-6 py-6 pb-24">
-        <header className="surface-panel subtle-shadow sticky top-4 z-20 mb-5 p-4 sm:p-5 animate-page-enter">
+        <header
+          className="surface-panel subtle-shadow sticky top-4 z-20 mb-5 p-4 sm:p-5 animate-page-enter"
+          data-testid="song-library-header"
+        >
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div className="flex items-center gap-3">
               {onBack && (
@@ -222,6 +239,7 @@ export function SongLibrary({
                 <p
                   className="text-sm mt-1"
                   style={{ color: "var(--color-text-muted)" }}
+                  data-testid="song-library-greeting"
                 >
                   {greeting}
                 </p>
@@ -506,10 +524,15 @@ export function SongLibrary({
           <div
             className="app-overlay-backdrop"
             onClick={() => setShowDeviceDrawer(false)}
+            data-testid="library-midi-drawer-backdrop"
           >
             <aside
               className="app-side-drawer"
               onClick={(e) => e.stopPropagation()}
+              role="dialog"
+              aria-modal="true"
+              aria-label="MIDI"
+              data-testid="library-midi-drawer"
             >
               <div className="app-side-drawer-header">
                 <span className="kicker-label">MIDI</span>

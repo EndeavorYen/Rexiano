@@ -2,6 +2,9 @@
 
 # Rexiano
 
+[![CI](https://github.com/nickhsu-endea/Rexiano/actions/workflows/ci.yml/badge.svg)](https://github.com/nickhsu-endea/Rexiano/actions/workflows/ci.yml)
+[![codecov](https://codecov.io/gh/nickhsu-endea/Rexiano/graph/badge.svg)](https://codecov.io/gh/nickhsu-endea/Rexiano)
+
 免費、開源的鋼琴練習應用程式——有下落音符、MIDI 鍵盤支援和多種練習工具。一位爸爸為兒子而建，開放給所有人。
 
 **繁體中文** | [English](README.md)
@@ -110,8 +113,9 @@ pnpm dev
 | `pnpm build:win`   | 建置 Windows 安裝檔（.exe）        |
 | `pnpm build:mac`   | 建置 macOS 磁碟映像（.dmg）        |
 | `pnpm build:linux` | 建置 Linux 套件（.AppImage、.deb） |
-| `pnpm test`        | 執行所有 Vitest 測試               |
-| `pnpm test:watch`  | 測試 Watch 模式                    |
+| `pnpm test`             | 執行所有 Vitest 測試               |
+| `pnpm test:coverage`   | 執行測試並產生覆蓋率報告           |
+| `pnpm test:watch`      | 測試 Watch 模式                    |
 | `pnpm lint`        | 執行 ESLint                        |
 | `pnpm typecheck`   | 執行 TypeScript 型別檢查           |
 | `pnpm format`      | 以 Prettier 格式化程式碼           |

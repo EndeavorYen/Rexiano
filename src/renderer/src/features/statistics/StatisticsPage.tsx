@@ -45,7 +45,10 @@ export function StatisticsPage({
   const tips = getPracticeTips(score, mode, speed);
 
   return (
-    <div className="fixed inset-0 z-[150] flex items-center justify-center modal-backdrop-cinematic">
+    <div
+      className="fixed inset-0 z-[150] flex items-center justify-center modal-backdrop-cinematic"
+      data-testid="statistics-page-backdrop"
+    >
       <div
         className="w-[92vw] max-w-[560px] max-h-[88vh] overflow-y-auto rounded-2xl shadow-2xl modal-card-cinematic p-6 sm:p-7"
         style={{
@@ -53,6 +56,9 @@ export function StatisticsPage({
             "color-mix(in srgb, var(--color-surface) 90%, transparent)",
           border: "1px solid var(--color-border)",
         }}
+        role="dialog"
+        aria-modal="true"
+        aria-label={t("stats.title")}
         data-testid="statistics-page"
       >
         {/* Song name */}

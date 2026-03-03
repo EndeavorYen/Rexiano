@@ -2,6 +2,9 @@
 
 # Rexiano
 
+[![CI](https://github.com/nickhsu-endea/Rexiano/actions/workflows/ci.yml/badge.svg)](https://github.com/nickhsu-endea/Rexiano/actions/workflows/ci.yml)
+[![codecov](https://codecov.io/gh/nickhsu-endea/Rexiano/graph/badge.svg)](https://codecov.io/gh/nickhsu-endea/Rexiano)
+
 A free, open-source piano practice app with falling notes, MIDI keyboard support, and practice tools -- built by a dad for his son, shared with everyone.
 
 [繁體中文](README-zh.md) | **English**
@@ -137,6 +140,7 @@ pnpm dev:sandbox
 | `pnpm build:mac`       | Build macOS disk image (.dmg)                      |
 | `pnpm build:linux`     | Build Linux packages (.AppImage, .deb)             |
 | `pnpm test`            | Run all tests with Vitest                          |
+| `pnpm test:coverage`   | Run tests with code coverage report                |
 | `pnpm test:watch`      | Run tests in watch mode                            |
 | `pnpm test:e2e`        | Build app and run Playwright Electron E2E tests    |
 | `pnpm test:e2e:update` | Build app and update Playwright visual snapshots   |

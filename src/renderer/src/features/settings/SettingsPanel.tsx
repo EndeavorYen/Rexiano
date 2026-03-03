@@ -72,6 +72,21 @@ const practiceModeKeys: {
   { value: "free", key: "practice.free" },
 ];
 
+const FOCUSABLE_SELECTOR = [
+  "button:not([disabled])",
+  "a[href]",
+  "input:not([disabled])",
+  "select:not([disabled])",
+  "textarea:not([disabled])",
+  "[tabindex]:not([tabindex='-1'])",
+].join(", ");
+
+function getFocusableElements(root: HTMLElement): HTMLElement[] {
+  return Array.from(root.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR)).filter(
+    (el) => !el.hasAttribute("disabled") && el.tabIndex !== -1,
+  );
+}
+
 /**
  * Full settings modal with tabbed navigation.
  * Covers Theme, Display, Audio, Practice, and Keyboard Shortcuts.
@@ -191,11 +206,58 @@ export function SettingsPanel({
   useEffect(() => {
     if (!open) return;
     const handler = (e: KeyboardEvent): void => {
-      if (e.key === "Escape") handleClose();
+      if (e.key === "Escape") {
+        e.preventDefault();
+        e.stopPropagation();
+        handleClose();
+        return;
+      }
+
+      if (e.key !== "Tab") return;
+      const panel = panelRef.current;
+      if (!panel) return;
+
+      const focusables = getFocusableElements(panel);
+      if (focusables.length === 0) {
+        e.preventDefault();
+        panel.focus();
+        return;
+      }
+
+      const active = document.activeElement as HTMLElement | null;
+      if (!active || !panel.contains(active)) {
+        e.preventDefault();
+        focusables[0].focus();
+        return;
+      }
+
+      const first = focusables[0];
+      const last = focusables[focusables.length - 1];
+      if (e.shiftKey && active === first) {
+        e.preventDefault();
+        last.focus();
+        return;
+      }
+      if (!e.shiftKey && active === last) {
+        e.preventDefault();
+        first.focus();
+      }
     };
-    document.addEventListener("keydown", handler);
-    return () => document.removeEventListener("keydown", handler);
+    document.addEventListener("keydown", handler, true);
+    return () => document.removeEventListener("keydown", handler, true);
   }, [open, handleClose]);
+
+  useEffect(() => {
+    if (!open) return;
+    const panel = panelRef.current;
+    if (!panel) return;
+    const focusables = getFocusableElements(panel);
+    if (focusables.length > 0) {
+      focusables[0].focus();
+      return;
+    }
+    panel.focus();
+  }, [open]);
 
   // About tab: lazy-load app info
   const [appInfo, setAppInfo] = useState<{
@@ -238,8 +300,10 @@ export function SettingsPanel({
               border: "1px solid var(--color-border)",
             }}
             role="dialog"
+            aria-modal="true"
             aria-label={t("settings.title")}
             data-testid="settings-panel"
+            tabIndex={-1}
           >
             {/* Header */}
             <div
@@ -261,6 +325,7 @@ export function SettingsPanel({
                   placeholder={t("settings.searchTabs")}
                   className="input-themed w-[120px] px-2 py-1 text-[11px] font-body"
                   aria-label={t("settings.searchTabsAria")}
+                  autoFocus
                 />
                 <button
                   onClick={() => {

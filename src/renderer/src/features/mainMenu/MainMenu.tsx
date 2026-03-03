@@ -49,9 +49,15 @@ export function MainMenu({
   const practicedSongs = new Set(sessions.map((s) => s.songId)).size;
 
   return (
-    <div className="flex-1 min-h-0 app-shell overflow-y-auto px-6 py-8">
+    <div
+      className="flex-1 min-h-0 app-shell overflow-y-auto px-6 py-8"
+      data-testid="main-menu-view"
+    >
       <div className="mx-auto h-full w-full max-w-6xl flex items-center">
-        <div className="surface-panel subtle-shadow-md w-full p-6 sm:p-8 lg:p-10 animate-page-enter">
+        <div
+          className="surface-panel subtle-shadow-md w-full p-6 sm:p-8 lg:p-10 animate-page-enter"
+          data-testid="main-menu-panel"
+        >
           <div className="grid gap-6 lg:grid-cols-[1.2fr_0.9fr]">
             <section className="space-y-6">
               <span className="kicker-label">{t("app.subtitle")}</span>
@@ -73,6 +79,7 @@ export function MainMenu({
                   <p
                     className="text-sm mt-1"
                     style={{ color: "var(--color-text-muted)" }}
+                    data-testid="main-menu-greeting"
                   >
                     {greeting}
                   </p>

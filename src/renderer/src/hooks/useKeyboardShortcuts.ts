@@ -16,6 +16,13 @@ const SEEK_STEP = 5;
 const SEEK_STEP_LARGE = 15;
 /** Speed change per arrow key press */
 const SPEED_STEP = 0.25;
+const SHORTCUT_BLOCKING_OVERLAY_SELECTOR = [
+  "[data-testid='mode-selection-modal']",
+  "[data-testid='settings-panel']",
+  "[data-testid='insights-modal']",
+  "[data-testid='statistics-page']",
+  "[data-testid='celebration-overlay']",
+].join(", ");
 
 /** Whether the shortcut help overlay is currently shown (toggled by ?) */
 let _showHelp = false;
@@ -54,6 +61,11 @@ function isTextInput(target: EventTarget | null): boolean {
   return tag === "input" || tag === "textarea" || target.isContentEditable;
 }
 
+function hasShortcutBlockingOverlay(): boolean {
+  if (typeof document === "undefined") return false;
+  return document.querySelector(SHORTCUT_BLOCKING_OVERLAY_SELECTOR) !== null;
+}
+
 export interface KeyboardShortcutDeps {
   /** Called to open a MIDI file dialog. If omitted, Ctrl/Cmd+O is a no-op. */
   onOpenFile?: () => void;
@@ -73,7 +85,9 @@ export function createKeyboardHandler(
   getDeps: () => KeyboardShortcutDeps,
 ): (e: KeyboardEvent) => void {
   return function handler(e: KeyboardEvent): void {
+    if (e.defaultPrevented) return;
     if (isTextInput(e.target)) return;
+    if (hasShortcutBlockingOverlay()) return;
 
     const hasSong = useSongStore.getState().song !== null;
 
@@ -248,4 +262,11 @@ export function useKeyboardShortcuts(deps: KeyboardShortcutDeps = {}): void {
 }
 
 // Exported for testing
-export { isTextInput, SEEK_STEP, SEEK_STEP_LARGE, SPEED_STEP, MODE_MAP };
+export {
+  isTextInput,
+  hasShortcutBlockingOverlay,
+  SEEK_STEP,
+  SEEK_STEP_LARGE,
+  SPEED_STEP,
+  MODE_MAP,
+};

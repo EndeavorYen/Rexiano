@@ -208,6 +208,34 @@ function App(): React.JSX.Element {
     return analyzer.analyze(songId, summaries);
   }, [songId, sessions]);
 
+  // Close lightweight overlays with Escape without interrupting active flows
+  // like mode selection / celebration / statistics.
+  useEffect(() => {
+    if (!showPlaybackDrawer && !showInsights) return;
+    const onKeyDown = (event: KeyboardEvent): void => {
+      if (event.key !== "Escape") return;
+      if (event.defaultPrevented) return;
+      if (showModeModal || showCelebration || showStats) return;
+      if (showInsights) {
+        event.preventDefault();
+        setShowInsights(false);
+        return;
+      }
+      if (showPlaybackDrawer) {
+        event.preventDefault();
+        setShowPlaybackDrawer(false);
+      }
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [
+    showPlaybackDrawer,
+    showInsights,
+    showModeModal,
+    showCelebration,
+    showStats,
+  ]);
+
   // ─── Phase 7: Sheet Music ──────────────────────────────
   const displayMode = usePracticeStore((s) => s.displayMode);
   const isPlaying = usePlaybackStore((s) => s.isPlaying);
@@ -908,6 +936,7 @@ function App(): React.JSX.Element {
         <div
           key="playback"
           className="flex-1 min-h-0 flex flex-col animate-page-enter px-3 pb-3 pt-3"
+          data-testid="playback-view"
         >
           <div
             className={`surface-panel subtle-shadow ${
@@ -918,23 +947,23 @@ function App(): React.JSX.Element {
             }}
             data-testid="playback-header-panel"
           >
-            <div className="flex items-center gap-1.5 justify-between min-w-0">
+            <div className="flex min-w-0 flex-col gap-1.5 sm:flex-row sm:items-center sm:justify-between">
               <div
                 className="min-w-0 flex-1 flex items-center gap-1.5 overflow-hidden"
                 data-testid="playback-title-meta-row"
               >
-                <span className="kicker-label shrink-0 text-[11px]">
+                <span className="kicker-label hidden shrink-0 text-[11px] sm:inline">
                   {t("app.subtitle")}
                 </span>
                 <h2
-                  className="font-semibold font-body truncate text-[1.02rem] leading-tight max-w-[min(40vw,420px)]"
+                  className="min-w-0 max-w-[min(46vw,420px)] truncate text-[1.02rem] leading-tight font-semibold font-body sm:max-w-[min(40vw,420px)]"
                   data-testid="playback-song-title"
                 >
                   {song.fileName}
                 </h2>
 
                 <div
-                  className="flex items-center gap-1 min-w-0 overflow-hidden"
+                  className="[-ms-overflow-style:none] [scrollbar-width:none] flex min-w-0 items-center gap-1 overflow-x-auto whitespace-nowrap sm:overflow-hidden"
                   data-testid="playback-header-chips"
                 >
                   <span className="control-chip playback-header-chip shrink-0">
@@ -958,7 +987,7 @@ function App(): React.JSX.Element {
               </div>
 
               <div
-                className="flex items-center gap-1 shrink-0"
+                className="flex shrink-0 self-end items-center gap-1 sm:self-auto"
                 data-testid="playback-header-actions"
               >
                 <button
@@ -967,14 +996,17 @@ function App(): React.JSX.Element {
                   data-testid="playback-drawer-trigger"
                 >
                   <PanelRightOpen size={13} />
-                  {t("settings.title")}
+                  <span className="hidden sm:inline">{t("settings.title")}</span>
                 </button>
                 <button
                   onClick={handleExitPlayback}
                   className="btn-surface-themed flex items-center gap-1 rounded-lg font-body cursor-pointer px-2 py-[3px] text-[10px]"
+                  data-testid="playback-back-to-library"
                 >
                   <ArrowLeft size={13} />
-                  {t("song.backToLibrary")}
+                  <span className="hidden sm:inline">
+                    {t("song.backToLibrary")}
+                  </span>
                 </button>
               </div>
             </div>
@@ -984,10 +1016,14 @@ function App(): React.JSX.Element {
             <div
               className="app-overlay-backdrop"
               onClick={() => setShowPlaybackDrawer(false)}
+              data-testid="playback-settings-drawer-backdrop"
             >
               <aside
                 className="app-side-drawer"
                 onClick={(e) => e.stopPropagation()}
+                role="complementary"
+                aria-label={t("settings.title")}
+                data-testid="playback-settings-drawer"
               >
                 <div className="app-side-drawer-header">
                   <span className="kicker-label">{t("settings.title")}</span>
@@ -1014,6 +1050,7 @@ function App(): React.JSX.Element {
                       }}
                       className="btn-surface-themed w-8 h-8 flex items-center justify-center rounded-full cursor-pointer"
                       title={t("app.insightsTitle")}
+                      aria-label={t("app.insightsTitle")}
                       data-testid="insights-trigger"
                     >
                       <BarChart3
@@ -1086,10 +1123,15 @@ function App(): React.JSX.Element {
             <div
               className="fixed inset-0 z-[100] flex items-center justify-center modal-backdrop-cinematic"
               onClick={() => setShowInsights(false)}
+              data-testid="insights-modal-backdrop"
             >
               <div
                 className="w-[92vw] max-w-[460px] max-h-[85vh] overflow-y-auto modal-card-cinematic subtle-shadow-md"
                 onClick={(e) => e.stopPropagation()}
+                role="dialog"
+                aria-modal="true"
+                aria-label={t("app.insightsTitle")}
+                data-testid="insights-modal"
               >
                 <InsightsPanel
                   insight={insight}
