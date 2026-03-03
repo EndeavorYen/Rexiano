@@ -100,6 +100,7 @@ export interface TranslationMap {
   "practice.trackN": string;
   "practice.notesCount": string;
   "practice.muteAll": string;
+  "practice.muteAllDisabledWait": string;
   "practice.resetTracks": string;
   "practice.solo": string;
   "practice.accuracy": string;
@@ -216,9 +217,12 @@ export interface TranslationMap {
   "celebration.hits": string;
   "celebration.missed": string;
   "celebration.bestStreak": string;
+  "celebration.starRating": string;
 
   // ── Sheet Music ────────────────────────────────────────────────
   "sheetMusic.loadSong": string;
+  "sheetMusic.vexflowError": string;
+  "sheetMusic.vexflowErrorHint": string;
   "sheetMusic.modeFalling": string;
   "sheetMusic.modeSheet": string;
   "sheetMusic.modeSplit": string;

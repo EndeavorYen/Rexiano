@@ -3,7 +3,7 @@
 # Rexiano
 
 [![CI](https://github.com/nickhsu-endea/Rexiano/actions/workflows/ci.yml/badge.svg)](https://github.com/nickhsu-endea/Rexiano/actions/workflows/ci.yml)
-[![codecov](https://codecov.io/gh/nickhsu-endea/Rexiano/graph/badge.svg)](https://codecov.io/gh/nickhsu-endea/Rexiano)
+[![coverage](https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/nickhsu-endea/COVERAGE_GIST_ID/raw/rexiano-coverage.json)](https://github.com/nickhsu-endea/Rexiano/actions/workflows/ci.yml)
 
 A free, open-source piano practice app with falling notes, MIDI keyboard support, and practice tools -- built by a dad for his son, shared with everyone.
 

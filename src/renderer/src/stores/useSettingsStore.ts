@@ -1,3 +1,8 @@
+/**
+ * Phase 6.5: Persisted user settings store — localStorage-backed preferences.
+ * Volume is stored at 0–100 scale here; the live audio volume (0–1) lives in
+ * usePlaybackStore. SettingsPanel writes to both stores to keep them in sync.
+ */
 import { create } from "zustand";
 import type { PracticeMode } from "@shared/types";
 
@@ -20,7 +25,18 @@ interface SettingsState {
   showFingering: boolean;
   compactKeyLabels: boolean;
   language: Language;
+  /**
+   * Persisted default volume (0-100 scale). Used to initialize playback volume
+   * on app startup. The **live** volume used by the audio engine is in
+   * `usePlaybackStore.volume` (0-1 scale). SettingsPanel writes to both stores
+   * so they stay in sync, but the audio engine only reads from usePlaybackStore.
+   */
   volume: number;
+  /**
+   * Persisted muted flag. The live mute state is derived from
+   * `usePlaybackStore.volume === 0`. This field is persisted so the muted
+   * preference survives app restarts.
+   */
   muted: boolean;
   defaultSpeed: number;
   defaultMode: PracticeMode;

@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Tests for createKeyboardHandler — the actual handler logic
  * extracted from the useKeyboardShortcuts hook.
@@ -61,6 +62,10 @@ vi.mock("@renderer/stores/useSongStore", () => {
 import {
   createKeyboardHandler,
   isTextInput,
+  hasShortcutBlockingOverlay,
+  onHelpChange,
+  getShowHelp,
+  setShowHelp,
   SEEK_STEP,
   SEEK_STEP_LARGE,
   SPEED_STEP,
@@ -96,22 +101,22 @@ function makeKeyEvent(
   } as unknown as KeyboardEvent;
 }
 
-let handler: (e: KeyboardEvent) => void;
-let currentDeps: KeyboardShortcutDeps = {};
-
-function setupHandler(deps: KeyboardShortcutDeps = {}): void {
-  currentDeps = deps;
-  handler = createKeyboardHandler(() => currentDeps);
-}
-
-function fireKey(
-  code: string,
-  opts: Parameters<typeof makeKeyEvent>[1] = {},
-): void {
-  handler(makeKeyEvent(code, opts));
-}
-
 describe("useKeyboardShortcuts", () => {
+  let handler: (e: KeyboardEvent) => void;
+  let currentDeps: KeyboardShortcutDeps;
+
+  function setupHandler(deps: KeyboardShortcutDeps = {}): void {
+    currentDeps = deps;
+    handler = createKeyboardHandler(() => currentDeps);
+  }
+
+  function fireKey(
+    code: string,
+    opts: Parameters<typeof makeKeyEvent>[1] = {},
+  ): void {
+    handler(makeKeyEvent(code, opts));
+  }
+
   beforeEach(() => {
     vi.clearAllMocks();
     vi.unstubAllGlobals();
@@ -121,6 +126,17 @@ describe("useKeyboardShortcuts", () => {
     (
       usePracticeStore.getState() as { loopRange: [number, number] | null }
     ).loopRange = null;
+    // Restore song state (may have been nulled by "no song loaded" tests)
+    (useSongStore.getState() as Record<string, unknown>).song = {
+      duration: 120,
+      tracks: [],
+      noteCount: 0,
+      tempos: [],
+      timeSignatures: [],
+      fileName: "test.mid",
+    };
+    // Reset help state
+    setShowHelp(false);
     setupHandler();
   });
 
@@ -328,7 +344,193 @@ describe("useKeyboardShortcuts", () => {
   // The isTextInput function uses `instanceof HTMLElement` which
   // needs real DOM globals. Skipped in this Node-only test suite.
 
-  // ─── No song loaded ─────────────────────────────────────
+  // ─── BracketRight / BracketLeft — Speed (alternative keys) ──
+  describe("BracketRight / BracketLeft — Speed", () => {
+    test("BracketRight increases speed by SPEED_STEP", () => {
+      fireKey("BracketRight");
+      expect(usePracticeStore.getState().setSpeed).toHaveBeenCalledWith(
+        1.0 + SPEED_STEP,
+      );
+    });
+
+    test("BracketLeft decreases speed by SPEED_STEP", () => {
+      fireKey("BracketLeft");
+      expect(usePracticeStore.getState().setSpeed).toHaveBeenCalledWith(
+        1.0 - SPEED_STEP,
+      );
+    });
+  });
+
+  // ─── A / B — Loop point setting ──────────────────────────
+  describe("A / B — Loop point setting", () => {
+    test("A sets loop start to current time", () => {
+      fireKey("KeyA");
+      expect(usePracticeStore.getState().setLoopRange).toHaveBeenCalled();
+      const args = (usePracticeStore.getState().setLoopRange as ReturnType<typeof vi.fn>).mock.calls[0][0];
+      expect(args[0]).toBe(10); // currentTime
+    });
+
+    test("A uses existing loop end if loop is active", () => {
+      (
+        usePracticeStore.getState() as { loopRange: [number, number] | null }
+      ).loopRange = [5, 30];
+      fireKey("KeyA");
+      const args = (usePracticeStore.getState().setLoopRange as ReturnType<typeof vi.fn>).mock.calls[0][0];
+      expect(args[0]).toBe(10); // new start
+      expect(args[1]).toBe(30); // existing end
+    });
+
+    test("A defaults loop end to song duration when no loop exists", () => {
+      fireKey("KeyA");
+      const args = (usePracticeStore.getState().setLoopRange as ReturnType<typeof vi.fn>).mock.calls[0][0];
+      expect(args[1]).toBe(120); // song duration
+    });
+
+    test("B sets loop end to current time", () => {
+      fireKey("KeyB");
+      expect(usePracticeStore.getState().setLoopRange).toHaveBeenCalled();
+      const args = (usePracticeStore.getState().setLoopRange as ReturnType<typeof vi.fn>).mock.calls[0][0];
+      expect(args[1]).toBe(10); // currentTime
+    });
+
+    test("B uses existing loop start if loop is active", () => {
+      (
+        usePracticeStore.getState() as { loopRange: [number, number] | null }
+      ).loopRange = [5, 30];
+      fireKey("KeyB");
+      const args = (usePracticeStore.getState().setLoopRange as ReturnType<typeof vi.fn>).mock.calls[0][0];
+      expect(args[0]).toBe(5);  // existing start
+      expect(args[1]).toBe(10); // new end
+    });
+
+    test("B defaults loop start to 0 when no loop exists", () => {
+      fireKey("KeyB");
+      const args = (usePracticeStore.getState().setLoopRange as ReturnType<typeof vi.fn>).mock.calls[0][0];
+      expect(args[0]).toBe(0);
+    });
+  });
+
+  // ─── Escape — Stop playback ─────────────────────────────
+  describe("Escape — Stop playback", () => {
+    test("stops playback when playing", () => {
+      (usePlaybackStore.getState() as { isPlaying: boolean }).isPlaying = true;
+      fireKey("Escape");
+      expect(usePlaybackStore.getState().setPlaying).toHaveBeenCalledWith(false);
+    });
+
+    test("does nothing when already stopped", () => {
+      (usePlaybackStore.getState() as { isPlaying: boolean }).isPlaying = false;
+      fireKey("Escape");
+      expect(usePlaybackStore.getState().setPlaying).not.toHaveBeenCalled();
+    });
+  });
+
+  // ─── ? — Help overlay toggle ─────────────────────────────
+  describe("? — Help overlay toggle", () => {
+    test("toggles help overlay on", () => {
+      // Reset help state
+      setShowHelp(false);
+      fireKey("Slash", { key: "?" });
+      expect(getShowHelp()).toBe(true);
+    });
+
+    test("toggles help overlay off", () => {
+      setShowHelp(true);
+      fireKey("Slash", { key: "?" });
+      expect(getShowHelp()).toBe(false);
+    });
+  });
+
+  // ─── onHelpChange / getShowHelp / setShowHelp ─────────────
+  describe("help state management", () => {
+    test("onHelpChange registers a listener that is called on change", () => {
+      const listener = vi.fn();
+      const unsub = onHelpChange(listener);
+      setShowHelp(true);
+      expect(listener).toHaveBeenCalledWith(true);
+      setShowHelp(false);
+      expect(listener).toHaveBeenCalledWith(false);
+      unsub();
+    });
+
+    test("onHelpChange unsubscribe removes listener", () => {
+      const listener = vi.fn();
+      const unsub = onHelpChange(listener);
+      unsub();
+      setShowHelp(true);
+      expect(listener).not.toHaveBeenCalled();
+      // Clean up
+      setShowHelp(false);
+    });
+
+    test("getShowHelp returns current state", () => {
+      setShowHelp(false);
+      expect(getShowHelp()).toBe(false);
+      setShowHelp(true);
+      expect(getShowHelp()).toBe(true);
+      setShowHelp(false);
+    });
+  });
+
+  // ─── hasShortcutBlockingOverlay ───────────────────────────
+  describe("hasShortcutBlockingOverlay", () => {
+    test("returns false when no overlays are open", () => {
+      vi.stubGlobal("document", {
+        querySelector: vi.fn(() => null),
+      });
+      expect(hasShortcutBlockingOverlay()).toBe(false);
+    });
+
+    test("returns true when an overlay is open", () => {
+      vi.stubGlobal("document", {
+        querySelector: vi.fn(() => ({})),
+      });
+      expect(hasShortcutBlockingOverlay()).toBe(true);
+    });
+  });
+
+  // ─── Arrow keys with modifier combinations ────────────────
+  describe("Arrow keys with modifiers", () => {
+    test("Ctrl+ArrowLeft does not seek", () => {
+      fireKey("ArrowLeft", { ctrlKey: true });
+      expect(usePlaybackStore.getState().setCurrentTime).not.toHaveBeenCalled();
+    });
+
+    test("Alt+ArrowLeft does not seek", () => {
+      fireKey("ArrowLeft", { altKey: true });
+      expect(usePlaybackStore.getState().setCurrentTime).not.toHaveBeenCalled();
+    });
+
+    test("Meta+ArrowLeft does not seek", () => {
+      fireKey("ArrowLeft", { metaKey: true });
+      expect(usePlaybackStore.getState().setCurrentTime).not.toHaveBeenCalled();
+    });
+
+    test("Ctrl+ArrowRight does not seek", () => {
+      fireKey("ArrowRight", { ctrlKey: true });
+      expect(usePlaybackStore.getState().setCurrentTime).not.toHaveBeenCalled();
+    });
+
+    test("Alt+ArrowRight does not seek", () => {
+      fireKey("ArrowRight", { altKey: true });
+      expect(usePlaybackStore.getState().setCurrentTime).not.toHaveBeenCalled();
+    });
+
+    test("Meta+ArrowRight does not seek", () => {
+      fireKey("ArrowRight", { metaKey: true });
+      expect(usePlaybackStore.getState().setCurrentTime).not.toHaveBeenCalled();
+    });
+  });
+
+  // ─── R with Meta key ──────────────────────────────────────
+  describe("R with Meta key", () => {
+    test("does not reset on Meta+R", () => {
+      fireKey("KeyR", { metaKey: true });
+      expect(usePlaybackStore.getState().setCurrentTime).not.toHaveBeenCalled();
+    });
+  });
+
+  // ─── No song loaded (extended) ─────────────────────────────
   describe("no song loaded", () => {
     test("Space does nothing when no song", () => {
       (useSongStore.getState() as { song: null }).song = null;
@@ -340,6 +542,91 @@ describe("useKeyboardShortcuts", () => {
       (useSongStore.getState() as { song: null }).song = null;
       fireKey("ArrowLeft");
       expect(usePlaybackStore.getState().setCurrentTime).not.toHaveBeenCalled();
+    });
+
+    test("ArrowRight does nothing when no song", () => {
+      (useSongStore.getState() as { song: null }).song = null;
+      fireKey("ArrowRight");
+      expect(usePlaybackStore.getState().setCurrentTime).not.toHaveBeenCalled();
+    });
+
+    test("ArrowUp does nothing when no song", () => {
+      (useSongStore.getState() as { song: null }).song = null;
+      fireKey("ArrowUp");
+      expect(usePracticeStore.getState().setSpeed).not.toHaveBeenCalled();
+    });
+
+    test("ArrowDown does nothing when no song", () => {
+      (useSongStore.getState() as { song: null }).song = null;
+      fireKey("ArrowDown");
+      expect(usePracticeStore.getState().setSpeed).not.toHaveBeenCalled();
+    });
+
+    test("KeyR does nothing when no song", () => {
+      (useSongStore.getState() as { song: null }).song = null;
+      fireKey("KeyR");
+      expect(usePlaybackStore.getState().setCurrentTime).not.toHaveBeenCalled();
+    });
+
+    test("KeyA does nothing when no song", () => {
+      (useSongStore.getState() as { song: null }).song = null;
+      fireKey("KeyA");
+      expect(usePracticeStore.getState().setLoopRange).not.toHaveBeenCalled();
+    });
+
+    test("KeyB does nothing when no song", () => {
+      (useSongStore.getState() as { song: null }).song = null;
+      fireKey("KeyB");
+      expect(usePracticeStore.getState().setLoopRange).not.toHaveBeenCalled();
+    });
+
+    test("Escape does nothing when no song", () => {
+      (useSongStore.getState() as { song: null }).song = null;
+      fireKey("Escape");
+      expect(usePlaybackStore.getState().setPlaying).not.toHaveBeenCalled();
+    });
+
+    test("KeyL does nothing when no song", () => {
+      (useSongStore.getState() as { song: null }).song = null;
+      fireKey("KeyL");
+      expect(usePracticeStore.getState().setLoopRange).not.toHaveBeenCalled();
+    });
+
+    test("Digit1 does nothing when no song", () => {
+      (useSongStore.getState() as { song: null }).song = null;
+      fireKey("Digit1");
+      expect(usePracticeStore.getState().setMode).not.toHaveBeenCalled();
+    });
+
+    test("KeyM does nothing when no song", () => {
+      (useSongStore.getState() as { song: null }).song = null;
+      const onToggleMute = vi.fn();
+      setupHandler({ onToggleMute });
+      fireKey("KeyM");
+      expect(onToggleMute).not.toHaveBeenCalled();
+    });
+
+    test("BracketRight does nothing when no song", () => {
+      (useSongStore.getState() as { song: null }).song = null;
+      fireKey("BracketRight");
+      expect(usePracticeStore.getState().setSpeed).not.toHaveBeenCalled();
+    });
+
+    test("BracketLeft does nothing when no song", () => {
+      (useSongStore.getState() as { song: null }).song = null;
+      fireKey("BracketLeft");
+      expect(usePracticeStore.getState().setSpeed).not.toHaveBeenCalled();
+    });
+  });
+
+  // ─── Shift+ArrowRight clamps to song duration ─────────────
+  describe("Shift+ArrowRight clamps to duration", () => {
+    test("Shift+ArrowRight clamps to song duration", () => {
+      (usePlaybackStore.getState() as { currentTime: number }).currentTime = 115;
+      fireKey("ArrowRight", { shiftKey: true });
+      expect(usePlaybackStore.getState().setCurrentTime).toHaveBeenCalledWith(
+        120, // min(120, 115 + 15) = 120
+      );
     });
   });
 });

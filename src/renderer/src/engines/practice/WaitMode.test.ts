@@ -2,24 +2,6 @@ import { describe, it, expect, beforeEach, vi } from "vitest";
 import { WaitMode } from "./WaitMode";
 import type { ParsedTrack } from "../midi/types";
 
-// Mock useSettingsStore — WaitMode reads latencyCompensation via getState()
-// The variable must be declared before vi.mock (hoisted) so we use vi.hoisted().
-const { getLatencyMs, setLatencyMs } = vi.hoisted(() => {
-  let latencyMs = 0;
-  return {
-    getLatencyMs: () => latencyMs,
-    setLatencyMs: (ms: number) => {
-      latencyMs = ms;
-    },
-  };
-});
-
-vi.mock("@renderer/stores/useSettingsStore", () => ({
-  useSettingsStore: {
-    getState: () => ({ latencyCompensation: getLatencyMs() }),
-  },
-}));
-
 function makeTracks(
   notes: Array<{ midi: number; time: number }>,
 ): ParsedTrack[] {
@@ -44,7 +26,6 @@ describe("WaitMode", () => {
 
   beforeEach(() => {
     wm = new WaitMode(200); // ±200ms tolerance
-    setLatencyMs(0); // Reset latency compensation for each test
   });
 
   it("starts in idle state", () => {
@@ -232,14 +213,13 @@ describe("WaitMode", () => {
     // So at currentTime=0.83, adjustedTime=0.78 → note at 1.0 is NOT in [0.58, 0.98] wait... let's think again
     // adjustedTime = 0.83 - 0.05 = 0.78. Window = [0.78-0.2, 0.78+0.2] = [0.58, 0.98]
     // note at 1.0 is outside → returns true (no waiting)
-    setLatencyMs(50);
     wm.init(makeTracks([{ midi: 60, time: 1.0 }]), new Set([0]));
     wm.start();
 
     // Without latency compensation, 0.85 would trigger waiting (note 1.0 in [0.65, 1.05])
     // With 50ms latency, adjustedTime = 0.85 - 0.05 = 0.80, window = [0.60, 1.00]
     // note at 1.0 is exactly at boundary → pending
-    const result = wm.tick(0.85);
+    const result = wm.tick(0.85, 50);
     expect(result).toBe(false);
     expect(wm.state).toBe("waiting");
   });
@@ -249,27 +229,70 @@ describe("WaitMode", () => {
     // Without latency: at time 1.25, note would be missed (past 1.2 window end)
     // With 100ms latency: adjustedTime = 1.25 - 0.10 = 1.15, window = [0.95, 1.35]
     // note at 1.0 is within window → pending (not missed yet)
-    setLatencyMs(100);
     const onMiss = vi.fn();
     wm.setCallbacks({ onMiss });
     wm.init(makeTracks([{ midi: 60, time: 1.0 }]), new Set([0]));
     wm.start();
 
-    wm.tick(1.25);
+    wm.tick(1.25, 100);
     expect(onMiss).not.toHaveBeenCalled();
     expect(wm.state).toBe("waiting");
   });
 
   it("zero latency compensation behaves the same as default", () => {
-    setLatencyMs(0);
     const onWait = vi.fn();
     wm.setCallbacks({ onWait });
     wm.init(makeTracks([{ midi: 60, time: 1.0 }]), new Set([0]));
     wm.start();
 
     // At time 0.85 → note at 1.0 is within ±200ms
-    wm.tick(0.85);
+    wm.tick(0.85, 0);
     expect(wm.state).toBe("waiting");
     expect(onWait).toHaveBeenCalledOnce();
+  });
+
+  // ─── seekTo() tests ───────────────────
+
+  it("seekTo() clears pending notes and rewinds cursors", () => {
+    const tracks = makeTracks([
+      { midi: 60, time: 1.0 },
+      { midi: 62, time: 2.0 },
+      { midi: 64, time: 3.0 },
+    ]);
+    wm.init(tracks, new Set([0]));
+    wm.start();
+
+    // Trigger waiting on first note
+    wm.tick(1.0);
+    expect(wm.state).toBe("waiting");
+    expect(wm.targetNotes.has(60)).toBe(true);
+
+    // Seek to time 2.5 — clears pending, keeps state as playing
+    wm.seekTo(2.5);
+    expect(wm.state).toBe("playing");
+    expect(wm.targetNotes.size).toBe(0);
+
+    // Next tick at time 3.0 should pick up the note at 3.0
+    const result = wm.tick(3.0);
+    expect(result).toBe(false);
+    expect(wm.targetNotes.has(64)).toBe(true);
+  });
+
+  it("seekTo() preserves hit/miss results for notes before seek point", () => {
+    const tracks = makeTracks([
+      { midi: 60, time: 1.0 },
+      { midi: 62, time: 3.0 },
+    ]);
+    wm.init(tracks, new Set([0]));
+    wm.start();
+
+    // Play through first note — hit it
+    wm.tick(1.0);
+    wm.checkInput(new Set([60]));
+    expect(wm.noteResults.get("0:0")).toBe("hit");
+
+    // Seek forward — the hit result should be preserved
+    wm.seekTo(2.5);
+    expect(wm.noteResults.get("0:0")).toBe("hit");
   });
 });

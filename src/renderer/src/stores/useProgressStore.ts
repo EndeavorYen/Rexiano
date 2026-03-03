@@ -1,3 +1,12 @@
+/**
+ * Phase 6: Progress tracking store — persists practice session records via IPC.
+ *
+ * Also exports `initAutoSave()` which orchestrates cross-store subscriptions
+ * to auto-save sessions when playback stops. This cross-store wiring is
+ * co-located here (rather than in a separate service) because all the
+ * SessionRecord construction logic is tightly coupled to the store's
+ * `addSession` action and the `deriveSongId` helper.
+ */
 import { create } from "zustand";
 import type { SessionRecord } from "@shared/types";
 import { usePlaybackStore } from "./usePlaybackStore";
@@ -64,10 +73,29 @@ export const useProgressStore = create<ProgressState>()((set, get) => ({
   },
 }));
 
+// ─── Song ID helper ─────────────────────────────────────────────────
+
+/**
+ * Derive a stable, collision-resistant songId from a ParsedSong.
+ *
+ * Uses `fileName:noteCount` so that two different MIDI files that happen
+ * to share the same file name are still differentiated by their content.
+ * Not cryptographically secure, but sufficient for progress tracking.
+ */
+export function deriveSongId(song: {
+  fileName: string;
+  noteCount: number;
+}): string {
+  return `${song.fileName}:${song.noteCount}`;
+}
+
 // ─── Auto-save integration ───────────────────────────────────────────
 
 /** Timestamp when the current practice session started (playing → true) */
 let _sessionStartTime: number | null = null;
+
+/** fileName of the song when _sessionStartTime was captured */
+let _sessionSongFileName: string | null = null;
 
 /** Unsubscribe function for the playback subscription, if active */
 let _autoSaveUnsub: (() => void) | null = null;
@@ -82,10 +110,12 @@ export function initAutoSave(): () => void {
   // Prevent duplicate subscriptions — check for non-null (still active) ref
   if (_autoSaveUnsub) return _autoSaveUnsub;
 
-  const rawUnsub = usePlaybackStore.subscribe((state, prev) => {
+  const playbackUnsub = usePlaybackStore.subscribe((state, prev) => {
     // Track when playback starts
     if (state.isPlaying && !prev.isPlaying) {
+      const currentSong = useSongStore.getState().song;
       _sessionStartTime = Date.now();
+      _sessionSongFileName = currentSong?.fileName ?? null;
     }
 
     // When transitioning from playing to stopped, save session
@@ -100,7 +130,7 @@ export function initAutoSave(): () => void {
 
         const record: SessionRecord = {
           id: crypto.randomUUID(),
-          songId: song.fileName,
+          songId: deriveSongId(song),
           songTitle: song.fileName,
           timestamp: Date.now(),
           mode: practiceState.mode,
@@ -114,12 +144,24 @@ export function initAutoSave(): () => void {
       }
 
       _sessionStartTime = null;
+      _sessionSongFileName = null;
+    }
+  });
+
+  // Reset session start time when the song changes (prevents stale timing
+  // from a previous song leaking into the new song's session record)
+  const songUnsub = useSongStore.subscribe((state) => {
+    const newFileName = state.song?.fileName ?? null;
+    if (_sessionStartTime !== null && newFileName !== _sessionSongFileName) {
+      _sessionStartTime = null;
+      _sessionSongFileName = null;
     }
   });
 
   // Wrap unsubscribe to also clear the guard ref, allowing re-initialization
   _autoSaveUnsub = () => {
-    rawUnsub();
+    playbackUnsub();
+    songUnsub();
     _autoSaveUnsub = null;
   };
 

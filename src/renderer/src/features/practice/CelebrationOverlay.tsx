@@ -1,5 +1,9 @@
+/**
+ * Phase 6: Celebration overlay — shown when a practice session ends.
+ * Displays tier, accuracy, streak stats, star rating, and new-record badge.
+ */
 import { useMemo } from "react";
-import type { PracticeScore } from "@shared/types";
+import type { PracticeScore, PracticeMode } from "@shared/types";
 import { useProgressStore } from "../../stores/useProgressStore";
 import { getTier, isNewRecord, type CelebrationTier } from "./celebrationUtils";
 import { useTranslation } from "@renderer/i18n/useTranslation";
@@ -12,6 +16,8 @@ interface CelebrationOverlayProps {
   onChooseSong: () => void;
   /** Song identifier used to look up previous best score for "New Record!" detection */
   songId?: string;
+  /** Current practice mode — watch mode never shows "New Record!" */
+  mode?: PracticeMode;
 }
 
 /** Emoji animation name per tier — not translated */
@@ -87,19 +93,22 @@ function getStarCount(accuracy: number): number {
   if (accuracy >= 85) return 4;
   if (accuracy >= 70) return 3;
   if (accuracy >= 50) return 2;
-  if (accuracy >= 25) return 1;
   return 1; // Always at least 1 star — keep it encouraging
 }
 
 /** Render star display */
 function StarDisplay({ accuracy }: { accuracy: number }): React.JSX.Element {
+  const { t } = useTranslation();
   const filled = getStarCount(accuracy);
   const total = 5;
 
   return (
     <div
       className="flex items-center gap-1"
-      aria-label={`${filled} out of ${total} stars`}
+      aria-label={t("celebration.starRating", {
+        filled: String(filled),
+        total: String(total),
+      })}
     >
       {Array.from({ length: total }, (_, i) => {
         const isFilled = i < filled;
@@ -134,6 +143,7 @@ export function CelebrationOverlay({
   onPracticeAgain,
   onChooseSong,
   songId,
+  mode,
 }: CelebrationOverlayProps): React.JSX.Element {
   const { t } = useTranslation();
   const tier = getTier(score.accuracy);
@@ -147,6 +157,7 @@ export function CelebrationOverlay({
     score.totalNotes,
     songId,
     previousBest ? previousBest.score.accuracy : null,
+    mode,
   );
 
   // Regenerate particles when tier changes (count is derived from tier)

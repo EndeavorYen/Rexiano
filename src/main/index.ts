@@ -1,3 +1,7 @@
+/**
+ * Main process entry point — creates the BrowserWindow, registers IPC handlers,
+ * and manages Bluetooth device auto-selection for MIDI piano input.
+ */
 import { app, shell, BrowserWindow } from "electron";
 import { join } from "path";
 import icon from "../../docs/figure/Rexiano_icon.png?asset";
@@ -21,9 +25,12 @@ function createWindow(): void {
     minHeight: 600,
     show: false,
     autoHideMenuBar: true,
-    ...(process.platform === "linux" ? { icon } : {}),
+    icon,
     webPreferences: {
       preload: join(__dirname, "../preload/index.js"),
+      contextIsolation: true,
+      // sandbox: false required because electron-vite preload bundling
+      // uses Node.js module resolution within the preload script.
       sandbox: false,
     },
   });

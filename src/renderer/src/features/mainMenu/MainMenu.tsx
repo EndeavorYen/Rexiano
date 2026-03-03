@@ -1,3 +1,7 @@
+/**
+ * Phase 6.5: Main menu — application home screen with recent files,
+ * practice stats overview, and quick actions.
+ */
 import { useMemo } from "react";
 import {
   Play,
@@ -96,7 +100,11 @@ export function MainMenu({
               <div className="flex flex-wrap gap-2.5">
                 <MetaPill
                   icon={<Library size={14} />}
-                  label={t("library.songsPracticed")}
+                  label={
+                    practicedSongs === 1
+                      ? t("library.songPracticed")
+                      : t("library.songsPracticed")
+                  }
                   value={practicedSongs}
                 />
                 <MetaPill

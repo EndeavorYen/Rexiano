@@ -1,20 +1,32 @@
-import { Hand, Music } from "lucide-react";
+import { useEffect, useRef } from "react";
+import { Eye, Hand, Music } from "lucide-react";
 import type { PracticeMode } from "@shared/types";
 import { useTranslation } from "@renderer/i18n/useTranslation";
 
 interface ModeSelectionModalProps {
   onSelect: (mode: PracticeMode) => void;
+  onClose?: () => void;
 }
 
 interface ModeOption {
   mode: PracticeMode;
   icon: React.ReactNode;
-  titleKey: "practice.wait" | "practice.free";
-  descKey: "modeSelect.waitDesc" | "modeSelect.freeDesc";
+  titleKey: "practice.watch" | "practice.wait" | "practice.free";
+  descKey:
+    | "modeSelect.watchDesc"
+    | "modeSelect.waitDesc"
+    | "modeSelect.freeDesc";
   accentStyle: React.CSSProperties;
 }
 
 const MODE_OPTIONS: ModeOption[] = [
+  {
+    mode: "watch",
+    icon: <Eye size={28} />,
+    titleKey: "practice.watch",
+    descKey: "modeSelect.watchDesc",
+    accentStyle: { color: "var(--color-accent)" },
+  },
   {
     mode: "wait",
     icon: <Hand size={28} />,
@@ -37,8 +49,27 @@ const MODE_OPTIONS: ModeOption[] = [
  */
 export function ModeSelectionModal({
   onSelect,
+  onClose,
 }: ModeSelectionModalProps): React.JSX.Element {
   const { t } = useTranslation();
+  const firstCardRef = useRef<HTMLButtonElement>(null);
+
+  // Focus the first card button on mount for keyboard accessibility
+  useEffect(() => {
+    firstCardRef.current?.focus();
+  }, []);
+
+  useEffect(() => {
+    if (!onClose) return;
+    const handler = (e: KeyboardEvent): void => {
+      if (e.key === "Escape") {
+        e.preventDefault();
+        onClose();
+      }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [onClose]);
 
   return (
     <div
@@ -75,10 +106,11 @@ export function ModeSelectionModal({
         </p>
 
         {/* Mode cards */}
-        <div className="grid gap-3 sm:grid-cols-2">
+        <div className="grid gap-3 sm:grid-cols-3">
           {MODE_OPTIONS.map((opt, idx) => (
             <button
               key={opt.mode}
+              ref={idx === 0 ? firstCardRef : undefined}
               onClick={() => onSelect(opt.mode)}
               className="card-hover animate-page-enter flex flex-col items-center gap-3 p-4 rounded-xl cursor-pointer transition-all min-h-[170px]"
               style={{
@@ -117,12 +149,22 @@ export function ModeSelectionModal({
           ))}
         </div>
 
-        <p
-          className="text-[11px] font-body text-center mt-4"
-          style={{ color: "var(--color-text-muted)" }}
-        >
-          {t("modeSelect.mustChoose")}
-        </p>
+        {onClose ? (
+          <button
+            onClick={onClose}
+            className="text-[11px] font-body text-center mt-2 cursor-pointer hover:underline"
+            style={{ color: "var(--color-text-muted)" }}
+          >
+            {t("modeSelect.escToSkip")}
+          </button>
+        ) : (
+          <p
+            className="text-[11px] font-body text-center mt-4"
+            style={{ color: "var(--color-text-muted)" }}
+          >
+            {t("modeSelect.mustChoose")}
+          </p>
+        )}
       </div>
     </div>
   );

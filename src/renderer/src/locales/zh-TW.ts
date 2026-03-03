@@ -1,3 +1,4 @@
+/** Traditional Chinese (zh-TW) locale. */
 import type { TranslationMap } from "@renderer/i18n/types";
 
 export const zhTW: TranslationMap = {
@@ -98,6 +99,7 @@ export const zhTW: TranslationMap = {
   "practice.trackN": "軌道 {n}",
   "practice.notesCount": "{count} 個音符",
   "practice.muteAll": "全部靜音",
+  "practice.muteAllDisabledWait": "等待模式下至少需要一個軌道",
   "practice.resetTracks": "重設",
   "practice.solo": "獨奏",
   "practice.accuracy": "準確率",
@@ -215,9 +217,12 @@ export const zhTW: TranslationMap = {
   "celebration.hits": "命中",
   "celebration.missed": "失誤",
   "celebration.bestStreak": "最佳連擊",
+  "celebration.starRating": "{filled} / {total} 顆星",
 
   // ── Sheet Music ────────────────────────────────────────────────
   "sheetMusic.loadSong": "載入曲子以檢視樂譜",
+  "sheetMusic.vexflowError": "樂譜渲染器載入失敗",
+  "sheetMusic.vexflowErrorHint": "請嘗試重新載入應用程式",
   "sheetMusic.modeFalling": "音符",
   "sheetMusic.modeSheet": "樂譜",
   "sheetMusic.modeSplit": "雙顯示",
@@ -259,7 +264,7 @@ export const zhTW: TranslationMap = {
   "stats.tipTrainStreak": "連擊偏短，試著用 A-B 循環練同一小節。",
   "stats.tipRaiseSpeed": "準確率很高，可以嘗試提高速度挑戰自己。",
   "stats.tipKeepGoing": "表現穩定，維持每天短時間練習就會持續進步。",
-  "stats.tipLoopFocus": "針對 {note} 的弱點小節進行 5 分鐘 A-B 循環練習。",
+  "stats.tipLoopFocus": "試著用 A-B 循環針對困難段落練習 5 分鐘。",
   "stats.tipShortSession": "今天先做一段 8 分鐘短練習，建立連續性。",
   "stats.playAgain": "再玩一次",
   "stats.backToLibrary": "返回曲庫",

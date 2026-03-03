@@ -1,3 +1,8 @@
+/**
+ * Phase 4: Playback state store — manages live transport position, play/pause,
+ * audio engine status, volume, and the recovery UI badge lifecycle.
+ * The audio engine reads volume via `getState()` (not hooks) at scheduling time.
+ */
 import { create } from "zustand";
 import type { AudioEngineStatus } from "@renderer/engines/audio/types";
 
@@ -26,6 +31,13 @@ interface PlaybackState {
   audioRecoverySuccessVisible: boolean;
   /** Monotonic trigger value for user-initiated recovery */
   audioRecoverySignal: number;
+  /**
+   * Monotonic counter incremented when currentTime is explicitly set while
+   * NOT playing (e.g. reset / skip-back while paused). The App.tsx audio
+   * subscriber watches this to call `scheduler.seek()` even when the
+   * playback-state transition subscriber would not fire.
+   */
+  seekVersion: number;
 
   setCurrentTime: (time: number) => void;
   setPlaying: (playing: boolean) => void;
@@ -41,6 +53,16 @@ interface PlaybackState {
   reset: () => void;
 }
 
+/**
+ * Module-level timer handle for the recovery-success badge auto-dismiss.
+ *
+ * This lives outside the Zustand store because `setTimeout` callbacks need a
+ * stable reference that survives store re-creations. The trade-off is that
+ * during Vite HMR (or test-runner module reloads) this variable resets to
+ * `null` while a pending timeout from the previous module instance may still
+ * fire — the orphaned callback calls `set()` on the old store copy, which is
+ * harmless but worth knowing about when debugging flaky HMR behavior.
+ */
 let recoverySuccessTimer: ReturnType<typeof setTimeout> | null = null;
 
 export const usePlaybackStore = create<PlaybackState>()((set) => ({
@@ -56,8 +78,15 @@ export const usePlaybackStore = create<PlaybackState>()((set) => ({
   audioRecoveryMaxAttempts: 0,
   audioRecoverySuccessVisible: false,
   audioRecoverySignal: 0,
+  seekVersion: 0,
 
-  setCurrentTime: (time) => set({ currentTime: time }),
+  setCurrentTime: (time) =>
+    set((state) => ({
+      currentTime: time,
+      // Bump seekVersion when seeking while paused so the audio subscriber
+      // can detect the change and call scheduler.seek()
+      seekVersion: state.isPlaying ? state.seekVersion : state.seekVersion + 1,
+    })),
   setPlaying: (playing) => set({ isPlaying: playing }),
   setPixelsPerSecond: (pps) => set({ pixelsPerSecond: pps }),
   setAudioStatus: (status) => set({ audioStatus: status }),
@@ -99,13 +128,15 @@ export const usePlaybackStore = create<PlaybackState>()((set) => ({
       clearTimeout(recoverySuccessTimer);
       recoverySuccessTimer = null;
     }
-    set({
+    set((state) => ({
       currentTime: 0,
       isPlaying: false,
-      audioRecoveryState: "idle",
+      audioStatus: "uninitialized",
+      audioRecoveryState: "idle" as const,
       audioRecoveryAttempt: 0,
       audioRecoveryMaxAttempts: 0,
       audioRecoverySuccessVisible: false,
-    });
+      seekVersion: state.seekVersion + 1,
+    }));
   },
 }));

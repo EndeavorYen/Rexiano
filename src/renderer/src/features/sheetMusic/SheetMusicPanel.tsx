@@ -34,6 +34,15 @@ interface SheetMusicPanelProps {
   height?: number;
 }
 
+/** Convert a hex color to rgba string for SVG use. */
+function hexToRgba(hex: string, alpha: number): string {
+  const cleaned = hex.replace("#", "");
+  const r = parseInt(cleaned.substring(0, 2), 16);
+  const g = parseInt(cleaned.substring(2, 4), 16);
+  const b = parseInt(cleaned.substring(4, 6), 16);
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+}
+
 /**
  * Build a VexFlow rest note at the appropriate position for the clef.
  * Uses b/4 for treble, d/3 for bass as conventional rest placement.
@@ -192,17 +201,18 @@ function renderEmptyMeasure(
   y: number,
   width: number,
   isFirst: boolean,
+  timeSignature = "4/4",
 ): void {
   const { Stave, StaveConnector } = VF;
   const treble = new Stave(x, y, width);
   if (isFirst) {
-    treble.addClef("treble").addTimeSignature("4/4");
+    treble.addClef("treble").addTimeSignature(timeSignature);
   }
   treble.setContext(context).draw();
 
   const bass = new Stave(x, y + STAVE_HEIGHT + SYSTEM_GAP, width);
   if (isFirst) {
-    bass.addClef("bass").addTimeSignature("4/4");
+    bass.addClef("bass").addTimeSignature(timeSignature);
   }
   bass.setContext(context).draw();
 
@@ -228,7 +238,16 @@ export function SheetMusicPanel({
   const containerRef = useRef<HTMLDivElement>(null);
   const svgHostRef = useRef<HTMLDivElement>(null);
   const [containerWidth, setContainerWidth] = useState(800);
+  const [vexflowError, setVexflowError] = useState(false);
   const hidden = mode === "falling";
+
+  /** Read the computed accent color from CSS custom properties for VexFlow SVG rendering. */
+  const accentHex = useMemo(() => {
+    if (typeof document === "undefined") return "#1E6E72";
+    const style = getComputedStyle(document.documentElement);
+    return style.getPropertyValue("--color-accent").trim() || "#1E6E72";
+  }, []);
+
   const cursorPosition = useMemo(() => {
     if (!notationData) return null;
     return getCursorPosition(currentTime, notationData);
@@ -275,6 +294,16 @@ export function SheetMusicPanel({
     return () => observer.disconnect();
   }, []);
 
+  /*
+   * VexFlow rendering effect — triggers on measure window or layout changes.
+   *
+   * Performance note: this re-renders the SVG only when `visibleMeasures`
+   * changes (i.e. the active measure crosses a window boundary), NOT on
+   * every animation frame. The `visibleMeasures` array is memoised above
+   * and only produces a new reference when `activeMeasureIndex` moves to a
+   * different measure, so the cost is bounded by the number of measure
+   * transitions — typically a few times per minute at normal playback speed.
+   */
   useEffect(() => {
     const host = svgHostRef.current;
     if (
@@ -306,7 +335,13 @@ export function SheetMusicPanel({
           const isFirst = slot === 0;
 
           if (measureIndex === undefined) {
-            renderEmptyMeasure(VF, context, x, y, slotWidth, isFirst);
+            // Use the time signature from the last known measure, or default to 4/4
+            const lastMeasure =
+              notationData.measures[notationData.measures.length - 1];
+            const timeSig = lastMeasure
+              ? `${lastMeasure.timeSignatureTop}/${lastMeasure.timeSignatureBottom}`
+              : "4/4";
+            renderEmptyMeasure(VF, context, x, y, slotWidth, isFirst, timeSig);
             continue;
           }
 
@@ -333,6 +368,7 @@ export function SheetMusicPanel({
       .catch((err: unknown) => {
         if (!cancelled) {
           console.error("SheetMusic: failed to load VexFlow", err);
+          setVexflowError(true);
         }
       });
 
@@ -382,7 +418,7 @@ export function SheetMusicPanel({
               width: slotWidth,
               top: TOP_MARGIN,
               height: SYSTEM_HEIGHT,
-              background: "rgba(30, 110, 114, 0.06)",
+              background: hexToRgba(accentHex, 0.06),
               borderRadius: 3,
               transition: "left 120ms ease-out, width 120ms ease-out",
             }}
@@ -395,10 +431,9 @@ export function SheetMusicPanel({
               width: 2,
               top: TOP_MARGIN + 4,
               height: SYSTEM_HEIGHT - 8,
-              background:
-                "linear-gradient(180deg, rgba(30, 110, 114, 0.75), rgba(30, 110, 114, 0.4))",
+              background: `linear-gradient(180deg, ${hexToRgba(accentHex, 0.75)}, ${hexToRgba(accentHex, 0.4)})`,
               borderRadius: 999,
-              boxShadow: "0 0 8px rgba(30, 110, 114, 0.3)",
+              boxShadow: `0 0 8px ${hexToRgba(accentHex, 0.3)}`,
               transform: "translateX(-1px)",
               transition: "left 120ms linear",
             }}
@@ -412,8 +447,8 @@ export function SheetMusicPanel({
               width: 8,
               height: 8,
               borderRadius: "999px",
-              background: "rgba(30, 110, 114, 0.92)",
-              boxShadow: "0 0 10px rgba(30, 110, 114, 0.35)",
+              background: hexToRgba(accentHex, 0.92),
+              boxShadow: `0 0 10px ${hexToRgba(accentHex, 0.35)}`,
               transition: "left 120ms linear",
             }}
             data-testid="sheet-cursor-dot"
@@ -421,12 +456,27 @@ export function SheetMusicPanel({
         </>
       )}
 
-      {!notationData && (
+      {!notationData && !vexflowError && (
         <div
           className="absolute inset-0 flex items-center justify-center h-full text-sm font-body"
           style={{ color: "var(--color-text-muted)" }}
         >
           {t("sheetMusic.loadSong")}
+        </div>
+      )}
+
+      {vexflowError && (
+        <div
+          className="absolute inset-0 flex flex-col items-center justify-center h-full gap-1 text-sm font-body"
+          style={{ color: "var(--color-text-muted)" }}
+          role="alert"
+        >
+          <span style={{ color: "var(--color-hit-line, #E07373)" }}>
+            {t("sheetMusic.vexflowError")}
+          </span>
+          <span className="text-xs opacity-70">
+            {t("sheetMusic.vexflowErrorHint")}
+          </span>
         </div>
       )}
     </div>

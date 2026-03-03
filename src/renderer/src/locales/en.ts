@@ -1,3 +1,4 @@
+/** English locale — default fallback language. All keys must be present. */
 import type { TranslationMap } from "@renderer/i18n/types";
 
 export const en: TranslationMap = {
@@ -99,6 +100,8 @@ export const en: TranslationMap = {
   "practice.trackN": "Track {n}",
   "practice.notesCount": "{count} notes",
   "practice.muteAll": "Mute All",
+  "practice.muteAllDisabledWait":
+    "At least one track must be active in Wait mode",
   "practice.resetTracks": "Reset",
   "practice.solo": "Solo",
   "practice.accuracy": "Acc",
@@ -219,9 +222,12 @@ export const en: TranslationMap = {
   "celebration.hits": "Hits",
   "celebration.missed": "Missed",
   "celebration.bestStreak": "Best Streak",
+  "celebration.starRating": "{filled} out of {total} stars",
 
   // ── Sheet Music ────────────────────────────────────────────────
   "sheetMusic.loadSong": "Load a song to see sheet music",
+  "sheetMusic.vexflowError": "Failed to load sheet music renderer",
+  "sheetMusic.vexflowErrorHint": "Try reloading the application",
   "sheetMusic.modeFalling": "Notes",
   "sheetMusic.modeSheet": "Sheet",
   "sheetMusic.modeSplit": "Both",
@@ -266,7 +272,8 @@ export const en: TranslationMap = {
     "Great accuracy. Try increasing speed for the next run.",
   "stats.tipKeepGoing":
     "Solid progress. Keep short daily sessions for momentum.",
-  "stats.tipLoopFocus": "Loop {note} focus bars for 5 minutes in A-B mode.",
+  "stats.tipLoopFocus":
+    "Try focusing on difficult sections with A-B loop for 5 minutes.",
   "stats.tipShortSession":
     "Run one short 8-minute session today to build consistency.",
   "stats.playAgain": "Play Again",

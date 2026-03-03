@@ -3,7 +3,7 @@
 # Rexiano
 
 [![CI](https://github.com/nickhsu-endea/Rexiano/actions/workflows/ci.yml/badge.svg)](https://github.com/nickhsu-endea/Rexiano/actions/workflows/ci.yml)
-[![codecov](https://codecov.io/gh/nickhsu-endea/Rexiano/graph/badge.svg)](https://codecov.io/gh/nickhsu-endea/Rexiano)
+[![coverage](https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/nickhsu-endea/COVERAGE_GIST_ID/raw/rexiano-coverage.json)](https://github.com/nickhsu-endea/Rexiano/actions/workflows/ci.yml)
 
 免費、開源的鋼琴練習應用程式——有下落音符、MIDI 鍵盤支援和多種練習工具。一位爸爸為兒子而建，開放給所有人。
 

@@ -3,6 +3,7 @@ import type { Viewport } from "./ViewportManager";
 import { useSongStore } from "@renderer/stores/useSongStore";
 import { usePlaybackStore } from "@renderer/stores/usePlaybackStore";
 import { usePracticeStore } from "@renderer/stores/usePracticeStore";
+import { useSettingsStore } from "@renderer/stores/useSettingsStore";
 import { getPracticeEngines } from "@renderer/engines/practice/practiceManager";
 
 /** Cap frame delta to prevent large time jumps (e.g. after tab backgrounding) */
@@ -47,10 +48,16 @@ export function createTickerUpdate(
 
     let effectiveTime = playState.currentTime;
 
+    const settingsState = useSettingsStore.getState();
+    const showFingering = settingsState.showFingering;
+
     if (playState.isPlaying) {
       // ── WaitMode gate: if waiting, freeze time ──
       if (usePracticeStore.getState().mode === "wait" && waitMode) {
-        const shouldContinue = waitMode.tick(effectiveTime);
+        const shouldContinue = waitMode.tick(
+          effectiveTime,
+          settingsState.latencyCompensation,
+        );
         if (!shouldContinue) {
           // Don't advance time — waiting for user input
           // Still update renderer so notes stay visible
@@ -61,7 +68,7 @@ export function createTickerUpdate(
             pps: effectivePps,
             currentTime: effectiveTime,
           };
-          noteRenderer.update(songState.song, vp);
+          noteRenderer.update(songState.song, vp, showFingering);
           return;
         }
       }
@@ -102,7 +109,7 @@ export function createTickerUpdate(
       currentTime: effectiveTime,
     };
 
-    noteRenderer.update(songState.song, vp);
+    noteRenderer.update(songState.song, vp, showFingering);
 
     // Only notify React when active notes actually change
     if (onActiveNotesChangeRef.current) {

@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import { usePracticeStore } from "@renderer/stores/usePracticeStore";
 import { useTranslation } from "@renderer/i18n/useTranslation";
 import type { TranslationKey } from "@renderer/i18n/types";
@@ -17,18 +18,22 @@ export function ScoreOverlay(): React.JSX.Element {
   const score = usePracticeStore((s) => s.score);
   const mode = usePracticeStore((s) => s.mode);
 
+  // useMemo must be called before any early returns (Rules of Hooks)
+  const encouragementKey = useMemo(
+    () => getEncouragementKey(score.accuracy, score.currentStreak),
+    [score.accuracy, score.currentStreak],
+  );
+
   // In watch mode there's no scoring
   if (mode === "watch") return <></>;
   // Don't show overlay until practice begins
   if (score.totalNotes === 0) return <></>;
 
-  const encouragement = t(
-    getEncouragementKey(score.accuracy, score.currentStreak),
-  );
+  const encouragement = t(encouragementKey);
 
   return (
     <div
-      className="fixed top-3 right-3 z-50 flex flex-col items-end gap-1 px-4 py-3 rounded-xl pointer-events-none select-none animate-score-enter"
+      className="absolute top-3 right-3 z-50 flex flex-col items-end gap-1 px-4 py-3 rounded-xl pointer-events-none select-none animate-score-enter"
       style={{
         background: "color-mix(in srgb, var(--color-surface) 80%, transparent)",
         border:

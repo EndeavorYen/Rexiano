@@ -1,30 +1,44 @@
+/**
+ * Phase 6: Track selector — per-track toggles for split-hand practice.
+ * In wait mode, at least one track must remain active.
+ */
 import { useCallback } from "react";
 import { useSongStore } from "@renderer/stores/useSongStore";
 import { usePracticeStore } from "@renderer/stores/usePracticeStore";
 import { useTranslation } from "@renderer/i18n/useTranslation";
 
+/** Track selection panel with All/Mute/Solo controls. */
 export function TrackSelector(): React.JSX.Element {
   const { t } = useTranslation();
   const song = useSongStore((s) => s.song);
   const activeTracks = usePracticeStore((s) => s.activeTracks);
   const setActiveTracks = usePracticeStore((s) => s.setActiveTracks);
+  const mode = usePracticeStore((s) => s.mode);
 
   const tracks = song?.tracks ?? [];
 
+  // In wait mode, at least one track must remain active so WaitMode has
+  // notes to wait for. Prevent deselecting the very last active track.
   const handleToggle = useCallback(
     (index: number) => {
       const next = new Set(activeTracks);
       if (next.has(index)) {
+        // Guard: don't allow empty active tracks in wait mode
+        if (mode === "wait" && next.size <= 1) return;
         next.delete(index);
       } else {
         next.add(index);
       }
       setActiveTracks(next);
     },
-    [activeTracks, setActiveTracks],
+    [activeTracks, setActiveTracks, mode],
   );
 
   if (tracks.length === 0) return <></>;
+
+  // Mute All is disabled in wait mode — having zero active tracks would
+  // let WaitMode play through without ever waiting for input.
+  const isMuteAllDisabled = mode === "wait";
 
   const setAllTracks = (): void => {
     const next = new Set<number>();
@@ -35,6 +49,7 @@ export function TrackSelector(): React.JSX.Element {
   };
 
   const muteAllTracks = (): void => {
+    if (isMuteAllDisabled) return;
     setActiveTracks(new Set<number>());
   };
 
@@ -54,13 +69,17 @@ export function TrackSelector(): React.JSX.Element {
       <div className="flex items-center gap-1">
         <button
           onClick={muteAllTracks}
-          className="px-2 py-0.5 rounded text-[10px] font-body font-medium cursor-pointer"
+          disabled={isMuteAllDisabled}
+          className="px-2 py-0.5 rounded text-[10px] font-body font-medium cursor-pointer disabled:cursor-not-allowed disabled:opacity-40"
           style={{
             color: "var(--color-text-muted)",
             background:
               "color-mix(in srgb, var(--color-surface-alt) 72%, var(--color-surface))",
             border: "1px solid var(--color-border)",
           }}
+          title={
+            isMuteAllDisabled ? t("practice.muteAllDisabledWait") : undefined
+          }
         >
           {t("practice.muteAll")}
         </button>

@@ -63,15 +63,15 @@ export function usePracticeLifecycle(
     const { waitMode } = getPracticeEngines();
     if (!waitMode) return;
 
-    // Reset stale track selection from a previous song before initialising
-    usePracticeStore.getState().setActiveTracks(new Set());
-
     const practiceState = usePracticeStore.getState();
-    const activeTracks =
-      practiceState.activeTracks.size > 0
-        ? practiceState.activeTracks
-        : new Set(song.tracks.map((_, i) => i));
-    if (practiceState.activeTracks.size === 0) {
+    // Default to all tracks if no selection exists or selection is from a different song
+    const maxTrackIndex = song.tracks.length - 1;
+    const hasValidSelection = practiceState.activeTracks.size > 0 &&
+      Array.from(practiceState.activeTracks).every(i => i <= maxTrackIndex);
+    const activeTracks = hasValidSelection
+      ? practiceState.activeTracks
+      : new Set(song.tracks.map((_, i) => i));
+    if (!hasValidSelection) {
       usePracticeStore.getState().setActiveTracks(activeTracks);
     }
     waitMode.init(song.tracks, activeTracks);
@@ -232,6 +232,15 @@ export function usePracticeLifecycle(
         if (usePracticeStore.getState().mode === "wait" && waitMode) {
           waitMode.reset();
           waitMode.start();
+
+          // Resume audio playback after the loop reset
+          const { scheduler, engine } = audioRef.current;
+          if (scheduler && engine) {
+            scheduler.start(state.currentTime);
+            void engine.resume().catch((err) => {
+              console.error("Loop restart audio resume failed:", err);
+            });
+          }
         }
       }
     });

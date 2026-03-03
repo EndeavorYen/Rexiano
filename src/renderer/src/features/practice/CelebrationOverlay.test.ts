@@ -69,4 +69,18 @@ describe("CelebrationOverlay — isNewRecord()", () => {
     expect(isNewRecord(85.01, 20, "song-1", 85)).toBe(true);
     expect(isNewRecord(85.001, 20, "song-1", 85)).toBe(true);
   });
+
+  test("returns false when mode is 'watch' (no user input)", () => {
+    expect(isNewRecord(95, 10, "song-1", null, "watch")).toBe(false);
+    expect(isNewRecord(100, 20, "song-1", 50, "watch")).toBe(false);
+  });
+
+  test("returns true for 'wait' and 'free' modes when accuracy qualifies", () => {
+    expect(isNewRecord(90, 10, "song-1", 80, "wait")).toBe(true);
+    expect(isNewRecord(90, 10, "song-1", 80, "free")).toBe(true);
+  });
+
+  test("returns true when mode is undefined (backward compat)", () => {
+    expect(isNewRecord(90, 10, "song-1", 80)).toBe(true);
+  });
 });

@@ -1,3 +1,10 @@
+/**
+ * Theme token definitions. CSS custom properties (e.g. `--color-accent`) are
+ * injected into `document.documentElement` by `applyThemeToDOM` in
+ * `src/renderer/src/stores/useThemeStore.ts` — both on store creation and
+ * whenever `setTheme` is called. Token keys map to CSS var names via
+ * camelCase → kebab-case conversion (e.g. `surfaceAlt` → `--color-surface-alt`).
+ */
 export type ThemeId = "lavender" | "ocean" | "peach" | "midnight";
 
 export interface ThemeTokens {
@@ -164,8 +171,8 @@ export const themes: Record<ThemeId, ThemeTokens> = {
       note3: "#64B69C",
       note4: "#D3B36B",
       keyActive: "#6AAFC8",
-      keyWhite: "#222A33",
-      keyWhiteBottom: "#1A212A",
+      keyWhite: "#2D3642",
+      keyWhiteBottom: "#242D38",
       keyBlack: "#070A0E",
       keyBlackTop: "#0E1218",
       hitGlow: "#7FC2D8",

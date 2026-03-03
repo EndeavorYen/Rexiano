@@ -12,7 +12,9 @@ import {
 } from "lucide-react";
 import { useThemeStore } from "@renderer/stores/useThemeStore";
 import { useSettingsStore } from "@renderer/stores/useSettingsStore";
+import { usePlaybackStore } from "@renderer/stores/usePlaybackStore";
 import type { Language } from "@renderer/stores/useSettingsStore";
+import type { TranslationKey } from "@renderer/i18n/types";
 import { themes, type ThemeId } from "@renderer/themes/tokens";
 import { getAvailableLanguages } from "@renderer/i18n";
 import { useTranslation } from "@renderer/i18n/useTranslation";
@@ -31,37 +33,20 @@ type SettingsTab =
   | "language"
   | "about";
 
-const tabKeys = [
-  "settings.tab.theme",
-  "settings.tab.display",
-  "settings.tab.audio",
-  "settings.tab.practice",
-  "settings.tab.keys",
-  "settings.tab.lang",
-  "settings.tab.about",
-] as const;
+const tabs: { id: SettingsTab; key: TranslationKey; icon: React.ReactNode }[] =
+  [
+    { id: "theme", key: "settings.tab.theme", icon: <Palette size={14} /> },
+    { id: "display", key: "settings.tab.display", icon: <Monitor size={14} /> },
+    { id: "audio", key: "settings.tab.audio", icon: <Volume2 size={14} /> },
+    { id: "practice", key: "settings.tab.practice", icon: <Music size={14} /> },
+    { id: "shortcuts", key: "settings.tab.keys", icon: <Keyboard size={14} /> },
+    { id: "language", key: "settings.tab.lang", icon: <Globe size={14} /> },
+    { id: "about", key: "settings.tab.about", icon: <Info size={14} /> },
+  ];
 
-const tabIds: SettingsTab[] = [
-  "theme",
-  "display",
-  "audio",
-  "practice",
-  "shortcuts",
-  "language",
-  "about",
-];
+const tabIds: SettingsTab[] = tabs.map((t) => t.id);
 
 const basicTabIds: SettingsTab[] = ["theme", "language"];
-
-const tabIcons = [
-  <Palette size={14} key="theme" />,
-  <Monitor size={14} key="display" />,
-  <Volume2 size={14} key="audio" />,
-  <Music size={14} key="practice" />,
-  <Keyboard size={14} key="shortcuts" />,
-  <Globe size={14} key="lang" />,
-  <Info size={14} key="about" />,
-];
 
 const practiceModeKeys: {
   value: PracticeMode;
@@ -82,9 +67,9 @@ const FOCUSABLE_SELECTOR = [
 ].join(", ");
 
 function getFocusableElements(root: HTMLElement): HTMLElement[] {
-  return Array.from(root.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR)).filter(
-    (el) => !el.hasAttribute("disabled") && el.tabIndex !== -1,
-  );
+  return Array.from(
+    root.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR),
+  ).filter((el) => !el.hasAttribute("disabled") && el.tabIndex !== -1);
 }
 
 /**
@@ -113,8 +98,10 @@ export function SettingsPanel({
     normalizedSettingsSearch.length === 0
       ? visibleTabIds
       : visibleTabIds.filter((id) => {
-          const i = tabIds.indexOf(id);
-          return t(tabKeys[i]).toLowerCase().includes(normalizedSettingsSearch);
+          const tab = tabs.find((tb) => tb.id === id);
+          return tab
+            ? t(tab.key).toLowerCase().includes(normalizedSettingsSearch)
+            : false;
         });
   const resolvedActiveTab = useMemo<SettingsTab>(() => {
     if (filteredTabIds.includes(activeTab)) return activeTab;
@@ -134,8 +121,11 @@ export function SettingsPanel({
   const showFingering = useSettingsStore((s) => s.showFingering);
   const compactKeyLabels = useSettingsStore((s) => s.compactKeyLabels);
   const language = useSettingsStore((s) => s.language);
-  const volume = useSettingsStore((s) => s.volume);
+  // Live volume comes from usePlaybackStore (0-1 scale); settings store holds persisted default only
+  const playbackVolume = usePlaybackStore((s) => s.volume);
   const muted = useSettingsStore((s) => s.muted);
+  /** Ref to remember volume before muting, so we can restore on unmute */
+  const preMuteVolumeRef = useRef(playbackVolume > 0 ? playbackVolume : 0.8);
   const defaultSpeed = useSettingsStore((s) => s.defaultSpeed);
   const defaultMode = useSettingsStore((s) => s.defaultMode);
   const metronomeEnabled = useSettingsStore((s) => s.metronomeEnabled);
@@ -152,8 +142,9 @@ export function SettingsPanel({
   const setShowFingering = useSettingsStore((s) => s.setShowFingering);
   const setCompactKeyLabels = useSettingsStore((s) => s.setCompactKeyLabels);
   const setLanguage = useSettingsStore((s) => s.setLanguage);
-  const setVolume = useSettingsStore((s) => s.setVolume);
-  const setMuted = useSettingsStore((s) => s.setMuted);
+  const setSettingsVolume = useSettingsStore((s) => s.setVolume);
+  const setSettingsMuted = useSettingsStore((s) => s.setMuted);
+  const setPlaybackVolume = usePlaybackStore((s) => s.setVolume);
   const setDefaultSpeed = useSettingsStore((s) => s.setDefaultSpeed);
   const setDefaultMode = useSettingsStore((s) => s.setDefaultMode);
   const setMetronomeEnabled = useSettingsStore((s) => s.setMetronomeEnabled);
@@ -190,16 +181,16 @@ export function SettingsPanel({
     }
   }, [isFirstVisit]);
 
-  // Close on outside click
+  // Close on outside click (pointerdown covers mouse, touch, and pen)
   useEffect(() => {
     if (!open) return;
-    const handler = (e: MouseEvent): void => {
+    const handler = (e: PointerEvent): void => {
       if (panelRef.current && !panelRef.current.contains(e.target as Node)) {
         handleClose();
       }
     };
-    document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
+    document.addEventListener("pointerdown", handler);
+    return () => document.removeEventListener("pointerdown", handler);
   }, [open, handleClose]);
 
   // Close on Escape
@@ -259,17 +250,22 @@ export function SettingsPanel({
     panel.focus();
   }, [open]);
 
-  // About tab: lazy-load app info
+  // About tab: lazy-load app info (fetch only once)
   const [appInfo, setAppInfo] = useState<{
     version: string;
     changelog: string;
   } | null>(null);
+  const appInfoFetchedRef = useRef(false);
 
   useEffect(() => {
-    if (resolvedActiveTab === "about" && !appInfo) {
-      window.api.getAppInfo().then(setAppInfo);
+    if (resolvedActiveTab === "about" && !appInfoFetchedRef.current) {
+      appInfoFetchedRef.current = true;
+      window.api
+        .getAppInfo()
+        .then(setAppInfo)
+        .catch(() => setAppInfo(null));
     }
-  }, [resolvedActiveTab, appInfo]);
+  }, [resolvedActiveTab]);
 
   return (
     <>
@@ -377,7 +373,7 @@ export function SettingsPanel({
               }}
             >
               {filteredTabIds.map((id) => {
-                const i = tabIds.indexOf(id);
+                const tab = tabs.find((tb) => tb.id === id)!;
                 return (
                   <button
                     key={id}
@@ -395,8 +391,8 @@ export function SettingsPanel({
                     }}
                     data-testid={`settings-tab-${id}`}
                   >
-                    {tabIcons[i]}
-                    {t(tabKeys[i])}
+                    {tab.icon}
+                    {t(tab.key)}
                     {resolvedActiveTab === id && (
                       <div
                         className="absolute bottom-0 left-2 right-2 h-0.5 rounded-full"
@@ -435,7 +431,19 @@ export function SettingsPanel({
                 </div>
                 <div className="flex flex-wrap gap-1.5">
                   <button
-                    onClick={() => setMuted(!muted)}
+                    onClick={() => {
+                      const newMuted = !muted;
+                      setSettingsMuted(newMuted);
+                      if (newMuted) {
+                        preMuteVolumeRef.current =
+                          playbackVolume > 0
+                            ? playbackVolume
+                            : preMuteVolumeRef.current;
+                        setPlaybackVolume(0);
+                      } else {
+                        setPlaybackVolume(preMuteVolumeRef.current);
+                      }
+                    }}
                     className="px-2.5 py-1 rounded-md text-[11px] font-body font-medium cursor-pointer"
                     style={{
                       color: muted ? "#fff" : "var(--color-text-muted)",
@@ -593,15 +601,21 @@ export function SettingsPanel({
                           className="text-xs font-mono tabular-nums"
                           style={{ color: "var(--color-text-muted)" }}
                         >
-                          {muted ? t("settings.muted") : volume}
+                          {muted
+                            ? t("settings.muted")
+                            : Math.round(playbackVolume * 100)}
                         </span>
                       </div>
                       <input
                         type="range"
                         min={0}
                         max={100}
-                        value={muted ? 0 : volume}
-                        onChange={(e) => setVolume(Number(e.target.value))}
+                        value={muted ? 0 : Math.round(playbackVolume * 100)}
+                        onChange={(e) => {
+                          const normalized = Number(e.target.value) / 100;
+                          setPlaybackVolume(normalized);
+                          setSettingsVolume(Number(e.target.value));
+                        }}
                         className="w-full"
                         disabled={muted}
                         data-testid="volume-slider"
@@ -610,7 +624,20 @@ export function SettingsPanel({
                     <ToggleRow
                       label={t("settings.muteAudio")}
                       checked={muted}
-                      onChange={setMuted}
+                      onChange={(newMuted) => {
+                        setSettingsMuted(newMuted);
+                        if (newMuted) {
+                          // Save current volume before muting
+                          preMuteVolumeRef.current =
+                            playbackVolume > 0
+                              ? playbackVolume
+                              : preMuteVolumeRef.current;
+                          setPlaybackVolume(0);
+                        } else {
+                          // Restore volume on unmute
+                          setPlaybackVolume(preMuteVolumeRef.current);
+                        }
+                      }}
                       testId="toggle-mute"
                     />
                     <ToggleRow
@@ -949,6 +976,7 @@ function SectionTitle({
   );
 }
 
+/** Toggle switch row with label and optional description. */
 function ToggleRow({
   label,
   description,
@@ -963,8 +991,9 @@ function ToggleRow({
   testId?: string;
 }): React.JSX.Element {
   return (
-    <label
-      className="flex items-center justify-between cursor-pointer gap-3 rounded-xl px-3 py-2.5"
+    <div
+      role="group"
+      className="flex items-center justify-between gap-3 rounded-xl px-3 py-2.5"
       style={{
         background:
           "color-mix(in srgb, var(--color-surface-alt) 52%, var(--color-surface))",
@@ -990,8 +1019,9 @@ function ToggleRow({
       <button
         role="switch"
         aria-checked={checked}
+        aria-label={label}
         onClick={() => onChange(!checked)}
-        className="w-10 h-[22px] rounded-full relative transition-colors shrink-0"
+        className="w-10 h-[22px] rounded-full relative transition-colors shrink-0 cursor-pointer"
         style={{
           background: checked
             ? "var(--color-accent)"
@@ -1011,7 +1041,7 @@ function ToggleRow({
           }}
         />
       </button>
-    </label>
+    </div>
   );
 }
 

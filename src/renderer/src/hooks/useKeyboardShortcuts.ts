@@ -261,10 +261,11 @@ export function useKeyboardShortcuts(deps: KeyboardShortcutDeps = {}): void {
   }, []); // stable — deps accessed via ref
 }
 
-// Exported for testing
+// Exported for testing and KeyboardShortcutsHelp component
 export {
   isTextInput,
   hasShortcutBlockingOverlay,
+  setShowHelp,
   SEEK_STEP,
   SEEK_STEP_LARGE,
   SPEED_STEP,

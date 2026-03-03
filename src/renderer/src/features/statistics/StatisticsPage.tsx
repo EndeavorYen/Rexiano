@@ -31,6 +31,9 @@ export function StatisticsPage({
   const consistency =
     totalNotes > 0 ? (score.bestStreak / totalNotes) * 100 : 0;
 
+  // Semantic status colors: amber (#f59e0b) and red (#ef4444) are fixed values
+  // (not theme vars) because they carry universal "caution" / "error" meaning that
+  // must remain legible across all themes — same rationale as ConnectionStatus.tsx.
   const accuracyColor =
     score.accuracy >= 90
       ? "var(--color-accent)"
@@ -42,7 +45,7 @@ export function StatisticsPage({
       ? 0
       : Math.max(0, Math.min(360, (score.accuracy / 100) * 360));
   const reward = getRewardTier(score.accuracy);
-  const tips = getPracticeTips(score, mode, speed);
+  const tips = getPracticeTips(score, mode, speed, durationSeconds);
 
   return (
     <div
@@ -134,6 +137,7 @@ export function StatisticsPage({
             label={t("stats.notesHit")}
             color="var(--color-accent)"
           />
+          {/* Fixed semantic colors: red = error, amber = caution (see accuracyColor comment above) */}
           <StatCell
             value={score.missedNotes}
             label={t("stats.notesMissed")}
@@ -155,6 +159,7 @@ export function StatisticsPage({
             label={t("stats.hitRate")}
             color="var(--color-accent)"
           />
+          {/* Fixed semantic color: blue = informational/neutral metric */}
           <StatCell
             value={Number(consistency.toFixed(1))}
             suffix="%"
@@ -325,24 +330,22 @@ function modeKey(
   return "stats.modeWatch";
 }
 
-function getPracticeTips(
-  score: PracticeScore,
-  mode: PracticeMode,
-  speed: number,
-): Array<
+type PracticeTipKey =
   | "stats.tipSlowDown"
   | "stats.tipUseWaitMode"
   | "stats.tipTrainStreak"
   | "stats.tipRaiseSpeed"
   | "stats.tipKeepGoing"
-> {
-  const tips: Array<
-    | "stats.tipSlowDown"
-    | "stats.tipUseWaitMode"
-    | "stats.tipTrainStreak"
-    | "stats.tipRaiseSpeed"
-    | "stats.tipKeepGoing"
-  > = [];
+  | "stats.tipLoopFocus"
+  | "stats.tipShortSession";
+
+function getPracticeTips(
+  score: PracticeScore,
+  mode: PracticeMode,
+  speed: number,
+  durationSeconds?: number,
+): Array<PracticeTipKey> {
+  const tips: Array<PracticeTipKey> = [];
 
   if (score.accuracy < 75) {
     tips.push("stats.tipSlowDown");
@@ -352,6 +355,12 @@ function getPracticeTips(
   }
   if (score.bestStreak < 8 && score.totalNotes > 0) {
     tips.push("stats.tipTrainStreak");
+  }
+  if (score.accuracy < 85 && score.accuracy >= 50 && score.missedNotes > 0) {
+    tips.push("stats.tipLoopFocus");
+  }
+  if (durationSeconds !== undefined && durationSeconds < 60) {
+    tips.push("stats.tipShortSession");
   }
   if (score.accuracy >= 90 && speed < 1.2) {
     tips.push("stats.tipRaiseSpeed");

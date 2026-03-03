@@ -1,9 +1,15 @@
+/**
+ * Phase 6: A-B loop selector — lets the user set loop start (A) and end (B)
+ * points for focused practice of a specific passage.
+ */
 import { useEffect, useState } from "react";
 import { usePracticeStore } from "@renderer/stores/usePracticeStore";
 import { usePlaybackStore } from "@renderer/stores/usePlaybackStore";
+import { useSongStore } from "@renderer/stores/useSongStore";
 import { useTranslation } from "@renderer/i18n/useTranslation";
 import { X } from "lucide-react";
 
+/** Format seconds as M:SS display string. */
 // eslint-disable-next-line react-refresh/only-export-components
 export function fmtSec(s: number): string {
   const min = Math.floor(s / 60);
@@ -16,6 +22,7 @@ export function ABLoopSelector(): React.JSX.Element {
   const loopRange = usePracticeStore((s) => s.loopRange);
   const setLoopRange = usePracticeStore((s) => s.setLoopRange);
   const currentTime = usePlaybackStore((s) => s.currentTime);
+  const song = useSongStore((s) => s.song);
   const [flashMessage, setFlashMessage] = useState<string | null>(null);
 
   const hasA = loopRange !== null;
@@ -31,7 +38,7 @@ export function ABLoopSelector(): React.JSX.Element {
     if (loopRange) {
       setLoopRange([currentTime, Math.max(currentTime + 0.1, loopRange[1])]);
     } else {
-      setLoopRange([currentTime, currentTime]);
+      setLoopRange([currentTime, song?.duration ?? currentTime + 1]);
     }
     setFlashMessage(`A ${fmtSec(currentTime)}`);
   };

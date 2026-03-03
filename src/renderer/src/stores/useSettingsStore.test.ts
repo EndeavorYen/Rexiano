@@ -142,6 +142,24 @@ describe("useSettingsStore", () => {
       store.getState().setAudioCompatibilityMode(true);
       expect(store.getState().audioCompatibilityMode).toBe(true);
     });
+
+    test("setShowFingering toggles the value", async () => {
+      const store = await getStore();
+      store.getState().setShowFingering(false);
+      expect(store.getState().showFingering).toBe(false);
+    });
+
+    test("setCompactKeyLabels toggles the value", async () => {
+      const store = await getStore();
+      store.getState().setCompactKeyLabels(true);
+      expect(store.getState().compactKeyLabels).toBe(true);
+    });
+
+    test("setLanguage updates language", async () => {
+      const store = await getStore();
+      store.getState().setLanguage("zh-TW");
+      expect(store.getState().language).toBe("zh-TW");
+    });
   });
 
   describe("value clamping", () => {

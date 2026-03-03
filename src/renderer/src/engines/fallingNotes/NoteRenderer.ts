@@ -17,7 +17,6 @@ import {
   FingeringEngine,
   type Finger,
 } from "@renderer/engines/practice/FingeringEngine";
-import { useSettingsStore } from "@renderer/stores/useSettingsStore";
 
 function noteKey(trackIdx: number, midi: number, time: number): string {
   // Convert time to microseconds integer to avoid float-to-string instability
@@ -62,6 +61,26 @@ function midiToNoteName(midi: number): string {
   const name = NOTE_NAMES[midi % 12];
   const octave = Math.floor(midi / 12) - 1;
   return `${name}${octave}`;
+}
+
+/** Cached TextStyle for combo counter text. */
+let _comboStyle: TextStyle | null = null;
+function getComboStyle(): TextStyle {
+  if (!_comboStyle) {
+    _comboStyle = new TextStyle({
+      fontFamily: "Nunito Variable, Nunito, sans-serif",
+      fontSize: 28,
+      fontWeight: "800",
+      fill: 0xffffff,
+      dropShadow: {
+        color: 0x000000,
+        blur: 4,
+        distance: 1,
+        alpha: 0.35,
+      },
+    });
+  }
+  return _comboStyle;
 }
 
 /** Shared text style for note labels on falling note sprites. */
@@ -123,8 +142,8 @@ export class NoteRenderer {
   /** Currently visible fingering labels (key → Text) */
   private activeFingeringLabels = new Map<string, Text>();
   private nextFingeringLabels = new Map<string, Text>();
-  /** Cached fingering results per song, keyed by "trackIdx" */
-  private fingeringCache = new Map<string, Map<number, Finger>>();
+  /** Cached fingering results per song, keyed by "trackIdx" → composite "midi:time" → Finger */
+  private fingeringCache = new Map<string, Map<string, Finger>>();
   /** ID of the last song we computed fingering for */
   private lastSongFileName = "";
 
@@ -168,14 +187,13 @@ export class NoteRenderer {
    * @param song Currently loaded parsed song
    * @param vp   Current viewport (position + dimensions)
    */
-  update(song: ParsedSong, vp: Viewport): void {
+  update(song: ParsedSong, vp: Viewport, showFingering: boolean): void {
     // Double-buffer swap: reuse nextActive map instead of allocating each frame
     const nextActive = this.nextActive;
     nextActive.clear();
     this.activeNotes.clear();
 
     const hitWindow = 0.05;
-    const showFingering = useSettingsStore.getState().showFingering;
     const maxVisibleLabels =
       vp.height < 200 ? 14 : vp.height < 280 ? 22 : vp.height < 360 ? 30 : 42;
     let shownLabelCount = 0;
@@ -453,10 +471,15 @@ export class NoteRenderer {
       const hand = avgMidi < 60 ? "left" : "right";
 
       const results = this.fingeringEngine.computeFingering(track.notes, hand);
-      const trackCache = new Map<number, Finger>();
+      const trackCache = new Map<string, Finger>();
 
-      for (const result of results) {
-        trackCache.set(result.midi, result.finger);
+      for (let i = 0; i < results.length; i++) {
+        // Use the original note's time for the composite key so lookups
+        // by ParsedNote (midi + time) work correctly even when the same
+        // pitch appears multiple times with different fingerings.
+        const note = track.notes[i];
+        const key = `${note.midi}:${Math.round(note.time * 1e6)}`;
+        trackCache.set(key, results[i].finger);
       }
 
       this.fingeringCache.set(String(trackIdx), trackCache);
@@ -467,7 +490,8 @@ export class NoteRenderer {
   private getFingerForNote(trackIdx: number, note: ParsedNote): Finger | null {
     const trackCache = this.fingeringCache.get(String(trackIdx));
     if (!trackCache) return null;
-    return trackCache.get(note.midi) ?? null;
+    const key = `${note.midi}:${Math.round(note.time * 1e6)}`;
+    return trackCache.get(key) ?? null;
   }
 
   // ── Practice mode visual feedback ──────────────────────────────────
@@ -548,18 +572,7 @@ export class NoteRenderer {
    * The number pops in with scale, drifts upward, then fades out.
    */
   showCombo(count: number, x: number, y: number): void {
-    const style = new TextStyle({
-      fontFamily: "Nunito Variable, Nunito, sans-serif",
-      fontSize: 28,
-      fontWeight: "800",
-      fill: 0xffffff,
-      dropShadow: {
-        color: 0x000000,
-        blur: 4,
-        distance: 1,
-        alpha: 0.35,
-      },
-    });
+    const style = getComboStyle();
     const label = new Text({ text: `${count}x`, style });
     label.anchor.set(0.5);
     label.x = x;

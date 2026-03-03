@@ -3,7 +3,11 @@ import { ArrowLeft, BarChart3, PanelRightOpen, X } from "lucide-react";
 import { parseMidiFile } from "./engines/midi/MidiFileParser";
 import { useSongStore } from "./stores/useSongStore";
 import { usePlaybackStore } from "./stores/usePlaybackStore";
-import { useProgressStore, initAutoSave } from "./stores/useProgressStore";
+import {
+  useProgressStore,
+  initAutoSave,
+  deriveSongId,
+} from "./stores/useProgressStore";
 import { useSettingsStore } from "./stores/useSettingsStore";
 import {
   initMetronome,
@@ -42,6 +46,9 @@ import { MainMenu } from "./features/mainMenu/MainMenu";
 import { ModeSelectionModal } from "./features/practice/ModeSelectionModal";
 import { CelebrationOverlay } from "./features/practice/CelebrationOverlay";
 import { StatisticsPage } from "./features/statistics/StatisticsPage";
+import { getPracticeEngines } from "./engines/practice/practiceManager";
+import { OnboardingGuide } from "./features/onboarding/OnboardingGuide";
+import { KeyboardShortcutsHelp } from "./features/settings/KeyboardShortcutsHelp";
 import type { PracticeMode } from "@shared/types";
 import {
   parseRouteHash,
@@ -125,11 +132,15 @@ function App(): React.JSX.Element {
   const speed = usePracticeStore((s) => s.speed);
   const score = usePracticeStore((s) => s.score);
 
+  // Track wall-clock session start for accurate durationSeconds in stats
+  const sessionStartRef = useRef<number>(Date.now());
+
   // Show mode selection when a new song loads (subscribe pattern avoids
   // calling setState directly in an effect body).
   useEffect(() => {
     return useSongStore.subscribe((state, prev) => {
       if (state.song !== prev.song && state.song) {
+        sessionStartRef.current = Date.now();
         setShowModeModal(true);
         setShowCelebration(false);
         setShowStats(false);
@@ -146,7 +157,7 @@ function App(): React.JSX.Element {
         if (
           currentSong &&
           currentScore.totalNotes > 0 &&
-          state.currentTime >= currentSong.duration - 1
+          state.currentTime >= currentSong.duration - 0.3
         ) {
           setShowCelebration(true);
           setShowStats(false);
@@ -165,10 +176,13 @@ function App(): React.JSX.Element {
     return () => clearTimeout(timer);
   }, [showCelebration]);
 
+  const modeSelectTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   const handleModeSelect = useCallback((mode: PracticeMode) => {
     usePracticeStore.getState().setMode(mode);
     setShowModeModal(false);
-    setTimeout(() => {
+    if (modeSelectTimerRef.current) clearTimeout(modeSelectTimerRef.current);
+    modeSelectTimerRef.current = setTimeout(() => {
       usePlaybackStore.getState().setPlaying(true);
     }, 150);
   }, []);
@@ -178,6 +192,13 @@ function App(): React.JSX.Element {
     setShowStats(false);
     usePlaybackStore.getState().reset();
     usePracticeStore.getState().resetScore();
+    usePracticeStore.getState().setLoopRange(null);
+    // Reset WaitMode so notes are re-judged from scratch
+    const { waitMode } = getPracticeEngines();
+    waitMode?.reset();
+    // Re-show mode selection so the player can pick Watch/Wait/Free again
+    setShowModeModal(true);
+    sessionStartRef.current = Date.now();
   }, []);
 
   const handleChooseSong = useCallback(() => {
@@ -192,7 +213,7 @@ function App(): React.JSX.Element {
   // ─── Phase 6.5 Sprint 5: Insights Panel ──────────────
   const [showInsights, setShowInsights] = useState(false);
   const sessions = useProgressStore((s) => s.sessions);
-  const songId = song?.fileName ?? "";
+  const songId = song ? deriveSongId(song) : "";
 
   const insight = useMemo(() => {
     if (!songId || sessions.length === 0) return null;
@@ -239,7 +260,6 @@ function App(): React.JSX.Element {
   // ─── Phase 7: Sheet Music ──────────────────────────────
   const displayMode = usePracticeStore((s) => s.displayMode);
   const isPlaying = usePlaybackStore((s) => s.isPlaying);
-  const currentTime = usePlaybackStore((s) => s.currentTime);
 
   const notationData = useMemo(() => {
     if (!song) return null;
@@ -577,6 +597,13 @@ function App(): React.JSX.Element {
           }, 50);
         }
       }
+
+      // Seek while paused (e.g. reset / skip-back button): seekVersion bumps
+      // without a play/pause transition, so we need to explicitly tell the
+      // scheduler about the new position.
+      if (!state.isPlaying && state.seekVersion !== prev.seekVersion) {
+        scheduler.seek(state.currentTime);
+      }
     });
     return () => {
       unsub();
@@ -594,6 +621,8 @@ function App(): React.JSX.Element {
         clearTimeout(deviceChangeDebounceRef.current);
         deviceChangeDebounceRef.current = null;
       }
+      if (dragErrorTimerRef.current) clearTimeout(dragErrorTimerRef.current);
+      if (modeSelectTimerRef.current) clearTimeout(modeSelectTimerRef.current);
       disposeMetronome();
       triggerRecoveryRef.current = () => {};
     };
@@ -693,7 +722,9 @@ function App(): React.JSX.Element {
   );
 
   // ─── Phase 6.5: Mute toggle ────────────────────────────
-  const muteRef = useRef({ prevVolume: 0.8 });
+  const muteRef = useRef({
+    prevVolume: usePlaybackStore.getState().volume || 0.8,
+  });
   const handleToggleMute = useCallback(() => {
     const pb = usePlaybackStore.getState();
     if (pb.volume > 0) {
@@ -714,6 +745,7 @@ function App(): React.JSX.Element {
   const [isDragging, setIsDragging] = useState(false);
   const [dragError, setDragError] = useState<string | null>(null);
   const dragCountRef = useRef(0);
+  const dragErrorTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const handleDragEnter = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -753,7 +785,8 @@ function App(): React.JSX.Element {
       const ext = file.name.toLowerCase().slice(file.name.lastIndexOf("."));
       if (!MIDI_EXTENSIONS.includes(ext)) {
         setDragError(t("app.invalidFileType", { ext }));
-        setTimeout(() => setDragError(null), 3000);
+        if (dragErrorTimerRef.current) clearTimeout(dragErrorTimerRef.current);
+        dragErrorTimerRef.current = setTimeout(() => setDragError(null), 3000);
         return;
       }
 
@@ -768,12 +801,14 @@ function App(): React.JSX.Element {
         } catch (err) {
           console.error("Failed to parse dropped MIDI file:", err);
           setDragError(t("app.failedParse"));
-          setTimeout(() => setDragError(null), 3000);
+          if (dragErrorTimerRef.current) clearTimeout(dragErrorTimerRef.current);
+          dragErrorTimerRef.current = setTimeout(() => setDragError(null), 3000);
         }
       };
       reader.onerror = () => {
         setDragError(t("app.failedRead"));
-        setTimeout(() => setDragError(null), 3000);
+        if (dragErrorTimerRef.current) clearTimeout(dragErrorTimerRef.current);
+        dragErrorTimerRef.current = setTimeout(() => setDragError(null), 3000);
       };
       reader.readAsArrayBuffer(file);
     },
@@ -814,12 +849,15 @@ function App(): React.JSX.Element {
       ? Math.max(0, estimatedWorkspaceHeight - splitSheetHeight)
       : 0;
   const splitFallingMinHeight = isSplitMode
-    ? Math.min(
-        Math.max(
-          SPLIT_FALLING_MIN,
-          Math.round(estimatedWorkspaceHeight * 0.42),
+    ? Math.max(
+        SPLIT_FALLING_MIN,
+        Math.min(
+          Math.max(
+            SPLIT_FALLING_MIN,
+            Math.round(estimatedWorkspaceHeight * 0.42),
+          ),
+          splitFallingAvailableHeight,
         ),
-        splitFallingAvailableHeight,
       )
     : null;
   const fallingCanvasMinHeight = isSplitMode
@@ -860,6 +898,8 @@ function App(): React.JSX.Element {
       onDrop={handleDrop}
     >
       {showSceneCurtain && <div className="scene-curtain" />}
+      <OnboardingGuide />
+      <KeyboardShortcutsHelp />
 
       {/* Drag-and-drop overlay */}
       {isDragging && (
@@ -899,8 +939,10 @@ function App(): React.JSX.Element {
         <div
           className="fixed top-4 left-1/2 -translate-x-1/2 z-50 px-4 py-2 rounded-lg text-sm font-body subtle-shadow"
           style={{
-            background: "#dc2626",
-            color: "#ffffff",
+            background:
+              "color-mix(in srgb, #dc2626 55%, var(--color-surface))",
+            color: "var(--color-text)",
+            border: "1px solid color-mix(in srgb, #dc2626 30%, var(--color-border))",
           }}
         >
           {dragError}
@@ -1156,7 +1198,12 @@ function App(): React.JSX.Element {
           />
 
           {/* Mode selection modal (shown when a song first loads) */}
-          {showModeModal && <ModeSelectionModal onSelect={handleModeSelect} />}
+          {showModeModal && (
+            <ModeSelectionModal
+              onSelect={handleModeSelect}
+              onClose={() => setShowModeModal(false)}
+            />
+          )}
 
           {/* Celebration overlay (shown when song ends).
               "Pick Song" leads to StatisticsPage instead of directly back. */}
@@ -1170,6 +1217,7 @@ function App(): React.JSX.Element {
                 setShowStats(true);
               }}
               songId={songId}
+              mode={mode}
             />
           )}
 
@@ -1180,7 +1228,9 @@ function App(): React.JSX.Element {
               songName={song?.fileName ?? ""}
               mode={mode}
               speed={speed}
-              durationSeconds={Math.round(currentTime)}
+              durationSeconds={Math.round(
+                (Date.now() - sessionStartRef.current) / 1000,
+              )}
               onPlayAgain={handlePracticeAgain}
               onChooseSong={handleChooseSong}
             />
