@@ -42,7 +42,7 @@ describe("FingeringEngine", () => {
   });
 
   describe("C major scale — right hand descending", () => {
-    it("assigns standard 5-4-3-2-1-3-2-1 pattern", () => {
+    it("assigns standard RH descending fingering 5-4-3-2-1-4-3-2", () => {
       // C5 B4 A4 G4 F4 E4 D4 C4
       const notes = [72, 71, 69, 67, 65, 64, 62, 60].map((m, i) =>
         note(m, i * 0.5),
@@ -50,7 +50,17 @@ describe("FingeringEngine", () => {
       const results = engine.computeFingering(notes, "right");
 
       expect(results).toHaveLength(8);
-      expect(fingers(results)).toEqual([5, 4, 3, 2, 1, 3, 2, 1]);
+      // Standard descending: 5-4-3-2-1-4-3-2 (8 notes from 9-element template)
+      expect(fingers(results)).toEqual([5, 4, 3, 2, 1, 4, 3, 2]);
+    });
+
+    it("assigns standard RH descending fingering with quarter-note spacing", () => {
+      const notes = [72, 71, 69, 67, 65, 64, 62, 60].map((m, i) =>
+        note(m, i * 0.25),
+      );
+      const results = engine.computeFingering(notes, "right");
+      // Standard descending: 5-4-3-2-1-4-3-2 (8 notes)
+      expect(fingers(results)).toEqual([5, 4, 3, 2, 1, 4, 3, 2]);
     });
   });
 

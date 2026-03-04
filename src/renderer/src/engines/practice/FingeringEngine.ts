@@ -25,7 +25,7 @@ export const FINGER_REACH: Record<Finger, number> = {
 /** Standard right-hand major scale ascending fingering (starting from tonic) */
 const RH_SCALE_UP: Finger[] = [1, 2, 3, 1, 2, 3, 4, 5];
 /** Standard right-hand major scale descending fingering (from octave down) */
-const RH_SCALE_DOWN: Finger[] = [5, 4, 3, 2, 1, 3, 2, 1];
+const RH_SCALE_DOWN: Finger[] = [5, 4, 3, 2, 1, 4, 3, 2, 1];
 /** Standard left-hand major scale ascending fingering */
 const LH_SCALE_UP: Finger[] = [5, 4, 3, 2, 1, 3, 2, 1];
 /** Standard left-hand major scale descending fingering */
