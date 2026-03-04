@@ -35,7 +35,7 @@ Gemini 說了
 
 跨平台考量：Chromium 內核對 Web MIDI API 支援度極佳。如果你使用 Electron 打包，跨平台完全不是問題。
 
-雷區提醒 (Windows)：Mac 內建支援 BLE MIDI，配對後 Chrome 直接抓得到。但 Windows 的傳統 Win32 API 對 BLE MIDI 支援較弱，有時可能需要使用者額外安裝 MIDIberry 或 KORG BLE-MIDI Driver 作為橋接，這點在 README 中提醒使用者即可。
+藍牙 MIDI：Windows 10/11、macOS、Linux 均原生支援 BLE MIDI。Rexiano 透過 Web Bluetooth API（`BleMidiManager.ts`）直接連接 BLE MIDI 裝置，無需任何額外橋接軟體。
 
 2. Python 的作法
    在 Python 生態系中，通常使用 mido 搭配 python-rtmidi 底層庫。

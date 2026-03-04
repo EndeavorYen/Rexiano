@@ -128,7 +128,7 @@
   - [x] `ConnectionStatus.tsx` 連線狀態指示（綠/灰/紅燈）
 - [x] Electron MIDI 權限自動核准（`midiDeviceHandlers.ts`）
 - [x] 測試：MidiDeviceManager, MidiInputParser, MidiOutputSender, useMidiDeviceStore, ConnectionStatus
-- [ ] Windows BLE MIDI 橋接說明文件 → **移至 Phase 9**
+- [x] BLE MIDI 原生支援（BleMidiManager.ts + Web Bluetooth API，Windows/macOS/Linux 均免橋接）
 - [x] 連線測試按鈕（DeviceSelector test button, 3-state cycle: idle → playing → ok）
 - [x] 延遲補償設定（SettingsPanel 0-100ms slider, WaitMode 整合）
 
@@ -517,7 +517,7 @@
   - [x] Linux: desktop entry（自動從 mimeTypes + category 產生）
 - [ ] README / 文件完善
   - [ ] 安裝指南（各平台）
-  - [ ] Windows BLE MIDI 橋接教學
+  - [x] BLE MIDI 已原生支援，無需額外橋接教學
   - [ ] 開發者貢獻指南 (CONTRIBUTING.md)
   - [ ] 功能截圖 / GIF
 
