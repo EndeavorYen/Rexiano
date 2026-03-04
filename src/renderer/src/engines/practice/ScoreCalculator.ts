@@ -30,6 +30,29 @@ export class ScoreCalculator {
     this._currentStreak = 0;
   }
 
+  /**
+   * Record a successful chord hit (all notes in the chord were played).
+   * Streak increments by 1 per chord event, not per individual note.
+   */
+  chordHit(noteCount: number): void {
+    this._totalNotes += noteCount;
+    this._hitNotes += noteCount;
+    this._currentStreak++;
+    if (this._currentStreak > this._bestStreak) {
+      this._bestStreak = this._currentStreak;
+    }
+  }
+
+  /**
+   * Record a missed chord (not all notes were played in time).
+   * Streak resets on any missed chord.
+   */
+  chordMiss(noteCount: number): void {
+    this._totalNotes += noteCount;
+    this._missedNotes += noteCount;
+    this._currentStreak = 0;
+  }
+
   /** Get the current score snapshot */
   getScore(): PracticeScore {
     return {
