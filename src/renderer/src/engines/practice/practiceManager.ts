@@ -3,12 +3,14 @@ import { WaitMode } from "./WaitMode";
 import { SpeedController } from "./SpeedController";
 import { LoopController } from "./LoopController";
 import { ScoreCalculator } from "./ScoreCalculator";
+import { FreeScorer } from "./FreeScorer";
 
 export interface PracticeEngines {
   waitMode: WaitMode | null;
   speedController: SpeedController | null;
   loopController: LoopController | null;
   scoreCalculator: ScoreCalculator | null;
+  freeScorer: FreeScorer | null;
 }
 
 /**
@@ -21,6 +23,7 @@ const _engines: PracticeEngines = {
   speedController: null,
   loopController: null,
   scoreCalculator: null,
+  freeScorer: null,
 };
 
 /**
@@ -33,6 +36,7 @@ export function initPracticeEngines(): void {
   _engines.speedController = new SpeedController();
   _engines.loopController = new LoopController();
   _engines.scoreCalculator = new ScoreCalculator();
+  _engines.freeScorer = new FreeScorer();
 }
 
 /** Returns the stable singleton object (same reference every call). */
@@ -53,4 +57,7 @@ export function disposePracticeEngines(): void {
   _engines.loopController = null;
   _engines.scoreCalculator?.reset();
   _engines.scoreCalculator = null;
+  _engines.freeScorer?.clearCallbacks();
+  _engines.freeScorer?.stop();
+  _engines.freeScorer = null;
 }

@@ -50,10 +50,12 @@ export function createTickerUpdate(
 
     const settingsState = useSettingsStore.getState();
     const showFingering = settingsState.showFingering;
+    const practiceMode = usePracticeStore.getState().mode;
+    const isWatchMode = practiceMode === "watch";
 
     if (playState.isPlaying) {
       // ── WaitMode gate: if waiting, freeze time ──
-      if (usePracticeStore.getState().mode === "wait" && waitMode) {
+      if (practiceMode === "wait" && waitMode) {
         const shouldContinue = waitMode.tick(
           effectiveTime,
           settingsState.latencyCompensation,
@@ -68,7 +70,7 @@ export function createTickerUpdate(
             pps: effectivePps,
             currentTime: effectiveTime,
           };
-          noteRenderer.update(songState.song, vp, showFingering);
+          noteRenderer.update(songState.song, vp, showFingering, false);
           return;
         }
       }
@@ -109,7 +111,7 @@ export function createTickerUpdate(
       currentTime: effectiveTime,
     };
 
-    noteRenderer.update(songState.song, vp, showFingering);
+    noteRenderer.update(songState.song, vp, showFingering, isWatchMode);
 
     // Only notify React when active notes actually change
     if (onActiveNotesChangeRef.current) {

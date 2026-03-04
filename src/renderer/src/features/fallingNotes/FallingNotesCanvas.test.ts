@@ -1,4 +1,4 @@
-import { describe, test, expect, vi, beforeEach } from "vitest";
+import { describe, test, expect, vi, beforeEach, afterEach } from "vitest";
 
 // --- Mock pixi.js ---
 
@@ -140,6 +140,10 @@ describe("FallingNotesCanvas ticker logic (via createTickerUpdate)", () => {
   let noteRenderer: NoteRenderer;
 
   beforeEach(() => {
+    // Stub requestAnimationFrame/cancelAnimationFrame for Watch mode glow animations
+    vi.stubGlobal("requestAnimationFrame", () => 0);
+    vi.stubGlobal("cancelAnimationFrame", () => undefined);
+
     noteRenderer = new NoteRenderer(new Container());
     noteRenderer.init(SCREEN.width);
 
@@ -155,6 +159,10 @@ describe("FallingNotesCanvas ticker logic (via createTickerUpdate)", () => {
       }),
     };
     songStoreState = { song: null };
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
   });
 
   test("does nothing when no song is loaded", () => {

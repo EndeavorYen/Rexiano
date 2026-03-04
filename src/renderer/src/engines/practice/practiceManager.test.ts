@@ -17,15 +17,17 @@ describe("practiceManager", () => {
     expect(e.speedController).toBeNull();
     expect(e.loopController).toBeNull();
     expect(e.scoreCalculator).toBeNull();
+    expect(e.freeScorer).toBeNull();
   });
 
-  it("initializes all four engines", () => {
+  it("initializes all engines", () => {
     initPracticeEngines();
     const e = getPracticeEngines();
     expect(e.waitMode).not.toBeNull();
     expect(e.speedController).not.toBeNull();
     expect(e.loopController).not.toBeNull();
     expect(e.scoreCalculator).not.toBeNull();
+    expect(e.freeScorer).not.toBeNull();
   });
 
   it("dispose nulls everything", () => {
