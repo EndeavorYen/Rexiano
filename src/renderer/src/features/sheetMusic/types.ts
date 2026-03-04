@@ -26,6 +26,8 @@ export interface NotationNote {
   vexDuration: string;
   /** Whether this note is tied to the next */
   tied: boolean;
+  /** Whether this is a rest (no pitch) */
+  isRest?: boolean;
 }
 
 /** A measure (bar) of quantized notes */
@@ -36,8 +38,8 @@ export interface NotationMeasure {
   timeSignatureTop: number;
   /** Time signature denominator */
   timeSignatureBottom: number;
-  /** Key signature (number of sharps/flats, negative = flats) */
-  keySignature: number;
+  /** Key signature as VexFlow key name (e.g. "C", "F", "Bb", "D") */
+  keySignature: string;
   /** Notes in the treble clef (MIDI >= 60) */
   trebleNotes: NotationNote[];
   /** Notes in the bass clef (MIDI < 60) */

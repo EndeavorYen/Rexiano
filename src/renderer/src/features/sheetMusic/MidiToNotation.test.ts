@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 import {
   midiToVexKey,
+  keySigToVexKey,
   quantizeToGrid,
   ticksToVexDuration,
   convertToNotation,
@@ -116,6 +117,81 @@ describe("MidiToNotation", () => {
       const result = convertToNotation(notes, 120, 480);
 
       expect(result.measures[0].trebleNotes[0].vexKey).toBe("c/4");
+    });
+  });
+
+  describe("keySigToVexKey", () => {
+    it('returns "C" for key signature 0', () => {
+      expect(keySigToVexKey(0)).toBe("C");
+    });
+
+    it('returns "F" for key signature -1 (one flat)', () => {
+      expect(keySigToVexKey(-1)).toBe("F");
+    });
+
+    it('returns "G" for key signature 1 (one sharp)', () => {
+      expect(keySigToVexKey(1)).toBe("G");
+    });
+
+    it('returns "Eb" for key signature -3 (three flats)', () => {
+      expect(keySigToVexKey(-3)).toBe("Eb");
+    });
+
+    it('returns "C" for out-of-range key signature', () => {
+      expect(keySigToVexKey(10)).toBe("C");
+      expect(keySigToVexKey(-10)).toBe("C");
+    });
+  });
+
+  describe("key signature support", () => {
+    it("passes key signature to VexFlow measure data", () => {
+      const notes = [
+        { midi: 60, name: "C4", time: 0, duration: 0.5, velocity: 80 },
+      ];
+      // F major (keySig = -1)
+      const result = convertToNotation(notes, 120, 480, 4, 4, -1);
+
+      expect(result.measures[0].keySignature).toBe("F");
+    });
+
+    it('uses C major by default when no key signature provided', () => {
+      const notes = [
+        { midi: 60, name: "C4", time: 0, duration: 0.5, velocity: 80 },
+      ];
+      const result = convertToNotation(notes, 120, 480);
+
+      expect(result.measures[0].keySignature).toBe("C");
+    });
+
+    it("spells notes with flats in flat key signatures", () => {
+      const notes = [
+        // Bb4 (MIDI 70) should be spelled "bb/4" not "a#/4" in F major
+        { midi: 70, name: "Bb4", time: 0, duration: 0.5, velocity: 80 },
+      ];
+      const result = convertToNotation(notes, 120, 480, 4, 4, -1);
+
+      expect(result.measures[0].trebleNotes[0].vexKey).toBe("bb/4");
+    });
+  });
+
+  describe("dotted notes", () => {
+    const TPQ = 480;
+
+    it('returns "qd" for dotted quarter (1.5-beat duration)', () => {
+      expect(ticksToVexDuration(720, TPQ)).toBe("qd");
+    });
+
+    it('returns "hd" for dotted half (3-beat duration)', () => {
+      expect(ticksToVexDuration(1440, TPQ)).toBe("hd");
+    });
+
+    it('returns "8d" for dotted eighth (0.625-beat duration)', () => {
+      // 300 ticks / 480 TPQ = 0.625 ratio, between 8d threshold (0.5625) and q threshold (0.75)
+      expect(ticksToVexDuration(300, TPQ)).toBe("8d");
+    });
+
+    it('returns "wd" for dotted whole (6-beat duration)', () => {
+      expect(ticksToVexDuration(2880, TPQ)).toBe("wd");
     });
   });
 });

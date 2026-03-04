@@ -12,7 +12,7 @@ describe("CursorSync", () => {
       index: i,
       timeSignatureTop: 4,
       timeSignatureBottom: 4,
-      keySignature: 0,
+      keySignature: "C",
       trebleNotes: [],
       bassNotes: [],
     })),
