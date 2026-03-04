@@ -26,6 +26,9 @@ const mockManager = {
   onDeviceListChange: vi.fn(),
   onActiveInputChange: vi.fn(),
   onActiveOutputChange: vi.fn(),
+  onDisconnect: vi.fn(),
+  onReconnect: vi.fn(),
+  onReconnectFailed: vi.fn(),
   dispose: vi.fn(),
 };
 

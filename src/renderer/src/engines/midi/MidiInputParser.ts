@@ -34,6 +34,9 @@ export class MidiInputParser {
   private _onNoteOff: NoteOffCallback | null = null;
   private _onCC: CCCallback | null = null;
 
+  /** Channel filter: null = accept all channels, 0-15 = specific channel */
+  private _channelFilter: number | null = null;
+
   /** Bound handler reference for cleanup */
   private _boundMessageHandler = this._handleMessage.bind(this);
 
@@ -48,6 +51,19 @@ export class MidiInputParser {
 
   onCC(cb: CCCallback | null): void {
     this._onCC = cb;
+  }
+
+  /**
+   * Set a MIDI channel filter.
+   * @param channel - 0-15 for a specific channel, or null to accept all channels
+   */
+  setChannelFilter(channel: number | null): void {
+    this._channelFilter = channel;
+  }
+
+  /** Get the current channel filter (null = all channels) */
+  get channelFilter(): number | null {
+    return this._channelFilter;
   }
 
   // ─── Attach / Detach ────────────────────────────
@@ -77,6 +93,7 @@ export class MidiInputParser {
     this._onNoteOn = null;
     this._onNoteOff = null;
     this._onCC = null;
+    this._channelFilter = null;
   }
 
   // ─── Private ────────────────────────────────────
@@ -86,6 +103,10 @@ export class MidiInputParser {
 
     const status = data[0];
     const type = statusType(status);
+
+    // Apply channel filter before processing
+    const channel = status & 0x0f;
+    if (this._channelFilter !== null && channel !== this._channelFilter) return;
 
     switch (type) {
       case STATUS_NOTE_ON: {

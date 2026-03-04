@@ -211,10 +211,10 @@ describe("useSettingsStore", () => {
       expect(store.getState().latencyCompensation).toBe(0);
     });
 
-    test("latencyCompensation is clamped to 100 maximum", async () => {
+    test("latencyCompensation is clamped to 200 maximum", async () => {
       const store = await getStore();
-      store.getState().setLatencyCompensation(200);
-      expect(store.getState().latencyCompensation).toBe(100);
+      store.getState().setLatencyCompensation(300);
+      expect(store.getState().latencyCompensation).toBe(200);
     });
 
     test("latencyCompensation is rounded to integer", async () => {

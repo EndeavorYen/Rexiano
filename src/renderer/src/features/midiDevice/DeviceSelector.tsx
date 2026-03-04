@@ -1,4 +1,4 @@
-import { useEffect, useCallback, useState, useRef } from "react";
+import { useEffect, useCallback, useState, useRef, startTransition } from "react";
 import { Bluetooth } from "lucide-react";
 import { useMidiDeviceStore } from "@renderer/stores/useMidiDeviceStore";
 import { MidiDeviceManager } from "@renderer/engines/midi/MidiDeviceManager";
@@ -6,6 +6,7 @@ import { MidiOutputSender } from "@renderer/engines/midi/MidiOutputSender";
 import { ConnectionStatus } from "./ConnectionStatus";
 import { sendTestNote, type TestButtonState } from "./midiTestUtils";
 import { useTranslation } from "@renderer/i18n/useTranslation";
+import { spellNote } from "@renderer/utils/enharmonicSpelling";
 
 export function DeviceSelector(): React.JSX.Element {
   const { t } = useTranslation();
@@ -28,15 +29,40 @@ export function DeviceSelector(): React.JSX.Element {
   const [testState, setTestState] = useState<TestButtonState>("idle");
   const okTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  // MIDI input test state
+  const lastNoteOn = useMidiDeviceStore((s) => s.lastNoteOn);
+  const [testNote, setTestNote] = useState<{
+    name: string;
+    velocity: number;
+  } | null>(null);
+  const lastNoteTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Update test note display when a new note is received
+  useEffect(() => {
+    if (!lastNoteOn || !isConnected) return;
+    if (lastNoteTimerRef.current) clearTimeout(lastNoteTimerRef.current);
+    startTransition(() => {
+      setTestNote({
+        name: spellNote(lastNoteOn.midi),
+        velocity: lastNoteOn.velocity,
+      });
+    });
+    lastNoteTimerRef.current = setTimeout(() => {
+      startTransition(() => setTestNote(null));
+      lastNoteTimerRef.current = null;
+    }, 3000);
+  }, [lastNoteOn, isConnected]);
+
   // Auto-init MIDI access on mount
   useEffect(() => {
     connect();
   }, [connect]);
 
-  // Cleanup ok timer on unmount
+  // Cleanup timers on unmount
   useEffect(() => {
     return () => {
       if (okTimerRef.current) clearTimeout(okTimerRef.current);
+      if (lastNoteTimerRef.current) clearTimeout(lastNoteTimerRef.current);
     };
   }, []);
 
@@ -180,6 +206,49 @@ export function DeviceSelector(): React.JSX.Element {
             </button>
           )}
         </>
+      )}
+
+      {/* MIDI input test display — visible when an input device is connected */}
+      {isConnected && selectedInputId && (
+        <div
+          className="flex items-center gap-1.5 rounded-lg px-2 py-1"
+          style={{
+            background:
+              "color-mix(in srgb, var(--color-surface) 75%, transparent)",
+            border: `1px solid ${testNote ? "var(--color-accent)" : "var(--color-border)"}`,
+            transition: "border-color 0.2s",
+          }}
+          data-testid="midi-input-test"
+        >
+          <span
+            className="text-[10px] font-body"
+            style={{ color: "var(--color-text-muted)" }}
+          >
+            {t("midi.testKeyboard")}
+          </span>
+          {testNote ? (
+            <span
+              className="text-xs font-mono font-semibold tabular-nums"
+              style={{ color: "var(--color-accent)" }}
+              data-testid="midi-test-note"
+            >
+              {testNote.name}
+              <span
+                className="text-[10px] font-normal ml-1"
+                style={{ color: "var(--color-text-muted)" }}
+              >
+                v{testNote.velocity}
+              </span>
+            </span>
+          ) : (
+            <span
+              className="text-[10px] italic"
+              style={{ color: "var(--color-text-muted)" }}
+            >
+              {t("midi.pressAKey")}
+            </span>
+          )}
+        </div>
       )}
 
       {/* Connect / Disconnect button */}

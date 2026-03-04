@@ -22,6 +22,15 @@ interface MidiDeviceState {
   connectionError: string | null;
   /** Real-time set of MIDI notes currently being pressed */
   activeNotes: Set<number>;
+  /** Last received note-on event (for input testing display) */
+  lastNoteOn: { midi: number; velocity: number } | null;
+
+  /** MIDI channel filter: null = all channels, 0-15 = specific channel */
+  midiChannel: number | null;
+  /** Whether auto-reconnection is in progress */
+  reconnecting: boolean;
+  /** Number of reconnect attempts made */
+  reconnectAttempts: number;
 
   // ─── BLE MIDI state ─────────────────────────────
   /** Bluetooth MIDI connection status */
@@ -39,11 +48,13 @@ interface MidiDeviceState {
   /** Select an output device by ID */
   selectOutput: (deviceId: string | null) => void;
   /** Handle a MIDI note-on event */
-  onNoteOn: (midi: number) => void;
+  onNoteOn: (midi: number, velocity?: number) => void;
   /** Handle a MIDI note-off event */
   onNoteOff: (midi: number) => void;
   /** Replace the device lists (called by MidiDeviceManager callback) */
   setDeviceLists: (inputs: MidiDeviceInfo[], outputs: MidiDeviceInfo[]) => void;
+  /** Set the MIDI channel filter (null = all, 0-15 = specific) */
+  setMidiChannel: (channel: number | null) => void;
   /** Scan and connect to a BLE MIDI device via Bluetooth */
   connectBluetooth: () => Promise<void>;
   /** Disconnect BLE MIDI device */
@@ -77,23 +88,26 @@ export function setMidiCCHandler(
 let _bleManager: BleMidiManager | null = null;
 
 function getParser(store: {
-  onNoteOn: (midi: number) => void;
+  onNoteOn: (midi: number, velocity?: number) => void;
   onNoteOff: (midi: number) => void;
 }): MidiInputParser {
   if (!_parser) {
     _parser = new MidiInputParser();
-    _parser.onNoteOn((midi) => store.onNoteOn(midi));
+    _parser.onNoteOn((midi, velocity) => store.onNoteOn(midi, velocity));
     _parser.onNoteOff((midi) => store.onNoteOff(midi));
     if (_pendingCCHandler) {
       _parser.onCC(_pendingCCHandler);
     }
+    // Apply the current channel filter from the store
+    const { midiChannel } = useMidiDeviceStore.getState();
+    _parser.setChannelFilter(midiChannel);
   }
   return _parser;
 }
 
 /** Attach the parser to the currently active MIDI input device */
 function syncParserToActiveInput(store: {
-  onNoteOn: (midi: number) => void;
+  onNoteOn: (midi: number, velocity?: number) => void;
   onNoteOff: (midi: number) => void;
 }): void {
   const manager = MidiDeviceManager.getInstance();
@@ -114,6 +128,10 @@ export const useMidiDeviceStore = create<MidiDeviceState>()((set, get) => ({
   isConnected: false,
   connectionError: null,
   activeNotes: new Set(),
+  lastNoteOn: null,
+  midiChannel: null,
+  reconnecting: false,
+  reconnectAttempts: 0,
   bleStatus: "idle" as BleMidiStatus,
   bleDeviceName: null,
 
@@ -132,12 +150,26 @@ export const useMidiDeviceStore = create<MidiDeviceState>()((set, get) => ({
         isConnected: device !== null,
         connectionError: null,
         activeNotes: new Set(), // Clear notes on device change
+        lastNoteOn: null,
       });
       syncParserToActiveInput(get());
     });
 
     manager.onActiveOutputChange((device) => {
       set({ selectedOutputId: device?.id ?? null });
+    });
+
+    // Wire up reconnection callbacks
+    manager.onDisconnect(() => {
+      set({ reconnecting: true, reconnectAttempts: 0 });
+    });
+
+    manager.onReconnect(() => {
+      set({ reconnecting: false, reconnectAttempts: 0 });
+    });
+
+    manager.onReconnectFailed(() => {
+      set({ reconnecting: false });
     });
 
     try {
@@ -176,6 +208,9 @@ export const useMidiDeviceStore = create<MidiDeviceState>()((set, get) => ({
     manager.onDeviceListChange(null);
     manager.onActiveInputChange(null);
     manager.onActiveOutputChange(null);
+    manager.onDisconnect(null);
+    manager.onReconnect(null);
+    manager.onReconnectFailed(null);
 
     // Clean up parser
     if (_parser) {
@@ -189,6 +224,8 @@ export const useMidiDeviceStore = create<MidiDeviceState>()((set, get) => ({
       isConnected: false,
       connectionError: null,
       activeNotes: new Set(),
+      reconnecting: false,
+      reconnectAttempts: 0,
     });
   },
 
@@ -219,10 +256,13 @@ export const useMidiDeviceStore = create<MidiDeviceState>()((set, get) => ({
     }
   },
 
-  onNoteOn: (midi) => {
+  onNoteOn: (midi, velocity) => {
     const next = new Set(get().activeNotes);
     next.add(midi);
-    set({ activeNotes: next });
+    set({
+      activeNotes: next,
+      lastNoteOn: { midi, velocity: velocity ?? 127 },
+    });
   },
 
   onNoteOff: (midi) => {
@@ -233,6 +273,13 @@ export const useMidiDeviceStore = create<MidiDeviceState>()((set, get) => ({
 
   setDeviceLists: (inputs, outputs) => {
     set({ inputs, outputs });
+  },
+
+  setMidiChannel: (channel) => {
+    set({ midiChannel: channel });
+    if (_parser) {
+      _parser.setChannelFilter(channel);
+    }
   },
 
   connectBluetooth: async () => {
