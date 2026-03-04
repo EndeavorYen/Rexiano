@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState } from "react";
 import { useTranslation } from "@renderer/i18n/useTranslation";
 
 const STORAGE_KEY = "rexiano-onboarding-completed";
@@ -18,10 +18,26 @@ export function OnboardingGuide(): React.JSX.Element {
   const { t } = useTranslation();
 
   const steps: OnboardingStep[] = [
-    { title: t("onboarding.step1.title"), description: t("onboarding.step1.desc"), icon: "\uD83C\uDFB5" },
-    { title: t("onboarding.step2.title"), description: t("onboarding.step2.desc"), icon: "\u25B6\uFE0F" },
-    { title: t("onboarding.step3.title"), description: t("onboarding.step3.desc"), icon: "\uD83C\uDFAF" },
-    { title: t("onboarding.step4.title"), description: t("onboarding.step4.desc"), icon: "\uD83C\uDFB9" },
+    {
+      title: t("onboarding.step1.title"),
+      description: t("onboarding.step1.desc"),
+      icon: "\uD83C\uDFB5",
+    },
+    {
+      title: t("onboarding.step2.title"),
+      description: t("onboarding.step2.desc"),
+      icon: "\u25B6\uFE0F",
+    },
+    {
+      title: t("onboarding.step3.title"),
+      description: t("onboarding.step3.desc"),
+      icon: "\uD83C\uDFAF",
+    },
+    {
+      title: t("onboarding.step4.title"),
+      description: t("onboarding.step4.desc"),
+      icon: "\uD83C\uDFB9",
+    },
   ];
   const [visible, setVisible] = useState(() => {
     try {
@@ -33,26 +49,26 @@ export function OnboardingGuide(): React.JSX.Element {
 
   const [currentStep, setCurrentStep] = useState(0);
 
-  const markComplete = useCallback(() => {
+  const markComplete = (): void => {
     try {
       localStorage.setItem(STORAGE_KEY, "1");
     } catch {
       /* noop */
     }
     setVisible(false);
-  }, []);
+  };
 
-  const handleNext = useCallback(() => {
+  const handleNext = (): void => {
     if (currentStep < steps.length - 1) {
       setCurrentStep((s) => s + 1);
     } else {
       markComplete();
     }
-  }, [currentStep, markComplete]);
+  };
 
-  const handleSkip = useCallback(() => {
+  const handleSkip = (): void => {
     markComplete();
-  }, [markComplete]);
+  };
 
   if (!visible) return <></>;
 

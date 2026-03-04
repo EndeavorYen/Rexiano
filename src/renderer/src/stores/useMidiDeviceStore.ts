@@ -64,7 +64,9 @@ let _pendingCCHandler: ((cc: number, value: number) => void) | null = null;
  * Safe to call before or after the parser is created — the handler is stored
  * and applied when the parser initializes.
  */
-export function setMidiCCHandler(cb: ((cc: number, value: number) => void) | null): void {
+export function setMidiCCHandler(
+  cb: ((cc: number, value: number) => void) | null,
+): void {
   _pendingCCHandler = cb;
   if (_parser) {
     _parser.onCC(cb);

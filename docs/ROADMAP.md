@@ -1,6 +1,6 @@
 # Rexiano — 開發路線圖與追蹤清單
 
-> **最後更新**: 2026-03-03
+> **最後更新**: 2026-03-05
 >
 > 詳細設計請參考 [DESIGN.md](./DESIGN.md)
 
@@ -287,6 +287,32 @@
   - [x] 初期兩語言：English / 繁體中文（91 翻譯鍵值）
   - [x] Settings 語言切換（Language tab + Globe icon）
   - [x] I18nProvider mounted in main.tsx
+
+### Sprint 6 — 鋼琴老師審查 Phase 1（30 項高嚴重度修正）
+
+> 設計文件：`docs/plans/2026-03-04-teacher-audit-phase1-design.md`
+> 實作計畫：`docs/plans/2026-03-04-teacher-audit-phase1-plan.md`
+
+- [x] 升降音拼寫修正（根據調號顯示 # 或 b）
+- [x] MIDI 調號解析（ParsedSong.keySignatures）
+- [x] 下落音符使用調號感知的升降音拼寫
+- [x] 五線譜調號顯示
+- [x] 五線譜附點音符支援
+- [x] 五線譜跨小節連結線
+- [x] 五線譜休止符插入
+- [x] 五線譜多速度標記 + 智慧譜號分配
+- [x] 修正 showNoteLabels 未接線至鋼琴鍵盤的 bug
+- [x] 新手引導 i18n 國際化
+- [x] 中文術語改善（遊戲用語→教學用語、兒童友善提示）
+- [x] UI 縮放系統（一般/大/特大，方便幼兒使用）
+- [x] 修正降音階指法模板
+- [x] 拇指避免落在黑鍵
+- [x] 雙軌曲目的手部分配改用軌道索引
+- [x] 等待模式和弦分組（80ms 窗口）+ 10 秒超時
+- [x] 和弦層級計分（連擊以和弦事件計算）
+- [x] 延音踏板支援（MIDI CC64）
+- [x] 歌曲時長元資料修正 + 片段標記
+- [x] BuiltinSongMeta 新增 source 欄位
 
 ### Synthesia 對照表
 
