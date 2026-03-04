@@ -22,6 +22,7 @@ const SHORTCUT_BLOCKING_OVERLAY_SELECTOR = [
   "[data-testid='insights-modal']",
   "[data-testid='statistics-page']",
   "[data-testid='celebration-overlay']",
+  "[data-testid='count-in-overlay']",
 ].join(", ");
 
 /** Whether the shortcut help overlay is currently shown (toggled by ?) */

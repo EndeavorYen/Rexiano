@@ -45,6 +45,7 @@ import { usePracticeStore } from "./stores/usePracticeStore";
 import { MainMenu } from "./features/mainMenu/MainMenu";
 import { ModeSelectionModal } from "./features/practice/ModeSelectionModal";
 import { CelebrationOverlay } from "./features/practice/CelebrationOverlay";
+import { CountInOverlay } from "./features/practice/CountInOverlay";
 import { StatisticsPage } from "./features/statistics/StatisticsPage";
 import { getPracticeEngines } from "./engines/practice/practiceManager";
 import { OnboardingGuide } from "./features/onboarding/OnboardingGuide";
@@ -126,12 +127,14 @@ function App(): React.JSX.Element {
 
   // ─── UI scale: sync data attribute to <html> ─────────
   const uiScale = useSettingsStore((s) => s.uiScale);
+  const countInBeats = useSettingsStore((s) => s.countInBeats);
   useEffect(() => {
     document.documentElement.setAttribute("data-ui-scale", uiScale);
   }, [uiScale]);
 
-  // ─── Mode selection + celebration + stats flow ────────
+  // ─── Mode selection + count-in + celebration + stats flow ────────
   const [showModeModal, setShowModeModal] = useState(false);
+  const [countInActive, setCountInActive] = useState(false);
   const [showCelebration, setShowCelebration] = useState(false);
   const [showStats, setShowStats] = useState(false);
   const mode = usePracticeStore((s) => s.mode);
@@ -188,9 +191,22 @@ function App(): React.JSX.Element {
     usePracticeStore.getState().setMode(mode);
     setShowModeModal(false);
     if (modeSelectTimerRef.current) clearTimeout(modeSelectTimerRef.current);
-    modeSelectTimerRef.current = setTimeout(() => {
-      usePlaybackStore.getState().setPlaying(true);
-    }, 150);
+    const beats = useSettingsStore.getState().countInBeats;
+    if (beats > 0) {
+      // Show count-in overlay; playback starts when it completes
+      modeSelectTimerRef.current = setTimeout(() => {
+        setCountInActive(true);
+      }, 150);
+    } else {
+      modeSelectTimerRef.current = setTimeout(() => {
+        usePlaybackStore.getState().setPlaying(true);
+      }, 150);
+    }
+  }, []);
+
+  const handleCountInComplete = useCallback(() => {
+    setCountInActive(false);
+    usePlaybackStore.getState().setPlaying(true);
   }, []);
 
   const handlePracticeAgain = useCallback(() => {
@@ -1243,6 +1259,14 @@ function App(): React.JSX.Element {
             height={keyboardHeight}
             showLabels={showNoteLabels}
             compactLabels={compactKeyLabels}
+          />
+
+          {/* Count-in overlay (shown before playback starts) */}
+          <CountInOverlay
+            visible={countInActive}
+            bpm={effectiveBpm ?? 120}
+            countInBeats={countInBeats}
+            onComplete={handleCountInComplete}
           />
 
           {/* Mode selection modal (shown when a song first loads) */}
