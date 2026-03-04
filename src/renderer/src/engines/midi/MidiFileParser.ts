@@ -5,6 +5,7 @@ import type {
   ParsedNote,
   TempoEvent,
   TimeSignatureEvent,
+  KeySignatureEvent,
 } from "./types";
 
 /**
@@ -51,6 +52,20 @@ export function parseMidiFile(fileName: string, data: number[]): ParsedSong {
     }),
   );
 
+  // @tonejs/midi stores key as string (e.g. "C", "G", "Eb") and scale as string ("major"/"minor").
+  // Convert to numeric representation: key = number of sharps/flats, scale = 0 (major) / 1 (minor).
+  const keyNameToSharps: Record<string, number> = {
+    Cb: -7, Gb: -6, Db: -5, Ab: -4, Eb: -3, Bb: -2, F: -1,
+    C: 0, G: 1, D: 2, A: 3, E: 4, B: 5, "F#": 6, "C#": 7,
+  };
+  const keySignatures: KeySignatureEvent[] = (midi.header.keySignatures ?? []).map(
+    (ks) => ({
+      time: midi.header.ticksToSeconds(ks.ticks),
+      key: keyNameToSharps[ks.key] ?? 0,
+      scale: ks.scale === "minor" ? 1 : 0,
+    }),
+  );
+
   const noteCount = tracks.reduce((sum, track) => sum + track.notes.length, 0);
 
   // Use the end time of the last audible note instead of midi.duration,
@@ -67,6 +82,7 @@ export function parseMidiFile(fileName: string, data: number[]): ParsedSong {
     tracks,
     tempos,
     timeSignatures,
+    keySignatures,
     noteCount,
   };
 }

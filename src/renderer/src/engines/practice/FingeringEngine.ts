@@ -36,6 +36,14 @@ const MAJOR_SCALE_INTERVALS = [0, 2, 4, 5, 7, 9, 11, 12];
 /** Natural minor scale intervals in semitones from root */
 const MINOR_SCALE_INTERVALS = [0, 2, 3, 5, 7, 8, 10, 12];
 
+/** Pitch classes that correspond to black keys (C#, D#, F#, G#, A#) */
+const BLACK_KEY_PCS = new Set([1, 3, 6, 8, 10]);
+
+/** Check whether a MIDI note falls on a black key */
+function isBlackKey(midi: number): boolean {
+  return BLACK_KEY_PCS.has(midi % 12);
+}
+
 // ── Helpers ────────────────────────────────────────────────────────────
 
 /** Check whether a sequence of MIDI notes matches a scale pattern (ascending or descending) */
@@ -401,6 +409,11 @@ export class FingeringEngine {
       results[0].finger = overallDirection >= 0 ? 5 : 1;
     }
 
+    // Avoid thumb on black keys for the starting note
+    if (results[0].finger === 1 && isBlackKey(results[0].midi)) {
+      results[0].finger = 2;
+    }
+
     for (let i = 1; i < results.length; i++) {
       const prev = results[i - 1];
       const curr = results[i];
@@ -425,6 +438,11 @@ export class FingeringEngine {
 
       // Try to find the next logical finger
       curr.finger = this.nextFinger(prev.finger, interval, hand);
+
+      // Avoid thumb on black keys — shift to finger 2
+      if (curr.finger === 1 && isBlackKey(curr.midi)) {
+        curr.finger = 2;
+      }
     }
   }
 

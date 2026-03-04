@@ -967,6 +967,45 @@ describe("FingeringEngine", () => {
     });
   });
 
+  // ── Thumb-on-black-key avoidance ───────────────────────────────
+
+  describe("thumb-on-black-key avoidance", () => {
+    it("avoids thumb on black keys in ascending stepwise passage (RH)", () => {
+      // C4 C#4 Eb4 F4 F#4 — black keys at midi 61, 63, 66
+      const notes = [60, 61, 63, 65, 66].map((m, i) => note(m, i * 0.3));
+      const results = engine.computeFingering(notes, "right");
+
+      // Finger 1 (thumb) should not land on any black key
+      for (const r of results) {
+        if ([61, 63, 66].includes(r.midi)) {
+          expect(r.finger).not.toBe(1);
+        }
+      }
+    });
+
+    it("avoids thumb on black keys in descending stepwise passage (LH)", () => {
+      // F#4 F4 Eb4 C#4 C4 — black keys at midi 66, 63, 61
+      const notes = [66, 65, 63, 61, 60].map((m, i) => note(m, i * 0.3));
+      const results = engine.computeFingering(notes, "left");
+
+      for (const r of results) {
+        if ([66, 63, 61].includes(r.midi)) {
+          expect(r.finger).not.toBe(1);
+        }
+      }
+    });
+
+    it("avoids thumb on black key even as the starting note", () => {
+      // Start on C#4 (black key) ascending
+      const notes = [61, 62, 64].map((m, i) => note(m, i * 0.3));
+      const results = engine.computeFingering(notes, "right");
+
+      // First note is black key — should not be thumb
+      expect(results[0].midi).toBe(61);
+      expect(results[0].finger).not.toBe(1);
+    });
+  });
+
   // ── Single note via computeFingering ───────────────────────────
 
   describe("computeFingering — single note", () => {

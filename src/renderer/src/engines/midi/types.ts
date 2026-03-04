@@ -42,6 +42,16 @@ export interface TimeSignatureEvent {
   denominator: number;
 }
 
+/** Key signature event */
+export interface KeySignatureEvent {
+  /** Time in seconds */
+  time: number;
+  /** Negative = flats, positive = sharps. E.g., -1 = F major, +1 = G major. */
+  key: number;
+  /** 0 = major, 1 = minor. */
+  scale: number;
+}
+
 /** Complete parsed representation of a MIDI file */
 export interface ParsedSong {
   /** Original file name */
@@ -54,6 +64,8 @@ export interface ParsedSong {
   tempos: TempoEvent[];
   /** Time signature changes */
   timeSignatures: TimeSignatureEvent[];
+  /** Key signature changes */
+  keySignatures: KeySignatureEvent[];
   /** Total number of notes across all tracks */
   noteCount: number;
 }

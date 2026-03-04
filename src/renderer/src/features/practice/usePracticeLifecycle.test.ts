@@ -225,6 +225,7 @@ function makeSong(trackCount = 2): ParsedSong {
     tracks,
     tempos: [{ time: 0, bpm: 120 }],
     timeSignatures: [{ time: 0, numerator: 4, denominator: 4 }],
+    keySignatures: [],
     noteCount: trackCount,
   };
 }

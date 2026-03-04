@@ -53,6 +53,7 @@ const fakeSong: ParsedSong = {
   tracks: [{ name: "Piano", instrument: "Piano", channel: 0, notes: [] }],
   tempos: [{ time: 0, bpm: 120 }],
   timeSignatures: [{ time: 0, numerator: 4, denominator: 4 }],
+  keySignatures: [],
   noteCount: 100,
 };
 

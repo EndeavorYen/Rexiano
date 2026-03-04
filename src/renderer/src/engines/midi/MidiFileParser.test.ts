@@ -40,6 +40,11 @@ function buildMockMidi(overrides: {
     ticks: number;
     timeSignature: [number, number];
   }>;
+  keySignatures?: Array<{
+    ticks: number;
+    key: string;
+    scale: string;
+  }>;
 }) {
   const tracks = (overrides.tracks ?? []).map((t) => ({
     name: t.name ?? "",
@@ -50,6 +55,7 @@ function buildMockMidi(overrides: {
 
   const tempos = overrides.tempos ?? [];
   const timeSignatures = overrides.timeSignatures ?? [];
+  const keySignatures = overrides.keySignatures ?? [];
 
   return {
     tracks,
@@ -57,6 +63,7 @@ function buildMockMidi(overrides: {
     header: {
       tempos,
       timeSignatures,
+      keySignatures,
       ticksToSeconds: vi.fn((ticks: number) => ticks / 480),
     },
   };
@@ -399,5 +406,62 @@ describe("MidiFileParser — parseMidiFile", () => {
     const result = parseMidiFile("bpm-round.mid", []);
 
     expect(result.tempos[0].bpm).toBe(120);
+  });
+
+  describe("key signature parsing", () => {
+    it("includes keySignatures array in ParsedSong", () => {
+      prepareMidi({
+        tracks: [
+          {
+            notes: [
+              { midi: 60, name: "C", octave: 4, time: 0, duration: 1, velocity: 0.5 },
+            ],
+          },
+        ],
+      });
+
+      const result = parseMidiFile("test.mid", []);
+      expect(result.keySignatures).toBeDefined();
+      expect(Array.isArray(result.keySignatures)).toBe(true);
+    });
+
+    it("defaults keySignatures to empty array for files without key events", () => {
+      prepareMidi({
+        tracks: [
+          {
+            notes: [
+              { midi: 60, name: "C", octave: 4, time: 0, duration: 1, velocity: 0.5 },
+            ],
+          },
+        ],
+      });
+
+      const result = parseMidiFile("test.mid", []);
+      expect(result.keySignatures).toEqual([]);
+    });
+
+    it("extracts key signature events with correct time conversion", () => {
+      const mock = prepareMidi({
+        tracks: [
+          {
+            notes: [
+              { midi: 60, name: "C", octave: 4, time: 0, duration: 1, velocity: 0.5 },
+            ],
+          },
+        ],
+        keySignatures: [
+          { ticks: 0, key: "F", scale: "major" },
+          { ticks: 1920, key: "D", scale: "minor" },
+        ],
+      });
+
+      const result = parseMidiFile("keysig.mid", []);
+
+      expect(result.keySignatures).toHaveLength(2);
+      expect(result.keySignatures[0]).toEqual({ time: 0, key: -1, scale: 0 }); // F major
+      expect(result.keySignatures[1]).toEqual({ time: 4, key: 2, scale: 1 }); // D minor, 1920/480 = 4s
+      expect(mock.header.ticksToSeconds).toHaveBeenCalledWith(0);
+      expect(mock.header.ticksToSeconds).toHaveBeenCalledWith(1920);
+    });
   });
 });

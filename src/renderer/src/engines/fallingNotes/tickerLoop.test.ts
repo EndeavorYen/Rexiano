@@ -26,6 +26,7 @@ const mockSong: ParsedSong = {
   noteCount: 1,
   tempos: [{ time: 0, bpm: 120 }],
   timeSignatures: [{ time: 0, numerator: 4, denominator: 4 }],
+  keySignatures: [],
   tracks: [
     {
       name: "Track 0",
