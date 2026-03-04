@@ -181,6 +181,11 @@ export const zhTW: TranslationMap = {
   "settings.common": "常用",
   "settings.compactKeyLabels": "精簡鍵名標籤",
   "settings.compactKeyLabelsDesc": "在窄鍵盤上顯示較少鍵名",
+  "settings.uiScale": "顯示大小",
+  "settings.uiScaleDesc": "放大文字和按鈕，方便小朋友使用",
+  "settings.uiScale.normal": "一般",
+  "settings.uiScale.large": "大",
+  "settings.uiScale.xlarge": "特大",
 
   // ── Fingering ──────────────────────────────────────────────────
   "fingering.label": "指法",

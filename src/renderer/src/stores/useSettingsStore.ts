@@ -7,6 +7,9 @@ import { create } from "zustand";
 import type { PracticeMode } from "@shared/types";
 
 export type Language = "en" | "zh-TW";
+export type UiScale = "normal" | "large" | "xlarge";
+
+const VALID_UI_SCALES: readonly UiScale[] = ["normal", "large", "xlarge"];
 
 const STORAGE_KEY = "rexiano-settings";
 
@@ -44,6 +47,7 @@ interface SettingsState {
   countInBeats: number;
   latencyCompensation: number;
   audioCompatibilityMode: boolean;
+  uiScale: UiScale;
 
   setShowNoteLabels: (v: boolean) => void;
   setShowFallingNoteLabels: (v: boolean) => void;
@@ -58,6 +62,7 @@ interface SettingsState {
   setCountInBeats: (v: number) => void;
   setLatencyCompensation: (ms: number) => void;
   setAudioCompatibilityMode: (v: boolean) => void;
+  setUiScale: (scale: UiScale) => void;
 }
 
 interface PersistedSettings {
@@ -74,6 +79,7 @@ interface PersistedSettings {
   countInBeats?: number;
   latencyCompensation?: number;
   audioCompatibilityMode?: boolean;
+  uiScale?: UiScale;
 }
 
 const defaults: PersistedSettings = {
@@ -90,6 +96,7 @@ const defaults: PersistedSettings = {
   countInBeats: 4,
   latencyCompensation: 0,
   audioCompatibilityMode: false,
+  uiScale: "normal",
 };
 
 function loadSavedSettings(): PersistedSettings {
@@ -132,6 +139,9 @@ export const useSettingsStore = create<SettingsState>()((set) => {
     countInBeats: saved.countInBeats!,
     latencyCompensation: saved.latencyCompensation!,
     audioCompatibilityMode: saved.audioCompatibilityMode!,
+    uiScale: VALID_UI_SCALES.includes(saved.uiScale as UiScale)
+      ? (saved.uiScale as UiScale)
+      : "normal",
 
     setShowNoteLabels: (v) => {
       persist({ showNoteLabels: v });
@@ -188,6 +198,11 @@ export const useSettingsStore = create<SettingsState>()((set) => {
     setAudioCompatibilityMode: (v) => {
       persist({ audioCompatibilityMode: v });
       set({ audioCompatibilityMode: v });
+    },
+    setUiScale: (scale) => {
+      if (!VALID_UI_SCALES.includes(scale)) return;
+      persist({ uiScale: scale });
+      set({ uiScale: scale });
     },
   };
 });

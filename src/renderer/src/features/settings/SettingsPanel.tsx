@@ -13,7 +13,7 @@ import {
 import { useThemeStore } from "@renderer/stores/useThemeStore";
 import { useSettingsStore } from "@renderer/stores/useSettingsStore";
 import { usePlaybackStore } from "@renderer/stores/usePlaybackStore";
-import type { Language } from "@renderer/stores/useSettingsStore";
+import type { Language, UiScale } from "@renderer/stores/useSettingsStore";
 import type { TranslationKey } from "@renderer/i18n/types";
 import { themes, type ThemeId } from "@renderer/themes/tokens";
 import { getAvailableLanguages } from "@renderer/i18n";
@@ -155,6 +155,8 @@ export function SettingsPanel({
   const setAudioCompatibilityMode = useSettingsStore(
     (s) => s.setAudioCompatibilityMode,
   );
+  const uiScale = useSettingsStore((s) => s.uiScale);
+  const setUiScale = useSettingsStore((s) => s.setUiScale);
 
   // First-visit pulse
   const [isFirstVisit] = useState(() => {
@@ -580,6 +582,61 @@ export function SettingsPanel({
                       onChange={setCompactKeyLabels}
                       testId="toggle-compact-key-labels"
                     />
+
+                    {/* UI Scale selector */}
+                    <div
+                      className="rounded-xl px-3 py-2.5"
+                      style={{
+                        background:
+                          "color-mix(in srgb, var(--color-surface-alt) 52%, var(--color-surface))",
+                        border: "1px solid var(--color-border)",
+                      }}
+                    >
+                      <div className="flex flex-col">
+                        <span
+                          className="text-xs font-body"
+                          style={{ color: "var(--color-text)" }}
+                        >
+                          {t("settings.uiScale")}
+                        </span>
+                        <span
+                          className="text-[10px] font-body mt-0.5"
+                          style={{ color: "var(--color-text-muted)" }}
+                        >
+                          {t("settings.uiScaleDesc")}
+                        </span>
+                      </div>
+                      <div className="flex gap-1.5 mt-2">
+                        {(
+                          [
+                            { value: "normal", key: "settings.uiScale.normal" },
+                            { value: "large", key: "settings.uiScale.large" },
+                            { value: "xlarge", key: "settings.uiScale.xlarge" },
+                          ] as const
+                        ).map((opt) => (
+                          <button
+                            key={opt.value}
+                            onClick={() =>
+                              setUiScale(opt.value as UiScale)
+                            }
+                            className="px-3 py-1.5 text-xs font-body rounded-lg cursor-pointer transition-colors"
+                            style={{
+                              background:
+                                uiScale === opt.value
+                                  ? "var(--color-accent)"
+                                  : "var(--color-surface-alt)",
+                              color:
+                                uiScale === opt.value
+                                  ? "#fff"
+                                  : "var(--color-text-muted)",
+                            }}
+                            data-testid={`ui-scale-btn-${opt.value}`}
+                          >
+                            {t(opt.key)}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
                   </div>
                 </TabContent>
               )}

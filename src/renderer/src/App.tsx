@@ -124,6 +124,12 @@ function App(): React.JSX.Element {
     }
   }, [view]);
 
+  // ─── UI scale: sync data attribute to <html> ─────────
+  const uiScale = useSettingsStore((s) => s.uiScale);
+  useEffect(() => {
+    document.documentElement.setAttribute("data-ui-scale", uiScale);
+  }, [uiScale]);
+
   // ─── Mode selection + celebration + stats flow ────────
   const [showModeModal, setShowModeModal] = useState(false);
   const [showCelebration, setShowCelebration] = useState(false);
@@ -836,7 +842,15 @@ function App(): React.JSX.Element {
 
   const isSplitMode = displayMode === "split";
   const splitFocus = isSplitMode ? splitFocusPanel : "sheet";
-  const keyboardHeight = isSplitMode ? 84 : 100;
+  const keyboardHeightMap = { normal: 100, large: 130, xlarge: 160 } as const;
+  const splitKeyboardHeightMap = {
+    normal: 84,
+    large: 110,
+    xlarge: 140,
+  } as const;
+  const keyboardHeight = isSplitMode
+    ? splitKeyboardHeightMap[uiScale]
+    : keyboardHeightMap[uiScale];
   const reservedChromeHeight =
     HEADER_ESTIMATED_HEIGHT +
     TRANSPORT_ESTIMATED_HEIGHT +

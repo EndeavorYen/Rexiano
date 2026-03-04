@@ -33,6 +33,20 @@
   --color-note3: #3d74a6;
   --color-hit-glow: #66c7cb;
   --color-streak-gold: #cfb066;
+
+  /* UI scale system — default (normal) */
+  --ui-font-scale: 1;
+  --keyboard-height: 120px;
+}
+
+[data-ui-scale="large"] {
+  --ui-font-scale: 1.25;
+  --keyboard-height: 150px;
+}
+
+[data-ui-scale="xlarge"] {
+  --ui-font-scale: 1.5;
+  --keyboard-height: 180px;
 }
 
 * {

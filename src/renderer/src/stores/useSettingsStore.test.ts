@@ -224,6 +224,39 @@ describe("useSettingsStore", () => {
     });
   });
 
+  describe("uiScale", () => {
+    test("defaults to 'normal'", async () => {
+      const store = await getStore();
+      expect(store.getState().uiScale).toBe("normal");
+    });
+
+    test("setUiScale updates value", async () => {
+      const store = await getStore();
+      store.getState().setUiScale("large");
+      expect(store.getState().uiScale).toBe("large");
+    });
+
+    test("setUiScale accepts xlarge", async () => {
+      const store = await getStore();
+      store.getState().setUiScale("xlarge");
+      expect(store.getState().uiScale).toBe("xlarge");
+    });
+
+    test("setUiScale rejects invalid values", async () => {
+      const store = await getStore();
+      store.getState().setUiScale("invalid" as any);
+      expect(store.getState().uiScale).toBe("normal");
+    });
+
+    test("setUiScale persists to localStorage", async () => {
+      const store = await getStore();
+      store.getState().setUiScale("large");
+      const raw = storage.get(STORAGE_KEY);
+      const parsed = JSON.parse(raw!);
+      expect(parsed.uiScale).toBe("large");
+    });
+  });
+
   describe("localStorage persistence", () => {
     test("setVolume persists to localStorage", async () => {
       const store = await getStore();

@@ -186,6 +186,11 @@ export const en: TranslationMap = {
   "settings.common": "Common",
   "settings.compactKeyLabels": "Compact key labels",
   "settings.compactKeyLabelsDesc": "Show fewer key names on narrow keyboards",
+  "settings.uiScale": "Display Size",
+  "settings.uiScaleDesc": "Increase text and controls for younger users",
+  "settings.uiScale.normal": "Normal",
+  "settings.uiScale.large": "Large",
+  "settings.uiScale.xlarge": "Extra Large",
 
   // ── Fingering ──────────────────────────────────────────────────
   "fingering.label": "Fingering",

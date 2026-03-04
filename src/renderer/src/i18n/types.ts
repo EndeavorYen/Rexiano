@@ -181,6 +181,11 @@ export interface TranslationMap {
   "settings.common": string;
   "settings.compactKeyLabels": string;
   "settings.compactKeyLabelsDesc": string;
+  "settings.uiScale": string;
+  "settings.uiScaleDesc": string;
+  "settings.uiScale.normal": string;
+  "settings.uiScale.large": string;
+  "settings.uiScale.xlarge": string;
 
   // ── Fingering ──────────────────────────────────────────────────
   "fingering.label": string;
