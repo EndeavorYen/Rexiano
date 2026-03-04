@@ -8,7 +8,8 @@
     "category": "popular",
     "grade": 0,
     "durationSeconds": 14,
-    "tags": ["traditional", "melody", "beginner", "level-0"]
+    "tags": ["traditional", "melody", "beginner", "level-0"],
+    "source": "mfiles.co.uk"
   },
   {
     "id": "au-clair-de-la-lune",
@@ -19,7 +20,8 @@
     "category": "popular",
     "grade": 0,
     "durationSeconds": 20,
-    "tags": ["traditional", "melody", "french", "level-0"]
+    "tags": ["traditional", "melody", "french", "level-0"],
+    "source": "mfiles.co.uk"
   },
   {
     "id": "c-major-scale",
@@ -30,7 +32,8 @@
     "category": "exercise",
     "grade": 1,
     "durationSeconds": 8,
-    "tags": ["exercise", "scale", "level-1"]
+    "tags": ["exercise", "scale", "level-1"],
+    "source": "mfiles.co.uk"
   },
   {
     "id": "mary-had-a-little-lamb",
@@ -41,7 +44,8 @@
     "category": "popular",
     "grade": 1,
     "durationSeconds": 18,
-    "tags": ["traditional", "melody", "beginner", "level-1"]
+    "tags": ["traditional", "melody", "beginner", "level-1"],
+    "source": "mfiles.co.uk"
   },
   {
     "id": "london-bridge",
@@ -52,7 +56,8 @@
     "category": "popular",
     "grade": 2,
     "durationSeconds": 16,
-    "tags": ["traditional", "melody", "level-2"]
+    "tags": ["traditional", "melody", "level-2"],
+    "source": "mfiles.co.uk"
   },
   {
     "id": "jingle-bells",
@@ -63,7 +68,8 @@
     "category": "holiday",
     "grade": 2,
     "durationSeconds": 16,
-    "tags": ["holiday", "christmas", "melody", "level-2"]
+    "tags": ["holiday", "christmas", "melody", "level-2"],
+    "source": "mfiles.co.uk"
   },
   {
     "id": "ode-to-joy",
@@ -74,7 +80,8 @@
     "category": "classical",
     "grade": 2,
     "durationSeconds": 16,
-    "tags": ["classical", "melody", "level-2"]
+    "tags": ["classical", "melody", "level-2"],
+    "source": "mfiles.co.uk"
   },
   {
     "id": "happy-birthday",
@@ -85,7 +92,8 @@
     "category": "popular",
     "grade": 2,
     "durationSeconds": 15,
-    "tags": ["popular", "melody", "level-2"]
+    "tags": ["popular", "melody", "level-2"],
+    "source": "mfiles.co.uk"
   },
   {
     "id": "row-row-row",
@@ -96,7 +104,8 @@
     "category": "popular",
     "grade": 2,
     "durationSeconds": 15,
-    "tags": ["traditional", "melody", "level-2"]
+    "tags": ["traditional", "melody", "level-2"],
+    "source": "mfiles.co.uk"
   },
   {
     "id": "lavender-blue",
@@ -107,7 +116,8 @@
     "category": "popular",
     "grade": 2,
     "durationSeconds": 22,
-    "tags": ["traditional", "melody", "folk", "level-2"]
+    "tags": ["traditional", "melody", "folk", "level-2"],
+    "source": "mfiles.co.uk"
   },
   {
     "id": "twinkle-twinkle",
@@ -118,7 +128,8 @@
     "category": "popular",
     "grade": 2,
     "durationSeconds": 29,
-    "tags": ["traditional", "melody", "level-2"]
+    "tags": ["traditional", "melody", "level-2"],
+    "source": "mfiles.co.uk"
   },
   {
     "id": "chopsticks",
@@ -129,7 +140,8 @@
     "category": "popular",
     "grade": 3,
     "durationSeconds": 12,
-    "tags": ["popular", "duet", "classic", "two-hands", "level-3"]
+    "tags": ["popular", "duet", "classic", "two-hands", "level-3"],
+    "source": "mfiles.co.uk"
   },
   {
     "id": "frere-jacques",
@@ -140,7 +152,8 @@
     "category": "popular",
     "grade": 3,
     "durationSeconds": 28,
-    "tags": ["traditional", "french", "two-hands", "level-3"]
+    "tags": ["traditional", "french", "two-hands", "level-3"],
+    "source": "mfiles.co.uk"
   },
   {
     "id": "brahms-lullaby",
@@ -151,7 +164,8 @@
     "category": "classical",
     "grade": 3,
     "durationSeconds": 46,
-    "tags": ["classical", "lullaby", "3-4", "two-hands", "level-3"]
+    "tags": ["classical", "lullaby", "3-4", "two-hands", "level-3"],
+    "source": "mfiles.co.uk"
   },
   {
     "id": "yankee-doodle",
@@ -161,8 +175,9 @@
     "difficulty": "beginner",
     "category": "popular",
     "grade": 3,
-    "durationSeconds": 30,
-    "tags": ["traditional", "american", "two-hands", "level-3"]
+    "durationSeconds": 60,
+    "tags": ["traditional", "american", "two-hands", "level-3"],
+    "source": "mfiles.co.uk"
   },
   {
     "id": "amazing-grace",
@@ -172,8 +187,9 @@
     "difficulty": "intermediate",
     "category": "popular",
     "grade": 4,
-    "durationSeconds": 64,
-    "tags": ["traditional", "3-4", "g-major", "two-hands", "level-4"]
+    "durationSeconds": 80,
+    "tags": ["traditional", "3-4", "g-major", "two-hands", "level-4"],
+    "source": "mfiles.co.uk"
   },
   {
     "id": "scarborough-fair",
@@ -183,8 +199,9 @@
     "difficulty": "intermediate",
     "category": "popular",
     "grade": 4,
-    "durationSeconds": 51,
-    "tags": ["traditional", "english", "a-minor", "3-4", "two-hands", "level-4"]
+    "durationSeconds": 76,
+    "tags": ["traditional", "english", "a-minor", "3-4", "two-hands", "level-4"],
+    "source": "mfiles.co.uk"
   },
   {
     "id": "long-long-ago",
@@ -194,52 +211,57 @@
     "difficulty": "intermediate",
     "category": "classical",
     "grade": 4,
-    "durationSeconds": 45,
-    "tags": ["classical", "lyrical", "two-hands", "level-4"]
+    "durationSeconds": 53,
+    "tags": ["classical", "lyrical", "two-hands", "level-4"],
+    "source": "mfiles.co.uk"
   },
   {
     "id": "fur-elise",
     "file": "fur-elise.mid",
-    "title": "Für Elise",
+    "title": "Für Elise (Excerpt)",
     "composer": "Ludwig van Beethoven",
     "difficulty": "intermediate",
     "category": "classical",
     "grade": 5,
     "durationSeconds": 35,
-    "tags": ["classical", "romantic", "level-5"]
+    "tags": ["classical", "romantic", "level-5"],
+    "source": "mfiles.co.uk"
   },
   {
     "id": "minuet-in-g",
     "file": "minuet-in-g.mid",
-    "title": "Minuet in G Major",
+    "title": "Minuet in G Major (Excerpt)",
     "composer": "J.S. Bach",
     "difficulty": "intermediate",
     "category": "classical",
     "grade": 5,
     "durationSeconds": 15,
-    "tags": ["classical", "baroque", "two-hands", "level-5"]
+    "tags": ["classical", "baroque", "two-hands", "level-5"],
+    "source": "mfiles.co.uk"
   },
   {
     "id": "canon-in-d",
     "file": "canon-in-d.mid",
-    "title": "Canon in D",
+    "title": "Canon in D (Excerpt)",
     "composer": "Johann Pachelbel",
     "difficulty": "intermediate",
     "category": "classical",
     "grade": 5,
     "durationSeconds": 12,
-    "tags": ["classical", "baroque", "two-hands", "level-5"]
+    "tags": ["classical", "baroque", "two-hands", "level-5"],
+    "source": "mfiles.co.uk"
   },
   {
     "id": "prelude-in-c",
     "file": "prelude-in-c.mid",
-    "title": "Prelude in C Major (BWV 846)",
+    "title": "Prelude in C Major (BWV 846) (Excerpt)",
     "composer": "J.S. Bach",
     "difficulty": "intermediate",
     "category": "classical",
     "grade": 6,
     "durationSeconds": 14,
-    "tags": ["classical", "baroque", "arpeggiated", "two-hands", "level-6"]
+    "tags": ["classical", "baroque", "arpeggiated", "two-hands", "level-6"],
+    "source": "mfiles.co.uk"
   },
   {
     "id": "clementi-sonatina",
@@ -249,8 +271,9 @@
     "difficulty": "intermediate",
     "category": "classical",
     "grade": 6,
-    "durationSeconds": 30,
-    "tags": ["classical", "sonatina", "alberti-bass", "two-hands", "level-6"]
+    "durationSeconds": 37,
+    "tags": ["classical", "sonatina", "alberti-bass", "two-hands", "level-6"],
+    "source": "mfiles.co.uk"
   },
   {
     "id": "german-dance",
@@ -260,29 +283,260 @@
     "difficulty": "intermediate",
     "category": "classical",
     "grade": 6,
-    "durationSeconds": 35,
-    "tags": ["classical", "dance", "d-major", "3-4", "two-hands", "level-6"]
+    "durationSeconds": 50,
+    "tags": ["classical", "dance", "d-major", "3-4", "two-hands", "level-6"],
+    "source": "mfiles.co.uk"
   },
   {
     "id": "moonlight-sonata",
     "file": "moonlight-sonata.mid",
-    "title": "Moonlight Sonata (1st mvt)",
+    "title": "Moonlight Sonata (1st mvt) (Excerpt)",
     "composer": "Ludwig van Beethoven",
     "difficulty": "advanced",
     "category": "classical",
     "grade": 7,
     "durationSeconds": 35,
-    "tags": ["classical", "romantic", "two-hands", "level-7"]
+    "tags": ["classical", "romantic", "two-hands", "level-7"],
+    "source": "mfiles.co.uk"
   },
   {
     "id": "turkish-march",
     "file": "turkish-march.mid",
-    "title": "Turkish March",
+    "title": "Turkish March (Excerpt)",
     "composer": "W.A. Mozart",
     "difficulty": "advanced",
     "category": "classical",
     "grade": 7,
     "durationSeconds": 7,
-    "tags": ["classical", "fast", "level-7"]
+    "tags": ["classical", "fast", "level-7"],
+    "source": "mfiles.co.uk"
+  },
+  {
+    "id": "mozart-minuet-k2",
+    "file": "mozart-minuet-k2.mid",
+    "title": "Minuet in F Major (K.2)",
+    "composer": "W.A. Mozart",
+    "difficulty": "beginner",
+    "category": "classical",
+    "grade": 2,
+    "durationSeconds": 44,
+    "tags": ["classical", "minuet", "3-4", "level-2"],
+    "source": "mfiles.co.uk"
+  },
+  {
+    "id": "schumann-soldiers-march",
+    "file": "schumann-soldiers-march.mid",
+    "title": "Soldier's March (Op. 68 No. 2)",
+    "composer": "Robert Schumann",
+    "difficulty": "beginner",
+    "category": "classical",
+    "grade": 3,
+    "durationSeconds": 44,
+    "tags": ["classical", "march", "album-for-the-young", "two-hands", "level-3"],
+    "source": "mfiles.co.uk"
+  },
+  {
+    "id": "schumann-strange-lands",
+    "file": "schumann-strange-lands.mid",
+    "title": "Of Strange Lands and People (Op. 15 No. 1)",
+    "composer": "Robert Schumann",
+    "difficulty": "beginner",
+    "category": "classical",
+    "grade": 3,
+    "durationSeconds": 83,
+    "tags": ["classical", "kinderszenen", "lyrical", "two-hands", "level-3"],
+    "source": "mfiles.co.uk"
+  },
+  {
+    "id": "tchaikovsky-waltz-op39",
+    "file": "tchaikovsky-waltz-op39.mid",
+    "title": "Waltz (Op. 39 No. 8)",
+    "composer": "Pyotr Ilyich Tchaikovsky",
+    "difficulty": "beginner",
+    "category": "classical",
+    "grade": 3,
+    "durationSeconds": 73,
+    "tags": ["classical", "waltz", "3-4", "album-for-the-young", "two-hands", "level-3"],
+    "source": "mfiles.co.uk"
+  },
+  {
+    "id": "saint-saens-elephant",
+    "file": "saint-saens-elephant.mid",
+    "title": "The Elephant (Carnival of the Animals)",
+    "composer": "Camille Saint-Saëns",
+    "difficulty": "beginner",
+    "category": "classical",
+    "grade": 3,
+    "durationSeconds": 85,
+    "tags": ["classical", "fun", "children", "two-hands", "level-3"],
+    "source": "mfiles.co.uk"
+  },
+  {
+    "id": "grieg-arietta",
+    "file": "grieg-arietta.mid",
+    "title": "Arietta (Lyric Pieces Op. 12 No. 1)",
+    "composer": "Edvard Grieg",
+    "difficulty": "intermediate",
+    "category": "classical",
+    "grade": 4,
+    "durationSeconds": 64,
+    "tags": ["classical", "lyrical", "romantic", "two-hands", "level-4"],
+    "source": "mfiles.co.uk"
+  },
+  {
+    "id": "satie-gymnopedie-1",
+    "file": "satie-gymnopedie-1.mid",
+    "title": "Gymnopédie No. 1",
+    "composer": "Erik Satie",
+    "difficulty": "intermediate",
+    "category": "classical",
+    "grade": 4,
+    "durationSeconds": 171,
+    "tags": ["classical", "minimalist", "3-4", "slow", "two-hands", "level-4"],
+    "source": "mfiles.co.uk"
+  },
+  {
+    "id": "satie-gnossienne-1",
+    "file": "satie-gnossienne-1.mid",
+    "title": "Gnossienne No. 1",
+    "composer": "Erik Satie",
+    "difficulty": "intermediate",
+    "category": "classical",
+    "grade": 4,
+    "durationSeconds": 226,
+    "tags": ["classical", "minimalist", "no-time-sig", "two-hands", "level-4"],
+    "source": "mfiles.co.uk"
+  },
+  {
+    "id": "chopin-prelude-op28-4",
+    "file": "chopin-prelude-op28-4.mid",
+    "title": "Prelude in E Minor (Op. 28 No. 4)",
+    "composer": "Frédéric Chopin",
+    "difficulty": "intermediate",
+    "category": "classical",
+    "grade": 5,
+    "durationSeconds": 113,
+    "tags": ["classical", "romantic", "prelude", "e-minor", "two-hands", "level-5"],
+    "source": "mfiles.co.uk"
+  },
+  {
+    "id": "schumann-traumerei",
+    "file": "schumann-traumerei.mid",
+    "title": "Träumerei (Op. 15 No. 7)",
+    "composer": "Robert Schumann",
+    "difficulty": "intermediate",
+    "category": "classical",
+    "grade": 5,
+    "durationSeconds": 140,
+    "tags": ["classical", "romantic", "kinderszenen", "lyrical", "two-hands", "level-5"],
+    "source": "mfiles.co.uk"
+  },
+  {
+    "id": "dvorak-humoresque",
+    "file": "dvorak-humoresque.mid",
+    "title": "Humoresque No. 7",
+    "composer": "Antonín Dvořák",
+    "difficulty": "intermediate",
+    "category": "classical",
+    "grade": 5,
+    "durationSeconds": 144,
+    "tags": ["classical", "romantic", "two-hands", "level-5"],
+    "source": "mfiles.co.uk"
+  },
+  {
+    "id": "cpe-bach-solfeggietto",
+    "file": "cpe-bach-solfeggietto.mid",
+    "title": "Solfeggietto in C Minor",
+    "composer": "C.P.E. Bach",
+    "difficulty": "intermediate",
+    "category": "classical",
+    "grade": 5,
+    "durationSeconds": 68,
+    "tags": ["classical", "baroque", "fast", "c-minor", "level-5"],
+    "source": "mfiles.co.uk"
+  },
+  {
+    "id": "tchaikovsky-sugar-plum",
+    "file": "tchaikovsky-sugar-plum.mid",
+    "title": "Dance of the Sugar Plum Fairy",
+    "composer": "Pyotr Ilyich Tchaikovsky",
+    "difficulty": "intermediate",
+    "category": "classical",
+    "grade": 5,
+    "durationSeconds": 102,
+    "tags": ["classical", "nutcracker", "holiday", "two-hands", "level-5"],
+    "source": "mfiles.co.uk"
+  },
+  {
+    "id": "liszt-liebestraum-easy",
+    "file": "liszt-liebestraum-easy.mid",
+    "title": "Liebesträum No. 3 (Easy Piano)",
+    "composer": "Franz Liszt",
+    "difficulty": "intermediate",
+    "category": "classical",
+    "grade": 5,
+    "durationSeconds": 48,
+    "tags": ["classical", "romantic", "easy-arrangement", "two-hands", "level-5"],
+    "source": "mfiles.co.uk"
+  },
+  {
+    "id": "chopin-nocturne-op9-2",
+    "file": "chopin-nocturne-op9-2.mid",
+    "title": "Nocturne in E♭ Major (Op. 9 No. 2)",
+    "composer": "Frédéric Chopin",
+    "difficulty": "advanced",
+    "category": "classical",
+    "grade": 7,
+    "durationSeconds": 224,
+    "tags": ["classical", "romantic", "nocturne", "two-hands", "level-7"],
+    "source": "mfiles.co.uk"
+  },
+  {
+    "id": "debussy-arabesque-1",
+    "file": "debussy-arabesque-1.mid",
+    "title": "Arabesque No. 1",
+    "composer": "Claude Debussy",
+    "difficulty": "advanced",
+    "category": "classical",
+    "grade": 7,
+    "durationSeconds": 229,
+    "tags": ["classical", "impressionist", "arpeggiated", "two-hands", "level-7"],
+    "source": "mfiles.co.uk"
+  },
+  {
+    "id": "debussy-clair-de-lune",
+    "file": "debussy-clair-de-lune.mid",
+    "title": "Clair de Lune",
+    "composer": "Claude Debussy",
+    "difficulty": "advanced",
+    "category": "classical",
+    "grade": 8,
+    "durationSeconds": 237,
+    "tags": ["classical", "impressionist", "famous", "two-hands", "level-8"],
+    "source": "mfiles.co.uk"
+  },
+  {
+    "id": "hanon-exercise-01",
+    "file": "hanon-exercise-01.mid",
+    "title": "Hanon Exercise No. 1",
+    "composer": "Charles-Louis Hanon",
+    "difficulty": "beginner",
+    "category": "exercise",
+    "grade": 2,
+    "durationSeconds": 60,
+    "tags": ["exercise", "technique", "finger-independence", "level-2"],
+    "source": "mfiles.co.uk"
+  },
+  {
+    "id": "hanon-exercise-02",
+    "file": "hanon-exercise-02.mid",
+    "title": "Hanon Exercise No. 2",
+    "composer": "Charles-Louis Hanon",
+    "difficulty": "beginner",
+    "category": "exercise",
+    "grade": 2,
+    "durationSeconds": 60,
+    "tags": ["exercise", "technique", "finger-independence", "level-2"],
+    "source": "mfiles.co.uk"
   }
 ]
