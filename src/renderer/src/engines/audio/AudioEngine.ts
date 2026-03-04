@@ -43,6 +43,12 @@ export class AudioEngine implements IAudioEngine {
   /** Active notes: MIDI note → list of active sources (supports overlapping same-note) */
   private _activeNotes = new Map<number, ActiveNote[]>();
 
+  /** Whether the sustain pedal is currently held down */
+  private _sustainActive = false;
+
+  /** Notes held by sustain pedal: MIDI note → list of sustained sources */
+  private _sustainedNotes = new Map<number, ActiveNote[]>();
+
   /** Guard against concurrent init() calls */
   private _initPromise: Promise<void> | null = null;
 
@@ -168,43 +174,61 @@ export class AudioEngine implements IAudioEngine {
       const activeNote = notes.shift()!;
       if (notes.length === 0) this._activeNotes.delete(midi);
 
-      const { source, gain } = activeNote;
-
-      // Apply release envelope: ramp gain to near-zero then stop
-      try {
-        // setTargetAtTime is safer than exponentialRamp for small values
-        gain.gain.setValueAtTime(gain.gain.value, time);
-        gain.gain.exponentialRampToValueAtTime(0.001, time + RELEASE_TIME);
-        source.stop(time + RELEASE_TIME + 0.01);
-      } catch {
-        // Source may have already stopped
-        try {
-          source.stop();
-        } catch {
-          /* already stopped */
+      // If sustain pedal is active, hold the note instead of releasing
+      if (this._sustainActive) {
+        const existing = this._sustainedNotes.get(midi);
+        if (existing) {
+          existing.push(activeNote);
+        } else {
+          this._sustainedNotes.set(midi, [activeNote]);
         }
+        return;
       }
+
+      this._releaseNote(activeNote, time);
     } catch (err) {
       this._handleRuntimeError(err, "noteOff");
     }
   }
 
-  allNotesOff(): void {
+  /** Engage sustain pedal -- noteOff calls will hold notes until pedal is released */
+  sustainOn(): void {
+    this._sustainActive = true;
+  }
+
+  /** Release sustain pedal -- all held notes are released with proper envelope */
+  sustainOff(): void {
+    this._sustainActive = false;
     const now = this._audioContext?.currentTime ?? 0;
-    for (const [, notes] of this._activeNotes) {
-      for (const { source, gain } of notes) {
-        try {
-          gain.gain.cancelScheduledValues(now);
-          gain.gain.setValueAtTime(0, now);
-          source.stop(now);
-          source.disconnect();
-          gain.disconnect();
-        } catch {
-          /* already stopped */
-        }
+    for (const [, notes] of this._sustainedNotes) {
+      for (const activeNote of notes) {
+        this._releaseNote(activeNote, now);
       }
     }
-    this._activeNotes.clear();
+    this._sustainedNotes.clear();
+  }
+
+  allNotesOff(): void {
+    const now = this._audioContext?.currentTime ?? 0;
+    const killAll = (noteMap: Map<number, ActiveNote[]>): void => {
+      for (const [, notes] of noteMap) {
+        for (const { source, gain } of notes) {
+          try {
+            gain.gain.cancelScheduledValues(now);
+            gain.gain.setValueAtTime(0, now);
+            source.stop(now);
+            source.disconnect();
+            gain.disconnect();
+          } catch {
+            /* already stopped */
+          }
+        }
+      }
+      noteMap.clear();
+    };
+    killAll(this._activeNotes);
+    killAll(this._sustainedNotes);
+    this._sustainActive = false;
   }
 
   async resume(): Promise<void> {
@@ -227,6 +251,23 @@ export class AudioEngine implements IAudioEngine {
     }
   }
 
+  /** Apply release envelope to a single active note */
+  private _releaseNote(activeNote: ActiveNote, time: number): void {
+    const { source, gain } = activeNote;
+    try {
+      gain.gain.setValueAtTime(gain.gain.value, time);
+      gain.gain.exponentialRampToValueAtTime(0.001, time + RELEASE_TIME);
+      source.stop(time + RELEASE_TIME + 0.01);
+    } catch {
+      // Source may have already stopped
+      try {
+        source.stop();
+      } catch {
+        /* already stopped */
+      }
+    }
+  }
+
   setVolume(volume: number): void {
     if (this._masterGain) {
       this._masterGain.gain.value = Math.max(0, Math.min(1, volume));
@@ -235,6 +276,8 @@ export class AudioEngine implements IAudioEngine {
 
   dispose(): void {
     this.allNotesOff();
+    this._sustainActive = false;
+    this._sustainedNotes.clear();
     this._soundFontLoader.dispose();
     void this._audioContext?.close();
     this._audioContext = null;

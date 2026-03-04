@@ -32,7 +32,7 @@ import { DeviceSelector } from "./features/midiDevice/DeviceSelector";
 import { InsightsPanel } from "./features/insights/InsightsPanel";
 import { WeakSpotAnalyzer } from "./features/insights/WeakSpotAnalyzer";
 import type { SessionSummary } from "./features/insights/WeakSpotAnalyzer";
-import { useMidiDeviceStore } from "./stores/useMidiDeviceStore";
+import { useMidiDeviceStore, setMidiCCHandler } from "./stores/useMidiDeviceStore";
 import { usePracticeLifecycle } from "./features/practice/usePracticeLifecycle";
 import { PracticeToolbar } from "./features/practice/PracticeToolbar";
 import { ScoreOverlay } from "./features/practice/ScoreOverlay";
@@ -271,7 +271,8 @@ function App(): React.JSX.Element {
     if (!song) return null;
     const allNotes = song.tracks.flatMap((tr) => tr.notes);
     const bpm = song.tempos.length > 0 ? song.tempos[0].bpm : 120;
-    return convertToNotation(allNotes, bpm);
+    const keySig = song.keySignatures?.[0]?.key ?? 0;
+    return convertToNotation(allNotes, bpm, 480, 4, 4, keySig);
   }, [song]);
 
   // ─── End Phase 7 ──────────────────────────────────────
@@ -656,6 +657,23 @@ function App(): React.JSX.Element {
       engine.setVolume(state.muted ? 0 : usePlaybackStore.getState().volume);
     });
     return unsub;
+  }, []);
+
+  // ─── MIDI CC64 (sustain pedal) → AudioEngine ──────────
+  // Wire the sustain pedal CC message from the MIDI parser to the audio engine.
+  useEffect(() => {
+    setMidiCCHandler((cc, value) => {
+      if (cc === 64) {
+        const { engine } = audioRef.current;
+        if (!engine) return;
+        if (value >= 64) {
+          engine.sustainOn();
+        } else {
+          engine.sustainOff();
+        }
+      }
+    });
+    return () => setMidiCCHandler(null);
   }, []);
 
   // ─── Phase 6.5: Startup wiring — speed sync to AudioScheduler ──

@@ -365,6 +365,164 @@ describe("AudioEngine", () => {
     });
   });
 
+  describe("sustain pedal", () => {
+    test("sustainOn prevents noteOff from releasing the note", async () => {
+      const { mockCtx } = stubGlobalAudioContext();
+
+      const mockSample = {
+        midi: 60,
+        buffer: {} as AudioBuffer,
+        sampleRate: 44100,
+        basePitch: 60,
+      };
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const loader = (engine as any)._soundFontLoader;
+      loader.getSample.mockReturnValue(mockSample);
+
+      await engine.init();
+
+      const mockSource = createMockAudioBufferSourceNode();
+      const mockVelocityGain = createMockGainNode();
+      mockCtx.createBufferSource.mockReturnValue(mockSource);
+      mockCtx.createGain.mockReturnValue(mockVelocityGain);
+
+      engine.sustainOn();
+      engine.noteOn(60, 100, 0);
+      engine.noteOff(60, 1.0);
+
+      // Note should NOT have been released (no stop, no envelope ramp)
+      expect(mockSource.stop).not.toHaveBeenCalled();
+      expect(
+        mockVelocityGain.gain.exponentialRampToValueAtTime,
+      ).not.toHaveBeenCalled();
+
+      // Note should be in the sustained notes map
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const sustainedNotes = (engine as any)._sustainedNotes as Map<
+        number,
+        unknown[]
+      >;
+      expect(sustainedNotes.size).toBe(1);
+      expect(sustainedNotes.get(60)?.length).toBe(1);
+    });
+
+    test("sustainOff releases all sustained notes", async () => {
+      const { mockCtx } = stubGlobalAudioContext();
+
+      const mockSample = {
+        midi: 60,
+        buffer: {} as AudioBuffer,
+        sampleRate: 44100,
+        basePitch: 60,
+      };
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const loader = (engine as any)._soundFontLoader;
+      loader.getSample.mockReturnValue(mockSample);
+
+      await engine.init();
+
+      const mockSource = createMockAudioBufferSourceNode();
+      const mockVelocityGain = createMockGainNode();
+      mockCtx.createBufferSource.mockReturnValue(mockSource);
+      mockCtx.createGain.mockReturnValue(mockVelocityGain);
+
+      engine.sustainOn();
+      engine.noteOn(60, 100, 0);
+      engine.noteOff(60, 1.0);
+
+      // Verify note is sustained, not released
+      expect(mockSource.stop).not.toHaveBeenCalled();
+
+      // Now release pedal
+      engine.sustainOff();
+
+      // Note should now be released with envelope
+      expect(mockVelocityGain.gain.setValueAtTime).toHaveBeenCalled();
+      expect(
+        mockVelocityGain.gain.exponentialRampToValueAtTime,
+      ).toHaveBeenCalled();
+      expect(mockSource.stop).toHaveBeenCalled();
+
+      // Sustained notes map should be cleared
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const sustainedNotes = (engine as any)._sustainedNotes as Map<
+        number,
+        unknown[]
+      >;
+      expect(sustainedNotes.size).toBe(0);
+    });
+
+    test("noteOff releases normally when sustain is not active", async () => {
+      const { mockCtx } = stubGlobalAudioContext();
+
+      const mockSample = {
+        midi: 60,
+        buffer: {} as AudioBuffer,
+        sampleRate: 44100,
+        basePitch: 60,
+      };
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const loader = (engine as any)._soundFontLoader;
+      loader.getSample.mockReturnValue(mockSample);
+
+      await engine.init();
+
+      const mockSource = createMockAudioBufferSourceNode();
+      const mockVelocityGain = createMockGainNode();
+      mockCtx.createBufferSource.mockReturnValue(mockSource);
+      mockCtx.createGain.mockReturnValue(mockVelocityGain);
+
+      // No sustainOn() — normal behavior
+      engine.noteOn(60, 100, 0);
+      engine.noteOff(60, 1.0);
+
+      // Note should be released immediately
+      expect(mockSource.stop).toHaveBeenCalled();
+      expect(
+        mockVelocityGain.gain.exponentialRampToValueAtTime,
+      ).toHaveBeenCalled();
+    });
+
+    test("allNotesOff clears sustained notes too", async () => {
+      const { mockCtx } = stubGlobalAudioContext();
+
+      const mockSample = {
+        midi: 60,
+        buffer: {} as AudioBuffer,
+        sampleRate: 44100,
+        basePitch: 60,
+      };
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const loader = (engine as any)._soundFontLoader;
+      loader.getSample.mockReturnValue(mockSample);
+
+      await engine.init();
+
+      const mockSource = createMockAudioBufferSourceNode();
+      const mockVelocityGain = createMockGainNode();
+      mockCtx.createBufferSource.mockReturnValue(mockSource);
+      mockCtx.createGain.mockReturnValue(mockVelocityGain);
+
+      engine.sustainOn();
+      engine.noteOn(60, 100, 0);
+      engine.noteOff(60, 1.0);
+
+      // Note is sustained
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const sustainedNotes = (engine as any)._sustainedNotes as Map<
+        number,
+        unknown[]
+      >;
+      expect(sustainedNotes.size).toBe(1);
+
+      engine.allNotesOff();
+
+      // Both active and sustained should be cleared
+      expect(sustainedNotes.size).toBe(0);
+      expect(mockSource.stop).toHaveBeenCalled();
+    });
+  });
+
   describe("resume / suspend", () => {
     test("resume does not throw when audioContext is null", async () => {
       await expect(engine.resume()).resolves.toBeUndefined();

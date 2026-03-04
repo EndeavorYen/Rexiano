@@ -46,6 +46,12 @@ export interface IAudioEngine {
   /** Stop all currently sounding notes immediately */
   allNotesOff(): void;
 
+  /** Engage sustain pedal -- noteOff calls will hold notes until pedal is released */
+  sustainOn(): void;
+
+  /** Release sustain pedal -- all held notes are released with proper envelope */
+  sustainOff(): void;
+
   /** Resume AudioContext (after browser suspend) */
   resume(): Promise<void>;
 

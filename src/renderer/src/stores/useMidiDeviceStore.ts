@@ -53,6 +53,24 @@ interface MidiDeviceState {
 /** Module-level parser instance — one per app, managed by the store */
 let _parser: MidiInputParser | null = null;
 
+/** Stored CC callback to apply when parser is created */
+let _pendingCCHandler: ((cc: number, value: number) => void) | null = null;
+
+/**
+ * Register a Control Change callback on the shared MIDI parser.
+ * Call with `null` to unregister. Used by App.tsx to wire CC64 (sustain pedal)
+ * to the AudioEngine without coupling the store to audio concerns.
+ *
+ * Safe to call before or after the parser is created — the handler is stored
+ * and applied when the parser initializes.
+ */
+export function setMidiCCHandler(cb: ((cc: number, value: number) => void) | null): void {
+  _pendingCCHandler = cb;
+  if (_parser) {
+    _parser.onCC(cb);
+  }
+}
+
 /** Module-level BLE MIDI manager */
 let _bleManager: BleMidiManager | null = null;
 
@@ -64,6 +82,9 @@ function getParser(store: {
     _parser = new MidiInputParser();
     _parser.onNoteOn((midi) => store.onNoteOn(midi));
     _parser.onNoteOff((midi) => store.onNoteOff(midi));
+    if (_pendingCCHandler) {
+      _parser.onCC(_pendingCCHandler);
+    }
   }
   return _parser;
 }
