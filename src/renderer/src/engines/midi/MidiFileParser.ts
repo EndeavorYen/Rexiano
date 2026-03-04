@@ -7,8 +7,8 @@ import type {
   TimeSignatureEvent,
   KeySignatureEvent,
   DynamicsMarking,
-  ExpressionMarking,
 } from "./types";
+import { analyzeExpressions } from "./ExpressionAnalyzer";
 
 /**
  * Parse raw MIDI file bytes into a structured ParsedSong.
@@ -91,7 +91,7 @@ export function parseMidiFile(fileName: string, data: number[]): ParsedSong {
   const dynamics = inferDynamics(tracks, measureTimes);
 
   // Infer expression markings from tempo changes, note durations, and overlaps
-  const expressions = inferExpressions(tracks, tempos);
+  const expressions = analyzeExpressions(tracks, tempos);
 
   return {
     fileName,
@@ -240,77 +240,3 @@ function inferDynamics(
   return markings;
 }
 
-/**
- * Infer expression markings from MIDI data:
- * - Tempo changes: rit. (decreasing BPM) or accel. (increasing BPM)
- * - Staccato: notes shorter than 50% of the median duration
- * - Legato: overlapping notes (a note starts before the previous ends)
- */
-function inferExpressions(
-  tracks: ParsedTrack[],
-  tempos: TempoEvent[],
-): ExpressionMarking[] {
-  const expressions: ExpressionMarking[] = [];
-
-  // Detect rit. and accel. from tempo changes
-  for (let i = 1; i < tempos.length; i++) {
-    const prev = tempos[i - 1];
-    const curr = tempos[i];
-    // Only mark significant tempo changes (> 5% difference)
-    const ratio = curr.bpm / prev.bpm;
-    if (ratio < 0.95) {
-      expressions.push({ time: curr.time, type: "rit" });
-    } else if (ratio > 1.05) {
-      expressions.push({ time: curr.time, type: "accel" });
-    }
-  }
-
-  // Compute median note duration across all tracks for staccato detection
-  const allDurations: number[] = [];
-  for (const track of tracks) {
-    for (const note of track.notes) {
-      allDurations.push(note.duration);
-    }
-  }
-  if (allDurations.length === 0) return expressions;
-
-  allDurations.sort((a, b) => a - b);
-  const medianDuration = allDurations[Math.floor(allDurations.length / 2)];
-  const staccatoThreshold = medianDuration * 0.5;
-
-  // Detect staccato and legato per track
-  for (const track of tracks) {
-    const notes = track.notes;
-    for (let i = 0; i < notes.length; i++) {
-      const note = notes[i];
-
-      // Staccato: very short notes relative to typical duration
-      if (note.duration > 0 && note.duration < staccatoThreshold) {
-        expressions.push({ time: note.time, type: "staccato" });
-      }
-
-      // Legato: this note overlaps with the next note on same track
-      if (i + 1 < notes.length) {
-        const next = notes[i + 1];
-        const noteEnd = note.time + note.duration;
-        if (noteEnd > next.time + 0.01) {
-          // Overlap > 10ms → legato
-          expressions.push({ time: note.time, type: "legato" });
-        }
-      }
-    }
-  }
-
-  // Sort by time and deduplicate nearby markings of the same type (within 0.5s)
-  expressions.sort((a, b) => a.time - b.time);
-  const deduped: ExpressionMarking[] = [];
-  for (const expr of expressions) {
-    const prev = deduped[deduped.length - 1];
-    if (prev && prev.type === expr.type && expr.time - prev.time < 0.5) {
-      continue; // skip near-duplicate
-    }
-    deduped.push(expr);
-  }
-
-  return deduped;
-}

@@ -14,6 +14,7 @@ import { useTranslation } from "@renderer/i18n/useTranslation";
 import { usePlaybackStore } from "@renderer/stores/usePlaybackStore";
 import type {
   NotationData,
+  NotationExpression,
   NotationMeasure,
   NotationNote,
   DisplayMode,
@@ -99,8 +100,9 @@ function renderMeasure(
   width: number,
   isFirst: boolean,
   measureNumber?: number,
+  expressions?: NotationExpression[],
 ): void {
-  const { Stave, StaveNote, Voice, Formatter, StaveConnector } = VF;
+  const { Stave, StaveNote, Voice, Formatter, StaveConnector, Articulation } = VF;
 
   const treble = new Stave(x, y, width);
   if (isFirst) {
@@ -152,6 +154,20 @@ function renderMeasure(
     }
   }
 
+  // Build a set of staccato tick positions from expression marks
+  const staccatoTicks = new Set<number>();
+  if (expressions) {
+    const beatsPerMeasure = measure.timeSignatureTop;
+    for (const expr of expressions) {
+      if (expr.type === "staccato") {
+        // Convert beat position to approximate tick for matching
+        // We match the nearest chord group's startTick
+        const targetFraction = expr.beat / beatsPerMeasure;
+        staccatoTicks.add(Math.round(targetFraction * 1000)); // normalized key
+      }
+    }
+  }
+
   const trebleChords = groupNotesIntoChords(measure.trebleNotes);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const trebleVexNotes: any[] =
@@ -161,6 +177,20 @@ function renderMeasure(
             keys: chord.keys,
             duration: chord.duration,
           });
+          // Add staccato dot if this chord position matches a staccato expression
+          if (expressions && Articulation) {
+            const beatsPerMeasure = measure.timeSignatureTop;
+            const totalTicks = beatsPerMeasure * 480; // approximate
+            const chordFraction = chord.startTick / totalTicks;
+            const normalizedTick = Math.round(chordFraction * 1000);
+            if (staccatoTicks.has(normalizedTick)) {
+              try {
+                note.addModifier(new Articulation("a."), 0);
+              } catch {
+                // Articulation not available in this VexFlow build
+              }
+            }
+          }
           return note;
         })
       : [
@@ -180,6 +210,20 @@ function renderMeasure(
             duration: chord.duration,
             clef: "bass",
           });
+          // Add staccato dot for bass notes too
+          if (expressions && Articulation) {
+            const beatsPerMeasure = measure.timeSignatureTop;
+            const totalTicks = beatsPerMeasure * 480;
+            const chordFraction = chord.startTick / totalTicks;
+            const normalizedTick = Math.round(chordFraction * 1000);
+            if (staccatoTicks.has(normalizedTick)) {
+              try {
+                note.addModifier(new Articulation("a."), 0);
+              } catch {
+                // Articulation not available
+              }
+            }
+          }
           return note;
         })
       : [
@@ -210,6 +254,50 @@ function renderMeasure(
 
   trebleVoice.draw(context, treble);
   bassVoice.draw(context, bass);
+
+  // Render text-based expression marks (rit., accel., legato) above the treble staff
+  if (expressions && expressions.length > 0) {
+    const svg = context.svg as SVGSVGElement | undefined;
+    if (svg) {
+      const beatsPerMeasure = measure.timeSignatureTop;
+      for (const expr of expressions) {
+        if (expr.type === "staccato") continue; // handled via VexFlow Articulation above
+
+        const label =
+          expr.type === "rit"
+            ? "rit."
+            : expr.type === "accel"
+              ? "accel."
+              : "legato";
+        const isItalic =
+          expr.type === "rit" || expr.type === "accel" || expr.type === "legato";
+        const beatFraction = Math.max(
+          0,
+          Math.min(1, expr.beat / beatsPerMeasure),
+        );
+        const textX = x + width * beatFraction + (isFirst ? 40 : 10);
+        const textY = y - 6;
+
+        const text = document.createElementNS(
+          "http://www.w3.org/2000/svg",
+          "text",
+        );
+        text.setAttribute("x", String(textX));
+        text.setAttribute("y", String(textY));
+        text.setAttribute("font-size", "11");
+        text.setAttribute("font-family", "inherit");
+        text.setAttribute(
+          "font-style",
+          isItalic ? "italic" : "normal",
+        );
+        text.setAttribute("font-weight", "500");
+        text.setAttribute("fill", "var(--color-accent, #1E6E72)");
+        text.setAttribute("opacity", "0.85");
+        text.textContent = label;
+        svg.appendChild(text);
+      }
+    }
+  }
 }
 
 /**
@@ -403,6 +491,11 @@ export function SheetMusicPanel({
 
           const measure = notationData.measures[measureIndex];
 
+          // Filter expressions for this measure
+          const measureExpressions = notationData.expressions?.filter(
+            (e) => e.measureIndex === measureIndex,
+          );
+
           try {
             renderMeasure(
               VF,
@@ -413,6 +506,7 @@ export function SheetMusicPanel({
               slotWidth,
               isFirst,
               measureIndex + 1,
+              measureExpressions,
             );
           } catch (e) {
             console.warn(

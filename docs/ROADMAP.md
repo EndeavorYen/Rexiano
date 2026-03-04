@@ -457,6 +457,13 @@
   - [ ] 調號
   - [ ] 符桿方向（VexFlow 預設處理）
   - [ ] 連結線（跨小節音符）
+- [x] 表情記號偵測與顯示（Expression Marks）
+  - [x] `engines/midi/ExpressionAnalyzer.ts` — 從 MIDI 推斷表情記號
+  - [x] 速度變化偵測：rit.（漸慢）/ accel.（漸快），BPM 變化 >5%
+  - [x] 斷奏偵測：音符時值 < 中位數 50%
+  - [x] 圓滑偵測：同軌道連續音符重疊 >10ms
+  - [x] SheetMusicPanel 渲染：VexFlow Articulation（斷奏點）+ SVG 文字註記（rit./accel./legato）
+  - [x] 測試覆蓋（ExpressionAnalyzer.test.ts: 15 tests）
 - [x] 測試：量化精度、游標同步（25 tests: MidiToNotation 17 + CursorSync 8）
 
 ---

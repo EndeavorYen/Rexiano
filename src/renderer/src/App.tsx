@@ -288,7 +288,7 @@ function App(): React.JSX.Element {
     const allNotes = song.tracks.flatMap((tr) => tr.notes);
     const bpm = song.tempos.length > 0 ? song.tempos[0].bpm : 120;
     const keySig = song.keySignatures?.[0]?.key ?? 0;
-    return convertToNotation(allNotes, bpm, 480, 4, 4, keySig);
+    return convertToNotation(allNotes, bpm, 480, 4, 4, keySig, 0, 1, song.expressions);
   }, [song]);
 
   // ─── End Phase 7 ──────────────────────────────────────

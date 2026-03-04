@@ -13,9 +13,9 @@
  * Pure logic — no React or DOM dependencies.
  */
 
-import type { ParsedNote, TempoEvent } from "@renderer/engines/midi/types";
+import type { ParsedNote, TempoEvent, ExpressionMarking } from "@renderer/engines/midi/types";
 import { midiToVexKey as enharmonicMidiToVexKey } from "../../utils/enharmonicSpelling";
-import type { NotationData, NotationMeasure, NotationNote } from "./types";
+import type { NotationData, NotationExpression, NotationMeasure, NotationNote } from "./types";
 
 /** Middle C boundary for clef assignment */
 const MIDDLE_C = 60;
@@ -231,6 +231,7 @@ interface TaggedNote extends NotationNote {
  * @param keySig - Key signature value from MIDI (-7..+7, default 0 = C major)
  * @param trackIndex - Which track these notes belong to (default 0)
  * @param trackCount - Total number of tracks in the song (default 1)
+ * @param expressions - Optional expression markings from ExpressionAnalyzer
  * @returns NotationData with measures ready for VexFlow rendering
  */
 export function convertToNotation(
@@ -242,6 +243,7 @@ export function convertToNotation(
   keySig = 0,
   trackIndex = 0,
   trackCount = 1,
+  expressions?: ExpressionMarking[],
 ): NotationData {
   // Normalize tempos
   const tempos: TempoEvent[] =
@@ -338,7 +340,21 @@ export function convertToNotation(
     );
   }
 
-  return { measures, bpm: primaryBpm, ticksPerQuarter };
+  // Map expression markings to measure positions
+  const notationExpressions = mapExpressionsToMeasures(
+    expressions,
+    primaryBpm,
+    ticksPerQuarter,
+    ticksPerMeasure,
+    timeSignatureTop,
+  );
+
+  return {
+    measures,
+    bpm: primaryBpm,
+    ticksPerQuarter,
+    expressions: notationExpressions.length > 0 ? notationExpressions : undefined,
+  };
 }
 
 /** Remove internal tag fields from TaggedNote */
@@ -425,4 +441,38 @@ function splitClefTies(
       measures[measureIndex + 1][clefKey].push(continuation);
     }
   }
+}
+
+/**
+ * Map ExpressionMarking[] (time-based) to NotationExpression[] (measure-based).
+ *
+ * Converts each expression's time (seconds) to a measure index and beat position
+ * within that measure, so the sheet music renderer can place annotations correctly.
+ */
+function mapExpressionsToMeasures(
+  expressions: ExpressionMarking[] | undefined,
+  bpm: number,
+  ticksPerQuarter: number,
+  ticksPerMeasure: number,
+  beatsPerMeasure: number,
+): NotationExpression[] {
+  if (!expressions || expressions.length === 0) return [];
+
+  const result: NotationExpression[] = [];
+
+  for (const expr of expressions) {
+    // Convert time to absolute ticks
+    const absoluteTick = quantizeToGrid(expr.time, bpm, ticksPerQuarter);
+    const measureIndex = Math.floor(absoluteTick / ticksPerMeasure);
+    const tickInMeasure = absoluteTick - measureIndex * ticksPerMeasure;
+    const beat = (tickInMeasure / ticksPerMeasure) * beatsPerMeasure;
+
+    result.push({
+      measureIndex,
+      beat,
+      type: expr.type,
+    });
+  }
+
+  return result;
 }

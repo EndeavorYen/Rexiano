@@ -46,6 +46,16 @@ export interface NotationMeasure {
   bassNotes: NotationNote[];
 }
 
+/** An expression marking mapped to a measure position for rendering */
+export interface NotationExpression {
+  /** 0-based measure index where this expression appears */
+  measureIndex: number;
+  /** Fractional beat position within the measure (0 = start, beatsPerMeasure = end) */
+  beat: number;
+  /** Expression type */
+  type: "rit" | "accel" | "staccato" | "legato";
+}
+
 /** Complete notation data for a song */
 export interface NotationData {
   /** All measures */
@@ -54,4 +64,6 @@ export interface NotationData {
   bpm: number;
   /** Ticks per quarter note (for quantization) */
   ticksPerQuarter: number;
+  /** Expression markings mapped to measure positions */
+  expressions?: NotationExpression[];
 }
