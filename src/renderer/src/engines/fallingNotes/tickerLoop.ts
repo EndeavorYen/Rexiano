@@ -41,7 +41,10 @@ export function createTickerUpdate(
     const engines = getPracticeEngines();
     const { waitMode, speedController, loopController } = engines;
 
-    // Compute effective pps with speed multiplier
+    // Advance smooth speed interpolation and compute effective pps
+    if (speedController) {
+      speedController.tick(performance.now());
+    }
     const effectivePps = speedController
       ? speedController.effectivePixelsPerSecond(playState.pixelsPerSecond)
       : playState.pixelsPerSecond;
@@ -54,6 +57,24 @@ export function createTickerUpdate(
     const isWatchMode = practiceMode === "watch";
 
     if (playState.isPlaying) {
+      // ── StepMode: freeze at current step position, don't advance time ──
+      if (practiceMode === "step" && engines.stepMode) {
+        const chord = engines.stepMode.getCurrentNotes();
+        if (chord) {
+          effectiveTime = chord.time;
+          playState.setCurrentTime(effectiveTime);
+        }
+        const screen = getScreenSize();
+        const vp: Viewport = {
+          width: screen.width,
+          height: screen.height,
+          pps: effectivePps,
+          currentTime: effectiveTime,
+        };
+        noteRenderer.update(songState.song, vp, showFingering, false);
+        return;
+      }
+
       // ── WaitMode gate: if waiting, freeze time ──
       if (practiceMode === "wait" && waitMode) {
         const shouldContinue = waitMode.tick(

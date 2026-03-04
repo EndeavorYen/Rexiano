@@ -65,12 +65,12 @@ describe("usePracticeStore", () => {
     expect(usePracticeStore.getState().speed).toBe(1.5);
   });
 
-  test("setSpeed() clamps to minimum 0.25", () => {
-    usePracticeStore.getState().setSpeed(0.1);
-    expect(usePracticeStore.getState().speed).toBe(0.25);
+  test("setSpeed() clamps to minimum 0.1", () => {
+    usePracticeStore.getState().setSpeed(0.05);
+    expect(usePracticeStore.getState().speed).toBe(0.1);
 
     usePracticeStore.getState().setSpeed(-1);
-    expect(usePracticeStore.getState().speed).toBe(0.25);
+    expect(usePracticeStore.getState().speed).toBe(0.1);
   });
 
   test("setSpeed() clamps to maximum 2.0", () => {

@@ -52,6 +52,22 @@ export interface KeySignatureEvent {
   scale: number;
 }
 
+/** A dynamics marking inferred from velocity patterns */
+export interface DynamicsMarking {
+  /** Time in seconds when this dynamics level takes effect */
+  time: number;
+  /** Standard dynamics marking (pp, p, mp, mf, f, ff) */
+  marking: "pp" | "p" | "mp" | "mf" | "f" | "ff";
+}
+
+/** An expression marking inferred from MIDI data */
+export interface ExpressionMarking {
+  /** Time in seconds when this expression occurs */
+  time: number;
+  /** Expression type */
+  type: "rit" | "accel" | "staccato" | "legato";
+}
+
 /** Complete parsed representation of a MIDI file */
 export interface ParsedSong {
   /** Original file name */
@@ -68,4 +84,13 @@ export interface ParsedSong {
   keySignatures: KeySignatureEvent[];
   /** Total number of notes across all tracks */
   noteCount: number;
+  /**
+   * Start time (in seconds) of each measure, computed from time signatures and tempos.
+   * Index 0 = measure 1's start time (usually 0).
+   */
+  measureTimes?: number[];
+  /** Dynamics markings inferred from velocity patterns across 2-measure windows */
+  dynamics?: DynamicsMarking[];
+  /** Expression markings inferred from tempo changes, note durations, and overlaps */
+  expressions?: ExpressionMarking[];
 }

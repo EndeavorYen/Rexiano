@@ -142,7 +142,7 @@
 
 - [x] `stores/usePracticeStore.ts` — 練習狀態管理
   - [x] 模式切換：Watch / Wait / Free
-  - [x] 速度控制 (0.25x ~ 2.0x)
+  - [x] 速度控制 (0.10x ~ 2.0x)
   - [x] A-B 段落循環
   - [x] 分手練習（track 過濾）
   - [x] 評分統計
@@ -313,6 +313,15 @@
 - [x] 延音踏板支援（MIDI CC64）
 - [x] 歌曲時長元資料修正 + 片段標記
 - [x] BuiltinSongMeta 新增 source 欄位
+
+### Sprint 7 — 速度與循環增強（WP4）
+
+- [x] 速度下限降低至 10%（SpeedController.MIN: 0.25 → 0.10）
+- [x] 速度預設新增 25%（4 段：25% / 50% / 75% / 100%）
+- [x] 漸進式加速（autoSpeedUp: A-B 循環準確率 ≥90% 時自動 +5%）
+- [x] 分手練習引導提示（TrackSelector: 單手選取時顯示鼓勵性 banner）
+- [x] 按小節 A-B 循環（MidiFileParser 計算 measureTimes + ABLoopSelector 小節選擇器）
+- [x] 平滑速度過渡（SpeedController lerp 插值，200ms 緩動）
 
 ### Synthesia 對照表
 

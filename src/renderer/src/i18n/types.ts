@@ -134,6 +134,13 @@ export interface TranslationMap {
   "practice.mode.watchDesc": string;
   "practice.mode.waitDesc": string;
   "practice.mode.freeDesc": string;
+  "practice.step": string;
+  "practice.mode.stepDesc": string;
+  "practice.autoSpeedUp": string;
+  "practice.speedBumped": string;
+  "practice.handSeparation.hint": string;
+  "practice.loop.byMeasure": string;
+  "practice.loop.measure": string;
 
   // ── Settings ───────────────────────────────────────────────────
   "settings.title": string;
@@ -247,6 +254,8 @@ export interface TranslationMap {
   "sheetMusic.modeSheet": string;
   "sheetMusic.modeSplit": string;
   "sheetMusic.displayMode": string;
+  "sheetMusic.zoomIn": string;
+  "sheetMusic.zoomOut": string;
 
   // ── Mode Selection ─────────────────────────────────────────────
   "modeSelect.title": string;
@@ -280,6 +289,8 @@ export interface TranslationMap {
   "stats.modeWait": string;
   "stats.modeFree": string;
   "stats.modeWatch": string;
+  "stats.modeStep": string;
+  "stats.weakSpotHint": string;
   "stats.tipSlowDown": string;
   "stats.tipUseWaitMode": string;
   "stats.tipTrainStreak": string;
@@ -314,6 +325,17 @@ export interface TranslationMap {
 
   // ── Count-in ─────────────────────────────────────────────────
   "countIn.go": string;
+
+  // ── Song Library Tags ─────────────────────────────────────────
+  "library.filterByTag": string;
+  "library.clearTagFilter": string;
+
+  // ── Progress / Daily Goal ───────────────────────────────────
+  "progress.dailyGoal": string;
+  "progress.min": string;
+  "progress.goalReached": string;
+  "settings.dailyGoal": string;
+  "settings.dailyGoalDesc": string;
 
   // ── General ────────────────────────────────────────────────────
   "general.loading": string;

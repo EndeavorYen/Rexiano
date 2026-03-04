@@ -65,6 +65,7 @@ const mockWaitMode = {
 
 const mockSpeedController = {
   multiplier: 1.0,
+  tick: vi.fn().mockReturnValue(1.0),
   effectivePixelsPerSecond: vi.fn((base: number) => base),
 };
 

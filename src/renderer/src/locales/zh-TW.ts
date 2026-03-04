@@ -133,6 +133,14 @@ export const zhTW: TranslationMap = {
   "practice.mode.watchDesc": "看和聽",
   "practice.mode.waitDesc": "音樂等你彈",
   "practice.mode.freeDesc": "自由跟著彈",
+  "practice.step": "逐步",
+  "practice.mode.stepDesc": "一個一個音",
+  "practice.autoSpeedUp": "自動加速",
+  "practice.speedBumped": "加速了！現在 {speed}%",
+  "practice.handSeparation.hint":
+    "很好！先單手練習，準備好了再加另一隻手。",
+  "practice.loop.byMeasure": "按小節",
+  "practice.loop.measure": "第 {n} 小節",
 
   // ── Settings ───────────────────────────────────────────────────
   "settings.title": "設定",
@@ -247,6 +255,8 @@ export const zhTW: TranslationMap = {
   "sheetMusic.modeSheet": "樂譜",
   "sheetMusic.modeSplit": "雙顯示",
   "sheetMusic.displayMode": "顯示模式",
+  "sheetMusic.zoomIn": "放大",
+  "sheetMusic.zoomOut": "縮小",
 
   // ── Mode Selection ─────────────────────────────────────────────
   "modeSelect.title": "你想怎麼練習？",
@@ -280,6 +290,8 @@ export const zhTW: TranslationMap = {
   "stats.modeWait": "等待",
   "stats.modeFree": "自由",
   "stats.modeWatch": "觀看",
+  "stats.modeStep": "逐步",
+  "stats.weakSpotHint": "試試多練習第 {start}-{end} 小節",
   "stats.tipSlowDown": "我們先放慢速度，一個一個音慢慢彈，彈對最重要喔！",
   "stats.tipUseWaitMode": "試試看「等待」模式，讓音樂等你彈好再繼續。",
   "stats.tipTrainStreak": "連續正確還不太多，試著用 A-B 循環反覆練一小段。",
@@ -314,6 +326,17 @@ export const zhTW: TranslationMap = {
 
   // ── Count-in ─────────────────────────────────────────────────
   "countIn.go": "開始！",
+
+  // ── Song Library Tags ─────────────────────────────────────────
+  "library.filterByTag": "依標籤篩選",
+  "library.clearTagFilter": "清除",
+
+  // ── Progress / Daily Goal ───────────────────────────────────
+  "progress.dailyGoal": "每日目標",
+  "progress.min": "分鐘",
+  "progress.goalReached": "達標了！",
+  "settings.dailyGoal": "每日練習目標",
+  "settings.dailyGoalDesc": "設定每日練習時間來養成習慣",
 
   // ── General ────────────────────────────────────────────────────
   "general.loading": "載入中…",

@@ -135,6 +135,14 @@ export const en: TranslationMap = {
   "practice.mode.watchDesc": "Watch and listen",
   "practice.mode.waitDesc": "Music waits for you",
   "practice.mode.freeDesc": "Play along freely",
+  "practice.step": "Step",
+  "practice.mode.stepDesc": "One note at a time",
+  "practice.autoSpeedUp": "Auto speed up",
+  "practice.speedBumped": "Speed up! Now {speed}%",
+  "practice.handSeparation.hint":
+    "Great! Practice this hand alone first. When you're ready, add the other hand.",
+  "practice.loop.byMeasure": "By measure",
+  "practice.loop.measure": "Measure {n}",
 
   // ── Settings ───────────────────────────────────────────────────
   "settings.title": "Settings",
@@ -252,6 +260,8 @@ export const en: TranslationMap = {
   "sheetMusic.modeSheet": "Sheet",
   "sheetMusic.modeSplit": "Both",
   "sheetMusic.displayMode": "Display mode",
+  "sheetMusic.zoomIn": "Zoom in",
+  "sheetMusic.zoomOut": "Zoom out",
 
   // ── Mode Selection ─────────────────────────────────────────────
   "modeSelect.title": "How do you want to play?",
@@ -285,6 +295,8 @@ export const en: TranslationMap = {
   "stats.modeWait": "Wait",
   "stats.modeFree": "Free",
   "stats.modeWatch": "Watch",
+  "stats.modeStep": "Step",
+  "stats.weakSpotHint": "Try practicing measures {start}-{end} more",
   "stats.tipSlowDown": "Drop to 0.75x or 0.5x and lock in clean notes first.",
   "stats.tipUseWaitMode": "Switch to Wait mode to stabilize your accuracy.",
   "stats.tipTrainStreak":
@@ -324,6 +336,17 @@ export const en: TranslationMap = {
 
   // ── Count-in ─────────────────────────────────────────────────
   "countIn.go": "Go!",
+
+  // ── Song Library Tags ─────────────────────────────────────────
+  "library.filterByTag": "Filtered by tag",
+  "library.clearTagFilter": "Clear",
+
+  // ── Progress / Daily Goal ───────────────────────────────────
+  "progress.dailyGoal": "Daily Goal",
+  "progress.min": "min",
+  "progress.goalReached": "Goal reached!",
+  "settings.dailyGoal": "Daily Practice Goal",
+  "settings.dailyGoalDesc": "Set a daily practice target to build a habit",
 
   // ── General ────────────────────────────────────────────────────
   "general.loading": "Loading...",

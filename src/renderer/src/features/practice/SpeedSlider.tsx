@@ -2,10 +2,10 @@ import { usePracticeStore } from "@renderer/stores/usePracticeStore";
 import { useTranslation } from "@renderer/i18n/useTranslation";
 
 /** Primary presets shown as big buttons */
-const mainPresets = [0.5, 0.75, 1.0] as const;
+const mainPresets = [0.25, 0.5, 0.75, 1.0] as const;
 
 /** Full range for the continuous slider */
-const SPEED_MIN = 25;
+const SPEED_MIN = 10;
 const SPEED_MAX = 200;
 const SPEED_STEP = 5;
 
@@ -22,12 +22,14 @@ export function SpeedSlider(): React.JSX.Element {
   const { t } = useTranslation();
   const speed = usePracticeStore((s) => s.speed);
   const setSpeed = usePracticeStore((s) => s.setSpeed);
+  const autoSpeedUp = usePracticeStore((s) => s.autoSpeedUp);
+  const setAutoSpeedUp = usePracticeStore((s) => s.setAutoSpeedUp);
 
   const speedPercent = Math.round(speed * 100);
 
   return (
     <div
-      className="flex items-center gap-2.5 min-w-0 py-0.5"
+      className="flex items-center gap-2.5 min-w-0 py-0.5 flex-wrap"
       data-testid="speed-slider-control"
     >
       <span
@@ -84,6 +86,25 @@ export function SpeedSlider(): React.JSX.Element {
       >
         {formatSpeed(speed)}
       </span>
+
+      {/* Auto speed up toggle */}
+      <label
+        className="flex items-center gap-1.5 shrink-0 cursor-pointer"
+        data-testid="auto-speed-up-toggle"
+      >
+        <input
+          type="checkbox"
+          checked={autoSpeedUp}
+          onChange={(e) => setAutoSpeedUp(e.target.checked)}
+          className="accent-[var(--color-accent)] cursor-pointer"
+        />
+        <span
+          className="text-[10px] font-body"
+          style={{ color: "var(--color-text-muted)" }}
+        >
+          {t("practice.autoSpeedUp")}
+        </span>
+      </label>
     </div>
   );
 }

@@ -266,6 +266,20 @@ export function usePracticeLifecycle(
         state.currentTime < prev.currentTime &&
         Math.abs(state.currentTime - loopController.getLoopStart()) < 0.1
       ) {
+        // Auto speed-up: bump speed by 5% if accuracy >= 90% and feature is enabled
+        const practiceSnapshot = usePracticeStore.getState();
+        if (
+          practiceSnapshot.autoSpeedUp &&
+          practiceSnapshot.score.totalNotes > 0 &&
+          practiceSnapshot.score.accuracy >= 90
+        ) {
+          const { speedController: sc } = getPracticeEngines();
+          if (sc) {
+            const newSpeed = sc.bumpSpeed(0.05);
+            usePracticeStore.getState().setSpeed(newSpeed);
+          }
+        }
+
         audioRef.current.scheduler?.seek(state.currentTime);
 
         const practiceMode = usePracticeStore.getState().mode;

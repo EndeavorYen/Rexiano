@@ -14,7 +14,7 @@ const initialScore: PracticeScore = {
 interface PracticeState {
   /** Current practice mode */
   mode: PracticeMode;
-  /** Playback speed multiplier (0.25–2.0) */
+  /** Playback speed multiplier (0.10–2.0) */
   speed: number;
   /** A/B loop range in seconds, or null if no loop set */
   loopRange: [number, number] | null;
@@ -26,9 +26,12 @@ interface PracticeState {
   noteResults: Map<string, NoteResult>;
   /** Display mode: falling notes, sheet music, or split view */
   displayMode: DisplayMode;
+  /** Whether to auto-increase speed when A-B loop accuracy >= 90% */
+  autoSpeedUp: boolean;
 
   setMode: (mode: PracticeMode) => void;
   setSpeed: (speed: number) => void;
+  setAutoSpeedUp: (enabled: boolean) => void;
   setLoopRange: (range: [number, number] | null) => void;
   setActiveTracks: (tracks: Set<number>) => void;
   setDisplayMode: (mode: DisplayMode) => void;
@@ -50,6 +53,7 @@ export const usePracticeStore = create<PracticeState>()((set) => ({
   score: { ...initialScore },
   noteResults: new Map<string, NoteResult>(),
   displayMode: "falling",
+  autoSpeedUp: false,
 
   setMode: (mode) =>
     set({
@@ -58,7 +62,9 @@ export const usePracticeStore = create<PracticeState>()((set) => ({
       noteResults: new Map(),
     }),
 
-  setSpeed: (speed) => set({ speed: Math.max(0.25, Math.min(2.0, speed)) }),
+  setSpeed: (speed) => set({ speed: Math.max(0.1, Math.min(2.0, speed)) }),
+
+  setAutoSpeedUp: (enabled) => set({ autoSpeedUp: enabled }),
 
   setLoopRange: (range) => set({ loopRange: range }),
 
