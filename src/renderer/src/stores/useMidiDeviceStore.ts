@@ -1,7 +1,16 @@
+/**
+ * ─── Phase 5: MIDI Device Store ─────────────────────────────
+ *
+ * Zustand store managing MIDI device connection state.
+ * Bridges MidiDeviceManager, MidiInputParser, and MidiOutputSender
+ * engine instances to React, handling device enumeration,
+ * selection, and Bluetooth MIDI lifecycle.
+ */
 import { create } from "zustand";
 import type { MidiDeviceInfo } from "@shared/types";
 import { MidiDeviceManager } from "@renderer/engines/midi/MidiDeviceManager";
 import { MidiInputParser } from "@renderer/engines/midi/MidiInputParser";
+import { MidiOutputSender } from "@renderer/engines/midi/MidiOutputSender";
 import {
   BleMidiManager,
   type BleMidiStatus,
@@ -55,6 +64,8 @@ interface MidiDeviceState {
   setDeviceLists: (inputs: MidiDeviceInfo[], outputs: MidiDeviceInfo[]) => void;
   /** Set the MIDI channel filter (null = all, 0-15 = specific) */
   setMidiChannel: (channel: number | null) => void;
+  /** Send a short test note to the active MIDI output device */
+  sendTestNote: () => Promise<void>;
   /** Scan and connect to a BLE MIDI device via Bluetooth */
   connectBluetooth: () => Promise<void>;
   /** Disconnect BLE MIDI device */
@@ -280,6 +291,18 @@ export const useMidiDeviceStore = create<MidiDeviceState>()((set, get) => ({
     if (_parser) {
       _parser.setChannelFilter(channel);
     }
+  },
+
+  sendTestNote: async () => {
+    const manager = MidiDeviceManager.getInstance();
+    const output = manager.getActiveOutput();
+    if (!output) return;
+    const sender = new MidiOutputSender();
+    sender.attach(output);
+    sender.noteOn(60, 100);
+    await new Promise((r) => setTimeout(r, 300));
+    sender.noteOff(60);
+    sender.detach();
   },
 
   connectBluetooth: async () => {

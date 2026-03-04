@@ -1,3 +1,11 @@
+/**
+ * ─── Phase 6.5: Song Card ───────────────────────────────────
+ *
+ * Individual song entry in the library grid. Displays title,
+ * composer, difficulty dots, grade badge, duration, tags,
+ * best-score stars, and preview/demo actions. Supports
+ * bilingual display (en / zh-TW) via the settings store.
+ */
 import { useCallback, useState } from "react";
 import type { BuiltinSongMeta } from "../../../../shared/types";
 import { useProgressStore } from "@renderer/stores/useProgressStore";
@@ -38,10 +46,10 @@ const difficultyDots: Record<BuiltinSongMeta["difficulty"], number> = {
   advanced: 3,
 };
 
-const difficultyLabels: Record<BuiltinSongMeta["difficulty"], string> = {
-  beginner: "Beginner",
-  intermediate: "Intermediate",
-  advanced: "Advanced",
+const difficultyLabelKeys: Record<BuiltinSongMeta["difficulty"], "library.difficulty.beginner" | "library.difficulty.intermediate" | "library.difficulty.advanced"> = {
+  beginner: "library.difficulty.beginner",
+  intermediate: "library.difficulty.intermediate",
+  advanced: "library.difficulty.advanced",
 };
 
 /** Convert accuracy (0-100) to a 0-3 star count */
@@ -122,7 +130,7 @@ export function SongCard({
   );
 
   /** Only show non-level tags (level-N tags are not useful to display) */
-  const visibleTags = song.tags.filter((t) => !t.startsWith("level-"));
+  const visibleTags = song.tags.filter((tag) => !tag.startsWith("level-"));
 
   return (
     <button
@@ -218,7 +226,7 @@ export function SongCard({
                   opacity: isHovered || previewState !== "idle" ? 1 : 0,
                 }}
                 title={
-                  previewState === "playing" ? "Stop preview" : "Preview song"
+                  previewState === "playing" ? t("songCard.stopPreview") : t("songCard.previewSong")
                 }
               >
                 {previewState === "loading" ? (
@@ -260,7 +268,7 @@ export function SongCard({
                   boxShadow:
                     "0 0 0 4px color-mix(in srgb, var(--color-accent) 18%, transparent)",
                 }}
-                title="Practiced"
+                title={t("songCard.practiced")}
               />
             )}
           </div>
@@ -311,8 +319,8 @@ export function SongCard({
           <div className="flex items-center gap-2.5 min-w-0">
             <div
               className="flex items-center gap-0.5"
-              title={`${difficultyLabels[song.difficulty]}: ${difficultyDescription}`}
-              aria-label={`Difficulty: ${difficultyLabels[song.difficulty]} — ${difficultyDescription}`}
+              title={`${t(difficultyLabelKeys[song.difficulty])}: ${difficultyDescription}`}
+              aria-label={t("songCard.difficulty", { level: t(difficultyLabelKeys[song.difficulty]), desc: difficultyDescription })}
             >
               {[1, 2, 3].map((n) => (
                 <div
@@ -328,7 +336,7 @@ export function SongCard({
             {bestScore && (
               <div
                 className="flex items-center gap-px"
-                title={`Best: ${Math.round(bestScore.score.accuracy)}%`}
+                title={t("songCard.bestScore", { score: Math.round(bestScore.score.accuracy) })}
               >
                 {[1, 2, 3].map((n) => (
                   <svg

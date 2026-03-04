@@ -405,6 +405,19 @@ describe("MidiToNotation", () => {
       expect(result[1].startTick).toBe(480);
       expect(result[1].durationTicks).toBe(480);
     });
+
+    it('uses "d/3" rest key for bass clef', () => {
+      const result = fillRestsInMeasure([], TPM, TPQ, "bass");
+      expect(result.length).toBe(1);
+      expect(result[0].isRest).toBe(true);
+      expect(result[0].vexKey).toBe("d/3");
+      expect(result[0].vexDuration).toBe("wr");
+    });
+
+    it('uses "b/4" rest key for treble clef (default)', () => {
+      const result = fillRestsInMeasure([], TPM, TPQ);
+      expect(result[0].vexKey).toBe("b/4");
+    });
   });
 
   describe("multi-tempo support", () => {

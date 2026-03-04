@@ -49,7 +49,8 @@ export function StatisticsPage({
   const reward = getRewardTier(score.accuracy);
   const tips = getPracticeTips(score, mode, speed, durationSeconds);
 
-  // Context-aware weak spot analysis
+  // Read frozen snapshot outside React subscription to avoid re-renders during animation.
+  // These values are captured once when the statistics overlay mounts and do not change.
   const noteResults = usePracticeStore.getState().noteResults;
   const measureTimes = useSongStore.getState().song?.measureTimes ?? [];
   const weakSpots = analyzeWeakSpots(noteResults, measureTimes);

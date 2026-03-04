@@ -346,6 +346,20 @@ export interface TranslationMap {
   "heatmap.hard": string;
   "heatmap.veryHard": string;
 
+  // ── Help / Shortcuts ─────────────────────────────────────────
+  "help.seekShort": string;
+  "help.seekLong": string;
+  "help.openFile": string;
+  "help.toggleHelp": string;
+  "help.closeHint": string;
+
+  // ── Song Card ───────────────────────────────────────────────
+  "songCard.stopPreview": string;
+  "songCard.previewSong": string;
+  "songCard.practiced": string;
+  "songCard.bestScore": string;
+  "songCard.difficulty": string;
+
   // ── General ────────────────────────────────────────────────────
   "general.loading": string;
   "general.error": string;

@@ -1,3 +1,10 @@
+/**
+ * ─── Phase 6: Practice Toolbar ──────────────────────────────
+ *
+ * Composite UI component that groups all practice controls
+ * (mode selector, speed slider, A-B loop, track selector)
+ * into a single toolbar embedded below the TransportBar.
+ */
 import { PracticeModeSelector } from "./PracticeModeSelector";
 import { SpeedSlider } from "./SpeedSlider";
 import { ABLoopSelector } from "./ABLoopSelector";

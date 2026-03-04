@@ -1,3 +1,10 @@
+/**
+ * ─── Phase 6.5: Song Library Store ──────────────────────────
+ *
+ * Zustand store for the built-in song catalogue.
+ * Manages loading, filtering (search, difficulty, grade, category),
+ * and sorting of BuiltinSongMeta entries fetched via IPC.
+ */
 import { create } from "zustand";
 import type { BuiltinSongMeta } from "../../../shared/types";
 

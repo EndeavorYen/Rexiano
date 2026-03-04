@@ -1,3 +1,11 @@
+/**
+ * ─── Phase 3: Transport Bar ─────────────────────────────────
+ *
+ * Playback control bar with play/pause, restart, seek slider,
+ * volume, metronome toggle, and MIDI device status. Sits at the
+ * bottom of the falling-notes view and integrates with the
+ * playback store and audio engine.
+ */
 import { useState } from "react";
 import {
   Play,

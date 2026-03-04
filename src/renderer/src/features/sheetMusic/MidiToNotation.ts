@@ -156,12 +156,18 @@ export function assignClef(
  * Fill gaps between notes in a measure with rests.
  * Also adds trailing rest to fill measure, and returns a whole rest
  * for completely empty measures.
+ *
+ * @param clef - "treble" or "bass" for proper rest vertical positioning.
+ *   Treble rests sit on b/4, bass rests sit on d/3 (standard engraving convention).
  */
 export function fillRestsInMeasure(
   notes: NotationNote[],
   ticksPerMeasure: number,
   ticksPerQuarter: number,
+  clef: "treble" | "bass" = "treble",
 ): NotationNote[] {
+  const restKey = clef === "treble" ? "b/4" : "d/3";
+
   // Empty measure → whole rest
   if (notes.length === 0) {
     return [
@@ -169,7 +175,7 @@ export function fillRestsInMeasure(
         midi: 0,
         startTick: 0,
         durationTicks: ticksPerMeasure,
-        vexKey: "b/4",
+        vexKey: restKey,
         vexDuration: "wr",
         tied: false,
         isRest: true,
@@ -188,7 +194,7 @@ export function fillRestsInMeasure(
         midi: 0,
         startTick: cursor,
         durationTicks: gapTicks,
-        vexKey: "b/4",
+        vexKey: restKey,
         vexDuration: ticksToVexDuration(gapTicks, ticksPerQuarter) + "r",
         tied: false,
         isRest: true,
@@ -205,7 +211,7 @@ export function fillRestsInMeasure(
       midi: 0,
       startTick: cursor,
       durationTicks: gapTicks,
-      vexKey: "b/4",
+      vexKey: restKey,
       vexDuration: ticksToVexDuration(gapTicks, ticksPerQuarter) + "r",
       tied: false,
       isRest: true,
@@ -326,17 +332,19 @@ export function convertToNotation(
   // Post-process: cross-measure ties
   splitTiesAcrossMeasures(measures, ticksPerMeasure, ticksPerQuarter);
 
-  // Post-process: fill rests
+  // Post-process: fill rests (with proper clef positioning)
   for (const measure of measures) {
     measure.trebleNotes = fillRestsInMeasure(
       measure.trebleNotes,
       ticksPerMeasure,
       ticksPerQuarter,
+      "treble",
     );
     measure.bassNotes = fillRestsInMeasure(
       measure.bassNotes,
       ticksPerMeasure,
       ticksPerQuarter,
+      "bass",
     );
   }
 

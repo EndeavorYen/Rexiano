@@ -54,8 +54,14 @@ export function analyzeDifficulty(song: ParsedSong): {
   const noteDensity = allNotes.length / song.duration;
 
   // --- Pitch Range ---
-  const midiValues = allNotes.map((n) => n.midi);
-  const pitchRange = Math.max(...midiValues) - Math.min(...midiValues);
+  // Use a loop instead of Math.max(...arr) to avoid stack overflow on large arrays
+  let midiMax = -Infinity;
+  let midiMin = Infinity;
+  for (const n of allNotes) {
+    if (n.midi > midiMax) midiMax = n.midi;
+    if (n.midi < midiMin) midiMin = n.midi;
+  }
+  const pitchRange = midiMax - midiMin;
 
   // --- Rhythm Complexity ---
   // Quantize durations to nearest 50ms and count unique values
@@ -94,11 +100,26 @@ export function analyzeDifficulty(song: ParsedSong): {
     const trackA = sorted[0];
     const trackB = sorted[1];
 
-    // Count notes in trackA that overlap in time with any note in trackB
+    // Count notes in trackA that overlap in time with any note in trackB.
+    // Pre-sort trackB by time and use binary search to avoid O(n*m) scan.
+    const sortedB = [...trackB.notes].sort((a, b) => a.time - b.time);
     let overlapping = 0;
     for (const noteA of trackA.notes) {
       const aEnd = noteA.time + noteA.duration;
-      for (const noteB of trackB.notes) {
+      // Binary search: find first noteB whose time >= noteA.time - maxDurationB
+      // Since we only need "any overlap", scan from the first noteB that could
+      // possibly overlap (noteB.time < aEnd) and stop when noteB.time >= aEnd.
+      // Find first index where noteB.time + noteB.duration > noteA.time
+      let lo = 0;
+      let hi = sortedB.length;
+      while (lo < hi) {
+        const mid = (lo + hi) >>> 1;
+        if (sortedB[mid].time + sortedB[mid].duration <= noteA.time) lo = mid + 1;
+        else hi = mid;
+      }
+      for (let j = lo; j < sortedB.length; j++) {
+        const noteB = sortedB[j];
+        if (noteB.time >= aEnd) break; // no more possible overlaps
         const bEnd = noteB.time + noteB.duration;
         if (noteA.time < bEnd && noteB.time < aEnd) {
           overlapping++;

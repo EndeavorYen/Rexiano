@@ -128,10 +128,10 @@ export function KeyboardShortcutsHelp(): React.JSX.Element | null {
   const shortcuts: ShortcutEntry[] = [
     { keyCaps: ["Space"], label: t("settings.shortcut.playPause") },
     { keyCaps: ["R"], label: t("settings.shortcut.restart") },
-    { keyCaps: ["\u2190", "\u2192"], label: "Seek \u00B15s" },
+    { keyCaps: ["\u2190", "\u2192"], label: t("help.seekShort") },
     {
       keyCaps: ["Shift", "\u2190", "\u2192"],
-      label: "Seek \u00B115s",
+      label: t("help.seekLong"),
     },
     {
       keyCaps: ["\u2191", "\u2193"],
@@ -156,8 +156,8 @@ export function KeyboardShortcutsHelp(): React.JSX.Element | null {
         t("practice.free"),
     },
     { keyCaps: ["M"], label: t("audio.mute") + " / " + t("audio.unmute") },
-    { keyCaps: ["Ctrl", "O"], label: "Open file" },
-    { keyCaps: ["?"], label: "Toggle this help" },
+    { keyCaps: ["Ctrl", "O"], label: t("help.openFile") },
+    { keyCaps: ["?"], label: t("help.toggleHelp") },
     { keyCaps: ["Esc"], label: t("settings.shortcut.closeBack") },
   ];
 
@@ -211,7 +211,7 @@ export function KeyboardShortcutsHelp(): React.JSX.Element | null {
           className="text-[10px] font-body text-center mt-4"
           style={{ color: "var(--color-text-muted)" }}
         >
-          Press <KeyCap label="?" /> or <KeyCap label="Esc" /> to close
+          {t("help.closeHint", { key1: "?", key2: "Esc" })}
         </p>
       </div>
     </div>

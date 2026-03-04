@@ -1,3 +1,10 @@
+/**
+ * ─── Phase 6: Speed Slider ──────────────────────────────────
+ *
+ * Speed control component with preset buttons (0.25x–1.0x)
+ * and a continuous slider (10%–200%). Updates the practice
+ * store speed value which feeds into the ticker loop multiplier.
+ */
 import { usePracticeStore } from "@renderer/stores/usePracticeStore";
 import { useTranslation } from "@renderer/i18n/useTranslation";
 

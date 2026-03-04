@@ -1,3 +1,10 @@
+/**
+ * ─── Phase 6: Practice Mode Selector ────────────────────────
+ *
+ * Toggle button group for switching between Watch, Wait, Free,
+ * and Step practice modes. Reads and writes mode via
+ * usePracticeStore and displays mode descriptions on hover.
+ */
 import { usePracticeStore } from "@renderer/stores/usePracticeStore";
 import { useTranslation } from "@renderer/i18n/useTranslation";
 import type { PracticeMode } from "@shared/types";

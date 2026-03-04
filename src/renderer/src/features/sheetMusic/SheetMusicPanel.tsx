@@ -29,6 +29,43 @@ const LEFT_MARGIN = 28;
 const TOP_MARGIN = 10;
 const DISPLAY_MEASURE_COUNT = 8;
 
+/**
+ * Extract the accidental symbol from a VexFlow key string.
+ * e.g. "c#/4" → "#", "db/3" → "b", "e/4" → null, "f##/5" → "##", "abb/3" → "bb"
+ */
+function extractAccidental(vexKey: string): string | null {
+  const slash = vexKey.indexOf("/");
+  const name = slash >= 0 ? vexKey.substring(0, slash) : vexKey;
+  // Strip the base letter (a-g), whatever remains is the accidental
+  const base = name.substring(0, 1);
+  const accidental = name.substring(base.length);
+  if (accidental === "" || accidental === "n") return null;
+  return accidental; // "#", "b", "##", "bb"
+}
+
+/**
+ * Check if a VexFlow duration string is dotted.
+ * Dotted durations end with "d" (e.g. "qd", "hd", "8d", "wd").
+ * Rest durations end with "r" or "dr" (e.g. "qr", "qdr").
+ */
+function isDottedDuration(vexDuration: string): boolean {
+  const stripped = vexDuration.replace(/r$/, "");
+  return stripped.endsWith("d");
+}
+
+/**
+ * Get the base VexFlow duration without the dotted suffix.
+ * "qd" → "q", "8d" → "8", "hdr" → "hr", "wr" → "wr"
+ */
+function baseDuration(vexDuration: string): string {
+  const isRest = vexDuration.endsWith("r");
+  let core = isRest ? vexDuration.slice(0, -1) : vexDuration;
+  if (core.endsWith("d")) {
+    core = core.slice(0, -1);
+  }
+  return isRest ? core + "r" : core;
+}
+
 /** Available zoom levels for sheet music display */
 const ZOOM_LEVELS = [0.75, 1.0, 1.25, 1.5] as const;
 
@@ -89,6 +126,60 @@ function groupNotesIntoChords(notes: NotationNote[]): ChordGroup[] {
   return groups;
 }
 
+/** Return value from renderMeasure for post-render passes (ties, beams). */
+interface MeasureRenderResult {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  trebleVexNotes: any[];
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  bassVexNotes: any[];
+  trebleChords: ChordGroup[];
+  bassChords: ChordGroup[];
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  trebleStave: any;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  bassStave: any;
+}
+
+/**
+ * Create a VexFlow StaveNote with proper accidentals and dots.
+ */
+function createVexNote(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  VF: any,
+  chord: ChordGroup,
+  clef: "treble" | "bass" = "treble",
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+): any {
+  const { StaveNote, Accidental, Dot } = VF;
+  const dotted = isDottedDuration(chord.duration);
+  const duration = dotted ? baseDuration(chord.duration) : chord.duration;
+
+  const noteOpts: Record<string, unknown> = {
+    keys: chord.keys,
+    duration,
+  };
+  if (clef === "bass") noteOpts.clef = "bass";
+
+  const note = new StaveNote(noteOpts);
+
+  // Add accidentals for each key in the chord
+  if (Accidental) {
+    for (let i = 0; i < chord.keys.length; i++) {
+      const acc = extractAccidental(chord.keys[i]);
+      if (acc) {
+        note.addModifier(new Accidental(acc), i);
+      }
+    }
+  }
+
+  // Add augmentation dots for dotted durations
+  if (dotted && Dot) {
+    Dot.buildAndAttach([note], { all: true });
+  }
+
+  return note;
+}
+
 function renderMeasure(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   VF: any,
@@ -101,26 +192,31 @@ function renderMeasure(
   isFirst: boolean,
   measureNumber?: number,
   expressions?: NotationExpression[],
-): void {
+): MeasureRenderResult {
   const { Stave, StaveNote, Voice, Formatter, StaveConnector, Articulation } = VF;
 
   const treble = new Stave(x, y, width);
   if (isFirst) {
-    treble
-      .addClef("treble")
-      .addTimeSignature(
-        `${measure.timeSignatureTop}/${measure.timeSignatureBottom}`,
-      );
+    treble.addClef("treble");
+    // Add key signature if not C major
+    if (measure.keySignature && measure.keySignature !== "C") {
+      treble.addKeySignature(measure.keySignature);
+    }
+    treble.addTimeSignature(
+      `${measure.timeSignatureTop}/${measure.timeSignatureBottom}`,
+    );
   }
   treble.setContext(context).draw();
 
   const bass = new Stave(x, y + STAVE_HEIGHT + SYSTEM_GAP, width);
   if (isFirst) {
-    bass
-      .addClef("bass")
-      .addTimeSignature(
-        `${measure.timeSignatureTop}/${measure.timeSignatureBottom}`,
-      );
+    bass.addClef("bass");
+    if (measure.keySignature && measure.keySignature !== "C") {
+      bass.addKeySignature(measure.keySignature);
+    }
+    bass.addTimeSignature(
+      `${measure.timeSignatureTop}/${measure.timeSignatureBottom}`,
+    );
   }
   bass.setContext(context).draw();
 
@@ -160,10 +256,8 @@ function renderMeasure(
     const beatsPerMeasure = measure.timeSignatureTop;
     for (const expr of expressions) {
       if (expr.type === "staccato") {
-        // Convert beat position to approximate tick for matching
-        // We match the nearest chord group's startTick
         const targetFraction = expr.beat / beatsPerMeasure;
-        staccatoTicks.add(Math.round(targetFraction * 1000)); // normalized key
+        staccatoTicks.add(Math.round(targetFraction * 1000));
       }
     }
   }
@@ -173,14 +267,10 @@ function renderMeasure(
   const trebleVexNotes: any[] =
     trebleChords.length > 0
       ? trebleChords.map((chord) => {
-          const note = new StaveNote({
-            keys: chord.keys,
-            duration: chord.duration,
-          });
-          // Add staccato dot if this chord position matches a staccato expression
+          const note = createVexNote(VF, chord, "treble");
           if (expressions && Articulation) {
             const beatsPerMeasure = measure.timeSignatureTop;
-            const totalTicks = beatsPerMeasure * 480; // approximate
+            const totalTicks = beatsPerMeasure * 480;
             const chordFraction = chord.startTick / totalTicks;
             const normalizedTick = Math.round(chordFraction * 1000);
             if (staccatoTicks.has(normalizedTick)) {
@@ -194,10 +284,13 @@ function renderMeasure(
           return note;
         })
       : [
-          new StaveNote({
-            keys: [makeRestKey("treble")],
-            duration: "wr",
-          }),
+          (() => {
+            const rest = new StaveNote({
+              keys: [makeRestKey("treble")],
+              duration: "wr",
+            });
+            return rest;
+          })(),
         ];
 
   const bassChords = groupNotesIntoChords(measure.bassNotes);
@@ -205,12 +298,7 @@ function renderMeasure(
   const bassVexNotes: any[] =
     bassChords.length > 0
       ? bassChords.map((chord) => {
-          const note = new StaveNote({
-            keys: chord.keys,
-            duration: chord.duration,
-            clef: "bass",
-          });
-          // Add staccato dot for bass notes too
+          const note = createVexNote(VF, chord, "bass");
           if (expressions && Articulation) {
             const beatsPerMeasure = measure.timeSignatureTop;
             const totalTicks = beatsPerMeasure * 480;
@@ -227,11 +315,14 @@ function renderMeasure(
           return note;
         })
       : [
-          new StaveNote({
-            keys: [makeRestKey("bass")],
-            duration: "wr",
-            clef: "bass",
-          }),
+          (() => {
+            const rest = new StaveNote({
+              keys: [makeRestKey("bass")],
+              duration: "wr",
+              clef: "bass",
+            });
+            return rest;
+          })(),
         ];
 
   const trebleVoice = new Voice({
@@ -246,7 +337,7 @@ function renderMeasure(
   }).setStrict(false);
   bassVoice.addTickables(bassVexNotes);
 
-  const staveWidth = width - (isFirst ? 80 : 20);
+  const staveWidth = width - (isFirst ? 100 : 20);
   new Formatter()
     .joinVoices([trebleVoice])
     .joinVoices([bassVoice])
@@ -255,13 +346,39 @@ function renderMeasure(
   trebleVoice.draw(context, treble);
   bassVoice.draw(context, bass);
 
+  // Draw beams for treble and bass notes.
+  // Beam.generateBeams automatically groups 8th/16th/32nd notes into beamed
+  // groups and ignores quarter notes and longer. We pass only non-rest notes
+  // since rests break beam groups.
+  try {
+    const { Beam } = VF;
+    if (Beam) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const drawBeams = (vexNotes: any[], chords: ChordGroup[]): void => {
+        const nonRestNotes = vexNotes.filter(
+          (_n: unknown, i: number) =>
+            chords[i] && !chords[i].duration.includes("r"),
+        );
+        if (nonRestNotes.length > 1) {
+          const beams = Beam.generateBeams(nonRestNotes);
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          beams.forEach((b: any) => b.setContext(context).draw());
+        }
+      };
+      drawBeams(trebleVexNotes, trebleChords);
+      drawBeams(bassVexNotes, bassChords);
+    }
+  } catch {
+    // Beam generation can fail for certain note configurations; silently skip
+  }
+
   // Render text-based expression marks (rit., accel., legato) above the treble staff
   if (expressions && expressions.length > 0) {
     const svg = context.svg as SVGSVGElement | undefined;
     if (svg) {
       const beatsPerMeasure = measure.timeSignatureTop;
       for (const expr of expressions) {
-        if (expr.type === "staccato") continue; // handled via VexFlow Articulation above
+        if (expr.type === "staccato") continue;
 
         const label =
           expr.type === "rit"
@@ -298,6 +415,8 @@ function renderMeasure(
       }
     }
   }
+
+  return { trebleVexNotes, bassVexNotes, trebleChords, bassChords, trebleStave: treble, bassStave: bass };
 }
 
 /**
@@ -466,11 +585,15 @@ export function SheetMusicPanel({
         await document.fonts.ready;
         if (cancelled || !svgHostRef.current) return;
 
-        const { Renderer } = VF;
+        const { Renderer, StaveTie } = VF;
         const stage = document.createElement("div");
         const renderer = new Renderer(stage, Renderer.Backends.SVG);
         renderer.resize(containerWidth, Math.max(totalHeight, height));
         const context = renderer.getContext();
+
+        // Collect render results for cross-measure tie rendering
+        const slotResults: (MeasureRenderResult | null)[] = [];
+        const slotMeasureIndices: (number | undefined)[] = [];
 
         for (let slot = 0; slot < DISPLAY_MEASURE_COUNT; slot++) {
           const measureIndex = visibleMeasures[slot];
@@ -478,26 +601,26 @@ export function SheetMusicPanel({
           const y = TOP_MARGIN;
           const isFirst = slot === 0;
 
+          slotMeasureIndices.push(measureIndex);
+
           if (measureIndex === undefined) {
-            // Use the time signature from the last known measure, or default to 4/4
             const lastMeasure =
               notationData.measures[notationData.measures.length - 1];
             const timeSig = lastMeasure
               ? `${lastMeasure.timeSignatureTop}/${lastMeasure.timeSignatureBottom}`
               : "4/4";
             renderEmptyMeasure(VF, context, x, y, slotWidth, isFirst, timeSig);
+            slotResults.push(null);
             continue;
           }
 
           const measure = notationData.measures[measureIndex];
-
-          // Filter expressions for this measure
           const measureExpressions = notationData.expressions?.filter(
             (e) => e.measureIndex === measureIndex,
           );
 
           try {
-            renderMeasure(
+            const result = renderMeasure(
               VF,
               context,
               measure,
@@ -508,11 +631,88 @@ export function SheetMusicPanel({
               measureIndex + 1,
               measureExpressions,
             );
+            slotResults.push(result);
           } catch (e) {
             console.warn(
               `SheetMusic: failed to render measure ${measureIndex}:`,
               e,
             );
+            slotResults.push(null);
+          }
+        }
+
+        // Draw ties between consecutive measures for notes marked as tied
+        if (StaveTie) {
+          for (let slot = 0; slot < DISPLAY_MEASURE_COUNT - 1; slot++) {
+            const currentResult = slotResults[slot];
+            const nextResult = slotResults[slot + 1];
+            const currentMeasureIdx = slotMeasureIndices[slot];
+            const nextMeasureIdx = slotMeasureIndices[slot + 1];
+            if (
+              !currentResult ||
+              !nextResult ||
+              currentMeasureIdx === undefined ||
+              nextMeasureIdx === undefined
+            )
+              continue;
+
+            // Only draw ties for consecutive measure indices
+            if (nextMeasureIdx !== currentMeasureIdx + 1) continue;
+
+            const currentMeasure = notationData.measures[currentMeasureIdx];
+
+            // Check treble notes for ties
+            for (let ni = 0; ni < currentResult.trebleChords.length; ni++) {
+              const chord = currentResult.trebleChords[ni];
+              // Find the original notation notes to check the tied flag
+              const matchingNotes = currentMeasure.trebleNotes.filter(
+                (n) => n.startTick === chord.startTick && n.tied,
+              );
+              if (matchingNotes.length > 0 && nextResult.trebleVexNotes.length > 0) {
+                try {
+                  const indices = Array.from(
+                    { length: chord.keys.length },
+                    (_, i) => i,
+                  );
+                  new StaveTie({
+                    firstNote: currentResult.trebleVexNotes[ni],
+                    lastNote: nextResult.trebleVexNotes[0],
+                    firstIndexes: indices,
+                    lastIndexes: indices.slice(0, 1),
+                  })
+                    .setContext(context)
+                    .draw();
+                } catch {
+                  // Tie rendering can fail for edge cases; skip silently
+                }
+              }
+            }
+
+            // Check bass notes for ties
+            for (let ni = 0; ni < currentResult.bassChords.length; ni++) {
+              const chord = currentResult.bassChords[ni];
+              const matchingNotes = currentMeasure.bassNotes.filter(
+                (n) => n.startTick === chord.startTick && n.tied,
+              );
+              if (matchingNotes.length > 0 && nextResult.bassVexNotes.length > 0) {
+                try {
+                  const indices = Array.from(
+                    { length: chord.keys.length },
+                    (_, i) => i,
+                  );
+                  new StaveTie({
+                    firstNote: currentResult.bassVexNotes[ni],
+                    lastNote: nextResult.bassVexNotes[0],
+                    firstIndexes: indices,
+                    lastIndexes: indices.slice(0, 1),
+                  })
+                    .setContext(context)
+                    .draw();
+                } catch {
+                  // Tie rendering can fail; skip silently
+                }
+              }
+            }
           }
         }
 

@@ -160,10 +160,22 @@ function computeHandIndependence(
 ): number {
   if (trackANotes.length === 0 || trackBNotes.length === 0) return 0;
 
+  // Pre-sort trackB by time and use binary search to avoid O(n*m) scan.
+  const sortedB = [...trackBNotes].sort((a, b) => a.time - b.time);
   let overlapping = 0;
   for (const noteA of trackANotes) {
     const aEnd = noteA.time + noteA.duration;
-    for (const noteB of trackBNotes) {
+    // Binary search: find first noteB whose end time > noteA.time
+    let lo = 0;
+    let hi = sortedB.length;
+    while (lo < hi) {
+      const mid = (lo + hi) >>> 1;
+      if (sortedB[mid].time + sortedB[mid].duration <= noteA.time) lo = mid + 1;
+      else hi = mid;
+    }
+    for (let j = lo; j < sortedB.length; j++) {
+      const noteB = sortedB[j];
+      if (noteB.time >= aEnd) break; // no more possible overlaps
       const bEnd = noteB.time + noteB.duration;
       if (noteA.time < bEnd && noteB.time < aEnd) {
         overlapping++;

@@ -1,3 +1,10 @@
+/**
+ * ─── Phase 6.5: Song Library ────────────────────────────────
+ *
+ * Main song library view. Renders the filterable, searchable
+ * grid of SongCards, category tabs, difficulty/grade filters,
+ * recently-played section, daily goal widget, and MIDI import.
+ */
 import { useEffect, useMemo, useCallback, useState, useRef } from "react";
 import {
   Upload,
@@ -11,7 +18,6 @@ import {
   X,
   Tag,
 } from "lucide-react";
-import { parseMidiFile } from "../../engines/midi/MidiFileParser";
 import { useSongStore } from "../../stores/useSongStore";
 import { usePlaybackStore } from "../../stores/usePlaybackStore";
 import { useSongLibraryStore } from "../../stores/useSongLibraryStore";
@@ -57,7 +63,7 @@ export function SongLibrary({
   const setActiveTag = useSongLibraryStore((s) => s.setActiveTag);
   const fetchSongs = useSongLibraryStore((s) => s.fetchSongs);
 
-  const loadSong = useSongStore((s) => s.loadSong);
+  const loadFromMidiData = useSongStore((s) => s.loadFromMidiData);
   const reset = usePlaybackStore((s) => s.reset);
 
   const sessions = useProgressStore((s) => s.sessions);
@@ -107,8 +113,7 @@ export function SongLibrary({
         // Actually load the song, set Watch mode, and auto-play
         const result = await window.api.loadBuiltinSong(songId);
         if (result) {
-          const parsed = parseMidiFile(result.fileName, result.data);
-          loadSong(parsed);
+          loadFromMidiData(result.fileName, result.data);
           reset();
           usePracticeStore.getState().setMode("watch");
           // Brief delay so canvas initializes before playing
@@ -129,7 +134,7 @@ export function SongLibrary({
         setPreviewSongId(null);
       }
     },
-    [previewSongId, loadSong, reset, refreshRecents],
+    [previewSongId, loadFromMidiData, reset, refreshRecents],
   );
 
   /** Handle demo click — load song, set Watch mode, and auto-play */
@@ -140,8 +145,7 @@ export function SongLibrary({
       try {
         const result = await window.api.loadBuiltinSong(songId);
         if (result) {
-          const parsed = parseMidiFile(result.fileName, result.data);
-          loadSong(parsed);
+          loadFromMidiData(result.fileName, result.data);
           reset();
           usePracticeStore.getState().setMode("watch");
           // Brief delay so canvas initializes before playing
@@ -163,7 +167,7 @@ export function SongLibrary({
         setLoadingId(null);
       }
     },
-    [loadSong, reset, refreshRecents, t],
+    [loadFromMidiData, reset, refreshRecents, t],
   );
 
   // Cleanup preview timer on unmount
@@ -243,8 +247,7 @@ export function SongLibrary({
       try {
         const result = await window.api.loadBuiltinSong(songId);
         if (result) {
-          const parsed = parseMidiFile(result.fileName, result.data);
-          loadSong(parsed);
+          loadFromMidiData(result.fileName, result.data);
           reset();
           // Save to recent files with builtin: prefix
           void window.api.saveRecentFile({
@@ -262,7 +265,7 @@ export function SongLibrary({
         setLoadingId(null);
       }
     },
-    [loadSong, reset, refreshRecents, t],
+    [loadFromMidiData, reset, refreshRecents, t],
   );
 
   /** Max recent files shown in the quick-access strip */
@@ -289,8 +292,7 @@ export function SongLibrary({
           setTimeout(() => setRecentError(null), 3000);
           return;
         }
-        const parsed = parseMidiFile(result.fileName, result.data);
-        loadSong(parsed);
+        loadFromMidiData(result.fileName, result.data);
         reset();
         // Bump timestamp
         void window.api.saveRecentFile({
@@ -308,7 +310,7 @@ export function SongLibrary({
         setLoadingRecentPath(null);
       }
     },
-    [loadSong, reset, refreshRecents, t],
+    [loadFromMidiData, reset, refreshRecents, t],
   );
 
   return (

@@ -361,6 +361,20 @@ export const en: TranslationMap = {
   "heatmap.hard": "Hard",
   "heatmap.veryHard": "Very Hard",
 
+  // ── Help / Shortcuts ─────────────────────────────────────────
+  "help.seekShort": "Seek \u00B15s",
+  "help.seekLong": "Seek \u00B115s",
+  "help.openFile": "Open file",
+  "help.toggleHelp": "Toggle this help",
+  "help.closeHint": "Press {key1} or {key2} to close",
+
+  // ── Song Card ───────────────────────────────────────────────
+  "songCard.stopPreview": "Stop preview",
+  "songCard.previewSong": "Preview song",
+  "songCard.practiced": "Practiced",
+  "songCard.bestScore": "Best: {score}%",
+  "songCard.difficulty": "Difficulty: {level} — {desc}",
+
   // ── General ────────────────────────────────────────────────────
   "general.loading": "Loading...",
   "general.error": "Error",

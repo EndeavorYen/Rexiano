@@ -348,6 +348,20 @@ export const zhTW: TranslationMap = {
   "heatmap.hard": "困難",
   "heatmap.veryHard": "非常困難",
 
+  // ── Help / Shortcuts ─────────────────────────────────────────
+  "help.seekShort": "快轉 \u00B15 秒",
+  "help.seekLong": "快轉 \u00B115 秒",
+  "help.openFile": "開啟檔案",
+  "help.toggleHelp": "顯示／隱藏快捷鍵說明",
+  "help.closeHint": "按 {key1} 或 {key2} 關閉",
+
+  // ── Song Card ───────────────────────────────────────────────
+  "songCard.stopPreview": "停止預聽",
+  "songCard.previewSong": "預聽曲子",
+  "songCard.practiced": "已練習",
+  "songCard.bestScore": "最高：{score}%",
+  "songCard.difficulty": "難度：{level} — {desc}",
+
   // ── General ────────────────────────────────────────────────────
   "general.loading": "載入中…",
   "general.error": "錯誤",

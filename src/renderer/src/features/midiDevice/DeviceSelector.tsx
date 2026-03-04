@@ -1,10 +1,8 @@
 import { useEffect, useCallback, useState, useRef, startTransition } from "react";
 import { Bluetooth } from "lucide-react";
 import { useMidiDeviceStore } from "@renderer/stores/useMidiDeviceStore";
-import { MidiDeviceManager } from "@renderer/engines/midi/MidiDeviceManager";
-import { MidiOutputSender } from "@renderer/engines/midi/MidiOutputSender";
 import { ConnectionStatus } from "./ConnectionStatus";
-import { sendTestNote, type TestButtonState } from "./midiTestUtils";
+import type { TestButtonState } from "./midiTestUtils";
 import { useTranslation } from "@renderer/i18n/useTranslation";
 import { spellNote } from "@renderer/utils/enharmonicSpelling";
 
@@ -22,6 +20,7 @@ export function DeviceSelector(): React.JSX.Element {
   const selectOutput = useMidiDeviceStore((s) => s.selectOutput);
   const bleStatus = useMidiDeviceStore((s) => s.bleStatus);
   const bleDeviceName = useMidiDeviceStore((s) => s.bleDeviceName);
+  const storeSendTestNote = useMidiDeviceStore((s) => s.sendTestNote);
   const connectBluetooth = useMidiDeviceStore((s) => s.connectBluetooth);
   const disconnectBluetooth = useMidiDeviceStore((s) => s.disconnectBluetooth);
 
@@ -69,14 +68,9 @@ export function DeviceSelector(): React.JSX.Element {
   const handleTestClick = useCallback(async () => {
     if (testState !== "idle") return;
 
-    const manager = MidiDeviceManager.getInstance();
-    const output = manager.getActiveOutput();
-    if (!output) return;
-
     setTestState("playing");
     try {
-      const sender = new MidiOutputSender();
-      await sendTestNote(sender, output);
+      await storeSendTestNote();
       setTestState("ok");
       okTimerRef.current = setTimeout(() => {
         setTestState("idle");
@@ -85,7 +79,7 @@ export function DeviceSelector(): React.JSX.Element {
     } catch {
       setTestState("idle");
     }
-  }, [testState]);
+  }, [testState, storeSendTestNote]);
 
   const handleInputChange = useCallback(
     (e: React.ChangeEvent<HTMLSelectElement>) => {

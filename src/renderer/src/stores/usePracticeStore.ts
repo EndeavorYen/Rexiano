@@ -1,3 +1,10 @@
+/**
+ * ─── Phase 6: Practice Store ────────────────────────────────
+ *
+ * Zustand store bridging practice engine state to React.
+ * Holds mode selection, speed, loop range, active tracks,
+ * live score, and display-mode preferences for the practice session.
+ */
 import { create } from "zustand";
 import type { PracticeMode, PracticeScore, NoteResult } from "@shared/types";
 import type { DisplayMode } from "@renderer/features/sheetMusic/types";

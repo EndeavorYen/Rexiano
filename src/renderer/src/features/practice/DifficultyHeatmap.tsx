@@ -1,10 +1,9 @@
 import { useMemo, useState } from "react";
-import { useSongStore } from "@renderer/stores/useSongStore";
-import { useTranslation } from "@renderer/i18n/useTranslation";
 import {
-  analyzeSegments,
+  useSongStore,
   type SegmentDifficulty,
-} from "@renderer/engines/midi/SegmentDifficultyAnalyzer";
+} from "@renderer/stores/useSongStore";
+import { useTranslation } from "@renderer/i18n/useTranslation";
 
 /**
  * Map a 0-1 difficulty score to a color string.
@@ -42,12 +41,15 @@ function difficultyLabelKey(
 export function DifficultyHeatmap(): React.JSX.Element | null {
   const { t } = useTranslation();
   const song = useSongStore((s) => s.song);
+  const getSegmentDifficulties = useSongStore(
+    (s) => s.getSegmentDifficulties,
+  );
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
 
   const segments: SegmentDifficulty[] = useMemo(() => {
     if (!song) return [];
-    return analyzeSegments(song, 2);
-  }, [song]);
+    return getSegmentDifficulties(2);
+  }, [song, getSegmentDifficulties]);
 
   if (!song || segments.length === 0) return null;
 
