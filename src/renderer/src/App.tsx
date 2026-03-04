@@ -1196,11 +1196,11 @@ function App(): React.JSX.Element {
               style={
                 isSplitMode
                   ? {
-                      filter:
+                      borderLeft:
                         splitFocus === "sheet"
-                          ? "saturate(1.03) brightness(1.015)"
-                          : "saturate(0.9) brightness(0.965)",
-                      transition: "filter 160ms ease",
+                          ? "2px solid var(--color-accent)"
+                          : "2px solid var(--color-border)",
+                      transition: "border-color 160ms ease",
                     }
                   : undefined
               }
@@ -1221,11 +1221,13 @@ function App(): React.JSX.Element {
               className="flex-1 min-h-0 relative flex flex-col"
               style={{
                 display: displayMode === "sheet" ? "none" : "flex",
-                filter:
-                  isSplitMode && splitFocus === "sheet"
-                    ? "saturate(0.9) brightness(0.965)"
-                    : undefined,
-                transition: isSplitMode ? "filter 160ms ease" : undefined,
+                borderLeft:
+                  isSplitMode && splitFocus === "falling"
+                    ? "2px solid var(--color-accent)"
+                    : isSplitMode
+                      ? "2px solid var(--color-border)"
+                      : undefined,
+                transition: isSplitMode ? "border-color 160ms ease" : undefined,
               }}
               onMouseEnter={() => isSplitMode && setSplitFocusPanel("falling")}
             >

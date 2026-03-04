@@ -2,10 +2,10 @@
  * SheetMusicPanel — Renders sheet music with VexFlow 5.
  *
  * Rendering model:
- * - Always displays 4 measure slots.
- * - On the 4th measure of a group, preload the next 3 measures while
- *   keeping the current one as anchor:
- *   1,2,3,4 -> 5,6,7,4 -> 5,6,7,8
+ * - Always displays 8 measure slots (configurable via DISPLAY_MEASURE_COUNT).
+ * - On the last measure of a group, preload the next measures while
+ *   keeping the current one as anchor.
+ * - Displays measure numbers on odd measures (1, 3, 5, ...) above treble staff.
  * - Subtly highlights currently active measure + note/chord.
  */
 
@@ -26,7 +26,7 @@ const SYSTEM_GAP = 20;
 const SYSTEM_HEIGHT = STAVE_HEIGHT * 2 + SYSTEM_GAP;
 const LEFT_MARGIN = 28;
 const TOP_MARGIN = 10;
-const DISPLAY_MEASURE_COUNT = 4;
+const DISPLAY_MEASURE_COUNT = 8;
 
 interface SheetMusicPanelProps {
   notationData: NotationData | null;
@@ -95,6 +95,7 @@ function renderMeasure(
   y: number,
   width: number,
   isFirst: boolean,
+  measureNumber?: number,
 ): void {
   const { Stave, StaveNote, Voice, Formatter, StaveConnector } = VF;
 
@@ -128,6 +129,25 @@ function renderMeasure(
     .setType("singleRight")
     .setContext(context)
     .draw();
+
+  // Draw measure number above treble staff on odd measures (1, 3, 5, ...)
+  if (measureNumber !== undefined && measureNumber % 2 === 1) {
+    const svg = context.svg as SVGSVGElement | undefined;
+    if (svg) {
+      const text = document.createElementNS(
+        "http://www.w3.org/2000/svg",
+        "text",
+      );
+      text.setAttribute("x", String(x + 4));
+      text.setAttribute("y", String(y - 2));
+      text.setAttribute("font-size", "10");
+      text.setAttribute("font-family", "inherit");
+      text.setAttribute("fill", "var(--color-text-muted, #888)");
+      text.setAttribute("opacity", "0.7");
+      text.textContent = String(measureNumber);
+      svg.appendChild(text);
+    }
+  }
 
   const trebleChords = groupNotesIntoChords(measure.trebleNotes);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -190,7 +210,7 @@ function renderMeasure(
 }
 
 /**
- * Draw an empty slot when the song has fewer than 4 measures left.
+ * Draw an empty slot when the song has fewer measures than display slots.
  */
 function renderEmptyMeasure(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -348,7 +368,16 @@ export function SheetMusicPanel({
           const measure = notationData.measures[measureIndex];
 
           try {
-            renderMeasure(VF, context, measure, x, y, slotWidth, isFirst);
+            renderMeasure(
+              VF,
+              context,
+              measure,
+              x,
+              y,
+              slotWidth,
+              isFirst,
+              measureIndex + 1,
+            );
           } catch (e) {
             console.warn(
               `SheetMusic: failed to render measure ${measureIndex}:`,

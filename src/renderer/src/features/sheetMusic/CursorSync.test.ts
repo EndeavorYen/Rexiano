@@ -89,32 +89,35 @@ describe("CursorSync", () => {
   });
 
   describe("getMeasureWindow", () => {
-    it("returns 4-measure base window", () => {
-      expect(getMeasureWindow(0, 12)).toEqual([0, 1, 2, 3]);
-      expect(getMeasureWindow(2, 12)).toEqual([0, 1, 2, 3]);
+    it("returns 8-measure base window", () => {
+      expect(getMeasureWindow(0, 20)).toEqual([0, 1, 2, 3, 4, 5, 6, 7]);
+      expect(getMeasureWindow(3, 20)).toEqual([0, 1, 2, 3, 4, 5, 6, 7]);
     });
 
-    it("preloads next 3 measures when cursor reaches the 4th measure", () => {
-      // 1,2,3,4 -> 5,6,7,4 (0-based: 4,5,6,3)
-      expect(getMeasureWindow(3, 12)).toEqual([4, 5, 6, 3]);
+    it("preloads next measures when cursor reaches the last measure of group", () => {
+      // At measure index 7 (last of first group of 8), preload next group
+      expect(getMeasureWindow(7, 20)).toEqual([8, 9, 10, 11, 12, 13, 14, 7]);
     });
 
-    it("advances to next full 4-measure window on the next measure", () => {
-      // 5,6,7,8 (0-based: 4,5,6,7)
-      expect(getMeasureWindow(4, 12)).toEqual([4, 5, 6, 7]);
+    it("advances to next full 8-measure window on the next measure", () => {
+      expect(getMeasureWindow(8, 20)).toEqual([8, 9, 10, 11, 12, 13, 14, 15]);
     });
 
     it("does not return out-of-range indices near the song end", () => {
-      expect(getMeasureWindow(7, 9)).toEqual([8, 7]);
-      expect(getMeasureWindow(7, 10)).toEqual([8, 9, 7]);
-      for (const index of getMeasureWindow(7, 9)) {
-        expect(index).toBeLessThan(9);
+      expect(getMeasureWindow(15, 18)).toEqual([16, 17, 15]);
+      for (const index of getMeasureWindow(15, 18)) {
+        expect(index).toBeLessThan(18);
       }
     });
 
     it("handles short songs", () => {
       expect(getMeasureWindow(0, 2)).toEqual([0, 1]);
       expect(getMeasureWindow(5, 2)).toEqual([0, 1]);
+    });
+
+    it("handles songs with exactly 8 measures", () => {
+      expect(getMeasureWindow(0, 8)).toEqual([0, 1, 2, 3, 4, 5, 6, 7]);
+      expect(getMeasureWindow(6, 8)).toEqual([0, 1, 2, 3, 4, 5, 6, 7]);
     });
   });
 });

@@ -21,7 +21,7 @@ export interface CursorPosition {
   tick: number;
 }
 
-const DISPLAY_MEASURE_COUNT = 4;
+const DISPLAY_MEASURE_COUNT = 8;
 
 /**
  * Compute the cursor position from a playback time.
@@ -90,12 +90,12 @@ export function getScrollTarget(
 }
 
 /**
- * Compute a stable 4-measure display window with boundary preloading.
+ * Compute a stable 8-measure display window with boundary preloading.
  *
- * Example (1-based for readability):
- * - current 1~3: 1,2,3,4
- * - current 4:   5,6,7,4
- * - current 5+:  5,6,7,8
+ * Example (1-based for readability, DISPLAY_MEASURE_COUNT = 8):
+ * - current 1~7: 1,2,3,4,5,6,7,8
+ * - current 8:   9,10,11,12,13,14,15,8
+ * - current 9+:  9,10,11,12,13,14,15,16
  */
 export function getMeasureWindow(
   currentMeasureIndex: number,
@@ -107,13 +107,17 @@ export function getMeasureWindow(
     0,
     Math.min(Math.floor(currentMeasureIndex), totalMeasures - 1),
   );
-  const groupStart = Math.floor(current / DISPLAY_MEASURE_COUNT) * 4;
+  const groupStart =
+    Math.floor(current / DISPLAY_MEASURE_COUNT) * DISPLAY_MEASURE_COUNT;
   const positionInGroup = current - groupStart;
 
-  if (positionInGroup === 3 && groupStart + 4 < totalMeasures) {
-    const nextGroupStart = groupStart + 4;
+  if (
+    positionInGroup === DISPLAY_MEASURE_COUNT - 1 &&
+    groupStart + DISPLAY_MEASURE_COUNT < totalMeasures
+  ) {
+    const nextGroupStart = groupStart + DISPLAY_MEASURE_COUNT;
     const nextMeasures: number[] = [];
-    for (let offset = 0; offset < 3; offset++) {
+    for (let offset = 0; offset < DISPLAY_MEASURE_COUNT - 1; offset++) {
       const index = nextGroupStart + offset;
       if (index >= totalMeasures) break;
       nextMeasures.push(index);
