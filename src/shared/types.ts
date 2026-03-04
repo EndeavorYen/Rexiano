@@ -48,7 +48,11 @@ export interface BuiltinSongMeta {
   id: string;
   file: string;
   title: string;
+  /** Traditional Chinese title (e.g. "乖乖愛麗絲" for "Für Elise") */
+  titleZh?: string;
   composer: string;
+  /** Traditional Chinese composer name (e.g. "貝多芬" for "Beethoven") */
+  composerZh?: string;
   difficulty: "beginner" | "intermediate" | "advanced";
   category?: "exercise" | "classical" | "popular" | "holiday";
   durationSeconds: number;
