@@ -664,6 +664,25 @@ function App(): React.JSX.Element {
     return cleanup;
   }, []);
 
+  // ─── Daily practice time tracking ──────────────────────
+  // Track elapsed playback time and add to daily progress when playback stops.
+  useEffect(() => {
+    let playStartTime: number | null = null;
+    const unsub = usePlaybackStore.subscribe((state, prev) => {
+      if (state.isPlaying && !prev.isPlaying) {
+        playStartTime = Date.now();
+      }
+      if (!state.isPlaying && prev.isPlaying && playStartTime !== null) {
+        const elapsed = Date.now() - playStartTime;
+        if (elapsed > 1000) {
+          useProgressStore.getState().addPracticeTime(elapsed);
+        }
+        playStartTime = null;
+      }
+    });
+    return unsub;
+  }, []);
+
   // ─── Phase 6.5: Startup wiring — muted setting ─────────
   // Sync the persisted muted setting to the audio engine whenever it changes.
   useEffect(() => {

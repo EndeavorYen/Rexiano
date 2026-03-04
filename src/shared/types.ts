@@ -57,6 +57,8 @@ export interface BuiltinSongMeta {
   category?: "exercise" | "classical" | "popular" | "holiday";
   durationSeconds: number;
   tags: string[];
+  /** Piano techniques featured in this piece, shown as secondary info */
+  techniques?: string[];
   /**
    * Granular difficulty level (0–8), aligned with the Rexiano Level Guide.
    * L0=Pre-Starter, L1=Starter, L2=Early Beginner, L3=Beginner,
@@ -88,7 +90,7 @@ export interface MidiDeviceInfo {
 // ─── Phase 6: Practice Mode ─────────────────────────────────────────
 
 /** Available practice modes */
-export type PracticeMode = "watch" | "wait" | "free";
+export type PracticeMode = "watch" | "wait" | "free" | "step";
 
 /** Scoring result for a practice session */
 export interface PracticeScore {

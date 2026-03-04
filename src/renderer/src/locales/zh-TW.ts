@@ -137,8 +137,7 @@ export const zhTW: TranslationMap = {
   "practice.mode.stepDesc": "一個一個音",
   "practice.autoSpeedUp": "自動加速",
   "practice.speedBumped": "加速了！現在 {speed}%",
-  "practice.handSeparation.hint":
-    "很好！先單手練習，準備好了再加另一隻手。",
+  "practice.handSeparation.hint": "很好！先單手練習，準備好了再加另一隻手。",
   "practice.loop.byMeasure": "按小節",
   "practice.loop.measure": "第 {n} 小節",
 
@@ -316,9 +315,11 @@ export const zhTW: TranslationMap = {
   "onboarding.step2.title": "播放看看",
   "onboarding.step2.desc": "按空白鍵開始播放，看音符落下來，試著跟著彈！",
   "onboarding.step3.title": "選擇練習方式",
-  "onboarding.step3.desc": "選「觀看」聽示範、「等待」讓音樂等你彈、或「自由」自己隨意彈。",
+  "onboarding.step3.desc":
+    "選「觀看」聽示範、「等待」讓音樂等你彈、或「自由」自己隨意彈。",
   "onboarding.step4.title": "接上你的鍵盤",
-  "onboarding.step4.desc": "接上 MIDI 鍵盤就可以真的跟著彈囉！或是先看看也可以。",
+  "onboarding.step4.desc":
+    "接上 MIDI 鍵盤就可以真的跟著彈囉！或是先看看也可以。",
   "onboarding.skip": "跳過",
   "onboarding.next": "下一步",
   "onboarding.getStarted": "開始吧！",

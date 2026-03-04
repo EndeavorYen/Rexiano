@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useCallback, useState } from "react";
+import { useEffect, useMemo, useCallback, useState, useRef } from "react";
 import {
   Upload,
   Clock,
@@ -9,17 +9,20 @@ import {
   ArrowLeft,
   PanelRightOpen,
   X,
+  Tag,
 } from "lucide-react";
 import { parseMidiFile } from "../../engines/midi/MidiFileParser";
 import { useSongStore } from "../../stores/useSongStore";
 import { usePlaybackStore } from "../../stores/usePlaybackStore";
 import { useSongLibraryStore } from "../../stores/useSongLibraryStore";
 import { useProgressStore } from "../../stores/useProgressStore";
+import { usePracticeStore } from "../../stores/usePracticeStore";
 import { useRecentFiles } from "../../hooks/useRecentFiles";
 import { formatRelativeTime } from "../../utils/relativeTime";
 import { SongCard } from "./SongCard";
 import { SongLibraryFilters } from "./SongLibraryFilters";
 import { ThemePicker } from "../settings/ThemePicker";
+import { DailyGoal } from "../progress/DailyGoal";
 import { groupSongsByCategory, categoryI18nKeys } from "./songCardUtils";
 import type { TranslationKey } from "../../i18n/types";
 import { DeviceSelector } from "../midiDevice/DeviceSelector";
@@ -50,6 +53,8 @@ export function SongLibrary({
   const searchQuery = useSongLibraryStore((s) => s.searchQuery);
   const difficultyFilter = useSongLibraryStore((s) => s.difficultyFilter);
   const gradeFilter = useSongLibraryStore((s) => s.gradeFilter);
+  const activeTag = useSongLibraryStore((s) => s.activeTag);
+  const setActiveTag = useSongLibraryStore((s) => s.setActiveTag);
   const fetchSongs = useSongLibraryStore((s) => s.fetchSongs);
 
   const loadSong = useSongStore((s) => s.loadSong);
@@ -68,6 +73,72 @@ export function SongLibrary({
     null,
   );
   const [showDeviceDrawer, setShowDeviceDrawer] = useState(false);
+  const [previewSongId, setPreviewSongId] = useState<string | null>(null);
+  const [previewState, setPreviewState] = useState<
+    "idle" | "loading" | "playing"
+  >("idle");
+  const previewTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  /** Handle tag clicks — toggle filter on/off */
+  const handleTagClick = useCallback(
+    (tag: string) => {
+      setActiveTag(activeTag === tag ? null : tag);
+    },
+    [activeTag, setActiveTag],
+  );
+
+  /** Handle preview/demo click — load song in Watch mode and auto-play */
+  const handlePreviewClick = useCallback(
+    async (songId: string) => {
+      // If already previewing this song, stop
+      if (previewSongId === songId) {
+        if (previewTimerRef.current) clearTimeout(previewTimerRef.current);
+        setPreviewSongId(null);
+        setPreviewState("idle");
+        return;
+      }
+      // Stop any existing preview
+      if (previewTimerRef.current) clearTimeout(previewTimerRef.current);
+
+      setPreviewSongId(songId);
+      setPreviewState("loading");
+
+      try {
+        // Actually load the song, set Watch mode, and auto-play
+        const result = await window.api.loadBuiltinSong(songId);
+        if (result) {
+          const parsed = parseMidiFile(result.fileName, result.data);
+          loadSong(parsed);
+          reset();
+          usePracticeStore.getState().setMode("watch");
+          // Brief delay so canvas initializes before playing
+          setTimeout(() => {
+            usePlaybackStore.getState().setPlaying(true);
+          }, 200);
+          void window.api.saveRecentFile({
+            path: `builtin:${songId}`,
+            name: result.fileName,
+            timestamp: Date.now(),
+          });
+          refreshRecents();
+          setPreviewState("idle");
+          setPreviewSongId(null);
+        }
+      } catch {
+        setPreviewState("idle");
+        setPreviewSongId(null);
+      }
+    },
+    [previewSongId, loadSong, reset, refreshRecents],
+  );
+
+  // Cleanup preview timer on unmount
+  useEffect(() => {
+    const ref = previewTimerRef;
+    return () => {
+      if (ref.current) clearTimeout(ref.current);
+    };
+  }, []);
 
   useEffect(() => {
     if (!showDeviceDrawer) return;
@@ -98,6 +169,9 @@ export function SongLibrary({
     if (gradeFilter !== "all") {
       result = result.filter((s) => s.grade === gradeFilter);
     }
+    if (activeTag) {
+      result = result.filter((s) => s.tags.includes(activeTag));
+    }
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
       result = result.filter(
@@ -109,7 +183,7 @@ export function SongLibrary({
       );
     }
     return result;
-  }, [songs, difficultyFilter, gradeFilter, searchQuery]);
+  }, [songs, difficultyFilter, gradeFilter, activeTag, searchQuery]);
 
   /** Songs grouped by category for section display */
   const categoryGroups = useMemo(
@@ -250,6 +324,7 @@ export function SongLibrary({
             </div>
 
             <div className="flex items-center gap-2.5">
+              <DailyGoal />
               <button
                 onClick={onOpenFile}
                 className="btn-primary-themed flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium cursor-pointer"
@@ -370,6 +445,43 @@ export function SongLibrary({
         <section className="surface-panel p-4 sm:p-5 animate-page-enter">
           <SongLibraryFilters />
 
+          {activeTag && (
+            <div
+              className="mt-3 flex items-center gap-2 px-1"
+              data-testid="active-tag-filter"
+            >
+              <Tag size={12} style={{ color: "var(--color-accent)" }} />
+              <span
+                className="text-xs font-body"
+                style={{ color: "var(--color-text-muted)" }}
+              >
+                {t("library.filterByTag")}:
+              </span>
+              <span
+                className="text-xs font-body font-semibold px-2 py-0.5 rounded-full"
+                style={{
+                  background:
+                    "color-mix(in srgb, var(--color-accent) 18%, transparent)",
+                  color: "var(--color-accent)",
+                }}
+              >
+                {activeTag}
+              </span>
+              <button
+                onClick={() => setActiveTag(null)}
+                className="text-[10px] font-body px-2 py-0.5 rounded-full cursor-pointer transition-colors"
+                style={{
+                  background: "var(--color-surface-alt)",
+                  color: "var(--color-text-muted)",
+                  border: "1px solid var(--color-border)",
+                }}
+                data-testid="clear-tag-filter"
+              >
+                {t("library.clearTagFilter")}
+              </button>
+            </div>
+          )}
+
           <div className="mt-6">
             {isLoading ? (
               <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-3">
@@ -477,6 +589,12 @@ export function SongLibrary({
                             song={song}
                             onSelect={handleSelectSong}
                             colorIndex={groupIdx * 4 + i}
+                            onTagClick={handleTagClick}
+                            activeTag={activeTag}
+                            previewState={
+                              previewSongId === song.id ? previewState : "idle"
+                            }
+                            onPreviewClick={handlePreviewClick}
                           />
                           {loadingId === song.id && (
                             <div

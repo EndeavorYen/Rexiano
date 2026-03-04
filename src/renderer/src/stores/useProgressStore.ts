@@ -13,11 +13,62 @@ import { usePlaybackStore } from "./usePlaybackStore";
 import { usePracticeStore } from "./usePracticeStore";
 import { useSongStore } from "./useSongStore";
 
+/** localStorage key for daily practice data */
+const DAILY_GOAL_STORAGE_KEY = "rexiano:dailyGoal";
+const DAILY_PROGRESS_STORAGE_KEY = "rexiano:dailyProgress";
+
+/** Get today's date key in YYYY-MM-DD format */
+function todayKey(): string {
+  return new Date().toISOString().slice(0, 10);
+}
+
+/** Load daily goal from localStorage */
+function loadDailyGoal(): number {
+  try {
+    const raw = localStorage.getItem(DAILY_GOAL_STORAGE_KEY);
+    if (raw) return Number(raw) || 15;
+  } catch {
+    /* ignore */
+  }
+  return 15;
+}
+
+/** Load today's practice time from localStorage */
+function loadTodayPracticeMs(): number {
+  try {
+    const raw = localStorage.getItem(DAILY_PROGRESS_STORAGE_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw) as { date: string; ms: number };
+      if (parsed.date === todayKey()) return parsed.ms;
+    }
+  } catch {
+    /* ignore */
+  }
+  return 0;
+}
+
+/** Persist today's practice time to localStorage */
+function saveTodayPracticeMs(ms: number): void {
+  try {
+    localStorage.setItem(
+      DAILY_PROGRESS_STORAGE_KEY,
+      JSON.stringify({ date: todayKey(), ms }),
+    );
+  } catch {
+    /* ignore */
+  }
+}
+
 interface ProgressState {
   /** All persisted practice session records */
   sessions: SessionRecord[];
   /** Whether the initial load from disk has completed */
   isLoaded: boolean;
+
+  /** Daily practice goal in minutes */
+  dailyGoalMinutes: number;
+  /** Accumulated practice time today in milliseconds */
+  todayPracticeMs: number;
 
   /** Load sessions from main process via IPC */
   loadSessions: () => Promise<void>;
@@ -29,11 +80,19 @@ interface ProgressState {
   getRecentSessions: (limit: number) => SessionRecord[];
   /** Get the session with the highest accuracy for a song, or null */
   getBestScore: (songId: string) => SessionRecord | null;
+  /** Set daily practice goal in minutes */
+  setDailyGoal: (minutes: number) => void;
+  /** Add practice time in milliseconds to today's total */
+  addPracticeTime: (ms: number) => void;
+  /** Reset daily progress (for new day detection) */
+  resetDailyProgress: () => void;
 }
 
 export const useProgressStore = create<ProgressState>()((set, get) => ({
   sessions: [],
   isLoaded: false,
+  dailyGoalMinutes: loadDailyGoal(),
+  todayPracticeMs: loadTodayPracticeMs(),
 
   loadSessions: async () => {
     try {
@@ -70,6 +129,27 @@ export const useProgressStore = create<ProgressState>()((set, get) => ({
     return songSessions.reduce((best, current) =>
       current.score.accuracy > best.score.accuracy ? current : best,
     );
+  },
+
+  setDailyGoal: (minutes) => {
+    set({ dailyGoalMinutes: minutes });
+    try {
+      localStorage.setItem(DAILY_GOAL_STORAGE_KEY, String(minutes));
+    } catch {
+      /* ignore */
+    }
+  },
+
+  addPracticeTime: (ms) => {
+    const current = get().todayPracticeMs;
+    const updated = current + ms;
+    set({ todayPracticeMs: updated });
+    saveTodayPracticeMs(updated);
+  },
+
+  resetDailyProgress: () => {
+    set({ todayPracticeMs: 0 });
+    saveTodayPracticeMs(0);
   },
 }));
 

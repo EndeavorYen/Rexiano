@@ -16,6 +16,7 @@
       "beginner",
       "level-0"
     ],
+    "techniques": ["single hand", "three-note pattern"],
     "source": "mfiles.co.uk"
   },
   {
@@ -35,6 +36,7 @@
       "french",
       "level-0"
     ],
+    "techniques": ["single hand", "five-finger position"],
     "source": "mfiles.co.uk"
   },
   {
@@ -53,6 +55,7 @@
       "scale",
       "level-1"
     ],
+    "techniques": ["scale pattern", "thumb crossing"],
     "source": "mfiles.co.uk"
   },
   {
@@ -72,6 +75,7 @@
       "beginner",
       "level-1"
     ],
+    "techniques": ["single hand", "five-finger position"],
     "source": "mfiles.co.uk"
   },
   {
@@ -90,6 +94,7 @@
       "melody",
       "level-2"
     ],
+    "techniques": ["five-finger position", "steady rhythm"],
     "source": "mfiles.co.uk"
   },
   {
@@ -109,6 +114,7 @@
       "melody",
       "level-2"
     ],
+    "techniques": ["repeated notes", "five-finger position"],
     "source": "mfiles.co.uk"
   },
   {
@@ -127,6 +133,7 @@
       "melody",
       "level-2"
     ],
+    "techniques": ["stepwise motion", "five-finger position"],
     "source": "mfiles.co.uk"
   },
   {
@@ -145,6 +152,7 @@
       "melody",
       "level-2"
     ],
+    "techniques": ["dotted rhythm", "interval leaps"],
     "source": "mfiles.co.uk"
   },
   {
@@ -163,6 +171,7 @@
       "melody",
       "level-2"
     ],
+    "techniques": ["single hand", "steady tempo"],
     "source": "mfiles.co.uk"
   },
   {
@@ -182,6 +191,7 @@
       "folk",
       "level-2"
     ],
+    "techniques": ["waltz rhythm", "five-finger position"],
     "source": "mfiles.co.uk"
   },
   {
@@ -200,6 +210,7 @@
       "melody",
       "level-2"
     ],
+    "techniques": ["five-finger position", "repeated notes"],
     "source": "mfiles.co.uk"
   },
   {
@@ -220,6 +231,7 @@
       "two-hands",
       "level-3"
     ],
+    "techniques": ["two-hand coordination", "repeated chords"],
     "source": "mfiles.co.uk"
   },
   {
@@ -239,6 +251,7 @@
       "two-hands",
       "level-3"
     ],
+    "techniques": ["two-hand coordination", "simple bass"],
     "source": "mfiles.co.uk"
   },
   {
@@ -259,6 +272,7 @@
       "two-hands",
       "level-3"
     ],
+    "techniques": ["legato phrasing", "waltz bass"],
     "source": "mfiles.co.uk"
   },
   {
@@ -278,6 +292,7 @@
       "two-hands",
       "level-3"
     ],
+    "techniques": ["two-hand coordination", "march rhythm"],
     "source": "mfiles.co.uk"
   },
   {
@@ -298,6 +313,7 @@
       "two-hands",
       "level-4"
     ],
+    "techniques": ["legato melody", "chord accompaniment"],
     "source": "mfiles.co.uk"
   },
   {
@@ -319,6 +335,7 @@
       "two-hands",
       "level-4"
     ],
+    "techniques": ["minor key", "legato phrasing"],
     "source": "mfiles.co.uk"
   },
   {
@@ -338,6 +355,7 @@
       "two-hands",
       "level-4"
     ],
+    "techniques": ["phrasing", "simple accompaniment"],
     "source": "mfiles.co.uk"
   },
   {
@@ -356,6 +374,7 @@
       "romantic",
       "level-5"
     ],
+    "techniques": ["arpeggios", "cross-hands"],
     "source": "mfiles.co.uk"
   },
   {
@@ -375,6 +394,7 @@
       "two-hands",
       "level-5"
     ],
+    "techniques": ["counterpoint", "ornaments"],
     "source": "mfiles.co.uk"
   },
   {
@@ -394,6 +414,7 @@
       "two-hands",
       "level-5"
     ],
+    "techniques": ["broken chords", "voice leading"],
     "source": "mfiles.co.uk"
   },
   {
@@ -414,6 +435,7 @@
       "two-hands",
       "level-6"
     ],
+    "techniques": ["arpeggios", "sustained bass"],
     "source": "mfiles.co.uk"
   },
   {
@@ -434,6 +456,7 @@
       "two-hands",
       "level-6"
     ],
+    "techniques": ["Alberti bass", "scale passages"],
     "source": "mfiles.co.uk"
   },
   {
@@ -455,6 +478,7 @@
       "two-hands",
       "level-6"
     ],
+    "techniques": ["waltz bass", "dynamic contrast"],
     "source": "mfiles.co.uk"
   },
   {
@@ -474,6 +498,7 @@
       "two-hands",
       "level-7"
     ],
+    "techniques": ["arpeggios", "sustained bass"],
     "source": "mfiles.co.uk"
   },
   {
@@ -492,6 +517,7 @@
       "fast",
       "level-7"
     ],
+    "techniques": ["octave passages", "fast scales"],
     "source": "mfiles.co.uk"
   },
   {
@@ -511,6 +537,7 @@
       "3-4",
       "level-2"
     ],
+    "techniques": ["waltz rhythm", "simple melody"],
     "source": "mfiles.co.uk"
   },
   {
@@ -531,6 +558,7 @@
       "two-hands",
       "level-3"
     ],
+    "techniques": ["staccato chords", "march rhythm"],
     "source": "mfiles.co.uk"
   },
   {
@@ -551,6 +579,7 @@
       "two-hands",
       "level-3"
     ],
+    "techniques": ["legato melody", "voicing"],
     "source": "mfiles.co.uk"
   },
   {
@@ -572,6 +601,7 @@
       "two-hands",
       "level-3"
     ],
+    "techniques": ["waltz bass", "phrasing"],
     "source": "mfiles.co.uk"
   },
   {
@@ -592,6 +622,7 @@
       "two-hands",
       "level-3"
     ],
+    "techniques": ["bass clef reading", "heavy touch"],
     "source": "mfiles.co.uk"
   },
   {
@@ -612,6 +643,7 @@
       "two-hands",
       "level-4"
     ],
+    "techniques": ["legato phrasing", "dynamic shading"],
     "source": "mfiles.co.uk"
   },
   {
@@ -633,6 +665,7 @@
       "two-hands",
       "level-4"
     ],
+    "techniques": ["sustained chords", "pedal technique"],
     "source": "mfiles.co.uk"
   },
   {
@@ -653,6 +686,7 @@
       "two-hands",
       "level-4"
     ],
+    "techniques": ["free rhythm", "expressive phrasing"],
     "source": "mfiles.co.uk"
   },
   {
@@ -674,6 +708,7 @@
       "two-hands",
       "level-5"
     ],
+    "techniques": ["sustained melody", "chromatic descent"],
     "source": "mfiles.co.uk"
   },
   {
@@ -695,6 +730,7 @@
       "two-hands",
       "level-5"
     ],
+    "techniques": ["voicing", "legato melody"],
     "source": "mfiles.co.uk"
   },
   {
@@ -714,6 +750,7 @@
       "two-hands",
       "level-5"
     ],
+    "techniques": ["dotted rhythm", "syncopation"],
     "source": "mfiles.co.uk"
   },
   {
@@ -734,6 +771,7 @@
       "c-minor",
       "level-5"
     ],
+    "techniques": ["fast scales", "hand alternation"],
     "source": "mfiles.co.uk"
   },
   {
@@ -754,6 +792,7 @@
       "two-hands",
       "level-5"
     ],
+    "techniques": ["staccato", "light touch"],
     "source": "mfiles.co.uk"
   },
   {
@@ -774,6 +813,7 @@
       "two-hands",
       "level-5"
     ],
+    "techniques": ["arpeggios", "expressive phrasing"],
     "source": "mfiles.co.uk"
   },
   {
@@ -794,6 +834,7 @@
       "two-hands",
       "level-7"
     ],
+    "techniques": ["rubato", "ornamental melody"],
     "source": "mfiles.co.uk"
   },
   {
@@ -814,6 +855,7 @@
       "two-hands",
       "level-7"
     ],
+    "techniques": ["flowing arpeggios", "pedal technique"],
     "source": "mfiles.co.uk"
   },
   {
@@ -834,6 +876,7 @@
       "two-hands",
       "level-8"
     ],
+    "techniques": ["pedal technique", "wide stretches"],
     "source": "mfiles.co.uk"
   },
   {
@@ -853,6 +896,7 @@
       "finger-independence",
       "level-2"
     ],
+    "techniques": ["finger independence", "even tone"],
     "source": "mfiles.co.uk"
   },
   {
@@ -872,6 +916,7 @@
       "finger-independence",
       "level-2"
     ],
+    "techniques": ["finger independence", "even tone"],
     "source": "mfiles.co.uk"
   }
 ]

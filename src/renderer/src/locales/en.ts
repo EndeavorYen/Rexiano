@@ -322,13 +322,17 @@ export const en: TranslationMap = {
 
   // ── Onboarding ──────────────────────────────────────────────────
   "onboarding.step1.title": "Open a Song",
-  "onboarding.step1.desc": "Click the \"Open MIDI File\" button to load a song you want to practice.",
+  "onboarding.step1.desc":
+    'Click the "Open MIDI File" button to load a song you want to practice.',
   "onboarding.step2.title": "Play It Back",
-  "onboarding.step2.desc": "Press Space to play and watch the notes fall down. Try to follow along!",
+  "onboarding.step2.desc":
+    "Press Space to play and watch the notes fall down. Try to follow along!",
   "onboarding.step3.title": "Choose How to Practice",
-  "onboarding.step3.desc": "Pick \"Watch\" to just listen, \"Wait\" so it pauses for you, or \"Free\" to play along freely.",
+  "onboarding.step3.desc":
+    'Pick "Watch" to just listen, "Wait" so it pauses for you, or "Free" to play along freely.',
   "onboarding.step4.title": "Connect Your Keyboard",
-  "onboarding.step4.desc": "Plug in a MIDI keyboard to play along for real. Or just watch and learn first!",
+  "onboarding.step4.desc":
+    "Plug in a MIDI keyboard to play along for real. Or just watch and learn first!",
   "onboarding.skip": "Skip",
   "onboarding.next": "Next",
   "onboarding.getStarted": "Get Started",

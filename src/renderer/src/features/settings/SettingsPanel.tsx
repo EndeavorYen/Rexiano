@@ -19,7 +19,10 @@ import { themes, type ThemeId } from "@renderer/themes/tokens";
 import { getAvailableLanguages } from "@renderer/i18n";
 import { useTranslation } from "@renderer/i18n/useTranslation";
 import { useMidiDeviceStore } from "@renderer/stores/useMidiDeviceStore";
+import { useProgressStore } from "@renderer/stores/useProgressStore";
 import type { PracticeMode } from "@shared/types";
+
+const dailyGoalPresets = [5, 10, 15, 20, 30];
 
 const themeList: ThemeId[] = ["lavender", "ocean", "peach", "midnight"];
 
@@ -162,6 +165,8 @@ export function SettingsPanel({
   const setMidiChannel = useMidiDeviceStore((s) => s.setMidiChannel);
   const uiScale = useSettingsStore((s) => s.uiScale);
   const setUiScale = useSettingsStore((s) => s.setUiScale);
+  const dailyGoalMinutes = useProgressStore((s) => s.dailyGoalMinutes);
+  const setDailyGoal = useProgressStore((s) => s.setDailyGoal);
 
   // First-visit pulse
   const [isFirstVisit] = useState(() => {
@@ -627,9 +632,7 @@ export function SettingsPanel({
                         ).map((opt) => (
                           <button
                             key={opt.value}
-                            onClick={() =>
-                              setUiScale(opt.value as UiScale)
-                            }
+                            onClick={() => setUiScale(opt.value as UiScale)}
                             className="px-3 py-1.5 text-xs font-body rounded-lg cursor-pointer transition-colors"
                             style={{
                               background:
@@ -913,15 +916,51 @@ export function SettingsPanel({
                         aria-label={t("settings.midiChannel")}
                         data-testid="midi-channel-select"
                       >
-                        <option value="">
-                          {t("settings.midiChannelAll")}
-                        </option>
+                        <option value="">{t("settings.midiChannelAll")}</option>
                         {Array.from({ length: 16 }, (_, i) => (
                           <option key={i} value={String(i)}>
                             Channel {i + 1}
                           </option>
                         ))}
                       </select>
+                    </div>
+
+                    {/* Daily practice goal */}
+                    <div>
+                      <span
+                        className="text-xs font-body block mb-1.5"
+                        style={{ color: "var(--color-text)" }}
+                      >
+                        {t("settings.dailyGoal")}
+                      </span>
+                      <div className="flex gap-1.5">
+                        {dailyGoalPresets.map((m) => (
+                          <button
+                            key={m}
+                            onClick={() => setDailyGoal(m)}
+                            className="px-2.5 py-1 text-[11px] font-mono rounded-lg cursor-pointer transition-colors"
+                            style={{
+                              background:
+                                dailyGoalMinutes === m
+                                  ? "var(--color-accent)"
+                                  : "var(--color-surface-alt)",
+                              color:
+                                dailyGoalMinutes === m
+                                  ? "#fff"
+                                  : "var(--color-text-muted)",
+                            }}
+                            data-testid={`daily-goal-${m}`}
+                          >
+                            {m} {t("progress.min")}
+                          </button>
+                        ))}
+                      </div>
+                      <span
+                        className="text-[10px] font-body mt-1 block"
+                        style={{ color: "var(--color-text-muted)" }}
+                      >
+                        {t("settings.dailyGoalDesc")}
+                      </span>
                     </div>
                   </div>
                 </TabContent>

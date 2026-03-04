@@ -1,4 +1,4 @@
-import { useCallback } from "react";
+import { useCallback, useState } from "react";
 import type { BuiltinSongMeta } from "../../../../shared/types";
 import { useProgressStore } from "@renderer/stores/useProgressStore";
 import { useSettingsStore } from "@renderer/stores/useSettingsStore";
@@ -15,6 +15,11 @@ interface SongCardProps {
   song: BuiltinSongMeta;
   onSelect: (songId: string) => void;
   colorIndex: number;
+  onTagClick?: (tag: string) => void;
+  activeTag?: string | null;
+  /** Preview state: "idle" | "loading" | "playing" */
+  previewState?: "idle" | "loading" | "playing";
+  onPreviewClick?: (songId: string) => void;
 }
 
 function formatDuration(seconds: number): string {
@@ -48,7 +53,12 @@ export function SongCard({
   song,
   onSelect,
   colorIndex,
+  onTagClick,
+  activeTag,
+  previewState = "idle",
+  onPreviewClick,
 }: SongCardProps): React.JSX.Element {
+  const [isHovered, setIsHovered] = useState(false);
   const noteColors = [
     "var(--color-note1)",
     "var(--color-note2)",
@@ -82,9 +92,30 @@ export function SongCard({
   const gradeColor =
     song.grade !== undefined ? getGradeColor(song.grade) : null;
 
+  const handlePreviewClick = useCallback(
+    (e: React.MouseEvent) => {
+      e.stopPropagation();
+      onPreviewClick?.(song.id);
+    },
+    [song.id, onPreviewClick],
+  );
+
+  const handleTagClick = useCallback(
+    (e: React.MouseEvent, tag: string) => {
+      e.stopPropagation();
+      onTagClick?.(tag);
+    },
+    [onTagClick],
+  );
+
+  /** Only show non-level tags (level-N tags are not useful to display) */
+  const visibleTags = song.tags.filter((t) => !t.startsWith("level-"));
+
   return (
     <button
       onClick={handleClick}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
       className="group card-hover text-left rounded-xl overflow-hidden cursor-pointer w-full"
       style={{
         background: "color-mix(in srgb, var(--color-surface) 88%, transparent)",
@@ -92,11 +123,22 @@ export function SongCard({
       }}
     >
       <div
-        className="h-1.5 transition-all duration-300 group-hover:h-2"
+        className="h-1.5 transition-all duration-300 group-hover:h-2 relative"
         style={{
           background: `linear-gradient(95deg, ${stripeColor}, color-mix(in srgb, ${stripeColor} 38%, var(--color-surface)))`,
         }}
-      />
+      >
+        {/* Preview mini progress bar */}
+        {previewState === "playing" && (
+          <div
+            className="absolute inset-0 origin-left animate-preview-progress"
+            style={{
+              background:
+                "color-mix(in srgb, var(--color-accent) 60%, transparent)",
+            }}
+          />
+        )}
+      </div>
 
       <div className="p-3.5">
         <div className="flex items-start justify-between gap-2.5">
@@ -115,18 +157,112 @@ export function SongCard({
             </p>
           </div>
 
-          {bestScore && (
-            <div
-              className="w-2.5 h-2.5 rounded-full shrink-0 mt-1.5"
-              style={{
-                background: "var(--color-accent)",
-                boxShadow:
-                  "0 0 0 4px color-mix(in srgb, var(--color-accent) 18%, transparent)",
-              }}
-              title="Practiced"
-            />
-          )}
+          <div className="flex items-center gap-1.5 shrink-0 mt-0.5">
+            {/* Preview button */}
+            {onPreviewClick && (
+              <div
+                role="button"
+                tabIndex={-1}
+                onClick={handlePreviewClick}
+                className="w-6 h-6 rounded-full flex items-center justify-center transition-all duration-150"
+                style={{
+                  background:
+                    previewState !== "idle"
+                      ? "var(--color-accent)"
+                      : "color-mix(in srgb, var(--color-accent) 12%, transparent)",
+                  color:
+                    previewState !== "idle" ? "#fff" : "var(--color-accent)",
+                  opacity: isHovered || previewState !== "idle" ? 1 : 0,
+                }}
+                title={
+                  previewState === "playing" ? "Stop preview" : "Preview song"
+                }
+              >
+                {previewState === "loading" ? (
+                  <div
+                    className="w-3 h-3 border-[1.5px] rounded-full animate-spin"
+                    style={{
+                      borderColor: "transparent",
+                      borderTopColor: "currentColor",
+                    }}
+                  />
+                ) : previewState === "playing" ? (
+                  <svg
+                    width="8"
+                    height="8"
+                    viewBox="0 0 8 8"
+                    fill="currentColor"
+                  >
+                    <rect x="0" y="0" width="3" height="8" rx="0.5" />
+                    <rect x="5" y="0" width="3" height="8" rx="0.5" />
+                  </svg>
+                ) : (
+                  <svg
+                    width="8"
+                    height="10"
+                    viewBox="0 0 8 10"
+                    fill="currentColor"
+                  >
+                    <path d="M0 0.5v9l8-4.5z" />
+                  </svg>
+                )}
+              </div>
+            )}
+
+            {bestScore && (
+              <div
+                className="w-2.5 h-2.5 rounded-full shrink-0"
+                style={{
+                  background: "var(--color-accent)",
+                  boxShadow:
+                    "0 0 0 4px color-mix(in srgb, var(--color-accent) 18%, transparent)",
+                }}
+                title="Practiced"
+              />
+            )}
+          </div>
         </div>
+
+        {/* Tag chips */}
+        {visibleTags.length > 0 && (
+          <div className="flex flex-wrap gap-1 mt-2">
+            {visibleTags.slice(0, 4).map((tag) => (
+              <span
+                key={tag}
+                role="button"
+                tabIndex={-1}
+                onClick={(e) => handleTagClick(e, tag)}
+                className="text-[9px] font-body font-medium px-1.5 py-0.5 rounded-full cursor-pointer transition-colors"
+                style={{
+                  background:
+                    activeTag === tag
+                      ? "color-mix(in srgb, var(--color-accent) 25%, transparent)"
+                      : "color-mix(in srgb, var(--color-accent) 10%, transparent)",
+                  color:
+                    activeTag === tag
+                      ? "var(--color-accent)"
+                      : "var(--color-text-muted)",
+                  border:
+                    activeTag === tag
+                      ? "1px solid color-mix(in srgb, var(--color-accent) 40%, transparent)"
+                      : "1px solid transparent",
+                }}
+              >
+                {tag}
+              </span>
+            ))}
+          </div>
+        )}
+
+        {/* Techniques — shown on hover */}
+        {song.techniques && song.techniques.length > 0 && isHovered && (
+          <p
+            className="text-[10px] font-body mt-1.5 truncate"
+            style={{ color: "var(--color-text-muted)", opacity: 0.7 }}
+          >
+            {song.techniques.join(" · ")}
+          </p>
+        )}
 
         <div className="flex items-center justify-between mt-3.5">
           <div className="flex items-center gap-2.5 min-w-0">
@@ -140,8 +276,7 @@ export function SongCard({
                   key={n}
                   className="w-3 h-3 rounded-full"
                   style={{
-                    background:
-                      n <= dots ? dotColor : "var(--color-border)",
+                    background: n <= dots ? dotColor : "var(--color-border)",
                   }}
                 />
               ))}

@@ -1092,6 +1092,20 @@ input[type="range"]:disabled::-moz-range-thumb {
   animation: drop-pulse 1.5s ease-in-out infinite;
 }
 
+/* ── Song preview progress bar animation ── */
+@keyframes preview-progress {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+
+.animate-preview-progress {
+  animation: preview-progress 8s linear forwards;
+}
+
 @media (max-width: 1024px) {
   .app-shell::before {
     width: 64vw;
