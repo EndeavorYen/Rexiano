@@ -223,6 +223,7 @@ export interface TranslationMap {
   "celebration.missed": string;
   "celebration.bestStreak": string;
   "celebration.starRating": string;
+  "celebration.tapToContinue": string;
 
   // ── Sheet Music ────────────────────────────────────────────────
   "sheetMusic.loadSong": string;
@@ -295,6 +296,9 @@ export interface TranslationMap {
   "onboarding.next": string;
   "onboarding.getStarted": string;
   "onboarding.ariaLabel": string;
+
+  // ── Count-in ─────────────────────────────────────────────────
+  "countIn.go": string;
 
   // ── General ────────────────────────────────────────────────────
   "general.loading": string;

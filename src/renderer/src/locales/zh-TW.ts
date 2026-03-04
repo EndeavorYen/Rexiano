@@ -223,6 +223,7 @@ export const zhTW: TranslationMap = {
   "celebration.missed": "未彈到",
   "celebration.bestStreak": "最佳連續正確",
   "celebration.starRating": "{filled} / {total} 顆星",
+  "celebration.tapToContinue": "點任意地方繼續",
 
   // ── Sheet Music ────────────────────────────────────────────────
   "sheetMusic.loadSong": "載入曲子以檢視樂譜",
@@ -295,6 +296,9 @@ export const zhTW: TranslationMap = {
   "onboarding.next": "下一步",
   "onboarding.getStarted": "開始吧！",
   "onboarding.ariaLabel": "歡迎導覽",
+
+  // ── Count-in ─────────────────────────────────────────────────
+  "countIn.go": "開始！",
 
   // ── General ────────────────────────────────────────────────────
   "general.loading": "載入中…",

@@ -2,7 +2,7 @@
  * Phase 6: Celebration overlay — shown when a practice session ends.
  * Displays tier, accuracy, streak stats, star rating, and new-record badge.
  */
-import { useMemo } from "react";
+import { useMemo, useState, useEffect } from "react";
 import type { PracticeScore, PracticeMode } from "@shared/types";
 import { useProgressStore } from "../../stores/useProgressStore";
 import { getTier, isNewRecord, type CelebrationTier } from "./celebrationUtils";
@@ -14,6 +14,8 @@ interface CelebrationOverlayProps {
   visible: boolean;
   onPracticeAgain: () => void;
   onChooseSong: () => void;
+  /** Called when user clicks the backdrop to dismiss early */
+  onDismiss?: () => void;
   /** Song identifier used to look up previous best score for "New Record!" detection */
   songId?: string;
   /** Current practice mode — watch mode never shows "New Record!" */
@@ -142,6 +144,7 @@ export function CelebrationOverlay({
   visible,
   onPracticeAgain,
   onChooseSong,
+  onDismiss,
   songId,
   mode,
 }: CelebrationOverlayProps): React.JSX.Element {
@@ -166,13 +169,30 @@ export function CelebrationOverlay({
     [count, tier],
   );
 
+  // Show "tap to continue" hint after a 2-second delay
+  const [showHint, setShowHint] = useState(false);
+  useEffect(() => {
+    if (!visible) {
+      setShowHint(false);
+      return;
+    }
+    const timer = setTimeout(() => setShowHint(true), 2000);
+    return () => clearTimeout(timer);
+  }, [visible]);
+
   if (!visible) return <></>;
 
   return (
     <div
-      className="fixed inset-0 z-[200] flex items-center justify-center celebration-backdrop"
+      className="fixed inset-0 z-[200] flex items-center justify-center celebration-backdrop cursor-pointer"
       data-testid="celebration-overlay"
       data-tier={tier}
+      onClick={onDismiss}
+      role="button"
+      tabIndex={0}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") onDismiss?.();
+      }}
     >
       {/* Particles */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
@@ -200,7 +220,7 @@ export function CelebrationOverlay({
         ))}
       </div>
 
-      {/* Content card */}
+      {/* Content card — stop propagation so button clicks don't dismiss */}
       <div
         className="relative z-10 flex flex-col items-center gap-4 px-12 py-8 rounded-3xl celebration-card"
         style={{
@@ -210,6 +230,7 @@ export function CelebrationOverlay({
           boxShadow: "0 12px 48px rgba(0,0,0,0.25)",
           backdropFilter: "blur(16px)",
         }}
+        onClick={(e) => e.stopPropagation()}
       >
         {/* Big emoji indicator */}
         <div className="text-5xl celebration-bounce" aria-hidden="true">
@@ -298,6 +319,17 @@ export function CelebrationOverlay({
           </button>
         </div>
       </div>
+
+      {/* Delayed hint — fades in after 2 seconds */}
+      <p
+        className="absolute bottom-8 z-10 text-xs font-body pointer-events-none transition-opacity duration-700"
+        style={{
+          color: "var(--color-text-muted)",
+          opacity: showHint ? 0.7 : 0,
+        }}
+      >
+        {t("celebration.tapToContinue")}
+      </p>
     </div>
   );
 }

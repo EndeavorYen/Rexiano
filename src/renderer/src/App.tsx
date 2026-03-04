@@ -59,7 +59,7 @@ import {
 
 /** Accepted file extensions for drag-and-drop MIDI import */
 const MIDI_EXTENSIONS = [".mid", ".midi"];
-const CELEBRATION_DURATION_MS = 2200;
+const CELEBRATION_DURATION_MS = 5000;
 const HEADER_ESTIMATED_HEIGHT = 112;
 const TRANSPORT_ESTIMATED_HEIGHT = 84;
 const TOOLBAR_ESTIMATED_HEIGHT = 72;
@@ -1261,6 +1261,10 @@ function App(): React.JSX.Element {
               visible={showCelebration}
               onPracticeAgain={handlePracticeAgain}
               onChooseSong={() => {
+                setShowCelebration(false);
+                setShowStats(true);
+              }}
+              onDismiss={() => {
                 setShowCelebration(false);
                 setShowStats(true);
               }}

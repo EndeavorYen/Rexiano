@@ -228,6 +228,7 @@ export const en: TranslationMap = {
   "celebration.missed": "Missed",
   "celebration.bestStreak": "Best Streak",
   "celebration.starRating": "{filled} out of {total} stars",
+  "celebration.tapToContinue": "Tap anywhere to continue",
 
   // ── Sheet Music ────────────────────────────────────────────────
   "sheetMusic.loadSong": "Load a song to see sheet music",
@@ -305,6 +306,9 @@ export const en: TranslationMap = {
   "onboarding.next": "Next",
   "onboarding.getStarted": "Get Started",
   "onboarding.ariaLabel": "Welcome guide",
+
+  // ── Count-in ─────────────────────────────────────────────────
+  "countIn.go": "Go!",
 
   // ── General ────────────────────────────────────────────────────
   "general.loading": "Loading...",
