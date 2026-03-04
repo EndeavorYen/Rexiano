@@ -341,6 +341,13 @@ export const zhTW: TranslationMap = {
   "settings.dailyGoal": "每日練習目標",
   "settings.dailyGoalDesc": "設定每日練習時間來養成習慣",
 
+  // ── Difficulty Heatmap ────────────────────────────────────────
+  "heatmap.ariaLabel": "難度熱圖",
+  "heatmap.easy": "簡單",
+  "heatmap.medium": "中等",
+  "heatmap.hard": "困難",
+  "heatmap.veryHard": "非常困難",
+
   // ── General ────────────────────────────────────────────────────
   "general.loading": "載入中…",
   "general.error": "錯誤",

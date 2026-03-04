@@ -393,6 +393,13 @@
 - [x] 上下文感知練習建議（analyzeWeakSpots: 按小節密度分析 miss，建議 A-B 循環）
 - [x] 鍵盤快捷鍵可視化（KeyboardShortcutsHelp: KeyCap 視覺鍵帽 + TransportBar ShortcutBadge）
 
+### Sprint 17 — 難度熱圖（#65）
+
+- [x] 分段難度分析引擎（SegmentDifficultyAnalyzer: 2 秒視窗，音符密度 + 音程 + 手部獨立性加權）
+- [x] 難度熱圖元件（DifficultyHeatmap: TransportBar 下方彩色條，綠/黃/橘/紅四級）
+- [x] i18n 翻譯（en / zh-TW：heatmap.easy / medium / hard / veryHard）
+- [x] 單元測試（10 個測試案例：分段切割、密度計分、正規化、一致性）
+
 ### Synthesia 對照表
 
 | 功能             | Synthesia | Rexiano Phase 6.5 後         | 超越？ |

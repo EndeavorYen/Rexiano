@@ -339,6 +339,13 @@ export interface TranslationMap {
   "settings.dailyGoal": string;
   "settings.dailyGoalDesc": string;
 
+  // ── Difficulty Heatmap ────────────────────────────────────────
+  "heatmap.ariaLabel": string;
+  "heatmap.easy": string;
+  "heatmap.medium": string;
+  "heatmap.hard": string;
+  "heatmap.veryHard": string;
+
   // ── General ────────────────────────────────────────────────────
   "general.loading": string;
   "general.error": string;

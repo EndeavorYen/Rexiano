@@ -13,6 +13,7 @@ import { useSongStore } from "@renderer/stores/useSongStore";
 import { usePracticeStore } from "@renderer/stores/usePracticeStore";
 import { useSettingsStore } from "@renderer/stores/useSettingsStore";
 import { VolumeControl } from "@renderer/features/audio/VolumeControl";
+import { DifficultyHeatmap } from "@renderer/features/practice/DifficultyHeatmap";
 import { MetronomePulse } from "@renderer/features/metronome/MetronomePulse";
 import { useMetronomeBeat } from "@renderer/hooks/useMetronomeBeat";
 import { useTranslation } from "@renderer/i18n/useTranslation";
@@ -280,8 +281,8 @@ export function TransportBar({
         </div>
 
         <div
-          className={`flex items-center min-w-0 lg:min-w-[280px] rounded-xl px-2 ${
-            compact ? "gap-2 py-0.5" : "gap-3 py-1"
+          className={`flex flex-col min-w-0 lg:min-w-[280px] rounded-xl px-2 ${
+            compact ? "gap-0.5 py-0.5" : "gap-1 py-1"
           }`}
           style={{
             background:
@@ -289,60 +290,64 @@ export function TransportBar({
             border: "1px solid var(--color-border)",
           }}
         >
-          <span
-            className="text-xs font-mono tabular-nums shrink-0"
-            style={{
-              color: "var(--color-text)",
-              minWidth: 36,
-              textAlign: "right",
-            }}
-          >
-            {formatTime(currentTime)}
-          </span>
+          <div className={`flex items-center ${compact ? "gap-2" : "gap-3"}`}>
+            <span
+              className="text-xs font-mono tabular-nums shrink-0"
+              style={{
+                color: "var(--color-text)",
+                minWidth: 36,
+                textAlign: "right",
+              }}
+            >
+              {formatTime(currentTime)}
+            </span>
 
-          <div
-            className="relative flex-1 flex items-center"
-            style={{ height: compact ? 18 : 20 }}
-          >
-            {loopHighlight && (
-              <div
-                className="absolute rounded-full pointer-events-none"
-                style={{
-                  left: `${loopHighlight.left}%`,
-                  width: `${loopHighlight.width}%`,
-                  top: "50%",
-                  height: 5,
-                  transform: "translateY(-50%)",
-                  background: `linear-gradient(90deg, color-mix(in srgb, var(--color-accent) 40%, transparent), var(--color-accent), color-mix(in srgb, var(--color-accent) 40%, transparent))`,
-                  borderRadius: 3,
-                }}
-                data-testid="loop-highlight"
-                aria-label="A-B loop range"
+            <div
+              className="relative flex-1 flex items-center"
+              style={{ height: compact ? 18 : 20 }}
+            >
+              {loopHighlight && (
+                <div
+                  className="absolute rounded-full pointer-events-none"
+                  style={{
+                    left: `${loopHighlight.left}%`,
+                    width: `${loopHighlight.width}%`,
+                    top: "50%",
+                    height: 5,
+                    transform: "translateY(-50%)",
+                    background: `linear-gradient(90deg, color-mix(in srgb, var(--color-accent) 40%, transparent), var(--color-accent), color-mix(in srgb, var(--color-accent) 40%, transparent))`,
+                    borderRadius: 3,
+                  }}
+                  data-testid="loop-highlight"
+                  aria-label="A-B loop range"
+                />
+              )}
+              <input
+                type="range"
+                min={0}
+                max={duration || 1}
+                step={0.1}
+                value={currentTime}
+                onChange={(e) => setCurrentTime(parseFloat(e.target.value))}
+                disabled={!song}
+                className="w-full relative z-10"
+                style={{ accentColor: "var(--color-accent)" }}
+                aria-label={t("transport.seekPosition")}
               />
-            )}
-            <input
-              type="range"
-              min={0}
-              max={duration || 1}
-              step={0.1}
-              value={currentTime}
-              onChange={(e) => setCurrentTime(parseFloat(e.target.value))}
-              disabled={!song}
-              className="w-full relative z-10"
-              style={{ accentColor: "var(--color-accent)" }}
-              aria-label={t("transport.seekPosition")}
-            />
+            </div>
+
+            <span
+              className="text-xs font-mono tabular-nums shrink-0"
+              style={{
+                color: "var(--color-text-muted)",
+                minWidth: 36,
+              }}
+            >
+              {formatTime(duration)}
+            </span>
           </div>
 
-          <span
-            className="text-xs font-mono tabular-nums shrink-0"
-            style={{
-              color: "var(--color-text-muted)",
-              minWidth: 36,
-            }}
-          >
-            {formatTime(duration)}
-          </span>
+          {song && <DifficultyHeatmap />}
         </div>
 
         <div

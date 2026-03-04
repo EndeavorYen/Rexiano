@@ -354,6 +354,13 @@ export const en: TranslationMap = {
   "settings.dailyGoal": "Daily Practice Goal",
   "settings.dailyGoalDesc": "Set a daily practice target to build a habit",
 
+  // ── Difficulty Heatmap ────────────────────────────────────────
+  "heatmap.ariaLabel": "Difficulty heatmap",
+  "heatmap.easy": "Easy",
+  "heatmap.medium": "Medium",
+  "heatmap.hard": "Hard",
+  "heatmap.veryHard": "Very Hard",
+
   // ── General ────────────────────────────────────────────────────
   "general.loading": "Loading...",
   "general.error": "Error",
