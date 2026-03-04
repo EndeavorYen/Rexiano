@@ -63,6 +63,21 @@ function midiToNoteName(midi: number): string {
   return `${name}${octave}`;
 }
 
+/**
+ * Assign hand based on track convention for 2-track songs (track 0 = right,
+ * track 1 = left). Falls back to average MIDI pitch heuristic otherwise.
+ */
+function assignHand(
+  trackIndex: number,
+  trackCount: number,
+  avgMidi: number,
+): "left" | "right" {
+  if (trackCount === 2) {
+    return trackIndex === 0 ? "right" : "left";
+  }
+  return avgMidi < 60 ? "left" : "right";
+}
+
 /** Cached TextStyle for combo counter text. */
 let _comboStyle: TextStyle | null = null;
 function getComboStyle(): TextStyle {
@@ -465,10 +480,9 @@ export class NoteRenderer {
       const track = song.tracks[trackIdx];
       if (track.notes.length === 0) continue;
 
-      // Heuristic: tracks with mostly lower notes (avg midi < 60) are left hand
       const avgMidi =
         track.notes.reduce((sum, n) => sum + n.midi, 0) / track.notes.length;
-      const hand = avgMidi < 60 ? "left" : "right";
+      const hand = assignHand(trackIdx, song.tracks.length, avgMidi);
 
       const results = this.fingeringEngine.computeFingering(track.notes, hand);
       const trackCache = new Map<string, Finger>();
