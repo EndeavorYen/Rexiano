@@ -16,6 +16,7 @@ import { VolumeControl } from "@renderer/features/audio/VolumeControl";
 import { MetronomePulse } from "@renderer/features/metronome/MetronomePulse";
 import { useMetronomeBeat } from "@renderer/hooks/useMetronomeBeat";
 import { useTranslation } from "@renderer/i18n/useTranslation";
+import { ShortcutBadge } from "@renderer/features/settings/KeyboardShortcutsHelp";
 
 // eslint-disable-next-line react-refresh/only-export-components
 export function formatTime(seconds: number): string {
@@ -113,36 +114,41 @@ export function TransportBar({
             border: "1px solid var(--color-border)",
           }}
         >
-          <button
-            onClick={handlePlayPause}
-            disabled={!song}
-            className="flex items-center justify-center rounded-full text-white disabled:opacity-40 cursor-pointer"
-            style={{
-              width: primaryButtonSize,
-              height: primaryButtonSize,
-              background: "var(--color-accent)",
-              boxShadow: playPulse
-                ? "0 0 0 6px color-mix(in srgb, var(--color-accent) 25%, transparent)"
-                : "0 2px 8px color-mix(in srgb, var(--color-accent) 30%, transparent)",
-              transition: "box-shadow 0.3s ease, transform 0.1s ease",
-              transform: playPulse ? "scale(0.93)" : "scale(1)",
-              animation: isPlaying
-                ? "status-dot-pulse 2.6s ease-out infinite"
-                : "none",
-            }}
-            title={isPlaying ? t("transport.pause") : t("transport.play")}
-            aria-label={isPlaying ? t("transport.pause") : t("transport.play")}
-          >
-            {isPlaying ? (
-              <Pause size={iconSize} fill="currentColor" />
-            ) : (
-              <Play
-                size={iconSize}
-                fill="currentColor"
-                style={{ marginLeft: 2 }}
-              />
-            )}
-          </button>
+          <div className="flex flex-col items-center gap-0.5">
+            <button
+              onClick={handlePlayPause}
+              disabled={!song}
+              className="flex items-center justify-center rounded-full text-white disabled:opacity-40 cursor-pointer"
+              style={{
+                width: primaryButtonSize,
+                height: primaryButtonSize,
+                background: "var(--color-accent)",
+                boxShadow: playPulse
+                  ? "0 0 0 6px color-mix(in srgb, var(--color-accent) 25%, transparent)"
+                  : "0 2px 8px color-mix(in srgb, var(--color-accent) 30%, transparent)",
+                transition: "box-shadow 0.3s ease, transform 0.1s ease",
+                transform: playPulse ? "scale(0.93)" : "scale(1)",
+                animation: isPlaying
+                  ? "status-dot-pulse 2.6s ease-out infinite"
+                  : "none",
+              }}
+              title={isPlaying ? t("transport.pause") : t("transport.play")}
+              aria-label={
+                isPlaying ? t("transport.pause") : t("transport.play")
+              }
+            >
+              {isPlaying ? (
+                <Pause size={iconSize} fill="currentColor" />
+              ) : (
+                <Play
+                  size={iconSize}
+                  fill="currentColor"
+                  style={{ marginLeft: 2 }}
+                />
+              )}
+            </button>
+            {!compact && <ShortcutBadge label="Space" />}
+          </div>
 
           <button
             onClick={reset}

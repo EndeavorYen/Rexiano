@@ -27,6 +27,12 @@ const modes: {
     descKey: "practice.mode.freeDesc",
     emoji: "\u{1F3B9}",
   },
+  {
+    id: "step",
+    labelKey: "practice.step",
+    descKey: "practice.mode.stepDesc",
+    emoji: "\u{1F446}",
+  },
 ];
 
 export function PracticeModeSelector(): React.JSX.Element {

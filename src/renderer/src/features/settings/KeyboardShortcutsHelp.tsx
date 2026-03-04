@@ -7,10 +7,93 @@ import {
 import { useTranslation } from "@renderer/i18n/useTranslation";
 
 interface ShortcutEntry {
-  /** Key combination displayed in the left column */
-  keys: string;
+  /** Key cap labels displayed as visual key-cap badges */
+  keyCaps: string[];
   /** Description — either an i18n key result or a plain string */
   label: string;
+}
+
+/**
+ * Renders a single visual key-cap badge (rounded rect with border + shadow).
+ * Designed to look like a physical keyboard key.
+ */
+function KeyCap({ label }: { label: string }): React.JSX.Element {
+  return (
+    <kbd
+      className="inline-flex items-center justify-center text-[11px] font-mono font-semibold rounded-md"
+      style={{
+        background:
+          "linear-gradient(180deg, color-mix(in srgb, var(--color-surface-alt) 90%, var(--color-surface)) 0%, var(--color-surface-alt) 100%)",
+        border: "1px solid var(--color-border)",
+        boxShadow:
+          "0 1px 0 color-mix(in srgb, var(--color-border) 60%, transparent), inset 0 1px 0 color-mix(in srgb, var(--color-surface) 40%, transparent)",
+        color: "var(--color-text)",
+        minWidth: 24,
+        height: 22,
+        padding: "0 5px",
+        lineHeight: "22px",
+      }}
+    >
+      {label}
+    </kbd>
+  );
+}
+
+/**
+ * Renders a group of key-caps with "+" or "/" separators between them.
+ */
+function KeyCapGroup({
+  caps,
+  separator = "+",
+}: {
+  caps: string[];
+  separator?: string;
+}): React.JSX.Element {
+  return (
+    <span className="inline-flex items-center gap-0.5">
+      {caps.map((cap, i) => (
+        <span key={i} className="inline-flex items-center gap-0.5">
+          {i > 0 && (
+            <span
+              className="text-[10px] font-mono mx-0.5"
+              style={{ color: "var(--color-text-muted)", opacity: 0.6 }}
+            >
+              {separator}
+            </span>
+          )}
+          <KeyCap label={cap} />
+        </span>
+      ))}
+    </span>
+  );
+}
+
+/**
+ * Tiny inline shortcut hint badge for toolbar buttons.
+ * Exported for use in TransportBar and other UI components.
+ */
+export function ShortcutBadge({
+  label,
+}: {
+  label: string;
+}): React.JSX.Element {
+  return (
+    <span
+      className="inline-flex items-center justify-center text-[9px] font-mono rounded"
+      style={{
+        background:
+          "color-mix(in srgb, var(--color-surface-alt) 60%, transparent)",
+        border: "1px solid color-mix(in srgb, var(--color-border) 50%, transparent)",
+        color: "var(--color-text-muted)",
+        padding: "0 3px",
+        height: 14,
+        lineHeight: "14px",
+        opacity: 0.7,
+      }}
+    >
+      {label}
+    </span>
+  );
 }
 
 /**
@@ -43,25 +126,28 @@ export function KeyboardShortcutsHelp(): React.JSX.Element | null {
   if (!visible) return null;
 
   const shortcuts: ShortcutEntry[] = [
-    { keys: "Space", label: t("settings.shortcut.playPause") },
-    { keys: "R", label: t("settings.shortcut.restart") },
-    { keys: "\u2190 / \u2192", label: "Seek \u00B15s" },
-    { keys: "Shift + \u2190 / \u2192", label: "Seek \u00B115s" },
+    { keyCaps: ["Space"], label: t("settings.shortcut.playPause") },
+    { keyCaps: ["R"], label: t("settings.shortcut.restart") },
+    { keyCaps: ["\u2190", "\u2192"], label: "Seek \u00B15s" },
     {
-      keys: "\u2191 / \u2193",
+      keyCaps: ["Shift", "\u2190", "\u2192"],
+      label: "Seek \u00B115s",
+    },
+    {
+      keyCaps: ["\u2191", "\u2193"],
       label:
         t("settings.shortcut.speedUp") +
         " / " +
         t("settings.shortcut.speedDown"),
     },
     {
-      keys: "A / B",
+      keyCaps: ["A", "B"],
       label:
         t("settings.shortcut.loopA") + " / " + t("settings.shortcut.loopB"),
     },
-    { keys: "L", label: t("practice.clearLoop") },
+    { keyCaps: ["L"], label: t("practice.clearLoop") },
     {
-      keys: "1 / 2 / 3",
+      keyCaps: ["1", "2", "3"],
       label:
         t("practice.watch") +
         " / " +
@@ -69,10 +155,10 @@ export function KeyboardShortcutsHelp(): React.JSX.Element | null {
         " / " +
         t("practice.free"),
     },
-    { keys: "M", label: t("audio.mute") + " / " + t("audio.unmute") },
-    { keys: "Ctrl+O", label: "Open file" },
-    { keys: "?", label: "Toggle this help" },
-    { keys: "Esc", label: t("settings.shortcut.closeBack") },
+    { keyCaps: ["M"], label: t("audio.mute") + " / " + t("audio.unmute") },
+    { keyCaps: ["Ctrl", "O"], label: "Open file" },
+    { keyCaps: ["?"], label: "Toggle this help" },
+    { keyCaps: ["Esc"], label: t("settings.shortcut.closeBack") },
   ];
 
   return (
@@ -102,22 +188,15 @@ export function KeyboardShortcutsHelp(): React.JSX.Element | null {
         </h2>
 
         <div className="flex flex-col gap-1.5">
-          {shortcuts.map((s) => (
+          {shortcuts.map((s, idx) => (
             <div
-              key={s.keys}
+              key={idx}
               className="flex items-center justify-between gap-3 py-1 px-1"
             >
-              <kbd
-                className="inline-block min-w-[80px] text-center text-[11px] font-mono px-2 py-0.5 rounded"
-                style={{
-                  background:
-                    "color-mix(in srgb, var(--color-surface-alt) 70%, var(--color-surface))",
-                  border: "1px solid var(--color-border)",
-                  color: "var(--color-text)",
-                }}
-              >
-                {s.keys}
-              </kbd>
+              <KeyCapGroup
+                caps={s.keyCaps}
+                separator={s.keyCaps.length > 2 ? "+" : "/"}
+              />
               <span
                 className="text-xs font-body text-right flex-1"
                 style={{ color: "var(--color-text-muted)" }}
@@ -132,8 +211,7 @@ export function KeyboardShortcutsHelp(): React.JSX.Element | null {
           className="text-[10px] font-body text-center mt-4"
           style={{ color: "var(--color-text-muted)" }}
         >
-          Press <kbd className="font-mono">?</kbd> or{" "}
-          <kbd className="font-mono">Esc</kbd> to close
+          Press <KeyCap label="?" /> or <KeyCap label="Esc" /> to close
         </p>
       </div>
     </div>

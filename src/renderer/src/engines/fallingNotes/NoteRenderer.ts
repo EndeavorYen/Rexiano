@@ -32,6 +32,12 @@ const MIN_HEIGHT_FOR_LABEL = 16;
 /** Minimum note height (px) at which we show the fingering label */
 const MIN_HEIGHT_FOR_FINGERING = 14;
 
+/** Time window (seconds) before the hit line in which small notes get labels */
+const SMALL_NOTE_LABEL_WINDOW = 2.0;
+
+/** Font size for small note labels shown above short notes near hit line */
+const SMALL_NOTE_LABEL_SIZE = 8;
+
 /** Circled digit characters for finger numbers 1-5 */
 const CIRCLED_DIGITS: Record<Finger, string> = {
   1: "\u2460",
@@ -111,6 +117,20 @@ function getWatchLabelStyle(): TextStyle {
   return _watchLabelStyle;
 }
 
+/** Text style for small labels shown above short notes near the hit line. */
+let _smallLabelStyle: TextStyle | null = null;
+function getSmallLabelStyle(): TextStyle {
+  if (!_smallLabelStyle) {
+    _smallLabelStyle = new TextStyle({
+      fontFamily: "'JetBrains Mono Variable', 'JetBrains Mono', monospace",
+      fontSize: SMALL_NOTE_LABEL_SIZE,
+      fontWeight: "bold",
+      fill: 0xffffff,
+    });
+  }
+  return _smallLabelStyle;
+}
+
 /** Linearly interpolate between two 0xRRGGBB colors by factor t ∈ [0,1]. */
 function lerpColor(a: number, b: number, t: number): number {
   const ar = (a >> 16) & 0xff,
@@ -148,6 +168,12 @@ export class NoteRenderer {
   public showNoteLabels = true;
   /** Key signature (negative = flats, positive = sharps, 0 = C major) */
   public keySig = 0;
+
+  // ── Small note label pool (for notes too short for inline labels) ──
+  /** Text pool for small labels shown above short notes near hit line */
+  private _smallLabelPool: Text[] = [];
+  /** Maps each active sprite to its associated small label Text object */
+  private _spriteSmallLabels = new Map<Sprite, Text>();
 
   public activeNotes = new Set<number>();
 
@@ -282,6 +308,12 @@ export class NoteRenderer {
         sprite.width = kp.width;
         sprite.height = Math.max(h, 2);
         sprite.visible = true;
+
+        // Vary alpha based on velocity (0-127 -> 0.4-1.0) for dynamics visualization
+        if (note.velocity > 0) {
+          sprite.alpha = 0.4 + (note.velocity / 127) * 0.6;
+        }
+
         nextActive.set(key, sprite);
 
         // ── Note label management ──
@@ -300,12 +332,43 @@ export class NoteRenderer {
           label.y = rectY + Math.max(h, 2) / 2;
           label.visible = true;
           shownLabelCount += 1;
+        } else if (
+          this.showNoteLabels &&
+          h < MIN_HEIGHT_FOR_LABEL &&
+          shownLabelCount < maxVisibleLabels &&
+          note.time - vp.currentTime <= SMALL_NOTE_LABEL_WINDOW &&
+          note.time - vp.currentTime >= -0.1
+        ) {
+          // Small note near hit line — show a small label above the note
+          let smallLabel = this._spriteSmallLabels.get(sprite);
+          if (!smallLabel) {
+            smallLabel = this.allocateSmallLabel();
+            this._spriteSmallLabels.set(sprite, smallLabel);
+          }
+          smallLabel.text = spellNote(note.midi, this.keySig);
+          smallLabel.x = kp.x + kp.width / 2;
+          smallLabel.y = rectY - 4;
+          smallLabel.visible = true;
+          shownLabelCount += 1;
+
+          // Hide inline label if present
+          const existingLabel = this._spriteLabels.get(sprite);
+          if (existingLabel) {
+            this.releaseLabel(existingLabel);
+            this._spriteLabels.delete(sprite);
+          }
         } else {
           // Hide label if note is too small or labels are disabled
           const existingLabel = this._spriteLabels.get(sprite);
           if (existingLabel) {
             this.releaseLabel(existingLabel);
             this._spriteLabels.delete(sprite);
+          }
+          // Hide small label if present
+          const existingSmall = this._spriteSmallLabels.get(sprite);
+          if (existingSmall) {
+            this.releaseSmallLabel(existingSmall);
+            this._spriteSmallLabels.delete(sprite);
           }
         }
 
@@ -433,9 +496,11 @@ export class NoteRenderer {
     this.activeNotes.clear();
     this.keyPositions.clear();
 
-    // Clean up label pool
+    // Clean up label pools
     this._labelPool.length = 0;
     this._spriteLabels.clear();
+    this._smallLabelPool.length = 0;
+    this._spriteSmallLabels.clear();
 
     // Clean up fingering overlay
     this.fingeringLabelPool.length = 0;
@@ -492,6 +557,32 @@ export class NoteRenderer {
     this._labelPool.push(label);
   }
 
+  // ── Small note label pool (above short notes near hit line) ──
+
+  private createSmallLabel(): Text {
+    const t = new Text({ text: "", style: getSmallLabelStyle() });
+    t.anchor.set(0.5, 1); // bottom-center anchor (label sits above the note)
+    t.visible = false;
+    t.alpha = 0.85;
+    this.container.addChild(t);
+    return t;
+  }
+
+  private allocateSmallLabel(): Text {
+    if (this._smallLabelPool.length === 0) {
+      const grow = 16;
+      for (let i = 0; i < grow; i++) {
+        this._smallLabelPool.push(this.createSmallLabel());
+      }
+    }
+    return this._smallLabelPool.pop()!;
+  }
+
+  private releaseSmallLabel(label: Text): void {
+    label.visible = false;
+    this._smallLabelPool.push(label);
+  }
+
   private release(sprite: Sprite): void {
     // Cancel any in-flight animation before returning sprite to pool
     const handle = this._animHandles.get(sprite);
@@ -508,6 +599,13 @@ export class NoteRenderer {
     if (label) {
       this.releaseLabel(label);
       this._spriteLabels.delete(sprite);
+    }
+
+    // Release the associated small label if present
+    const smallLabel = this._spriteSmallLabels.get(sprite);
+    if (smallLabel) {
+      this.releaseSmallLabel(smallLabel);
+      this._spriteSmallLabels.delete(sprite);
     }
   }
 

@@ -26,6 +26,10 @@ function mockThemeState(
     note2: string;
     note3: string;
     note4: string;
+    note5: string;
+    note6: string;
+    note7: string;
+    note8: string;
     canvasBg: string;
     hitLine: string;
   }> = {},
@@ -38,6 +42,10 @@ function mockThemeState(
         note2: overrides.note2 ?? "#00BB00",
         note3: overrides.note3 ?? "#0000CC",
         note4: overrides.note4 ?? "#DD00DD",
+        note5: overrides.note5 ?? "#00EEAA",
+        note6: overrides.note6 ?? "#EE8800",
+        note7: overrides.note7 ?? "#EE66AA",
+        note8: overrides.note8 ?? "#88CC00",
         canvasBg: overrides.canvasBg ?? "#FFFFFF",
         hitLine: overrides.hitLine ?? "#FF0000",
       },
@@ -73,22 +81,26 @@ describe("noteColors", () => {
       expect(colors[3]).toBe(0xdd00dd); // note4
     });
 
-    it("cycles track colors for index >= 4 (trackIndex % 4)", () => {
-      mockedGetState.mockReturnValue(mockThemeState("test-theme-c") as ReturnType<typeof useThemeStore.getState>);
+    it("cycles track colors for index >= 8 (trackIndex % 8)", () => {
+      mockedGetState.mockReturnValue(
+        mockThemeState("test-theme-c") as ReturnType<
+          typeof useThemeStore.getState
+        >,
+      );
 
-      // Track 4 should wrap to note1 (index 0)
-      expect(getTrackColor(4)).toBe(getTrackColor(0));
-      // Track 5 wraps to note2 (index 1)
-      expect(getTrackColor(5)).toBe(getTrackColor(1));
-      // Track 7 wraps to note4 (index 3)
-      expect(getTrackColor(7)).toBe(getTrackColor(3));
+      // Track 8 should wrap to note1 (index 0)
+      expect(getTrackColor(8)).toBe(getTrackColor(0));
+      // Track 9 wraps to note2 (index 1)
+      expect(getTrackColor(9)).toBe(getTrackColor(1));
+      // Track 15 wraps to note8 (index 7)
+      expect(getTrackColor(15)).toBe(getTrackColor(7));
     });
 
     it("caches palette per theme — does not recompute on same themeId", () => {
       mockedGetState.mockReturnValue(mockThemeState("cached-theme") as ReturnType<typeof useThemeStore.getState>);
 
       getTrackColor(0);
-      // hexToPixi should be called 4 times for the 4-color palette build
+      // hexToPixi should be called 8 times for the 8-color palette build
       const callCountAfterFirst = mockedHexToPixi.mock.calls.length;
 
       getTrackColor(1);
@@ -98,23 +110,22 @@ describe("noteColors", () => {
     });
 
     it("rebuilds cache when theme changes", () => {
-      mockedGetState.mockReturnValue(mockThemeState("theme-1") as ReturnType<typeof useThemeStore.getState>);
-      getTrackColor(0);
-      const callsAfterTheme1 = mockedHexToPixi.mock.calls.length;
+      mockedGetState.mockReturnValue(
+        mockThemeState("theme-1") as ReturnType<typeof useThemeStore.getState>,
+      );
+      const color1 = getTrackColor(0);
 
-      // Switch to a different theme
+      // Switch to a different theme with different note1 color
       mockedGetState.mockReturnValue(
         mockThemeState("theme-2", {
           note1: "#111111",
-          note2: "#222222",
-          note3: "#333333",
-          note4: "#444444",
         }) as ReturnType<typeof useThemeStore.getState>,
       );
 
-      getTrackColor(0);
-      // Should have 4 more calls for the new palette
-      expect(mockedHexToPixi).toHaveBeenCalledTimes(callsAfterTheme1 + 4);
+      const color2 = getTrackColor(0);
+      // Color should have changed to reflect the new theme
+      expect(color2).toBe(0x111111);
+      expect(color2).not.toBe(color1);
       expect(mockedHexToPixi).toHaveBeenCalledWith("#111111");
     });
 
@@ -123,7 +134,7 @@ describe("noteColors", () => {
 
       // Should not throw for arbitrarily large indices
       expect(() => getTrackColor(100)).not.toThrow();
-      expect(getTrackColor(100)).toBe(getTrackColor(100 % 4));
+      expect(getTrackColor(100)).toBe(getTrackColor(100 % 8));
     });
   });
 

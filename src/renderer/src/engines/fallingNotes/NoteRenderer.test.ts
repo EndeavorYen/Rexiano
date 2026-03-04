@@ -349,8 +349,12 @@ describe("NoteRenderer", () => {
     ).children[0].children as {
       visible: boolean;
       height: number;
+      text?: string;
     }[];
-    const visible = sprites.filter((s) => s.visible);
+    // Filter out Text objects (labels) — only check Sprites
+    const visible = sprites.filter(
+      (s) => s.visible && typeof s.text !== "string",
+    );
     expect(visible.length).toBe(1);
     expect(visible[0].height).toBe(2);
   });
@@ -596,10 +600,32 @@ describe("NoteRenderer", () => {
       expect(labels[0].text).toBe("C4");
     });
 
-    test("does not create labels for notes shorter than MIN_HEIGHT_FOR_LABEL", () => {
+    test("shows small label above short notes near hit line", () => {
       // duration=0.01 at pps=200 → h=2px, below 16px threshold
+      // Note at time=0, currentTime=0 → within 2s window → gets small label
       const song = makeSong([
         { notes: [{ midi: 60, time: 0, duration: 0.01 }] },
+      ]);
+      renderer.update(song, makeViewport({ currentTime: 0, pps: 200 }), false);
+
+      const containerChildren = (
+        parent as unknown as { children: { children: unknown[] }[] }
+      ).children[0].children as {
+        text?: string;
+        visible: boolean;
+      }[];
+      const labels = containerChildren.filter(
+        (c) => typeof c.text === "string" && c.text !== "" && c.visible,
+      );
+      expect(labels.length).toBe(1);
+      expect(labels[0].text).toBe("C4");
+    });
+
+    test("does not create labels for short notes far from hit line", () => {
+      // duration=0.01 at pps=200 → h=2px, below 16px threshold
+      // Note at time=5.0, currentTime=0 → 5s away > 2s window → no label
+      const song = makeSong([
+        { notes: [{ midi: 60, time: 5.0, duration: 0.01 }] },
       ]);
       renderer.update(song, makeViewport({ currentTime: 0, pps: 200 }), false);
 

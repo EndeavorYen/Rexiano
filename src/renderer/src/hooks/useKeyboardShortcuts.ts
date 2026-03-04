@@ -8,6 +8,7 @@ import { useEffect, useRef } from "react";
 import { usePlaybackStore } from "@renderer/stores/usePlaybackStore";
 import { usePracticeStore } from "@renderer/stores/usePracticeStore";
 import { useSongStore } from "@renderer/stores/useSongStore";
+import { getPracticeEngines } from "@renderer/engines/practice/practiceManager";
 import type { PracticeMode } from "@shared/types";
 
 /** Seek offset in seconds for arrow-key shortcuts */
@@ -112,6 +113,17 @@ export function createKeyboardHandler(
       case "ArrowLeft": {
         e.preventDefault();
         if (!hasSong) return;
+        // In step mode, ArrowLeft goes to previous note/chord
+        if (usePracticeStore.getState().mode === "step") {
+          const { stepMode } = getPracticeEngines();
+          if (stepMode) {
+            const chord = stepMode.goBack();
+            if (chord) {
+              usePlaybackStore.getState().setCurrentTime(chord.time);
+            }
+          }
+          break;
+        }
         if (e.shiftKey) {
           // Shift+← : large seek backward
           const ct = usePlaybackStore.getState().currentTime;
@@ -131,6 +143,17 @@ export function createKeyboardHandler(
       case "ArrowRight": {
         e.preventDefault();
         if (!hasSong) return;
+        // In step mode, ArrowRight advances to next note/chord
+        if (usePracticeStore.getState().mode === "step") {
+          const { stepMode } = getPracticeEngines();
+          if (stepMode) {
+            const chord = stepMode.advance();
+            if (chord) {
+              usePlaybackStore.getState().setCurrentTime(chord.time);
+            }
+          }
+          break;
+        }
         const duration = useSongStore.getState().song?.duration ?? 0;
         if (e.shiftKey) {
           const ct = usePlaybackStore.getState().currentTime;

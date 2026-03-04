@@ -1,7 +1,7 @@
 import { useThemeStore } from "@renderer/stores/useThemeStore";
 import { hexToPixi } from "@renderer/themes/tokens";
 
-// Four-color palette per theme. Tracks beyond 4 will cycle through these colors.
+// Eight-color palette per theme. Tracks beyond 8 will cycle through these colors.
 let cachedThemeId: string | null = null;
 let cachedPalette: number[] = [];
 
@@ -19,6 +19,10 @@ export function getTrackColor(trackIndex: number): number {
       hexToPixi(c.note2),
       hexToPixi(c.note3),
       hexToPixi(c.note4),
+      hexToPixi(c.note5),
+      hexToPixi(c.note6),
+      hexToPixi(c.note7),
+      hexToPixi(c.note8),
     ];
     cachedThemeId = state.themeId;
   }

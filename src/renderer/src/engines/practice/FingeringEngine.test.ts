@@ -1016,6 +1016,72 @@ describe("FingeringEngine", () => {
     });
   });
 
+  // ── Chord grouping threshold at fast tempos ─────────────────────
+
+  describe("chord grouping threshold at fast tempos", () => {
+    it("does NOT group 200 BPM sixteenth notes (75ms apart) as chords", () => {
+      // At 200 BPM, a sixteenth note = 60/200/4 = 0.075s = 75ms
+      // The groupByTime threshold is 50ms, so 75ms apart should be separate groups
+      const notes = [note(60, 0.0), note(62, 0.075), note(64, 0.15)];
+      const results = engine.computeFingering(notes, "right");
+
+      expect(results).toHaveLength(3);
+      // All treated as single notes (ascending stepwise), not as a chord
+      expect(results[0].finger).toBe(1);
+      expect(results[1].finger).toBe(2);
+      expect(results[2].finger).toBe(3);
+    });
+
+    it("groups notes within 50ms as chords even at fast tempos", () => {
+      // Two notes 30ms apart should be grouped as a chord
+      const notes = [note(60, 0.0), note(64, 0.03), note(67, 1.0)];
+      const results = engine.computeFingering(notes, "right");
+
+      expect(results).toHaveLength(3);
+      // First two notes form a chord group (within 50ms)
+      // Last note is separate
+      results.forEach((r) => {
+        expect(r.finger).toBeGreaterThanOrEqual(1);
+        expect(r.finger).toBeLessThanOrEqual(5);
+      });
+    });
+  });
+
+  // ── Scale detection with sliding window ───────────────────────
+
+  describe("scale detection with sliding window", () => {
+    it("detects a scale starting from a non-root position (prefix notes)", () => {
+      // F3 G3 (non-scale prefix) then C major scale: C4 D4 E4 F4 G4 A4 B4 C5
+      // F3-G3 don't form a scale from the root, but C major starts at offset 2
+      // (F3=53, G3=55, C4=60: intervals 53→55=+2, 53→60=+7 — not major or minor from F3)
+      const notes = [53, 55, 60, 62, 64, 65, 67, 69, 71, 72].map((m, i) =>
+        note(m, i * 0.5),
+      );
+      const results = engine.computeFingering(notes, "right");
+
+      expect(results).toHaveLength(10);
+      // Scale portion (from index 2 onward) should get standard RH ascending
+      expect(results[2].finger).toBe(1); // C4 = thumb (scale start)
+      expect(results[3].finger).toBe(2); // D4
+      expect(results[4].finger).toBe(3); // E4
+      expect(results[5].finger).toBe(1); // F4 (thumb under)
+    });
+
+    it("prefers the smallest offset when multiple patterns match", () => {
+      // A minor scale from root: A3 B3 C4 D4 E4 F4 G4 A4
+      // This is also a C major scale starting at offset 2
+      // Should prefer offset 0 (A minor) over offset 2 (C major)
+      const notes = [57, 59, 60, 62, 64, 65, 67, 69].map((m, i) =>
+        note(m, i * 0.5),
+      );
+      const results = engine.computeFingering(notes, "right");
+
+      expect(results).toHaveLength(8);
+      // Should detect as minor from offset 0 → standard RH ascending
+      expect(fingers(results)).toEqual([1, 2, 3, 1, 2, 3, 4, 5]);
+    });
+  });
+
   // ── Single note via computeFingering ───────────────────────────
 
   describe("computeFingering — single note", () => {

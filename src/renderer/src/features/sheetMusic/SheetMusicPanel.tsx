@@ -9,7 +9,7 @@
  * - Subtly highlights currently active measure + note/chord.
  */
 
-import { useRef, useEffect, useState, useMemo } from "react";
+import { useRef, useEffect, useState, useMemo, useCallback } from "react";
 import { useTranslation } from "@renderer/i18n/useTranslation";
 import { usePlaybackStore } from "@renderer/stores/usePlaybackStore";
 import type {
@@ -27,6 +27,9 @@ const SYSTEM_HEIGHT = STAVE_HEIGHT * 2 + SYSTEM_GAP;
 const LEFT_MARGIN = 28;
 const TOP_MARGIN = 10;
 const DISPLAY_MEASURE_COUNT = 8;
+
+/** Available zoom levels for sheet music display */
+const ZOOM_LEVELS = [0.75, 1.0, 1.25, 1.5] as const;
 
 interface SheetMusicPanelProps {
   notationData: NotationData | null;
@@ -259,7 +262,22 @@ export function SheetMusicPanel({
   const svgHostRef = useRef<HTMLDivElement>(null);
   const [containerWidth, setContainerWidth] = useState(800);
   const [vexflowError, setVexflowError] = useState(false);
+  const [zoomLevel, setZoomLevel] = useState(1.0);
   const hidden = mode === "falling";
+
+  const zoomIn = useCallback(() => {
+    setZoomLevel((prev) => {
+      const idx = ZOOM_LEVELS.indexOf(prev as (typeof ZOOM_LEVELS)[number]);
+      return idx < ZOOM_LEVELS.length - 1 ? ZOOM_LEVELS[idx + 1] : prev;
+    });
+  }, []);
+
+  const zoomOut = useCallback(() => {
+    setZoomLevel((prev) => {
+      const idx = ZOOM_LEVELS.indexOf(prev as (typeof ZOOM_LEVELS)[number]);
+      return idx > 0 ? ZOOM_LEVELS[idx - 1] : prev;
+    });
+  }, []);
 
   /** Read the computed accent color from CSS custom properties for VexFlow SVG rendering. */
   const accentHex = useMemo(() => {
@@ -313,6 +331,24 @@ export function SheetMusicPanel({
     observer.observe(el);
     return () => observer.disconnect();
   }, []);
+
+  // Keyboard shortcuts: Ctrl+= to zoom in, Ctrl+- to zoom out
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el || hidden) return;
+    const handleKey = (e: KeyboardEvent): void => {
+      if (!e.ctrlKey && !e.metaKey) return;
+      if (e.key === "=" || e.key === "+") {
+        e.preventDefault();
+        zoomIn();
+      } else if (e.key === "-") {
+        e.preventDefault();
+        zoomOut();
+      }
+    };
+    el.addEventListener("keydown", handleKey);
+    return () => el.removeEventListener("keydown", handleKey);
+  }, [hidden, zoomIn, zoomOut]);
 
   /*
    * VexFlow rendering effect — triggers on measure window or layout changes.
@@ -419,7 +455,8 @@ export function SheetMusicPanel({
   return (
     <div
       ref={containerRef}
-      className="relative w-full overflow-hidden"
+      tabIndex={0}
+      className="relative w-full overflow-auto outline-none"
       style={{
         flex: mode === "sheet" ? 1 : undefined,
         height: mode === "split" ? height : undefined,
@@ -435,6 +472,10 @@ export function SheetMusicPanel({
       <div
         ref={svgHostRef}
         className="w-full h-full"
+        style={{
+          transform: zoomLevel !== 1 ? `scale(${zoomLevel})` : undefined,
+          transformOrigin: "top left",
+        }}
         data-testid="sheet-music-svg-host"
       />
 
@@ -484,6 +525,56 @@ export function SheetMusicPanel({
           />
         </>
       )}
+
+      {/* Zoom controls */}
+      <div
+        className="absolute top-1 right-2 flex items-center gap-0.5 z-10"
+        style={{ opacity: 0.75 }}
+      >
+        <button
+          type="button"
+          className="px-1.5 py-0.5 rounded text-xs font-mono"
+          style={{
+            background: "var(--color-surface-alt)",
+            color: "var(--color-text)",
+            border: "1px solid var(--color-border)",
+            cursor: zoomLevel > ZOOM_LEVELS[0] ? "pointer" : "not-allowed",
+            opacity: zoomLevel > ZOOM_LEVELS[0] ? 1 : 0.4,
+          }}
+          onClick={zoomOut}
+          disabled={zoomLevel <= ZOOM_LEVELS[0]}
+          aria-label={t("sheetMusic.zoomOut")}
+          title={t("sheetMusic.zoomOut")}
+        >
+          −
+        </button>
+        <span
+          className="text-xs font-mono min-w-[3ch] text-center select-none"
+          style={{ color: "var(--color-text-muted)" }}
+        >
+          {Math.round(zoomLevel * 100)}%
+        </span>
+        <button
+          type="button"
+          className="px-1.5 py-0.5 rounded text-xs font-mono"
+          style={{
+            background: "var(--color-surface-alt)",
+            color: "var(--color-text)",
+            border: "1px solid var(--color-border)",
+            cursor:
+              zoomLevel < ZOOM_LEVELS[ZOOM_LEVELS.length - 1]
+                ? "pointer"
+                : "not-allowed",
+            opacity: zoomLevel < ZOOM_LEVELS[ZOOM_LEVELS.length - 1] ? 1 : 0.4,
+          }}
+          onClick={zoomIn}
+          disabled={zoomLevel >= ZOOM_LEVELS[ZOOM_LEVELS.length - 1]}
+          aria-label={t("sheetMusic.zoomIn")}
+          title={t("sheetMusic.zoomIn")}
+        >
+          +
+        </button>
+      </div>
 
       {!notationData && !vexflowError && (
         <div

@@ -1,5 +1,7 @@
-import type { PracticeMode, PracticeScore } from "@shared/types";
+import type { PracticeMode, PracticeScore, NoteResult } from "@shared/types";
 import { useTranslation } from "@renderer/i18n/useTranslation";
+import { useSongStore } from "@renderer/stores/useSongStore";
+import { usePracticeStore } from "@renderer/stores/usePracticeStore";
 
 interface StatisticsPageProps {
   score: PracticeScore;
@@ -46,6 +48,11 @@ export function StatisticsPage({
       : Math.max(0, Math.min(360, (score.accuracy / 100) * 360));
   const reward = getRewardTier(score.accuracy);
   const tips = getPracticeTips(score, mode, speed, durationSeconds);
+
+  // Context-aware weak spot analysis
+  const noteResults = usePracticeStore.getState().noteResults;
+  const measureTimes = useSongStore.getState().song?.measureTimes ?? [];
+  const weakSpots = analyzeWeakSpots(noteResults, measureTimes);
 
   return (
     <div
@@ -226,6 +233,33 @@ export function StatisticsPage({
           </div>
         </div>
 
+        {/* Weak spot hints */}
+        {weakSpots.length > 0 && (
+          <div
+            className="rounded-xl px-4 py-3 mb-6"
+            style={{
+              background:
+                "color-mix(in srgb, var(--color-surface-alt) 60%, var(--color-surface))",
+              border:
+                "1px solid color-mix(in srgb, var(--color-accent) 20%, var(--color-border))",
+            }}
+            data-testid="weak-spot-hints"
+          >
+            {weakSpots.map((spot) => (
+              <p
+                key={`${spot.start}-${spot.end}`}
+                className="text-xs font-body"
+                style={{ color: "var(--color-text)" }}
+              >
+                {t("stats.weakSpotHint", {
+                  start: spot.start,
+                  end: spot.end,
+                })}
+              </p>
+            ))}
+          </div>
+        )}
+
         {/* Actions */}
         <div className="flex gap-2">
           <button
@@ -342,9 +376,10 @@ function getRewardTier(
 
 function modeKey(
   mode: PracticeMode,
-): "stats.modeWait" | "stats.modeFree" | "stats.modeWatch" {
+): "stats.modeWait" | "stats.modeFree" | "stats.modeWatch" | "stats.modeStep" {
   if (mode === "wait") return "stats.modeWait";
   if (mode === "free") return "stats.modeFree";
+  if (mode === "step") return "stats.modeStep";
   return "stats.modeWatch";
 }
 
@@ -387,6 +422,57 @@ function getPracticeTips(
     tips.push("stats.tipKeepGoing");
   }
   return tips.slice(0, 3);
+}
+
+/**
+ * Analyze noteResults to find measure ranges with the highest miss density.
+ * Uses binary search on measureTimes to map note times to measure numbers.
+ * Returns up to 2 weak measure ranges (expanded by 1 adjacent measure each side).
+ */
+function analyzeWeakSpots(
+  noteResults: Map<string, NoteResult>,
+  measureTimes: number[],
+): Array<{ start: number; end: number }> {
+  if (measureTimes.length < 2) return [];
+
+  // Count misses per measure using binary search
+  const missCounts = new Map<number, number>();
+  for (const [key, result] of noteResults) {
+    if (result !== "miss") continue;
+    // Key format: "trackIdx:midi:timeMicros"
+    const parts = key.split(":");
+    if (parts.length < 3) continue;
+    const time = Number(parts[2]) / 1e6; // Convert micros to seconds
+    if (!Number.isFinite(time)) continue;
+
+    // Binary search for measure
+    let lo = 0;
+    let hi = measureTimes.length - 1;
+    while (lo < hi) {
+      const mid = (lo + hi + 1) >> 1;
+      if (measureTimes[mid] <= time) lo = mid;
+      else hi = mid - 1;
+    }
+    const measure = lo + 1; // 1-indexed
+    missCounts.set(measure, (missCounts.get(measure) ?? 0) + 1);
+  }
+
+  if (missCounts.size === 0) return [];
+
+  // Sort measures by miss count descending
+  const sorted = [...missCounts.entries()].sort((a, b) => b[1] - a[1]);
+  const totalMeasures = measureTimes.length;
+  const spots: Array<{ start: number; end: number }> = [];
+
+  for (const [measure] of sorted.slice(0, 2)) {
+    const start = Math.max(1, measure - 1);
+    const end = Math.min(totalMeasures, measure + 1);
+    // Avoid overlapping with previously added ranges
+    if (spots.length > 0 && start <= spots[0].end) continue;
+    spots.push({ start, end });
+  }
+
+  return spots;
 }
 
 function formatDuration(totalSeconds: number): string {

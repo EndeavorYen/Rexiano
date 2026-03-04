@@ -28,6 +28,10 @@ export interface ThemeTokens {
     note2: string;
     note3: string;
     note4: string;
+    note5: string;
+    note6: string;
+    note7: string;
+    note8: string;
     keyActive: string;
     keyWhite: string;
     keyWhiteBottom: string;
@@ -68,6 +72,10 @@ export const themes: Record<ThemeId, ThemeTokens> = {
       note2: "#C17A94",
       note3: "#648CB5",
       note4: "#6FA58B",
+      note5: "#2BB5A0",
+      note6: "#E08840",
+      note7: "#D86FA3",
+      note8: "#8DC034",
       keyActive: "#A48BC2",
       keyWhite: "#FDFDFE",
       keyWhiteBottom: "#EFEAF3",
@@ -102,6 +110,10 @@ export const themes: Record<ThemeId, ThemeTokens> = {
       note2: "#4FA17E",
       note3: "#3D74A6",
       note4: "#D0925A",
+      note5: "#2DD4BF",
+      note6: "#E8923F",
+      note7: "#D86FA3",
+      note8: "#8DC034",
       keyActive: "#4BA7AD",
       keyWhite: "#FDFEFE",
       keyWhiteBottom: "#E9F0EF",
@@ -136,6 +148,10 @@ export const themes: Record<ThemeId, ThemeTokens> = {
       note2: "#D0A06C",
       note3: "#AE6D64",
       note4: "#7FA171",
+      note5: "#3ABBA6",
+      note6: "#E08840",
+      note7: "#C96B96",
+      note8: "#8FB83A",
       keyActive: "#D89372",
       keyWhite: "#FEFDFC",
       keyWhiteBottom: "#F3E9DF",
@@ -153,16 +169,16 @@ export const themes: Record<ThemeId, ThemeTokens> = {
   midnight: {
     id: "midnight",
     label: "Midnight",
-    dot: "#4C8EA3",
+    dot: "#5DA3B8",
     colors: {
       bg: "#0E1013",
       surface: "#161B21",
       surfaceAlt: "#232A33",
-      accent: "#4C8EA3",
-      accentHover: "#5EA5BB",
+      accent: "#5DA3B8",
+      accentHover: "#6FB5CA",
       text: "#E8EDF2",
       textMuted: "#97A6B6",
-      border: "#303947",
+      border: "#3A4556",
       canvasBg: "#0A0D12",
       gridLine: "#1D2430",
       hitLine: "#E07373",
@@ -170,6 +186,10 @@ export const themes: Record<ThemeId, ThemeTokens> = {
       note2: "#C97C93",
       note3: "#64B69C",
       note4: "#D3B36B",
+      note5: "#2DD4BF",
+      note6: "#FB923C",
+      note7: "#F472B6",
+      note8: "#A3E635",
       keyActive: "#6AAFC8",
       keyWhite: "#2D3642",
       keyWhiteBottom: "#242D38",

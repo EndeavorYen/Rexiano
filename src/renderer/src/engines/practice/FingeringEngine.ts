@@ -46,33 +46,44 @@ function isBlackKey(midi: number): boolean {
 
 // ── Helpers ────────────────────────────────────────────────────────────
 
-/** Check whether a sequence of MIDI notes matches a scale pattern (ascending or descending) */
-function matchesScalePattern(midis: number[], intervals: number[]): boolean {
-  if (midis.length < 3) return false;
+/**
+ * Check whether a sequence of MIDI notes matches a scale pattern (ascending or
+ * descending) using a sliding window. Returns the offset (0-based index) where
+ * the match starts, or -1 if no match is found.
+ */
+function matchesScalePattern(midis: number[], intervals: number[]): number {
+  if (midis.length < 3) return -1;
 
-  // Check ascending
-  const root = midis[0];
-  let matchesAsc = true;
-  for (let i = 1; i < midis.length && i < intervals.length; i++) {
-    if (midis[i] - root !== intervals[i]) {
-      matchesAsc = false;
-      break;
-    }
-  }
-  if (matchesAsc) return true;
+  for (let offset = 0; offset < midis.length; offset++) {
+    const remaining = midis.length - offset;
+    if (remaining < 5) break;
 
-  // Check descending (intervals reversed: octave minus ascending interval)
-  const topNote = midis[0];
-  const octave = intervals[intervals.length - 1]; // e.g. 12
-  let matchesDesc = true;
-  for (let i = 1; i < midis.length && i < intervals.length; i++) {
-    const expectedDrop = octave - intervals[intervals.length - 1 - i];
-    if (topNote - midis[i] !== expectedDrop) {
-      matchesDesc = false;
-      break;
+    // Check ascending from this offset
+    const root = midis[offset];
+    let matchesAsc = true;
+    for (let i = 1; i < remaining && i < intervals.length; i++) {
+      if (midis[offset + i] - root !== intervals[i]) {
+        matchesAsc = false;
+        break;
+      }
     }
+    if (matchesAsc) return offset;
+
+    // Check descending from this offset
+    const topNote = midis[offset];
+    const octave = intervals[intervals.length - 1]; // e.g. 12
+    let matchesDesc = true;
+    for (let i = 1; i < remaining && i < intervals.length; i++) {
+      const expectedDrop = octave - intervals[intervals.length - 1 - i];
+      if (topNote - midis[offset + i] !== expectedDrop) {
+        matchesDesc = false;
+        break;
+      }
+    }
+    if (matchesDesc) return offset;
   }
-  return matchesDesc;
+
+  return -1;
 }
 
 /** Detect whether notes form an ascending sequence */
@@ -370,28 +381,48 @@ export class FingeringEngine {
     const midis = results.map((r) => r.midi);
     if (midis.length < 5) return false;
 
-    // Check major and minor scale patterns
+    // Find best (smallest) offset across all scale patterns
     const patterns = [MAJOR_SCALE_INTERVALS, MINOR_SCALE_INTERVALS];
+    let bestOffset = -1;
+
     for (const pattern of patterns) {
-      if (matchesScalePattern(midis, pattern)) {
-        const asc = isAscending(midis);
-        const desc = isDescending(midis);
-
-        let template: Finger[];
-        if (hand === "right") {
-          template = asc ? RH_SCALE_UP : desc ? RH_SCALE_DOWN : RH_SCALE_UP;
-        } else {
-          template = asc ? LH_SCALE_UP : desc ? LH_SCALE_DOWN : LH_SCALE_UP;
-        }
-
-        for (let i = 0; i < results.length; i++) {
-          results[i].finger = template[i % template.length];
-        }
-        return true;
+      const offset = matchesScalePattern(midis, pattern);
+      if (offset >= 0 && (bestOffset < 0 || offset < bestOffset)) {
+        bestOffset = offset;
+        if (offset === 0) break; // can't do better than 0
       }
     }
 
-    return false;
+    if (bestOffset < 0) return false;
+
+    // Determine direction from the scale portion onward
+    const scaleMidis = midis.slice(bestOffset);
+    const asc = isAscending(scaleMidis);
+    const desc = isDescending(scaleMidis);
+
+    let template: Finger[];
+    if (hand === "right") {
+      template = asc ? RH_SCALE_UP : desc ? RH_SCALE_DOWN : RH_SCALE_UP;
+    } else {
+      template = asc ? LH_SCALE_UP : desc ? LH_SCALE_DOWN : LH_SCALE_UP;
+    }
+
+    // Assign scale fingering from the offset onward
+    for (let i = bestOffset; i < results.length; i++) {
+      results[i].finger = template[(i - bestOffset) % template.length];
+    }
+
+    // Handle prefix notes before the scale with stepwise heuristic
+    if (bestOffset > 0) {
+      // Create shallow copies to avoid overwriting scale-assigned fingering
+      const prefix = results.slice(0, bestOffset + 1).map((r) => ({ ...r }));
+      this.assignStepwise(prefix, hand);
+      for (let i = 0; i < bestOffset; i++) {
+        results[i].finger = prefix[i].finger;
+      }
+    }
+
+    return true;
   }
 
   /** Stepwise heuristic for passages that are not pure scales */
