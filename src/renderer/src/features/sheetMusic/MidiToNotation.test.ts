@@ -5,7 +5,12 @@ import {
   quantizeToGrid,
   ticksToVexDuration,
   convertToNotation,
+  bpmAtTime,
+  assignClef,
+  fillRestsInMeasure,
 } from "./MidiToNotation";
+import type { TempoEvent } from "@renderer/engines/midi/types";
+import type { NotationNote } from "./types";
 
 describe("MidiToNotation", () => {
   describe("midiToVexKey", () => {
@@ -92,9 +97,11 @@ describe("MidiToNotation", () => {
       const result = convertToNotation(notes, 120, 480, 4, 4);
 
       expect(result.measures.length).toBeGreaterThanOrEqual(2);
-      // First two notes in measure 0, third in measure 1
-      expect(result.measures[0].trebleNotes.length).toBe(2);
-      expect(result.measures[1].trebleNotes.length).toBe(1);
+      // First two notes in measure 0, third in measure 1 (filter out rests)
+      const m0Notes = result.measures[0].trebleNotes.filter((n) => !n.isRest);
+      const m1Notes = result.measures[1].trebleNotes.filter((n) => !n.isRest);
+      expect(m0Notes.length).toBe(2);
+      expect(m1Notes.length).toBe(1);
     });
 
     it("splits notes into treble and bass clefs at MIDI 60", () => {
@@ -104,10 +111,12 @@ describe("MidiToNotation", () => {
       ];
       const result = convertToNotation(notes, 120, 480);
 
-      expect(result.measures[0].trebleNotes.length).toBe(1);
-      expect(result.measures[0].bassNotes.length).toBe(1);
-      expect(result.measures[0].trebleNotes[0].midi).toBe(72);
-      expect(result.measures[0].bassNotes[0].midi).toBe(48);
+      const treble = result.measures[0].trebleNotes.filter((n) => !n.isRest);
+      const bass = result.measures[0].bassNotes.filter((n) => !n.isRest);
+      expect(treble.length).toBe(1);
+      expect(bass.length).toBe(1);
+      expect(treble[0].midi).toBe(72);
+      expect(bass[0].midi).toBe(48);
     });
 
     it("generates valid VexFlow keys", () => {
@@ -154,7 +163,7 @@ describe("MidiToNotation", () => {
       expect(result.measures[0].keySignature).toBe("F");
     });
 
-    it('uses C major by default when no key signature provided', () => {
+    it("uses C major by default when no key signature provided", () => {
       const notes = [
         { midi: 60, name: "C4", time: 0, duration: 0.5, velocity: 80 },
       ];
@@ -192,6 +201,266 @@ describe("MidiToNotation", () => {
 
     it('returns "wd" for dotted whole (6-beat duration)', () => {
       expect(ticksToVexDuration(2880, TPQ)).toBe("wd");
+    });
+  });
+
+  describe("bpmAtTime", () => {
+    it("returns the only tempo when there is one", () => {
+      const tempos: TempoEvent[] = [{ time: 0, bpm: 100 }];
+      expect(bpmAtTime(tempos, 0)).toBe(100);
+      expect(bpmAtTime(tempos, 10)).toBe(100);
+    });
+
+    it("returns 120 when tempos array is empty", () => {
+      expect(bpmAtTime([], 5)).toBe(120);
+    });
+
+    it("returns the correct tempo for multi-tempo songs", () => {
+      const tempos: TempoEvent[] = [
+        { time: 0, bpm: 80 },
+        { time: 4.0, bpm: 120 },
+        { time: 8.0, bpm: 60 },
+      ];
+      expect(bpmAtTime(tempos, 0)).toBe(80);
+      expect(bpmAtTime(tempos, 2.0)).toBe(80);
+      expect(bpmAtTime(tempos, 4.0)).toBe(120); // exactly at change
+      expect(bpmAtTime(tempos, 6.0)).toBe(120);
+      expect(bpmAtTime(tempos, 8.0)).toBe(60);
+      expect(bpmAtTime(tempos, 100)).toBe(60);
+    });
+  });
+
+  describe("assignClef", () => {
+    it("uses track index for 2-track songs (track 0 = treble)", () => {
+      const note = {
+        midi: 40,
+        name: "E2",
+        time: 0,
+        duration: 0.5,
+        velocity: 80,
+      };
+      // Even though MIDI 40 < 60, track 0 in a 2-track song is treble
+      expect(assignClef(note, 0, 2)).toBe("treble");
+    });
+
+    it("uses track index for 2-track songs (track 1 = bass)", () => {
+      const note = {
+        midi: 72,
+        name: "C5",
+        time: 0,
+        duration: 0.5,
+        velocity: 80,
+      };
+      // Even though MIDI 72 >= 60, track 1 in a 2-track song is bass
+      expect(assignClef(note, 1, 2)).toBe("bass");
+    });
+
+    it("falls back to MIDI split for single-track songs", () => {
+      const trebleNote = {
+        midi: 65,
+        name: "F4",
+        time: 0,
+        duration: 0.5,
+        velocity: 80,
+      };
+      const bassNote = {
+        midi: 55,
+        name: "G3",
+        time: 0,
+        duration: 0.5,
+        velocity: 80,
+      };
+      expect(assignClef(trebleNote, 0, 1)).toBe("treble");
+      expect(assignClef(bassNote, 0, 1)).toBe("bass");
+    });
+
+    it("falls back to MIDI split for 3+ track songs", () => {
+      const note = {
+        midi: 48,
+        name: "C3",
+        time: 0,
+        duration: 0.5,
+        velocity: 80,
+      };
+      expect(assignClef(note, 0, 3)).toBe("bass");
+    });
+  });
+
+  describe("cross-measure ties", () => {
+    it("splits a note spanning two measures into tied notes", () => {
+      // At 120 BPM, 1 beat = 0.5s, 1 measure (4/4) = 2.0s
+      // Place a note starting at beat 3 (1.5s) with duration 1.5s → ends at 3.0s
+      // This extends 1.0s into measure 2
+      const notes = [
+        { midi: 64, name: "E4", time: 1.5, duration: 1.5, velocity: 80 },
+      ];
+      const result = convertToNotation(notes, 120, 480, 4, 4);
+
+      expect(result.measures.length).toBeGreaterThanOrEqual(2);
+
+      // First part: in measure 0, should be tied
+      const m0Treble = result.measures[0].trebleNotes.filter((n) => !n.isRest);
+      expect(m0Treble.length).toBe(1);
+      expect(m0Treble[0].tied).toBe(true);
+      expect(m0Treble[0].midi).toBe(64);
+
+      // Second part: continuation in measure 1, not tied
+      const m1Treble = result.measures[1].trebleNotes.filter((n) => !n.isRest);
+      expect(m1Treble.length).toBe(1);
+      expect(m1Treble[0].tied).toBe(false);
+      expect(m1Treble[0].midi).toBe(64);
+      expect(m1Treble[0].startTick).toBe(0); // starts at beginning of next measure
+    });
+  });
+
+  describe("rest insertion", () => {
+    it("inserts a rest between two notes with a gap", () => {
+      // At 120 BPM: beat 1 note (0s), then gap, then beat 3 note (1.0s)
+      // Each note is quarter note (0.5s)
+      const notes = [
+        { midi: 60, name: "C4", time: 0, duration: 0.5, velocity: 80 },
+        { midi: 64, name: "E4", time: 1.0, duration: 0.5, velocity: 80 },
+      ];
+      const result = convertToNotation(notes, 120, 480, 4, 4);
+
+      const treble = result.measures[0].trebleNotes;
+      // Should be: note, rest (beat 2), note, rest (beat 4)
+      expect(treble.filter((n) => n.isRest).length).toBeGreaterThanOrEqual(1);
+
+      // The rest between the two notes
+      const restBetween = treble.find(
+        (n) => n.isRest && n.startTick > 0 && n.startTick < 960,
+      );
+      expect(restBetween).toBeDefined();
+      expect(restBetween!.vexDuration).toContain("r");
+    });
+
+    it("fills empty measures with whole rest", () => {
+      // Note only in measure 2 (at time 2.0s at 120 BPM)
+      // Measure 1 should have whole rests in both clefs
+      const notes = [
+        { midi: 60, name: "C4", time: 2.0, duration: 0.5, velocity: 80 },
+      ];
+      const result = convertToNotation(notes, 120, 480, 4, 4);
+
+      expect(result.measures.length).toBeGreaterThanOrEqual(2);
+
+      // Measure 0 has no real notes, should have whole rest
+      const m0Treble = result.measures[0].trebleNotes;
+      expect(m0Treble.length).toBe(1);
+      expect(m0Treble[0].isRest).toBe(true);
+      expect(m0Treble[0].vexDuration).toBe("wr");
+    });
+
+    it("adds trailing rest to fill incomplete measure", () => {
+      // One quarter note at start of measure
+      const notes = [
+        { midi: 60, name: "C4", time: 0, duration: 0.5, velocity: 80 },
+      ];
+      const result = convertToNotation(notes, 120, 480, 4, 4);
+
+      const treble = result.measures[0].trebleNotes;
+      const rests = treble.filter((n) => n.isRest);
+      expect(rests.length).toBeGreaterThanOrEqual(1);
+      // Trailing rest should exist after the note
+      const trailing = rests.find((r) => r.startTick >= 480);
+      expect(trailing).toBeDefined();
+    });
+  });
+
+  describe("fillRestsInMeasure", () => {
+    const TPQ = 480;
+    const TPM = TPQ * 4; // 4/4 time = 1920 ticks per measure
+
+    it("returns whole rest for empty note array", () => {
+      const result = fillRestsInMeasure([], TPM, TPQ);
+      expect(result.length).toBe(1);
+      expect(result[0].isRest).toBe(true);
+      expect(result[0].vexDuration).toBe("wr");
+    });
+
+    it("inserts rest for gap between notes", () => {
+      const notes: NotationNote[] = [
+        {
+          midi: 60,
+          startTick: 0,
+          durationTicks: 480,
+          vexKey: "c/4",
+          vexDuration: "q",
+          tied: false,
+        },
+        {
+          midi: 64,
+          startTick: 960,
+          durationTicks: 480,
+          vexKey: "e/4",
+          vexDuration: "q",
+          tied: false,
+        },
+      ];
+      const result = fillRestsInMeasure(notes, TPM, TPQ);
+      // note, rest (480-960), note, trailing rest (1440-1920)
+      expect(result.length).toBe(4);
+      expect(result[1].isRest).toBe(true);
+      expect(result[1].startTick).toBe(480);
+      expect(result[1].durationTicks).toBe(480);
+    });
+  });
+
+  describe("multi-tempo support", () => {
+    it("uses tempo array for quantization", () => {
+      const tempos: TempoEvent[] = [
+        { time: 0, bpm: 120 },
+        { time: 2.0, bpm: 60 },
+      ];
+      const notes = [
+        { midi: 60, name: "C4", time: 0, duration: 0.5, velocity: 80 },
+      ];
+      const result = convertToNotation(notes, tempos, 480, 4, 4);
+
+      // Should use primaryBpm from first tempo
+      expect(result.bpm).toBe(120);
+      const treble = result.measures[0].trebleNotes.filter((n) => !n.isRest);
+      expect(treble.length).toBe(1);
+    });
+
+    it("reports primary BPM from first tempo event", () => {
+      const tempos: TempoEvent[] = [
+        { time: 0, bpm: 90 },
+        { time: 5.0, bpm: 140 },
+      ];
+      const result = convertToNotation([], tempos, 480);
+      expect(result.bpm).toBe(90);
+    });
+  });
+
+  describe("track-aware clef assignment in convertToNotation", () => {
+    it("assigns all notes to treble for track 0 in 2-track song", () => {
+      const notes = [
+        { midi: 48, name: "C3", time: 0, duration: 0.5, velocity: 80 }, // below middle C
+      ];
+      // trackIndex=0, trackCount=2 → treble
+      const result = convertToNotation(notes, 120, 480, 4, 4, 0, 0, 2);
+
+      const treble = result.measures[0].trebleNotes.filter((n) => !n.isRest);
+      const bass = result.measures[0].bassNotes.filter((n) => !n.isRest);
+      expect(treble.length).toBe(1);
+      expect(treble[0].midi).toBe(48);
+      expect(bass.length).toBe(0);
+    });
+
+    it("assigns all notes to bass for track 1 in 2-track song", () => {
+      const notes = [
+        { midi: 72, name: "C5", time: 0, duration: 0.5, velocity: 80 }, // above middle C
+      ];
+      // trackIndex=1, trackCount=2 → bass
+      const result = convertToNotation(notes, 120, 480, 4, 4, 0, 1, 2);
+
+      const treble = result.measures[0].trebleNotes.filter((n) => !n.isRest);
+      const bass = result.measures[0].bassNotes.filter((n) => !n.isRest);
+      expect(treble.length).toBe(0);
+      expect(bass.length).toBe(1);
+      expect(bass[0].midi).toBe(72);
     });
   });
 });

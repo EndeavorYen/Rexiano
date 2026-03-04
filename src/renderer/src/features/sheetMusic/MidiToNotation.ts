@@ -215,38 +215,58 @@ export function fillRestsInMeasure(
   return result;
 }
 
+/** Internal note with clef tag before measure splitting */
+interface TaggedNote extends NotationNote {
+  clef: "treble" | "bass";
+}
+
 /**
  * Convert an array of ParsedNotes into notation-ready data.
  *
  * @param notes - All parsed notes from the MIDI file
- * @param bpm - Tempo (from song.tempos[0].bpm)
+ * @param bpmOrTempos - Single BPM number or array of TempoEvents for multi-tempo support
  * @param ticksPerQuarter - MIDI resolution (default 480)
  * @param timeSignatureTop - Beats per measure (default 4)
  * @param timeSignatureBottom - Beat unit (default 4)
  * @param keySig - Key signature value from MIDI (-7..+7, default 0 = C major)
+ * @param trackIndex - Which track these notes belong to (default 0)
+ * @param trackCount - Total number of tracks in the song (default 1)
  * @returns NotationData with measures ready for VexFlow rendering
  */
 export function convertToNotation(
   notes: ParsedNote[],
-  bpm: number,
+  bpmOrTempos: number | TempoEvent[],
   ticksPerQuarter = 480,
   timeSignatureTop = 4,
   timeSignatureBottom = 4,
   keySig = 0,
+  trackIndex = 0,
+  trackCount = 1,
 ): NotationData {
+  // Normalize tempos
+  const tempos: TempoEvent[] =
+    typeof bpmOrTempos === "number"
+      ? [{ time: 0, bpm: bpmOrTempos }]
+      : bpmOrTempos;
+  const primaryBpm = tempos[0]?.bpm ?? 120;
+
   if (notes.length === 0) {
-    return { measures: [], bpm, ticksPerQuarter };
+    return { measures: [], bpm: primaryBpm, ticksPerQuarter };
   }
 
   const ticksPerMeasure =
     ticksPerQuarter * timeSignatureTop * (4 / timeSignatureBottom);
 
-  // Quantize all notes
-  const quantized: NotationNote[] = notes.map((note) => {
-    const startTick = quantizeToGrid(note.time, bpm, ticksPerQuarter);
+  const vexKeySig = keySigToVexKey(keySig);
+
+  // Quantize all notes with tempo-aware quantization
+  const quantized: TaggedNote[] = notes.map((note) => {
+    const noteBpm = bpmAtTime(tempos, note.time);
+    const startTick = quantizeToGrid(note.time, noteBpm, ticksPerQuarter);
+    const endBpm = bpmAtTime(tempos, note.time + note.duration);
     const endTick = quantizeToGrid(
       note.time + note.duration,
-      bpm,
+      endBpm,
       ticksPerQuarter,
     );
     const durationTicks = Math.max(
@@ -254,17 +274,20 @@ export function convertToNotation(
       ticksPerQuarter / QUANTIZE_GRID,
     );
 
+    const clef = assignClef(note, trackIndex, trackCount);
+
     return {
       midi: note.midi,
       startTick,
       durationTicks,
       vexKey: enharmonicMidiToVexKey(note.midi, keySig),
       vexDuration: ticksToVexDuration(durationTicks, ticksPerQuarter),
-      tied: false, // TODO: detect cross-measure ties
+      tied: false,
+      clef,
     };
   });
 
-  // Group into measures
+  // Group into measures (absolute ticks)
   const maxTick = Math.max(
     ...quantized.map((n) => n.startTick + n.durationTicks),
   );
@@ -273,14 +296,15 @@ export function convertToNotation(
 
   for (let i = 0; i < measureCount; i++) {
     const measureStart = i * ticksPerMeasure;
-    const measureEnd = measureStart + ticksPerMeasure;
 
     const measureNotes = quantized.filter(
-      (n) => n.startTick >= measureStart && n.startTick < measureEnd,
+      (n) =>
+        n.startTick >= measureStart &&
+        n.startTick < measureStart + ticksPerMeasure,
     );
 
-    // Adjust startTick to be relative to measure start
-    const relativeNotes = measureNotes.map((n) => ({
+    // Make startTick relative to measure
+    const relativeNotes: TaggedNote[] = measureNotes.map((n) => ({
       ...n,
       startTick: n.startTick - measureStart,
     }));
@@ -289,11 +313,116 @@ export function convertToNotation(
       index: i,
       timeSignatureTop,
       timeSignatureBottom,
-      keySignature: keySigToVexKey(keySig),
-      trebleNotes: relativeNotes.filter((n) => n.midi >= MIDDLE_C),
-      bassNotes: relativeNotes.filter((n) => n.midi < MIDDLE_C),
+      keySignature: vexKeySig,
+      trebleNotes: relativeNotes
+        .filter((n) => n.clef === "treble")
+        .map(stripTag),
+      bassNotes: relativeNotes.filter((n) => n.clef === "bass").map(stripTag),
     });
   }
 
-  return { measures, bpm, ticksPerQuarter };
+  // Post-process: cross-measure ties
+  splitTiesAcrossMeasures(measures, ticksPerMeasure, ticksPerQuarter);
+
+  // Post-process: fill rests
+  for (const measure of measures) {
+    measure.trebleNotes = fillRestsInMeasure(
+      measure.trebleNotes,
+      ticksPerMeasure,
+      ticksPerQuarter,
+    );
+    measure.bassNotes = fillRestsInMeasure(
+      measure.bassNotes,
+      ticksPerMeasure,
+      ticksPerQuarter,
+    );
+  }
+
+  return { measures, bpm: primaryBpm, ticksPerQuarter };
+}
+
+/** Remove internal tag fields from TaggedNote */
+function stripTag(n: TaggedNote): NotationNote {
+  return {
+    midi: n.midi,
+    startTick: n.startTick,
+    durationTicks: n.durationTicks,
+    vexKey: n.vexKey,
+    vexDuration: n.vexDuration,
+    tied: n.tied,
+  };
+}
+
+/**
+ * Post-process pass: split notes that extend past their measure boundary
+ * into tied note pairs.
+ */
+function splitTiesAcrossMeasures(
+  measures: NotationMeasure[],
+  ticksPerMeasure: number,
+  ticksPerQuarter: number,
+): void {
+  for (let mi = 0; mi < measures.length; mi++) {
+    splitClefTies(
+      measures,
+      mi,
+      "trebleNotes",
+      ticksPerMeasure,
+      ticksPerQuarter,
+    );
+    splitClefTies(measures, mi, "bassNotes", ticksPerMeasure, ticksPerQuarter);
+  }
+}
+
+function splitClefTies(
+  measures: NotationMeasure[],
+  measureIndex: number,
+  clefKey: "trebleNotes" | "bassNotes",
+  ticksPerMeasure: number,
+  ticksPerQuarter: number,
+): void {
+  const measure = measures[measureIndex];
+  const notes = measure[clefKey];
+
+  for (let ni = 0; ni < notes.length; ni++) {
+    const note = notes[ni];
+    const noteEnd = note.startTick + note.durationTicks;
+
+    if (noteEnd > ticksPerMeasure) {
+      // Trim this note to measure boundary
+      const firstPartDuration = ticksPerMeasure - note.startTick;
+      const overflow = noteEnd - ticksPerMeasure;
+
+      // Update current note in place
+      notes[ni] = {
+        ...note,
+        durationTicks: firstPartDuration,
+        vexDuration: ticksToVexDuration(firstPartDuration, ticksPerQuarter),
+        tied: true,
+      };
+
+      // Create continuation note in next measure
+      const continuation: NotationNote = {
+        midi: note.midi,
+        startTick: 0,
+        durationTicks: overflow,
+        vexKey: note.vexKey,
+        vexDuration: ticksToVexDuration(overflow, ticksPerQuarter),
+        tied: false,
+      };
+
+      // Ensure next measure exists
+      if (measureIndex + 1 >= measures.length) {
+        measures.push({
+          index: measureIndex + 1,
+          timeSignatureTop: measure.timeSignatureTop,
+          timeSignatureBottom: measure.timeSignatureBottom,
+          keySignature: measure.keySignature,
+          trebleNotes: [],
+          bassNotes: [],
+        });
+      }
+      measures[measureIndex + 1][clefKey].push(continuation);
+    }
+  }
 }
