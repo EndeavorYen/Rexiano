@@ -675,12 +675,24 @@ function App(): React.JSX.Element {
   const showFallingNoteLabels = useSettingsStore(
     (s) => s.showFallingNoteLabels,
   );
+  const showNoteLabels = useSettingsStore((s) => s.showNoteLabels);
   const compactKeyLabels = useSettingsStore((s) => s.compactKeyLabels);
   useEffect(() => {
     if (noteRendererRef.current) {
       noteRendererRef.current.showNoteLabels = showFallingNoteLabels;
     }
   }, [showFallingNoteLabels, noteRendererRef]);
+  // Wrap the practice lifecycle callback so we also sync settings on init.
+  // The useEffect above won't re-fire when the ref is first assigned (ref
+  // identity is stable), so we eagerly apply the setting here.
+  const handleNoteRendererReadyWithSync = useCallback(
+    (renderer: Parameters<typeof handleNoteRendererReady>[0]) => {
+      handleNoteRendererReady(renderer);
+      renderer.showNoteLabels =
+        useSettingsStore.getState().showFallingNoteLabels;
+    },
+    [handleNoteRendererReady],
+  );
   // ─── End Phase 6.5 ───────────────────────────────────
 
   const handleOpenFile = useCallback(async (): Promise<void> => {
@@ -1153,7 +1165,7 @@ function App(): React.JSX.Element {
               <FallingNotesCanvas
                 onActiveNotesChange={handleActiveNotesChange}
                 getAudioCurrentTime={getAudioCurrentTime}
-                onNoteRendererReady={handleNoteRendererReady}
+                onNoteRendererReady={handleNoteRendererReadyWithSync}
                 minHeight={fallingCanvasMinHeight}
               />
             </div>
@@ -1194,6 +1206,7 @@ function App(): React.JSX.Element {
             activeNotes={activeNotes}
             midiActiveNotes={midiActiveNotes}
             height={keyboardHeight}
+            showLabels={showNoteLabels}
             compactLabels={compactKeyLabels}
           />
 
