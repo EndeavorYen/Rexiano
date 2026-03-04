@@ -3,14 +3,7 @@
  * @vitest-environment jsdom
  */
 import { describe, test, expect, vi, afterEach } from "vitest";
-import { render, screen, fireEvent, cleanup } from "@testing-library/react";
-
-// Mock lucide-react
-vi.mock("lucide-react", () => ({
-  ChevronDown: (props: any) => <svg data-testid="icon-ChevronDown" />,
-  ChevronUp: (props: any) => <svg data-testid="icon-ChevronUp" />,
-  X: (props: any) => <svg data-testid="icon-X" />,
-}));
+import { render, screen, cleanup } from "@testing-library/react";
 
 // Mock useTranslation
 vi.mock("@renderer/i18n/useTranslation", () => ({
@@ -60,21 +53,18 @@ describe("PracticeToolbar render", () => {
     expect(screen.getByTestId("practice-toolbar")).toBeDefined();
   });
 
-  test("shows basic mode label by default", () => {
+  test("shows all controls without requiring a toggle", () => {
     render(<PracticeToolbar />);
-    expect(screen.getByTestId("practice-toolbar-level")).toBeDefined();
-    expect(screen.getByText("settings.basicMode")).toBeDefined();
+    // Mode selector, speed slider, AB loop should all be visible directly
+    expect(screen.getByTestId("practice-mode-watch")).toBeDefined();
+    expect(screen.getByText("practice.loopSection")).toBeDefined();
+    expect(screen.getByTestId("speed-slider")).toBeDefined();
   });
 
-  test("has an advanced toggle button", () => {
+  test("does not render a More toggle button", () => {
     render(<PracticeToolbar />);
-    expect(screen.getByTestId("practice-toolbar-advanced-toggle")).toBeDefined();
-  });
-
-  test("toggles to advanced mode when expand button is clicked", () => {
-    render(<PracticeToolbar />);
-    const toggle = screen.getByTestId("practice-toolbar-advanced-toggle");
-    fireEvent.click(toggle);
-    expect(screen.getByText("settings.advancedMode")).toBeDefined();
+    expect(
+      screen.queryByTestId("practice-toolbar-advanced-toggle"),
+    ).toBeNull();
   });
 });

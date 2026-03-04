@@ -155,6 +155,8 @@ export function SettingsPanel({
   const setAudioCompatibilityMode = useSettingsStore(
     (s) => s.setAudioCompatibilityMode,
   );
+  const noteReleaseMs = useSettingsStore((s) => s.noteReleaseMs);
+  const setNoteReleaseMs = useSettingsStore((s) => s.setNoteReleaseMs);
   const uiScale = useSettingsStore((s) => s.uiScale);
   const setUiScale = useSettingsStore((s) => s.setUiScale);
 
@@ -275,7 +277,7 @@ export function SettingsPanel({
       {!inline && (
         <button
           onClick={handleOpen}
-          className={`btn-surface-themed w-8 h-8 flex items-center justify-center rounded-full cursor-pointer ${isFirstVisit ? "animate-gentle-pulse" : ""}`}
+          className={`btn-surface-themed flex items-center gap-1.5 rounded-full px-3 py-1.5 cursor-pointer ${isFirstVisit ? "animate-gentle-pulse" : ""}`}
           style={{
             border: "1px solid var(--color-border)",
           }}
@@ -283,6 +285,12 @@ export function SettingsPanel({
           data-testid="settings-trigger"
         >
           <Settings size={16} style={{ color: "var(--color-text-muted)" }} />
+          <span
+            className="text-xs font-body font-medium"
+            style={{ color: "var(--color-text-muted)" }}
+          >
+            {t("app.openSettings")}
+          </span>
         </button>
       )}
 
@@ -704,6 +712,37 @@ export function SettingsPanel({
                       onChange={setAudioCompatibilityMode}
                       testId="toggle-audio-compatibility"
                     />
+                    {/* Note release time slider */}
+                    <div>
+                      <div className="flex items-center justify-between mb-1.5">
+                        <span
+                          className="text-xs font-body"
+                          style={{ color: "var(--color-text)" }}
+                        >
+                          {t("settings.noteRelease")}
+                        </span>
+                        <span
+                          className="text-xs font-mono tabular-nums"
+                          style={{ color: "var(--color-text-muted)" }}
+                        >
+                          {t("settings.noteReleaseMs", {
+                            value: noteReleaseMs,
+                          })}
+                        </span>
+                      </div>
+                      <input
+                        type="range"
+                        min={50}
+                        max={300}
+                        step={10}
+                        value={noteReleaseMs}
+                        onChange={(e) =>
+                          setNoteReleaseMs(Number(e.target.value))
+                        }
+                        className="w-full"
+                        data-testid="note-release-slider"
+                      />
+                    </div>
                   </div>
                 </TabContent>
               )}
@@ -835,7 +874,7 @@ export function SettingsPanel({
                       <input
                         type="range"
                         min={0}
-                        max={100}
+                        max={200}
                         step={1}
                         value={latencyCompensation}
                         onChange={(e) =>

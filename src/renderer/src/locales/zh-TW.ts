@@ -50,6 +50,11 @@ export const zhTW: TranslationMap = {
   "library.noSongsHint": "匯入 MIDI 檔案開始練習吧！",
   "library.noMatchSearch": "沒有符合搜尋的曲子",
   "library.noMatchHint": "試試其他關鍵字或清除篩選",
+  "library.category.exercise": "\u{1F4AA} 練習",
+  "library.category.popular": "\u{1F3B5} 流行",
+  "library.category.holiday": "\u{1F384} 節慶",
+  "library.category.classical": "\u{1F3BB} 古典",
+  "library.category.all": "\u{1F4DA} 全部",
 
   // ── Transport Bar ──────────────────────────────────────────────
   "transport.play": "播放（空白鍵）",
@@ -123,6 +128,9 @@ export const zhTW: TranslationMap = {
   "practice.encourageGettingThere": "越來越好了！",
   "practice.encourageYouCanDoIt": "你可以的！",
   "practice.scoreLabel": "練習分數",
+  "practice.mode.watchDesc": "看和聽",
+  "practice.mode.waitDesc": "音樂等你彈",
+  "practice.mode.freeDesc": "自由跟著彈",
 
   // ── Settings ───────────────────────────────────────────────────
   "settings.title": "設定",
@@ -155,6 +163,8 @@ export const zhTW: TranslationMap = {
   "settings.audioCompatibilityMode": "音訊相容模式",
   "settings.audioCompatibilityModeDesc":
     "使用較安全的播放延遲，改善部分 Windows 音效驅動穩定性",
+  "settings.noteRelease": "音符釋放時間",
+  "settings.noteReleaseMs": "{value}ms",
   "settings.practiceDefaults": "練習預設值",
   "settings.defaultMode": "預設模式",
   "settings.defaultSpeed": "預設速度",
@@ -250,7 +260,8 @@ export const zhTW: TranslationMap = {
   "stats.notesMissed": "漏掉的音",
   "stats.streak": "最佳連續正確",
   "stats.totalNotes": "總音符",
-  "stats.hitRate": "正確率",
+  "stats.hitRate": "彈對多少",
+  "stats.hitFraction": "{total} 個音彈對 {hit} 個",
   "stats.consistency": "穩定度",
   "stats.mode": "模式",
   "stats.speed": "速度",

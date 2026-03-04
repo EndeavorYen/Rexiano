@@ -6,101 +6,26 @@ import type { TranslationKey } from "@renderer/i18n/types";
 const modes: {
   id: PracticeMode;
   labelKey: TranslationKey;
-  icon: React.JSX.Element;
+  descKey: TranslationKey;
+  emoji: string;
 }[] = [
   {
     id: "watch",
     labelKey: "practice.watch",
-    icon: (
-      <svg
-        width="16"
-        height="16"
-        viewBox="0 0 16 16"
-        fill="none"
-        aria-hidden="true"
-      >
-        <ellipse
-          cx="8"
-          cy="8"
-          rx="7"
-          ry="4.5"
-          stroke="currentColor"
-          strokeWidth="1.5"
-        />
-        <circle cx="8" cy="8" r="2" fill="currentColor" />
-      </svg>
-    ),
+    descKey: "practice.mode.watchDesc",
+    emoji: "\u{1F440}",
   },
   {
     id: "wait",
     labelKey: "practice.wait",
-    icon: (
-      <svg
-        width="16"
-        height="16"
-        viewBox="0 0 16 16"
-        fill="none"
-        aria-hidden="true"
-      >
-        <circle cx="8" cy="8" r="6.5" stroke="currentColor" strokeWidth="1.5" />
-        <rect
-          x="5.5"
-          y="4.5"
-          width="2"
-          height="7"
-          rx="0.5"
-          fill="currentColor"
-        />
-        <rect
-          x="8.5"
-          y="4.5"
-          width="2"
-          height="7"
-          rx="0.5"
-          fill="currentColor"
-        />
-      </svg>
-    ),
+    descKey: "practice.mode.waitDesc",
+    emoji: "\u23F8\uFE0F",
   },
   {
     id: "free",
     labelKey: "practice.free",
-    icon: (
-      <svg
-        width="16"
-        height="16"
-        viewBox="0 0 16 16"
-        fill="none"
-        aria-hidden="true"
-      >
-        <path
-          d="M3 8C3 5.5 5 3 8 3C11 3 12 5 12.5 6.5"
-          stroke="currentColor"
-          strokeWidth="1.5"
-          strokeLinecap="round"
-        />
-        <path
-          d="M10.5 4.5L12.5 6.5L14 4.5"
-          stroke="currentColor"
-          strokeWidth="1.5"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
-        <path
-          d="M13 8C13 10.5 11 13 8 13C5 13 4 11 3.5 9.5"
-          stroke="currentColor"
-          strokeWidth="1.5"
-          strokeLinecap="round"
-        />
-        <path
-          d="M5.5 11.5L3.5 9.5L2 11.5"
-          stroke="currentColor"
-          strokeWidth="1.5"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
-      </svg>
-    ),
+    descKey: "practice.mode.freeDesc",
+    emoji: "\u{1F3B9}",
   },
 ];
 
@@ -116,28 +41,34 @@ export function PracticeModeSelector(): React.JSX.Element {
       role="radiogroup"
       aria-label="Practice mode"
     >
-      {modes.map(({ id, labelKey, icon }) => {
+      {modes.map(({ id, labelKey, descKey, emoji }) => {
         const isActive = currentMode === id;
         const label = t(labelKey);
+        const desc = t(descKey);
         return (
           <button
             key={id}
             role="radio"
             aria-checked={isActive}
             onClick={() => setMode(id)}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-body font-medium cursor-pointer"
+            className="flex flex-col items-center gap-0.5 rounded-md font-body font-medium cursor-pointer"
             style={{
               background: isActive ? "var(--color-accent)" : "transparent",
               color: isActive ? "#fff" : "var(--color-text-muted)",
               boxShadow: isActive ? "0 1px 4px rgba(0,0,0,0.15)" : "none",
               transition: "all 0.2s ease",
               transform: isActive ? "scale(1)" : "scale(0.98)",
+              minWidth: 48,
+              minHeight: 48,
+              padding: "4px 10px",
             }}
-            title={label}
+            title={desc}
             data-testid={`practice-mode-${id}`}
           >
-            {icon}
-            <span>{label}</span>
+            <span className="text-base leading-none" aria-hidden="true">
+              {emoji}
+            </span>
+            <span className="text-[10px] leading-tight">{label}</span>
           </button>
         );
       })}

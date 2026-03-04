@@ -51,6 +51,11 @@ export const en: TranslationMap = {
   "library.noSongsHint": "Import a MIDI file below to get started!",
   "library.noMatchSearch": "No songs match your search",
   "library.noMatchHint": "Try a different keyword or clear the filter",
+  "library.category.exercise": "\u{1F4AA} Exercises",
+  "library.category.popular": "\u{1F3B5} Popular",
+  "library.category.holiday": "\u{1F384} Holiday",
+  "library.category.classical": "\u{1F3BB} Classical",
+  "library.category.all": "\u{1F4DA} All",
 
   // ── Transport Bar ──────────────────────────────────────────────
   "transport.play": "Play (Space)",
@@ -125,6 +130,9 @@ export const en: TranslationMap = {
   "practice.encourageGettingThere": "Getting there!",
   "practice.encourageYouCanDoIt": "You can do it!",
   "practice.scoreLabel": "Practice score",
+  "practice.mode.watchDesc": "Watch and listen",
+  "practice.mode.waitDesc": "Music waits for you",
+  "practice.mode.freeDesc": "Play along freely",
 
   // ── Settings ───────────────────────────────────────────────────
   "settings.title": "Settings",
@@ -160,6 +168,8 @@ export const en: TranslationMap = {
   "settings.audioCompatibilityMode": "Audio compatibility mode",
   "settings.audioCompatibilityModeDesc":
     "Use safer playback latency to improve stability on some Windows audio drivers",
+  "settings.noteRelease": "Note release time",
+  "settings.noteReleaseMs": "{value}ms",
   "settings.practiceDefaults": "Practice Defaults",
   "settings.defaultMode": "Default Mode",
   "settings.defaultSpeed": "Default Speed",
@@ -253,10 +263,11 @@ export const en: TranslationMap = {
   "stats.accuracy": "Accuracy",
   "stats.notesHit": "Notes Hit",
   "stats.notesMissed": "Missed",
-  "stats.streak": "Best Streak",
+  "stats.streak": "Best run",
   "stats.totalNotes": "Total Notes",
-  "stats.hitRate": "Hit Rate",
-  "stats.consistency": "Consistency",
+  "stats.hitRate": "How many correct",
+  "stats.hitFraction": "{hit} out of {total} correct",
+  "stats.consistency": "How steady",
   "stats.mode": "Mode",
   "stats.speed": "Speed",
   "stats.duration": "Duration",

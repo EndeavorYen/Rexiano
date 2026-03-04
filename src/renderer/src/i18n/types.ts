@@ -51,6 +51,11 @@ export interface TranslationMap {
   "library.noSongsHint": string;
   "library.noMatchSearch": string;
   "library.noMatchHint": string;
+  "library.category.exercise": string;
+  "library.category.popular": string;
+  "library.category.holiday": string;
+  "library.category.classical": string;
+  "library.category.all": string;
 
   // ── Transport Bar ──────────────────────────────────────────────
   "transport.play": string;
@@ -124,6 +129,9 @@ export interface TranslationMap {
   "practice.encourageGettingThere": string;
   "practice.encourageYouCanDoIt": string;
   "practice.scoreLabel": string;
+  "practice.mode.watchDesc": string;
+  "practice.mode.waitDesc": string;
+  "practice.mode.freeDesc": string;
 
   // ── Settings ───────────────────────────────────────────────────
   "settings.title": string;
@@ -183,6 +191,8 @@ export interface TranslationMap {
   "settings.compactKeyLabelsDesc": string;
   "settings.uiScale": string;
   "settings.uiScaleDesc": string;
+  "settings.noteRelease": string;
+  "settings.noteReleaseMs": string;
   "settings.uiScale.normal": string;
   "settings.uiScale.large": string;
   "settings.uiScale.xlarge": string;
@@ -251,6 +261,7 @@ export interface TranslationMap {
   "stats.streak": string;
   "stats.totalNotes": string;
   "stats.hitRate": string;
+  "stats.hitFraction": string;
   "stats.consistency": string;
   "stats.mode": string;
   "stats.speed": string;
