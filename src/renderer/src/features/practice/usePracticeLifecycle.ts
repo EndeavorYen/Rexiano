@@ -60,7 +60,7 @@ export function usePracticeLifecycle(
     if (!song) return;
 
     initPracticeEngines();
-    const { waitMode } = getPracticeEngines();
+    const { waitMode, freeScorer } = getPracticeEngines();
     if (!waitMode) return;
 
     const practiceState = usePracticeStore.getState();
@@ -75,48 +75,60 @@ export function usePracticeLifecycle(
       usePracticeStore.getState().setActiveTracks(activeTracks);
     }
     waitMode.init(song.tracks, activeTracks);
+    freeScorer?.init(song.tracks, activeTracks);
 
-    // Wire callbacks — read song from store inside to avoid stale closure
+    /** Shared hit callback for both WaitMode and FreeScorer */
+    const handleHit = (midi: number, time: number): void => {
+      const key = `${midi}:${Math.round(time * 1e6)}`;
+      usePracticeStore.getState().recordHit(key);
+
+      // Visual feedback
+      const currentSong = useSongStore.getState().song;
+      const nr = noteRendererRef.current;
+      if (nr && currentSong) {
+        for (let t = 0; t < currentSong.tracks.length; t++) {
+          const sprite = nr.findSpriteForNote(t, midi, time);
+          if (sprite) {
+            nr.flashHit(sprite);
+            break;
+          }
+        }
+      }
+      // Show combo at milestones
+      const score = usePracticeStore.getState().score;
+      if (nr && COMBO_MILESTONES.has(score.currentStreak)) {
+        nr.showCombo(score.currentStreak, 400, 200);
+      }
+    };
+
+    /** Shared miss callback for both WaitMode and FreeScorer */
+    const handleMiss = (midi: number, time: number): void => {
+      const key = `${midi}:${Math.round(time * 1e6)}`;
+      usePracticeStore.getState().recordMiss(key);
+
+      // Audio feedback — gentle error tone (only in Wait mode)
+      if (usePracticeStore.getState().mode === "wait") {
+        audioRef.current.engine?.playErrorTone();
+      }
+
+      // Visual feedback
+      const currentSong = useSongStore.getState().song;
+      const nr = noteRendererRef.current;
+      if (nr && currentSong) {
+        for (let t = 0; t < currentSong.tracks.length; t++) {
+          const sprite = nr.findSpriteForNote(t, midi, time);
+          if (sprite) {
+            nr.markMiss(sprite);
+            break;
+          }
+        }
+      }
+    };
+
+    // Wire WaitMode callbacks
     waitMode.setCallbacks({
-      onHit: (midi, time) => {
-        const key = `${midi}:${Math.round(time * 1e6)}`;
-        usePracticeStore.getState().recordHit(key);
-
-        // Visual feedback
-        const currentSong = useSongStore.getState().song;
-        const nr = noteRendererRef.current;
-        if (nr && currentSong) {
-          for (let t = 0; t < currentSong.tracks.length; t++) {
-            const sprite = nr.findSpriteForNote(t, midi, time);
-            if (sprite) {
-              nr.flashHit(sprite);
-              break;
-            }
-          }
-        }
-        // Show combo at milestones
-        const score = usePracticeStore.getState().score;
-        if (nr && COMBO_MILESTONES.has(score.currentStreak)) {
-          nr.showCombo(score.currentStreak, 400, 200);
-        }
-      },
-      onMiss: (midi, time) => {
-        const key = `${midi}:${Math.round(time * 1e6)}`;
-        usePracticeStore.getState().recordMiss(key);
-
-        // Visual feedback
-        const currentSong = useSongStore.getState().song;
-        const nr = noteRendererRef.current;
-        if (nr && currentSong) {
-          for (let t = 0; t < currentSong.tracks.length; t++) {
-            const sprite = nr.findSpriteForNote(t, midi, time);
-            if (sprite) {
-              nr.markMiss(sprite);
-              break;
-            }
-          }
-        }
-      },
+      onHit: handleHit,
+      onMiss: handleMiss,
       onWait: () => {
         // Pause audio when waiting for user input
         audioRef.current.scheduler?.stop();
@@ -137,6 +149,12 @@ export function usePracticeLifecycle(
       },
     });
 
+    // Wire FreeScorer callbacks (same hit/miss logic, no wait/resume)
+    freeScorer?.setCallbacks({
+      onHit: handleHit,
+      onMiss: handleMiss,
+    });
+
     return () => {
       disposePracticeEngines();
     };
@@ -145,19 +163,26 @@ export function usePracticeLifecycle(
   // ── Sync practice store → engine singletons (permanent subscriber) ──
   useEffect(() => {
     const unsub = usePracticeStore.subscribe((state, prev) => {
-      const { waitMode, speedController, loopController, scoreCalculator } =
+      const { waitMode, speedController, loopController, scoreCalculator, freeScorer } =
         getPracticeEngines();
       const currentSong = useSongStore.getState().song;
 
       // Mode change
-      if (state.mode !== prev.mode && waitMode && currentSong) {
-        if (state.mode === "wait") {
+      if (state.mode !== prev.mode && currentSong) {
+        // Stop previous mode engines
+        waitMode?.stop();
+        freeScorer?.stop();
+
+        if (state.mode === "wait" && waitMode) {
           waitMode.init(currentSong.tracks, state.activeTracks);
           if (usePlaybackStore.getState().isPlaying) {
             waitMode.start();
           }
-        } else {
-          waitMode.stop();
+        } else if (state.mode === "free" && freeScorer) {
+          freeScorer.init(currentSong.tracks, state.activeTracks);
+          if (usePlaybackStore.getState().isPlaying) {
+            freeScorer.start();
+          }
         }
         scoreCalculator?.reset();
         usePracticeStore.getState().resetScore();
@@ -178,38 +203,53 @@ export function usePracticeLifecycle(
       }
 
       // Active tracks change
-      if (state.activeTracks !== prev.activeTracks && waitMode && currentSong) {
-        waitMode.init(currentSong.tracks, state.activeTracks);
+      if (state.activeTracks !== prev.activeTracks && currentSong) {
+        waitMode?.init(currentSong.tracks, state.activeTracks);
+        freeScorer?.init(currentSong.tracks, state.activeTracks);
       }
     });
     return unsub;
   }, []);
 
-  // ── Wire MIDI input → WaitMode.checkInput() ──
+  // ── Wire MIDI input → WaitMode / FreeScorer ──
   useEffect(() => {
     const unsub = useMidiDeviceStore.subscribe((state, prev) => {
       if (state.activeNotes !== prev.activeNotes) {
-        const { waitMode } = getPracticeEngines();
+        const { waitMode, freeScorer } = getPracticeEngines();
         const practiceMode = usePracticeStore.getState().mode;
-        if (waitMode && practiceMode === "wait") {
+        if (practiceMode === "wait" && waitMode) {
           waitMode.checkInput(state.activeNotes);
+        } else if (practiceMode === "free" && freeScorer) {
+          const currentTime = usePlaybackStore.getState().currentTime;
+          freeScorer.checkInput(state.activeNotes, currentTime);
         }
       }
     });
     return unsub;
   }, []);
 
-  // ── Start/stop WaitMode with playback ──
+  // ── Start/stop WaitMode / FreeScorer with playback ──
   useEffect(() => {
     const unsub = usePlaybackStore.subscribe((state, prev) => {
-      const { waitMode } = getPracticeEngines();
+      const { waitMode, freeScorer } = getPracticeEngines();
       const practiceMode = usePracticeStore.getState().mode;
-      if (!waitMode || practiceMode !== "wait") return;
 
       if (state.isPlaying && !prev.isPlaying) {
-        waitMode.start();
+        if (practiceMode === "wait" && waitMode) waitMode.start();
+        if (practiceMode === "free" && freeScorer) freeScorer.start();
       } else if (!state.isPlaying && prev.isPlaying) {
-        waitMode.stop();
+        if (practiceMode === "wait" && waitMode) waitMode.stop();
+        if (practiceMode === "free" && freeScorer) freeScorer.stop();
+      }
+
+      // Tick FreeScorer on time changes to detect misses
+      if (
+        practiceMode === "free" &&
+        freeScorer &&
+        state.isPlaying &&
+        state.currentTime !== prev.currentTime
+      ) {
+        freeScorer.tick(state.currentTime);
       }
     });
     return unsub;
@@ -218,7 +258,7 @@ export function usePracticeLifecycle(
   // ── Loop seek → AudioScheduler sync + WaitMode reset ──
   useEffect(() => {
     const unsub = usePlaybackStore.subscribe((state, prev) => {
-      const { loopController, waitMode } = getPracticeEngines();
+      const { loopController, waitMode, freeScorer } = getPracticeEngines();
       if (!loopController?.isActive) return;
 
       // Detect backward time jump near the loop start point
@@ -228,8 +268,10 @@ export function usePracticeLifecycle(
       ) {
         audioRef.current.scheduler?.seek(state.currentTime);
 
+        const practiceMode = usePracticeStore.getState().mode;
+
         // Reset WaitMode so notes are re-judged on the next loop pass
-        if (usePracticeStore.getState().mode === "wait" && waitMode) {
+        if (practiceMode === "wait" && waitMode) {
           waitMode.reset();
           waitMode.start();
 
@@ -241,6 +283,11 @@ export function usePracticeLifecycle(
               console.error("Loop restart audio resume failed:", err);
             });
           }
+        }
+
+        // Reset FreeScorer so notes are re-judged on the next loop pass
+        if (practiceMode === "free" && freeScorer) {
+          freeScorer.reset();
         }
       }
     });

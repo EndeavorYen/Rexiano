@@ -268,6 +268,46 @@ export class AudioEngine implements IAudioEngine {
     }
   }
 
+  /**
+   * Play a brief, gentle error tone when a wrong note is played.
+   * Uses a short frequency sweep (400→200Hz) with low volume to avoid startling children.
+   */
+  playErrorTone(): void {
+    if (this._status !== "ready" || !this._audioContext || !this._masterGain)
+      return;
+
+    try {
+      const ctx = this._audioContext;
+      const now = ctx.currentTime;
+
+      // Oscillator: 400Hz → 200Hz sweep over 80ms (descending = "wrong" feeling)
+      const osc = ctx.createOscillator();
+      osc.type = "sine";
+      osc.frequency.setValueAtTime(400, now);
+      osc.frequency.exponentialRampToValueAtTime(200, now + 0.08);
+
+      // Gain: low volume (0.15) to avoid startling children
+      const gain = ctx.createGain();
+      gain.gain.setValueAtTime(0.15, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.1);
+
+      // Connect: osc → gain → masterGain (respects volume control)
+      osc.connect(gain);
+      gain.connect(this._masterGain);
+
+      osc.start(now);
+      osc.stop(now + 0.1);
+
+      // Auto-cleanup after tone finishes
+      osc.onended = () => {
+        osc.disconnect();
+        gain.disconnect();
+      };
+    } catch (err) {
+      this._handleRuntimeError(err, "playErrorTone");
+    }
+  }
+
   setVolume(volume: number): void {
     if (this._masterGain) {
       this._masterGain.gain.value = Math.max(0, Math.min(1, volume));

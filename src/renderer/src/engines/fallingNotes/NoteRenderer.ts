@@ -91,6 +91,26 @@ function getLabelStyle(): TextStyle {
   return _labelStyle;
 }
 
+/** Larger text style for Watch mode prominent note labels at the hit line. */
+let _watchLabelStyle: TextStyle | null = null;
+function getWatchLabelStyle(): TextStyle {
+  if (!_watchLabelStyle) {
+    _watchLabelStyle = new TextStyle({
+      fontFamily: "Nunito Variable, Nunito, sans-serif",
+      fontSize: 22,
+      fontWeight: "800",
+      fill: 0xffffff,
+      dropShadow: {
+        color: 0x000000,
+        blur: 4,
+        distance: 1,
+        alpha: 0.45,
+      },
+    });
+  }
+  return _watchLabelStyle;
+}
+
 /** Linearly interpolate between two 0xRRGGBB colors by factor t ∈ [0,1]. */
 function lerpColor(a: number, b: number, t: number): number {
   const ar = (a >> 16) & 0xff,
@@ -130,6 +150,16 @@ export class NoteRenderer {
   public keySig = 0;
 
   public activeNotes = new Set<number>();
+
+  // ── Watch mode hit-line label pool ───────────────────────────────
+  /** Pool of reusable Text objects for Watch mode prominent labels */
+  private _watchLabelPool: Text[] = [];
+  /** Currently visible Watch mode labels (noteKey → Text) */
+  private _activeWatchLabels = new Map<string, Text>();
+  /** Double-buffer for Watch mode labels */
+  private _nextWatchLabels = new Map<string, Text>();
+  /** Set of note keys that already had a Watch glow triggered (avoid re-triggering) */
+  private _watchGlowedKeys = new Set<string>();
 
   // ── Fingering overlay ──────────────────────────────────────────
   private fingeringEngine = new FingeringEngine();
@@ -183,7 +213,12 @@ export class NoteRenderer {
    * @param song Currently loaded parsed song
    * @param vp   Current viewport (position + dimensions)
    */
-  update(song: ParsedSong, vp: Viewport, showFingering: boolean): void {
+  update(
+    song: ParsedSong,
+    vp: Viewport,
+    showFingering: boolean,
+    watchMode = false,
+  ): void {
     // Double-buffer swap: reuse nextActive map instead of allocating each frame
     const nextActive = this.nextActive;
     nextActive.clear();
@@ -203,6 +238,18 @@ export class NoteRenderer {
     // Double-buffer for fingering labels
     const nextFLabels = this.nextFingeringLabels;
     nextFLabels.clear();
+
+    // Double-buffer for Watch mode labels
+    const nextWLabels = this._nextWatchLabels;
+    nextWLabels.clear();
+
+    /**
+     * Watch mode hit-line detection: a note is "at" the hit line when
+     * its time range overlaps the current time within a small window.
+     * We use a slightly wider window than hitWindow so the glow starts
+     * just before the note reaches the line and lingers briefly.
+     */
+    const watchHitWindow = 0.12; // seconds
 
     for (let trackIdx = 0; trackIdx < song.tracks.length; trackIdx++) {
       const track = song.tracks[trackIdx];
@@ -285,6 +332,35 @@ export class NoteRenderer {
             nextFLabels.set(key, label);
           }
         }
+
+        // ── Watch mode: glow + prominent note name at hit line ──
+        if (watchMode) {
+          const noteAtHitLine =
+            note.time <= vp.currentTime + watchHitWindow &&
+            note.time + note.duration >= vp.currentTime - watchHitWindow;
+
+          if (noteAtHitLine) {
+            // Subtle glow: brighten sprite tint toward white (30%)
+            // Only trigger once per note to avoid re-brightening every frame
+            if (!this._watchGlowedKeys.has(key)) {
+              this._watchGlowedKeys.add(key);
+              this.glowWatch(sprite);
+            }
+
+            // Prominent note name label above the note at the hit line
+            let wLabel =
+              this._activeWatchLabels.get(key) ?? nextWLabels.get(key);
+            if (!wLabel) {
+              wLabel = this.allocateWatchLabel();
+            }
+            wLabel.text = spellNote(note.midi, this.keySig);
+            wLabel.x = kp.x + kp.width / 2;
+            // Position the label centered on the note at the hit line area
+            wLabel.y = vp.height - 6;
+            wLabel.visible = true;
+            nextWLabels.set(key, wLabel);
+          }
+        }
       }
     }
 
@@ -308,6 +384,20 @@ export class NoteRenderer {
       }
     }
 
+    // Release unused Watch mode labels
+    for (const [key, label] of this._activeWatchLabels) {
+      if (!nextWLabels.has(key)) {
+        this.releaseWatchLabel(label);
+      }
+    }
+    // Hide all Watch labels if not in Watch mode
+    if (!watchMode) {
+      for (const [, label] of this._activeWatchLabels) {
+        this.releaseWatchLabel(label);
+      }
+      this._watchGlowedKeys.clear();
+    }
+
     // Swap buffers: active ↔ nextActive
     this.nextActive = this.active;
     this.active = nextActive;
@@ -315,6 +405,10 @@ export class NoteRenderer {
     // Swap fingering label buffers
     this.nextFingeringLabels = this.activeFingeringLabels;
     this.activeFingeringLabels = nextFLabels;
+
+    // Swap Watch mode label buffers
+    this._nextWatchLabels = this._activeWatchLabels;
+    this._activeWatchLabels = nextWLabels;
   }
 
   /**
@@ -349,6 +443,12 @@ export class NoteRenderer {
     this.nextFingeringLabels.clear();
     this.fingeringCache.clear();
     this.lastSongFileName = "";
+
+    // Clean up Watch mode overlay
+    this._watchLabelPool.length = 0;
+    this._activeWatchLabels.clear();
+    this._nextWatchLabels.clear();
+    this._watchGlowedKeys.clear();
   }
 
   private createSprite(): Sprite {
@@ -409,6 +509,67 @@ export class NoteRenderer {
       this.releaseLabel(label);
       this._spriteLabels.delete(sprite);
     }
+  }
+
+  // ── Watch mode label pool ────────────────────────────────────────
+
+  private createWatchLabel(): Text {
+    const t = new Text({ text: "", style: getWatchLabelStyle() });
+    t.anchor.set(0.5);
+    t.visible = false;
+    this.container.addChild(t);
+    return t;
+  }
+
+  private allocateWatchLabel(): Text {
+    if (this._watchLabelPool.length === 0) {
+      const grow = 16;
+      for (let i = 0; i < grow; i++) {
+        this._watchLabelPool.push(this.createWatchLabel());
+      }
+    }
+    return this._watchLabelPool.pop()!;
+  }
+
+  private releaseWatchLabel(label: Text): void {
+    label.visible = false;
+    this._watchLabelPool.push(label);
+  }
+
+  /**
+   * Apply a subtle glow to a note sprite in Watch mode.
+   * Brightens the tint toward white (30%) with a gentle pulse over 350ms,
+   * then eases back to the original tint. Designed to be noticeable but
+   * not distracting — purely educational highlight.
+   */
+  private glowWatch(sprite: Sprite): void {
+    const existing = this._animHandles.get(sprite);
+    if (existing !== undefined) cancelAnimationFrame(existing);
+
+    const originalTint = sprite.tint;
+    const duration = 350; // ms
+    let start = -1;
+
+    const tick = (now: number): void => {
+      if (!this._animHandles.has(sprite)) return;
+
+      if (start < 0) start = now;
+      const t = Math.min((now - start) / duration, 1);
+
+      // Ease in-out: brighten to 30% white then back
+      const brightness = t < 0.4
+        ? (t / 0.4) * 0.3
+        : 0.3 * (1 - (t - 0.4) / 0.6);
+      sprite.tint = lerpColor(originalTint, 0xffffff, brightness);
+
+      if (t < 1) {
+        this._animHandles.set(sprite, requestAnimationFrame(tick));
+      } else {
+        this._animHandles.delete(sprite);
+        sprite.tint = originalTint;
+      }
+    };
+    this._animHandles.set(sprite, requestAnimationFrame(tick));
   }
 
   // ── Fingering label pool ──────────────────────────────────────────
@@ -493,7 +654,8 @@ export class NoteRenderer {
 
   /**
    * Flash a bright hit effect on a note sprite.
-   * Tint shifts to white and alpha pulses, then restores over ~200ms.
+   * Tint pulses from white → bright accent color over ~400ms with a
+   * more dramatic effect so young children can easily notice it.
    * Animation is automatically cancelled if the sprite is recycled.
    */
   flashHit(sprite: Sprite): void {
@@ -503,7 +665,9 @@ export class NoteRenderer {
 
     const originalTint = sprite.tint;
     const originalAlpha = sprite.alpha;
-    const duration = 200; // ms
+    /** Bright accent color to pulse toward after the initial white flash */
+    const accentColor = 0x66ffcc;
+    const duration = 400; // ms (increased from 200 for child visibility)
     let start = -1;
 
     const tick = (now: number): void => {
@@ -514,10 +678,27 @@ export class NoteRenderer {
       const elapsed = now - start;
       const t = Math.min(elapsed / duration, 1);
 
-      // Quick flash up then ease back
-      const flash = t < 0.3 ? t / 0.3 : 1 - (t - 0.3) / 0.7;
-      sprite.tint = lerpColor(originalTint, 0xffffff, flash * 0.7);
-      sprite.alpha = originalAlpha + (1 - originalAlpha) * flash * 0.5;
+      // Phase 1 (0–0.2): flash to white
+      // Phase 2 (0.2–0.5): transition white → accent color
+      // Phase 3 (0.5–1.0): ease accent → original tint
+      if (t < 0.2) {
+        const p = t / 0.2;
+        sprite.tint = lerpColor(originalTint, 0xffffff, p * 0.85);
+        sprite.alpha = originalAlpha + (1 - originalAlpha) * p * 0.6;
+      } else if (t < 0.5) {
+        const p = (t - 0.2) / 0.3;
+        sprite.tint = lerpColor(0xffffff, accentColor, p * 0.7);
+        sprite.alpha = originalAlpha + (1 - originalAlpha) * 0.6 * (1 - p * 0.3);
+      } else {
+        const p = (t - 0.5) / 0.5;
+        const easeOut = p * (2 - p); // ease-out quad
+        sprite.tint = lerpColor(
+          lerpColor(0xffffff, accentColor, 0.7),
+          originalTint,
+          easeOut,
+        );
+        sprite.alpha = originalAlpha + (1 - originalAlpha) * 0.42 * (1 - easeOut);
+      }
 
       if (t < 1) {
         this._animHandles.set(sprite, requestAnimationFrame(tick));
@@ -531,8 +712,10 @@ export class NoteRenderer {
   }
 
   /**
-   * Mark a note sprite as missed: fade to gray and reduce opacity.
-   * Transition runs over ~150ms. Cancelled if sprite is recycled.
+   * Mark a note sprite as missed: brief red tint flash (300ms), then
+   * fade to gray with reduced opacity. More visible than a plain fade
+   * so children clearly notice they missed the note.
+   * Cancelled if sprite is recycled.
    */
   markMiss(sprite: Sprite): void {
     const existing = this._animHandles.get(sprite);
@@ -540,18 +723,33 @@ export class NoteRenderer {
 
     const originalTint = sprite.tint;
     const originalAlpha = sprite.alpha;
-    const duration = 150;
+    /** Red tint color for the initial miss flash */
+    const missRedTint = 0xff4444;
+    const redDuration = 300; // ms — red flash phase
+    const fadeDuration = 150; // ms — gray fade phase
+    const totalDuration = redDuration + fadeDuration;
     let start = -1;
 
     const tick = (now: number): void => {
       if (!this._animHandles.has(sprite)) return;
 
       if (start < 0) start = now;
-      const t = Math.min((now - start) / duration, 1);
-      const ease = t * (2 - t); // ease-out quad
+      const elapsed = now - start;
+      const t = Math.min(elapsed / totalDuration, 1);
 
-      sprite.tint = lerpColor(originalTint, 0x888888, ease);
-      sprite.alpha = originalAlpha - (originalAlpha - 0.4) * ease;
+      if (elapsed < redDuration) {
+        // Phase 1: flash red then ease back toward original
+        const p = elapsed / redDuration;
+        const flash = p < 0.3 ? p / 0.3 : 1 - (p - 0.3) / 0.7;
+        sprite.tint = lerpColor(originalTint, missRedTint, flash * 0.8);
+        sprite.alpha = originalAlpha;
+      } else {
+        // Phase 2: fade to gray + reduce opacity
+        const p = (elapsed - redDuration) / fadeDuration;
+        const ease = p * (2 - p); // ease-out quad
+        sprite.tint = lerpColor(originalTint, 0x888888, ease);
+        sprite.alpha = originalAlpha - (originalAlpha - 0.4) * ease;
+      }
 
       if (t < 1) {
         this._animHandles.set(sprite, requestAnimationFrame(tick));
@@ -564,7 +762,9 @@ export class NoteRenderer {
 
   /**
    * Show a floating combo counter at the given canvas position.
-   * The number pops in with scale, drifts upward, then fades out.
+   * The number pops in with a scale bounce (1.0 → 1.3 → 1.0),
+   * drifts upward, then fades out over 1200ms total so children
+   * can clearly see their streak count.
    */
   showCombo(count: number, x: number, y: number): void {
     const style = getComboStyle();
@@ -576,7 +776,7 @@ export class NoteRenderer {
     label.scale.set(0.3);
     this.container.addChild(label);
 
-    const duration = 600;
+    const duration = 1200; // ms (increased from 600 for child visibility)
     let start = -1;
 
     const tick = (now: number): void => {
@@ -586,14 +786,19 @@ export class NoteRenderer {
       if (start < 0) start = now;
       const t = Math.min((now - start) / duration, 1);
 
-      // Phase 1 (0–0.2): pop in
-      // Phase 2 (0.2–0.7): hold + drift
-      // Phase 3 (0.7–1.0): fade out
-      if (t < 0.2) {
-        const p = t / 0.2;
-        const overshoot = 1 + 0.2 * Math.sin(p * Math.PI);
-        label.scale.set(overshoot);
-        label.alpha = p;
+      // Phase 1 (0–0.12): pop in with overshoot to 1.3x
+      // Phase 2 (0.12–0.25): bounce back from 1.3x → 1.0x
+      // Phase 3 (0.25–0.7): hold at full scale + drift
+      // Phase 4 (0.7–1.0): fade out
+      if (t < 0.12) {
+        const p = t / 0.12;
+        label.scale.set(0.3 + p * 1.0); // 0.3 → 1.3
+        label.alpha = Math.min(p * 1.5, 1);
+      } else if (t < 0.25) {
+        const p = (t - 0.12) / 0.13;
+        const easeOut = p * (2 - p);
+        label.scale.set(1.3 - 0.3 * easeOut); // 1.3 → 1.0
+        label.alpha = 1;
       } else if (t < 0.7) {
         label.scale.set(1);
         label.alpha = 1;
@@ -603,7 +808,7 @@ export class NoteRenderer {
         label.scale.set(1 - p * 0.3);
       }
 
-      label.y = y - 40 * t;
+      label.y = y - 60 * t; // drift further (40 → 60) given longer duration
 
       if (t < 1) {
         this._comboHandles.delete(handle);

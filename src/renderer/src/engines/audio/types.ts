@@ -61,6 +61,12 @@ export interface IAudioEngine {
   /** Set master volume (0.0 = silent, 1.0 = full) */
   setVolume(volume: number): void;
 
+  /**
+   * Play a brief, gentle error tone when a wrong note is played.
+   * Uses a short frequency sweep (400->200Hz) with low volume to avoid startling children.
+   */
+  playErrorTone(): void;
+
   /** Clean up AudioContext and buffers */
   dispose(): void;
 }

@@ -456,8 +456,8 @@ describe("NoteRenderer", () => {
       expect(rafCb).not.toBeNull();
       // Fire first frame at t=0
       rafCb!(0);
-      // Fire at end of animation (150ms)
-      rafCb!(150);
+      // Fire at end of animation (300ms red flash + 150ms gray fade = 450ms total)
+      rafCb!(450);
 
       // At the end, tint should be 0x888888 and alpha ~0.4
       expect(sprite.tint).toBe(0x888888);
@@ -495,7 +495,7 @@ describe("NoteRenderer", () => {
       // Run animation to completion
       // First call registers the tick
       calls[0](0); // start
-      calls[1](600); // end
+      calls[1](1200); // end (duration increased from 600 to 1200ms)
 
       // Text removed after animation completes
       expect(containerChildren.length).toBe(countBefore);

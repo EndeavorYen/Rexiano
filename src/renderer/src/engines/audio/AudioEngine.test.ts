@@ -43,8 +43,26 @@ function createMockAudioBufferSourceNode() {
 }
 
 // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
+function createMockOscillatorNode() {
+  return {
+    type: "sine" as OscillatorType,
+    frequency: {
+      value: 440,
+      setValueAtTime: vi.fn(),
+      exponentialRampToValueAtTime: vi.fn(),
+    },
+    connect: vi.fn(),
+    start: vi.fn(),
+    stop: vi.fn(),
+    disconnect: vi.fn(),
+    onended: null as (() => void) | null,
+  };
+}
+
+// eslint-disable-next-line @typescript-eslint/explicit-function-return-type
 function stubGlobalAudioContext() {
   const mockGainNode = createMockGainNode();
+  const mockOscillator = createMockOscillatorNode();
   const mockCtx = {
     currentTime: 0,
     sampleRate: 44100,
@@ -54,6 +72,7 @@ function stubGlobalAudioContext() {
     createBufferSource: vi
       .fn()
       .mockReturnValue(createMockAudioBufferSourceNode()),
+    createOscillator: vi.fn().mockReturnValue(mockOscillator),
     createBuffer: vi.fn(),
     resume: vi.fn().mockResolvedValue(undefined),
     suspend: vi.fn().mockResolvedValue(undefined),
@@ -85,6 +104,7 @@ function stubGlobalAudioContext() {
   return {
     mockCtx,
     mockGainNode,
+    mockOscillator,
     MockAudioContext,
     get lastConstructorArg() {
       return lastConstructorArg;
@@ -625,6 +645,67 @@ describe("AudioEngine", () => {
 
     test("dispose is safe when audioContext is already null", () => {
       expect(() => engine.dispose()).not.toThrow();
+    });
+  });
+
+  describe("playErrorTone", () => {
+    test("is a no-op when audioContext is null (uninitialized)", () => {
+      expect(() => engine.playErrorTone()).not.toThrow();
+    });
+
+    test("is a no-op when status is not ready", () => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (engine as any)._audioContext = {} as AudioContext;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (engine as any)._status = "loading";
+      expect(() => engine.playErrorTone()).not.toThrow();
+    });
+
+    test("creates oscillator and gain nodes when engine is ready", async () => {
+      const { mockCtx, mockOscillator } = stubGlobalAudioContext();
+      await engine.init();
+
+      // Reset createGain call count (init creates masterGain)
+      mockCtx.createGain.mockClear();
+
+      const errorGain = createMockGainNode();
+      mockCtx.createGain.mockReturnValue(errorGain);
+      mockCtx.createOscillator.mockReturnValue(mockOscillator);
+
+      engine.playErrorTone();
+
+      expect(mockCtx.createOscillator).toHaveBeenCalled();
+      expect(mockCtx.createGain).toHaveBeenCalled();
+      expect(mockOscillator.frequency.setValueAtTime).toHaveBeenCalledWith(
+        400,
+        0,
+      );
+      expect(
+        mockOscillator.frequency.exponentialRampToValueAtTime,
+      ).toHaveBeenCalledWith(200, 0.08);
+      expect(errorGain.gain.setValueAtTime).toHaveBeenCalledWith(0.15, 0);
+      expect(mockOscillator.connect).toHaveBeenCalledWith(errorGain);
+      expect(mockOscillator.start).toHaveBeenCalledWith(0);
+      expect(mockOscillator.stop).toHaveBeenCalledWith(0.1);
+    });
+
+    test("cleans up nodes via onended callback", async () => {
+      const { mockCtx } = stubGlobalAudioContext();
+      await engine.init();
+
+      const osc = createMockOscillatorNode();
+      const gain = createMockGainNode();
+      mockCtx.createOscillator.mockReturnValue(osc);
+      mockCtx.createGain.mockReturnValue(gain);
+
+      engine.playErrorTone();
+
+      // Simulate oscillator ending
+      expect(osc.onended).toBeTypeOf("function");
+      osc.onended!();
+
+      expect(osc.disconnect).toHaveBeenCalled();
+      expect(gain.disconnect).toHaveBeenCalled();
     });
   });
 });
