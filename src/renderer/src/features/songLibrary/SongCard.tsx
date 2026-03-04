@@ -2,6 +2,7 @@ import { useCallback, useState } from "react";
 import type { BuiltinSongMeta } from "../../../../shared/types";
 import { useProgressStore } from "@renderer/stores/useProgressStore";
 import { useSettingsStore } from "@renderer/stores/useSettingsStore";
+import { useTranslation } from "@renderer/i18n/useTranslation";
 import {
   difficultyDescriptions,
   gradeLabelShort,
@@ -20,6 +21,8 @@ interface SongCardProps {
   /** Preview state: "idle" | "loading" | "playing" */
   previewState?: "idle" | "loading" | "playing";
   onPreviewClick?: (songId: string) => void;
+  /** Called when "Demo" is clicked — loads song in Watch mode and auto-plays */
+  onDemo?: (songId: string) => void;
 }
 
 function formatDuration(seconds: number): string {
@@ -57,7 +60,9 @@ export function SongCard({
   activeTag,
   previewState = "idle",
   onPreviewClick,
+  onDemo,
 }: SongCardProps): React.JSX.Element {
+  const { t } = useTranslation();
   const [isHovered, setIsHovered] = useState(false);
   const noteColors = [
     "var(--color-note1)",
@@ -98,6 +103,14 @@ export function SongCard({
       onPreviewClick?.(song.id);
     },
     [song.id, onPreviewClick],
+  );
+
+  const handleDemoClick = useCallback(
+    (e: React.MouseEvent) => {
+      e.stopPropagation();
+      onDemo?.(song.id);
+    },
+    [song.id, onDemo],
   );
 
   const handleTagClick = useCallback(
@@ -158,6 +171,36 @@ export function SongCard({
           </div>
 
           <div className="flex items-center gap-1.5 shrink-0 mt-0.5">
+            {/* Demo button — loads song in Watch mode */}
+            {onDemo && (
+              <div
+                role="button"
+                tabIndex={-1}
+                onClick={handleDemoClick}
+                className="flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-body font-semibold cursor-pointer transition-all duration-150"
+                style={{
+                  background:
+                    "color-mix(in srgb, var(--color-accent) 14%, transparent)",
+                  color: "var(--color-accent)",
+                  border:
+                    "1px solid color-mix(in srgb, var(--color-accent) 25%, transparent)",
+                  opacity: isHovered ? 1 : 0,
+                }}
+                title={t("library.demoTitle")}
+                data-testid="song-card-demo-btn"
+              >
+                <svg
+                  width="8"
+                  height="10"
+                  viewBox="0 0 8 10"
+                  fill="currentColor"
+                >
+                  <path d="M0 0.5v9l8-4.5z" />
+                </svg>
+                {t("library.demo")}
+              </div>
+            )}
+
             {/* Preview button */}
             {onPreviewClick && (
               <div

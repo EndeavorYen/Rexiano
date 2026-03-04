@@ -344,6 +344,8 @@ export const en: TranslationMap = {
   // ── Song Library Tags ─────────────────────────────────────────
   "library.filterByTag": "Filtered by tag",
   "library.clearTagFilter": "Clear",
+  "library.demo": "Demo",
+  "library.demoTitle": "Play demo in Watch mode",
 
   // ── Progress / Daily Goal ───────────────────────────────────
   "progress.dailyGoal": "Daily Goal",

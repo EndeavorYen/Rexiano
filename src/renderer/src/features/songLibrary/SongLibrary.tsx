@@ -132,6 +132,40 @@ export function SongLibrary({
     [previewSongId, loadSong, reset, refreshRecents],
   );
 
+  /** Handle demo click — load song, set Watch mode, and auto-play */
+  const handleDemo = useCallback(
+    async (songId: string) => {
+      setError(null);
+      setLoadingId(songId);
+      try {
+        const result = await window.api.loadBuiltinSong(songId);
+        if (result) {
+          const parsed = parseMidiFile(result.fileName, result.data);
+          loadSong(parsed);
+          reset();
+          usePracticeStore.getState().setMode("watch");
+          // Brief delay so canvas initializes before playing
+          setTimeout(() => {
+            usePlaybackStore.getState().setPlaying(true);
+          }, 200);
+          void window.api.saveRecentFile({
+            path: `builtin:${songId}`,
+            name: result.fileName,
+            timestamp: Date.now(),
+          });
+          refreshRecents();
+        }
+      } catch (e) {
+        const msg = e instanceof Error ? e.message : t("general.error");
+        setError(msg);
+        console.error("Failed to load song for demo:", e);
+      } finally {
+        setLoadingId(null);
+      }
+    },
+    [loadSong, reset, refreshRecents, t],
+  );
+
   // Cleanup preview timer on unmount
   useEffect(() => {
     const ref = previewTimerRef;
@@ -595,6 +629,7 @@ export function SongLibrary({
                               previewSongId === song.id ? previewState : "idle"
                             }
                             onPreviewClick={handlePreviewClick}
+                            onDemo={handleDemo}
                           />
                           {loadingId === song.id && (
                             <div

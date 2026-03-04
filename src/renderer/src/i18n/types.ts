@@ -329,6 +329,8 @@ export interface TranslationMap {
   // ── Song Library Tags ─────────────────────────────────────────
   "library.filterByTag": string;
   "library.clearTagFilter": string;
+  "library.demo": string;
+  "library.demoTitle": string;
 
   // ── Progress / Daily Goal ───────────────────────────────────
   "progress.dailyGoal": string;

@@ -331,6 +331,8 @@ export const zhTW: TranslationMap = {
   // ── Song Library Tags ─────────────────────────────────────────
   "library.filterByTag": "依標籤篩選",
   "library.clearTagFilter": "清除",
+  "library.demo": "試聽",
+  "library.demoTitle": "以觀看模式播放示範",
 
   // ── Progress / Daily Goal ───────────────────────────────────
   "progress.dailyGoal": "每日目標",
