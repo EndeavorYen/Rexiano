@@ -13,6 +13,14 @@ vi.mock("@renderer/stores/useProgressStore", () => ({
     }),
 }));
 
+// Mock useSettingsStore
+vi.mock("@renderer/stores/useSettingsStore", () => ({
+  useSettingsStore: (selector: (s: any) => any) =>
+    selector({
+      language: "en",
+    }),
+}));
+
 import { SongCard } from "./SongCard";
 
 const mockSong = {
@@ -59,6 +67,6 @@ describe("SongCard render", () => {
   test("renders with grade badge when grade is present", () => {
     const songWithGrade = { ...mockSong, grade: 2 };
     render(<SongCard song={songWithGrade} onSelect={vi.fn()} colorIndex={0} />);
-    expect(screen.getByText("L2")).toBeDefined();
+    expect(screen.getByText(/L2/)).toBeDefined();
   });
 });

@@ -80,6 +80,7 @@ function createMockEngine(initialTime = 0): MockAudioEngine {
     resume: vi.fn().mockResolvedValue(undefined),
     suspend: vi.fn().mockResolvedValue(undefined),
     setVolume: vi.fn(),
+    setReleaseTime: vi.fn(),
     playErrorTone: vi.fn(),
     dispose: vi.fn(),
     _setCurrentTime(t: number) {

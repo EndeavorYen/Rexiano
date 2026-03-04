@@ -95,6 +95,8 @@ export const en: TranslationMap = {
   "midi.bluetooth": "Bluetooth",
   "midi.bleDisconnect": "Disconnect Bluetooth MIDI",
   "midi.bleDeviceTitle": "Bluetooth: {name} (click to disconnect)",
+  "midi.testKeyboard": "Test your keyboard",
+  "midi.pressAKey": "Press any key...",
 
   // ── Practice Mode ──────────────────────────────────────────────
   "practice.watch": "Watch",
@@ -179,6 +181,8 @@ export const en: TranslationMap = {
   "settings.countInOff": "Off",
   "settings.latencyComp": "Latency Compensation",
   "settings.latencyDesc": "Adjust timing offset for MIDI keyboard input",
+  "settings.midiChannel": "MIDI Channel",
+  "settings.midiChannelAll": "All Channels",
   "settings.keyboardShortcuts": "Keyboard Shortcuts",
   "settings.langDesc": "Language changes apply immediately across the app.",
   "settings.shortcut.playPause": "Play / Pause",

@@ -1075,6 +1075,23 @@ input[type="range"]:disabled::-moz-range-thumb {
   animation: stagger-fade-up 0.3s ease-out both;
 }
 
+/* ── Drop zone pulsing border animation ── */
+@keyframes drop-pulse {
+  0%,
+  100% {
+    border-color: var(--color-accent);
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--color-accent) 30%, transparent);
+  }
+  50% {
+    border-color: color-mix(in srgb, var(--color-accent) 60%, transparent);
+    box-shadow: 0 0 24px 6px color-mix(in srgb, var(--color-accent) 18%, transparent);
+  }
+}
+
+.animate-drop-pulse {
+  animation: drop-pulse 1.5s ease-in-out infinite;
+}
+
 @media (max-width: 1024px) {
   .app-shell::before {
     width: 64vw;

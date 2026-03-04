@@ -366,8 +366,9 @@ function App(): React.JSX.Element {
       usePlaybackStore.getState().setAudioStatus("loading");
       await engine.init();
 
-      const { muted } = useSettingsStore.getState();
+      const { muted, noteReleaseMs } = useSettingsStore.getState();
       engine.setVolume(muted ? 0 : usePlaybackStore.getState().volume);
+      engine.setReleaseTime(noteReleaseMs / 1000);
 
       // Rebind metronome to the latest live AudioContext after recovery/rebuild.
       disposeMetronome();
@@ -675,6 +676,17 @@ function App(): React.JSX.Element {
     return unsub;
   }, []);
 
+  // Sync note release time setting to the audio engine whenever it changes.
+  useEffect(() => {
+    const unsub = useSettingsStore.subscribe((state, prev) => {
+      if (state.noteReleaseMs === prev.noteReleaseMs) return;
+      const { engine } = audioRef.current;
+      if (!engine) return;
+      engine.setReleaseTime(state.noteReleaseMs / 1000);
+    });
+    return unsub;
+  }, []);
+
   // ─── MIDI CC64 (sustain pedal) → AudioEngine ──────────
   // Wire the sustain pedal CC message from the MIDI parser to the audio engine.
   useEffect(() => {
@@ -927,12 +939,15 @@ function App(): React.JSX.Element {
     ? (splitFallingMinHeight ?? 0)
     : 200;
   const speedPercent = Math.round(speed * 100);
-  const baseBpm =
-    song?.tempos && song.tempos.length > 0
-      ? Math.round(song.tempos[0].bpm)
-      : null;
+  const rawBaseBpm =
+    song?.tempos && song.tempos.length > 0 ? song.tempos[0].bpm : null;
+  const rawEffectiveBpm =
+    rawBaseBpm !== null ? Math.max(1, rawBaseBpm * speed) : null;
+  /** Format BPM: show one decimal place only if non-integer */
+  const formatBpm = (bpm: number): string =>
+    bpm % 1 === 0 ? String(bpm) : bpm.toFixed(1);
   const effectiveBpm =
-    baseBpm !== null ? Math.max(1, Math.round(baseBpm * speed)) : null;
+    rawEffectiveBpm !== null ? formatBpm(rawEffectiveBpm) : null;
 
   useEffect(() => {
     const token = `${view}:${song?.fileName ?? ""}`;
@@ -974,21 +989,22 @@ function App(): React.JSX.Element {
           }}
         >
           <div
-            className="rounded-3xl px-10 py-8 text-center subtle-shadow-md"
+            className="rounded-3xl px-14 py-10 text-center subtle-shadow-md animate-drop-pulse"
             style={{
               background:
-                "color-mix(in srgb, var(--color-surface) 90%, transparent)",
+                "color-mix(in srgb, var(--color-surface) 92%, transparent)",
               border: "3px dashed var(--color-accent)",
             }}
           >
+            <div className="text-5xl mb-3 select-none">{"\u{1F3B5}"}</div>
             <p
-              className="text-lg font-semibold font-body"
+              className="text-xl font-bold font-display"
               style={{ color: "var(--color-text)" }}
             >
               {t("app.dropMidi")}
             </p>
             <p
-              className="text-sm mt-1"
+              className="text-sm mt-2"
               style={{ color: "var(--color-text-muted)" }}
             >
               {t("app.supportedFormats")}
@@ -1264,7 +1280,7 @@ function App(): React.JSX.Element {
           {/* Count-in overlay (shown before playback starts) */}
           <CountInOverlay
             visible={countInActive}
-            bpm={effectiveBpm ?? 120}
+            bpm={rawEffectiveBpm ?? 120}
             countInBeats={countInBeats}
             onComplete={handleCountInComplete}
           />

@@ -158,6 +158,14 @@ export function StatisticsPage({
             suffix="%"
             label={t("stats.hitRate")}
             color="var(--color-accent)"
+            subtitle={
+              totalNotes > 0
+                ? t("stats.hitFraction", {
+                    hit: score.hitNotes,
+                    total: totalNotes,
+                  })
+                : undefined
+            }
           />
           {/* Fixed semantic color: blue = informational/neutral metric */}
           <StatCell
@@ -245,11 +253,13 @@ function StatCell({
   suffix,
   label,
   color,
+  subtitle,
 }: {
   value: number;
   suffix?: string;
   label: string;
   color: string;
+  subtitle?: string;
 }): React.JSX.Element {
   return (
     <div
@@ -273,6 +283,14 @@ function StatCell({
       >
         {label}
       </span>
+      {subtitle && (
+        <span
+          className="text-[9px] font-body mt-0.5 text-center"
+          style={{ color: "var(--color-text-muted)", opacity: 0.75 }}
+        >
+          {subtitle}
+        </span>
+      )}
     </div>
   );
 }

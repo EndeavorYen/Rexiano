@@ -1,11 +1,14 @@
 import { useCallback } from "react";
 import type { BuiltinSongMeta } from "../../../../shared/types";
 import { useProgressStore } from "@renderer/stores/useProgressStore";
+import { useSettingsStore } from "@renderer/stores/useSettingsStore";
 import {
   difficultyDescriptions,
   gradeLabelShort,
+  gradeEmoji,
   gradeDescriptions,
   getGradeColor,
+  getDifficultyDotColor,
 } from "./songCardUtils";
 
 interface SongCardProps {
@@ -55,6 +58,12 @@ export function SongCard({
   const stripeColor = noteColors[colorIndex % noteColors.length];
 
   const bestScore = useProgressStore((s) => s.getBestScore(song.id));
+  const language = useSettingsStore((s) => s.language);
+
+  const displayTitle =
+    language === "zh-TW" ? (song.titleZh ?? song.title) : song.title;
+  const displayComposer =
+    language === "zh-TW" ? (song.composerZh ?? song.composer) : song.composer;
 
   const handleClick = useCallback(() => {
     onSelect(song.id);
@@ -63,8 +72,11 @@ export function SongCard({
   const difficultyDescription = difficultyDescriptions[song.difficulty];
   const dots = difficultyDots[song.difficulty];
   const stars = bestScore ? accuracyToStars(bestScore.score.accuracy) : 0;
+  const dotColor = getDifficultyDotColor(song.grade);
   const gradeLabel =
-    song.grade !== undefined ? gradeLabelShort[song.grade] : null;
+    song.grade !== undefined
+      ? `${gradeEmoji[song.grade] ?? ""} ${gradeLabelShort[song.grade]}`
+      : null;
   const gradeDesc =
     song.grade !== undefined ? gradeDescriptions[song.grade] : null;
   const gradeColor =
@@ -93,13 +105,13 @@ export function SongCard({
               className="font-body font-semibold text-sm truncate"
               style={{ color: "var(--color-text)" }}
             >
-              {song.title}
+              {displayTitle}
             </h3>
             <p
               className="text-xs mt-0.5 truncate"
               style={{ color: "var(--color-text-muted)" }}
             >
-              {song.composer}
+              {displayComposer}
             </p>
           </div>
 
@@ -126,10 +138,10 @@ export function SongCard({
               {[1, 2, 3].map((n) => (
                 <div
                   key={n}
-                  className="w-1.5 h-1.5 rounded-full"
+                  className="w-3 h-3 rounded-full"
                   style={{
                     background:
-                      n <= dots ? "var(--color-accent)" : "var(--color-border)",
+                      n <= dots ? dotColor : "var(--color-border)",
                   }}
                 />
               ))}

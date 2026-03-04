@@ -94,6 +94,8 @@ export const zhTW: TranslationMap = {
   "midi.bluetooth": "藍牙",
   "midi.bleDisconnect": "中斷藍牙 MIDI",
   "midi.bleDeviceTitle": "藍牙：{name}（點擊中斷連線）",
+  "midi.testKeyboard": "測試你的鍵盤",
+  "midi.pressAKey": "按一個鍵試試...",
 
   // ── Practice Mode ──────────────────────────────────────────────
   "practice.watch": "觀看",
@@ -174,6 +176,8 @@ export const zhTW: TranslationMap = {
   "settings.countInOff": "關閉",
   "settings.latencyComp": "延遲補償",
   "settings.latencyDesc": "調整 MIDI 鍵盤輸入的時間偏移",
+  "settings.midiChannel": "MIDI 頻道",
+  "settings.midiChannelAll": "所有頻道",
   "settings.keyboardShortcuts": "鍵盤快捷鍵",
   "settings.langDesc": "語言變更會立即套用到整個應用程式。",
   "settings.shortcut.playPause": "播放 / 暫停",

@@ -21,8 +21,8 @@ interface ActiveNote {
   gain: GainNode;
 }
 
-/** Release time in seconds for noteOff envelope */
-const RELEASE_TIME = 0.15;
+/** Default release time in seconds for noteOff envelope */
+const DEFAULT_RELEASE_TIME = 0.15;
 
 /** Default SoundFont file name in resources/ */
 const DEFAULT_SOUNDFONT = "piano.sf2";
@@ -49,6 +49,9 @@ export class AudioEngine implements IAudioEngine {
   /** Notes held by sustain pedal: MIDI note → list of sustained sources */
   private _sustainedNotes = new Map<number, ActiveNote[]>();
 
+  /** Configurable release time in seconds (default 0.15) */
+  private _releaseTime = DEFAULT_RELEASE_TIME;
+
   /** Guard against concurrent init() calls */
   private _initPromise: Promise<void> | null = null;
 
@@ -67,6 +70,14 @@ export class AudioEngine implements IAudioEngine {
 
   setRuntimeErrorHandler(handler: ((error: unknown) => void) | null): void {
     this._onRuntimeError = handler;
+  }
+
+  /**
+   * Set the note release (fade-out) time.
+   * @param seconds  Release duration in seconds (clamped to 0.05–0.3)
+   */
+  setReleaseTime(seconds: number): void {
+    this._releaseTime = Math.max(0.05, Math.min(0.3, seconds));
   }
 
   async init(): Promise<void> {
@@ -256,8 +267,8 @@ export class AudioEngine implements IAudioEngine {
     const { source, gain } = activeNote;
     try {
       gain.gain.setValueAtTime(gain.gain.value, time);
-      gain.gain.exponentialRampToValueAtTime(0.001, time + RELEASE_TIME);
-      source.stop(time + RELEASE_TIME + 0.01);
+      gain.gain.exponentialRampToValueAtTime(0.001, time + this._releaseTime);
+      source.stop(time + this._releaseTime + 0.01);
     } catch {
       // Source may have already stopped
       try {

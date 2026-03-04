@@ -41,7 +41,7 @@ export function parseMidiFile(fileName: string, data: number[]): ParsedSong {
 
   const tempos: TempoEvent[] = midi.header.tempos.map((t) => ({
     time: midi.header.ticksToSeconds(t.ticks),
-    bpm: Math.round(t.bpm),
+    bpm: Math.round(t.bpm * 10) / 10,
   }));
 
   const timeSignatures: TimeSignatureEvent[] = midi.header.timeSignatures.map(

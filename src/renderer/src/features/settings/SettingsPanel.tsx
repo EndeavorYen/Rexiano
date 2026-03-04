@@ -18,6 +18,7 @@ import type { TranslationKey } from "@renderer/i18n/types";
 import { themes, type ThemeId } from "@renderer/themes/tokens";
 import { getAvailableLanguages } from "@renderer/i18n";
 import { useTranslation } from "@renderer/i18n/useTranslation";
+import { useMidiDeviceStore } from "@renderer/stores/useMidiDeviceStore";
 import type { PracticeMode } from "@shared/types";
 
 const themeList: ThemeId[] = ["lavender", "ocean", "peach", "midnight"];
@@ -157,6 +158,8 @@ export function SettingsPanel({
   );
   const noteReleaseMs = useSettingsStore((s) => s.noteReleaseMs);
   const setNoteReleaseMs = useSettingsStore((s) => s.setNoteReleaseMs);
+  const midiChannel = useMidiDeviceStore((s) => s.midiChannel);
+  const setMidiChannel = useMidiDeviceStore((s) => s.setMidiChannel);
   const uiScale = useSettingsStore((s) => s.uiScale);
   const setUiScale = useSettingsStore((s) => s.setUiScale);
 
@@ -890,6 +893,35 @@ export function SettingsPanel({
                       >
                         {t("settings.latencyDesc")}
                       </span>
+                    </div>
+
+                    {/* MIDI channel filter */}
+                    <div>
+                      <span
+                        className="text-xs font-body block mb-1.5"
+                        style={{ color: "var(--color-text)" }}
+                      >
+                        {t("settings.midiChannel")}
+                      </span>
+                      <select
+                        value={midiChannel === null ? "" : String(midiChannel)}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          setMidiChannel(val === "" ? null : Number(val));
+                        }}
+                        className="select-themed rounded px-2 py-1 text-xs outline-none cursor-pointer w-full"
+                        aria-label={t("settings.midiChannel")}
+                        data-testid="midi-channel-select"
+                      >
+                        <option value="">
+                          {t("settings.midiChannelAll")}
+                        </option>
+                        {Array.from({ length: 16 }, (_, i) => (
+                          <option key={i} value={String(i)}>
+                            Channel {i + 1}
+                          </option>
+                        ))}
+                      </select>
                     </div>
                   </div>
                 </TabContent>

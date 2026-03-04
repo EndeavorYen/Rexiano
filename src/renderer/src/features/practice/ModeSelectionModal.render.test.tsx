@@ -57,10 +57,10 @@ describe("ModeSelectionModal render", () => {
     expect(screen.getByText("modeSelect.mustChoose")).toBeDefined();
   });
 
-  test("shows escToSkip button when onClose is provided", () => {
+  test("shows skip button when onClose is provided", () => {
     const onClose = vi.fn();
     render(<ModeSelectionModal onSelect={vi.fn()} onClose={onClose} />);
-    const skipBtn = screen.getByText("modeSelect.escToSkip");
+    const skipBtn = screen.getByText("onboarding.skip");
     expect(skipBtn).toBeDefined();
     fireEvent.click(skipBtn);
     expect(onClose).toHaveBeenCalledOnce();

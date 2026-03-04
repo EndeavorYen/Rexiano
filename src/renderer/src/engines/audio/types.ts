@@ -62,6 +62,12 @@ export interface IAudioEngine {
   setVolume(volume: number): void;
 
   /**
+   * Set the note release (fade-out) time.
+   * @param seconds  Release duration in seconds (clamped to 0.05–0.3)
+   */
+  setReleaseTime(seconds: number): void;
+
+  /**
    * Play a brief, gentle error tone when a wrong note is played.
    * Uses a short frequency sweep (400->200Hz) with low volume to avoid startling children.
    */

@@ -5,9 +5,8 @@ import { MetronomeEngine } from "./MetronomeEngine";
 function createMockAudioContext(): AudioContext {
   let currentTime = 0;
 
-  const mockOscillator = {
-    type: "sine" as OscillatorType,
-    frequency: { value: 0 },
+  const mockBufferSource = {
+    buffer: null as AudioBuffer | null,
     connect: vi.fn(),
     start: vi.fn(),
     stop: vi.fn(),
@@ -25,6 +24,22 @@ function createMockAudioContext(): AudioContext {
     disconnect: vi.fn(),
   };
 
+  const mockFilter = {
+    type: "bandpass" as BiquadFilterType,
+    frequency: { value: 0 },
+    Q: { value: 0 },
+    connect: vi.fn(),
+    disconnect: vi.fn(),
+  };
+
+  const mockBuffer = {
+    getChannelData: vi.fn(() => new Float32Array(128)),
+    length: 128,
+    sampleRate: 44100,
+    numberOfChannels: 1,
+    duration: 128 / 44100,
+  };
+
   return {
     get currentTime() {
       return currentTime;
@@ -32,7 +47,13 @@ function createMockAudioContext(): AudioContext {
     set currentTime(t: number) {
       currentTime = t;
     },
-    createOscillator: vi.fn(() => ({ ...mockOscillator })),
+    sampleRate: 44100,
+    createBufferSource: vi.fn(() => ({ ...mockBufferSource })),
+    createBiquadFilter: vi.fn(() => ({
+      ...mockFilter,
+      frequency: { value: 0 },
+      Q: { value: 0 },
+    })),
     createGain: vi.fn(() => ({
       ...mockGain,
       gain: {
@@ -41,6 +62,7 @@ function createMockAudioContext(): AudioContext {
         exponentialRampToValueAtTime: vi.fn(),
       },
     })),
+    createBuffer: vi.fn(() => ({ ...mockBuffer })),
     destination: {},
   } as unknown as AudioContext;
 }
@@ -112,21 +134,24 @@ describe("MetronomeEngine", () => {
     // Advance timer to trigger at least one tick
     vi.advanceTimersByTime(30);
 
-    expect(ctx.createOscillator).toHaveBeenCalled();
+    expect(ctx.createBufferSource).toHaveBeenCalled();
+    expect(ctx.createBiquadFilter).toHaveBeenCalled();
     expect(ctx.createGain).toHaveBeenCalled();
   });
 
-  it("uses higher frequency for strong beats (beat 0)", () => {
+  it("uses higher bandpass cutoff for strong beats (beat 0)", () => {
     metronome.setEnabled(true);
     metronome.start(120, 4);
 
-    // First tick should create oscillator at strong frequency (1500Hz)
+    // First tick should create a bandpass filter at accent cutoff (2000Hz)
     vi.advanceTimersByTime(30);
 
-    const oscCall = vi.mocked(ctx.createOscillator).mock.results[0];
-    if (oscCall) {
-      const osc = oscCall.value as unknown as { frequency: { value: number } };
-      expect(osc.frequency.value).toBe(1500); // strong beat
+    const filterCall = vi.mocked(ctx.createBiquadFilter).mock.results[0];
+    if (filterCall) {
+      const filter = filterCall.value as unknown as {
+        frequency: { value: number };
+      };
+      expect(filter.frequency.value).toBe(2000); // accent beat
     }
   });
 

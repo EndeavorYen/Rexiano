@@ -47,6 +47,7 @@ interface SettingsState {
   countInBeats: number;
   latencyCompensation: number;
   audioCompatibilityMode: boolean;
+  noteReleaseMs: number;
   uiScale: UiScale;
 
   setShowNoteLabels: (v: boolean) => void;
@@ -62,6 +63,7 @@ interface SettingsState {
   setCountInBeats: (v: number) => void;
   setLatencyCompensation: (ms: number) => void;
   setAudioCompatibilityMode: (v: boolean) => void;
+  setNoteReleaseMs: (ms: number) => void;
   setUiScale: (scale: UiScale) => void;
 }
 
@@ -79,6 +81,7 @@ interface PersistedSettings {
   countInBeats?: number;
   latencyCompensation?: number;
   audioCompatibilityMode?: boolean;
+  noteReleaseMs?: number;
   uiScale?: UiScale;
 }
 
@@ -96,6 +99,7 @@ const defaults: PersistedSettings = {
   countInBeats: 4,
   latencyCompensation: 0,
   audioCompatibilityMode: false,
+  noteReleaseMs: 150,
   uiScale: "normal",
 };
 
@@ -139,6 +143,7 @@ export const useSettingsStore = create<SettingsState>()((set) => {
     countInBeats: saved.countInBeats!,
     latencyCompensation: saved.latencyCompensation!,
     audioCompatibilityMode: saved.audioCompatibilityMode!,
+    noteReleaseMs: saved.noteReleaseMs!,
     uiScale: VALID_UI_SCALES.includes(saved.uiScale as UiScale)
       ? (saved.uiScale as UiScale)
       : "normal",
@@ -191,13 +196,18 @@ export const useSettingsStore = create<SettingsState>()((set) => {
       set({ countInBeats: clamped });
     },
     setLatencyCompensation: (ms) => {
-      const clamped = Math.max(0, Math.min(100, Math.round(ms)));
+      const clamped = Math.max(0, Math.min(200, Math.round(ms)));
       persist({ latencyCompensation: clamped });
       set({ latencyCompensation: clamped });
     },
     setAudioCompatibilityMode: (v) => {
       persist({ audioCompatibilityMode: v });
       set({ audioCompatibilityMode: v });
+    },
+    setNoteReleaseMs: (ms) => {
+      const clamped = Math.max(50, Math.min(300, Math.round(ms)));
+      persist({ noteReleaseMs: clamped });
+      set({ noteReleaseMs: clamped });
     },
     setUiScale: (scale) => {
       if (!VALID_UI_SCALES.includes(scale)) return;

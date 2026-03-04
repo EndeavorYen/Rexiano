@@ -241,33 +241,73 @@ export class SoundFontLoader implements ISoundFontLoader {
 
   // ─── Oscillator Fallback ─────────────────────────────
 
-  /** Generate simple piano-like tones using additive synthesis for all 88 keys */
+  /**
+   * Generate piano-like tones using dual triangle-wave oscillators with ADSR envelope.
+   * The second oscillator is detuned +3 cents to create a richer, chorus-like timbre
+   * that sounds more natural than a pure sine wave fallback.
+   */
   private _generateSynthSamples(audioContext: AudioContext): void {
     const sampleRate = audioContext.sampleRate;
     // Generate 2 seconds of audio per sample
     const duration = 2.0;
     const length = Math.floor(sampleRate * duration);
 
+    // ADSR envelope parameters (in seconds)
+    const attack = 0.01;
+    const decay = 0.1;
+    const sustainLevel = 0.6;
+    const release = 0.2;
+    // Sustain phase ends this many seconds before the end to leave room for release
+    const releaseStart = duration - release;
+
     for (let midi = PIANO_MIN; midi <= PIANO_MAX; midi++) {
       const freq = 440 * Math.pow(2, (midi - 69) / 12);
+      // Second oscillator detuned +3 cents for chorus richness
+      const freq2 = freq * Math.pow(2, 3 / 1200);
+
       const audioBuffer = audioContext.createBuffer(1, length, sampleRate);
       const channelData = audioBuffer.getChannelData(0);
 
       for (let i = 0; i < length; i++) {
         const t = i / sampleRate;
-        // Exponential decay envelope
-        const envelope = Math.exp(-t * 3.0);
 
-        // Additive synthesis: fundamental + harmonics for a piano-like timbre
-        let sample = 0;
-        sample += Math.sin(2 * Math.PI * freq * t) * 1.0; // fundamental
-        sample += Math.sin(2 * Math.PI * freq * 2 * t) * 0.5; // 2nd harmonic
-        sample += Math.sin(2 * Math.PI * freq * 3 * t) * 0.25; // 3rd harmonic
-        sample += Math.sin(2 * Math.PI * freq * 4 * t) * 0.125; // 4th harmonic
-        sample += Math.sin(2 * Math.PI * freq * 6 * t) * 0.0625; // 6th harmonic
+        // ADSR envelope
+        let envelope: number;
+        if (t < attack) {
+          // Attack: ramp from 0 to 1
+          envelope = t / attack;
+        } else if (t < attack + decay) {
+          // Decay: ramp from 1 to sustainLevel
+          envelope = 1 - ((1 - sustainLevel) * (t - attack)) / decay;
+        } else if (t < releaseStart) {
+          // Sustain: hold at sustainLevel with gentle exponential decay
+          envelope = sustainLevel * Math.exp(-(t - attack - decay) * 1.5);
+        } else {
+          // Release: ramp to 0
+          const releaseT = (t - releaseStart) / release;
+          const sustainAtRelease =
+            sustainLevel * Math.exp(-(releaseStart - attack - decay) * 1.5);
+          envelope = sustainAtRelease * (1 - releaseT);
+        }
 
-        // Normalize and apply envelope
-        channelData[i] = sample * envelope * 0.4;
+        // Triangle wave via Fourier series (odd harmonics, alternating sign)
+        const triangle = (time: number, f: number): number => {
+          let val = 0;
+          // 6 odd harmonics for a clean triangle shape
+          for (let n = 0; n < 6; n++) {
+            const k = 2 * n + 1;
+            const sign = n % 2 === 0 ? 1 : -1;
+            val += (sign / (k * k)) * Math.sin(2 * Math.PI * f * k * time);
+          }
+          return val * (8 / (Math.PI * Math.PI));
+        };
+
+        // Dual triangle oscillators (second detuned +3 cents)
+        const osc1 = triangle(t, freq);
+        const osc2 = triangle(t, freq2);
+        const sample = (osc1 + osc2) * 0.5;
+
+        channelData[i] = sample * envelope * 0.5;
       }
 
       this._samples.set(midi, {

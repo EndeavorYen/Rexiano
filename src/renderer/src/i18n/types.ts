@@ -95,6 +95,8 @@ export interface TranslationMap {
   "midi.bluetooth": string;
   "midi.bleDisconnect": string;
   "midi.bleDeviceTitle": string;
+  "midi.testKeyboard": string;
+  "midi.pressAKey": string;
 
   // ── Practice Mode ──────────────────────────────────────────────
   "practice.watch": string;
@@ -172,6 +174,8 @@ export interface TranslationMap {
   "settings.countInOff": string;
   "settings.latencyComp": string;
   "settings.latencyDesc": string;
+  "settings.midiChannel": string;
+  "settings.midiChannelAll": string;
   "settings.keyboardShortcuts": string;
   "settings.langDesc": string;
   "settings.shortcut.playPause": string;

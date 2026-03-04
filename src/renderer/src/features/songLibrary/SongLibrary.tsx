@@ -20,7 +20,8 @@ import { formatRelativeTime } from "../../utils/relativeTime";
 import { SongCard } from "./SongCard";
 import { SongLibraryFilters } from "./SongLibraryFilters";
 import { ThemePicker } from "../settings/ThemePicker";
-import { groupSongsByCategory } from "./songCardUtils";
+import { groupSongsByCategory, categoryI18nKeys } from "./songCardUtils";
+import type { TranslationKey } from "../../i18n/types";
 import { DeviceSelector } from "../midiDevice/DeviceSelector";
 import { useTranslation } from "../../i18n/useTranslation";
 import appIcon from "../../../../../docs/figure/Rexiano_icon.png";
@@ -102,7 +103,9 @@ export function SongLibrary({
       result = result.filter(
         (s) =>
           s.title.toLowerCase().includes(q) ||
-          s.composer.toLowerCase().includes(q),
+          s.composer.toLowerCase().includes(q) ||
+          (s.titleZh && s.titleZh.includes(q)) ||
+          (s.composerZh && s.composerZh.includes(q)),
       );
     }
     return result;
@@ -443,8 +446,8 @@ export function SongLibrary({
                       className="flex items-center gap-2 mb-3"
                       style={{ color: "var(--color-text-muted)" }}
                     >
-                      <span className="text-xs font-body font-semibold uppercase tracking-wider">
-                        {group.label}
+                      <span className="text-sm font-body font-semibold uppercase tracking-wider">
+                        {t(categoryI18nKeys[group.category] as TranslationKey)}
                       </span>
                       <span
                         className="text-[10px] font-mono px-1.5 py-0.5 rounded-full"

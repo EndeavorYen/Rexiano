@@ -23,6 +23,19 @@ export const gradeLabelShort: Record<number, string> = {
   8: "L8",
 };
 
+/** Emoji prefix per grade level for child-friendly display */
+export const gradeEmoji: Record<number, string> = {
+  0: "\u{1F331}", // seedling
+  1: "\u{1F33F}", // herb
+  2: "\u{1F33F}", // herb
+  3: "\u2B50", // star
+  4: "\u2B50", // star
+  5: "\u{1F525}", // fire
+  6: "\u{1F525}", // fire
+  7: "\u{1F48E}", // gem
+  8: "\u{1F48E}", // gem
+};
+
 /** Tooltip description for each grade level */
 export const gradeDescriptions: Record<number, string> = {
   0: "Pre-Starter — 3–5 notes, right hand only (C-E)",
@@ -47,6 +60,17 @@ export function getGradeColor(grade: number): string {
   return "#ef4444"; // red
 }
 
+/**
+ * Returns a semantic color for filled difficulty dots based on song grade.
+ * Green = easy (L0-2), yellow = medium (L3-5), red = hard (L6-8).
+ * Uses fixed colors (not theme vars) since they carry universal difficulty meaning.
+ */
+export function getDifficultyDotColor(grade: number | undefined): string {
+  if (grade === undefined || grade <= 2) return "#22c55e"; // green — easy
+  if (grade <= 5) return "#eab308"; // yellow — medium
+  return "#ef4444"; // red — hard
+}
+
 /** Determine the color for a best-score badge based on accuracy */
 export function getBestScoreColor(accuracy: number): string {
   if (accuracy >= 90) return "#22c55e"; // green
@@ -67,7 +91,21 @@ export const CATEGORY_ORDER: SongCategory[] = [
   "classical",
 ];
 
-/** Human-readable labels for each category */
+/**
+ * Translation keys for each category label.
+ * Consumers should call `t(categoryI18nKeys[cat])` to get the localised label.
+ */
+export const categoryI18nKeys: Record<SongCategory, string> = {
+  exercise: "library.category.exercise",
+  popular: "library.category.popular",
+  holiday: "library.category.holiday",
+  classical: "library.category.classical",
+};
+
+/**
+ * @deprecated Use `categoryI18nKeys` + `t()` instead.
+ * Kept for backward-compatibility in non-i18n contexts (tests, etc.).
+ */
 export const categoryLabels: Record<SongCategory, string> = {
   exercise: "Exercises",
   popular: "Popular",

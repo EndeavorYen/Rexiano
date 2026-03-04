@@ -152,10 +152,10 @@ export function ModeSelectionModal({
         {onClose ? (
           <button
             onClick={onClose}
-            className="text-[11px] font-body text-center mt-2 cursor-pointer hover:underline"
+            className="text-[11px] font-body text-center mt-4 cursor-pointer hover:underline"
             style={{ color: "var(--color-text-muted)" }}
           >
-            {t("modeSelect.escToSkip")}
+            {t("onboarding.skip")}
           </button>
         ) : (
           <p
