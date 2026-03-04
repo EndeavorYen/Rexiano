@@ -124,7 +124,7 @@ describe("useThemeStore", () => {
     expect(mockStyle.setProperty).toHaveBeenCalledWith("--color-bg", "#0E1013");
     expect(mockStyle.setProperty).toHaveBeenCalledWith(
       "--color-accent",
-      "#4C8EA3",
+      "#5DA3B8",
     );
     expect(mockStyle.setProperty).toHaveBeenCalledWith(
       "--color-text",

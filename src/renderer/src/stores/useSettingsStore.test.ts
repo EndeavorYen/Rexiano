@@ -175,10 +175,10 @@ describe("useSettingsStore", () => {
       expect(store.getState().volume).toBe(100);
     });
 
-    test("defaultSpeed is clamped to 0.25 minimum", async () => {
+    test("defaultSpeed is clamped to 0.10 minimum", async () => {
       const store = await getStore();
-      store.getState().setDefaultSpeed(0.1);
-      expect(store.getState().defaultSpeed).toBe(0.25);
+      store.getState().setDefaultSpeed(0.05);
+      expect(store.getState().defaultSpeed).toBe(0.1);
     });
 
     test("defaultSpeed is clamped to 2.0 maximum", async () => {

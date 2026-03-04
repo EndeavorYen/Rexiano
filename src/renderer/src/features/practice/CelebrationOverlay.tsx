@@ -172,12 +172,12 @@ export function CelebrationOverlay({
   // Show "tap to continue" hint after a 2-second delay
   const [showHint, setShowHint] = useState(false);
   useEffect(() => {
-    if (!visible) {
-      setShowHint(false);
-      return;
-    }
+    if (!visible) return;
     const timer = setTimeout(() => setShowHint(true), 2000);
-    return () => clearTimeout(timer);
+    return () => {
+      clearTimeout(timer);
+      setShowHint(false);
+    };
   }, [visible]);
 
   if (!visible) return <></>;

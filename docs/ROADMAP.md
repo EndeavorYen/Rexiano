@@ -323,6 +323,76 @@
 - [x] 按小節 A-B 循環（MidiFileParser 計算 measureTimes + ABLoopSelector 小節選擇器）
 - [x] 平滑速度過渡（SpeedController lerp 插值，200ms 緩動）
 
+### Sprint 8 — 兒童友善練習體驗（WP1）
+
+- [x] 倒數預備動畫（CountInOverlay: "3…2…1…Go!" CSS 動畫，同步 BPM）
+- [x] 慶祝結算延長至 5 秒 + 點擊任意處關閉 + "tap to continue" 提示
+- [x] Hit 閃光 200→400ms（白→accent 三階段）、Miss 紅色色調 300ms
+- [x] 連擊文字 600→1200ms 彈跳縮放效果
+- [x] 錯誤音效（AudioEngine.playErrorTone: 80ms 400→200Hz 頻率掃描）
+- [x] Watch 模式教育性增強（hit line 發光 + 22px 音名標籤）
+- [x] Free 模式評分（FreeScorer 引擎：±200ms 容許窗口 + 寬限期）
+
+### Sprint 9 — 曲庫內容擴充（WP2）
+
+- [x] 中文曲目元資料（titleZh / composerZh，42 首全部翻譯）
+- [x] 分類修正（Long Long Ago: classical → popular）
+- [x] 難度分析引擎（DifficultyAnalyzer: 音符密度、音域、節奏複雜度、速度、手部獨立性加權評分）
+
+### Sprint 10 — 兒童友善 UI（WP3）
+
+- [x] 練習控制面板永遠展開（移除 "More" 收合按鈕）
+- [x] 練習模式 emoji 圖示（Watch 👀 / Wait ⏸️ / Free 🎹，含文字標籤）
+- [x] 設定按鈕加文字標籤（"Settings" / "設定"）
+- [x] 等級標籤 emoji（🌱🌿⭐🔥💎）+ 難度點放大至 w-3 + 顏色編碼
+- [x] 統計術語簡化（Hit Rate → Correct Notes / 彈對的比例）
+- [x] 曲庫分類 emoji（🎵 Popular / 🎻 Classical / 🎄 Holiday / 💪 Exercise）
+- [x] "Press Esc to skip" 改為可見 Skip 按鈕
+- [x] 拖放 overlay 增強（🎵 emoji + 脈衝邊框動畫 + "Drop your song here!"）
+
+### Sprint 11 — 節拍器與音頻改善（WP5）
+
+- [x] 節拍器音色升級（白噪音 + 帶通濾波器，木魚音效：accent 2000Hz / normal 800Hz）
+- [x] 合成音色 fallback 升級（雙三角波 + 3 cents 去調 + ADSR 包絡）
+- [x] 可配置音符釋放時間（50-300ms slider，settings 面板）
+- [x] BPM 小數顯示（120 → 120, 95.5 → 95.5）
+
+### Sprint 12 — MIDI 裝置穩健性（WP6）
+
+- [x] MIDI 通道篩選器（MidiInputParser.setChannelFilter，settings 下拉選單）
+- [x] 自動重連（指數退避 1→30s，最多 10 次，按名稱匹配裝置）
+- [x] 延遲補償上限提高至 200ms
+- [x] MIDI 輸入測試顯示（DeviceSelector: 最後按鍵音名 + 力度）
+
+### Sprint 13 — 曲庫 UI 強化（WP7）
+
+- [x] 標籤顯示與篩選（SongCard tag chips + 曲庫標籤過濾器）
+- [x] 技巧描述（43 首曲目新增 techniques 欄位，hover 顯示）
+- [x] 曲目預覽（hover 播放 8 秒 + 迷你進度條動畫）
+- [x] 每日練習目標（DailyGoal 圓形進度環 + localStorage 持久化 + settings 面板）
+
+### Sprint 14 — 五線譜改善（WP8）
+
+- [x] 可見小節數 4→8（SheetMusicPanel + CursorSync 常數更新）
+- [x] 小節編號顯示（奇數小節上方 SVG text，10px muted）
+- [x] Split 模式焦點改為邊框高亮（取消透明度降低，改用 accent 色 2px 左框線）
+
+### Sprint 15 — 指法與視覺打磨（WP10+11）
+
+- [x] 和弦分組閾值驗證（200 BPM 16 分音符 75ms 不被誤判為和弦）
+- [x] 滑動窗口音階偵測（matchesScalePattern 支援任意起始音）
+- [x] 小音符標籤（高度 <16px 時在上方顯示 8px 標籤，限 hit line 2 秒內）
+- [x] 8 色調色盤（新增 teal / orange / pink / lime，trackIndex % 8）
+- [x] Midnight 主題對比度修正（accent #5DA3B8, border #3A4556）
+- [x] 五線譜縮放控制（75%–150%，Ctrl+=/-，CSS transform scale）
+
+### Sprint 16 — 音樂理論與進階練習（WP9+12+13）
+
+- [x] 力度視覺化（NoteRenderer 音符透明度 0.4–1.0 對應 velocity）
+- [x] 逐步模式（StepMode 引擎：右鍵/延音踏板逐音推進，80ms 和弦窗口）
+- [x] 上下文感知練習建議（analyzeWeakSpots: 按小節密度分析 miss，建議 A-B 循環）
+- [x] 鍵盤快捷鍵可視化（KeyboardShortcutsHelp: KeyCap 視覺鍵帽 + TransportBar ShortcutBadge）
+
 ### Synthesia 對照表
 
 | 功能             | Synthesia | Rexiano Phase 6.5 後         | 超越？ |

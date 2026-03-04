@@ -53,7 +53,7 @@ describe("SongCard render", () => {
   test("calls onSelect with song ID when clicked", () => {
     const onSelect = vi.fn();
     render(<SongCard song={mockSong} onSelect={onSelect} colorIndex={0} />);
-    fireEvent.click(screen.getByRole("button"));
+    fireEvent.click(screen.getAllByRole("button")[0]);
     expect(onSelect).toHaveBeenCalledWith("test-song-1");
   });
 

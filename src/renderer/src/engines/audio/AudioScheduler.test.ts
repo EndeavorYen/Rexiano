@@ -54,6 +54,7 @@ interface MockAudioEngine {
   resume: Mock;
   suspend: Mock;
   setVolume: Mock;
+  setReleaseTime: Mock;
   playErrorTone: Mock;
   dispose: Mock;
   _setCurrentTime: (t: number) => void;
