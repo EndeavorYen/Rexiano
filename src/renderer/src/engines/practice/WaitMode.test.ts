@@ -251,6 +251,124 @@ describe("WaitMode", () => {
     expect(onWait).toHaveBeenCalledOnce();
   });
 
+  // ─── Chord grouping tests (80ms window) ───────────────────
+
+  it("groups notes within 80ms as a single chord event", () => {
+    // Notes at 1.0s, 1.05s, 1.06s should be one chord
+    const tracks: ParsedTrack[] = [
+      {
+        name: "RH",
+        instrument: "Piano",
+        channel: 0,
+        notes: [
+          { midi: 60, name: "C4", time: 1.0, duration: 0.5, velocity: 80 },
+          { midi: 64, name: "E4", time: 1.05, duration: 0.5, velocity: 80 },
+          { midi: 67, name: "G4", time: 1.06, duration: 0.5, velocity: 80 },
+        ],
+      },
+    ];
+
+    wm.init(tracks, new Set([0]));
+    wm.start();
+
+    // Tick at exactly the first note's time — all 3 should be grouped
+    wm.tick(1.0);
+    expect(wm.state).toBe("waiting");
+    expect(wm.targetNotes.has(60)).toBe(true);
+    expect(wm.targetNotes.has(64)).toBe(true);
+    expect(wm.targetNotes.has(67)).toBe(true);
+    expect(wm.targetNotes.size).toBe(3);
+  });
+
+  it("does NOT group notes beyond 80ms apart from the first", () => {
+    const tracks: ParsedTrack[] = [
+      {
+        name: "RH",
+        instrument: "Piano",
+        channel: 0,
+        notes: [
+          { midi: 60, name: "C4", time: 1.0, duration: 0.5, velocity: 80 },
+          { midi: 64, name: "E4", time: 1.1, duration: 0.5, velocity: 80 },
+        ],
+      },
+    ];
+
+    wm.init(tracks, new Set([0]));
+    wm.start();
+
+    // First note at 1.0, second at 1.1 (100ms gap > 80ms)
+    wm.tick(1.0);
+    expect(wm.state).toBe("waiting");
+    expect(wm.targetNotes.has(60)).toBe(true);
+    expect(wm.targetNotes.has(64)).toBe(false);
+    expect(wm.targetNotes.size).toBe(1);
+  });
+
+  it("groups chord notes across multiple active tracks", () => {
+    const tracks: ParsedTrack[] = [
+      {
+        name: "RH",
+        instrument: "Piano",
+        channel: 0,
+        notes: [
+          { midi: 60, name: "C4", time: 1.0, duration: 0.5, velocity: 80 },
+        ],
+      },
+      {
+        name: "LH",
+        instrument: "Piano",
+        channel: 1,
+        notes: [
+          { midi: 48, name: "C3", time: 1.04, duration: 0.5, velocity: 80 },
+        ],
+      },
+    ];
+
+    wm.init(tracks, new Set([0, 1]));
+    wm.start();
+
+    wm.tick(1.0);
+    expect(wm.state).toBe("waiting");
+    expect(wm.targetNotes.has(60)).toBe(true);
+    expect(wm.targetNotes.has(48)).toBe(true);
+    expect(wm.targetNotes.size).toBe(2);
+  });
+
+  // ─── Wait timeout tests (10s) ───────────────────
+
+  it("auto-misses after 10 seconds of waiting", () => {
+    const onMiss = vi.fn();
+    const onResume = vi.fn();
+    wm.setCallbacks({ onMiss, onResume });
+    wm.init(makeTracks([{ midi: 60, time: 1.0 }]), new Set([0]));
+    wm.start();
+
+    // Enter waiting state
+    wm.tick(1.0);
+    expect(wm.state).toBe("waiting");
+
+    // Tick again with time > 10s later — should auto-miss and resume
+    wm.tick(11.5);
+    expect(wm.state).toBe("playing");
+    expect(onMiss).toHaveBeenCalledWith(60, 1.0);
+    expect(onResume).toHaveBeenCalled();
+  });
+
+  it("does not timeout before 10 seconds", () => {
+    const onMiss = vi.fn();
+    wm.setCallbacks({ onMiss });
+    wm.init(makeTracks([{ midi: 60, time: 1.0 }]), new Set([0]));
+    wm.start();
+
+    wm.tick(1.0);
+    expect(wm.state).toBe("waiting");
+
+    // Only 5 seconds later — should still be waiting
+    wm.tick(6.0);
+    expect(wm.state).toBe("waiting");
+    expect(onMiss).not.toHaveBeenCalled();
+  });
+
   // ─── seekTo() tests ───────────────────
 
   it("seekTo() clears pending notes and rewinds cursors", () => {

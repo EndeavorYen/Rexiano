@@ -51,6 +51,13 @@ export class WaitMode {
   /** Structured info for currently pending notes (avoids string parsing) */
   private _pendingNoteDetails: PendingNoteInfo[] = [];
 
+  /** Max time (seconds) within which near-simultaneous notes are grouped as a chord */
+  private _chordWindowSec = 0.08; // 80ms
+  /** Max seconds to wait for user input before auto-missing */
+  private _maxWaitSec = 10;
+  /** Playback time when we entered the waiting state (for timeout detection) */
+  private _waitEnteredTime = 0;
+
   /**
    * @param toleranceMs Time window (±ms) around the hit line for accepting input.
    *                     Default ±200ms.
@@ -115,7 +122,17 @@ export class WaitMode {
    */
   tick(currentTime: number, latencyMs = 0): boolean {
     if (this._state === "idle") return true;
-    if (this._state === "waiting") return false;
+    if (this._state === "waiting") {
+      // Timeout: auto-miss all pending notes after _maxWaitSec
+      if (currentTime - this._waitEnteredTime > this._maxWaitSec) {
+        this._markPendingAs("miss");
+        this._targetNotes.clear();
+        this._state = "playing";
+        this._callbacks.onResume?.();
+        return true;
+      }
+      return false;
+    }
 
     // Shift the effective time backward so MIDI input arriving late still matches.
     const adjustedTime = currentTime - latencyMs / 1000;
@@ -166,10 +183,34 @@ export class WaitMode {
       this._trackCursors.set(trackIndex, cursor);
     }
 
-    // If there are pending notes, pause and wait for input
+    // If there are pending notes, apply chord grouping then pause
     if (pendingMidis.size > 0) {
-      this._targetNotes = new Set(pendingMidis);
+      // Find the earliest pending note time for the chord window
+      let earliestTime = Infinity;
+      for (const pn of this._pendingNoteDetails) {
+        if (pn.time < earliestTime) earliestTime = pn.time;
+      }
+
+      // Keep only notes within the chord window of the earliest note.
+      // Notes outside the window are reverted from "pending" to unjudged
+      // so they'll be picked up in a future tick.
+      const chordMidis = new Set<number>();
+      const chordDetails: PendingNoteInfo[] = [];
+      for (const pn of this._pendingNoteDetails) {
+        const key = `${pn.trackIndex}:${pn.noteIndex}`;
+        if (pn.time - earliestTime <= this._chordWindowSec) {
+          chordMidis.add(pn.midi);
+          chordDetails.push(pn);
+        } else {
+          // Revert — not part of this chord
+          this._noteResults.delete(key);
+        }
+      }
+      this._pendingNoteDetails = chordDetails;
+
+      this._targetNotes = new Set(chordMidis);
       this._state = "waiting";
+      this._waitEnteredTime = currentTime;
       this._callbacks.onWait?.();
       return false;
     }
@@ -201,13 +242,15 @@ export class WaitMode {
     return true;
   }
 
-  /** Mark all currently pending notes as hit or miss */
+  /** Mark all currently pending notes as hit or miss and fire callbacks */
   private _markPendingAs(result: NoteResult): void {
     for (const pn of this._pendingNoteDetails) {
       const key = `${pn.trackIndex}:${pn.noteIndex}`;
       this._noteResults.set(key, result);
       if (result === "hit") {
         this._callbacks.onHit?.(pn.midi, pn.time);
+      } else if (result === "miss") {
+        this._callbacks.onMiss?.(pn.midi, pn.time);
       }
     }
     this._pendingNoteDetails.length = 0;
