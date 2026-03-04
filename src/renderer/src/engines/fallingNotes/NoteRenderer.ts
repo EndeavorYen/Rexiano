@@ -17,6 +17,7 @@ import {
   FingeringEngine,
   type Finger,
 } from "@renderer/engines/practice/FingeringEngine";
+import { spellNote } from "../../utils/enharmonicSpelling";
 
 function noteKey(trackIdx: number, midi: number, time: number): string {
   // Convert time to microseconds integer to avoid float-to-string instability
@@ -40,28 +41,6 @@ const CIRCLED_DIGITS: Record<Finger, string> = {
   5: "\u2464",
 };
 
-/** Chromatic note names indexed by (midi % 12). */
-const NOTE_NAMES = [
-  "C",
-  "C#",
-  "D",
-  "D#",
-  "E",
-  "F",
-  "F#",
-  "G",
-  "G#",
-  "A",
-  "A#",
-  "B",
-] as const;
-
-/** Convert a MIDI note number to a short display name (e.g. "C4", "F#5"). */
-function midiToNoteName(midi: number): string {
-  const name = NOTE_NAMES[midi % 12];
-  const octave = Math.floor(midi / 12) - 1;
-  return `${name}${octave}`;
-}
 
 /**
  * Assign hand based on track convention for 2-track songs (track 0 = right,
@@ -147,6 +126,8 @@ export class NoteRenderer {
   private _spriteLabels = new Map<Sprite, Text>();
   /** Whether note labels on falling notes are enabled */
   public showNoteLabels = true;
+  /** Key signature (negative = flats, positive = sharps, 0 = C major) */
+  public keySig = 0;
 
   public activeNotes = new Set<number>();
 
@@ -267,7 +248,7 @@ export class NoteRenderer {
             label = this.allocateLabel();
             this._spriteLabels.set(sprite, label);
           }
-          label.text = midiToNoteName(note.midi);
+          label.text = spellNote(note.midi, this.keySig);
           label.x = kp.x + kp.width / 2;
           label.y = rectY + Math.max(h, 2) / 2;
           label.visible = true;

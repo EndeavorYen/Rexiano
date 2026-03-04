@@ -686,8 +686,9 @@ function App(): React.JSX.Element {
   useEffect(() => {
     if (noteRendererRef.current) {
       noteRendererRef.current.showNoteLabels = showFallingNoteLabels;
+      noteRendererRef.current.keySig = song?.keySignatures?.[0]?.key ?? 0;
     }
-  }, [showFallingNoteLabels, noteRendererRef]);
+  }, [showFallingNoteLabels, noteRendererRef, song]);
   // Wrap the practice lifecycle callback so we also sync settings on init.
   // The useEffect above won't re-fire when the ref is first assigned (ref
   // identity is stable), so we eagerly apply the setting here.
@@ -696,6 +697,8 @@ function App(): React.JSX.Element {
       handleNoteRendererReady(renderer);
       renderer.showNoteLabels =
         useSettingsStore.getState().showFallingNoteLabels;
+      renderer.keySig =
+        useSongStore.getState().song?.keySignatures?.[0]?.key ?? 0;
     },
     [handleNoteRendererReady],
   );
