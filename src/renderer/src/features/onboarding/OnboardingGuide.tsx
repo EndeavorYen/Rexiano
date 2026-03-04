@@ -1,4 +1,5 @@
 import { useState, useCallback } from "react";
+import { useTranslation } from "@renderer/i18n/useTranslation";
 
 const STORAGE_KEY = "rexiano-onboarding-completed";
 
@@ -8,39 +9,20 @@ interface OnboardingStep {
   icon: string;
 }
 
-const steps: OnboardingStep[] = [
-  {
-    title: "Open a Song",
-    description:
-      'Click the "Open MIDI File" button to load a song you want to practice.',
-    icon: "\uD83C\uDFB5",
-  },
-  {
-    title: "Play It Back",
-    description:
-      "Press Space to play and watch the notes fall down. Try to follow along!",
-    icon: "\u25B6\uFE0F",
-  },
-  {
-    title: "Choose How to Practice",
-    description:
-      'Pick "Watch" to just listen, "Wait" so it pauses for you, or "Free" to play along freely.',
-    icon: "\uD83C\uDFAF",
-  },
-  {
-    title: "Connect Your Keyboard",
-    description:
-      "Plug in a MIDI keyboard to play along for real. Or just watch and learn first!",
-    icon: "\uD83C\uDFB9",
-  },
-];
-
 /**
  * First-time onboarding overlay. Shows a sequence of 4 steps with
  * friendly child-appropriate text. Stored in localStorage so it
  * only shows once.
  */
 export function OnboardingGuide(): React.JSX.Element {
+  const { t } = useTranslation();
+
+  const steps: OnboardingStep[] = [
+    { title: t("onboarding.step1.title"), description: t("onboarding.step1.desc"), icon: "\uD83C\uDFB5" },
+    { title: t("onboarding.step2.title"), description: t("onboarding.step2.desc"), icon: "\u25B6\uFE0F" },
+    { title: t("onboarding.step3.title"), description: t("onboarding.step3.desc"), icon: "\uD83C\uDFAF" },
+    { title: t("onboarding.step4.title"), description: t("onboarding.step4.desc"), icon: "\uD83C\uDFB9" },
+  ];
   const [visible, setVisible] = useState(() => {
     try {
       return !localStorage.getItem(STORAGE_KEY);
@@ -89,7 +71,7 @@ export function OnboardingGuide(): React.JSX.Element {
           border: "1px solid var(--color-border)",
         }}
         role="dialog"
-        aria-label="Welcome guide"
+        aria-label={t("onboarding.ariaLabel")}
         data-testid="onboarding-card"
       >
         {/* Step indicator dots */}
@@ -149,7 +131,7 @@ export function OnboardingGuide(): React.JSX.Element {
             }}
             data-testid="onboarding-skip"
           >
-            Skip
+            {t("onboarding.skip")}
           </button>
           <button
             onClick={handleNext}
@@ -160,7 +142,7 @@ export function OnboardingGuide(): React.JSX.Element {
             }}
             data-testid="onboarding-next"
           >
-            {isLast ? "Get Started" : "Next"}
+            {isLast ? t("onboarding.getStarted") : t("onboarding.next")}
           </button>
         </div>
       </div>

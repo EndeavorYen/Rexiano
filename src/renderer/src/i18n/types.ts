@@ -277,6 +277,20 @@ export interface TranslationMap {
   "audio.recoveryFailed": string;
   "audio.retry": string;
 
+  // ── Onboarding ──────────────────────────────────────────────────
+  "onboarding.step1.title": string;
+  "onboarding.step1.desc": string;
+  "onboarding.step2.title": string;
+  "onboarding.step2.desc": string;
+  "onboarding.step3.title": string;
+  "onboarding.step3.desc": string;
+  "onboarding.step4.title": string;
+  "onboarding.step4.desc": string;
+  "onboarding.skip": string;
+  "onboarding.next": string;
+  "onboarding.getStarted": string;
+  "onboarding.ariaLabel": string;
+
   // ── General ────────────────────────────────────────────────────
   "general.loading": string;
   "general.error": string;
