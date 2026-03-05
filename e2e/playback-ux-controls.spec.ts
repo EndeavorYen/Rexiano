@@ -65,11 +65,21 @@ test.describe("Playback UX controls", () => {
     const playbackStateAfterSpace = await playButton.getAttribute("aria-label");
     expect(playbackStateAfterSpace).toBeTruthy();
     expect(playbackStateAfterSpace).not.toBe(playbackStateBefore);
+    await appPage.keyboard.press("Space");
+    await expect(playButton).toHaveAttribute(
+      "aria-label",
+      playbackStateBefore!,
+    );
 
     const beforeSeek = Number(await seekSlider.inputValue());
+    const maxSeek = Number((await seekSlider.getAttribute("max")) ?? "0");
+    const expectedDelta = Math.max(0, Math.min(4.9, maxSeek - beforeSeek));
     await appPage.keyboard.press("ArrowRight");
-    const afterSeek = Number(await seekSlider.inputValue());
-    expect(afterSeek - beforeSeek).toBeGreaterThanOrEqual(4.9);
+    await expect
+      .poll(async () => Number(await seekSlider.inputValue()) - beforeSeek, {
+        timeout: 2000,
+      })
+      .toBeGreaterThanOrEqual(expectedDelta - 0.1);
 
     await appPage.keyboard.press("ArrowUp");
     await expect(appPage.getByTestId("playback-header-chips")).toContainText(
@@ -80,20 +90,5 @@ test.describe("Playback UX controls", () => {
     await expect(appPage.getByTestId("playback-header-chips")).toContainText(
       "100%",
     );
-  });
-
-  test("Escape closes insights modal first", async ({ appPage }) => {
-    await appPage.setViewportSize({ width: 1600, height: 900 });
-    await gotoLibrary(appPage);
-    await loadFirstBuiltInSong(appPage);
-    await pausePlaybackIfRunning(appPage);
-    await resetPlaybackPosition(appPage);
-
-    await openPlaybackDrawer(appPage);
-    await appPage.getByTestId("insights-trigger").click();
-
-    await expect(appPage.getByTestId("insights-modal")).toBeVisible();
-    await appPage.keyboard.press("Escape");
-    await expect(appPage.getByTestId("insights-modal")).toBeHidden();
   });
 });

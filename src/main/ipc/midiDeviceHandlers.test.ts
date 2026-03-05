@@ -40,7 +40,6 @@ const mockSetBluetoothPairingHandler = vi.mocked(
 );
 
 describe("midiDeviceHandlers", () => {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let handlers: Record<string, (...args: any[]) => Promise<any>>;
 
   beforeEach(() => {
@@ -48,7 +47,6 @@ describe("midiDeviceHandlers", () => {
 
     handlers = {};
     vi.mocked(ipcMain.handle).mockImplementation(
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (channel: string, handler: (...args: any[]) => any) => {
         handlers[channel] = handler;
         return undefined as never;
@@ -68,8 +66,9 @@ describe("midiDeviceHandlers", () => {
   });
 
   test("permission handler approves midi permission", () => {
-    const handler = mockSetPermissionRequestHandler.mock
-      .calls[0]![0] as (...args: unknown[]) => unknown;
+    const handler = mockSetPermissionRequestHandler.mock.calls[0]![0] as (
+      ...args: unknown[]
+    ) => unknown;
     const callback = vi.fn();
 
     handler(null, "midi", callback);
@@ -78,8 +77,9 @@ describe("midiDeviceHandlers", () => {
   });
 
   test("permission handler approves midiSysex permission", () => {
-    const handler = mockSetPermissionRequestHandler.mock
-      .calls[0]![0] as (...args: unknown[]) => unknown;
+    const handler = mockSetPermissionRequestHandler.mock.calls[0]![0] as (
+      ...args: unknown[]
+    ) => unknown;
     const callback = vi.fn();
 
     handler(null, "midiSysex", callback);
@@ -88,8 +88,9 @@ describe("midiDeviceHandlers", () => {
   });
 
   test("permission handler approves bluetooth permission", () => {
-    const handler = mockSetPermissionRequestHandler.mock
-      .calls[0]![0] as (...args: unknown[]) => unknown;
+    const handler = mockSetPermissionRequestHandler.mock.calls[0]![0] as (
+      ...args: unknown[]
+    ) => unknown;
     const callback = vi.fn();
 
     handler(null, "bluetooth", callback);
@@ -98,8 +99,9 @@ describe("midiDeviceHandlers", () => {
   });
 
   test("permission handler denies unrelated permissions", () => {
-    const handler = mockSetPermissionRequestHandler.mock
-      .calls[0]![0] as (...args: unknown[]) => unknown;
+    const handler = mockSetPermissionRequestHandler.mock.calls[0]![0] as (
+      ...args: unknown[]
+    ) => unknown;
     const callback = vi.fn();
 
     handler(null, "camera", callback);
@@ -124,8 +126,9 @@ describe("midiDeviceHandlers", () => {
   });
 
   test("device permission handler allows bluetooth devices", () => {
-    const handler = mockSetDevicePermissionHandler.mock
-      .calls[0]![0] as (...args: unknown[]) => unknown;
+    const handler = mockSetDevicePermissionHandler.mock.calls[0]![0] as (
+      ...args: unknown[]
+    ) => unknown;
 
     const result = handler({ deviceType: "bluetooth" });
 
@@ -133,8 +136,9 @@ describe("midiDeviceHandlers", () => {
   });
 
   test("device permission handler denies non-bluetooth devices", () => {
-    const handler = mockSetDevicePermissionHandler.mock
-      .calls[0]![0] as (...args: unknown[]) => unknown;
+    const handler = mockSetDevicePermissionHandler.mock.calls[0]![0] as (
+      ...args: unknown[]
+    ) => unknown;
 
     expect(handler({ deviceType: "usb" })).toBe(false);
     expect(handler({ deviceType: "hid" })).toBe(false);
@@ -151,8 +155,9 @@ describe("midiDeviceHandlers", () => {
   });
 
   test("bluetooth pairing handler auto-confirms", () => {
-    const handler = mockSetBluetoothPairingHandler.mock
-      .calls[0]![0] as (...args: unknown[]) => unknown;
+    const handler = mockSetBluetoothPairingHandler.mock.calls[0]![0] as (
+      ...args: unknown[]
+    ) => unknown;
     const callback = vi.fn();
 
     handler({}, callback);

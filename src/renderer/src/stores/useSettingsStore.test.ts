@@ -24,7 +24,6 @@ describe("useSettingsStore", () => {
     vi.resetModules();
   });
 
-  // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
   async function getStore() {
     const mod = await import("./useSettingsStore");
     return mod.useSettingsStore;

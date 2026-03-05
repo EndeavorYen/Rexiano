@@ -26,11 +26,12 @@ describe("PracticeModeSelector render", () => {
     vi.clearAllMocks();
   });
 
-  test("renders all three mode buttons", () => {
+  test("renders all four mode buttons", () => {
     render(<PracticeModeSelector />);
     expect(screen.getByTestId("practice-mode-watch")).toBeDefined();
     expect(screen.getByTestId("practice-mode-wait")).toBeDefined();
     expect(screen.getByTestId("practice-mode-free")).toBeDefined();
+    expect(screen.getByTestId("practice-mode-step")).toBeDefined();
   });
 
   test("renders as a radiogroup", () => {
@@ -43,6 +44,7 @@ describe("PracticeModeSelector render", () => {
     expect(screen.getByText("practice.watch")).toBeDefined();
     expect(screen.getByText("practice.wait")).toBeDefined();
     expect(screen.getByText("practice.free")).toBeDefined();
+    expect(screen.getByText("practice.step")).toBeDefined();
   });
 
   test("clicking a mode calls setMode", () => {

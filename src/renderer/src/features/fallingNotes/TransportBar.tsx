@@ -25,7 +25,6 @@ import { DifficultyHeatmap } from "@renderer/features/practice/DifficultyHeatmap
 import { MetronomePulse } from "@renderer/features/metronome/MetronomePulse";
 import { useMetronomeBeat } from "@renderer/hooks/useMetronomeBeat";
 import { useTranslation } from "@renderer/i18n/useTranslation";
-import { ShortcutBadge } from "@renderer/features/settings/KeyboardShortcutsHelp";
 
 // eslint-disable-next-line react-refresh/only-export-components
 export function formatTime(seconds: number): string {
@@ -156,7 +155,6 @@ export function TransportBar({
                 />
               )}
             </button>
-            {!compact && <ShortcutBadge label="Space" />}
           </div>
 
           <button

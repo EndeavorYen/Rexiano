@@ -41,9 +41,7 @@ function difficultyLabelKey(
 export function DifficultyHeatmap(): React.JSX.Element | null {
   const { t } = useTranslation();
   const song = useSongStore((s) => s.song);
-  const getSegmentDifficulties = useSongStore(
-    (s) => s.getSegmentDifficulties,
-  );
+  const getSegmentDifficulties = useSongStore((s) => s.getSegmentDifficulties);
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
 
   const segments: SegmentDifficulty[] = useMemo(() => {

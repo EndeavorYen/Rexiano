@@ -89,8 +89,22 @@ describe("MidiFileParser — parseMidiFile", () => {
           channel: 0,
           instrument: { name: "Acoustic Grand Piano" },
           notes: [
-            { midi: 60, name: "C", octave: 4, time: 0, duration: 0.5, velocity: 0.8 },
-            { midi: 64, name: "E", octave: 4, time: 0.5, duration: 0.5, velocity: 0.6 },
+            {
+              midi: 60,
+              name: "C",
+              octave: 4,
+              time: 0,
+              duration: 0.5,
+              velocity: 0.8,
+            },
+            {
+              midi: 64,
+              name: "E",
+              octave: 4,
+              time: 0.5,
+              duration: 0.5,
+              velocity: 0.6,
+            },
           ],
         },
       ],
@@ -117,7 +131,14 @@ describe("MidiFileParser — parseMidiFile", () => {
           name: "Has Notes",
           channel: 1,
           notes: [
-            { midi: 60, name: "C", octave: 4, time: 0, duration: 1, velocity: 0.5 },
+            {
+              midi: 60,
+              name: "C",
+              octave: 4,
+              time: 0,
+              duration: 1,
+              velocity: 0.5,
+            },
           ],
         },
         { name: "Also Empty", channel: 2, notes: [] },
@@ -137,10 +158,38 @@ describe("MidiFileParser — parseMidiFile", () => {
           name: "Unsorted",
           channel: 0,
           notes: [
-            { midi: 72, name: "C", octave: 5, time: 1.0, duration: 0.5, velocity: 0.5 },
-            { midi: 60, name: "C", octave: 4, time: 0.0, duration: 0.5, velocity: 0.5 },
-            { midi: 67, name: "G", octave: 4, time: 0.0, duration: 0.5, velocity: 0.5 },
-            { midi: 64, name: "E", octave: 4, time: 0.0, duration: 0.5, velocity: 0.5 },
+            {
+              midi: 72,
+              name: "C",
+              octave: 5,
+              time: 1.0,
+              duration: 0.5,
+              velocity: 0.5,
+            },
+            {
+              midi: 60,
+              name: "C",
+              octave: 4,
+              time: 0.0,
+              duration: 0.5,
+              velocity: 0.5,
+            },
+            {
+              midi: 67,
+              name: "G",
+              octave: 4,
+              time: 0.0,
+              duration: 0.5,
+              velocity: 0.5,
+            },
+            {
+              midi: 64,
+              name: "E",
+              octave: 4,
+              time: 0.0,
+              duration: 0.5,
+              velocity: 0.5,
+            },
           ],
         },
       ],
@@ -162,7 +211,14 @@ describe("MidiFileParser — parseMidiFile", () => {
       tracks: [
         {
           notes: [
-            { midi: 60, name: "C", octave: 4, time: 0, duration: 1, velocity: 0.5 },
+            {
+              midi: 60,
+              name: "C",
+              octave: 4,
+              time: 0,
+              duration: 1,
+              velocity: 0.5,
+            },
           ],
         },
       ],
@@ -186,7 +242,14 @@ describe("MidiFileParser — parseMidiFile", () => {
       tracks: [
         {
           notes: [
-            { midi: 60, name: "C", octave: 4, time: 0, duration: 1, velocity: 0.5 },
+            {
+              midi: 60,
+              name: "C",
+              octave: 4,
+              time: 0,
+              duration: 1,
+              velocity: 0.5,
+            },
           ],
         },
       ],
@@ -216,8 +279,22 @@ describe("MidiFileParser — parseMidiFile", () => {
       tracks: [
         {
           notes: [
-            { midi: 60, name: "C", octave: 4, time: 0, duration: 0.5, velocity: 0.5 },
-            { midi: 64, name: "E", octave: 4, time: 2.0, duration: 1.5, velocity: 0.5 },
+            {
+              midi: 60,
+              name: "C",
+              octave: 4,
+              time: 0,
+              duration: 0.5,
+              velocity: 0.5,
+            },
+            {
+              midi: 64,
+              name: "E",
+              octave: 4,
+              time: 2.0,
+              duration: 1.5,
+              velocity: 0.5,
+            },
           ],
         },
       ],
@@ -250,7 +327,14 @@ describe("MidiFileParser — parseMidiFile", () => {
           name: "",
           channel: 3,
           notes: [
-            { midi: 60, name: "C", octave: 4, time: 0, duration: 1, velocity: 0.5 },
+            {
+              midi: 60,
+              name: "C",
+              octave: 4,
+              time: 0,
+              duration: 1,
+              velocity: 0.5,
+            },
           ],
         },
       ],
@@ -269,7 +353,14 @@ describe("MidiFileParser — parseMidiFile", () => {
           name: "Track",
           instrument: { name: "" },
           notes: [
-            { midi: 60, name: "C", octave: 4, time: 0, duration: 1, velocity: 0.5 },
+            {
+              midi: 60,
+              name: "C",
+              octave: 4,
+              time: 0,
+              duration: 1,
+              velocity: 0.5,
+            },
           ],
         },
       ],
@@ -285,9 +376,30 @@ describe("MidiFileParser — parseMidiFile", () => {
       tracks: [
         {
           notes: [
-            { midi: 60, name: "C", octave: 4, time: 0, duration: 1, velocity: 1.0 },
-            { midi: 62, name: "D", octave: 4, time: 1, duration: 1, velocity: 0.5 },
-            { midi: 64, name: "E", octave: 4, time: 2, duration: 1, velocity: 0.0 },
+            {
+              midi: 60,
+              name: "C",
+              octave: 4,
+              time: 0,
+              duration: 1,
+              velocity: 1.0,
+            },
+            {
+              midi: 62,
+              name: "D",
+              octave: 4,
+              time: 1,
+              duration: 1,
+              velocity: 0.5,
+            },
+            {
+              midi: 64,
+              name: "E",
+              octave: 4,
+              time: 2,
+              duration: 1,
+              velocity: 0.0,
+            },
           ],
         },
       ],
@@ -297,8 +409,8 @@ describe("MidiFileParser — parseMidiFile", () => {
     const notes = result.tracks[0].notes;
 
     expect(notes[0].velocity).toBe(127); // 1.0 * 127 = 127
-    expect(notes[1].velocity).toBe(64);  // 0.5 * 127 = 63.5 -> rounded to 64
-    expect(notes[2].velocity).toBe(0);   // 0.0 * 127 = 0
+    expect(notes[1].velocity).toBe(64); // 0.5 * 127 = 63.5 -> rounded to 64
+    expect(notes[2].velocity).toBe(0); // 0.0 * 127 = 0
   });
 
   it("concatenates note name and octave correctly", () => {
@@ -306,9 +418,30 @@ describe("MidiFileParser — parseMidiFile", () => {
       tracks: [
         {
           notes: [
-            { midi: 60, name: "C", octave: 4, time: 0, duration: 1, velocity: 0.5 },
-            { midi: 61, name: "C#", octave: 4, time: 1, duration: 1, velocity: 0.5 },
-            { midi: 69, name: "A", octave: 4, time: 2, duration: 1, velocity: 0.5 },
+            {
+              midi: 60,
+              name: "C",
+              octave: 4,
+              time: 0,
+              duration: 1,
+              velocity: 0.5,
+            },
+            {
+              midi: 61,
+              name: "C#",
+              octave: 4,
+              time: 1,
+              duration: 1,
+              velocity: 0.5,
+            },
+            {
+              midi: 69,
+              name: "A",
+              octave: 4,
+              time: 2,
+              duration: 1,
+              velocity: 0.5,
+            },
           ],
         },
       ],
@@ -329,15 +462,36 @@ describe("MidiFileParser — parseMidiFile", () => {
           name: "Right Hand",
           channel: 0,
           notes: [
-            { midi: 60, name: "C", octave: 4, time: 0, duration: 1, velocity: 0.5 },
-            { midi: 64, name: "E", octave: 4, time: 0, duration: 1, velocity: 0.5 },
+            {
+              midi: 60,
+              name: "C",
+              octave: 4,
+              time: 0,
+              duration: 1,
+              velocity: 0.5,
+            },
+            {
+              midi: 64,
+              name: "E",
+              octave: 4,
+              time: 0,
+              duration: 1,
+              velocity: 0.5,
+            },
           ],
         },
         {
           name: "Left Hand",
           channel: 1,
           notes: [
-            { midi: 48, name: "C", octave: 3, time: 0, duration: 2, velocity: 0.4 },
+            {
+              midi: 48,
+              name: "C",
+              octave: 3,
+              time: 0,
+              duration: 2,
+              velocity: 0.4,
+            },
           ],
         },
       ],
@@ -354,12 +508,26 @@ describe("MidiFileParser — parseMidiFile", () => {
       tracks: [
         {
           notes: [
-            { midi: 60, name: "C", octave: 4, time: 0, duration: 1, velocity: 0.5 },
+            {
+              midi: 60,
+              name: "C",
+              octave: 4,
+              time: 0,
+              duration: 1,
+              velocity: 0.5,
+            },
           ],
         },
         {
           notes: [
-            { midi: 48, name: "C", octave: 3, time: 5.0, duration: 2.0, velocity: 0.5 },
+            {
+              midi: 48,
+              name: "C",
+              octave: 3,
+              time: 5.0,
+              duration: 2.0,
+              velocity: 0.5,
+            },
           ],
         },
       ],
@@ -377,7 +545,14 @@ describe("MidiFileParser — parseMidiFile", () => {
       tracks: [
         {
           notes: [
-            { midi: 60, name: "C", octave: 4, time: 0, duration: 1, velocity: 0.5 },
+            {
+              midi: 60,
+              name: "C",
+              octave: 4,
+              time: 0,
+              duration: 1,
+              velocity: 0.5,
+            },
           ],
         },
       ],
@@ -396,7 +571,14 @@ describe("MidiFileParser — parseMidiFile", () => {
       tracks: [
         {
           notes: [
-            { midi: 60, name: "C", octave: 4, time: 0, duration: 1, velocity: 0.5 },
+            {
+              midi: 60,
+              name: "C",
+              octave: 4,
+              time: 0,
+              duration: 1,
+              velocity: 0.5,
+            },
           ],
         },
       ],
@@ -414,7 +596,14 @@ describe("MidiFileParser — parseMidiFile", () => {
         tracks: [
           {
             notes: [
-              { midi: 60, name: "C", octave: 4, time: 0, duration: 1, velocity: 0.5 },
+              {
+                midi: 60,
+                name: "C",
+                octave: 4,
+                time: 0,
+                duration: 1,
+                velocity: 0.5,
+              },
             ],
           },
         ],
@@ -430,7 +619,14 @@ describe("MidiFileParser — parseMidiFile", () => {
         tracks: [
           {
             notes: [
-              { midi: 60, name: "C", octave: 4, time: 0, duration: 1, velocity: 0.5 },
+              {
+                midi: 60,
+                name: "C",
+                octave: 4,
+                time: 0,
+                duration: 1,
+                velocity: 0.5,
+              },
             ],
           },
         ],
@@ -445,7 +641,14 @@ describe("MidiFileParser — parseMidiFile", () => {
         tracks: [
           {
             notes: [
-              { midi: 60, name: "C", octave: 4, time: 0, duration: 1, velocity: 0.5 },
+              {
+                midi: 60,
+                name: "C",
+                octave: 4,
+                time: 0,
+                duration: 1,
+                velocity: 0.5,
+              },
             ],
           },
         ],

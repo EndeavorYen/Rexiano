@@ -25,7 +25,6 @@ import { ipcMain, app } from "electron";
 import * as fs from "fs";
 
 describe("appInfoHandlers", () => {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let handlers: Record<string, (...args: any[]) => Promise<any>>;
 
   beforeEach(() => {
@@ -33,7 +32,6 @@ describe("appInfoHandlers", () => {
 
     handlers = {};
     vi.mocked(ipcMain.handle).mockImplementation(
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (channel: string, handler: (...args: any[]) => any) => {
         handlers[channel] = handler;
         return undefined as never;
@@ -92,7 +90,6 @@ describe("appInfoHandlers", () => {
     // Re-register so the handler captures updated mock
     handlers = {};
     vi.mocked(ipcMain.handle).mockImplementation(
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (channel: string, handler: (...args: any[]) => any) => {
         handlers[channel] = handler;
         return undefined as never;

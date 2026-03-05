@@ -22,7 +22,7 @@ describe("SpeedController", () => {
     // Target is set; tick to reach it immediately
     ctrl.tick(1000);
     ctrl.tick(1300);
-    expect(ctrl.multiplier).toBe(0.10);
+    expect(ctrl.multiplier).toBe(0.1);
   });
 
   it("clamps above maximum (2.0)", () => {
@@ -54,10 +54,10 @@ describe("SpeedController", () => {
   });
 
   it("handles boundary values", () => {
-    ctrl.setSpeed(0.10);
+    ctrl.setSpeed(0.1);
     ctrl.tick(0);
     ctrl.tick(300);
-    expect(ctrl.multiplier).toBe(0.10);
+    expect(ctrl.multiplier).toBe(0.1);
 
     ctrl.setSpeed(2.0);
     ctrl.tick(400);
@@ -89,15 +89,15 @@ describe("SpeedController", () => {
       ctrl.setSpeed(0.15);
       ctrl.tick(0);
       ctrl.tick(300);
-      const result = ctrl.bumpSpeed(-0.10);
-      expect(result).toBe(0.10);
+      const result = ctrl.bumpSpeed(-0.1);
+      expect(result).toBe(0.1);
     });
 
     it("clamps at MAX when bumping up", () => {
       ctrl.setSpeed(1.95);
       ctrl.tick(0);
       ctrl.tick(300);
-      const result = ctrl.bumpSpeed(0.10);
+      const result = ctrl.bumpSpeed(0.1);
       expect(result).toBe(2.0);
     });
   });

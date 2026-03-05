@@ -35,13 +35,11 @@ describe("useThemeStore", () => {
     vi.resetModules();
   });
 
-  // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
   async function getStore() {
     const mod = await import("./useThemeStore");
     return mod.useThemeStore;
   }
 
-  // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
   async function getThemes() {
     const mod = await import("@renderer/themes/tokens");
     return mod.themes;

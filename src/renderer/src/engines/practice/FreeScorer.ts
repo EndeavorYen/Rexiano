@@ -145,7 +145,8 @@ export class FreeScorer {
         if (note.time > currentTime + this._toleranceSec) break;
 
         // Before the hit window — skip
-        if (note.time < currentTime - this._toleranceSec - this._graceDelaySec) continue;
+        if (note.time < currentTime - this._toleranceSec - this._graceDelaySec)
+          continue;
 
         const key = `${trackIndex}:${ni}`;
         if (this._judged.has(key)) continue;

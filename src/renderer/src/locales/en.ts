@@ -11,7 +11,6 @@ export const en: TranslationMap = {
     "Invalid file type: {ext}. Only .mid and .midi files are accepted.",
   "app.failedParse": "Failed to parse MIDI file.",
   "app.failedRead": "Failed to read file.",
-  "app.insightsTitle": "Practice Insights",
   "app.startPractice": "Start Practicing",
   "app.openSettings": "Settings",
   "app.menuGreeting": "What shall we play today?",
@@ -103,14 +102,6 @@ export const en: TranslationMap = {
   "practice.wait": "Wait",
   "practice.free": "Free",
   "practice.speed": "Speed",
-  "practice.tracks": "Tracks",
-  "practice.trackN": "Track {n}",
-  "practice.notesCount": "{count} notes",
-  "practice.muteAll": "Mute All",
-  "practice.muteAllDisabledWait":
-    "At least one track must be active in Wait mode",
-  "practice.resetTracks": "Reset",
-  "practice.solo": "Solo",
   "practice.accuracy": "Acc",
   "practice.combo": "combo",
   "practice.abLoop": "A\u2013B Loop",
@@ -137,10 +128,7 @@ export const en: TranslationMap = {
   "practice.mode.freeDesc": "Play along freely",
   "practice.step": "Step",
   "practice.mode.stepDesc": "One note at a time",
-  "practice.autoSpeedUp": "Auto speed up",
   "practice.speedBumped": "Speed up! Now {speed}%",
-  "practice.handSeparation.hint":
-    "Great! Practice this hand alone first. When you're ready, add the other hand.",
   "practice.loop.byMeasure": "By measure",
   "practice.loop.measure": "Measure {n}",
 
@@ -154,9 +142,7 @@ export const en: TranslationMap = {
   "settings.tab.display": "Display",
   "settings.tab.audio": "Audio",
   "settings.tab.practice": "Practice",
-  "settings.tab.keys": "Keys",
   "settings.tab.lang": "Lang",
-  "settings.tab.about": "About",
   "about.version": "Version",
   "about.changelog": "What's New",
   "about.noChangelog": "No changelog available.",
@@ -191,21 +177,7 @@ export const en: TranslationMap = {
   "settings.latencyDesc": "Adjust timing offset for MIDI keyboard input",
   "settings.midiChannel": "MIDI Channel",
   "settings.midiChannelAll": "All Channels",
-  "settings.keyboardShortcuts": "Keyboard Shortcuts",
   "settings.langDesc": "Language changes apply immediately across the app.",
-  "settings.shortcut.playPause": "Play / Pause",
-  "settings.shortcut.restart": "Restart",
-  "settings.shortcut.speedDown": "Speed down",
-  "settings.shortcut.speedUp": "Speed up",
-  "settings.shortcut.loopA": "Set loop A point",
-  "settings.shortcut.loopB": "Set loop B point",
-  "settings.shortcut.closeBack": "Close / Back",
-  "settings.basicMode": "Basic",
-  "settings.advancedMode": "Advanced",
-  "settings.searchTabs": "Search tabs...",
-  "settings.searchTabsAria": "Search settings tabs",
-  "settings.noMatchingTab": "No matching tab",
-  "settings.common": "Common",
   "settings.compactKeyLabels": "Compact key labels",
   "settings.compactKeyLabelsDesc": "Show fewer key names on narrow keyboards",
   "settings.uiScale": "Display Size",
@@ -217,100 +189,15 @@ export const en: TranslationMap = {
   // ── Fingering ──────────────────────────────────────────────────
   "fingering.label": "Fingering",
 
-  // ── Insights Panel ─────────────────────────────────────────────
-  "insights.title": "Practice Insights",
-  "insights.weakSpots": "Weak Spots",
-  "insights.accuracyTrend": "Accuracy Trend",
-  "insights.totalMinutes": "Total practice time",
-  "insights.sessions": "Sessions",
-  "insights.bestAccuracy": "Best accuracy",
-  "insights.recentImprovement": "Recent improvement",
-  "insights.emptyTitle": "No practice data yet",
-  "insights.emptyMessage": "Start practicing to see your insights here!",
-  "insights.missRate": "{rate}% miss",
-  "insights.attempts": "{count}x",
-  "insights.practiceNumber": "Practice #",
-  "insights.accuracyPercent": "Accuracy %",
-  "insights.practiceTime": "Practice time",
-
-  // ── Celebration ────────────────────────────────────────────────
-  "celebration.amazing.title": "You're a star!",
-  "celebration.amazing.subtitle": "That was absolutely wonderful!",
-  "celebration.great.title": "Well done!",
-  "celebration.great.subtitle": "You're getting better every time!",
-  "celebration.encourage.title": "Great effort!",
-  "celebration.encourage.subtitle": "Every practice makes you stronger!",
-  "celebration.newRecord": "New Record!",
-  "celebration.playAgain": "Play Again!",
-  "celebration.oneMoreTime": "One More Time!",
-  "celebration.tryAgain": "Try Again!",
-  "celebration.pickSong": "Pick a Song",
-  "celebration.accuracy": "Accuracy",
-  "celebration.hits": "Hits",
-  "celebration.missed": "Missed",
-  "celebration.bestStreak": "Best Streak",
-  "celebration.starRating": "{filled} out of {total} stars",
-  "celebration.tapToContinue": "Tap anywhere to continue",
-
   // ── Sheet Music ────────────────────────────────────────────────
   "sheetMusic.loadSong": "Load a song to see sheet music",
   "sheetMusic.vexflowError": "Failed to load sheet music renderer",
   "sheetMusic.vexflowErrorHint": "Try reloading the application",
   "sheetMusic.modeFalling": "Notes",
   "sheetMusic.modeSheet": "Sheet",
-  "sheetMusic.modeSplit": "Both",
   "sheetMusic.displayMode": "Display mode",
   "sheetMusic.zoomIn": "Zoom in",
   "sheetMusic.zoomOut": "Zoom out",
-
-  // ── Mode Selection ─────────────────────────────────────────────
-  "modeSelect.title": "How do you want to play?",
-  "modeSelect.subtitle": "Choose your practice style",
-  "modeSelect.watchDesc": "Watch the notes fall and listen",
-  "modeSelect.waitDesc": "Music waits for you to play each note",
-  "modeSelect.freeDesc": "Play freely without guidance",
-  "modeSelect.escToSkip": "Press Esc to skip",
-  "modeSelect.mustChoose": "Choose a mode to start playing",
-
-  // ── Statistics ─────────────────────────────────────────────────
-  "stats.title": "Session Stats",
-  "stats.accuracy": "Accuracy",
-  "stats.notesHit": "Notes Hit",
-  "stats.notesMissed": "Missed",
-  "stats.streak": "Best run",
-  "stats.totalNotes": "Total Notes",
-  "stats.hitRate": "How many correct",
-  "stats.hitFraction": "{hit} out of {total} correct",
-  "stats.consistency": "How steady",
-  "stats.mode": "Mode",
-  "stats.speed": "Speed",
-  "stats.duration": "Duration",
-  "stats.nextFocus": "What to focus on next",
-  "stats.missRateSummary": "Hit {hit}% · Miss {miss}%",
-  "stats.reward": "Reward",
-  "stats.rewardLegend": "Legend Badge",
-  "stats.rewardGold": "Gold Badge",
-  "stats.rewardSilver": "Silver Badge",
-  "stats.rewardBronze": "Bronze Badge",
-  "stats.modeWait": "Wait",
-  "stats.modeFree": "Free",
-  "stats.modeWatch": "Watch",
-  "stats.modeStep": "Step",
-  "stats.weakSpotHint": "Try practicing measures {start}-{end} more",
-  "stats.tipSlowDown": "Drop to 0.75x or 0.5x and lock in clean notes first.",
-  "stats.tipUseWaitMode": "Switch to Wait mode to stabilize your accuracy.",
-  "stats.tipTrainStreak":
-    "Your streak is short. Loop one bar with A-B practice.",
-  "stats.tipRaiseSpeed":
-    "Great accuracy. Try increasing speed for the next run.",
-  "stats.tipKeepGoing":
-    "Solid progress. Keep short daily sessions for momentum.",
-  "stats.tipLoopFocus":
-    "Try focusing on difficult sections with A-B loop for 5 minutes.",
-  "stats.tipShortSession":
-    "Run one short 8-minute session today to build consistency.",
-  "stats.playAgain": "Play Again",
-  "stats.backToLibrary": "Back to Library",
 
   // ── Audio ──────────────────────────────────────────────────────
   "audio.mute": "Mute",
@@ -319,33 +206,6 @@ export const en: TranslationMap = {
   "audio.restored": "Audio Restored",
   "audio.recoveryFailed": "Audio recovery failed",
   "audio.retry": "Retry",
-
-  // ── Onboarding ──────────────────────────────────────────────────
-  "onboarding.step1.title": "Open a Song",
-  "onboarding.step1.desc":
-    'Click the "Open MIDI File" button to load a song you want to practice.',
-  "onboarding.step2.title": "Play It Back",
-  "onboarding.step2.desc":
-    "Press Space to play and watch the notes fall down. Try to follow along!",
-  "onboarding.step3.title": "Choose How to Practice",
-  "onboarding.step3.desc":
-    'Pick "Watch" to just listen, "Wait" so it pauses for you, or "Free" to play along freely.',
-  "onboarding.step4.title": "Connect Your Keyboard",
-  "onboarding.step4.desc":
-    "Plug in a MIDI keyboard to play along for real. Or just watch and learn first!",
-  "onboarding.skip": "Skip",
-  "onboarding.next": "Next",
-  "onboarding.getStarted": "Get Started",
-  "onboarding.ariaLabel": "Welcome guide",
-
-  // ── Count-in ─────────────────────────────────────────────────
-  "countIn.go": "Go!",
-
-  // ── Song Library Tags ─────────────────────────────────────────
-  "library.filterByTag": "Filtered by tag",
-  "library.clearTagFilter": "Clear",
-  "library.demo": "Demo",
-  "library.demoTitle": "Play demo in Watch mode",
 
   // ── Progress / Daily Goal ───────────────────────────────────
   "progress.dailyGoal": "Daily Goal",
@@ -361,16 +221,7 @@ export const en: TranslationMap = {
   "heatmap.hard": "Hard",
   "heatmap.veryHard": "Very Hard",
 
-  // ── Help / Shortcuts ─────────────────────────────────────────
-  "help.seekShort": "Seek \u00B15s",
-  "help.seekLong": "Seek \u00B115s",
-  "help.openFile": "Open file",
-  "help.toggleHelp": "Toggle this help",
-  "help.closeHint": "Press {key1} or {key2} to close",
-
   // ── Song Card ───────────────────────────────────────────────
-  "songCard.stopPreview": "Stop preview",
-  "songCard.previewSong": "Preview song",
   "songCard.practiced": "Practiced",
   "songCard.bestScore": "Best: {score}%",
   "songCard.difficulty": "Difficulty: {level} — {desc}",

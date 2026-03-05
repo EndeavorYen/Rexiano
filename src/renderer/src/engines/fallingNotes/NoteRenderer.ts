@@ -47,7 +47,6 @@ const CIRCLED_DIGITS: Record<Finger, string> = {
   5: "\u2464",
 };
 
-
 /**
  * Assign hand based on track convention for 2-track songs (track 0 = right,
  * track 1 = left). Falls back to average MIDI pitch heuristic otherwise.
@@ -655,9 +654,8 @@ export class NoteRenderer {
       const t = Math.min((now - start) / duration, 1);
 
       // Ease in-out: brighten to 30% white then back
-      const brightness = t < 0.4
-        ? (t / 0.4) * 0.3
-        : 0.3 * (1 - (t - 0.4) / 0.6);
+      const brightness =
+        t < 0.4 ? (t / 0.4) * 0.3 : 0.3 * (1 - (t - 0.4) / 0.6);
       sprite.tint = lerpColor(originalTint, 0xffffff, brightness);
 
       if (t < 1) {
@@ -786,7 +784,8 @@ export class NoteRenderer {
       } else if (t < 0.5) {
         const p = (t - 0.2) / 0.3;
         sprite.tint = lerpColor(0xffffff, accentColor, p * 0.7);
-        sprite.alpha = originalAlpha + (1 - originalAlpha) * 0.6 * (1 - p * 0.3);
+        sprite.alpha =
+          originalAlpha + (1 - originalAlpha) * 0.6 * (1 - p * 0.3);
       } else {
         const p = (t - 0.5) / 0.5;
         const easeOut = p * (2 - p); // ease-out quad
@@ -795,7 +794,8 @@ export class NoteRenderer {
           originalTint,
           easeOut,
         );
-        sprite.alpha = originalAlpha + (1 - originalAlpha) * 0.42 * (1 - easeOut);
+        sprite.alpha =
+          originalAlpha + (1 - originalAlpha) * 0.42 * (1 - easeOut);
       }
 
       if (t < 1) {

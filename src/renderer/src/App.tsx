@@ -1,13 +1,9 @@
 import { useState, useCallback, useRef, useEffect, useMemo } from "react";
-import { ArrowLeft, BarChart3, PanelRightOpen, X } from "lucide-react";
+import { ArrowLeft, PanelRightOpen, X } from "lucide-react";
 import { parseMidiFile } from "./engines/midi/MidiFileParser";
 import { useSongStore } from "./stores/useSongStore";
 import { usePlaybackStore } from "./stores/usePlaybackStore";
-import {
-  useProgressStore,
-  initAutoSave,
-  deriveSongId,
-} from "./stores/useProgressStore";
+import { useProgressStore, initAutoSave } from "./stores/useProgressStore";
 import { useSettingsStore } from "./stores/useSettingsStore";
 import {
   initMetronome,
@@ -29,9 +25,6 @@ import { TransportBar } from "./features/fallingNotes/TransportBar";
 import { SettingsPanel } from "./features/settings/SettingsPanel";
 import { SongLibrary } from "./features/songLibrary/SongLibrary";
 import { DeviceSelector } from "./features/midiDevice/DeviceSelector";
-import { InsightsPanel } from "./features/insights/InsightsPanel";
-import { WeakSpotAnalyzer } from "./features/insights/WeakSpotAnalyzer";
-import type { SessionSummary } from "./features/insights/WeakSpotAnalyzer";
 import {
   useMidiDeviceStore,
   setMidiCCHandler,
@@ -46,14 +39,6 @@ import { DisplayModeToggle } from "./features/sheetMusic/DisplayModeToggle";
 import { convertToNotation } from "./features/sheetMusic/MidiToNotation";
 import { usePracticeStore } from "./stores/usePracticeStore";
 import { MainMenu } from "./features/mainMenu/MainMenu";
-import { ModeSelectionModal } from "./features/practice/ModeSelectionModal";
-import { CelebrationOverlay } from "./features/practice/CelebrationOverlay";
-import { CountInOverlay } from "./features/practice/CountInOverlay";
-import { StatisticsPage } from "./features/statistics/StatisticsPage";
-import { getPracticeEngines } from "./engines/practice/practiceManager";
-import { OnboardingGuide } from "./features/onboarding/OnboardingGuide";
-import { KeyboardShortcutsHelp } from "./features/settings/KeyboardShortcutsHelp";
-import type { PracticeMode } from "@shared/types";
 import {
   parseRouteHash,
   resolveRoute,
@@ -63,19 +48,6 @@ import {
 
 /** Accepted file extensions for drag-and-drop MIDI import */
 const MIDI_EXTENSIONS = [".mid", ".midi"];
-const CELEBRATION_DURATION_MS = 5000;
-const SPLIT_SHEET_MAX = 272;
-const SPLIT_SHEET_RATIO = 0.31;
-const SPLIT_FALLING_MIN = 72;
-const SPLIT_SHEET_FLOOR = 112;
-const FALLING_CANVAS_MIN_FLOOR = 96;
-const FALLING_CANVAS_TARGET_RATIO = 0.58;
-
-function clampNumber(value: number, min: number, max: number): number {
-  return Math.min(max, Math.max(min, value));
-}
-
-const analyzer = new WeakSpotAnalyzer();
 
 function App(): React.JSX.Element {
   const { t } = useTranslation();
@@ -128,181 +100,31 @@ function App(): React.JSX.Element {
 
   // ─── UI scale: sync data attribute to <html> ─────────
   const uiScale = useSettingsStore((s) => s.uiScale);
-  const countInBeats = useSettingsStore((s) => s.countInBeats);
+  const isProgressLoaded = useProgressStore((s) => s.isLoaded);
+  const loadProgressSessions = useProgressStore((s) => s.loadSessions);
   useEffect(() => {
     document.documentElement.setAttribute("data-ui-scale", uiScale);
   }, [uiScale]);
 
-  // ─── Mode selection + count-in + celebration + stats flow ────────
-  const [showModeModal, setShowModeModal] = useState(false);
-  const [countInActive, setCountInActive] = useState(false);
-  const [showCelebration, setShowCelebration] = useState(false);
-  const [showStats, setShowStats] = useState(false);
-  const mode = usePracticeStore((s) => s.mode);
+  useEffect(() => {
+    if (isProgressLoaded) return;
+    void loadProgressSessions();
+  }, [isProgressLoaded, loadProgressSessions]);
+
+  // Core playback stats
   const speed = usePracticeStore((s) => s.speed);
-  const score = usePracticeStore((s) => s.score);
-
-  // Track wall-clock session start for accurate durationSeconds in stats
-  const sessionStartRef = useRef<number>(Date.now());
-
-  // Show mode selection when a new song loads (subscribe pattern avoids
-  // calling setState directly in an effect body).
+  // Close drawer with Escape.
   useEffect(() => {
-    return useSongStore.subscribe((state, prev) => {
-      if (state.song !== prev.song && state.song) {
-        sessionStartRef.current = Date.now();
-        setShowModeModal(true);
-        setShowCelebration(false);
-        setShowStats(false);
-      }
-    });
-  }, []);
-
-  // Detect song end: isPlaying transitions true → false when near end of song.
-  useEffect(() => {
-    return usePlaybackStore.subscribe((state, prev) => {
-      if (prev.isPlaying && !state.isPlaying) {
-        const currentSong = useSongStore.getState().song;
-        const currentScore = usePracticeStore.getState().score;
-        if (
-          currentSong &&
-          currentScore.totalNotes > 0 &&
-          state.currentTime >= currentSong.duration - 0.3
-        ) {
-          setShowCelebration(true);
-          setShowStats(false);
-        }
-      }
-    });
-  }, []);
-
-  // End flow: celebration is shown first, then automatically transition to stats.
-  useEffect(() => {
-    if (!showCelebration) return;
-    const timer = setTimeout(() => {
-      setShowCelebration(false);
-      setShowStats(true);
-    }, CELEBRATION_DURATION_MS);
-    return () => clearTimeout(timer);
-  }, [showCelebration]);
-
-  const modeSelectTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const clearModeSelectTimer = useCallback((): void => {
-    if (!modeSelectTimerRef.current) return;
-    clearTimeout(modeSelectTimerRef.current);
-    modeSelectTimerRef.current = null;
-  }, []);
-
-  useEffect(() => {
-    return () => {
-      clearModeSelectTimer();
-    };
-  }, [clearModeSelectTimer]);
-
-  useEffect(() => {
-    if (view === "playback" && song) return;
-    clearModeSelectTimer();
-    setCountInActive(false);
-  }, [view, song, clearModeSelectTimer]);
-
-  const handleModeSelect = useCallback(
-    (mode: PracticeMode) => {
-      usePracticeStore.getState().setMode(mode);
-      setShowModeModal(false);
-      clearModeSelectTimer();
-      const beats = useSettingsStore.getState().countInBeats;
-      if (beats > 0) {
-        // Show count-in overlay; playback starts when it completes
-        modeSelectTimerRef.current = setTimeout(() => {
-          setCountInActive(true);
-        }, 150);
-      } else {
-        modeSelectTimerRef.current = setTimeout(() => {
-          usePlaybackStore.getState().setPlaying(true);
-        }, 150);
-      }
-    },
-    [clearModeSelectTimer],
-  );
-
-  const handleCountInComplete = useCallback(() => {
-    setCountInActive(false);
-    usePlaybackStore.getState().setPlaying(true);
-  }, []);
-
-  const handlePracticeAgain = useCallback(() => {
-    clearModeSelectTimer();
-    setCountInActive(false);
-    setShowCelebration(false);
-    setShowStats(false);
-    usePlaybackStore.getState().reset();
-    usePracticeStore.getState().resetScore();
-    usePracticeStore.getState().setLoopRange(null);
-    // Reset WaitMode so notes are re-judged from scratch
-    const { waitMode } = getPracticeEngines();
-    waitMode?.reset();
-    // Re-show mode selection so the player can pick Watch/Wait/Free again
-    setShowModeModal(true);
-    sessionStartRef.current = Date.now();
-  }, [clearModeSelectTimer]);
-
-  const handleChooseSong = useCallback(() => {
-    clearModeSelectTimer();
-    setCountInActive(false);
-    setShowCelebration(false);
-    setShowStats(false);
-    useSongStore.getState().clearSong();
-    usePlaybackStore.getState().reset();
-    applyRoute("menu");
-  }, [applyRoute, clearModeSelectTimer]);
-  // ─── End mode/celebration/stats flow ──────────────────
-
-  // ─── Phase 6.5 Sprint 5: Insights Panel ──────────────
-  const [showInsights, setShowInsights] = useState(false);
-  const sessions = useProgressStore((s) => s.sessions);
-  const songId = song ? deriveSongId(song) : "";
-
-  const insight = useMemo(() => {
-    if (!songId || sessions.length === 0) return null;
-    const summaries: SessionSummary[] = sessions
-      .filter((s) => s.songId === songId)
-      .map((s) => ({
-        songId: s.songId,
-        accuracy: s.score.accuracy,
-        durationMinutes: s.durationSeconds / 60,
-        timestamp: s.timestamp,
-        noteResults: new Map(),
-      }));
-    return analyzer.analyze(songId, summaries);
-  }, [songId, sessions]);
-
-  // Close lightweight overlays with Escape without interrupting active flows
-  // like mode selection / celebration / statistics.
-  useEffect(() => {
-    if (!showPlaybackDrawer && !showInsights) return;
+    if (!showPlaybackDrawer) return;
     const onKeyDown = (event: KeyboardEvent): void => {
       if (event.key !== "Escape") return;
       if (event.defaultPrevented) return;
-      if (showModeModal || showCelebration || showStats) return;
-      if (showInsights) {
-        event.preventDefault();
-        setShowInsights(false);
-        return;
-      }
-      if (showPlaybackDrawer) {
-        event.preventDefault();
-        setShowPlaybackDrawer(false);
-      }
+      event.preventDefault();
+      setShowPlaybackDrawer(false);
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [
-    showPlaybackDrawer,
-    showInsights,
-    showModeModal,
-    showCelebration,
-    showStats,
-  ]);
+  }, [showPlaybackDrawer]);
 
   // ─── Phase 7: Sheet Music ──────────────────────────────
   const displayMode = usePracticeStore((s) => s.displayMode);
@@ -340,30 +162,10 @@ function App(): React.JSX.Element {
 
   const [activeNotes, setActiveNotes] = useState<Set<number>>(new Set());
   const midiActiveNotes = useMidiDeviceStore((s) => s.activeNotes);
-  const [splitFocusPanel, setSplitFocusPanel] = useState<"sheet" | "falling">(
-    "sheet",
-  );
-  const workspaceFrameRef = useRef<HTMLDivElement | null>(null);
-  const [workspaceHeight, setWorkspaceHeight] = useState(360);
 
   const handleActiveNotesChange = useCallback((notes: Set<number>) => {
     setActiveNotes(notes);
   }, []);
-
-  useEffect(() => {
-    const node = workspaceFrameRef.current;
-    if (!node) return;
-    const updateHeight = (): void => {
-      setWorkspaceHeight(node.getBoundingClientRect().height);
-    };
-    updateHeight();
-    if (typeof ResizeObserver === "undefined") return;
-    const observer = new ResizeObserver(() => {
-      updateHeight();
-    });
-    observer.observe(node);
-    return () => observer.disconnect();
-  }, [song, view]);
 
   // ─── Phase 4: Audio Engine lifecycle ─────────────────
   const audioRef = useRef<{
@@ -696,7 +498,6 @@ function App(): React.JSX.Element {
         deviceChangeDebounceRef.current = null;
       }
       if (dragErrorTimerRef.current) clearTimeout(dragErrorTimerRef.current);
-      if (modeSelectTimerRef.current) clearTimeout(modeSelectTimerRef.current);
       disposeMetronome();
       triggerRecoveryRef.current = () => {};
     };
@@ -957,51 +758,14 @@ function App(): React.JSX.Element {
   // ─── End Phase 6.5 ─────────────────────────────────────
 
   const handleExitPlayback = useCallback(() => {
-    clearModeSelectTimer();
-    setCountInActive(false);
     useSongStore.getState().clearSong();
     usePlaybackStore.getState().reset();
     applyRoute("menu");
-  }, [applyRoute, clearModeSelectTimer]);
+  }, [applyRoute]);
 
-  const isSplitMode = displayMode === "split";
-  const splitFocus = isSplitMode ? splitFocusPanel : "sheet";
   const keyboardHeightMap = { normal: 100, large: 130, xlarge: 160 } as const;
-  const splitKeyboardHeightMap = {
-    normal: 84,
-    large: 110,
-    xlarge: 140,
-  } as const;
-  const keyboardHeight = isSplitMode
-    ? splitKeyboardHeightMap[uiScale]
-    : keyboardHeightMap[uiScale];
-  const normalizedWorkspaceHeight = Math.max(220, workspaceHeight);
-  const maxSheetHeight = Math.max(
-    SPLIT_SHEET_FLOOR,
-    normalizedWorkspaceHeight - SPLIT_FALLING_MIN,
-  );
-  const splitSheetHeight = isSplitMode
-    ? Math.round(
-        clampNumber(
-          normalizedWorkspaceHeight * SPLIT_SHEET_RATIO,
-          SPLIT_SHEET_FLOOR,
-          Math.min(SPLIT_SHEET_MAX, maxSheetHeight),
-        ),
-      )
-    : undefined;
-  const splitFallingAvailableHeight =
-    isSplitMode && splitSheetHeight !== undefined
-      ? Math.max(0, normalizedWorkspaceHeight - splitSheetHeight)
-      : 0;
-  const desiredSplitFallingHeight = Math.round(
-    normalizedWorkspaceHeight * FALLING_CANVAS_TARGET_RATIO,
-  );
-  const fallingCanvasMinHeight = isSplitMode
-    ? Math.max(
-        Math.min(splitFallingAvailableHeight, desiredSplitFallingHeight),
-        Math.min(FALLING_CANVAS_MIN_FLOOR, splitFallingAvailableHeight),
-      )
-    : 200;
+  const keyboardHeight = keyboardHeightMap[uiScale];
+  const fallingCanvasMinHeight = 200;
   const speedPercent = Math.round(speed * 100);
   const rawBaseBpm =
     song?.tempos && song.tempos.length > 0 ? song.tempos[0].bpm : null;
@@ -1040,8 +804,6 @@ function App(): React.JSX.Element {
       onDrop={handleDrop}
     >
       {showSceneCurtain && <div className="scene-curtain" />}
-      <OnboardingGuide />
-      <KeyboardShortcutsHelp />
 
       {/* Drag-and-drop overlay */}
       {isDragging && (
@@ -1124,9 +886,7 @@ function App(): React.JSX.Element {
           data-testid="playback-view"
         >
           <div
-            className={`surface-panel subtle-shadow ${
-              isSplitMode ? "px-2 py-1.5 mb-1.5" : "px-2.5 py-2 mb-2"
-            }`}
+            className="surface-panel subtle-shadow px-2.5 py-2 mb-2"
             style={{
               borderRadius: "1.1rem",
             }}
@@ -1229,22 +989,7 @@ function App(): React.JSX.Element {
                   <section className="app-side-section">
                     <DeviceSelector />
                   </section>
-                  <section className="app-side-section flex items-center gap-2">
-                    <button
-                      onClick={() => {
-                        setShowPlaybackDrawer(false);
-                        setShowInsights(true);
-                      }}
-                      className="btn-surface-themed w-8 h-8 flex items-center justify-center rounded-full cursor-pointer"
-                      title={t("app.insightsTitle")}
-                      aria-label={t("app.insightsTitle")}
-                      data-testid="insights-trigger"
-                    >
-                      <BarChart3
-                        size={16}
-                        style={{ color: "var(--color-text)" }}
-                      />
-                    </button>
+                  <section className="app-side-section">
                     <SettingsPanel />
                   </section>
                 </div>
@@ -1254,31 +999,14 @@ function App(): React.JSX.Element {
 
           {/* Main display area: sheet music / falling notes / both */}
           <div
-            ref={workspaceFrameRef}
             className={`workspace-frame ${isPlaying ? "workspace-frame-live" : ""} flex-1 relative flex flex-col min-h-0 surface-panel overflow-hidden`}
           >
-            {/* Sheet music panel (shown in split & sheet modes) */}
+            {/* Sheet music panel */}
             <div
               className="relative"
-              style={
-                isSplitMode
-                  ? {
-                      borderLeft:
-                        splitFocus === "sheet"
-                          ? "2px solid var(--color-accent)"
-                          : "2px solid var(--color-border)",
-                      transition: "border-color 160ms ease",
-                    }
-                  : undefined
-              }
-              onMouseEnter={() => isSplitMode && setSplitFocusPanel("sheet")}
-              data-testid="split-sheet-region"
+              style={{ display: displayMode === "falling" ? "none" : "block" }}
             >
-              <SheetMusicPanel
-                notationData={notationData}
-                mode={displayMode}
-                height={splitSheetHeight}
-              />
+              <SheetMusicPanel notationData={notationData} mode={displayMode} />
             </div>
 
             {/* Falling notes canvas — always mounted so PixiJS ticker keeps
@@ -1288,15 +1016,7 @@ function App(): React.JSX.Element {
               className="flex-1 min-h-0 relative flex flex-col"
               style={{
                 display: displayMode === "sheet" ? "none" : "flex",
-                borderLeft:
-                  isSplitMode && splitFocus === "falling"
-                    ? "2px solid var(--color-accent)"
-                    : isSplitMode
-                      ? "2px solid var(--color-border)"
-                      : undefined,
-                transition: isSplitMode ? "border-color 160ms ease" : undefined,
               }}
-              onMouseEnter={() => isSplitMode && setSplitFocusPanel("falling")}
             >
               <FallingNotesCanvas
                 onActiveNotesChange={handleActiveNotesChange}
@@ -1308,39 +1028,11 @@ function App(): React.JSX.Element {
             <ScoreOverlay />
           </div>
 
-          {/* Insights modal */}
-          {showInsights && (
-            <div
-              className="fixed inset-0 z-[100] flex items-center justify-center modal-backdrop-cinematic"
-              onClick={() => setShowInsights(false)}
-              data-testid="insights-modal-backdrop"
-            >
-              <div
-                className="w-[92vw] max-w-[460px] max-h-[85vh] overflow-y-auto modal-card-cinematic subtle-shadow-md"
-                onClick={(e) => e.stopPropagation()}
-                role="dialog"
-                aria-modal="true"
-                aria-label={t("app.insightsTitle")}
-                data-testid="insights-modal"
-              >
-                <InsightsPanel
-                  insight={insight}
-                  onClose={() => setShowInsights(false)}
-                />
-              </div>
-            </div>
-          )}
-
           {/* Transport bar */}
-          <TransportBar compact={isSplitMode} />
+          <TransportBar />
 
           {/* Practice toolbar */}
-          <PracticeToolbar
-            key={
-              isSplitMode ? "practice-toolbar-compact" : "practice-toolbar-full"
-            }
-            compact={isSplitMode}
-          />
+          <PracticeToolbar />
 
           {/* Piano keyboard */}
           <PianoKeyboard
@@ -1350,57 +1042,6 @@ function App(): React.JSX.Element {
             showLabels={showNoteLabels}
             compactLabels={compactKeyLabels}
           />
-
-          {/* Count-in overlay (shown before playback starts) */}
-          <CountInOverlay
-            visible={countInActive}
-            bpm={rawEffectiveBpm ?? 120}
-            countInBeats={countInBeats}
-            onComplete={handleCountInComplete}
-          />
-
-          {/* Mode selection modal (shown when a song first loads) */}
-          {showModeModal && (
-            <ModeSelectionModal
-              onSelect={handleModeSelect}
-              onClose={() => setShowModeModal(false)}
-            />
-          )}
-
-          {/* Celebration overlay (shown when song ends).
-              "Pick Song" leads to StatisticsPage instead of directly back. */}
-          {showCelebration && (
-            <CelebrationOverlay
-              score={score}
-              visible={showCelebration}
-              onPracticeAgain={handlePracticeAgain}
-              onChooseSong={() => {
-                setShowCelebration(false);
-                setShowStats(true);
-              }}
-              onDismiss={() => {
-                setShowCelebration(false);
-                setShowStats(true);
-              }}
-              songId={songId}
-              mode={mode}
-            />
-          )}
-
-          {/* Statistics page (shown after celebration) */}
-          {showStats && (
-            <StatisticsPage
-              score={score}
-              songName={song?.fileName ?? ""}
-              mode={mode}
-              speed={speed}
-              durationSeconds={Math.round(
-                (Date.now() - sessionStartRef.current) / 1000,
-              )}
-              onPlayAgain={handlePracticeAgain}
-              onChooseSong={handleChooseSong}
-            />
-          )}
         </div>
       )}
     </div>

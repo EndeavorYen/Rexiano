@@ -347,7 +347,9 @@ describe("BleMidiManager", () => {
       try {
         // @ts-expect-error — cleanup test mock
         delete navigator.bluetooth;
-      } catch { /* already cleaned up */ }
+      } catch {
+        /* already cleaned up */
+      }
     });
 
     it("resets status to idle after disconnect", () => {
@@ -383,7 +385,12 @@ describe("BleMidiManager", () => {
       const mockGattDisconnect = vi.fn();
       const mockDevice = {
         name: "Test Piano",
-        gatt: { ...mockServer, connect: mockServer.connect, disconnect: mockGattDisconnect, connected: true },
+        gatt: {
+          ...mockServer,
+          connect: mockServer.connect,
+          disconnect: mockGattDisconnect,
+          connected: true,
+        },
         addEventListener: vi.fn(),
         removeEventListener: vi.fn(),
       };
@@ -453,7 +460,11 @@ describe("BleMidiManager", () => {
       };
       const mockDevice = {
         name: "Roland FP-30X",
-        gatt: { connect: vi.fn().mockResolvedValue(mockServer), connected: false, disconnect: vi.fn() },
+        gatt: {
+          connect: vi.fn().mockResolvedValue(mockServer),
+          connected: false,
+          disconnect: vi.fn(),
+        },
         addEventListener: vi.fn(),
         removeEventListener: vi.fn(),
       };
@@ -492,9 +503,11 @@ describe("BleMidiManager", () => {
     it("handles user cancellation (cancelled → idle status)", async () => {
       Object.defineProperty(navigator, "bluetooth", {
         value: {
-          requestDevice: vi.fn().mockRejectedValue(
-            new Error("User cancelled the requestDevice() chooser"),
-          ),
+          requestDevice: vi
+            .fn()
+            .mockRejectedValue(
+              new Error("User cancelled the requestDevice() chooser"),
+            ),
         },
         configurable: true,
       });
@@ -508,9 +521,9 @@ describe("BleMidiManager", () => {
     it("handles user cancellation with 'canceled' spelling", async () => {
       Object.defineProperty(navigator, "bluetooth", {
         value: {
-          requestDevice: vi.fn().mockRejectedValue(
-            new Error("User canceled the request"),
-          ),
+          requestDevice: vi
+            .fn()
+            .mockRejectedValue(new Error("User canceled the request")),
         },
         configurable: true,
       });
@@ -524,9 +537,9 @@ describe("BleMidiManager", () => {
     it("handles connection failure (non-cancel error → error status)", async () => {
       Object.defineProperty(navigator, "bluetooth", {
         value: {
-          requestDevice: vi.fn().mockRejectedValue(
-            new Error("GATT connection timeout"),
-          ),
+          requestDevice: vi
+            .fn()
+            .mockRejectedValue(new Error("GATT connection timeout")),
         },
         configurable: true,
       });
@@ -565,7 +578,11 @@ describe("BleMidiManager", () => {
       };
       const mockDevice = {
         name: "Test Piano",
-        gatt: { connect: vi.fn().mockResolvedValue(mockServer), connected: false, disconnect: vi.fn() },
+        gatt: {
+          connect: vi.fn().mockResolvedValue(mockServer),
+          connected: false,
+          disconnect: vi.fn(),
+        },
         addEventListener: vi.fn(),
         removeEventListener: vi.fn(),
       };
@@ -598,7 +615,9 @@ describe("BleMidiManager", () => {
       try {
         // @ts-expect-error — cleanup test mock
         delete navigator.bluetooth;
-      } catch { /* already cleaned up */ }
+      } catch {
+        /* already cleaned up */
+      }
     });
 
     it("parses BLE MIDI data from characteristic value change events", async () => {
@@ -607,11 +626,13 @@ describe("BleMidiManager", () => {
 
       let dataHandler: ((event: Event) => void) | undefined;
       const mockCharacteristic = {
-        addEventListener: vi.fn((_event: string, handler: (event: Event) => void) => {
-          if (_event === "characteristicvaluechanged") {
-            dataHandler = handler;
-          }
-        }),
+        addEventListener: vi.fn(
+          (_event: string, handler: (event: Event) => void) => {
+            if (_event === "characteristicvaluechanged") {
+              dataHandler = handler;
+            }
+          },
+        ),
         removeEventListener: vi.fn(),
         startNotifications: vi.fn().mockResolvedValue(undefined),
       };
@@ -623,7 +644,11 @@ describe("BleMidiManager", () => {
       };
       const mockDevice = {
         name: "Test Piano",
-        gatt: { connect: vi.fn().mockResolvedValue(mockServer), connected: false, disconnect: vi.fn() },
+        gatt: {
+          connect: vi.fn().mockResolvedValue(mockServer),
+          connected: false,
+          disconnect: vi.fn(),
+        },
         addEventListener: vi.fn(),
         removeEventListener: vi.fn(),
       };

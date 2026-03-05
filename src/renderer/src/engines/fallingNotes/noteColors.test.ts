@@ -62,7 +62,11 @@ describe("noteColors", () => {
 
   describe("getTrackColor", () => {
     it("returns the correct PixiJS tint for track 0", () => {
-      mockedGetState.mockReturnValue(mockThemeState("test-theme-a") as ReturnType<typeof useThemeStore.getState>);
+      mockedGetState.mockReturnValue(
+        mockThemeState("test-theme-a") as ReturnType<
+          typeof useThemeStore.getState
+        >,
+      );
 
       const color = getTrackColor(0);
 
@@ -71,7 +75,11 @@ describe("noteColors", () => {
     });
 
     it("returns different colors for tracks 0-3", () => {
-      mockedGetState.mockReturnValue(mockThemeState("test-theme-b") as ReturnType<typeof useThemeStore.getState>);
+      mockedGetState.mockReturnValue(
+        mockThemeState("test-theme-b") as ReturnType<
+          typeof useThemeStore.getState
+        >,
+      );
 
       const colors = [0, 1, 2, 3].map((i) => getTrackColor(i));
 
@@ -97,7 +105,11 @@ describe("noteColors", () => {
     });
 
     it("caches palette per theme — does not recompute on same themeId", () => {
-      mockedGetState.mockReturnValue(mockThemeState("cached-theme") as ReturnType<typeof useThemeStore.getState>);
+      mockedGetState.mockReturnValue(
+        mockThemeState("cached-theme") as ReturnType<
+          typeof useThemeStore.getState
+        >,
+      );
 
       getTrackColor(0);
       // hexToPixi should be called 8 times for the 8-color palette build
@@ -130,7 +142,11 @@ describe("noteColors", () => {
     });
 
     it("handles large track indices without error", () => {
-      mockedGetState.mockReturnValue(mockThemeState("large-idx") as ReturnType<typeof useThemeStore.getState>);
+      mockedGetState.mockReturnValue(
+        mockThemeState("large-idx") as ReturnType<
+          typeof useThemeStore.getState
+        >,
+      );
 
       // Should not throw for arbitrarily large indices
       expect(() => getTrackColor(100)).not.toThrow();
@@ -140,7 +156,11 @@ describe("noteColors", () => {
 
   describe("getCanvasBgColor", () => {
     it("returns the canvas background color as a PixiJS number", () => {
-      mockedGetState.mockReturnValue(mockThemeState("bg-theme", { canvasBg: "#F2EFF6" }) as ReturnType<typeof useThemeStore.getState>);
+      mockedGetState.mockReturnValue(
+        mockThemeState("bg-theme", { canvasBg: "#F2EFF6" }) as ReturnType<
+          typeof useThemeStore.getState
+        >,
+      );
 
       const result = getCanvasBgColor();
 
@@ -149,10 +169,18 @@ describe("noteColors", () => {
     });
 
     it("reads from the current theme state each call (no caching)", () => {
-      mockedGetState.mockReturnValue(mockThemeState("bg-1", { canvasBg: "#AAAAAA" }) as ReturnType<typeof useThemeStore.getState>);
+      mockedGetState.mockReturnValue(
+        mockThemeState("bg-1", { canvasBg: "#AAAAAA" }) as ReturnType<
+          typeof useThemeStore.getState
+        >,
+      );
       getCanvasBgColor();
 
-      mockedGetState.mockReturnValue(mockThemeState("bg-2", { canvasBg: "#BBBBBB" }) as ReturnType<typeof useThemeStore.getState>);
+      mockedGetState.mockReturnValue(
+        mockThemeState("bg-2", { canvasBg: "#BBBBBB" }) as ReturnType<
+          typeof useThemeStore.getState
+        >,
+      );
       const result = getCanvasBgColor();
 
       expect(mockedHexToPixi).toHaveBeenCalledWith("#BBBBBB");
@@ -162,7 +190,11 @@ describe("noteColors", () => {
 
   describe("getHitLineColor", () => {
     it("returns the hit line color as a PixiJS number", () => {
-      mockedGetState.mockReturnValue(mockThemeState("hl-theme", { hitLine: "#705A87" }) as ReturnType<typeof useThemeStore.getState>);
+      mockedGetState.mockReturnValue(
+        mockThemeState("hl-theme", { hitLine: "#705A87" }) as ReturnType<
+          typeof useThemeStore.getState
+        >,
+      );
 
       const result = getHitLineColor();
 
@@ -171,10 +203,18 @@ describe("noteColors", () => {
     });
 
     it("reads from the current theme state each call (no caching)", () => {
-      mockedGetState.mockReturnValue(mockThemeState("hl-1", { hitLine: "#CCCCCC" }) as ReturnType<typeof useThemeStore.getState>);
+      mockedGetState.mockReturnValue(
+        mockThemeState("hl-1", { hitLine: "#CCCCCC" }) as ReturnType<
+          typeof useThemeStore.getState
+        >,
+      );
       getHitLineColor();
 
-      mockedGetState.mockReturnValue(mockThemeState("hl-2", { hitLine: "#DDDDDD" }) as ReturnType<typeof useThemeStore.getState>);
+      mockedGetState.mockReturnValue(
+        mockThemeState("hl-2", { hitLine: "#DDDDDD" }) as ReturnType<
+          typeof useThemeStore.getState
+        >,
+      );
       const result = getHitLineColor();
 
       expect(mockedHexToPixi).toHaveBeenCalledWith("#DDDDDD");

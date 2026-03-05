@@ -18,12 +18,7 @@ const SEEK_STEP_LARGE = 15;
 /** Speed change per arrow key press */
 const SPEED_STEP = 0.25;
 const SHORTCUT_BLOCKING_OVERLAY_SELECTOR = [
-  "[data-testid='mode-selection-modal']",
   "[data-testid='settings-panel']",
-  "[data-testid='insights-modal']",
-  "[data-testid='statistics-page']",
-  "[data-testid='celebration-overlay']",
-  "[data-testid='count-in-overlay']",
 ].join(", ");
 
 /** Whether the shortcut help overlay is currently shown (toggled by ?) */
@@ -285,7 +280,7 @@ export function useKeyboardShortcuts(deps: KeyboardShortcutDeps = {}): void {
   }, []); // stable — deps accessed via ref
 }
 
-// Exported for testing and KeyboardShortcutsHelp component
+// Exported for testing.
 export {
   isTextInput,
   hasShortcutBlockingOverlay,

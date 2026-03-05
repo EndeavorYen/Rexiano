@@ -46,7 +46,10 @@ vi.mock("soundfont2", () => {
         bank: number,
         preset: number,
       ): {
-        sample: { data: Int16Array; header: { sampleRate: number; originalPitch: number } };
+        sample: {
+          data: Int16Array;
+          header: { sampleRate: number; originalPitch: number };
+        };
         generators: Record<number, { value: number }>;
       } | null {
         if (sf2ConstructorBehavior === "empty") {
@@ -68,7 +71,11 @@ vi.mock("soundfont2", () => {
 
         if (sf2ConstructorBehavior === "preset0-fallback") {
           // Preset 0 returns nothing; only the fallback preset returns data
-          if (bank === 0 && preset === FALLBACK_PRESET && FALLBACK_KEYS.has(midi)) {
+          if (
+            bank === 0 &&
+            preset === FALLBACK_PRESET &&
+            FALLBACK_KEYS.has(midi)
+          ) {
             return {
               sample: {
                 data: new Int16Array([0, 8000, 16000, -8000, 0]),

@@ -57,16 +57,29 @@ export function parseMidiFile(fileName: string, data: number[]): ParsedSong {
   // @tonejs/midi stores key as string (e.g. "C", "G", "Eb") and scale as string ("major"/"minor").
   // Convert to numeric representation: key = number of sharps/flats, scale = 0 (major) / 1 (minor).
   const keyNameToSharps: Record<string, number> = {
-    Cb: -7, Gb: -6, Db: -5, Ab: -4, Eb: -3, Bb: -2, F: -1,
-    C: 0, G: 1, D: 2, A: 3, E: 4, B: 5, "F#": 6, "C#": 7,
+    Cb: -7,
+    Gb: -6,
+    Db: -5,
+    Ab: -4,
+    Eb: -3,
+    Bb: -2,
+    F: -1,
+    C: 0,
+    G: 1,
+    D: 2,
+    A: 3,
+    E: 4,
+    B: 5,
+    "F#": 6,
+    "C#": 7,
   };
-  const keySignatures: KeySignatureEvent[] = (midi.header.keySignatures ?? []).map(
-    (ks) => ({
-      time: midi.header.ticksToSeconds(ks.ticks),
-      key: keyNameToSharps[ks.key] ?? 0,
-      scale: ks.scale === "minor" ? 1 : 0,
-    }),
-  );
+  const keySignatures: KeySignatureEvent[] = (
+    midi.header.keySignatures ?? []
+  ).map((ks) => ({
+    time: midi.header.ticksToSeconds(ks.ticks),
+    key: keyNameToSharps[ks.key] ?? 0,
+    scale: ks.scale === "minor" ? 1 : 0,
+  }));
 
   const noteCount = tracks.reduce((sum, track) => sum + track.notes.length, 0);
 
@@ -81,11 +94,7 @@ export function parseMidiFile(fileName: string, data: number[]): ParsedSong {
   const duration = lastNoteEnd > 0 ? lastNoteEnd : midi.duration;
 
   // Compute measure boundary times from time signatures and tempos
-  const measureTimes = computeMeasureTimes(
-    duration,
-    timeSignatures,
-    tempos,
-  );
+  const measureTimes = computeMeasureTimes(duration, timeSignatures, tempos);
 
   // Infer dynamics from velocity patterns across 2-measure windows
   const dynamics = inferDynamics(tracks, measureTimes);
@@ -173,9 +182,7 @@ function computeMeasureTimes(
  * Map average velocity to a dynamics marking string.
  * Thresholds: pp (<40), p (<64), mp (<80), mf (<96), f (<112), ff (>=112)
  */
-function velocityToMarking(
-  avgVelocity: number,
-): DynamicsMarking["marking"] {
+function velocityToMarking(avgVelocity: number): DynamicsMarking["marking"] {
   if (avgVelocity < 40) return "pp";
   if (avgVelocity < 64) return "p";
   if (avgVelocity < 80) return "mp";
@@ -213,7 +220,7 @@ function inferDynamics(
     const windowEnd =
       i + 2 < measureTimes.length
         ? measureTimes[i + 2]
-        : (measureTimes[measureTimes.length - 1] + 10); // extend past last measure
+        : measureTimes[measureTimes.length - 1] + 10; // extend past last measure
 
     // Collect velocities in this window
     let velSum = 0;
@@ -239,4 +246,3 @@ function inferDynamics(
 
   return markings;
 }
-

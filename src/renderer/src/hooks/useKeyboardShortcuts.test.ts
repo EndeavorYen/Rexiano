@@ -366,7 +366,9 @@ describe("useKeyboardShortcuts", () => {
     test("A sets loop start to current time", () => {
       fireKey("KeyA");
       expect(usePracticeStore.getState().setLoopRange).toHaveBeenCalled();
-      const args = (usePracticeStore.getState().setLoopRange as ReturnType<typeof vi.fn>).mock.calls[0][0];
+      const args = (
+        usePracticeStore.getState().setLoopRange as ReturnType<typeof vi.fn>
+      ).mock.calls[0][0];
       expect(args[0]).toBe(10); // currentTime
     });
 
@@ -375,21 +377,27 @@ describe("useKeyboardShortcuts", () => {
         usePracticeStore.getState() as { loopRange: [number, number] | null }
       ).loopRange = [5, 30];
       fireKey("KeyA");
-      const args = (usePracticeStore.getState().setLoopRange as ReturnType<typeof vi.fn>).mock.calls[0][0];
+      const args = (
+        usePracticeStore.getState().setLoopRange as ReturnType<typeof vi.fn>
+      ).mock.calls[0][0];
       expect(args[0]).toBe(10); // new start
       expect(args[1]).toBe(30); // existing end
     });
 
     test("A defaults loop end to song duration when no loop exists", () => {
       fireKey("KeyA");
-      const args = (usePracticeStore.getState().setLoopRange as ReturnType<typeof vi.fn>).mock.calls[0][0];
+      const args = (
+        usePracticeStore.getState().setLoopRange as ReturnType<typeof vi.fn>
+      ).mock.calls[0][0];
       expect(args[1]).toBe(120); // song duration
     });
 
     test("B sets loop end to current time", () => {
       fireKey("KeyB");
       expect(usePracticeStore.getState().setLoopRange).toHaveBeenCalled();
-      const args = (usePracticeStore.getState().setLoopRange as ReturnType<typeof vi.fn>).mock.calls[0][0];
+      const args = (
+        usePracticeStore.getState().setLoopRange as ReturnType<typeof vi.fn>
+      ).mock.calls[0][0];
       expect(args[1]).toBe(10); // currentTime
     });
 
@@ -398,14 +406,18 @@ describe("useKeyboardShortcuts", () => {
         usePracticeStore.getState() as { loopRange: [number, number] | null }
       ).loopRange = [5, 30];
       fireKey("KeyB");
-      const args = (usePracticeStore.getState().setLoopRange as ReturnType<typeof vi.fn>).mock.calls[0][0];
-      expect(args[0]).toBe(5);  // existing start
+      const args = (
+        usePracticeStore.getState().setLoopRange as ReturnType<typeof vi.fn>
+      ).mock.calls[0][0];
+      expect(args[0]).toBe(5); // existing start
       expect(args[1]).toBe(10); // new end
     });
 
     test("B defaults loop start to 0 when no loop exists", () => {
       fireKey("KeyB");
-      const args = (usePracticeStore.getState().setLoopRange as ReturnType<typeof vi.fn>).mock.calls[0][0];
+      const args = (
+        usePracticeStore.getState().setLoopRange as ReturnType<typeof vi.fn>
+      ).mock.calls[0][0];
       expect(args[0]).toBe(0);
     });
   });
@@ -415,7 +427,9 @@ describe("useKeyboardShortcuts", () => {
     test("stops playback when playing", () => {
       (usePlaybackStore.getState() as { isPlaying: boolean }).isPlaying = true;
       fireKey("Escape");
-      expect(usePlaybackStore.getState().setPlaying).toHaveBeenCalledWith(false);
+      expect(usePlaybackStore.getState().setPlaying).toHaveBeenCalledWith(
+        false,
+      );
     });
 
     test("does nothing when already stopped", () => {
@@ -622,7 +636,8 @@ describe("useKeyboardShortcuts", () => {
   // ─── Shift+ArrowRight clamps to song duration ─────────────
   describe("Shift+ArrowRight clamps to duration", () => {
     test("Shift+ArrowRight clamps to song duration", () => {
-      (usePlaybackStore.getState() as { currentTime: number }).currentTime = 115;
+      (usePlaybackStore.getState() as { currentTime: number }).currentTime =
+        115;
       fireKey("ArrowRight", { shiftKey: true });
       expect(usePlaybackStore.getState().setCurrentTime).toHaveBeenCalledWith(
         120, // min(120, 115 + 15) = 120

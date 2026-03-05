@@ -1,34 +1,21 @@
-/**
- * ─── Phase 6.5: Song Library ────────────────────────────────
- *
- * Main song library view. Renders the filterable, searchable
- * grid of SongCards, category tabs, difficulty/grade filters,
- * recently-played section, daily goal widget, and MIDI import.
- */
-import { useEffect, useMemo, useCallback, useState, useRef } from "react";
+import { useEffect, useMemo, useCallback, useState } from "react";
 import {
   Upload,
   Clock,
   AlertCircle,
   Music,
-  Trophy,
-  Flame,
   ArrowLeft,
   PanelRightOpen,
   X,
-  Tag,
 } from "lucide-react";
 import { useSongStore } from "../../stores/useSongStore";
 import { usePlaybackStore } from "../../stores/usePlaybackStore";
 import { useSongLibraryStore } from "../../stores/useSongLibraryStore";
-import { useProgressStore } from "../../stores/useProgressStore";
-import { usePracticeStore } from "../../stores/usePracticeStore";
 import { useRecentFiles } from "../../hooks/useRecentFiles";
 import { formatRelativeTime } from "../../utils/relativeTime";
 import { SongCard } from "./SongCard";
 import { SongLibraryFilters } from "./SongLibraryFilters";
 import { ThemePicker } from "../settings/ThemePicker";
-import { DailyGoal } from "../progress/DailyGoal";
 import { groupSongsByCategory, categoryI18nKeys } from "./songCardUtils";
 import type { TranslationKey } from "../../i18n/types";
 import { DeviceSelector } from "../midiDevice/DeviceSelector";
@@ -47,29 +34,21 @@ export function SongLibrary({
 }: SongLibraryProps): React.JSX.Element {
   const { t } = useTranslation();
 
-  /** Warm greetings that rotate based on time of day */
   const greeting = useMemo(() => {
     const hour = new Date().getHours();
     if (hour < 12) return t("library.greeting.morning");
     if (hour < 17) return t("library.greeting.afternoon");
     return t("library.greeting.evening");
   }, [t]);
+
   const songs = useSongLibraryStore((s) => s.songs);
   const isLoading = useSongLibraryStore((s) => s.isLoading);
   const searchQuery = useSongLibraryStore((s) => s.searchQuery);
-  const difficultyFilter = useSongLibraryStore((s) => s.difficultyFilter);
   const gradeFilter = useSongLibraryStore((s) => s.gradeFilter);
-  const activeTag = useSongLibraryStore((s) => s.activeTag);
-  const setActiveTag = useSongLibraryStore((s) => s.setActiveTag);
   const fetchSongs = useSongLibraryStore((s) => s.fetchSongs);
 
   const loadFromMidiData = useSongStore((s) => s.loadFromMidiData);
   const reset = usePlaybackStore((s) => s.reset);
-
-  const sessions = useProgressStore((s) => s.sessions);
-  const isProgressLoaded = useProgressStore((s) => s.isLoaded);
-  const loadSessions = useProgressStore((s) => s.loadSessions);
-
   const { recentFiles, refresh: refreshRecents } = useRecentFiles();
 
   const [loadingId, setLoadingId] = useState<string | null>(null);
@@ -79,104 +58,10 @@ export function SongLibrary({
     null,
   );
   const [showDeviceDrawer, setShowDeviceDrawer] = useState(false);
-  const [previewSongId, setPreviewSongId] = useState<string | null>(null);
-  const [previewState, setPreviewState] = useState<
-    "idle" | "loading" | "playing"
-  >("idle");
-  const previewTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  /** Handle tag clicks — toggle filter on/off */
-  const handleTagClick = useCallback(
-    (tag: string) => {
-      setActiveTag(activeTag === tag ? null : tag);
-    },
-    [activeTag, setActiveTag],
-  );
-
-  /** Handle preview/demo click — load song in Watch mode and auto-play */
-  const handlePreviewClick = useCallback(
-    async (songId: string) => {
-      // If already previewing this song, stop
-      if (previewSongId === songId) {
-        if (previewTimerRef.current) clearTimeout(previewTimerRef.current);
-        setPreviewSongId(null);
-        setPreviewState("idle");
-        return;
-      }
-      // Stop any existing preview
-      if (previewTimerRef.current) clearTimeout(previewTimerRef.current);
-
-      setPreviewSongId(songId);
-      setPreviewState("loading");
-
-      try {
-        // Actually load the song, set Watch mode, and auto-play
-        const result = await window.api.loadBuiltinSong(songId);
-        if (result) {
-          loadFromMidiData(result.fileName, result.data);
-          reset();
-          usePracticeStore.getState().setMode("watch");
-          // Brief delay so canvas initializes before playing
-          setTimeout(() => {
-            usePlaybackStore.getState().setPlaying(true);
-          }, 200);
-          void window.api.saveRecentFile({
-            path: `builtin:${songId}`,
-            name: result.fileName,
-            timestamp: Date.now(),
-          });
-          refreshRecents();
-          setPreviewState("idle");
-          setPreviewSongId(null);
-        }
-      } catch {
-        setPreviewState("idle");
-        setPreviewSongId(null);
-      }
-    },
-    [previewSongId, loadFromMidiData, reset, refreshRecents],
-  );
-
-  /** Handle demo click — load song, set Watch mode, and auto-play */
-  const handleDemo = useCallback(
-    async (songId: string) => {
-      setError(null);
-      setLoadingId(songId);
-      try {
-        const result = await window.api.loadBuiltinSong(songId);
-        if (result) {
-          loadFromMidiData(result.fileName, result.data);
-          reset();
-          usePracticeStore.getState().setMode("watch");
-          // Brief delay so canvas initializes before playing
-          setTimeout(() => {
-            usePlaybackStore.getState().setPlaying(true);
-          }, 200);
-          void window.api.saveRecentFile({
-            path: `builtin:${songId}`,
-            name: result.fileName,
-            timestamp: Date.now(),
-          });
-          refreshRecents();
-        }
-      } catch (e) {
-        const msg = e instanceof Error ? e.message : t("general.error");
-        setError(msg);
-        console.error("Failed to load song for demo:", e);
-      } finally {
-        setLoadingId(null);
-      }
-    },
-    [loadFromMidiData, reset, refreshRecents, t],
-  );
-
-  // Cleanup preview timer on unmount
   useEffect(() => {
-    const ref = previewTimerRef;
-    return () => {
-      if (ref.current) clearTimeout(ref.current);
-    };
-  }, []);
+    fetchSongs();
+  }, [fetchSongs]);
 
   useEffect(() => {
     if (!showDeviceDrawer) return;
@@ -189,26 +74,10 @@ export function SongLibrary({
     return () => window.removeEventListener("keydown", onKeyDown, true);
   }, [showDeviceDrawer]);
 
-  useEffect(() => {
-    fetchSongs();
-  }, [fetchSongs]);
-
-  useEffect(() => {
-    if (!isProgressLoaded) {
-      loadSessions();
-    }
-  }, [isProgressLoaded, loadSessions]);
-
   const filteredSongs = useMemo(() => {
     let result = songs;
-    if (difficultyFilter !== "all") {
-      result = result.filter((s) => s.difficulty === difficultyFilter);
-    }
     if (gradeFilter !== "all") {
       result = result.filter((s) => s.grade === gradeFilter);
-    }
-    if (activeTag) {
-      result = result.filter((s) => s.tags.includes(activeTag));
     }
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
@@ -221,24 +90,12 @@ export function SongLibrary({
       );
     }
     return result;
-  }, [songs, difficultyFilter, gradeFilter, activeTag, searchQuery]);
+  }, [songs, gradeFilter, searchQuery]);
 
-  /** Songs grouped by category for section display */
   const categoryGroups = useMemo(
     () => groupSongsByCategory(filteredSongs),
     [filteredSongs],
   );
-
-  /** Progress stats derived from sessions */
-  const progressStats = useMemo(() => {
-    const uniqueSongs = new Set(sessions.map((s) => s.songId)).size;
-    const totalSessions = sessions.length;
-    const bestAccuracy =
-      sessions.length > 0
-        ? Math.round(Math.max(...sessions.map((s) => s.score.accuracy)))
-        : 0;
-    return { uniqueSongs, totalSessions, bestAccuracy };
-  }, [sessions]);
 
   const handleSelectSong = useCallback(
     async (songId: string) => {
@@ -249,7 +106,6 @@ export function SongLibrary({
         if (result) {
           loadFromMidiData(result.fileName, result.data);
           reset();
-          // Save to recent files with builtin: prefix
           void window.api.saveRecentFile({
             path: `builtin:${songId}`,
             name: result.fileName,
@@ -268,33 +124,25 @@ export function SongLibrary({
     [loadFromMidiData, reset, refreshRecents, t],
   );
 
-  /** Max recent files shown in the quick-access strip */
-  const RECENT_DISPLAY_LIMIT = 5;
-  const visibleRecents = recentFiles.slice(0, RECENT_DISPLAY_LIMIT);
+  const visibleRecents = recentFiles.slice(0, 5);
 
   const handleSelectRecent = useCallback(
     async (file: RecentFile) => {
       setRecentError(null);
       setLoadingRecentPath(file.path);
       try {
-        let result;
-        if (file.path.startsWith("builtin:")) {
-          // Built-in song — extract the songId and load via library API
-          const songId = file.path.slice("builtin:".length);
-          result = await window.api.loadBuiltinSong(songId);
-        } else {
-          // User-imported file — load by absolute path
-          result = await window.api.loadMidiPath(file.path);
-        }
+        const result = file.path.startsWith("builtin:")
+          ? await window.api.loadBuiltinSong(file.path.slice("builtin:".length))
+          : await window.api.loadMidiPath(file.path);
 
         if (!result) {
           setRecentError(t("general.error"));
           setTimeout(() => setRecentError(null), 3000);
           return;
         }
+
         loadFromMidiData(result.fileName, result.data);
         reset();
-        // Bump timestamp
         void window.api.saveRecentFile({
           path: file.path,
           name: file.name,
@@ -329,7 +177,7 @@ export function SongLibrary({
                 <button
                   onClick={onBack}
                   className="btn-surface-themed flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs cursor-pointer"
-                  aria-label={t("settings.shortcut.closeBack")}
+                  aria-label={t("song.backToLibrary")}
                 >
                   <ArrowLeft size={13} />
                 </button>
@@ -360,7 +208,6 @@ export function SongLibrary({
             </div>
 
             <div className="flex items-center gap-2.5">
-              <DailyGoal />
               <button
                 onClick={onOpenFile}
                 className="btn-primary-themed flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium cursor-pointer"
@@ -371,42 +218,6 @@ export function SongLibrary({
               <ThemePicker />
             </div>
           </div>
-
-          {isProgressLoaded && sessions.length > 0 && (
-            <div
-              className="mt-4 grid gap-3 rounded-xl px-4 py-3 sm:grid-cols-3"
-              style={{
-                background:
-                  "color-mix(in srgb, var(--color-accent) 8%, var(--color-surface))",
-                border:
-                  "1px solid color-mix(in srgb, var(--color-accent) 16%, var(--color-border))",
-              }}
-            >
-              <StatBadge
-                icon={<Music size={14} />}
-                value={progressStats.uniqueSongs}
-                label={
-                  progressStats.uniqueSongs === 1
-                    ? t("library.songPracticed")
-                    : t("library.songsPracticed")
-                }
-              />
-              <StatBadge
-                icon={<Flame size={14} />}
-                value={progressStats.totalSessions}
-                label={
-                  progressStats.totalSessions === 1
-                    ? t("library.session")
-                    : t("library.sessions")
-                }
-              />
-              <StatBadge
-                icon={<Trophy size={14} />}
-                value={`${progressStats.bestAccuracy}%`}
-                label={t("library.bestScore")}
-              />
-            </div>
-          )}
         </header>
 
         {visibleRecents.length > 0 && (
@@ -480,43 +291,6 @@ export function SongLibrary({
 
         <section className="surface-panel p-4 sm:p-5 animate-page-enter">
           <SongLibraryFilters />
-
-          {activeTag && (
-            <div
-              className="mt-3 flex items-center gap-2 px-1"
-              data-testid="active-tag-filter"
-            >
-              <Tag size={12} style={{ color: "var(--color-accent)" }} />
-              <span
-                className="text-xs font-body"
-                style={{ color: "var(--color-text-muted)" }}
-              >
-                {t("library.filterByTag")}:
-              </span>
-              <span
-                className="text-xs font-body font-semibold px-2 py-0.5 rounded-full"
-                style={{
-                  background:
-                    "color-mix(in srgb, var(--color-accent) 18%, transparent)",
-                  color: "var(--color-accent)",
-                }}
-              >
-                {activeTag}
-              </span>
-              <button
-                onClick={() => setActiveTag(null)}
-                className="text-[10px] font-body px-2 py-0.5 rounded-full cursor-pointer transition-colors"
-                style={{
-                  background: "var(--color-surface-alt)",
-                  color: "var(--color-text-muted)",
-                  border: "1px solid var(--color-border)",
-                }}
-                data-testid="clear-tag-filter"
-              >
-                {t("library.clearTagFilter")}
-              </button>
-            </div>
-          )}
 
           <div className="mt-6">
             {isLoading ? (
@@ -625,13 +399,6 @@ export function SongLibrary({
                             song={song}
                             onSelect={handleSelectSong}
                             colorIndex={groupIdx * 4 + i}
-                            onTagClick={handleTagClick}
-                            activeTag={activeTag}
-                            previewState={
-                              previewSongId === song.id ? previewState : "idle"
-                            }
-                            onPreviewClick={handlePreviewClick}
-                            onDemo={handleDemo}
                           />
                           {loadingId === song.id && (
                             <div
@@ -710,44 +477,6 @@ export function SongLibrary({
             </aside>
           </div>
         )}
-      </div>
-    </div>
-  );
-}
-
-/* ─── Sub-components ─── */
-
-function StatBadge({
-  icon,
-  value,
-  label,
-}: {
-  icon: React.ReactNode;
-  value: number | string;
-  label: string;
-}): React.JSX.Element {
-  return (
-    <div
-      className="flex items-center gap-2.5 rounded-lg px-2 py-1.5"
-      style={{
-        background: "color-mix(in srgb, var(--color-surface) 75%, transparent)",
-        border: "1px solid var(--color-border)",
-      }}
-    >
-      <span style={{ color: "var(--color-accent)" }}>{icon}</span>
-      <div className="min-w-0">
-        <span
-          className="text-sm font-display font-bold leading-tight block"
-          style={{ color: "var(--color-text)" }}
-        >
-          {value}
-        </span>
-        <span
-          className="text-[10px] font-body leading-tight truncate block"
-          style={{ color: "var(--color-text-muted)" }}
-        >
-          {label}
-        </span>
       </div>
     </div>
   );

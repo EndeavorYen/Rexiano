@@ -16,7 +16,6 @@ vi.mock("./SoundFontLoader", () => {
 
 // ─── Mock Web Audio API ──────────────────────────
 
-// eslint-disable-next-line @typescript-eslint/explicit-function-return-type
 function createMockGainNode() {
   return {
     gain: {
@@ -30,7 +29,6 @@ function createMockGainNode() {
   };
 }
 
-// eslint-disable-next-line @typescript-eslint/explicit-function-return-type
 function createMockAudioBufferSourceNode() {
   return {
     buffer: null,
@@ -42,7 +40,6 @@ function createMockAudioBufferSourceNode() {
   };
 }
 
-// eslint-disable-next-line @typescript-eslint/explicit-function-return-type
 function createMockOscillatorNode() {
   return {
     type: "sine" as OscillatorType,
@@ -59,7 +56,6 @@ function createMockOscillatorNode() {
   };
 }
 
-// eslint-disable-next-line @typescript-eslint/explicit-function-return-type
 function stubGlobalAudioContext() {
   const mockGainNode = createMockGainNode();
   const mockOscillator = createMockOscillatorNode();
@@ -215,7 +211,7 @@ describe("AudioEngine", () => {
     test("sets clamped value on masterGain when available", () => {
       const mockGainParam = { value: 0.5 };
       const mockGain = { gain: mockGainParam } as unknown as GainNode;
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
       (engine as any)._masterGain = mockGain;
 
       engine.setVolume(0.7);
@@ -255,7 +251,7 @@ describe("AudioEngine", () => {
         sampleRate: 44100,
         basePitch: 60,
       };
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
       const loader = (engine as any)._soundFontLoader;
       loader.getSample.mockReturnValue(mockSample);
 
@@ -284,7 +280,7 @@ describe("AudioEngine", () => {
         sampleRate: 44100,
         basePitch: 60,
       };
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
       const loader = (engine as any)._soundFontLoader;
       loader.getSample.mockReturnValue(mockSample);
 
@@ -308,7 +304,7 @@ describe("AudioEngine", () => {
 
     test("noteOn returns early if sample not found for midi", async () => {
       const { mockCtx } = stubGlobalAudioContext();
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
       const loader = (engine as any)._soundFontLoader;
       loader.getSample.mockReturnValue(undefined);
 
@@ -334,7 +330,7 @@ describe("AudioEngine", () => {
         sampleRate: 44100,
         basePitch: 60,
       };
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
       const loader = (engine as any)._soundFontLoader;
       loader.getSample.mockReturnValue(mockSample);
 
@@ -367,7 +363,7 @@ describe("AudioEngine", () => {
         sampleRate: 44100,
         basePitch: 60,
       };
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
       const loader = (engine as any)._soundFontLoader;
       loader.getSample.mockReturnValue(mockSample);
 
@@ -395,7 +391,7 @@ describe("AudioEngine", () => {
         sampleRate: 44100,
         basePitch: 60,
       };
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
       const loader = (engine as any)._soundFontLoader;
       loader.getSample.mockReturnValue(mockSample);
 
@@ -417,7 +413,7 @@ describe("AudioEngine", () => {
       ).not.toHaveBeenCalled();
 
       // Note should be in the sustained notes map
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
       const sustainedNotes = (engine as any)._sustainedNotes as Map<
         number,
         unknown[]
@@ -435,7 +431,7 @@ describe("AudioEngine", () => {
         sampleRate: 44100,
         basePitch: 60,
       };
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
       const loader = (engine as any)._soundFontLoader;
       loader.getSample.mockReturnValue(mockSample);
 
@@ -464,7 +460,7 @@ describe("AudioEngine", () => {
       expect(mockSource.stop).toHaveBeenCalled();
 
       // Sustained notes map should be cleared
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
       const sustainedNotes = (engine as any)._sustainedNotes as Map<
         number,
         unknown[]
@@ -481,7 +477,7 @@ describe("AudioEngine", () => {
         sampleRate: 44100,
         basePitch: 60,
       };
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
       const loader = (engine as any)._soundFontLoader;
       loader.getSample.mockReturnValue(mockSample);
 
@@ -512,7 +508,7 @@ describe("AudioEngine", () => {
         sampleRate: 44100,
         basePitch: 60,
       };
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
       const loader = (engine as any)._soundFontLoader;
       loader.getSample.mockReturnValue(mockSample);
 
@@ -528,7 +524,7 @@ describe("AudioEngine", () => {
       engine.noteOff(60, 1.0);
 
       // Note is sustained
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
       const sustainedNotes = (engine as any)._sustainedNotes as Map<
         number,
         unknown[]
@@ -557,7 +553,7 @@ describe("AudioEngine", () => {
         resume: vi.fn().mockResolvedValue(undefined),
         close: vi.fn().mockResolvedValue(undefined),
       } as unknown as AudioContext;
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
       (engine as any)._audioContext = mockCtx;
 
       await engine.resume();
@@ -575,9 +571,9 @@ describe("AudioEngine", () => {
         resume: vi.fn().mockRejectedValue(runtimeError),
         close: vi.fn().mockResolvedValue(undefined),
       } as unknown as AudioContext;
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
       (engine as any)._audioContext = mockCtx;
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
       (engine as any)._status = "ready";
 
       await expect(engine.resume()).rejects.toThrow(runtimeError);
@@ -590,7 +586,7 @@ describe("AudioEngine", () => {
         suspend: vi.fn().mockResolvedValue(undefined),
         close: vi.fn().mockResolvedValue(undefined),
       } as unknown as AudioContext;
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
       (engine as any)._audioContext = mockCtx;
 
       await engine.suspend();
@@ -608,9 +604,9 @@ describe("AudioEngine", () => {
       const mockCtx = {
         close: vi.fn().mockResolvedValue(undefined),
       } as unknown as AudioContext;
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
       (engine as any)._audioContext = mockCtx;
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
       (engine as any)._masterGain = {} as GainNode;
 
       engine.dispose();
@@ -621,7 +617,7 @@ describe("AudioEngine", () => {
     test("calls audioContext.close when available", () => {
       const closeFn = vi.fn().mockResolvedValue(undefined);
       const mockCtx = { close: closeFn } as unknown as AudioContext;
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
       (engine as any)._audioContext = mockCtx;
 
       engine.dispose();
@@ -631,7 +627,7 @@ describe("AudioEngine", () => {
     test("disposes soundFontLoader", async () => {
       stubGlobalAudioContext();
       await engine.init();
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
       const loader = (engine as any)._soundFontLoader;
       engine.dispose();
       expect(loader.dispose).toHaveBeenCalled();
@@ -654,9 +650,8 @@ describe("AudioEngine", () => {
     });
 
     test("is a no-op when status is not ready", () => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (engine as any)._audioContext = {} as AudioContext;
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
       (engine as any)._status = "loading";
       expect(() => engine.playErrorTone()).not.toThrow();
     });

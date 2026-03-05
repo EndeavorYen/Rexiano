@@ -40,7 +40,6 @@ describe("useSongLibraryStore", () => {
       songs: [],
       isLoading: false,
       searchQuery: "",
-      difficultyFilter: "all",
       gradeFilter: "all",
     });
     vi.clearAllMocks();
@@ -53,7 +52,6 @@ describe("useSongLibraryStore", () => {
     expect(s.songs).toEqual([]);
     expect(s.isLoading).toBe(false);
     expect(s.searchQuery).toBe("");
-    expect(s.difficultyFilter).toBe("all");
     expect(s.gradeFilter).toBe("all");
   });
 
@@ -68,31 +66,6 @@ describe("useSongLibraryStore", () => {
     useSongLibraryStore.getState().setSearchQuery("something");
     useSongLibraryStore.getState().setSearchQuery("");
     expect(useSongLibraryStore.getState().searchQuery).toBe("");
-  });
-
-  // ─── setDifficultyFilter() ───────────────────────────
-
-  test("setDifficultyFilter updates the difficulty filter", () => {
-    useSongLibraryStore.getState().setDifficultyFilter("beginner");
-    expect(useSongLibraryStore.getState().difficultyFilter).toBe("beginner");
-  });
-
-  test("setDifficultyFilter can set to intermediate", () => {
-    useSongLibraryStore.getState().setDifficultyFilter("intermediate");
-    expect(useSongLibraryStore.getState().difficultyFilter).toBe(
-      "intermediate",
-    );
-  });
-
-  test("setDifficultyFilter can set to advanced", () => {
-    useSongLibraryStore.getState().setDifficultyFilter("advanced");
-    expect(useSongLibraryStore.getState().difficultyFilter).toBe("advanced");
-  });
-
-  test("setDifficultyFilter can reset to all", () => {
-    useSongLibraryStore.getState().setDifficultyFilter("advanced");
-    useSongLibraryStore.getState().setDifficultyFilter("all");
-    expect(useSongLibraryStore.getState().difficultyFilter).toBe("all");
   });
 
   // ─── setGradeFilter() ────────────────────────────────

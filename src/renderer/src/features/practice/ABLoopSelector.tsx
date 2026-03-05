@@ -82,9 +82,7 @@ export function ABLoopSelector(): React.JSX.Element {
     if (effectiveB !== measureB) setMeasureB(effectiveB);
     const endTime = getMeasureEndTime(effectiveB - 1);
     setLoopRange([startTime, endTime]);
-    setFlashMessage(
-      `A: ${t("practice.loop.measure", { n: val })}`,
-    );
+    setFlashMessage(`A: ${t("practice.loop.measure", { n: val })}`);
   };
 
   const handleMeasureBChange = (val: number): void => {
@@ -94,9 +92,7 @@ export function ABLoopSelector(): React.JSX.Element {
     const startTime = measureTimes[effectiveA - 1] ?? 0;
     const endTime = getMeasureEndTime(val - 1);
     setLoopRange([startTime, endTime]);
-    setFlashMessage(
-      `B: ${t("practice.loop.measure", { n: val })}`,
-    );
+    setFlashMessage(`B: ${t("practice.loop.measure", { n: val })}`);
   };
 
   return (
@@ -222,9 +218,7 @@ export function ABLoopSelector(): React.JSX.Element {
               transition: "all 0.15s ease",
             }}
             title={
-              hasA
-                ? `Loop start: ${fmtSec(loopRange![0])}`
-                : t("practice.setA")
+              hasA ? `Loop start: ${fmtSec(loopRange![0])}` : t("practice.setA")
             }
             aria-label={t("practice.setALabel")}
           >
@@ -259,9 +253,7 @@ export function ABLoopSelector(): React.JSX.Element {
               transition: "all 0.15s ease",
             }}
             title={
-              hasB
-                ? `Loop end: ${fmtSec(loopRange![1])}`
-                : t("practice.setB")
+              hasB ? `Loop end: ${fmtSec(loopRange![1])}` : t("practice.setB")
             }
             aria-label={t("practice.setBLabel")}
           >

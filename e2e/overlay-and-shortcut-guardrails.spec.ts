@@ -8,36 +8,6 @@ import {
 } from "./helpers/appHarness";
 
 test.describe("Overlay and shortcut guardrails", () => {
-  test("mode selection modal blocks playback shortcuts until a mode is chosen", async ({
-    appPage,
-  }) => {
-    await appPage.setViewportSize({ width: 1600, height: 900 });
-    await gotoLibrary(appPage);
-
-    const firstSongCard = appPage.locator("button:has(h3)").first();
-    await expect(firstSongCard).toBeVisible({ timeout: 20_000 });
-    await firstSongCard.click();
-    await expect(appPage.getByTestId("mode-selection-modal")).toBeVisible();
-
-    const playButton = appPage
-      .getByTestId("transport-strip")
-      .locator("button")
-      .first();
-    const seekSlider = appPage.getByRole("slider", {
-      name: /seek position/i,
-    });
-    const playBefore = await playButton.getAttribute("aria-label");
-    const seekBefore = Number(await seekSlider.inputValue());
-
-    await appPage.keyboard.press("Space");
-    await appPage.keyboard.press("ArrowRight");
-
-    const playAfter = await playButton.getAttribute("aria-label");
-    const seekAfter = Number(await seekSlider.inputValue());
-    expect(playAfter).toBe(playBefore);
-    expect(seekAfter).toBe(seekBefore);
-  });
-
   test("Escape closes only the top settings layer and keeps drawer visible", async ({
     appPage,
   }) => {
@@ -99,7 +69,7 @@ test.describe("Overlay and shortcut guardrails", () => {
     await openPlaybackDrawer(appPage);
     await appPage.getByTestId("settings-trigger").click();
     await expect(appPage.getByTestId("settings-panel")).toBeVisible();
-    await appPage.getByLabel(/search settings tabs/i).click();
+    await appPage.getByTestId("settings-tab-theme").click();
 
     let escapedModal = false;
     for (let i = 0; i < 60; i++) {

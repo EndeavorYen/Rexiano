@@ -131,7 +131,8 @@ export const useSettingsStore = create<SettingsState>()((set) => {
 
   return {
     showNoteLabels: saved.showNoteLabels ?? defaults.showNoteLabels!,
-    showFallingNoteLabels: saved.showFallingNoteLabels ?? defaults.showFallingNoteLabels!,
+    showFallingNoteLabels:
+      saved.showFallingNoteLabels ?? defaults.showFallingNoteLabels!,
     showFingering: saved.showFingering ?? defaults.showFingering!,
     compactKeyLabels: saved.compactKeyLabels ?? defaults.compactKeyLabels!,
     language: saved.language ?? defaults.language!,
@@ -141,8 +142,10 @@ export const useSettingsStore = create<SettingsState>()((set) => {
     defaultMode: saved.defaultMode ?? defaults.defaultMode!,
     metronomeEnabled: saved.metronomeEnabled ?? defaults.metronomeEnabled!,
     countInBeats: saved.countInBeats ?? defaults.countInBeats!,
-    latencyCompensation: saved.latencyCompensation ?? defaults.latencyCompensation!,
-    audioCompatibilityMode: saved.audioCompatibilityMode ?? defaults.audioCompatibilityMode!,
+    latencyCompensation:
+      saved.latencyCompensation ?? defaults.latencyCompensation!,
+    audioCompatibilityMode:
+      saved.audioCompatibilityMode ?? defaults.audioCompatibilityMode!,
     noteReleaseMs: saved.noteReleaseMs ?? defaults.noteReleaseMs!,
     uiScale: VALID_UI_SCALES.includes(saved.uiScale as UiScale)
       ? (saved.uiScale as UiScale)

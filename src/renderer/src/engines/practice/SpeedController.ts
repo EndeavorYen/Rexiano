@@ -9,7 +9,7 @@ export class SpeedController {
   private _lastLerpTime: number = -1;
   private _lerpDurationMs: number = 200;
 
-  static readonly MIN = 0.10;
+  static readonly MIN = 0.1;
   static readonly MAX = 2.0;
 
   constructor(initialSpeed = 1.0) {

@@ -11,7 +11,6 @@ export interface TranslationMap {
   "app.invalidFileType": string;
   "app.failedParse": string;
   "app.failedRead": string;
-  "app.insightsTitle": string;
   "app.startPractice": string;
   "app.openSettings": string;
   "app.menuGreeting": string;
@@ -103,13 +102,6 @@ export interface TranslationMap {
   "practice.wait": string;
   "practice.free": string;
   "practice.speed": string;
-  "practice.tracks": string;
-  "practice.trackN": string;
-  "practice.notesCount": string;
-  "practice.muteAll": string;
-  "practice.muteAllDisabledWait": string;
-  "practice.resetTracks": string;
-  "practice.solo": string;
   "practice.accuracy": string;
   "practice.combo": string;
   "practice.abLoop": string;
@@ -136,9 +128,7 @@ export interface TranslationMap {
   "practice.mode.freeDesc": string;
   "practice.step": string;
   "practice.mode.stepDesc": string;
-  "practice.autoSpeedUp": string;
   "practice.speedBumped": string;
-  "practice.handSeparation.hint": string;
   "practice.loop.byMeasure": string;
   "practice.loop.measure": string;
 
@@ -152,9 +142,7 @@ export interface TranslationMap {
   "settings.tab.display": string;
   "settings.tab.audio": string;
   "settings.tab.practice": string;
-  "settings.tab.keys": string;
   "settings.tab.lang": string;
-  "settings.tab.about": string;
   "about.version": string;
   "about.changelog": string;
   "about.noChangelog": string;
@@ -183,21 +171,7 @@ export interface TranslationMap {
   "settings.latencyDesc": string;
   "settings.midiChannel": string;
   "settings.midiChannelAll": string;
-  "settings.keyboardShortcuts": string;
   "settings.langDesc": string;
-  "settings.shortcut.playPause": string;
-  "settings.shortcut.restart": string;
-  "settings.shortcut.speedDown": string;
-  "settings.shortcut.speedUp": string;
-  "settings.shortcut.loopA": string;
-  "settings.shortcut.loopB": string;
-  "settings.shortcut.closeBack": string;
-  "settings.basicMode": string;
-  "settings.advancedMode": string;
-  "settings.searchTabs": string;
-  "settings.searchTabsAria": string;
-  "settings.noMatchingTab": string;
-  "settings.common": string;
   "settings.compactKeyLabels": string;
   "settings.compactKeyLabelsDesc": string;
   "settings.uiScale": string;
@@ -211,95 +185,15 @@ export interface TranslationMap {
   // ── Fingering ──────────────────────────────────────────────────
   "fingering.label": string;
 
-  // ── Insights Panel ─────────────────────────────────────────────
-  "insights.title": string;
-  "insights.weakSpots": string;
-  "insights.accuracyTrend": string;
-  "insights.totalMinutes": string;
-  "insights.sessions": string;
-  "insights.bestAccuracy": string;
-  "insights.recentImprovement": string;
-  "insights.emptyTitle": string;
-  "insights.emptyMessage": string;
-  "insights.missRate": string;
-  "insights.attempts": string;
-  "insights.practiceNumber": string;
-  "insights.accuracyPercent": string;
-  "insights.practiceTime": string;
-
-  // ── Celebration ────────────────────────────────────────────────
-  "celebration.amazing.title": string;
-  "celebration.amazing.subtitle": string;
-  "celebration.great.title": string;
-  "celebration.great.subtitle": string;
-  "celebration.encourage.title": string;
-  "celebration.encourage.subtitle": string;
-  "celebration.newRecord": string;
-  "celebration.playAgain": string;
-  "celebration.oneMoreTime": string;
-  "celebration.tryAgain": string;
-  "celebration.pickSong": string;
-  "celebration.accuracy": string;
-  "celebration.hits": string;
-  "celebration.missed": string;
-  "celebration.bestStreak": string;
-  "celebration.starRating": string;
-  "celebration.tapToContinue": string;
-
   // ── Sheet Music ────────────────────────────────────────────────
   "sheetMusic.loadSong": string;
   "sheetMusic.vexflowError": string;
   "sheetMusic.vexflowErrorHint": string;
   "sheetMusic.modeFalling": string;
   "sheetMusic.modeSheet": string;
-  "sheetMusic.modeSplit": string;
   "sheetMusic.displayMode": string;
   "sheetMusic.zoomIn": string;
   "sheetMusic.zoomOut": string;
-
-  // ── Mode Selection ─────────────────────────────────────────────
-  "modeSelect.title": string;
-  "modeSelect.subtitle": string;
-  "modeSelect.watchDesc": string;
-  "modeSelect.waitDesc": string;
-  "modeSelect.freeDesc": string;
-  "modeSelect.escToSkip": string;
-  "modeSelect.mustChoose": string;
-
-  // ── Statistics ─────────────────────────────────────────────────
-  "stats.title": string;
-  "stats.accuracy": string;
-  "stats.notesHit": string;
-  "stats.notesMissed": string;
-  "stats.streak": string;
-  "stats.totalNotes": string;
-  "stats.hitRate": string;
-  "stats.hitFraction": string;
-  "stats.consistency": string;
-  "stats.mode": string;
-  "stats.speed": string;
-  "stats.duration": string;
-  "stats.nextFocus": string;
-  "stats.missRateSummary": string;
-  "stats.reward": string;
-  "stats.rewardLegend": string;
-  "stats.rewardGold": string;
-  "stats.rewardSilver": string;
-  "stats.rewardBronze": string;
-  "stats.modeWait": string;
-  "stats.modeFree": string;
-  "stats.modeWatch": string;
-  "stats.modeStep": string;
-  "stats.weakSpotHint": string;
-  "stats.tipSlowDown": string;
-  "stats.tipUseWaitMode": string;
-  "stats.tipTrainStreak": string;
-  "stats.tipRaiseSpeed": string;
-  "stats.tipKeepGoing": string;
-  "stats.tipLoopFocus": string;
-  "stats.tipShortSession": string;
-  "stats.playAgain": string;
-  "stats.backToLibrary": string;
 
   // ── Audio ──────────────────────────────────────────────────────
   "audio.mute": string;
@@ -308,29 +202,6 @@ export interface TranslationMap {
   "audio.restored": string;
   "audio.recoveryFailed": string;
   "audio.retry": string;
-
-  // ── Onboarding ──────────────────────────────────────────────────
-  "onboarding.step1.title": string;
-  "onboarding.step1.desc": string;
-  "onboarding.step2.title": string;
-  "onboarding.step2.desc": string;
-  "onboarding.step3.title": string;
-  "onboarding.step3.desc": string;
-  "onboarding.step4.title": string;
-  "onboarding.step4.desc": string;
-  "onboarding.skip": string;
-  "onboarding.next": string;
-  "onboarding.getStarted": string;
-  "onboarding.ariaLabel": string;
-
-  // ── Count-in ─────────────────────────────────────────────────
-  "countIn.go": string;
-
-  // ── Song Library Tags ─────────────────────────────────────────
-  "library.filterByTag": string;
-  "library.clearTagFilter": string;
-  "library.demo": string;
-  "library.demoTitle": string;
 
   // ── Progress / Daily Goal ───────────────────────────────────
   "progress.dailyGoal": string;
@@ -346,16 +217,7 @@ export interface TranslationMap {
   "heatmap.hard": string;
   "heatmap.veryHard": string;
 
-  // ── Help / Shortcuts ─────────────────────────────────────────
-  "help.seekShort": string;
-  "help.seekLong": string;
-  "help.openFile": string;
-  "help.toggleHelp": string;
-  "help.closeHint": string;
-
   // ── Song Card ───────────────────────────────────────────────
-  "songCard.stopPreview": string;
-  "songCard.previewSong": string;
   "songCard.practiced": string;
   "songCard.bestScore": string;
   "songCard.difficulty": string;

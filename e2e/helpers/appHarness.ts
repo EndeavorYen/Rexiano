@@ -36,11 +36,6 @@ export async function loadFirstBuiltInSong(page: Page): Promise<void> {
   await expect(firstSongCard).toBeVisible({ timeout: 20_000 });
   await firstSongCard.click();
 
-  await expect(page.getByTestId("mode-select-wait")).toBeVisible({
-    timeout: 20_000,
-  });
-  await page.getByTestId("mode-select-wait").click();
-
   await expect(page.locator(".workspace-frame")).toBeVisible({
     timeout: 20_000,
   });

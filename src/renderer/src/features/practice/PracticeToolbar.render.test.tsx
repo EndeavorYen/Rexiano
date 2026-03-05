@@ -33,14 +33,6 @@ vi.mock("@renderer/stores/usePlaybackStore", () => ({
     }),
 }));
 
-// Mock useSongStore (used by TrackSelector)
-vi.mock("@renderer/stores/useSongStore", () => ({
-  useSongStore: (selector: (s: any) => any) =>
-    selector({
-      song: null,
-    }),
-}));
-
 import { PracticeToolbar } from "./PracticeToolbar";
 
 describe("PracticeToolbar render", () => {

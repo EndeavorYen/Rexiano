@@ -94,10 +94,7 @@ describe("StepMode", () => {
   });
 
   it("should reset to the beginning", () => {
-    const track = makeTrack([
-      makeNote(60, 0.0),
-      makeNote(64, 0.5),
-    ]);
+    const track = makeTrack([makeNote(60, 0.0), makeNote(64, 0.5)]);
     step.setTracks([track], new Set([0]));
 
     step.advance();

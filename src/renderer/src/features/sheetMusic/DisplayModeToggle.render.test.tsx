@@ -9,7 +9,6 @@ import { render, screen, fireEvent, cleanup } from "@testing-library/react";
 vi.mock("lucide-react", () => ({
   Music: (props: any) => <svg data-testid="icon-Music" />,
   Piano: (props: any) => <svg data-testid="icon-Piano" />,
-  Layers: (props: any) => <svg data-testid="icon-Layers" />,
 }));
 
 // Mock useTranslation
@@ -34,29 +33,21 @@ describe("DisplayModeToggle render", () => {
     vi.clearAllMocks();
   });
 
-  test("renders all three display mode buttons", () => {
+  test("renders both display mode buttons", () => {
     render(<DisplayModeToggle />);
     expect(screen.getByTestId("display-mode-falling")).toBeDefined();
     expect(screen.getByTestId("display-mode-sheet")).toBeDefined();
-    expect(screen.getByTestId("display-mode-split")).toBeDefined();
   });
 
   test("displays mode labels", () => {
     render(<DisplayModeToggle />);
     expect(screen.getByText("sheetMusic.modeFalling")).toBeDefined();
     expect(screen.getByText("sheetMusic.modeSheet")).toBeDefined();
-    expect(screen.getByText("sheetMusic.modeSplit")).toBeDefined();
   });
 
   test("clicking sheet mode calls setDisplayMode", () => {
     render(<DisplayModeToggle />);
     fireEvent.click(screen.getByTestId("display-mode-sheet"));
     expect(mockSetDisplayMode).toHaveBeenCalledWith("sheet");
-  });
-
-  test("clicking split mode calls setDisplayMode", () => {
-    render(<DisplayModeToggle />);
-    fireEvent.click(screen.getByTestId("display-mode-split"));
-    expect(mockSetDisplayMode).toHaveBeenCalledWith("split");
   });
 });

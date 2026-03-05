@@ -29,8 +29,6 @@ export function SpeedSlider(): React.JSX.Element {
   const { t } = useTranslation();
   const speed = usePracticeStore((s) => s.speed);
   const setSpeed = usePracticeStore((s) => s.setSpeed);
-  const autoSpeedUp = usePracticeStore((s) => s.autoSpeedUp);
-  const setAutoSpeedUp = usePracticeStore((s) => s.setAutoSpeedUp);
 
   const speedPercent = Math.round(speed * 100);
 
@@ -93,25 +91,6 @@ export function SpeedSlider(): React.JSX.Element {
       >
         {formatSpeed(speed)}
       </span>
-
-      {/* Auto speed up toggle */}
-      <label
-        className="flex items-center gap-1.5 shrink-0 cursor-pointer"
-        data-testid="auto-speed-up-toggle"
-      >
-        <input
-          type="checkbox"
-          checked={autoSpeedUp}
-          onChange={(e) => setAutoSpeedUp(e.target.checked)}
-          className="accent-[var(--color-accent)] cursor-pointer"
-        />
-        <span
-          className="text-[10px] font-body"
-          style={{ color: "var(--color-text-muted)" }}
-        >
-          {t("practice.autoSpeedUp")}
-        </span>
-      </label>
     </div>
   );
 }

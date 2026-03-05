@@ -1,9 +1,9 @@
 /**
  * DisplayModeToggle — Segmented control for switching between
- * falling notes, sheet music, or split (both) display modes.
+ * falling notes or sheet music display modes.
  */
 
-import { Music, Piano, Layers } from "lucide-react";
+import { Music, Piano } from "lucide-react";
 import { usePracticeStore } from "@renderer/stores/usePracticeStore";
 import { useTranslation } from "@renderer/i18n/useTranslation";
 import type { DisplayMode } from "./types";
@@ -16,7 +16,6 @@ const modes: {
 }[] = [
   { value: "falling", labelKey: "sheetMusic.modeFalling", Icon: Piano },
   { value: "sheet", labelKey: "sheetMusic.modeSheet", Icon: Music },
-  { value: "split", labelKey: "sheetMusic.modeSplit", Icon: Layers },
 ];
 
 export function DisplayModeToggle(): React.JSX.Element {

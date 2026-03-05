@@ -127,6 +127,19 @@ describe("MidiToNotation", () => {
 
       expect(result.measures[0].trebleNotes[0].vexKey).toBe("c/4");
     });
+
+    it("clamps overlapping same-clef notes to next onset for readable rhythm", () => {
+      const notes = [
+        { midi: 60, name: "C4", time: 0, duration: 1.5, velocity: 80 },
+        { midi: 62, name: "D4", time: 0.5, duration: 0.5, velocity: 80 },
+      ];
+      const result = convertToNotation(notes, 120, 480, 4, 4);
+      const treble = result.measures[0].trebleNotes.filter((n) => !n.isRest);
+      const first = treble.find((n) => n.midi === 60 && n.startTick === 0);
+      expect(first).toBeDefined();
+      expect(first?.durationTicks).toBe(480);
+      expect(first?.tied).toBe(false);
+    });
   });
 
   describe("keySigToVexKey", () => {

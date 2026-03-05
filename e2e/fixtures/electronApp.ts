@@ -14,7 +14,6 @@ interface ElectronFixtures {
 }
 
 const SETTINGS_KEY = "rexiano-settings";
-const ONBOARDING_KEY = "rexiano-onboarding-completed";
 
 export const test = base.extend<ElectronFixtures>({
   // eslint-disable-next-line no-empty-pattern
@@ -67,14 +66,7 @@ export async function waitForUiSettled(page: Page): Promise<void> {
 
 async function applyStableSettings(page: Page): Promise<void> {
   await page.evaluate(
-    ({
-      settingsKey,
-      onboardingKey,
-    }: {
-      settingsKey: string;
-      onboardingKey: string;
-    }) => {
-      localStorage.setItem(onboardingKey, "1");
+    ({ settingsKey }: { settingsKey: string }) => {
       localStorage.setItem(
         settingsKey,
         JSON.stringify({
@@ -87,7 +79,7 @@ async function applyStableSettings(page: Page): Promise<void> {
         }),
       );
     },
-    { settingsKey: SETTINGS_KEY, onboardingKey: ONBOARDING_KEY },
+    { settingsKey: SETTINGS_KEY },
   );
 
   await page.reload();

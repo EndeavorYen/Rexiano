@@ -11,7 +11,9 @@ vi.mock("lucide-react", () => ({
   Clock3: (props: any) => <svg data-testid="icon-Clock3" />,
   Library: (props: any) => <svg data-testid="icon-Library" />,
   Flame: (props: any) => <svg data-testid="icon-Flame" />,
-  SlidersHorizontal: (props: any) => <svg data-testid="icon-SlidersHorizontal" />,
+  SlidersHorizontal: (props: any) => (
+    <svg data-testid="icon-SlidersHorizontal" />
+  ),
   ArrowUpRight: (props: any) => <svg data-testid="icon-ArrowUpRight" />,
 }));
 
@@ -60,23 +62,13 @@ describe("MainMenu render", () => {
   });
 
   test("renders the main menu panel", () => {
-    render(
-      <MainMenu
-        onStartPractice={vi.fn()}
-        onOpenSettings={vi.fn()}
-      />,
-    );
+    render(<MainMenu onStartPractice={vi.fn()} onOpenSettings={vi.fn()} />);
     expect(screen.getByTestId("main-menu-view")).toBeDefined();
     expect(screen.getByTestId("main-menu-panel")).toBeDefined();
   });
 
   test("displays app title and greeting", () => {
-    render(
-      <MainMenu
-        onStartPractice={vi.fn()}
-        onOpenSettings={vi.fn()}
-      />,
-    );
+    render(<MainMenu onStartPractice={vi.fn()} onOpenSettings={vi.fn()} />);
     // Translation keys are returned as-is
     expect(screen.getByText("app.title")).toBeDefined();
     expect(screen.getByText("app.startPractice")).toBeDefined();
@@ -85,35 +77,20 @@ describe("MainMenu render", () => {
 
   test("calls onStartPractice when start button clicked", () => {
     const onStart = vi.fn();
-    render(
-      <MainMenu
-        onStartPractice={onStart}
-        onOpenSettings={vi.fn()}
-      />,
-    );
+    render(<MainMenu onStartPractice={onStart} onOpenSettings={vi.fn()} />);
     fireEvent.click(screen.getByText("app.startPractice"));
     expect(onStart).toHaveBeenCalledOnce();
   });
 
   test("calls onOpenSettings when settings button clicked", () => {
     const onSettings = vi.fn();
-    render(
-      <MainMenu
-        onStartPractice={vi.fn()}
-        onOpenSettings={onSettings}
-      />,
-    );
+    render(<MainMenu onStartPractice={vi.fn()} onOpenSettings={onSettings} />);
     fireEvent.click(screen.getByText("app.openSettings"));
     expect(onSettings).toHaveBeenCalledOnce();
   });
 
   test("shows no-songs hint when no recent files", () => {
-    render(
-      <MainMenu
-        onStartPractice={vi.fn()}
-        onOpenSettings={vi.fn()}
-      />,
-    );
+    render(<MainMenu onStartPractice={vi.fn()} onOpenSettings={vi.fn()} />);
     expect(screen.getByText("library.noSongsHint")).toBeDefined();
   });
 });

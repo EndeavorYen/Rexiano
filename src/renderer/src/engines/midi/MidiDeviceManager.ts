@@ -364,16 +364,13 @@ export class MidiDeviceManager {
 
   /** Schedule the next reconnect attempt */
   private _scheduleReconnectAttempt(): void {
-    if (
-      this._reconnectAttempt >= MidiDeviceManager.MAX_RECONNECT_ATTEMPTS
-    ) {
+    if (this._reconnectAttempt >= MidiDeviceManager.MAX_RECONNECT_ATTEMPTS) {
       this._reconnecting = false;
       this._onReconnectFailed?.();
       return;
     }
 
-    const delay =
-      MidiDeviceManager.BACKOFF_MS[this._reconnectAttempt] ?? 30000;
+    const delay = MidiDeviceManager.BACKOFF_MS[this._reconnectAttempt] ?? 30000;
     this._reconnectTimer = setTimeout(() => {
       this._reconnectTimer = null;
       this._attemptReconnect();

@@ -42,7 +42,6 @@ function createMockMIDIAccess(
   } as unknown as MIDIAccess;
 }
 
-// eslint-disable-next-line @typescript-eslint/explicit-function-return-type
 function stubRequestMIDIAccess(midiAccess: MIDIAccess) {
   const fn = vi.fn().mockResolvedValue(midiAccess);
   vi.stubGlobal("navigator", {

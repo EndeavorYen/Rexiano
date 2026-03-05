@@ -22,6 +22,8 @@ const PIANO_MAX = 108;
 export class SoundFontLoader implements ISoundFontLoader {
   /** Map of MIDI note number → decoded sample */
   private _samples = new Map<number, NoteSample>();
+  /** Cache synthesized fallback samples by sample rate to avoid repeated heavy generation. */
+  private static _synthCache = new Map<number, Map<number, NoteSample>>();
 
   get isLoaded(): boolean {
     return this._samples.size > 0;
@@ -243,11 +245,18 @@ export class SoundFontLoader implements ISoundFontLoader {
 
   /**
    * Generate piano-like tones using dual triangle-wave oscillators with ADSR envelope.
-   * The second oscillator is detuned +3 cents to create a richer, chorus-like timbre
-   * that sounds more natural than a pure sine wave fallback.
+   * The second oscillator is detuned +3 cents to create a richer, chorus-like timbre.
    */
   private _generateSynthSamples(audioContext: AudioContext): void {
     const sampleRate = audioContext.sampleRate;
+    const cached = SoundFontLoader._synthCache.get(sampleRate);
+    if (cached) {
+      for (const [midi, sample] of cached) {
+        this._samples.set(midi, { ...sample });
+      }
+      return;
+    }
+
     // Generate 2 seconds of audio per sample
     const duration = 2.0;
     const length = Math.floor(sampleRate * duration);
@@ -259,63 +268,67 @@ export class SoundFontLoader implements ISoundFontLoader {
     const release = 0.2;
     // Sustain phase ends this many seconds before the end to leave room for release
     const releaseStart = duration - release;
+    const envelope = new Float32Array(length);
+
+    for (let i = 0; i < length; i++) {
+      const t = i / sampleRate;
+      if (t < attack) {
+        // Attack: ramp from 0 to 1
+        envelope[i] = t / attack;
+      } else if (t < attack + decay) {
+        // Decay: ramp from 1 to sustainLevel
+        envelope[i] = 1 - ((1 - sustainLevel) * (t - attack)) / decay;
+      } else if (t < releaseStart) {
+        // Sustain: hold at sustainLevel with gentle exponential decay
+        envelope[i] = sustainLevel * Math.exp(-(t - attack - decay) * 1.5);
+      } else {
+        // Release: ramp to 0
+        const releaseT = (t - releaseStart) / release;
+        const sustainAtRelease =
+          sustainLevel * Math.exp(-(releaseStart - attack - decay) * 1.5);
+        envelope[i] = sustainAtRelease * (1 - releaseT);
+      }
+    }
+
+    const generated = new Map<number, NoteSample>();
 
     for (let midi = PIANO_MIN; midi <= PIANO_MAX; midi++) {
       const freq = 440 * Math.pow(2, (midi - 69) / 12);
       // Second oscillator detuned +3 cents for chorus richness
       const freq2 = freq * Math.pow(2, 3 / 1200);
+      const phaseStep1 = freq / sampleRate;
+      const phaseStep2 = freq2 / sampleRate;
+      let phase1 = 0;
+      let phase2 = 0;
 
       const audioBuffer = audioContext.createBuffer(1, length, sampleRate);
       const channelData = audioBuffer.getChannelData(0);
 
       for (let i = 0; i < length; i++) {
-        const t = i / sampleRate;
+        phase1 += phaseStep1;
+        phase2 += phaseStep2;
+        if (phase1 >= 1) phase1 -= Math.floor(phase1);
+        if (phase2 >= 1) phase2 -= Math.floor(phase2);
 
-        // ADSR envelope
-        let envelope: number;
-        if (t < attack) {
-          // Attack: ramp from 0 to 1
-          envelope = t / attack;
-        } else if (t < attack + decay) {
-          // Decay: ramp from 1 to sustainLevel
-          envelope = 1 - ((1 - sustainLevel) * (t - attack)) / decay;
-        } else if (t < releaseStart) {
-          // Sustain: hold at sustainLevel with gentle exponential decay
-          envelope = sustainLevel * Math.exp(-(t - attack - decay) * 1.5);
-        } else {
-          // Release: ramp to 0
-          const releaseT = (t - releaseStart) / release;
-          const sustainAtRelease =
-            sustainLevel * Math.exp(-(releaseStart - attack - decay) * 1.5);
-          envelope = sustainAtRelease * (1 - releaseT);
-        }
-
-        // Triangle wave via Fourier series (odd harmonics, alternating sign)
-        const triangle = (time: number, f: number): number => {
-          let val = 0;
-          // 6 odd harmonics for a clean triangle shape
-          for (let n = 0; n < 6; n++) {
-            const k = 2 * n + 1;
-            const sign = n % 2 === 0 ? 1 : -1;
-            val += (sign / (k * k)) * Math.sin(2 * Math.PI * f * k * time);
-          }
-          return val * (8 / (Math.PI * Math.PI));
-        };
-
-        // Dual triangle oscillators (second detuned +3 cents)
-        const osc1 = triangle(t, freq);
-        const osc2 = triangle(t, freq2);
+        // Triangle wave from normalized phase in [0,1)
+        const osc1 = 1 - 4 * Math.abs(phase1 - 0.5);
+        const osc2 = 1 - 4 * Math.abs(phase2 - 0.5);
         const sample = (osc1 + osc2) * 0.5;
 
-        channelData[i] = sample * envelope * 0.5;
+        channelData[i] = sample * envelope[i] * 0.5;
       }
 
-      this._samples.set(midi, {
+      generated.set(midi, {
         midi,
         buffer: audioBuffer,
         sampleRate,
         basePitch: midi, // synth samples are pitched exactly
       });
+    }
+
+    SoundFontLoader._synthCache.set(sampleRate, generated);
+    for (const [midi, sample] of generated) {
+      this._samples.set(midi, { ...sample });
     }
   }
 }

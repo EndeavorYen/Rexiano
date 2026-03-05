@@ -299,7 +299,7 @@ export function convertToNotation(
   const minTick = Math.max(1, Math.round(ticksPerQuarter / QUANTIZE_GRID));
   const vexKeySig = keySigToVexKey(keySig);
 
-  const quantized: QuantizedNote[] = notes.map((note, idx) => {
+  const quantizedRaw: QuantizedNote[] = notes.map((note, idx) => {
     const absoluteStart = quantizeTick(
       secondsToAbsoluteTicks(note.time, tempos, ticksPerQuarter),
       ticksPerQuarter,
@@ -325,6 +325,7 @@ export function convertToNotation(
       clef,
     };
   });
+  const quantized = clampOverlappingDurations(quantizedRaw, minTick);
 
   const maxTick = Math.max(...quantized.map((n) => n.endTick));
   const measureBoundaries = buildMeasureBoundaries(
@@ -430,6 +431,50 @@ export function convertToNotation(
     expressions:
       notationExpressions.length > 0 ? notationExpressions : undefined,
   };
+}
+
+/**
+ * This renderer intentionally uses a single voice per clef.
+ * Clamp same-clef overlaps to the next onset so one measure stays rhythmically readable.
+ */
+function clampOverlappingDurations(
+  notes: QuantizedNote[],
+  minTick: number,
+): QuantizedNote[] {
+  const byClef: Record<"treble" | "bass", QuantizedNote[]> = {
+    treble: [],
+    bass: [],
+  };
+  for (const note of notes) {
+    byClef[note.clef].push(note);
+  }
+
+  const clamped: QuantizedNote[] = [];
+  for (const clef of ["treble", "bass"] as const) {
+    const list = [...byClef[clef]].sort(
+      (a, b) => a.startTick - b.startTick || a.endTick - b.endTick,
+    );
+    for (let i = 0; i < list.length; i++) {
+      const current = list[i];
+      let nextDistinctStart = Number.POSITIVE_INFINITY;
+      for (let j = i + 1; j < list.length; j++) {
+        if (list[j].startTick > current.startTick) {
+          nextDistinctStart = list[j].startTick;
+          break;
+        }
+      }
+
+      const cappedEnd = Number.isFinite(nextDistinctStart)
+        ? Math.min(current.endTick, nextDistinctStart)
+        : current.endTick;
+      clamped.push({
+        ...current,
+        endTick: Math.max(current.startTick + minTick, cappedEnd),
+      });
+    }
+  }
+
+  return clamped;
 }
 
 /** Ensure tempo events are sorted and always include a t=0 anchor. */

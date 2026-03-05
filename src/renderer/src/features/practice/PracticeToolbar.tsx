@@ -2,7 +2,7 @@
  * ─── Phase 6: Practice Toolbar ──────────────────────────────
  *
  * Composite UI component that groups all practice controls
- * (mode selector, speed slider, A-B loop, track selector)
+ * (mode selector, speed slider, A-B loop)
  * into a single toolbar embedded below the TransportBar.
  */
 import { useState } from "react";
@@ -11,7 +11,6 @@ import { useTranslation } from "@renderer/i18n/useTranslation";
 import { PracticeModeSelector } from "./PracticeModeSelector";
 import { SpeedSlider } from "./SpeedSlider";
 import { ABLoopSelector } from "./ABLoopSelector";
-import { TrackSelector } from "./TrackSelector";
 
 interface PracticeToolbarProps {
   compact?: boolean;
@@ -51,13 +50,6 @@ export function PracticeToolbar({
           />
 
           <ABLoopSelector />
-
-          <div
-            className="hidden sm:block h-5 w-px shrink-0"
-            style={{ background: "var(--color-border)" }}
-          />
-
-          <TrackSelector />
         </div>
       </div>
     );
@@ -105,7 +97,7 @@ export function PracticeToolbar({
 
       {showAdvanced && (
         <div
-          className="grid gap-2 border-t px-3 pb-2.5 pt-2 md:grid-cols-2"
+          className="border-t px-3 pb-2.5 pt-2"
           style={{
             borderColor: "var(--color-border)",
             background:
@@ -114,9 +106,6 @@ export function PracticeToolbar({
         >
           <div className="surface-elevated rounded-xl p-2">
             <ABLoopSelector />
-          </div>
-          <div className="surface-elevated rounded-xl p-2">
-            <TrackSelector />
           </div>
         </div>
       )}

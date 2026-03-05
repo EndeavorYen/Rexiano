@@ -1,4 +1,10 @@
-import { useEffect, useCallback, useState, useRef, startTransition } from "react";
+import {
+  useEffect,
+  useCallback,
+  useState,
+  useRef,
+  startTransition,
+} from "react";
 import { Bluetooth } from "lucide-react";
 import { useMidiDeviceStore } from "@renderer/stores/useMidiDeviceStore";
 import { ConnectionStatus } from "./ConnectionStatus";

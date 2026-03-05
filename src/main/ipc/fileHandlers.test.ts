@@ -33,7 +33,6 @@ import { readFile } from "fs/promises";
 import { existsSync } from "fs";
 
 describe("fileHandlers", () => {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let handlers: Record<string, (...args: any[]) => Promise<any>>;
 
   beforeEach(() => {
@@ -41,7 +40,6 @@ describe("fileHandlers", () => {
 
     handlers = {};
     vi.mocked(ipcMain.handle).mockImplementation(
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (channel: string, handler: (...args: any[]) => any) => {
         handlers[channel] = handler;
         return undefined as never;
@@ -154,10 +152,7 @@ describe("fileHandlers", () => {
   test("LOAD_SOUNDFONT blocks absolute path traversal", async () => {
     const consoleSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
 
-    const result = await handlers["audio:loadSoundFont"](
-      null,
-      "/etc/shadow",
-    );
+    const result = await handlers["audio:loadSoundFont"](null, "/etc/shadow");
 
     // The path.relative check should catch this
     expect(result).toBeNull();

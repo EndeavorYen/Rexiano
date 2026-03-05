@@ -27,6 +27,7 @@ import {
   normalizeTickInMeasure,
   type ChordGroup,
 } from "./sheetMusicRenderLogic";
+import { calcMeasureWidths } from "./sheetMusicUtils";
 
 /** Layout constants */
 const STAVE_HEIGHT = 80;
@@ -580,11 +581,36 @@ export function SheetMusicPanel({
     return getMeasureWindow(activeMeasureIndex, notationData.measures.length);
   }, [notationData, activeMeasureIndex]);
 
-  const slotWidth = useMemo(
-    () =>
-      Math.floor((containerWidth - LEFT_MARGIN * 2) / DISPLAY_MEASURE_COUNT),
-    [containerWidth],
+  const availableWidth = Math.max(
+    1,
+    Math.floor(containerWidth - LEFT_MARGIN * 2),
   );
+  const slotWidths = useMemo(() => {
+    const noteCounts = Array.from(
+      { length: DISPLAY_MEASURE_COUNT },
+      (_unused, slot) => {
+        const measureIndex = visibleMeasures[slot];
+        if (measureIndex === undefined || !notationData) return 0;
+        const measure = notationData.measures[measureIndex];
+        if (!measure) return 0;
+        const treble = measure.trebleNotes.filter((n) => !n.isRest).length;
+        const bass = measure.bassNotes.filter((n) => !n.isRest).length;
+        return treble + bass;
+      },
+    );
+    return calcMeasureWidths(noteCounts, availableWidth);
+  }, [availableWidth, notationData, visibleMeasures]);
+  const slotLefts = useMemo(() => {
+    const lefts: number[] = [];
+    let cursor = LEFT_MARGIN;
+    for (let i = 0; i < DISPLAY_MEASURE_COUNT; i++) {
+      lefts.push(cursor);
+      cursor += slotWidths[i] ?? 0;
+    }
+    return lefts;
+  }, [slotWidths]);
+  const contentWidth =
+    LEFT_MARGIN * 2 + slotWidths.reduce((sum, width) => sum + width, 0);
   const totalHeight = SYSTEM_HEIGHT + TOP_MARGIN * 2 + 16;
   const activeSlotIndex =
     cursorPosition && visibleMeasures.length > 0
@@ -599,9 +625,11 @@ export function SheetMusicPanel({
     cursorPosition && activeSlotIndex >= 0
       ? Math.max(0, Math.min(0.995, cursorPosition.beat / beatsPerMeasure))
       : 0;
+  const activeMeasureWidth =
+    activeSlotIndex >= 0 ? (slotWidths[activeSlotIndex] ?? 0) : 0;
   const activeMeasureLeft =
-    activeSlotIndex >= 0 ? LEFT_MARGIN + activeSlotIndex * slotWidth : 0;
-  const cursorLeft = activeMeasureLeft + slotWidth * beatRatio;
+    activeSlotIndex >= 0 ? (slotLefts[activeSlotIndex] ?? LEFT_MARGIN) : 0;
+  const cursorLeft = activeMeasureLeft + activeMeasureWidth * beatRatio;
 
   useEffect(() => {
     const el = containerRef.current;
@@ -650,7 +678,7 @@ export function SheetMusicPanel({
       !host ||
       !notationData ||
       notationData.measures.length === 0 ||
-      slotWidth <= 0
+      slotWidths.length === 0
     ) {
       return;
     }
@@ -664,7 +692,10 @@ export function SheetMusicPanel({
         const { Renderer, StaveTie } = VF;
         const stage = document.createElement("div");
         const renderer = new Renderer(stage, Renderer.Backends.SVG);
-        renderer.resize(containerWidth, Math.max(totalHeight, height));
+        renderer.resize(
+          Math.max(containerWidth, contentWidth),
+          Math.max(totalHeight, height),
+        );
         const context = renderer.getContext();
 
         // Collect render results for cross-measure tie rendering
@@ -673,7 +704,8 @@ export function SheetMusicPanel({
 
         for (let slot = 0; slot < DISPLAY_MEASURE_COUNT; slot++) {
           const measureIndex = visibleMeasures[slot];
-          const x = LEFT_MARGIN + slot * slotWidth;
+          const x = slotLefts[slot] ?? LEFT_MARGIN;
+          const width = slotWidths[slot] ?? 1;
           const y = TOP_MARGIN;
           const isFirst = slot === 0;
 
@@ -685,7 +717,7 @@ export function SheetMusicPanel({
             const timeSig = lastMeasure
               ? `${lastMeasure.timeSignatureTop}/${lastMeasure.timeSignatureBottom}`
               : "4/4";
-            renderEmptyMeasure(VF, context, x, y, slotWidth, isFirst, timeSig);
+            renderEmptyMeasure(VF, context, x, y, width, isFirst, timeSig);
             slotResults.push(null);
             continue;
           }
@@ -714,7 +746,7 @@ export function SheetMusicPanel({
               measure,
               x,
               y,
-              slotWidth,
+              width,
               isFirst,
               notationData.ticksPerQuarter,
               trebleContinuationKeys,
@@ -822,8 +854,10 @@ export function SheetMusicPanel({
     hidden,
     notationData,
     containerWidth,
+    contentWidth,
     height,
-    slotWidth,
+    slotLefts,
+    slotWidths,
     totalHeight,
     visibleMeasures,
   ]);
@@ -837,20 +871,18 @@ export function SheetMusicPanel({
       className="relative w-full overflow-auto outline-none"
       style={{
         flex: mode === "sheet" ? 1 : undefined,
-        height: mode === "split" ? height : undefined,
-        flexShrink: mode === "split" ? 0 : undefined,
-        minHeight: mode === "split" ? height : undefined,
+        height,
+        minHeight: height,
         background:
           "color-mix(in srgb, var(--color-surface) 88%, var(--color-bg))",
-        borderBottom:
-          mode === "split" ? "1px solid var(--color-border)" : undefined,
       }}
       data-testid="sheet-music-panel"
     >
       <div
         ref={svgHostRef}
-        className="w-full h-full"
+        className="h-full"
         style={{
+          minWidth: Math.max(containerWidth, contentWidth),
           transform: zoomLevel !== 1 ? `scale(${zoomLevel})` : undefined,
           transformOrigin: "top left",
         }}
@@ -863,7 +895,7 @@ export function SheetMusicPanel({
             className="absolute pointer-events-none"
             style={{
               left: activeMeasureLeft,
-              width: slotWidth,
+              width: activeMeasureWidth,
               top: TOP_MARGIN,
               height: SYSTEM_HEIGHT,
               background: hexToRgba(accentHex, 0.06),

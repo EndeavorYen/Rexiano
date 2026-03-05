@@ -1,12 +1,4 @@
-/**
- * ─── Phase 6.5: Song Card ───────────────────────────────────
- *
- * Individual song entry in the library grid. Displays title,
- * composer, difficulty dots, grade badge, duration, tags,
- * best-score stars, and preview/demo actions. Supports
- * bilingual display (en / zh-TW) via the settings store.
- */
-import { useCallback, useState } from "react";
+import { useCallback } from "react";
 import type { BuiltinSongMeta } from "../../../../shared/types";
 import { useProgressStore } from "@renderer/stores/useProgressStore";
 import { useSettingsStore } from "@renderer/stores/useSettingsStore";
@@ -24,13 +16,6 @@ interface SongCardProps {
   song: BuiltinSongMeta;
   onSelect: (songId: string) => void;
   colorIndex: number;
-  onTagClick?: (tag: string) => void;
-  activeTag?: string | null;
-  /** Preview state: "idle" | "loading" | "playing" */
-  previewState?: "idle" | "loading" | "playing";
-  onPreviewClick?: (songId: string) => void;
-  /** Called when "Demo" is clicked — loads song in Watch mode and auto-plays */
-  onDemo?: (songId: string) => void;
 }
 
 function formatDuration(seconds: number): string {
@@ -39,20 +24,23 @@ function formatDuration(seconds: number): string {
   return `${m}:${s.toString().padStart(2, "0")}`;
 }
 
-/** Number of difficulty dots to show (1 = beginner, 2 = intermediate, 3 = advanced) */
 const difficultyDots: Record<BuiltinSongMeta["difficulty"], number> = {
   beginner: 1,
   intermediate: 2,
   advanced: 3,
 };
 
-const difficultyLabelKeys: Record<BuiltinSongMeta["difficulty"], "library.difficulty.beginner" | "library.difficulty.intermediate" | "library.difficulty.advanced"> = {
+const difficultyLabelKeys: Record<
+  BuiltinSongMeta["difficulty"],
+  | "library.difficulty.beginner"
+  | "library.difficulty.intermediate"
+  | "library.difficulty.advanced"
+> = {
   beginner: "library.difficulty.beginner",
   intermediate: "library.difficulty.intermediate",
   advanced: "library.difficulty.advanced",
 };
 
-/** Convert accuracy (0-100) to a 0-3 star count */
 function accuracyToStars(accuracy: number): number {
   if (accuracy >= 90) return 3;
   if (accuracy >= 70) return 2;
@@ -64,14 +52,8 @@ export function SongCard({
   song,
   onSelect,
   colorIndex,
-  onTagClick,
-  activeTag,
-  previewState = "idle",
-  onPreviewClick,
-  onDemo,
 }: SongCardProps): React.JSX.Element {
   const { t } = useTranslation();
-  const [isHovered, setIsHovered] = useState(false);
   const noteColors = [
     "var(--color-note1)",
     "var(--color-note2)",
@@ -79,7 +61,6 @@ export function SongCard({
     "var(--color-note4)",
   ];
   const stripeColor = noteColors[colorIndex % noteColors.length];
-
   const bestScore = useProgressStore((s) => s.getBestScore(song.id));
   const language = useSettingsStore((s) => s.language);
 
@@ -105,38 +86,9 @@ export function SongCard({
   const gradeColor =
     song.grade !== undefined ? getGradeColor(song.grade) : null;
 
-  const handlePreviewClick = useCallback(
-    (e: React.MouseEvent) => {
-      e.stopPropagation();
-      onPreviewClick?.(song.id);
-    },
-    [song.id, onPreviewClick],
-  );
-
-  const handleDemoClick = useCallback(
-    (e: React.MouseEvent) => {
-      e.stopPropagation();
-      onDemo?.(song.id);
-    },
-    [song.id, onDemo],
-  );
-
-  const handleTagClick = useCallback(
-    (e: React.MouseEvent, tag: string) => {
-      e.stopPropagation();
-      onTagClick?.(tag);
-    },
-    [onTagClick],
-  );
-
-  /** Only show non-level tags (level-N tags are not useful to display) */
-  const visibleTags = song.tags.filter((tag) => !tag.startsWith("level-"));
-
   return (
     <button
       onClick={handleClick}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
       className="group card-hover text-left rounded-xl overflow-hidden cursor-pointer w-full"
       style={{
         background: "color-mix(in srgb, var(--color-surface) 88%, transparent)",
@@ -144,22 +96,11 @@ export function SongCard({
       }}
     >
       <div
-        className="h-1.5 transition-all duration-300 group-hover:h-2 relative"
+        className="h-1.5 transition-all duration-300 group-hover:h-2"
         style={{
           background: `linear-gradient(95deg, ${stripeColor}, color-mix(in srgb, ${stripeColor} 38%, var(--color-surface)))`,
         }}
-      >
-        {/* Preview mini progress bar */}
-        {previewState === "playing" && (
-          <div
-            className="absolute inset-0 origin-left animate-preview-progress"
-            style={{
-              background:
-                "color-mix(in srgb, var(--color-accent) 60%, transparent)",
-            }}
-          />
-        )}
-      </div>
+      />
 
       <div className="p-3.5">
         <div className="flex items-start justify-between gap-2.5">
@@ -178,149 +119,28 @@ export function SongCard({
             </p>
           </div>
 
-          <div className="flex items-center gap-1.5 shrink-0 mt-0.5">
-            {/* Demo button — loads song in Watch mode */}
-            {onDemo && (
-              <div
-                role="button"
-                tabIndex={-1}
-                onClick={handleDemoClick}
-                className="flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-body font-semibold cursor-pointer transition-all duration-150"
-                style={{
-                  background:
-                    "color-mix(in srgb, var(--color-accent) 14%, transparent)",
-                  color: "var(--color-accent)",
-                  border:
-                    "1px solid color-mix(in srgb, var(--color-accent) 25%, transparent)",
-                  opacity: isHovered ? 1 : 0,
-                }}
-                title={t("library.demoTitle")}
-                data-testid="song-card-demo-btn"
-              >
-                <svg
-                  width="8"
-                  height="10"
-                  viewBox="0 0 8 10"
-                  fill="currentColor"
-                >
-                  <path d="M0 0.5v9l8-4.5z" />
-                </svg>
-                {t("library.demo")}
-              </div>
-            )}
-
-            {/* Preview button */}
-            {onPreviewClick && (
-              <div
-                role="button"
-                tabIndex={-1}
-                onClick={handlePreviewClick}
-                className="w-6 h-6 rounded-full flex items-center justify-center transition-all duration-150"
-                style={{
-                  background:
-                    previewState !== "idle"
-                      ? "var(--color-accent)"
-                      : "color-mix(in srgb, var(--color-accent) 12%, transparent)",
-                  color:
-                    previewState !== "idle" ? "#fff" : "var(--color-accent)",
-                  opacity: isHovered || previewState !== "idle" ? 1 : 0,
-                }}
-                title={
-                  previewState === "playing" ? t("songCard.stopPreview") : t("songCard.previewSong")
-                }
-              >
-                {previewState === "loading" ? (
-                  <div
-                    className="w-3 h-3 border-[1.5px] rounded-full animate-spin"
-                    style={{
-                      borderColor: "transparent",
-                      borderTopColor: "currentColor",
-                    }}
-                  />
-                ) : previewState === "playing" ? (
-                  <svg
-                    width="8"
-                    height="8"
-                    viewBox="0 0 8 8"
-                    fill="currentColor"
-                  >
-                    <rect x="0" y="0" width="3" height="8" rx="0.5" />
-                    <rect x="5" y="0" width="3" height="8" rx="0.5" />
-                  </svg>
-                ) : (
-                  <svg
-                    width="8"
-                    height="10"
-                    viewBox="0 0 8 10"
-                    fill="currentColor"
-                  >
-                    <path d="M0 0.5v9l8-4.5z" />
-                  </svg>
-                )}
-              </div>
-            )}
-
-            {bestScore && (
-              <div
-                className="w-2.5 h-2.5 rounded-full shrink-0"
-                style={{
-                  background: "var(--color-accent)",
-                  boxShadow:
-                    "0 0 0 4px color-mix(in srgb, var(--color-accent) 18%, transparent)",
-                }}
-                title={t("songCard.practiced")}
-              />
-            )}
-          </div>
+          {bestScore && (
+            <div
+              className="w-2.5 h-2.5 rounded-full shrink-0 mt-0.5"
+              style={{
+                background: "var(--color-accent)",
+                boxShadow:
+                  "0 0 0 4px color-mix(in srgb, var(--color-accent) 18%, transparent)",
+              }}
+              title={t("songCard.practiced")}
+            />
+          )}
         </div>
-
-        {/* Tag chips */}
-        {visibleTags.length > 0 && (
-          <div className="flex flex-wrap gap-1 mt-2">
-            {visibleTags.slice(0, 4).map((tag) => (
-              <span
-                key={tag}
-                role="button"
-                tabIndex={-1}
-                onClick={(e) => handleTagClick(e, tag)}
-                className="text-[9px] font-body font-medium px-1.5 py-0.5 rounded-full cursor-pointer transition-colors"
-                style={{
-                  background:
-                    activeTag === tag
-                      ? "color-mix(in srgb, var(--color-accent) 25%, transparent)"
-                      : "color-mix(in srgb, var(--color-accent) 10%, transparent)",
-                  color:
-                    activeTag === tag
-                      ? "var(--color-accent)"
-                      : "var(--color-text-muted)",
-                  border:
-                    activeTag === tag
-                      ? "1px solid color-mix(in srgb, var(--color-accent) 40%, transparent)"
-                      : "1px solid transparent",
-                }}
-              >
-                {tag}
-              </span>
-            ))}
-          </div>
-        )}
-
-        {/* Techniques — shown on hover */}
-        {song.techniques && song.techniques.length > 0 && isHovered && (
-          <p
-            className="text-[10px] font-body mt-1.5 truncate"
-            style={{ color: "var(--color-text-muted)", opacity: 0.7 }}
-          >
-            {song.techniques.join(" · ")}
-          </p>
-        )}
 
         <div className="flex items-center justify-between mt-3.5">
           <div className="flex items-center gap-2.5 min-w-0">
             <div
               className="flex items-center gap-0.5"
               title={`${t(difficultyLabelKeys[song.difficulty])}: ${difficultyDescription}`}
-              aria-label={t("songCard.difficulty", { level: t(difficultyLabelKeys[song.difficulty]), desc: difficultyDescription })}
+              aria-label={t("songCard.difficulty", {
+                level: t(difficultyLabelKeys[song.difficulty]),
+                desc: difficultyDescription,
+              })}
             >
               {[1, 2, 3].map((n) => (
                 <div
@@ -336,7 +156,9 @@ export function SongCard({
             {bestScore && (
               <div
                 className="flex items-center gap-px"
-                title={t("songCard.bestScore", { score: Math.round(bestScore.score.accuracy) })}
+                title={t("songCard.bestScore", {
+                  score: Math.round(bestScore.score.accuracy),
+                })}
               >
                 {[1, 2, 3].map((n) => (
                   <svg
@@ -356,20 +178,6 @@ export function SongCard({
                   </svg>
                 ))}
               </div>
-            )}
-
-            {bestScore && (
-              <span
-                className="text-[10px] font-mono tabular-nums px-1.5 py-0.5 rounded-md"
-                style={{
-                  color: "var(--color-text-muted)",
-                  background:
-                    "color-mix(in srgb, var(--color-surface-alt) 80%, transparent)",
-                  border: "1px solid var(--color-border)",
-                }}
-              >
-                {Math.round(bestScore.score.accuracy)}%
-              </span>
             )}
           </div>
 

@@ -44,7 +44,6 @@ vi.mock("pixi.js", () => {
     }
   }
   class MockTextStyle {
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     constructor(_opts?: unknown) {
       /* noop */
     }

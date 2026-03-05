@@ -64,7 +64,6 @@ function makeSession(overrides: Partial<SessionRecord> = {}): SessionRecord {
 }
 
 describe("progressHandlers", () => {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let handlers: Record<string, (...args: any[]) => Promise<any>>;
 
   beforeEach(() => {
@@ -73,7 +72,6 @@ describe("progressHandlers", () => {
 
     handlers = {};
     vi.mocked(ipcMain.handle).mockImplementation(
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (channel: string, handler: (...args: any[]) => any) => {
         handlers[channel] = handler;
         return undefined as never;

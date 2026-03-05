@@ -53,7 +53,9 @@ const {
   };
 
   type PracticeStateLike = typeof practiceState;
-  const practiceSubscribers: Array<(state: PracticeStateLike, prev: PracticeStateLike) => void> = [];
+  const practiceSubscribers: Array<
+    (state: PracticeStateLike, prev: PracticeStateLike) => void
+  > = [];
 
   const songState = {
     song: null as ParsedSong | null,
@@ -67,14 +69,18 @@ const {
   };
 
   type PlaybackStateLike = typeof playbackState;
-  const playbackSubscribers: Array<(state: PlaybackStateLike, prev: PlaybackStateLike) => void> = [];
+  const playbackSubscribers: Array<
+    (state: PlaybackStateLike, prev: PlaybackStateLike) => void
+  > = [];
 
   const midiState = {
     activeNotes: new Set<number>(),
   };
 
   type MidiStateLike = typeof midiState;
-  const midiSubscribers: Array<(state: MidiStateLike, prev: MidiStateLike) => void> = [];
+  const midiSubscribers: Array<
+    (state: MidiStateLike, prev: MidiStateLike) => void
+  > = [];
 
   const mockWaitMode = {
     init: vi.fn(),
@@ -132,13 +138,17 @@ vi.mock("@renderer/stores/usePracticeStore", () => {
     vi.fn((sel: (s: typeof practiceState) => unknown) => sel(practiceState)),
     {
       getState: vi.fn(() => practiceState),
-      subscribe: vi.fn((cb: (state: typeof practiceState, prev: typeof practiceState) => void) => {
-        practiceSubscribers.push(cb);
-        return () => {
-          const idx = practiceSubscribers.indexOf(cb);
-          if (idx >= 0) practiceSubscribers.splice(idx, 1);
-        };
-      }),
+      subscribe: vi.fn(
+        (
+          cb: (state: typeof practiceState, prev: typeof practiceState) => void,
+        ) => {
+          practiceSubscribers.push(cb);
+          return () => {
+            const idx = practiceSubscribers.indexOf(cb);
+            if (idx >= 0) practiceSubscribers.splice(idx, 1);
+          };
+        },
+      ),
       setState: vi.fn(),
     },
   );
@@ -162,13 +172,17 @@ vi.mock("@renderer/stores/usePlaybackStore", () => {
     vi.fn((sel: (s: typeof playbackState) => unknown) => sel(playbackState)),
     {
       getState: vi.fn(() => playbackState),
-      subscribe: vi.fn((cb: (state: typeof playbackState, prev: typeof playbackState) => void) => {
-        playbackSubscribers.push(cb);
-        return () => {
-          const idx = playbackSubscribers.indexOf(cb);
-          if (idx >= 0) playbackSubscribers.splice(idx, 1);
-        };
-      }),
+      subscribe: vi.fn(
+        (
+          cb: (state: typeof playbackState, prev: typeof playbackState) => void,
+        ) => {
+          playbackSubscribers.push(cb);
+          return () => {
+            const idx = playbackSubscribers.indexOf(cb);
+            if (idx >= 0) playbackSubscribers.splice(idx, 1);
+          };
+        },
+      ),
       setState: vi.fn(),
     },
   );
@@ -180,13 +194,15 @@ vi.mock("@renderer/stores/useMidiDeviceStore", () => {
     vi.fn((sel: (s: typeof midiState) => unknown) => sel(midiState)),
     {
       getState: vi.fn(() => midiState),
-      subscribe: vi.fn((cb: (state: typeof midiState, prev: typeof midiState) => void) => {
-        midiSubscribers.push(cb);
-        return () => {
-          const idx = midiSubscribers.indexOf(cb);
-          if (idx >= 0) midiSubscribers.splice(idx, 1);
-        };
-      }),
+      subscribe: vi.fn(
+        (cb: (state: typeof midiState, prev: typeof midiState) => void) => {
+          midiSubscribers.push(cb);
+          return () => {
+            const idx = midiSubscribers.indexOf(cb);
+            if (idx >= 0) midiSubscribers.splice(idx, 1);
+          };
+        },
+      ),
       setState: vi.fn(),
     },
   );
@@ -215,7 +231,13 @@ function makeSong(trackCount = 2): ParsedSong {
       instrument: "Piano",
       channel: i,
       notes: [
-        { midi: 60 + i, name: `C${4 + i}`, time: 1, duration: 0.5, velocity: 80 },
+        {
+          midi: 60 + i,
+          name: `C${4 + i}`,
+          time: 1,
+          duration: 0.5,
+          velocity: 80,
+        },
       ],
     });
   }
@@ -231,8 +253,16 @@ function makeSong(trackCount = 2): ParsedSong {
 }
 
 function makeAudioRef() {
-  const ref = { current: { engine: null as AudioEngine | null, scheduler: null as AudioScheduler | null } };
-  return ref as React.MutableRefObject<{ engine: AudioEngine | null; scheduler: AudioScheduler | null }>;
+  const ref = {
+    current: {
+      engine: null as AudioEngine | null,
+      scheduler: null as AudioScheduler | null,
+    },
+  };
+  return ref as React.MutableRefObject<{
+    engine: AudioEngine | null;
+    scheduler: AudioScheduler | null;
+  }>;
 }
 
 // ── Tests ────────────────────────────────────────────────
@@ -285,7 +315,12 @@ describe("usePracticeLifecycle", () => {
     const audioRef = makeAudioRef();
     const { result } = renderHook(() => usePracticeLifecycle(null, audioRef));
 
-    const fakeRenderer = { findSpriteForNote: vi.fn(), flashHit: vi.fn(), markMiss: vi.fn(), showCombo: vi.fn() };
+    const fakeRenderer = {
+      findSpriteForNote: vi.fn(),
+      flashHit: vi.fn(),
+      markMiss: vi.fn(),
+      showCombo: vi.fn(),
+    };
     act(() => {
       result.current.handleNoteRendererReady(fakeRenderer as never);
     });
@@ -348,7 +383,9 @@ describe("usePracticeLifecycle", () => {
     practiceState.activeTracks = new Set<number>();
     renderHook(() => usePracticeLifecycle(song, audioRef));
 
-    expect(practiceState.setActiveTracks).toHaveBeenCalledWith(new Set([0, 1, 2]));
+    expect(practiceState.setActiveTracks).toHaveBeenCalledWith(
+      new Set([0, 1, 2]),
+    );
   });
 
   test("keeps existing valid activeTracks selection", () => {
@@ -402,7 +439,9 @@ describe("usePracticeLifecycle", () => {
 
       await vi.waitFor(() => {
         expect(mockEngine.resume).toHaveBeenCalled();
-        expect(mockScheduler.start).toHaveBeenCalledWith(playbackState.currentTime);
+        expect(mockScheduler.start).toHaveBeenCalledWith(
+          playbackState.currentTime,
+        );
       });
     });
   });
@@ -453,7 +492,10 @@ describe("usePracticeLifecycle", () => {
       const audioRef = makeAudioRef();
       renderHook(() => usePracticeLifecycle(null, audioRef));
 
-      const prev = { ...practiceState, loopRange: null as [number, number] | null };
+      const prev = {
+        ...practiceState,
+        loopRange: null as [number, number] | null,
+      };
       const next = { ...practiceState, loopRange: [5, 15] as [number, number] };
       practiceSubscribers[0](next, prev);
 
@@ -464,8 +506,14 @@ describe("usePracticeLifecycle", () => {
       const audioRef = makeAudioRef();
       renderHook(() => usePracticeLifecycle(null, audioRef));
 
-      const prev = { ...practiceState, loopRange: [5, 15] as [number, number] | null };
-      const next = { ...practiceState, loopRange: null as [number, number] | null };
+      const prev = {
+        ...practiceState,
+        loopRange: [5, 15] as [number, number] | null,
+      };
+      const next = {
+        ...practiceState,
+        loopRange: null as [number, number] | null,
+      };
       practiceSubscribers[0](next, prev);
 
       expect(mockLoopController.clear).toHaveBeenCalled();

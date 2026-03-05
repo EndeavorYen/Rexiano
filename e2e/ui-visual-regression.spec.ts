@@ -99,24 +99,19 @@ test.describe("UI visual regression", () => {
     await openPlaybackDrawer(appPage);
     await captureSnapshot(appPage, "playback-drawer-desktop.png");
 
-    await appPage.getByTestId("display-mode-split").click();
-    await closeTopDrawer(appPage);
-    await waitForUiSettled(appPage);
-
-    await appPage.getByTestId("practice-toolbar-advanced-toggle").click();
-    await waitForUiSettled(appPage);
-    await captureSnapshot(appPage, "playback-split-advanced-desktop.png");
-
-    await openPlaybackDrawer(appPage);
     await appPage.getByTestId("display-mode-sheet").click();
     await closeTopDrawer(appPage);
     await waitForUiSettled(appPage);
     await captureSnapshot(appPage, "playback-sheet-desktop.png");
+
+    await openPlaybackDrawer(appPage);
+    await appPage.getByTestId("display-mode-falling").click();
+    await closeTopDrawer(appPage);
+    await waitForUiSettled(appPage);
+    await captureSnapshot(appPage, "playback-falling-desktop.png");
   });
 
-  test("insights and settings overlays maintain visual hierarchy", async ({
-    appPage,
-  }) => {
+  test("settings overlay maintains visual hierarchy", async ({ appPage }) => {
     await appPage.setViewportSize({
       width: DESKTOP_VIEWPORT.width,
       height: DESKTOP_VIEWPORT.height,
@@ -127,25 +122,14 @@ test.describe("UI visual regression", () => {
     await freezePlaybackSnapshot(appPage);
 
     await openPlaybackDrawer(appPage);
-    await appPage.getByTestId("insights-trigger").click();
-    await expect(appPage.getByTestId("insights-modal")).toBeVisible();
-    await captureSnapshot(appPage, "playback-insights-modal.png");
-
-    await appPage.keyboard.press("Escape");
-    await expect(appPage.getByTestId("insights-modal")).toBeHidden();
-
-    await openPlaybackDrawer(appPage);
     await appPage.getByTestId("settings-trigger").click();
     await expect(appPage.getByTestId("settings-panel")).toBeVisible();
-    await captureSnapshot(appPage, "playback-settings-basic.png");
-
-    await appPage.getByTestId("settings-mode-toggle").click();
     await appPage.getByTestId("settings-tab-practice").click();
     await waitForUiSettled(appPage);
-    await captureSnapshot(appPage, "playback-settings-advanced-practice.png");
+    await captureSnapshot(appPage, "playback-settings-practice.png");
   });
 
-  test("tablet playback split view remains readable", async ({ appPage }) => {
+  test("tablet playback sheet view remains readable", async ({ appPage }) => {
     await appPage.setViewportSize({
       width: TABLET_VIEWPORT.width,
       height: TABLET_VIEWPORT.height,
@@ -156,10 +140,10 @@ test.describe("UI visual regression", () => {
     await freezePlaybackSnapshot(appPage);
 
     await openPlaybackDrawer(appPage);
-    await appPage.getByTestId("display-mode-split").click();
+    await appPage.getByTestId("display-mode-sheet").click();
     await closeTopDrawer(appPage);
     await waitForUiSettled(appPage);
 
-    await captureSnapshot(appPage, "playback-split-tablet.png");
+    await captureSnapshot(appPage, "playback-sheet-tablet.png");
   });
 });

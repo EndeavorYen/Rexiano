@@ -114,7 +114,8 @@ export function analyzeDifficulty(song: ParsedSong): {
       let hi = sortedB.length;
       while (lo < hi) {
         const mid = (lo + hi) >>> 1;
-        if (sortedB[mid].time + sortedB[mid].duration <= noteA.time) lo = mid + 1;
+        if (sortedB[mid].time + sortedB[mid].duration <= noteA.time)
+          lo = mid + 1;
         else hi = mid;
       }
       for (let j = lo; j < sortedB.length; j++) {

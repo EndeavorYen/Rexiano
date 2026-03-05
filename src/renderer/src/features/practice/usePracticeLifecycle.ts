@@ -66,8 +66,9 @@ export function usePracticeLifecycle(
     const practiceState = usePracticeStore.getState();
     // Default to all tracks if no selection exists or selection is from a different song
     const maxTrackIndex = song.tracks.length - 1;
-    const hasValidSelection = practiceState.activeTracks.size > 0 &&
-      Array.from(practiceState.activeTracks).every(i => i <= maxTrackIndex);
+    const hasValidSelection =
+      practiceState.activeTracks.size > 0 &&
+      Array.from(practiceState.activeTracks).every((i) => i <= maxTrackIndex);
     const activeTracks = hasValidSelection
       ? practiceState.activeTracks
       : new Set(song.tracks.map((_, i) => i));
@@ -163,8 +164,13 @@ export function usePracticeLifecycle(
   // ── Sync practice store → engine singletons (permanent subscriber) ──
   useEffect(() => {
     const unsub = usePracticeStore.subscribe((state, prev) => {
-      const { waitMode, speedController, loopController, scoreCalculator, freeScorer } =
-        getPracticeEngines();
+      const {
+        waitMode,
+        speedController,
+        loopController,
+        scoreCalculator,
+        freeScorer,
+      } = getPracticeEngines();
       const currentSong = useSongStore.getState().song;
 
       // Mode change
@@ -266,20 +272,6 @@ export function usePracticeLifecycle(
         state.currentTime < prev.currentTime &&
         Math.abs(state.currentTime - loopController.getLoopStart()) < 0.1
       ) {
-        // Auto speed-up: bump speed by 5% if accuracy >= 90% and feature is enabled
-        const practiceSnapshot = usePracticeStore.getState();
-        if (
-          practiceSnapshot.autoSpeedUp &&
-          practiceSnapshot.score.totalNotes > 0 &&
-          practiceSnapshot.score.accuracy >= 90
-        ) {
-          const { speedController: sc } = getPracticeEngines();
-          if (sc) {
-            const newSpeed = sc.bumpSpeed(0.05);
-            usePracticeStore.getState().setSpeed(newSpeed);
-          }
-        }
-
         audioRef.current.scheduler?.seek(state.currentTime);
 
         const practiceMode = usePracticeStore.getState().mode;

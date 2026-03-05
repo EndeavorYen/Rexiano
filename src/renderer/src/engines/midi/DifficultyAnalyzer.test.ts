@@ -28,9 +28,7 @@ function makeSong(
     timeSignatures: overrides.timeSignatures ?? [
       { time: 0, numerator: 4, denominator: 4 },
     ],
-    keySignatures: overrides.keySignatures ?? [
-      { time: 0, key: 0, scale: 0 },
-    ],
+    keySignatures: overrides.keySignatures ?? [{ time: 0, key: 0, scale: 0 }],
     noteCount: overrides.noteCount ?? allNotes.length,
   };
 }
