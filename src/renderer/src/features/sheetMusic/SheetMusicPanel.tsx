@@ -36,6 +36,7 @@ const SYSTEM_HEIGHT = STAVE_HEIGHT * 2 + SYSTEM_GAP;
 const LEFT_MARGIN = 28;
 const TOP_MARGIN = 10;
 const DISPLAY_MEASURE_COUNT = 8;
+const FIRST_MEASURE_MIN_WIDTH = 220;
 
 /**
  * Extract the accidental symbol from a VexFlow key string.
@@ -408,11 +409,14 @@ function renderMeasure(
   }).setStrict(false);
   bassVoice.addTickables(bassVexNotes);
 
-  const staveWidth = width - (isFirst ? 100 : 20);
-  new Formatter()
+  const formatter = new Formatter()
     .joinVoices([trebleVoice])
-    .joinVoices([bassVoice])
-    .format([trebleVoice, bassVoice], Math.max(staveWidth, 60));
+    .joinVoices([bassVoice]);
+  // Use VexFlow's stave-aware formatter to avoid collisions with clef/time/key modifiers.
+  const sharedStartX = Math.max(treble.getNoteStartX(), bass.getNoteStartX());
+  treble.setNoteStartX(sharedStartX);
+  bass.setNoteStartX(sharedStartX);
+  formatter.formatToStave([trebleVoice, bassVoice], treble);
 
   trebleVoice.draw(context, treble);
   bassVoice.draw(context, bass);
@@ -585,7 +589,7 @@ export function SheetMusicPanel({
     1,
     Math.floor(containerWidth - LEFT_MARGIN * 2),
   );
-  const slotWidths = useMemo(() => {
+  const rawSlotWidths = useMemo(() => {
     const noteCounts = Array.from(
       { length: DISPLAY_MEASURE_COUNT },
       (_unused, slot) => {
@@ -600,6 +604,12 @@ export function SheetMusicPanel({
     );
     return calcMeasureWidths(noteCounts, availableWidth);
   }, [availableWidth, notationData, visibleMeasures]);
+  const slotWidths = useMemo(() => {
+    if (rawSlotWidths.length === 0) return rawSlotWidths;
+    const next = [...rawSlotWidths];
+    next[0] = Math.max(next[0], FIRST_MEASURE_MIN_WIDTH);
+    return next;
+  }, [rawSlotWidths]);
   const slotLefts = useMemo(() => {
     const lefts: number[] = [];
     let cursor = LEFT_MARGIN;
