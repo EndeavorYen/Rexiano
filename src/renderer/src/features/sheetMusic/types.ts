@@ -1,3 +1,5 @@
+import type { TempoEvent } from "@renderer/engines/midi/types";
+
 /**
  * Shared types for the sheet music display system (Phase 7).
  *
@@ -64,6 +66,13 @@ export interface NotationData {
   bpm: number;
   /** Ticks per quarter note (for quantization) */
   ticksPerQuarter: number;
+  /**
+   * Absolute tick position of each measure start.
+   * Same index as `measures[i]`.
+   */
+  measureStartTicks?: number[];
+  /** Full tempo map used for time -> tick conversion. */
+  tempoMap?: TempoEvent[];
   /** Expression markings mapped to measure positions */
   expressions?: NotationExpression[];
 }
