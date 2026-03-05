@@ -187,6 +187,107 @@ test.describe("Playback UI polish guardrails", () => {
     }
   });
 
+  test("sheet beat highlight stays on noteheads (not left gutter)", async ({
+    appPage,
+  }) => {
+    await appPage.setViewportSize({ width: 1600, height: 900 });
+    await gotoLibrary(appPage);
+    await loadFirstBuiltInSong(appPage);
+    await waitForUiSettled(appPage);
+
+    await appPage.getByTestId("playback-drawer-trigger").click();
+    await appPage.getByTestId("display-mode-sheet").click();
+    await appPage.keyboard.press("Escape");
+    await waitForUiSettled(appPage);
+
+    const playButton = appPage
+      .getByTestId("transport-strip")
+      .locator("button")
+      .first();
+    const hasPauseIcon =
+      (await playButton.locator("svg.lucide-pause").count()) > 0;
+    if (!hasPauseIcon) {
+      await playButton.click();
+    }
+
+    const sampleHighlightAlignment = async (): Promise<{
+      ringCount: number;
+      minDxToNoteheadCenter: number | null;
+      minNoteheadCenterX: number | null;
+      minRingCenterX: number | null;
+    }> =>
+      appPage.evaluate(() => {
+        const host = document.querySelector(
+          "[data-testid='sheet-music-svg-host']",
+        ) as HTMLElement | null;
+        const svg = host?.querySelector("svg");
+        if (!svg) {
+          return {
+            ringCount: 0,
+            minDxToNoteheadCenter: null,
+            minNoteheadCenterX: null,
+            minRingCenterX: null,
+          };
+        }
+
+        const ringCenters = Array.from(
+          svg.querySelectorAll("[data-rx-notehead-highlight-layer] ellipse"),
+        )
+          .map((el) => {
+            const box = (el as SVGGraphicsElement).getBBox();
+            return box.x + box.width / 2;
+          })
+          .filter((x) => Number.isFinite(x));
+
+        const noteheadCenters = Array.from(
+          svg.querySelectorAll("g.vf-notehead"),
+        )
+          .map((el) => {
+            const box = (el as SVGGraphicsElement).getBBox();
+            return box.x + box.width / 2;
+          })
+          .filter((x) => Number.isFinite(x));
+
+        let minDxToNoteheadCenter: number | null = null;
+        for (const ringX of ringCenters) {
+          for (const headX of noteheadCenters) {
+            const dx = Math.abs(ringX - headX);
+            if (minDxToNoteheadCenter === null || dx < minDxToNoteheadCenter) {
+              minDxToNoteheadCenter = dx;
+            }
+          }
+        }
+
+        return {
+          ringCount: ringCenters.length,
+          minDxToNoteheadCenter,
+          minNoteheadCenterX:
+            noteheadCenters.length > 0 ? Math.min(...noteheadCenters) : null,
+          minRingCenterX:
+            ringCenters.length > 0 ? Math.min(...ringCenters) : null,
+        };
+      });
+
+    let sample = await sampleHighlightAlignment();
+    for (let i = 0; i < 30 && sample.ringCount === 0; i++) {
+      await appPage.waitForTimeout(120);
+      sample = await sampleHighlightAlignment();
+    }
+
+    expect(sample.ringCount).toBeGreaterThan(0);
+    expect(sample.minDxToNoteheadCenter).not.toBeNull();
+    if (sample.minDxToNoteheadCenter !== null) {
+      expect(sample.minDxToNoteheadCenter).toBeLessThan(26);
+    }
+    expect(sample.minRingCenterX).not.toBeNull();
+    expect(sample.minNoteheadCenterX).not.toBeNull();
+    if (sample.minRingCenterX !== null && sample.minNoteheadCenterX !== null) {
+      expect(sample.minRingCenterX).toBeGreaterThan(
+        sample.minNoteheadCenterX - 45,
+      );
+    }
+  });
+
   test("layout-guard keeps keyboard + transport + toolbar visible on short viewports", async ({
     appPage,
   }) => {

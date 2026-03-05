@@ -37,6 +37,10 @@ const LEFT_MARGIN = 28;
 const TOP_MARGIN = 10;
 const DISPLAY_MEASURE_COUNT = 8;
 const FIRST_MEASURE_MIN_WIDTH = 220;
+const ACTIVE_NOTEHEAD_STROKE_WIDTH_PX = 2.2;
+const ACTIVE_NOTEHEAD_GLOW_BLUR_PX = 4.2;
+const ACTIVE_BEAT_SNAP_RATIO = 0.62;
+const ACTIVE_BEAT_MATCH_TICK_EPSILON = 1;
 
 /**
  * Extract the accidental symbol from a VexFlow key string.
@@ -175,6 +179,246 @@ interface MeasureRenderResult {
   trebleStave: any;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   bassStave: any;
+  tickAnchors: TickAnchor[];
+}
+
+interface TickAnchor {
+  tick: number;
+  x: number;
+}
+
+interface NoteHeadHighlight {
+  cx: number;
+  cy: number;
+  rx: number;
+  ry: number;
+}
+
+function pickActiveBeatChordIndexes(
+  chords: ChordGroup[],
+  ticksPerBeat: number,
+  isActiveMeasure: boolean,
+  activeBeatTick: number | null,
+): Set<number> {
+  const active = new Set<number>();
+  if (!isActiveMeasure || activeBeatTick === null) return active;
+  if (!Number.isFinite(ticksPerBeat) || ticksPerBeat <= 0) return active;
+
+  let minDistance = Number.POSITIVE_INFINITY;
+  const candidateIndexes: number[] = [];
+  for (let i = 0; i < chords.length; i++) {
+    const chord = chords[i];
+    if (!chord || chord.duration.includes("r")) continue;
+    if (!Number.isFinite(chord.startTick)) continue;
+
+    const distance = Math.abs(chord.startTick - activeBeatTick);
+    if (distance + ACTIVE_BEAT_MATCH_TICK_EPSILON < minDistance) {
+      minDistance = distance;
+      candidateIndexes.length = 0;
+      candidateIndexes.push(i);
+      continue;
+    }
+    if (Math.abs(distance - minDistance) <= ACTIVE_BEAT_MATCH_TICK_EPSILON) {
+      candidateIndexes.push(i);
+    }
+  }
+
+  const maxSnapDistance = ticksPerBeat * ACTIVE_BEAT_SNAP_RATIO;
+  if (candidateIndexes.length === 0 || minDistance > maxSnapDistance) {
+    return active;
+  }
+
+  for (const idx of candidateIndexes) active.add(idx);
+  return active;
+}
+
+function collectNoteHeadHighlights(
+  chords: ChordGroup[],
+  vexNotes: unknown[],
+  ticksPerBeat: number,
+  isActiveMeasure: boolean,
+  activeBeatTick: number | null,
+): NoteHeadHighlight[] {
+  const highlights: NoteHeadHighlight[] = [];
+  const activeChordIndexes = pickActiveBeatChordIndexes(
+    chords,
+    ticksPerBeat,
+    isActiveMeasure,
+    activeBeatTick,
+  );
+  if (activeChordIndexes.size === 0) return highlights;
+
+  for (let i = 0; i < chords.length; i++) {
+    if (!activeChordIndexes.has(i)) continue;
+
+    const vexNote = vexNotes[i] as
+      | {
+          getAbsoluteX?: unknown;
+          getGlyphWidth?: unknown;
+          getYs?: unknown;
+        }
+      | undefined;
+    const getAbsoluteX = vexNote?.getAbsoluteX;
+    const getGlyphWidth = vexNote?.getGlyphWidth;
+    const getYs = vexNote?.getYs;
+    if (
+      typeof getAbsoluteX !== "function" ||
+      typeof getGlyphWidth !== "function" ||
+      typeof getYs !== "function"
+    ) {
+      continue;
+    }
+
+    const headX = Number(getAbsoluteX.call(vexNote));
+    const glyphWidth = Number(getGlyphWidth.call(vexNote));
+    const ys = getYs.call(vexNote) as unknown;
+    if (!Number.isFinite(headX) || !Number.isFinite(glyphWidth)) continue;
+    if (!Array.isArray(ys) || ys.length === 0) continue;
+
+    const width = Math.max(7, glyphWidth);
+    const centerX = headX + width * 0.52;
+    for (const yRaw of ys) {
+      const headY = Number(yRaw);
+      if (!Number.isFinite(headY)) continue;
+      highlights.push({
+        cx: centerX,
+        cy: headY,
+        rx: Math.max(4.6, width * 0.54),
+        ry: Math.max(3.4, width * 0.4),
+      });
+    }
+  }
+
+  return highlights;
+}
+
+function drawNoteHeadHighlights(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  context: any,
+  highlights: NoteHeadHighlight[],
+  accentHex: string,
+): void {
+  if (highlights.length === 0) return;
+  const svg = context.svg as SVGSVGElement | undefined;
+  if (!svg) return;
+
+  const group = document.createElementNS("http://www.w3.org/2000/svg", "g");
+  group.setAttribute("pointer-events", "none");
+  group.setAttribute("data-rx-notehead-highlight-layer", "1");
+
+  for (const head of highlights) {
+    const ring = document.createElementNS(
+      "http://www.w3.org/2000/svg",
+      "ellipse",
+    );
+    ring.setAttribute("cx", String(head.cx));
+    ring.setAttribute("cy", String(head.cy));
+    ring.setAttribute("rx", String(head.rx));
+    ring.setAttribute("ry", String(head.ry));
+    ring.setAttribute("fill", "none");
+    ring.setAttribute("stroke", accentHex);
+    ring.setAttribute("stroke-width", String(ACTIVE_NOTEHEAD_STROKE_WIDTH_PX));
+    ring.setAttribute("opacity", "0.96");
+    ring.setAttribute(
+      "style",
+      `filter: drop-shadow(0 0 ${ACTIVE_NOTEHEAD_GLOW_BLUR_PX}px ${accentHex});`,
+    );
+    group.appendChild(ring);
+  }
+
+  svg.appendChild(group);
+}
+
+function buildTickAnchorsFromRenderedNotes(
+  totalTicks: number,
+  noteStartX: number,
+  noteEndX: number,
+  trebleChords: ChordGroup[],
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  trebleVexNotes: any[],
+  bassChords: ChordGroup[],
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  bassVexNotes: any[],
+): TickAnchor[] {
+  const boundedTotalTicks = Math.max(1, Math.round(totalTicks));
+  const xSamplesByTick = new Map<number, number[]>();
+  const pushSample = (tick: number, x: number): void => {
+    if (!Number.isFinite(tick) || !Number.isFinite(x)) return;
+    const normalizedTick = Math.max(
+      0,
+      Math.min(boundedTotalTicks, Math.round(tick)),
+    );
+    const arr = xSamplesByTick.get(normalizedTick);
+    if (arr) arr.push(x);
+    else xSamplesByTick.set(normalizedTick, [x]);
+  };
+  const collect = (
+    chords: ChordGroup[],
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    vexNotes: any[],
+  ): void => {
+    for (let i = 0; i < chords.length; i++) {
+      const chord = chords[i];
+      const vexNote = vexNotes[i];
+      if (!chord || !vexNote || typeof vexNote.getAbsoluteX !== "function")
+        continue;
+      const x = vexNote.getAbsoluteX();
+      if (!Number.isFinite(x)) continue;
+      pushSample(chord.startTick, x);
+    }
+  };
+
+  pushSample(0, noteStartX);
+  pushSample(boundedTotalTicks, noteEndX);
+  collect(trebleChords, trebleVexNotes);
+  collect(bassChords, bassVexNotes);
+
+  const ticks = Array.from(xSamplesByTick.keys()).sort((a, b) => a - b);
+  if (ticks.length === 0) {
+    return [
+      { tick: 0, x: noteStartX },
+      { tick: boundedTotalTicks, x: noteEndX },
+    ];
+  }
+
+  const minX = Math.min(noteStartX, noteEndX);
+  const maxX = Math.max(noteStartX, noteEndX);
+  const anchors = ticks.map((tick) => {
+    const samples = xSamplesByTick.get(tick) ?? [noteStartX];
+    const avgX =
+      samples.reduce((sum, value) => sum + value, 0) / samples.length;
+    return {
+      tick,
+      x: Math.max(minX, Math.min(maxX, avgX)),
+    };
+  });
+
+  let lastX = anchors[0]?.x ?? noteStartX;
+  return anchors.map((anchor, index) => {
+    if (index === 0) return anchor;
+    const nextX = Math.max(lastX, anchor.x);
+    lastX = nextX;
+    return { tick: anchor.tick, x: nextX };
+  });
+}
+
+function interpolateTickAnchorX(tick: number, anchors: TickAnchor[]): number {
+  if (anchors.length === 0) return 0;
+  if (anchors.length === 1) return anchors[0].x;
+  if (tick <= anchors[0].tick) return anchors[0].x;
+
+  for (let i = 1; i < anchors.length; i++) {
+    const left = anchors[i - 1];
+    const right = anchors[i];
+    if (tick <= right.tick) {
+      const span = right.tick - left.tick;
+      if (span <= 0) return right.x;
+      const ratio = (tick - left.tick) / span;
+      return left.x + (right.x - left.x) * ratio;
+    }
+  }
+
+  return anchors[anchors.length - 1].x;
 }
 
 /**
@@ -241,6 +485,9 @@ function renderMeasure(
   ticksPerQuarter: number,
   trebleContinuationKeys: Set<string>,
   bassContinuationKeys: Set<string>,
+  accentHex: string,
+  isActiveMeasure: boolean,
+  activeBeatTick: number | null,
   measureNumber?: number,
   expressions?: NotationExpression[],
 ): MeasureRenderResult {
@@ -304,6 +551,12 @@ function renderMeasure(
 
   // Build a set of staccato tick positions from expression marks
   const staccatoTicks = new Set<number>();
+  const ticksPerBeat =
+    ticksPerQuarter * (4 / Math.max(1, measure.timeSignatureBottom));
+  const ticksPerMeasure = Math.max(
+    1,
+    Math.round(ticksPerBeat * Math.max(1, measure.timeSignatureTop)),
+  );
   if (expressions) {
     const beatsPerMeasure = measure.timeSignatureTop;
     for (const expr of expressions) {
@@ -447,6 +700,24 @@ function renderMeasure(
     // Beam generation can fail for certain note configurations; silently skip
   }
 
+  const highlightedNoteHeads = [
+    ...collectNoteHeadHighlights(
+      trebleChords,
+      trebleVexNotes,
+      ticksPerBeat,
+      isActiveMeasure,
+      activeBeatTick,
+    ),
+    ...collectNoteHeadHighlights(
+      bassChords,
+      bassVexNotes,
+      ticksPerBeat,
+      isActiveMeasure,
+      activeBeatTick,
+    ),
+  ];
+  drawNoteHeadHighlights(context, highlightedNoteHeads, accentHex);
+
   // Render text-based expression marks (rit., accel., legato) above the treble staff
   if (expressions && expressions.length > 0) {
     const svg = context.svg as SVGSVGElement | undefined;
@@ -497,6 +768,15 @@ function renderMeasure(
     bassChords,
     trebleStave: treble,
     bassStave: bass,
+    tickAnchors: buildTickAnchorsFromRenderedNotes(
+      ticksPerMeasure,
+      sharedStartX,
+      Math.max(treble.getNoteEndX(), bass.getNoteEndX()),
+      trebleChords,
+      trebleVexNotes,
+      bassChords,
+      bassVexNotes,
+    ),
   };
 }
 
@@ -551,6 +831,9 @@ export function SheetMusicPanel({
   const [containerWidth, setContainerWidth] = useState(800);
   const [vexflowError, setVexflowError] = useState(false);
   const [zoomLevel, setZoomLevel] = useState(1.0);
+  const [measureTickAnchors, setMeasureTickAnchors] = useState<
+    Record<number, TickAnchor[]>
+  >({});
   const hidden = mode === "falling";
 
   const zoomIn = useCallback(() => {
@@ -630,16 +913,55 @@ export function SheetMusicPanel({
     activeSlotIndex >= 0 && cursorPosition && notationData
       ? notationData.measures[cursorPosition.measureIndex]
       : null;
-  const beatsPerMeasure = Math.max(activeMeasure?.timeSignatureTop ?? 4, 1);
-  const beatRatio =
-    cursorPosition && activeSlotIndex >= 0
-      ? Math.max(0, Math.min(0.995, cursorPosition.beat / beatsPerMeasure))
-      : 0;
   const activeMeasureWidth =
     activeSlotIndex >= 0 ? (slotWidths[activeSlotIndex] ?? 0) : 0;
   const activeMeasureLeft =
     activeSlotIndex >= 0 ? (slotLefts[activeSlotIndex] ?? LEFT_MARGIN) : 0;
-  const cursorLeft = activeMeasureLeft + activeMeasureWidth * beatRatio;
+  const activeTickAnchors =
+    cursorPosition && activeSlotIndex >= 0
+      ? measureTickAnchors[cursorPosition.measureIndex]
+      : undefined;
+  const cursorLeft = useMemo(() => {
+    if (!cursorPosition || activeSlotIndex < 0) return activeMeasureLeft;
+    if (activeTickAnchors && activeTickAnchors.length >= 2) {
+      return interpolateTickAnchorX(cursorPosition.tick, activeTickAnchors);
+    }
+
+    // Fallback when anchors are unavailable: beat-ratio placement.
+    const beatsPerMeasure = Math.max(activeMeasure?.timeSignatureTop ?? 4, 1);
+    const beatRatio = Math.max(
+      0,
+      Math.min(0.995, cursorPosition.beat / beatsPerMeasure),
+    );
+    return activeMeasureLeft + activeMeasureWidth * beatRatio;
+  }, [
+    activeMeasure?.timeSignatureTop,
+    activeMeasureLeft,
+    activeMeasureWidth,
+    activeSlotIndex,
+    activeTickAnchors,
+    cursorPosition,
+  ]);
+  const activeBeatState = useMemo(() => {
+    if (!cursorPosition || !notationData) return null;
+    const measure = notationData.measures[cursorPosition.measureIndex];
+    if (!measure) return null;
+
+    const ticksPerBeat =
+      notationData.ticksPerQuarter *
+      (4 / Math.max(1, measure.timeSignatureBottom));
+    if (!Number.isFinite(ticksPerBeat) || ticksPerBeat <= 0) return null;
+    const beatIndex = Math.max(
+      0,
+      Math.floor(cursorPosition.tick / ticksPerBeat),
+    );
+    return {
+      measureIndex: cursorPosition.measureIndex,
+      beatTick: Math.round(beatIndex * ticksPerBeat),
+    };
+  }, [cursorPosition, notationData]);
+  const activeBeatMeasureIndex = activeBeatState?.measureIndex ?? -1;
+  const activeBeatTick = activeBeatState?.beatTick ?? null;
 
   useEffect(() => {
     const el = containerRef.current;
@@ -711,6 +1033,7 @@ export function SheetMusicPanel({
         // Collect render results for cross-measure tie rendering
         const slotResults: (MeasureRenderResult | null)[] = [];
         const slotMeasureIndices: (number | undefined)[] = [];
+        const nextMeasureTickAnchors: Record<number, TickAnchor[]> = {};
 
         for (let slot = 0; slot < DISPLAY_MEASURE_COUNT; slot++) {
           const measureIndex = visibleMeasures[slot];
@@ -761,10 +1084,14 @@ export function SheetMusicPanel({
               notationData.ticksPerQuarter,
               trebleContinuationKeys,
               bassContinuationKeys,
+              accentHex,
+              measureIndex === activeBeatMeasureIndex,
+              activeBeatTick,
               measureIndex + 1,
               measureExpressions,
             );
             slotResults.push(result);
+            nextMeasureTickAnchors[measureIndex] = result.tickAnchors;
           } catch (e) {
             console.warn(
               `SheetMusic: failed to render measure ${measureIndex}:`,
@@ -849,6 +1176,7 @@ export function SheetMusicPanel({
         } else {
           host.replaceChildren();
         }
+        setMeasureTickAnchors(nextMeasureTickAnchors);
       })
       .catch((err: unknown) => {
         if (!cancelled) {
@@ -870,6 +1198,9 @@ export function SheetMusicPanel({
     slotWidths,
     totalHeight,
     visibleMeasures,
+    accentHex,
+    activeBeatMeasureIndex,
+    activeBeatTick,
   ]);
 
   if (hidden) return null;
