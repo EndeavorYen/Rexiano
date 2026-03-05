@@ -16,10 +16,17 @@ import type {
   NotationData,
   NotationExpression,
   NotationMeasure,
-  NotationNote,
   DisplayMode,
 } from "./types";
 import { getCursorPosition, getMeasureWindow } from "./CursorSync";
+import {
+  buildContinuationKeySet,
+  buildTieIndexMapping,
+  groupNotesIntoChords,
+  isContinuationKey,
+  normalizeTickInMeasure,
+  type ChordGroup,
+} from "./sheetMusicRenderLogic";
 
 /** Layout constants */
 const STAVE_HEIGHT = 80;
@@ -41,6 +48,68 @@ function extractAccidental(vexKey: string): string | null {
   const accidental = name.substring(base.length);
   if (accidental === "" || accidental === "n") return null;
   return accidental; // "#", "b", "##", "bb"
+}
+
+interface ParsedVexKey {
+  letter: string;
+  octave: string;
+  accidental: string | null;
+}
+
+/** Key-signature defaults by note letter. */
+const KEY_SIGNATURE_DEFAULTS: Record<string, Record<string, string>> = {
+  C: {},
+  G: { F: "#" },
+  D: { F: "#", C: "#" },
+  A: { F: "#", C: "#", G: "#" },
+  E: { F: "#", C: "#", G: "#", D: "#" },
+  B: { F: "#", C: "#", G: "#", D: "#", A: "#" },
+  "F#": { F: "#", C: "#", G: "#", D: "#", A: "#", E: "#" },
+  "C#": { F: "#", C: "#", G: "#", D: "#", A: "#", E: "#", B: "#" },
+  F: { B: "b" },
+  Bb: { B: "b", E: "b" },
+  Eb: { B: "b", E: "b", A: "b" },
+  Ab: { B: "b", E: "b", A: "b", D: "b" },
+  Db: { B: "b", E: "b", A: "b", D: "b", G: "b" },
+  Gb: { B: "b", E: "b", A: "b", D: "b", G: "b", C: "b" },
+  Cb: { B: "b", E: "b", A: "b", D: "b", G: "b", C: "b", F: "b" },
+};
+
+function parseVexKey(vexKey: string): ParsedVexKey | null {
+  const [nameRaw, octaveRaw] = vexKey.split("/");
+  if (!nameRaw || !octaveRaw) return null;
+
+  const name = nameRaw.toLowerCase();
+  const letter = name[0];
+  if (!letter || letter < "a" || letter > "g") return null;
+
+  const accidentalPart = name.slice(1);
+  return {
+    letter: letter.toUpperCase(),
+    octave: octaveRaw,
+    accidental: accidentalPart === "" ? null : accidentalPart,
+  };
+}
+
+function accidentalToDisplay(
+  vexKey: string,
+  keySignature: string | undefined,
+  accidentalState: Map<string, string>,
+  suppressDisplay = false,
+): string | null {
+  const parsed = parseVexKey(vexKey);
+  if (!parsed) return extractAccidental(vexKey);
+
+  const keyDefaults =
+    KEY_SIGNATURE_DEFAULTS[keySignature ?? "C"] ?? KEY_SIGNATURE_DEFAULTS.C;
+  const defaultAccidental = keyDefaults[parsed.letter] ?? "n";
+  const pitchId = `${parsed.letter}${parsed.octave}`;
+  const currentAccidental = accidentalState.get(pitchId) ?? defaultAccidental;
+  const targetAccidental = parsed.accidental ?? "n";
+
+  if (currentAccidental === targetAccidental) return null;
+  accidentalState.set(pitchId, targetAccidental);
+  return suppressDisplay ? null : targetAccidental;
 }
 
 /**
@@ -92,40 +161,6 @@ function makeRestKey(clef: "treble" | "bass"): string {
   return clef === "treble" ? "b/4" : "d/3";
 }
 
-interface ChordGroup {
-  keys: string[];
-  duration: string;
-  startTick: number;
-  durationTicks: number;
-}
-
-/**
- * Group notes that start at the same tick into chords.
- */
-function groupNotesIntoChords(notes: NotationNote[]): ChordGroup[] {
-  if (notes.length === 0) return [];
-
-  const sorted = [...notes].sort((a, b) => a.startTick - b.startTick);
-  const groups: ChordGroup[] = [];
-
-  for (const note of sorted) {
-    const last = groups[groups.length - 1];
-    if (last && last.startTick === note.startTick) {
-      last.keys.push(note.vexKey);
-      last.durationTicks = Math.max(last.durationTicks, note.durationTicks);
-    } else {
-      groups.push({
-        keys: [note.vexKey],
-        duration: note.vexDuration,
-        startTick: note.startTick,
-        durationTicks: note.durationTicks,
-      });
-    }
-  }
-
-  return groups;
-}
-
 /** Return value from renderMeasure for post-render passes (ties, beams). */
 interface MeasureRenderResult {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -148,6 +183,9 @@ function createVexNote(
   VF: any,
   chord: ChordGroup,
   clef: "treble" | "bass" = "treble",
+  keySignature: string | undefined,
+  accidentalState: Map<string, string>,
+  continuationKeys?: Set<string>,
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
 ): any {
   const { StaveNote, Accidental, Dot } = VF;
@@ -165,7 +203,15 @@ function createVexNote(
   // Add accidentals for each key in the chord
   if (Accidental) {
     for (let i = 0; i < chord.keys.length; i++) {
-      const acc = extractAccidental(chord.keys[i]);
+      const suppressForTiedContinuation =
+        chord.startTick === 0 &&
+        isContinuationKey(chord.keys[i], continuationKeys);
+      const acc = accidentalToDisplay(
+        chord.keys[i],
+        keySignature,
+        accidentalState,
+        suppressForTiedContinuation,
+      );
       if (acc) {
         note.addModifier(new Accidental(acc), i);
       }
@@ -190,10 +236,14 @@ function renderMeasure(
   y: number,
   width: number,
   isFirst: boolean,
+  ticksPerQuarter: number,
+  trebleContinuationKeys: Set<string>,
+  bassContinuationKeys: Set<string>,
   measureNumber?: number,
   expressions?: NotationExpression[],
 ): MeasureRenderResult {
-  const { Stave, StaveNote, Voice, Formatter, StaveConnector, Articulation } = VF;
+  const { Stave, StaveNote, Voice, Formatter, StaveConnector, Articulation } =
+    VF;
 
   const treble = new Stave(x, y, width);
   if (isFirst) {
@@ -263,16 +313,26 @@ function renderMeasure(
   }
 
   const trebleChords = groupNotesIntoChords(measure.trebleNotes);
+  const trebleAccidentalState = new Map<string, string>();
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const trebleVexNotes: any[] =
     trebleChords.length > 0
       ? trebleChords.map((chord) => {
-          const note = createVexNote(VF, chord, "treble");
+          const note = createVexNote(
+            VF,
+            chord,
+            "treble",
+            measure.keySignature,
+            trebleAccidentalState,
+            trebleContinuationKeys,
+          );
           if (expressions && Articulation) {
-            const beatsPerMeasure = measure.timeSignatureTop;
-            const totalTicks = beatsPerMeasure * 480;
-            const chordFraction = chord.startTick / totalTicks;
-            const normalizedTick = Math.round(chordFraction * 1000);
+            const normalizedTick = normalizeTickInMeasure(
+              chord.startTick,
+              ticksPerQuarter,
+              measure.timeSignatureTop,
+              measure.timeSignatureBottom,
+            );
             if (staccatoTicks.has(normalizedTick)) {
               try {
                 note.addModifier(new Articulation("a."), 0);
@@ -294,16 +354,26 @@ function renderMeasure(
         ];
 
   const bassChords = groupNotesIntoChords(measure.bassNotes);
+  const bassAccidentalState = new Map<string, string>();
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const bassVexNotes: any[] =
     bassChords.length > 0
       ? bassChords.map((chord) => {
-          const note = createVexNote(VF, chord, "bass");
+          const note = createVexNote(
+            VF,
+            chord,
+            "bass",
+            measure.keySignature,
+            bassAccidentalState,
+            bassContinuationKeys,
+          );
           if (expressions && Articulation) {
-            const beatsPerMeasure = measure.timeSignatureTop;
-            const totalTicks = beatsPerMeasure * 480;
-            const chordFraction = chord.startTick / totalTicks;
-            const normalizedTick = Math.round(chordFraction * 1000);
+            const normalizedTick = normalizeTickInMeasure(
+              chord.startTick,
+              ticksPerQuarter,
+              measure.timeSignatureTop,
+              measure.timeSignatureBottom,
+            );
             if (staccatoTicks.has(normalizedTick)) {
               try {
                 note.addModifier(new Articulation("a."), 0);
@@ -387,7 +457,9 @@ function renderMeasure(
               ? "accel."
               : "legato";
         const isItalic =
-          expr.type === "rit" || expr.type === "accel" || expr.type === "legato";
+          expr.type === "rit" ||
+          expr.type === "accel" ||
+          expr.type === "legato";
         const beatFraction = Math.max(
           0,
           Math.min(1, expr.beat / beatsPerMeasure),
@@ -403,10 +475,7 @@ function renderMeasure(
         text.setAttribute("y", String(textY));
         text.setAttribute("font-size", "11");
         text.setAttribute("font-family", "inherit");
-        text.setAttribute(
-          "font-style",
-          isItalic ? "italic" : "normal",
-        );
+        text.setAttribute("font-style", isItalic ? "italic" : "normal");
         text.setAttribute("font-weight", "500");
         text.setAttribute("fill", "var(--color-accent, #1E6E72)");
         text.setAttribute("opacity", "0.85");
@@ -416,7 +485,14 @@ function renderMeasure(
     }
   }
 
-  return { trebleVexNotes, bassVexNotes, trebleChords, bassChords, trebleStave: treble, bassStave: bass };
+  return {
+    trebleVexNotes,
+    bassVexNotes,
+    trebleChords,
+    bassChords,
+    trebleStave: treble,
+    bassStave: bass,
+  };
 }
 
 /**
@@ -615,8 +691,20 @@ export function SheetMusicPanel({
           }
 
           const measure = notationData.measures[measureIndex];
+          const previousMeasure =
+            measureIndex > 0
+              ? notationData.measures[measureIndex - 1]
+              : undefined;
           const measureExpressions = notationData.expressions?.filter(
             (e) => e.measureIndex === measureIndex,
+          );
+          const trebleContinuationKeys = buildContinuationKeySet(
+            measure.trebleNotes,
+            previousMeasure?.trebleNotes,
+          );
+          const bassContinuationKeys = buildContinuationKeySet(
+            measure.bassNotes,
+            previousMeasure?.bassNotes,
           );
 
           try {
@@ -628,6 +716,9 @@ export function SheetMusicPanel({
               y,
               slotWidth,
               isFirst,
+              notationData.ticksPerQuarter,
+              trebleContinuationKeys,
+              bassContinuationKeys,
               measureIndex + 1,
               measureExpressions,
             );
@@ -659,58 +750,51 @@ export function SheetMusicPanel({
             // Only draw ties for consecutive measure indices
             if (nextMeasureIdx !== currentMeasureIdx + 1) continue;
 
-            const currentMeasure = notationData.measures[currentMeasureIdx];
-
             // Check treble notes for ties
             for (let ni = 0; ni < currentResult.trebleChords.length; ni++) {
-              const chord = currentResult.trebleChords[ni];
-              // Find the original notation notes to check the tied flag
-              const matchingNotes = currentMeasure.trebleNotes.filter(
-                (n) => n.startTick === chord.startTick && n.tied,
+              if (nextResult.trebleVexNotes.length === 0) continue;
+              const tieMapping = buildTieIndexMapping(
+                currentResult.trebleChords[ni],
+                nextResult.trebleChords,
               );
-              if (matchingNotes.length > 0 && nextResult.trebleVexNotes.length > 0) {
-                try {
-                  const indices = Array.from(
-                    { length: chord.keys.length },
-                    (_, i) => i,
-                  );
-                  new StaveTie({
-                    firstNote: currentResult.trebleVexNotes[ni],
-                    lastNote: nextResult.trebleVexNotes[0],
-                    firstIndexes: indices,
-                    lastIndexes: indices.slice(0, 1),
-                  })
-                    .setContext(context)
-                    .draw();
-                } catch {
-                  // Tie rendering can fail for edge cases; skip silently
-                }
+              if (!tieMapping) continue;
+
+              try {
+                new StaveTie({
+                  firstNote: currentResult.trebleVexNotes[ni],
+                  lastNote:
+                    nextResult.trebleVexNotes[tieMapping.targetChordIndex],
+                  firstIndexes: tieMapping.firstIndexes,
+                  lastIndexes: tieMapping.lastIndexes,
+                })
+                  .setContext(context)
+                  .draw();
+              } catch {
+                // Tie rendering can fail for edge cases; skip silently
               }
             }
 
             // Check bass notes for ties
             for (let ni = 0; ni < currentResult.bassChords.length; ni++) {
-              const chord = currentResult.bassChords[ni];
-              const matchingNotes = currentMeasure.bassNotes.filter(
-                (n) => n.startTick === chord.startTick && n.tied,
+              if (nextResult.bassVexNotes.length === 0) continue;
+              const tieMapping = buildTieIndexMapping(
+                currentResult.bassChords[ni],
+                nextResult.bassChords,
               );
-              if (matchingNotes.length > 0 && nextResult.bassVexNotes.length > 0) {
-                try {
-                  const indices = Array.from(
-                    { length: chord.keys.length },
-                    (_, i) => i,
-                  );
-                  new StaveTie({
-                    firstNote: currentResult.bassVexNotes[ni],
-                    lastNote: nextResult.bassVexNotes[0],
-                    firstIndexes: indices,
-                    lastIndexes: indices.slice(0, 1),
-                  })
-                    .setContext(context)
-                    .draw();
-                } catch {
-                  // Tie rendering can fail; skip silently
-                }
+              if (!tieMapping) continue;
+
+              try {
+                new StaveTie({
+                  firstNote: currentResult.bassVexNotes[ni],
+                  lastNote:
+                    nextResult.bassVexNotes[tieMapping.targetChordIndex],
+                  firstIndexes: tieMapping.firstIndexes,
+                  lastIndexes: tieMapping.lastIndexes,
+                })
+                  .setContext(context)
+                  .draw();
+              } catch {
+                // Tie rendering can fail; skip silently
               }
             }
           }

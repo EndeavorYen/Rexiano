@@ -57,6 +57,66 @@ describe("CursorSync", () => {
       const pos = getCursorPosition(100, data)!;
       expect(pos.measureIndex).toBe(3); // last measure
     });
+
+    it("uses tempo map + measureStartTicks when provided", () => {
+      const data: NotationData = {
+        measures: [
+          {
+            index: 0,
+            timeSignatureTop: 4,
+            timeSignatureBottom: 4,
+            keySignature: "C",
+            trebleNotes: [],
+            bassNotes: [],
+          },
+          {
+            index: 1,
+            timeSignatureTop: 4,
+            timeSignatureBottom: 4,
+            keySignature: "C",
+            trebleNotes: [],
+            bassNotes: [],
+          },
+        ],
+        bpm: 120,
+        ticksPerQuarter: 480,
+        tempoMap: [
+          { time: 0, bpm: 120 },
+          { time: 2.0, bpm: 60 },
+        ],
+        measureStartTicks: [0, 1920],
+      };
+
+      // 0~2s => 1920 ticks, then +1s at 60 BPM => +480 ticks.
+      // totalTick = 2400 => measure 1, beat 1.
+      const pos = getCursorPosition(3.0, data)!;
+      expect(pos.measureIndex).toBe(1);
+      expect(pos.beat).toBeCloseTo(1, 1);
+    });
+
+    it("computes beat using time-signature denominator", () => {
+      const data: NotationData = {
+        measures: [
+          {
+            index: 0,
+            timeSignatureTop: 3,
+            timeSignatureBottom: 8,
+            keySignature: "C",
+            trebleNotes: [],
+            bassNotes: [],
+          },
+        ],
+        bpm: 120,
+        ticksPerQuarter: 480,
+        measureStartTicks: [0],
+      };
+
+      // In 3/8, one beat = eighth note = 240 ticks.
+      // 0.25s at 120 BPM = 240 ticks => beat 1.
+      const pos = getCursorPosition(0.25, data)!;
+      expect(pos.measureIndex).toBe(0);
+      expect(pos.beat).toBeCloseTo(1, 1);
+    });
   });
 
   describe("getScrollTarget", () => {

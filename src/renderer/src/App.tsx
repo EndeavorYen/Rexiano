@@ -32,7 +32,10 @@ import { DeviceSelector } from "./features/midiDevice/DeviceSelector";
 import { InsightsPanel } from "./features/insights/InsightsPanel";
 import { WeakSpotAnalyzer } from "./features/insights/WeakSpotAnalyzer";
 import type { SessionSummary } from "./features/insights/WeakSpotAnalyzer";
-import { useMidiDeviceStore, setMidiCCHandler } from "./stores/useMidiDeviceStore";
+import {
+  useMidiDeviceStore,
+  setMidiCCHandler,
+} from "./stores/useMidiDeviceStore";
 import { usePracticeLifecycle } from "./features/practice/usePracticeLifecycle";
 import { PracticeToolbar } from "./features/practice/PracticeToolbar";
 import { ScoreOverlay } from "./features/practice/ScoreOverlay";
@@ -61,14 +64,12 @@ import {
 /** Accepted file extensions for drag-and-drop MIDI import */
 const MIDI_EXTENSIONS = [".mid", ".midi"];
 const CELEBRATION_DURATION_MS = 5000;
-const HEADER_ESTIMATED_HEIGHT = 112;
-const TRANSPORT_ESTIMATED_HEIGHT = 84;
-const TOOLBAR_ESTIMATED_HEIGHT = 72;
-const CHROME_VERTICAL_PADDING = 34;
-const SPLIT_SHEET_MIN = 168;
 const SPLIT_SHEET_MAX = 272;
 const SPLIT_SHEET_RATIO = 0.31;
 const SPLIT_FALLING_MIN = 72;
+const SPLIT_SHEET_FLOOR = 112;
+const FALLING_CANVAS_MIN_FLOOR = 96;
+const FALLING_CANVAS_TARGET_RATIO = 0.58;
 
 function clampNumber(value: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, value));
@@ -186,23 +187,43 @@ function App(): React.JSX.Element {
   }, [showCelebration]);
 
   const modeSelectTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  const handleModeSelect = useCallback((mode: PracticeMode) => {
-    usePracticeStore.getState().setMode(mode);
-    setShowModeModal(false);
-    if (modeSelectTimerRef.current) clearTimeout(modeSelectTimerRef.current);
-    const beats = useSettingsStore.getState().countInBeats;
-    if (beats > 0) {
-      // Show count-in overlay; playback starts when it completes
-      modeSelectTimerRef.current = setTimeout(() => {
-        setCountInActive(true);
-      }, 150);
-    } else {
-      modeSelectTimerRef.current = setTimeout(() => {
-        usePlaybackStore.getState().setPlaying(true);
-      }, 150);
-    }
+  const clearModeSelectTimer = useCallback((): void => {
+    if (!modeSelectTimerRef.current) return;
+    clearTimeout(modeSelectTimerRef.current);
+    modeSelectTimerRef.current = null;
   }, []);
+
+  useEffect(() => {
+    return () => {
+      clearModeSelectTimer();
+    };
+  }, [clearModeSelectTimer]);
+
+  useEffect(() => {
+    if (view === "playback" && song) return;
+    clearModeSelectTimer();
+    setCountInActive(false);
+  }, [view, song, clearModeSelectTimer]);
+
+  const handleModeSelect = useCallback(
+    (mode: PracticeMode) => {
+      usePracticeStore.getState().setMode(mode);
+      setShowModeModal(false);
+      clearModeSelectTimer();
+      const beats = useSettingsStore.getState().countInBeats;
+      if (beats > 0) {
+        // Show count-in overlay; playback starts when it completes
+        modeSelectTimerRef.current = setTimeout(() => {
+          setCountInActive(true);
+        }, 150);
+      } else {
+        modeSelectTimerRef.current = setTimeout(() => {
+          usePlaybackStore.getState().setPlaying(true);
+        }, 150);
+      }
+    },
+    [clearModeSelectTimer],
+  );
 
   const handleCountInComplete = useCallback(() => {
     setCountInActive(false);
@@ -210,6 +231,8 @@ function App(): React.JSX.Element {
   }, []);
 
   const handlePracticeAgain = useCallback(() => {
+    clearModeSelectTimer();
+    setCountInActive(false);
     setShowCelebration(false);
     setShowStats(false);
     usePlaybackStore.getState().reset();
@@ -221,15 +244,17 @@ function App(): React.JSX.Element {
     // Re-show mode selection so the player can pick Watch/Wait/Free again
     setShowModeModal(true);
     sessionStartRef.current = Date.now();
-  }, []);
+  }, [clearModeSelectTimer]);
 
   const handleChooseSong = useCallback(() => {
+    clearModeSelectTimer();
+    setCountInActive(false);
     setShowCelebration(false);
     setShowStats(false);
     useSongStore.getState().clearSong();
     usePlaybackStore.getState().reset();
     applyRoute("menu");
-  }, [applyRoute]);
+  }, [applyRoute, clearModeSelectTimer]);
   // ─── End mode/celebration/stats flow ──────────────────
 
   // ─── Phase 6.5 Sprint 5: Insights Panel ──────────────
@@ -285,35 +310,60 @@ function App(): React.JSX.Element {
 
   const notationData = useMemo(() => {
     if (!song) return null;
-    const allNotes = song.tracks.flatMap((tr) => tr.notes);
-    const bpm = song.tempos.length > 0 ? song.tempos[0].bpm : 120;
+    const flattened = song.tracks.flatMap((track, idx) =>
+      track.notes.map((note) => ({ note, trackIndex: idx })),
+    );
+    const allNotes = flattened.map((x) => x.note);
+    const noteTrackIndices = flattened.map((x) => x.trackIndex);
+    const tempos =
+      song.tempos.length > 0 ? song.tempos : [{ time: 0, bpm: 120 }];
+    const primaryTimeSignature = song.timeSignatures[0];
+    const timeSigTop = primaryTimeSignature?.numerator ?? 4;
+    const timeSigBottom = primaryTimeSignature?.denominator ?? 4;
     const keySig = song.keySignatures?.[0]?.key ?? 0;
-    return convertToNotation(allNotes, bpm, 480, 4, 4, keySig, 0, 1, song.expressions);
+    return convertToNotation(
+      allNotes,
+      tempos,
+      480,
+      timeSigTop,
+      timeSigBottom,
+      keySig,
+      0,
+      song.tracks.length,
+      song.expressions,
+      song.timeSignatures,
+      noteTrackIndices,
+    );
   }, [song]);
 
   // ─── End Phase 7 ──────────────────────────────────────
 
   const [activeNotes, setActiveNotes] = useState<Set<number>>(new Set());
   const midiActiveNotes = useMidiDeviceStore((s) => s.activeNotes);
-  const [viewportHeight, setViewportHeight] = useState(() =>
-    typeof window !== "undefined" ? window.innerHeight : 900,
-  );
   const [splitFocusPanel, setSplitFocusPanel] = useState<"sheet" | "falling">(
     "sheet",
   );
+  const workspaceFrameRef = useRef<HTMLDivElement | null>(null);
+  const [workspaceHeight, setWorkspaceHeight] = useState(360);
 
   const handleActiveNotesChange = useCallback((notes: Set<number>) => {
     setActiveNotes(notes);
   }, []);
 
   useEffect(() => {
-    if (typeof window === "undefined") return;
-    const onResize = (): void => {
-      setViewportHeight(window.innerHeight);
+    const node = workspaceFrameRef.current;
+    if (!node) return;
+    const updateHeight = (): void => {
+      setWorkspaceHeight(node.getBoundingClientRect().height);
     };
-    window.addEventListener("resize", onResize);
-    return () => window.removeEventListener("resize", onResize);
-  }, []);
+    updateHeight();
+    if (typeof ResizeObserver === "undefined") return;
+    const observer = new ResizeObserver(() => {
+      updateHeight();
+    });
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, [song, view]);
 
   // ─── Phase 4: Audio Engine lifecycle ─────────────────
   const audioRef = useRef<{
@@ -887,8 +937,12 @@ function App(): React.JSX.Element {
         } catch (err) {
           console.error("Failed to parse dropped MIDI file:", err);
           setDragError(t("app.failedParse"));
-          if (dragErrorTimerRef.current) clearTimeout(dragErrorTimerRef.current);
-          dragErrorTimerRef.current = setTimeout(() => setDragError(null), 3000);
+          if (dragErrorTimerRef.current)
+            clearTimeout(dragErrorTimerRef.current);
+          dragErrorTimerRef.current = setTimeout(
+            () => setDragError(null),
+            3000,
+          );
         }
       };
       reader.onerror = () => {
@@ -903,10 +957,12 @@ function App(): React.JSX.Element {
   // ─── End Phase 6.5 ─────────────────────────────────────
 
   const handleExitPlayback = useCallback(() => {
+    clearModeSelectTimer();
+    setCountInActive(false);
     useSongStore.getState().clearSong();
     usePlaybackStore.getState().reset();
     applyRoute("menu");
-  }, [applyRoute]);
+  }, [applyRoute, clearModeSelectTimer]);
 
   const isSplitMode = displayMode === "split";
   const splitFocus = isSplitMode ? splitFocusPanel : "sheet";
@@ -919,43 +975,32 @@ function App(): React.JSX.Element {
   const keyboardHeight = isSplitMode
     ? splitKeyboardHeightMap[uiScale]
     : keyboardHeightMap[uiScale];
-  const reservedChromeHeight =
-    HEADER_ESTIMATED_HEIGHT +
-    TRANSPORT_ESTIMATED_HEIGHT +
-    TOOLBAR_ESTIMATED_HEIGHT +
-    keyboardHeight +
-    CHROME_VERTICAL_PADDING;
-  const estimatedWorkspaceHeight = Math.max(
-    260,
-    viewportHeight - reservedChromeHeight,
+  const normalizedWorkspaceHeight = Math.max(220, workspaceHeight);
+  const maxSheetHeight = Math.max(
+    SPLIT_SHEET_FLOOR,
+    normalizedWorkspaceHeight - SPLIT_FALLING_MIN,
   );
   const splitSheetHeight = isSplitMode
     ? Math.round(
         clampNumber(
-          estimatedWorkspaceHeight * SPLIT_SHEET_RATIO,
-          SPLIT_SHEET_MIN,
-          SPLIT_SHEET_MAX,
+          normalizedWorkspaceHeight * SPLIT_SHEET_RATIO,
+          SPLIT_SHEET_FLOOR,
+          Math.min(SPLIT_SHEET_MAX, maxSheetHeight),
         ),
       )
     : undefined;
   const splitFallingAvailableHeight =
     isSplitMode && splitSheetHeight !== undefined
-      ? Math.max(0, estimatedWorkspaceHeight - splitSheetHeight)
+      ? Math.max(0, normalizedWorkspaceHeight - splitSheetHeight)
       : 0;
-  const splitFallingMinHeight = isSplitMode
-    ? Math.max(
-        SPLIT_FALLING_MIN,
-        Math.min(
-          Math.max(
-            SPLIT_FALLING_MIN,
-            Math.round(estimatedWorkspaceHeight * 0.42),
-          ),
-          splitFallingAvailableHeight,
-        ),
-      )
-    : null;
+  const desiredSplitFallingHeight = Math.round(
+    normalizedWorkspaceHeight * FALLING_CANVAS_TARGET_RATIO,
+  );
   const fallingCanvasMinHeight = isSplitMode
-    ? (splitFallingMinHeight ?? 0)
+    ? Math.max(
+        Math.min(splitFallingAvailableHeight, desiredSplitFallingHeight),
+        Math.min(FALLING_CANVAS_MIN_FLOOR, splitFallingAvailableHeight),
+      )
     : 200;
   const speedPercent = Math.round(speed * 100);
   const rawBaseBpm =
@@ -1037,10 +1082,10 @@ function App(): React.JSX.Element {
         <div
           className="fixed top-4 left-1/2 -translate-x-1/2 z-50 px-4 py-2 rounded-lg text-sm font-body subtle-shadow"
           style={{
-            background:
-              "color-mix(in srgb, #dc2626 55%, var(--color-surface))",
+            background: "color-mix(in srgb, #dc2626 55%, var(--color-surface))",
             color: "var(--color-text)",
-            border: "1px solid color-mix(in srgb, #dc2626 30%, var(--color-border))",
+            border:
+              "1px solid color-mix(in srgb, #dc2626 30%, var(--color-border))",
           }}
         >
           {dragError}
@@ -1075,7 +1120,7 @@ function App(): React.JSX.Element {
       {song && (
         <div
           key="playback"
-          className="flex-1 min-h-0 flex flex-col animate-page-enter px-3 pb-3 pt-3"
+          className="flex-1 min-h-0 flex flex-col animate-page-enter overflow-y-auto overflow-x-hidden px-3 pb-3 pt-3"
           data-testid="playback-view"
         >
           <div
@@ -1136,7 +1181,9 @@ function App(): React.JSX.Element {
                   data-testid="playback-drawer-trigger"
                 >
                   <PanelRightOpen size={13} />
-                  <span className="hidden sm:inline">{t("settings.title")}</span>
+                  <span className="hidden sm:inline">
+                    {t("settings.title")}
+                  </span>
                 </button>
                 <button
                   onClick={handleExitPlayback}
@@ -1207,6 +1254,7 @@ function App(): React.JSX.Element {
 
           {/* Main display area: sheet music / falling notes / both */}
           <div
+            ref={workspaceFrameRef}
             className={`workspace-frame ${isPlaying ? "workspace-frame-live" : ""} flex-1 relative flex flex-col min-h-0 surface-panel overflow-hidden`}
           >
             {/* Sheet music panel (shown in split & sheet modes) */}
@@ -1287,7 +1335,12 @@ function App(): React.JSX.Element {
           <TransportBar compact={isSplitMode} />
 
           {/* Practice toolbar */}
-          <PracticeToolbar compact={isSplitMode} />
+          <PracticeToolbar
+            key={
+              isSplitMode ? "practice-toolbar-compact" : "practice-toolbar-full"
+            }
+            compact={isSplitMode}
+          />
 
           {/* Piano keyboard */}
           <PianoKeyboard

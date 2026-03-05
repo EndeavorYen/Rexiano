@@ -3,7 +3,7 @@
  * @vitest-environment jsdom
  */
 import { describe, test, expect, vi, afterEach } from "vitest";
-import { render, screen, cleanup } from "@testing-library/react";
+import { render, screen, cleanup, fireEvent } from "@testing-library/react";
 
 // Mock useTranslation
 vi.mock("@renderer/i18n/useTranslation", () => ({
@@ -53,7 +53,7 @@ describe("PracticeToolbar render", () => {
     expect(screen.getByTestId("practice-toolbar")).toBeDefined();
   });
 
-  test("shows all controls without requiring a toggle", () => {
+  test("shows all controls without requiring a toggle in non-compact mode", () => {
     render(<PracticeToolbar />);
     // Mode selector, speed slider, AB loop should all be visible directly
     expect(screen.getByTestId("practice-mode-watch")).toBeDefined();
@@ -61,10 +61,23 @@ describe("PracticeToolbar render", () => {
     expect(screen.getByTestId("speed-slider")).toBeDefined();
   });
 
-  test("does not render a More toggle button", () => {
+  test("does not render a More toggle button in non-compact mode", () => {
     render(<PracticeToolbar />);
+    expect(screen.queryByTestId("practice-toolbar-advanced-toggle")).toBeNull();
+  });
+
+  test("renders advanced toggle and collapses advanced controls in compact mode", () => {
+    render(<PracticeToolbar compact />);
     expect(
-      screen.queryByTestId("practice-toolbar-advanced-toggle"),
-    ).toBeNull();
+      screen.getByTestId("practice-toolbar-advanced-toggle"),
+    ).toBeDefined();
+    expect(screen.queryByText("practice.loopSection")).toBeNull();
+  });
+
+  test("expands advanced controls when compact toggle is clicked", () => {
+    render(<PracticeToolbar compact />);
+    const toggle = screen.getByTestId("practice-toolbar-advanced-toggle");
+    fireEvent.click(toggle);
+    expect(screen.getByText("practice.loopSection")).toBeDefined();
   });
 });

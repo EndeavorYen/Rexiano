@@ -54,7 +54,7 @@ export function MainMenu({
 
   return (
     <div
-      className="flex-1 min-h-0 app-shell overflow-y-auto px-6 py-8"
+      className="flex-1 min-h-0 app-shell overflow-y-auto overflow-x-hidden px-6 py-8"
       data-testid="main-menu-view"
     >
       <div className="mx-auto h-full w-full max-w-6xl flex items-center">

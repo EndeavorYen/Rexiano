@@ -445,6 +445,26 @@ describe("MidiToNotation", () => {
       const result = convertToNotation([], tempos, 480);
       expect(result.bpm).toBe(90);
     });
+
+    it("maps absolute tick position correctly after a tempo change", () => {
+      const tempos: TempoEvent[] = [
+        { time: 0, bpm: 120 },
+        { time: 2.0, bpm: 60 },
+      ];
+      const notes = [
+        // 0~2s uses 120 BPM => 1920 ticks, then +1s at 60 BPM => +480 ticks
+        // Absolute tick at t=3.0s should be 2400 => measure 1 beat 2 in 4/4.
+        { midi: 67, name: "G4", time: 3.0, duration: 0.5, velocity: 80 },
+      ];
+
+      const result = convertToNotation(notes, tempos, 480, 4, 4);
+      const m0 = result.measures[0].trebleNotes.filter((n) => !n.isRest);
+      const m1 = result.measures[1].trebleNotes.filter((n) => !n.isRest);
+
+      expect(m0.length).toBe(0);
+      expect(m1.length).toBe(1);
+      expect(m1[0].startTick).toBe(480);
+    });
   });
 
   describe("track-aware clef assignment in convertToNotation", () => {
@@ -474,6 +494,68 @@ describe("MidiToNotation", () => {
       expect(treble.length).toBe(0);
       expect(bass.length).toBe(1);
       expect(bass[0].midi).toBe(72);
+    });
+
+    it("supports per-note track indices when flattening multi-track notes", () => {
+      const notes = [
+        { midi: 48, name: "C3", time: 0, duration: 0.5, velocity: 80 },
+        { midi: 72, name: "C5", time: 0, duration: 0.5, velocity: 80 },
+      ];
+      const noteTrackIndices = [0, 1];
+      const result = convertToNotation(
+        notes,
+        120,
+        480,
+        4,
+        4,
+        0,
+        0,
+        2,
+        undefined,
+        undefined,
+        noteTrackIndices,
+      );
+
+      const treble = result.measures[0].trebleNotes.filter((n) => !n.isRest);
+      const bass = result.measures[0].bassNotes.filter((n) => !n.isRest);
+      expect(treble.length).toBe(1);
+      expect(treble[0].midi).toBe(48);
+      expect(bass.length).toBe(1);
+      expect(bass[0].midi).toBe(72);
+    });
+  });
+
+  describe("time signature map", () => {
+    it("uses time-signature events to build measure boundaries", () => {
+      const notes = [
+        { midi: 60, name: "C4", time: 0, duration: 0.5, velocity: 80 },
+        { midi: 64, name: "E4", time: 3.0, duration: 0.5, velocity: 80 },
+      ];
+      const timeSignatures = [
+        { time: 0, numerator: 4, denominator: 4 },
+        { time: 2.0, numerator: 3, denominator: 4 },
+      ];
+
+      const result = convertToNotation(
+        notes,
+        120,
+        480,
+        4,
+        4,
+        0,
+        0,
+        1,
+        undefined,
+        timeSignatures,
+      );
+
+      expect(result.measures[0].timeSignatureTop).toBe(4);
+      expect(result.measures[1].timeSignatureTop).toBe(3);
+      expect(result.measureStartTicks?.[0]).toBe(0);
+      expect(result.measureStartTicks?.[1]).toBe(1920);
+
+      const m1Treble = result.measures[1].trebleNotes.filter((n) => !n.isRest);
+      expect(m1Treble.length).toBe(1);
     });
   });
 });

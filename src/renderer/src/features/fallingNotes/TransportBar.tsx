@@ -109,12 +109,12 @@ export function TransportBar({
       data-testid="transport-strip"
     >
       <div
-        className={`grid lg:grid-cols-[auto_1fr_auto] lg:items-center ${
-          compact ? "gap-1.5 lg:gap-2.5" : "gap-2 lg:gap-3"
+        className={`grid md:grid-cols-[auto_minmax(0,1fr)_auto] md:items-center ${
+          compact ? "gap-1.5 md:gap-2.5" : "gap-2 md:gap-3"
         }`}
       >
         <div
-          className={`flex items-center gap-2 overflow-x-auto lg:overflow-visible rounded-xl ${
+          className={`flex items-center gap-2 overflow-x-auto md:overflow-visible rounded-xl ${
             compact ? "px-1.5 py-0.5" : "px-1.5 py-1"
           }`}
           style={{
@@ -289,7 +289,7 @@ export function TransportBar({
         </div>
 
         <div
-          className={`flex flex-col min-w-0 lg:min-w-[280px] rounded-xl px-2 ${
+          className={`flex flex-col min-w-0 md:min-w-[240px] rounded-xl px-2 ${
             compact ? "gap-0.5 py-0.5" : "gap-1 py-1"
           }`}
           style={{
@@ -359,7 +359,7 @@ export function TransportBar({
         </div>
 
         <div
-          className={`flex items-center justify-end rounded-xl px-1.5 ${
+          className={`flex items-center justify-between md:justify-end rounded-xl px-1.5 ${
             compact ? "gap-2 py-1" : "gap-2.5 py-1.5"
           }`}
           style={{

@@ -109,6 +109,8 @@ textarea:focus-visible {
 .app-shell {
   position: relative;
   isolation: isolate;
+  overflow-x: hidden;
+  overflow-x: clip;
 }
 
 .app-shell-clipped {
@@ -1084,7 +1086,8 @@ input[type="range"]:disabled::-moz-range-thumb {
   }
   50% {
     border-color: color-mix(in srgb, var(--color-accent) 60%, transparent);
-    box-shadow: 0 0 24px 6px color-mix(in srgb, var(--color-accent) 18%, transparent);
+    box-shadow: 0 0 24px 6px
+      color-mix(in srgb, var(--color-accent) 18%, transparent);
   }
 }
 
