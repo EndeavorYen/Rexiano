@@ -45,6 +45,7 @@ function song(tracks: ParsedTrack[], duration?: number): ParsedSong {
 interface MockAudioEngine {
   status: "ready";
   audioContext: AudioContext;
+  masterGain: GainNode | null;
   init: Mock;
   noteOn: Mock;
   noteOff: Mock;
@@ -72,6 +73,7 @@ function createMockEngine(initialTime = 0): MockAudioEngine {
   return {
     status: "ready" as const,
     audioContext: ctx,
+    masterGain: null,
     init: vi.fn().mockResolvedValue(undefined),
     noteOn: vi.fn(),
     noteOff: vi.fn(),

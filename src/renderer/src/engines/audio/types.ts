@@ -21,6 +21,8 @@ export interface IAudioEngine {
   readonly status: AudioEngineStatus;
   /** The underlying Web Audio AudioContext (null until init) */
   readonly audioContext: AudioContext | null;
+  /** Master gain node for routing other audio sources through volume control */
+  readonly masterGain: GainNode | null;
 
   /**
    * Initialize the AudioContext + load the default piano SoundFont.
