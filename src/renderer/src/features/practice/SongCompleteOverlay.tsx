@@ -1,6 +1,7 @@
+import { useEffect } from "react";
 import { useTranslation } from "@renderer/i18n/useTranslation";
 import { usePracticeStore } from "@renderer/stores/usePracticeStore";
-import { RotateCcw, ArrowLeft } from "lucide-react";
+import { RotateCcw, ArrowLeft, Star } from "lucide-react";
 
 interface SongCompleteOverlayProps {
   onPlayAgain: () => void;
@@ -15,6 +16,25 @@ export function SongCompleteOverlay({
   const score = usePracticeStore((s) => s.score);
   const mode = usePracticeStore((s) => s.mode);
   const showScore = mode !== "watch" && score.totalNotes > 0;
+
+  const starCount =
+    score.accuracy >= 90
+      ? 3
+      : score.accuracy >= 70
+        ? 2
+        : score.accuracy >= 50
+          ? 1
+          : 0;
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent): void => {
+      if (e.key === "Escape") {
+        onBackToLibrary();
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [onBackToLibrary]);
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center modal-backdrop-cinematic">
@@ -31,6 +51,24 @@ export function SongCompleteOverlay({
             "0 24px 64px rgba(0,0,0,0.15), 0 4px 12px rgba(0,0,0,0.08)",
         }}
       >
+        {showScore && starCount > 0 && (
+          <div className="flex justify-center gap-1 mb-3">
+            {[1, 2, 3].map((i) => (
+              <Star
+                key={i}
+                size={28}
+                fill={i <= starCount ? "var(--color-accent)" : "none"}
+                stroke={
+                  i <= starCount
+                    ? "var(--color-accent)"
+                    : "var(--color-text-muted)"
+                }
+                strokeWidth={1.5}
+              />
+            ))}
+          </div>
+        )}
+
         <div
           className="text-3xl font-display font-bold mb-2"
           style={{ color: "var(--color-text)" }}
