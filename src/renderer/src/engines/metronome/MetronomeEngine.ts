@@ -232,7 +232,8 @@ export class MetronomeEngine {
     osc.frequency.value = isStrong ? STRONG_FREQ : NORMAL_FREQ;
 
     // Sharp attack, quick decay — scaled by _volume
-    const peakGain = this._volume * 0.5;
+    // Metronome routes through master GainNode, so no extra attenuation needed
+    const peakGain = this._volume;
     gain.gain.setValueAtTime(Math.max(peakGain, 0.001), time);
     gain.gain.exponentialRampToValueAtTime(0.001, time + CLICK_DURATION);
 
