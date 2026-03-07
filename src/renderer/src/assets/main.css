@@ -33,6 +33,9 @@
   --color-note3: #3d74a6;
   --color-hit-glow: #66c7cb;
   --color-streak-gold: #cfb066;
+  --color-timing-early: #5b9bd5;
+  --color-timing-late: #e8a838;
+  --color-combo-text: #3a9e86;
 
   /* UI scale system — default (normal) */
   --ui-font-scale: 1;
@@ -878,6 +881,21 @@ input[type="range"]:disabled::-moz-range-thumb {
 
 .animate-score-enter {
   animation: practice-score-enter 0.35s cubic-bezier(0.22, 0.61, 0.36, 1) both;
+}
+
+@keyframes song-complete-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes song-complete-scale-in {
+  from { opacity: 0; transform: scale(0.85); }
+  to { opacity: 1; transform: scale(1); }
+}
+.animate-fade-in {
+  animation: song-complete-fade-in 0.25s ease-out both;
+}
+.animate-scale-in {
+  animation: song-complete-scale-in 0.35s cubic-bezier(0.22, 0.61, 0.36, 1) both;
 }
 
 /* ── Card hover lift ── */

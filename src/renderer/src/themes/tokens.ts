@@ -45,6 +45,10 @@ export interface ThemeTokens {
     comboText: string;
     /** Practice mode — streak milestone accent */
     streakGold: string;
+    /** Practice mode — timing indicator: early */
+    timingEarly: string;
+    /** Practice mode — timing indicator: late */
+    timingLate: string;
   };
 }
 
@@ -85,6 +89,8 @@ export const themes: Record<ThemeId, ThemeTokens> = {
       missGray: "#8B8596",
       comboText: "#9268B8",
       streakGold: "#C89C49",
+      timingEarly: "#6B8FC2",
+      timingLate: "#D4A04A",
     },
   },
   /**
@@ -123,6 +129,8 @@ export const themes: Record<ThemeId, ThemeTokens> = {
       missGray: "#5D6B6C",
       comboText: "#3A9E86",
       streakGold: "#CFB066",
+      timingEarly: "#5B9BD5",
+      timingLate: "#E8A838",
     },
   },
   /**
@@ -161,6 +169,8 @@ export const themes: Record<ThemeId, ThemeTokens> = {
       missGray: "#988478",
       comboText: "#C4674C",
       streakGold: "#C99A4E",
+      timingEarly: "#6FA0C4",
+      timingLate: "#DBA24A",
     },
   },
   /**
@@ -199,6 +209,8 @@ export const themes: Record<ThemeId, ThemeTokens> = {
       missGray: "#4F5B66",
       comboText: "#86C4AD",
       streakGold: "#D4B670",
+      timingEarly: "#7BAED8",
+      timingLate: "#E8B04A",
     },
   },
 };

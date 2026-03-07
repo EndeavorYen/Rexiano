@@ -28,12 +28,15 @@ interface PracticeState {
   noteResults: Map<string, NoteResult>;
   /** Display mode: falling notes, sheet music, or split view */
   displayMode: DisplayMode;
+  /** Whether WaitMode is currently paused waiting for user input */
+  isWaiting: boolean;
 
   setMode: (mode: PracticeMode) => void;
   setSpeed: (speed: number) => void;
   setLoopRange: (range: [number, number] | null) => void;
   setActiveTracks: (tracks: Set<number>) => void;
   setDisplayMode: (mode: DisplayMode) => void;
+  setWaiting: (waiting: boolean) => void;
   recordHit: (noteKey: string, timingDeltaMs?: number) => void;
   recordMiss: (noteKey: string) => void;
   resetScore: () => void;
@@ -52,10 +55,12 @@ export const usePracticeStore = create<PracticeState>()((set) => ({
   score: { ...initialScore },
   noteResults: new Map<string, NoteResult>(),
   displayMode: "falling",
+  isWaiting: false,
 
   setMode: (mode) =>
     set({
       mode,
+      isWaiting: false,
       score: { ...initialScore },
       noteResults: new Map(),
     }),
@@ -65,6 +70,8 @@ export const usePracticeStore = create<PracticeState>()((set) => ({
   setLoopRange: (range) => set({ loopRange: range }),
 
   setDisplayMode: (displayMode) => set({ displayMode }),
+
+  setWaiting: (waiting) => set({ isWaiting: waiting }),
 
   setActiveTracks: (tracks) => set({ activeTracks: tracks }),
 
@@ -126,5 +133,6 @@ export const usePracticeStore = create<PracticeState>()((set) => ({
     set({
       score: { ...initialScore },
       noteResults: new Map(),
+      isWaiting: false,
     }),
 }));

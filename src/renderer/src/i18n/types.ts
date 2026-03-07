@@ -126,6 +126,13 @@ export interface TranslationMap {
   "practice.timingEarly": string;
   "practice.timingLate": string;
   "practice.timingOnTime": string;
+  "practice.waiting": string;
+  "practice.songComplete": string;
+  "practice.watchComplete": string;
+  "practice.finalAccuracy": string;
+  "practice.bestStreak": string;
+  "practice.playAgain": string;
+  "practice.backToLibrary": string;
   "practice.mode.watchDesc": string;
   "practice.mode.waitDesc": string;
   "practice.mode.freeDesc": string;

@@ -57,7 +57,7 @@ vi.mock("pixi.js", () => {
     }
   }
   class MockTextStyle {
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars, @typescript-eslint/no-empty-function
+    // eslint-disable-next-line @typescript-eslint/no-empty-function
     constructor(_opts?: unknown) {}
   }
   class MockGraphics {
@@ -96,9 +96,13 @@ vi.mock("@renderer/stores/useThemeStore", () => ({
         colors: {
           gridLine: "#E8E2EE",
           hitLine: "#705A87",
+          hitGlow: "#D8BE74",
+          missGray: "#8B8596",
+          comboText: "#9268B8",
         },
       },
     }),
+    subscribe: () => () => {},
   },
 }));
 
@@ -497,8 +501,8 @@ describe("NoteRenderer", () => {
       // Fire at end of animation (150ms)
       rafCb!(150);
 
-      // At the end, tint should be 0x888888 and alpha ~0.4
-      expect(sprite.tint).toBe(0x888888);
+      // At the end, tint should be theme missGray (0x8B8596) and alpha ~0.4
+      expect(sprite.tint).toBe(0x8b8596);
       expect(sprite.alpha).toBeCloseTo(0.4, 1);
       // Alpha decreased from original
       expect(sprite.alpha).toBeLessThan(originalAlpha);

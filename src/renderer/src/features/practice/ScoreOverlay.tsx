@@ -17,6 +17,7 @@ export function ScoreOverlay(): React.JSX.Element {
   const { t } = useTranslation();
   const score = usePracticeStore((s) => s.score);
   const mode = usePracticeStore((s) => s.mode);
+  const isWaiting = usePracticeStore((s) => s.isWaiting);
 
   // useMemo must be called before any early returns (Rules of Hooks)
   const encouragementKey = useMemo(
@@ -45,13 +46,29 @@ export function ScoreOverlay(): React.JSX.Element {
       role="status"
       aria-label={t("practice.scoreLabel")}
     >
+      {/* Wait mode indicator */}
+      {isWaiting && (
+        <span
+          className="text-xs font-display font-bold animate-pulse"
+          style={{
+            color: "var(--color-streak-gold, var(--color-accent))",
+            borderBottom: "2px solid currentColor",
+            paddingBottom: "1px",
+          }}
+        >
+          {t("practice.waiting")}
+        </span>
+      )}
+
       {/* Encouragement text */}
-      <span
-        className="text-xs font-display font-semibold"
-        style={{ color: "var(--color-accent)" }}
-      >
-        {encouragement}
-      </span>
+      {!isWaiting && (
+        <span
+          className="text-xs font-display font-semibold"
+          style={{ color: "var(--color-accent)" }}
+        >
+          {encouragement}
+        </span>
+      )}
 
       {/* Accuracy */}
       <div className="flex items-baseline gap-1.5">
@@ -82,8 +99,8 @@ export function ScoreOverlay(): React.JSX.Element {
                 Math.abs(score.lastTimingDeltaMs) < 30
                   ? "var(--color-accent)"
                   : score.lastTimingDeltaMs < 0
-                    ? "var(--color-timing-early, #5b9bd5)"
-                    : "var(--color-timing-late, #e8a838)",
+                    ? "var(--color-timing-early, #6B8FC2)"
+                    : "var(--color-timing-late, #C27B6B)",
             }}
           >
             {Math.abs(score.lastTimingDeltaMs) < 30
@@ -98,12 +115,12 @@ export function ScoreOverlay(): React.JSX.Element {
       {/* Combo streak with pop animation */}
       {score.currentStreak > 1 && (
         <div
-          className="flex items-baseline gap-1 mt-0.5"
+          className="flex items-baseline gap-1 mt-0.5 animate-combo-pop"
           key={`combo-${score.currentStreak}`}
         >
           <span
             className="text-sm font-display font-bold tabular-nums"
-            style={{ color: "var(--color-combo-text, var(--color-accent))" }}
+            style={{ color: "var(--color-combo-text)" }}
           >
             {score.currentStreak}
           </span>

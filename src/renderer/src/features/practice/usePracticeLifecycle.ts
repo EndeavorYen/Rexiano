@@ -48,6 +48,11 @@ interface AudioRef {
 /** Streak milestones that trigger a combo pop -- defined once, not on every hit. */
 const COMBO_MILESTONES = new Set([5, 10, 25, 50, 100]);
 
+interface PracticeLifecycleCallbacks {
+  onHitNote?: (midi: number) => void;
+  onMissNote?: (midi: number) => void;
+}
+
 interface PracticeLifecycleResult {
   noteRendererRef: React.MutableRefObject<NoteRenderer | null>;
   handleNoteRendererReady: (renderer: NoteRenderer) => void;
@@ -58,13 +63,19 @@ interface PracticeLifecycleResult {
  *
  * @param song     The currently loaded parsed song, or null when no song is open.
  * @param audioRef Ref holding the active AudioEngine and AudioScheduler instances.
+ * @param callbacks Optional callbacks for hit/miss note events (e.g. keyboard highlights).
  * @returns        A ref to the NoteRenderer (for hit/miss visual feedback) and
  *                 a callback to receive it once the canvas has mounted.
  */
 export function usePracticeLifecycle(
   song: ParsedSong | null,
   audioRef: React.MutableRefObject<AudioRef>,
+  callbacks?: PracticeLifecycleCallbacks,
 ): PracticeLifecycleResult {
+  const callbacksRef = useRef(callbacks);
+  useEffect(() => {
+    callbacksRef.current = callbacks;
+  });
   const noteRendererRef = useRef<NoteRenderer | null>(null);
 
   const handleNoteRendererReady = useCallback((renderer: NoteRenderer) => {
@@ -99,7 +110,7 @@ export function usePracticeLifecycle(
         }
         usePracticeStore.getState().recordHit(key, timingDeltaMs);
 
-        // Visual feedback
+        // Visual feedback on falling notes
         const currentSong = useSongStore.getState().song;
         const nr = noteRendererRef.current;
         if (nr && currentSong) {
@@ -114,14 +125,16 @@ export function usePracticeLifecycle(
         // Show combo at milestones
         const score = usePracticeStore.getState().score;
         if (nr && COMBO_MILESTONES.has(score.currentStreak)) {
-          nr.showCombo(score.currentStreak, 400, 200);
+          nr.showCombo(score.currentStreak);
         }
+        // Notify keyboard highlight
+        callbacksRef.current?.onHitNote?.(midi);
       },
       onMiss: (midi, time) => {
         const key = `${midi}:${Math.round(time * 1e6)}`;
         usePracticeStore.getState().recordMiss(key);
 
-        // Visual feedback
+        // Visual feedback on falling notes
         const currentSong = useSongStore.getState().song;
         const nr = noteRendererRef.current;
         if (nr && currentSong) {
@@ -133,12 +146,16 @@ export function usePracticeLifecycle(
             }
           }
         }
+        // Notify keyboard highlight
+        callbacksRef.current?.onMissNote?.(midi);
       },
       onWait: () => {
         // Pause audio when waiting for user input
         audioRef.current.scheduler?.stop();
+        usePracticeStore.getState().setWaiting(true);
       },
       onResume: () => {
+        usePracticeStore.getState().setWaiting(false);
         // R2-001: Check isPlaying before resuming, and await engine.resume()
         const { scheduler, engine } = audioRef.current;
         if (scheduler && engine && usePlaybackStore.getState().isPlaying) {
