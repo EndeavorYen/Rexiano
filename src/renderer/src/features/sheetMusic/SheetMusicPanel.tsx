@@ -36,10 +36,15 @@ let _vexflowCache: Promise<any> | null = null;
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function loadVexFlow(): Promise<any> {
   if (!_vexflowCache) {
-    _vexflowCache = import("vexflow").then(async (VF) => {
-      await document.fonts.ready;
-      return VF;
-    });
+    _vexflowCache = import("vexflow")
+      .then(async (VF) => {
+        await document.fonts.ready;
+        return VF;
+      })
+      .catch((err) => {
+        _vexflowCache = null; // Clear cache so next attempt retries
+        throw err;
+      });
   }
   return _vexflowCache;
 }
@@ -521,10 +526,14 @@ function renderMeasure(
     (prevMeasure.timeSignatureTop !== measure.timeSignatureTop ||
       prevMeasure.timeSignatureBottom !== measure.timeSignatureBottom);
 
+  // Show key signature if: non-C key, OR key changed from previous measure (including back to C)
+  const showKeySig =
+    (measure.keySignature && measure.keySignature !== "C") || keySigChanged;
+
   const treble = new Stave(x, y, width);
   if (isFirst) {
     treble.addClef("treble");
-    if (measure.keySignature && measure.keySignature !== "C") {
+    if (showKeySig) {
       treble.addKeySignature(measure.keySignature);
     }
     treble.addTimeSignature(
@@ -545,7 +554,7 @@ function renderMeasure(
   const bass = new Stave(x, y + STAVE_HEIGHT + SYSTEM_GAP, width);
   if (isFirst) {
     bass.addClef("bass");
-    if (measure.keySignature && measure.keySignature !== "C") {
+    if (showKeySig) {
       bass.addKeySignature(measure.keySignature);
     }
     bass.addTimeSignature(
@@ -876,9 +885,18 @@ export function SheetMusicPanel({
   const [containerWidth, setContainerWidth] = useState(800);
   const [vexflowError, setVexflowError] = useState(false);
   const [zoomLevel, setZoomLevel] = useState(1.0);
-  const prefersReducedMotion =
-    typeof window !== "undefined" &&
-    window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const [prefersReducedMotion, setPrefersReducedMotion] = useState(() =>
+    typeof window !== "undefined"
+      ? window.matchMedia("(prefers-reduced-motion: reduce)").matches
+      : false,
+  );
+  useEffect(() => {
+    const mql = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const handler = (e: MediaQueryListEvent): void =>
+      setPrefersReducedMotion(e.matches);
+    mql.addEventListener("change", handler);
+    return () => mql.removeEventListener("change", handler);
+  }, []);
   const cursorTransition = prefersReducedMotion ? "none" : "left 120ms linear";
   const measureTransition = prefersReducedMotion
     ? "none"
@@ -1264,9 +1282,9 @@ export function SheetMusicPanel({
       tabIndex={0}
       className="relative w-full overflow-auto outline-none"
       style={{
-        flex: mode === "sheet" ? 1 : mode === "split" ? "0 0 auto" : undefined,
-        height,
-        minHeight: height,
+        flex: mode === "sheet" ? 1 : undefined,
+        height: mode === "split" ? "100%" : height,
+        minHeight: mode === "split" ? undefined : height,
         background:
           "color-mix(in srgb, var(--color-surface) 88%, var(--color-bg))",
       }}
@@ -1395,12 +1413,10 @@ export function SheetMusicPanel({
         </div>
       )}
 
-      {/* Screen reader: announce current measure for assistive tech */}
-      {cursorPosition && (
-        <div className="sr-only" aria-live="polite" aria-atomic="true">
-          {`Measure ${(cursorPosition.measureIndex + 1)}`}
-        </div>
-      )}
+      {/* Screen reader: announce current measure (only on measure change) */}
+      <div className="sr-only" aria-live="polite" aria-atomic="true">
+        {cursorPosition ? `Measure ${activeMeasureIndex + 1}` : ""}
+      </div>
 
       {vexflowError && (
         <div
