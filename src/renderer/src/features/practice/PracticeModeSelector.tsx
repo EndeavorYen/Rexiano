@@ -73,7 +73,7 @@ export function PracticeModeSelector(): React.JSX.Element {
             title={desc}
             data-testid={`practice-mode-${id}`}
           >
-            <span className="text-[12px] leading-tight">{label}</span>
+            <span className="text-xs leading-tight">{label}</span>
           </button>
         );
       })}

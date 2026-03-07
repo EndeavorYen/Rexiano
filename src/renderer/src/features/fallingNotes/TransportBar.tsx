@@ -88,9 +88,9 @@ export function TransportBar({
     setPlayPulse(true);
     setTimeout(() => setPlayPulse(false), 300);
   };
-  const primaryButtonSize = compact ? 36 : 40;
+  const primaryButtonSize = compact ? "2.25rem" : "2.5rem";
   const iconSize = compact ? 16 : 18;
-  const utilityButtonSize = compact ? 30 : 32;
+  const utilityButtonSize = compact ? "1.875rem" : "2rem";
 
   return (
     <div

@@ -139,7 +139,7 @@ export function ABLoopSelector(): React.JSX.Element {
           <select
             value={measureA}
             onChange={(e) => handleMeasureAChange(parseInt(e.target.value, 10))}
-            className="px-2 py-1 rounded-md text-[11px] font-mono cursor-pointer"
+            className="px-2.5 py-1.5 rounded-md text-xs font-mono cursor-pointer"
             style={{
               background: "var(--color-surface-alt)",
               color: "var(--color-text)",
@@ -165,7 +165,7 @@ export function ABLoopSelector(): React.JSX.Element {
           <select
             value={measureB}
             onChange={(e) => handleMeasureBChange(parseInt(e.target.value, 10))}
-            className="px-2 py-1 rounded-md text-[11px] font-mono cursor-pointer"
+            className="px-2.5 py-1.5 rounded-md text-xs font-mono cursor-pointer"
             style={{
               background: "var(--color-surface-alt)",
               color: "var(--color-text)",
@@ -187,8 +187,8 @@ export function ABLoopSelector(): React.JSX.Element {
               onClick={handleClear}
               className="flex items-center justify-center rounded-md cursor-pointer"
               style={{
-                width: 24,
-                height: 24,
+                width: "1.75rem",
+                height: "1.75rem",
                 background: "var(--color-surface-alt)",
                 color: "var(--color-text-muted)",
                 transition: "color 0.15s",
@@ -206,7 +206,7 @@ export function ABLoopSelector(): React.JSX.Element {
           {/* Set A */}
           <button
             onClick={handleA}
-            className="px-2.5 py-1 rounded-md text-[11px] font-mono font-bold cursor-pointer"
+            className="px-3 py-1.5 rounded-md text-xs font-mono font-bold cursor-pointer"
             style={{
               background: hasA
                 ? "var(--color-accent)"
@@ -241,7 +241,7 @@ export function ABLoopSelector(): React.JSX.Element {
           {/* Set B */}
           <button
             onClick={handleB}
-            className="px-2.5 py-1 rounded-md text-[11px] font-mono font-bold cursor-pointer"
+            className="px-3 py-1.5 rounded-md text-xs font-mono font-bold cursor-pointer"
             style={{
               background: hasB
                 ? "var(--color-accent)"
@@ -271,8 +271,8 @@ export function ABLoopSelector(): React.JSX.Element {
               onClick={handleClear}
               className="flex items-center justify-center rounded-md cursor-pointer"
               style={{
-                width: 24,
-                height: 24,
+                width: "1.75rem",
+                height: "1.75rem",
                 background: "var(--color-surface-alt)",
                 color: "var(--color-text-muted)",
                 transition: "color 0.15s",
