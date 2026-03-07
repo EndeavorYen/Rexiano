@@ -52,7 +52,7 @@ export function SpeedSlider(): React.JSX.Element {
             <button
               key={v}
               onClick={() => setSpeed(v)}
-              className="px-2.5 py-1 rounded-md text-[11px] font-body font-semibold tabular-nums cursor-pointer"
+              className="px-3 py-1.5 rounded-md text-xs font-body font-semibold tabular-nums cursor-pointer"
               style={{
                 background: isActive
                   ? "var(--color-accent)"

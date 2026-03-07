@@ -22,7 +22,7 @@ export function SongCompleteOverlay({
       ? 3
       : score.accuracy >= 70
         ? 2
-        : score.accuracy >= 50
+        : score.accuracy >= 40
           ? 1
           : 0;
 
@@ -52,19 +52,28 @@ export function SongCompleteOverlay({
         }}
       >
         {showScore && starCount > 0 && (
-          <div className="flex justify-center gap-1 mb-3">
+          <div className="flex justify-center gap-2 mb-3">
             {[1, 2, 3].map((i) => (
-              <Star
+              <span
                 key={i}
-                size={28}
-                fill={i <= starCount ? "var(--color-accent)" : "none"}
-                stroke={
-                  i <= starCount
-                    ? "var(--color-accent)"
-                    : "var(--color-text-muted)"
-                }
-                strokeWidth={1.5}
-              />
+                className="animate-combo-pop"
+                style={{
+                  animationDelay: `${i * 180}ms`,
+                  animationFillMode: "both",
+                  display: "inline-flex",
+                }}
+              >
+                <Star
+                  size={32}
+                  fill={i <= starCount ? "var(--color-accent)" : "none"}
+                  stroke={
+                    i <= starCount
+                      ? "var(--color-accent)"
+                      : "var(--color-text-muted)"
+                  }
+                  strokeWidth={1.5}
+                />
+              </span>
             ))}
           </div>
         )}
