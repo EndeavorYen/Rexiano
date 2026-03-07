@@ -1086,9 +1086,18 @@ function App(): React.JSX.Element {
             {/* Sheet music panel */}
             <div
               className="relative"
-              style={{ display: displayMode === "falling" ? "none" : "block" }}
+              style={{
+                display: displayMode === "falling" ? "none" : "block",
+                ...(displayMode === "split"
+                  ? { maxHeight: "35%", borderBottom: "1px solid var(--color-border)" }
+                  : {}),
+              }}
             >
-              <SheetMusicPanel notationData={notationData} mode={displayMode} />
+              <SheetMusicPanel
+                notationData={notationData}
+                mode={displayMode}
+                height={displayMode === "split" ? 180 : 220}
+              />
             </div>
 
             {/* Falling notes canvas — always mounted so PixiJS ticker keeps

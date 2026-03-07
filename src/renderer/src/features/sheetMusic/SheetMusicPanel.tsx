@@ -12,6 +12,7 @@
 import { useRef, useEffect, useState, useMemo, useCallback } from "react";
 import { useTranslation } from "@renderer/i18n/useTranslation";
 import { usePlaybackStore } from "@renderer/stores/usePlaybackStore";
+import { useThemeStore } from "@renderer/stores/useThemeStore";
 import type {
   NotationData,
   NotationExpression,
@@ -28,6 +29,20 @@ import {
   type ChordGroup,
 } from "./sheetMusicRenderLogic";
 import { calcMeasureWidths } from "./sheetMusicUtils";
+
+/** Cached VexFlow module import + fonts.ready to avoid repeated async overhead */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+let _vexflowCache: Promise<any> | null = null;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function loadVexFlow(): Promise<any> {
+  if (!_vexflowCache) {
+    _vexflowCache = import("vexflow").then(async (VF) => {
+      await document.fonts.ready;
+      return VF;
+    });
+  }
+  return _vexflowCache;
+}
 
 /** Layout constants */
 const STAVE_HEIGHT = 80;
@@ -490,20 +505,40 @@ function renderMeasure(
   activeBeatTick: number | null,
   measureNumber?: number,
   expressions?: NotationExpression[],
+  prevMeasure?: NotationMeasure,
 ): MeasureRenderResult {
   const { Stave, StaveNote, Voice, Formatter, StaveConnector, Articulation } =
     VF;
 
+  // Detect key/time signature changes from previous measure
+  const keySigChanged =
+    !isFirst &&
+    prevMeasure &&
+    prevMeasure.keySignature !== measure.keySignature;
+  const timeSigChanged =
+    !isFirst &&
+    prevMeasure &&
+    (prevMeasure.timeSignatureTop !== measure.timeSignatureTop ||
+      prevMeasure.timeSignatureBottom !== measure.timeSignatureBottom);
+
   const treble = new Stave(x, y, width);
   if (isFirst) {
     treble.addClef("treble");
-    // Add key signature if not C major
     if (measure.keySignature && measure.keySignature !== "C") {
       treble.addKeySignature(measure.keySignature);
     }
     treble.addTimeSignature(
       `${measure.timeSignatureTop}/${measure.timeSignatureBottom}`,
     );
+  } else {
+    if (keySigChanged) {
+      treble.addKeySignature(measure.keySignature);
+    }
+    if (timeSigChanged) {
+      treble.addTimeSignature(
+        `${measure.timeSignatureTop}/${measure.timeSignatureBottom}`,
+      );
+    }
   }
   treble.setContext(context).draw();
 
@@ -516,6 +551,15 @@ function renderMeasure(
     bass.addTimeSignature(
       `${measure.timeSignatureTop}/${measure.timeSignatureBottom}`,
     );
+  } else {
+    if (keySigChanged) {
+      bass.addKeySignature(measure.keySignature);
+    }
+    if (timeSigChanged) {
+      bass.addTimeSignature(
+        `${measure.timeSignatureTop}/${measure.timeSignatureBottom}`,
+      );
+    }
   }
   bass.setContext(context).draw();
 
@@ -531,7 +575,7 @@ function renderMeasure(
     .draw();
 
   // Draw measure number above treble staff on odd measures (1, 3, 5, ...)
-  if (measureNumber !== undefined && measureNumber % 2 === 1) {
+  if (measureNumber !== undefined) {
     const svg = context.svg as SVGSVGElement | undefined;
     if (svg) {
       const text = document.createElementNS(
@@ -541,7 +585,7 @@ function renderMeasure(
       text.setAttribute("x", String(x + 4));
       text.setAttribute("y", String(y - 2));
       text.setAttribute("font-size", "10");
-      text.setAttribute("font-family", "inherit");
+      text.setAttribute("font-family", "'DM Sans', 'Nunito', sans-serif");
       text.setAttribute("fill", "var(--color-text-muted, #888)");
       text.setAttribute("opacity", "0.7");
       text.textContent = String(measureNumber);
@@ -750,7 +794,7 @@ function renderMeasure(
         text.setAttribute("x", String(textX));
         text.setAttribute("y", String(textY));
         text.setAttribute("font-size", "11");
-        text.setAttribute("font-family", "inherit");
+        text.setAttribute("font-family", "'DM Sans', 'Nunito', sans-serif");
         text.setAttribute("font-style", isItalic ? "italic" : "normal");
         text.setAttribute("font-weight", "500");
         text.setAttribute("fill", "var(--color-accent, #1E6E72)");
@@ -826,15 +870,23 @@ export function SheetMusicPanel({
 }: SheetMusicPanelProps): React.JSX.Element | null {
   const { t } = useTranslation();
   const currentTime = usePlaybackStore((s) => s.currentTime);
+  const themeId = useThemeStore((s) => s.themeId);
   const containerRef = useRef<HTMLDivElement>(null);
   const svgHostRef = useRef<HTMLDivElement>(null);
   const [containerWidth, setContainerWidth] = useState(800);
   const [vexflowError, setVexflowError] = useState(false);
   const [zoomLevel, setZoomLevel] = useState(1.0);
+  const prefersReducedMotion =
+    typeof window !== "undefined" &&
+    window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const cursorTransition = prefersReducedMotion ? "none" : "left 120ms linear";
+  const measureTransition = prefersReducedMotion
+    ? "none"
+    : "left 120ms ease-out, width 120ms ease-out";
   const [measureTickAnchors, setMeasureTickAnchors] = useState<
     Record<number, TickAnchor[]>
   >({});
-  const hidden = mode === "falling";
+  const hidden = mode !== "sheet" && mode !== "split";
 
   const zoomIn = useCallback(() => {
     setZoomLevel((prev) => {
@@ -855,7 +907,8 @@ export function SheetMusicPanel({
     if (typeof document === "undefined") return "#1E6E72";
     const style = getComputedStyle(document.documentElement);
     return style.getPropertyValue("--color-accent").trim() || "#1E6E72";
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [themeId]);
 
   const cursorPosition = useMemo(() => {
     if (!notationData) return null;
@@ -1016,9 +1069,8 @@ export function SheetMusicPanel({
     }
 
     let cancelled = false;
-    void import("vexflow")
-      .then(async (VF) => {
-        await document.fonts.ready;
+    void loadVexFlow()
+      .then((VF) => {
         if (cancelled || !svgHostRef.current) return;
 
         const { Renderer, StaveTie } = VF;
@@ -1089,6 +1141,7 @@ export function SheetMusicPanel({
               activeBeatTick,
               measureIndex + 1,
               measureExpressions,
+              previousMeasure,
             );
             slotResults.push(result);
             nextMeasureTickAnchors[measureIndex] = result.tickAnchors;
@@ -1211,7 +1264,7 @@ export function SheetMusicPanel({
       tabIndex={0}
       className="relative w-full overflow-auto outline-none"
       style={{
-        flex: mode === "sheet" ? 1 : undefined,
+        flex: mode === "sheet" ? 1 : mode === "split" ? "0 0 auto" : undefined,
         height,
         minHeight: height,
         background:
@@ -1219,63 +1272,69 @@ export function SheetMusicPanel({
       }}
       data-testid="sheet-music-panel"
     >
+      {/* Scaled container: SVG + overlays share the same transform so they stay aligned */}
       <div
-        ref={svgHostRef}
-        className="h-full"
         style={{
+          position: "relative",
           minWidth: Math.max(containerWidth, contentWidth),
           transform: zoomLevel !== 1 ? `scale(${zoomLevel})` : undefined,
           transformOrigin: "top left",
         }}
-        data-testid="sheet-music-svg-host"
-      />
+      >
+        <div
+          ref={svgHostRef}
+          className="h-full"
+          style={{ minWidth: Math.max(containerWidth, contentWidth) }}
+          data-testid="sheet-music-svg-host"
+        />
 
-      {activeSlotIndex >= 0 && cursorPosition && (
-        <>
-          <div
-            className="absolute pointer-events-none"
-            style={{
-              left: activeMeasureLeft,
-              width: activeMeasureWidth,
-              top: TOP_MARGIN,
-              height: SYSTEM_HEIGHT,
-              background: hexToRgba(accentHex, 0.06),
-              borderRadius: 3,
-              transition: "left 120ms ease-out, width 120ms ease-out",
-            }}
-            data-testid="sheet-active-measure-overlay"
-          />
-          <div
-            className="absolute pointer-events-none"
-            style={{
-              left: cursorLeft,
-              width: 2,
-              top: TOP_MARGIN + 4,
-              height: SYSTEM_HEIGHT - 8,
-              background: `linear-gradient(180deg, ${hexToRgba(accentHex, 0.75)}, ${hexToRgba(accentHex, 0.4)})`,
-              borderRadius: 999,
-              boxShadow: `0 0 8px ${hexToRgba(accentHex, 0.3)}`,
-              transform: "translateX(-1px)",
-              transition: "left 120ms linear",
-            }}
-            data-testid="sheet-cursor-line"
-          />
-          <div
-            className="absolute pointer-events-none"
-            style={{
-              left: cursorLeft - 4,
-              top: TOP_MARGIN + 32,
-              width: 8,
-              height: 8,
-              borderRadius: "999px",
-              background: hexToRgba(accentHex, 0.92),
-              boxShadow: `0 0 10px ${hexToRgba(accentHex, 0.35)}`,
-              transition: "left 120ms linear",
-            }}
-            data-testid="sheet-cursor-dot"
-          />
-        </>
-      )}
+        {activeSlotIndex >= 0 && cursorPosition && (
+          <>
+            <div
+              className="absolute pointer-events-none"
+              style={{
+                left: activeMeasureLeft,
+                width: activeMeasureWidth,
+                top: TOP_MARGIN,
+                height: SYSTEM_HEIGHT,
+                background: hexToRgba(accentHex, 0.06),
+                borderRadius: 3,
+                transition: measureTransition,
+              }}
+              data-testid="sheet-active-measure-overlay"
+            />
+            <div
+              className="absolute pointer-events-none"
+              style={{
+                left: cursorLeft,
+                width: 2,
+                top: TOP_MARGIN + 4,
+                height: SYSTEM_HEIGHT - 8,
+                background: `linear-gradient(180deg, ${hexToRgba(accentHex, 0.75)}, ${hexToRgba(accentHex, 0.4)})`,
+                borderRadius: 999,
+                boxShadow: `0 0 8px ${hexToRgba(accentHex, 0.3)}`,
+                transform: "translateX(-1px)",
+                transition: cursorTransition,
+              }}
+              data-testid="sheet-cursor-line"
+            />
+            <div
+              className="absolute pointer-events-none"
+              style={{
+                left: cursorLeft - 4,
+                top: TOP_MARGIN + 32,
+                width: 8,
+                height: 8,
+                borderRadius: "999px",
+                background: hexToRgba(accentHex, 0.92),
+                boxShadow: `0 0 10px ${hexToRgba(accentHex, 0.35)}`,
+                transition: cursorTransition,
+              }}
+              data-testid="sheet-cursor-dot"
+            />
+          </>
+        )}
+      </div>
 
       {/* Zoom controls */}
       <div
@@ -1333,6 +1392,13 @@ export function SheetMusicPanel({
           style={{ color: "var(--color-text-muted)" }}
         >
           {t("sheetMusic.loadSong")}
+        </div>
+      )}
+
+      {/* Screen reader: announce current measure for assistive tech */}
+      {cursorPosition && (
+        <div className="sr-only" aria-live="polite" aria-atomic="true">
+          {`Measure ${(cursorPosition.measureIndex + 1)}`}
         </div>
       )}
 
