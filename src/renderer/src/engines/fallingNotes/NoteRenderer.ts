@@ -143,6 +143,14 @@ export class NoteRenderer {
   /** Cached canvas width for responsive positioning (updated on init/resize) */
   private _canvasWidth = 800;
 
+  /** Cached PixiJS-format theme colors to avoid hexToPixi calls per animation frame */
+  private _cachedHitGlow = 0xffffff;
+  private _cachedMissGray = 0x888888;
+  private _cachedComboText = 0xffffff;
+  private _cachedGridLine = 0x444444;
+  /** Unsubscribe handle for theme store subscription */
+  private _themeUnsub: (() => void) | null = null;
+
   public activeNotes = new Set<number>();
 
   /** Key signature (number of sharps/flats) used for note label display.
@@ -199,6 +207,21 @@ export class NoteRenderer {
     for (let i = 0; i < labelPoolSize; i++) {
       this._labelPool.push(this.createLabel());
     }
+
+    // Cache theme colors and subscribe for theme changes
+    this._updateCachedColors();
+    this._themeUnsub = useThemeStore.subscribe(() =>
+      this._updateCachedColors(),
+    );
+  }
+
+  /** Refresh cached PixiJS color values from the current theme. */
+  private _updateCachedColors(): void {
+    const colors = useThemeStore.getState().theme.colors;
+    this._cachedHitGlow = hexToPixi(colors.hitGlow);
+    this._cachedMissGray = hexToPixi(colors.missGray);
+    this._cachedComboText = hexToPixi(colors.comboText);
+    this._cachedGridLine = hexToPixi(colors.gridLine);
   }
 
   /**
@@ -384,6 +407,10 @@ export class NoteRenderer {
     this._labelPool.length = 0;
     this._spriteLabels.clear();
 
+    // Unsubscribe from theme store
+    this._themeUnsub?.();
+    this._themeUnsub = null;
+
     // Clean up fingering overlay
     this.fingeringLabelPool.length = 0;
     this.activeFingeringLabels.clear();
@@ -540,7 +567,7 @@ export class NoteRenderer {
 
     const originalTint = sprite.tint;
     const originalAlpha = sprite.alpha;
-    const hitGlow = hexToPixi(useThemeStore.getState().theme.colors.hitGlow);
+    const hitGlow = this._cachedHitGlow;
     const duration = 200; // ms
     let start = -1;
 
@@ -578,7 +605,7 @@ export class NoteRenderer {
 
     const originalTint = sprite.tint;
     const originalAlpha = sprite.alpha;
-    const missGray = hexToPixi(useThemeStore.getState().theme.colors.missGray);
+    const missGray = this._cachedMissGray;
     const duration = 150;
     let start = -1;
 
@@ -608,9 +635,7 @@ export class NoteRenderer {
   showCombo(count: number, x?: number, y?: number): void {
     const cx = x ?? this._canvasWidth / 2;
     const cy = y ?? 200;
-    const comboColor = hexToPixi(
-      useThemeStore.getState().theme.colors.comboText,
-    );
+    const comboColor = this._cachedComboText;
     const style = new TextStyle({
       fontFamily: "Nunito Variable, Nunito, sans-serif",
       fontSize: 28,
@@ -705,7 +730,7 @@ export class NoteRenderer {
     g.clear();
 
     const [startTime, endTime] = getVisibleTimeRange(vp);
-    const gridColor = hexToPixi(useThemeStore.getState().theme.colors.gridLine);
+    const gridColor = this._cachedGridLine;
 
     const beats = computeBeatTimesInRange(
       startTime,

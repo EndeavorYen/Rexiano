@@ -127,6 +127,7 @@ export const zhTW: TranslationMap = {
   "practice.timingOnTime": "準確！",
   "practice.waiting": "等待中...",
   "practice.songComplete": "演奏完成！",
+  "practice.watchComplete": "聽得很棒！",
   "practice.finalAccuracy": "最終準確率",
   "practice.bestStreak": "最佳連擊",
   "practice.playAgain": "再彈一次",

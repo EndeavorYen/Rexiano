@@ -589,11 +589,8 @@ function App(): React.JSX.Element {
   // ─── Song completion detection ─────────────────────────
   useEffect(() => {
     const unsub = usePlaybackStore.subscribe((state, prev) => {
-      if (!state.isPlaying && prev.isPlaying) {
-        const currentSong = useSongStore.getState().song;
-        if (currentSong && state.currentTime >= currentSong.duration - 0.1) {
-          setShowSongComplete(true);
-        }
+      if (!state.isPlaying && prev.isPlaying && state.songEndedNaturally) {
+        setShowSongComplete(true);
       }
     });
     return unsub;
@@ -603,6 +600,10 @@ function App(): React.JSX.Element {
     setShowSongComplete(false);
     usePlaybackStore.getState().reset();
     usePracticeStore.getState().resetScore();
+    // Auto-start playback so the child doesn't need to press play again
+    requestAnimationFrame(() => {
+      usePlaybackStore.getState().setPlaying(true);
+    });
   }, []);
 
   const handleSongCompleteBack = useCallback(() => {

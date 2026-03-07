@@ -114,6 +114,7 @@ export function createTickerUpdate(
       playState.setCurrentTime(effectiveTime);
 
       if (effectiveTime >= songState.song.duration) {
+        playState.setSongEndedNaturally(true);
         playState.setPlaying(false);
       }
     }

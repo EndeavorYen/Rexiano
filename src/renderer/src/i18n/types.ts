@@ -128,6 +128,7 @@ export interface TranslationMap {
   "practice.timingOnTime": string;
   "practice.waiting": string;
   "practice.songComplete": string;
+  "practice.watchComplete": string;
   "practice.finalAccuracy": string;
   "practice.bestStreak": string;
   "practice.playAgain": string;

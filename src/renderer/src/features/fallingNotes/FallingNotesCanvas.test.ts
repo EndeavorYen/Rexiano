@@ -44,7 +44,6 @@ vi.mock("pixi.js", () => {
     }
   }
   class MockTextStyle {
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     constructor(_opts?: unknown) {
       /* noop */
     }
@@ -98,9 +97,13 @@ vi.mock("@renderer/stores/useThemeStore", () => ({
         colors: {
           gridLine: "#E8E2EE",
           hitLine: "#705A87",
+          hitGlow: "#D8BE74",
+          missGray: "#8B8596",
+          comboText: "#9268B8",
         },
       },
     }),
+    subscribe: () => () => {},
   },
 }));
 
@@ -122,6 +125,7 @@ let playbackStoreState = {
   setPlaying: vi.fn((p: boolean) => {
     playbackStoreState.isPlaying = p;
   }),
+  setSongEndedNaturally: vi.fn(),
 };
 
 vi.mock("@renderer/stores/useSongStore", () => ({
@@ -204,6 +208,7 @@ describe("FallingNotesCanvas ticker logic (via createTickerUpdate)", () => {
       setPlaying: vi.fn((p: boolean) => {
         playbackStoreState.isPlaying = p;
       }),
+      setSongEndedNaturally: vi.fn(),
     };
     songStoreState = { song: null };
   });

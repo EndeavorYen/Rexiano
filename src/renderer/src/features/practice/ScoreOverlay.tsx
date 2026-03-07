@@ -50,7 +50,11 @@ export function ScoreOverlay(): React.JSX.Element {
       {isWaiting && (
         <span
           className="text-xs font-display font-bold animate-pulse"
-          style={{ color: "var(--color-streak-gold, var(--color-accent))" }}
+          style={{
+            color: "var(--color-streak-gold, var(--color-accent))",
+            borderBottom: "2px solid currentColor",
+            paddingBottom: "1px",
+          }}
         >
           {t("practice.waiting")}
         </span>
@@ -95,8 +99,8 @@ export function ScoreOverlay(): React.JSX.Element {
                 Math.abs(score.lastTimingDeltaMs) < 30
                   ? "var(--color-accent)"
                   : score.lastTimingDeltaMs < 0
-                    ? "var(--color-timing-early)"
-                    : "var(--color-timing-late)",
+                    ? "var(--color-timing-early, #6B8FC2)"
+                    : "var(--color-timing-late, #C27B6B)",
             }}
           >
             {Math.abs(score.lastTimingDeltaMs) < 30

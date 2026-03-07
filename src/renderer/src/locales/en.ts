@@ -128,6 +128,7 @@ export const en: TranslationMap = {
   "practice.timingOnTime": "On time!",
   "practice.waiting": "Waiting...",
   "practice.songComplete": "Song Complete!",
+  "practice.watchComplete": "Great listening!",
   "practice.finalAccuracy": "Final Accuracy",
   "practice.bestStreak": "Best Streak",
   "practice.playAgain": "Play Again",

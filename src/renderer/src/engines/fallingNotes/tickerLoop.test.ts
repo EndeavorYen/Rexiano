@@ -12,6 +12,7 @@ const mockPlaybackState = {
   pixelsPerSecond: 200,
   setCurrentTime: vi.fn(),
   setPlaying: vi.fn(),
+  setSongEndedNaturally: vi.fn(),
 };
 
 vi.mock("@renderer/stores/usePlaybackStore", () => ({

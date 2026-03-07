@@ -57,7 +57,7 @@ vi.mock("pixi.js", () => {
     }
   }
   class MockTextStyle {
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars, @typescript-eslint/no-empty-function
+    // eslint-disable-next-line @typescript-eslint/no-empty-function
     constructor(_opts?: unknown) {}
   }
   class MockGraphics {
@@ -102,6 +102,7 @@ vi.mock("@renderer/stores/useThemeStore", () => ({
         },
       },
     }),
+    subscribe: () => () => {},
   },
 }));
 

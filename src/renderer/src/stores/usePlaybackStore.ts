@@ -30,9 +30,12 @@ interface PlaybackState {
   audioRecoverySignal: number;
   /** Monotonically increasing counter — bumped on seek-while-paused for scheduler sync */
   seekVersion: number;
+  /** True when the song reached its end naturally (not paused by user) */
+  songEndedNaturally: boolean;
 
   setCurrentTime: (time: number) => void;
   setPlaying: (playing: boolean) => void;
+  setSongEndedNaturally: (ended: boolean) => void;
   setPixelsPerSecond: (pps: number) => void;
   setCountingIn: (counting: boolean) => void;
   setAudioStatus: (status: AudioEngineStatus) => void;
@@ -63,6 +66,7 @@ export const usePlaybackStore = create<PlaybackState>()((set) => ({
   audioRecoverySuccessVisible: false,
   audioRecoverySignal: 0,
   seekVersion: 0,
+  songEndedNaturally: false,
 
   setCurrentTime: (time) =>
     set((state) =>
@@ -71,7 +75,11 @@ export const usePlaybackStore = create<PlaybackState>()((set) => ({
         : { currentTime: time, seekVersion: state.seekVersion + 1 },
     ),
   setPlaying: (playing) =>
-    set({ isPlaying: playing, ...(playing ? {} : { isCountingIn: false }) }),
+    set({
+      isPlaying: playing,
+      ...(playing ? { songEndedNaturally: false } : { isCountingIn: false }),
+    }),
+  setSongEndedNaturally: (ended) => set({ songEndedNaturally: ended }),
   setPixelsPerSecond: (pps) => set({ pixelsPerSecond: pps }),
   setCountingIn: (counting) => set({ isCountingIn: counting }),
   setAudioStatus: (status) => set({ audioStatus: status }),
@@ -122,6 +130,7 @@ export const usePlaybackStore = create<PlaybackState>()((set) => ({
       audioRecoveryAttempt: 0,
       audioRecoveryMaxAttempts: 0,
       audioRecoverySuccessVisible: false,
+      songEndedNaturally: false,
       seekVersion: state.seekVersion + 1,
     }));
   },

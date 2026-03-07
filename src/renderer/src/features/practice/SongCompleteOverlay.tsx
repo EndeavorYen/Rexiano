@@ -35,7 +35,9 @@ export function SongCompleteOverlay({
           className="text-3xl font-display font-bold mb-2"
           style={{ color: "var(--color-text)" }}
         >
-          {t("practice.songComplete")}
+          {mode === "watch"
+            ? t("practice.watchComplete")
+            : t("practice.songComplete")}
         </div>
 
         {showScore && (
