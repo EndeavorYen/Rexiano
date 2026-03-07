@@ -38,6 +38,7 @@ import { SheetMusicPanel } from "./features/sheetMusic/SheetMusicPanel";
 import { DisplayModeToggle } from "./features/sheetMusic/DisplayModeToggle";
 import { convertToNotation } from "./features/sheetMusic/MidiToNotation";
 import { usePracticeStore } from "./stores/usePracticeStore";
+import { SongCompleteOverlay } from "./features/practice/SongCompleteOverlay";
 import { MainMenu } from "./features/mainMenu/MainMenu";
 import {
   parseRouteHash,
@@ -163,9 +164,56 @@ function App(): React.JSX.Element {
   const [activeNotes, setActiveNotes] = useState<Set<number>>(new Set());
   const midiActiveNotes = useMidiDeviceStore((s) => s.activeNotes);
 
+  // ── Practice mode: transient hit/miss sets for PianoKeyboard CSS animations ──
+  const [hitNotes, setHitNotes] = useState<Set<number>>(new Set());
+  const [missedNotes, setMissedNotes] = useState<Set<number>>(new Set());
+  const hitTimersRef = useRef<Map<number, ReturnType<typeof setTimeout>>>(
+    new Map(),
+  );
+  const missTimersRef = useRef<Map<number, ReturnType<typeof setTimeout>>>(
+    new Map(),
+  );
+
+  const addHitNote = useCallback((midi: number) => {
+    setHitNotes((prev) => new Set(prev).add(midi));
+    const existing = hitTimersRef.current.get(midi);
+    if (existing) clearTimeout(existing);
+    hitTimersRef.current.set(
+      midi,
+      setTimeout(() => {
+        hitTimersRef.current.delete(midi);
+        setHitNotes((prev) => {
+          const next = new Set(prev);
+          next.delete(midi);
+          return next;
+        });
+      }, 250),
+    );
+  }, []);
+
+  const addMissNote = useCallback((midi: number) => {
+    setMissedNotes((prev) => new Set(prev).add(midi));
+    const existing = missTimersRef.current.get(midi);
+    if (existing) clearTimeout(existing);
+    missTimersRef.current.set(
+      midi,
+      setTimeout(() => {
+        missTimersRef.current.delete(midi);
+        setMissedNotes((prev) => {
+          const next = new Set(prev);
+          next.delete(midi);
+          return next;
+        });
+      }, 450),
+    );
+  }, []);
+
   const handleActiveNotesChange = useCallback((notes: Set<number>) => {
     setActiveNotes(notes);
   }, []);
+
+  // ── Song completion detection ──
+  const [showSongComplete, setShowSongComplete] = useState(false);
 
   // ─── Phase 4: Audio Engine lifecycle ─────────────────
   const audioRef = useRef<{
@@ -489,6 +537,8 @@ function App(): React.JSX.Element {
 
   // Cleanup audio on unmount
   useEffect(() => {
+    const hitTimers = hitTimersRef.current;
+    const missTimers = missTimersRef.current;
     return () => {
       audioRef.current.engine?.setRuntimeErrorHandler(null);
       audioRef.current.scheduler?.dispose();
@@ -498,6 +548,8 @@ function App(): React.JSX.Element {
         deviceChangeDebounceRef.current = null;
       }
       if (dragErrorTimerRef.current) clearTimeout(dragErrorTimerRef.current);
+      for (const t of hitTimers.values()) clearTimeout(t);
+      for (const t of missTimers.values()) clearTimeout(t);
       disposeMetronome();
       triggerRecoveryRef.current = () => {};
     };
@@ -533,6 +585,30 @@ function App(): React.JSX.Element {
     });
     return unsub;
   }, []);
+
+  // ─── Song completion detection ─────────────────────────
+  useEffect(() => {
+    const unsub = usePlaybackStore.subscribe((state, prev) => {
+      if (!state.isPlaying && prev.isPlaying) {
+        const currentSong = useSongStore.getState().song;
+        if (currentSong && state.currentTime >= currentSong.duration - 0.1) {
+          setShowSongComplete(true);
+        }
+      }
+    });
+    return unsub;
+  }, []);
+
+  const handlePlayAgain = useCallback(() => {
+    setShowSongComplete(false);
+    usePlaybackStore.getState().reset();
+    usePracticeStore.getState().resetScore();
+  }, []);
+
+  const handleSongCompleteBack = useCallback(() => {
+    setShowSongComplete(false);
+    handleExitPlayback();
+  }, [handleExitPlayback]);
 
   // ─── Phase 6.5: Startup wiring — muted setting ─────────
   // Sync the persisted muted setting to the audio engine whenever it changes.
@@ -577,9 +653,14 @@ function App(): React.JSX.Element {
   // ─── Phase 6: Practice Engine lifecycle (extracted to hook) ──
   // R3-003: Speed -> AudioScheduler sync is now inside usePracticeLifecycle
   // to avoid duplicate subscribers.
+  const practiceCallbacks = useMemo(
+    () => ({ onHitNote: addHitNote, onMissNote: addMissNote }),
+    [addHitNote, addMissNote],
+  );
   const { handleNoteRendererReady, noteRendererRef } = usePracticeLifecycle(
     song,
     audioRef,
+    practiceCallbacks,
   );
   // ─── End Phase 6 ─────────────────────────────────────
 
@@ -749,6 +830,7 @@ function App(): React.JSX.Element {
   // ─── End Phase 6.5 ─────────────────────────────────────
 
   const handleExitPlayback = useCallback(() => {
+    setShowSongComplete(false);
     useSongStore.getState().clearSong();
     usePlaybackStore.getState().reset();
     applyRoute("menu");
@@ -828,6 +910,14 @@ function App(): React.JSX.Element {
             </p>
           </div>
         </div>
+      )}
+
+      {/* Song complete celebration overlay */}
+      {showSongComplete && (
+        <SongCompleteOverlay
+          onPlayAgain={handlePlayAgain}
+          onBackToLibrary={handleSongCompleteBack}
+        />
       )}
 
       {/* Drag error toast */}
@@ -1029,6 +1119,8 @@ function App(): React.JSX.Element {
           <PianoKeyboard
             activeNotes={activeNotes}
             midiActiveNotes={midiActiveNotes}
+            hitNotes={hitNotes}
+            missedNotes={missedNotes}
             height={keyboardHeight}
             showLabels={showNoteLabels}
             compactLabels={compactKeyLabels}

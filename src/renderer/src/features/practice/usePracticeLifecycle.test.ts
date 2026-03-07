@@ -50,6 +50,7 @@ const {
     recordHit: vi.fn(),
     recordMiss: vi.fn(),
     resetScore: vi.fn(),
+    setWaiting: vi.fn(),
   };
 
   type PracticeStateLike = typeof practiceState;
@@ -423,6 +424,7 @@ describe("usePracticeLifecycle", () => {
       callbacks.onWait();
 
       expect(mockScheduler.stop).toHaveBeenCalled();
+      expect(practiceState.setWaiting).toHaveBeenCalledWith(true);
     });
   });
 
@@ -441,6 +443,7 @@ describe("usePracticeLifecycle", () => {
       const callbacks = mockWaitMode.setCallbacks.mock.calls[0][0];
       callbacks.onResume();
 
+      expect(practiceState.setWaiting).toHaveBeenCalledWith(false);
       await vi.waitFor(() => {
         expect(mockEngine.resume).toHaveBeenCalled();
         expect(mockScheduler.start).toHaveBeenCalledWith(

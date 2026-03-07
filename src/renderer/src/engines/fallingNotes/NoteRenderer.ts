@@ -49,8 +49,8 @@ const CIRCLED_DIGITS: Record<Finger, string> = {
   5: "\u2464",
 };
 
-/** Chromatic note names indexed by (midi % 12). */
-const NOTE_NAMES = [
+/** Chromatic note names indexed by (midi % 12) — sharps variant. */
+const NOTE_NAMES_SHARP = [
   "C",
   "C#",
   "D",
@@ -65,9 +65,27 @@ const NOTE_NAMES = [
   "B",
 ] as const;
 
-/** Convert a MIDI note number to a short display name (e.g. "C4", "F#5"). */
-function midiToNoteName(midi: number): string {
-  const name = NOTE_NAMES[midi % 12];
+/** Chromatic note names indexed by (midi % 12) — flats variant. */
+const NOTE_NAMES_FLAT = [
+  "C",
+  "Db",
+  "D",
+  "Eb",
+  "E",
+  "F",
+  "Gb",
+  "G",
+  "Ab",
+  "A",
+  "Bb",
+  "B",
+] as const;
+
+/** Convert a MIDI note number to a short display name (e.g. "C4", "F#5").
+ *  Uses flats when keySig < 0. */
+function midiToNoteName(midi: number, keySig: number): string {
+  const names = keySig < 0 ? NOTE_NAMES_FLAT : NOTE_NAMES_SHARP;
+  const name = names[midi % 12];
   const octave = Math.floor(midi / 12) - 1;
   return `${name}${octave}`;
 }
@@ -122,7 +140,14 @@ export class NoteRenderer {
   /** Whether note labels on falling notes are enabled */
   public showNoteLabels = true;
 
+  /** Cached canvas width for responsive positioning (updated on init/resize) */
+  private _canvasWidth = 800;
+
   public activeNotes = new Set<number>();
+
+  /** Key signature (number of sharps/flats) used for note label display.
+   *  Positive = sharps, negative = flats. Set from App.tsx. */
+  public keySig = 0;
 
   // ── Beat grid and hit line (R2-006: cached with dirty flag) ──────
   private _gridGraphics: Graphics;
@@ -161,6 +186,7 @@ export class NoteRenderer {
    * @param canvasWidth Canvas pixel width, used to compute key positions
    */
   init(canvasWidth: number): void {
+    this._canvasWidth = canvasWidth;
     this.keyPositions = buildKeyPositions(canvasWidth);
     this.noteTexture = Texture.WHITE;
 
@@ -180,6 +206,7 @@ export class NoteRenderer {
    * @param canvasWidth New canvas pixel width
    */
   resize(canvasWidth: number): void {
+    this._canvasWidth = canvasWidth;
     this.keyPositions = buildKeyPositions(canvasWidth);
   }
 
@@ -256,7 +283,7 @@ export class NoteRenderer {
             label = this.allocateLabel();
             this._spriteLabels.set(sprite, label);
           }
-          label.text = midiToNoteName(note.midi);
+          label.text = midiToNoteName(note.midi, this.keySig);
           label.x = kp.x + kp.width / 2;
           label.y = rectY + Math.max(h, 2) / 2;
           label.visible = true;
@@ -414,6 +441,7 @@ export class NoteRenderer {
       this._animHandles.delete(sprite);
     }
     sprite.alpha = 1;
+    sprite.tint = 0xffffff; // Reset tint to prevent color leak into pool
     sprite.visible = false;
     this.pool.push(sprite);
 
@@ -512,6 +540,7 @@ export class NoteRenderer {
 
     const originalTint = sprite.tint;
     const originalAlpha = sprite.alpha;
+    const hitGlow = hexToPixi(useThemeStore.getState().theme.colors.hitGlow);
     const duration = 200; // ms
     let start = -1;
 
@@ -525,7 +554,7 @@ export class NoteRenderer {
 
       // Quick flash up then ease back
       const flash = t < 0.3 ? t / 0.3 : 1 - (t - 0.3) / 0.7;
-      sprite.tint = lerpColor(originalTint, 0xffffff, flash * 0.7);
+      sprite.tint = lerpColor(originalTint, hitGlow, flash * 0.7);
       sprite.alpha = originalAlpha + (1 - originalAlpha) * flash * 0.5;
 
       if (t < 1) {
@@ -549,6 +578,7 @@ export class NoteRenderer {
 
     const originalTint = sprite.tint;
     const originalAlpha = sprite.alpha;
+    const missGray = hexToPixi(useThemeStore.getState().theme.colors.missGray);
     const duration = 150;
     let start = -1;
 
@@ -559,7 +589,7 @@ export class NoteRenderer {
       const t = Math.min((now - start) / duration, 1);
       const ease = t * (2 - t); // ease-out quad
 
-      sprite.tint = lerpColor(originalTint, 0x888888, ease);
+      sprite.tint = lerpColor(originalTint, missGray, ease);
       sprite.alpha = originalAlpha - (originalAlpha - 0.4) * ease;
 
       if (t < 1) {
@@ -575,12 +605,17 @@ export class NoteRenderer {
    * Show a floating combo counter at the given canvas position.
    * The number pops in with scale, drifts upward, then fades out.
    */
-  showCombo(count: number, x: number, y: number): void {
+  showCombo(count: number, x?: number, y?: number): void {
+    const cx = x ?? this._canvasWidth / 2;
+    const cy = y ?? 200;
+    const comboColor = hexToPixi(
+      useThemeStore.getState().theme.colors.comboText,
+    );
     const style = new TextStyle({
       fontFamily: "Nunito Variable, Nunito, sans-serif",
       fontSize: 28,
       fontWeight: "800",
-      fill: 0xffffff,
+      fill: comboColor,
       dropShadow: {
         color: 0x000000,
         blur: 4,
@@ -590,8 +625,8 @@ export class NoteRenderer {
     });
     const label = new Text({ text: `${count}x`, style });
     label.anchor.set(0.5);
-    label.x = x;
-    label.y = y;
+    label.x = cx;
+    label.y = cy;
     label.alpha = 0;
     label.scale.set(0.3);
     this.container.addChild(label);
@@ -623,7 +658,7 @@ export class NoteRenderer {
         label.scale.set(1 - p * 0.3);
       }
 
-      label.y = y - 40 * t;
+      label.y = cy - 40 * t;
 
       if (t < 1) {
         this._comboHandles.delete(handle);

@@ -33,6 +33,8 @@ const REQUIRED_COLOR_KEYS: (keyof ThemeTokens["colors"])[] = [
   "missGray",
   "comboText",
   "streakGold",
+  "timingEarly",
+  "timingLate",
 ];
 
 describe("Theme tokens", () => {
