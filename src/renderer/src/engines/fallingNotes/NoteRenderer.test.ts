@@ -57,11 +57,23 @@ vi.mock("pixi.js", () => {
     }
   }
   class MockTextStyle {
-    // eslint-disable-next-line @typescript-eslint/no-empty-function
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars, @typescript-eslint/no-empty-function
     constructor(_opts?: unknown) {}
+  }
+  class MockGraphics {
+    clear(): MockGraphics {
+      return this;
+    }
+    rect(): MockGraphics {
+      return this;
+    }
+    fill(): MockGraphics {
+      return this;
+    }
   }
   return {
     Container: MockContainer,
+    Graphics: MockGraphics,
     Sprite: MockSprite,
     Text: MockText,
     TextStyle: MockTextStyle,
@@ -73,6 +85,33 @@ vi.mock("pixi.js", () => {
 vi.mock("./noteColors", () => ({
   getTrackColor: (trackIndex: number) =>
     [0x9b7fd4, 0xc084cf, 0x7ba4d9, 0xa8d4a0][trackIndex % 4],
+  getHitLineColor: () => 0x705a87,
+}));
+
+// Mock useThemeStore to prevent document access in non-DOM test environment
+vi.mock("@renderer/stores/useThemeStore", () => ({
+  useThemeStore: {
+    getState: () => ({
+      theme: {
+        colors: {
+          gridLine: "#E8E2EE",
+          hitLine: "#705A87",
+        },
+      },
+    }),
+  },
+}));
+
+// Mock themes/tokens to provide hexToPixi without full theme system
+vi.mock("@renderer/themes/tokens", () => ({
+  hexToPixi: (hex: string) => parseInt(hex.replace("#", ""), 16),
+}));
+
+// Mock useSettingsStore to prevent FingeringEngine from creating fingering labels
+vi.mock("@renderer/stores/useSettingsStore", () => ({
+  useSettingsStore: {
+    getState: () => ({ showFingering: false, latencyCompensation: 0 }),
+  },
 }));
 
 // Mock FingeringEngine to avoid importing heavy fingering logic in unit tests
@@ -98,7 +137,6 @@ function makeSong(
     noteCount: tracks.reduce((sum, t) => sum + t.notes.length, 0),
     tempos: [{ time: 0, bpm: 120 }],
     timeSignatures: [{ time: 0, numerator: 4, denominator: 4 }],
-    keySignatures: [],
     tracks: tracks.map((t, i) => ({
       name: `Track ${i}`,
       instrument: "Piano",
@@ -140,7 +178,7 @@ describe("NoteRenderer", () => {
     const song = makeSong([{ notes: [{ midi: 60, time: 5, duration: 1 }] }]);
     const vp = makeViewport({ currentTime: 5.5 });
 
-    renderer.update(song, vp, false);
+    renderer.update(song, vp);
 
     expect(renderer.activeNotes.has(60)).toBe(true);
   });
@@ -151,7 +189,7 @@ describe("NoteRenderer", () => {
     const song = makeSong([{ notes: [{ midi: 60, time: 10, duration: 1 }] }]);
     const vp = makeViewport({ currentTime: 5 });
 
-    renderer.update(song, vp, false);
+    renderer.update(song, vp);
 
     expect(renderer.activeNotes.has(60)).toBe(false);
   });
@@ -160,11 +198,11 @@ describe("NoteRenderer", () => {
     const song = makeSong([{ notes: [{ midi: 60, time: 5, duration: 0.5 }] }]);
 
     // Frame 1: note is active
-    renderer.update(song, makeViewport({ currentTime: 5.2 }), false);
+    renderer.update(song, makeViewport({ currentTime: 5.2 }));
     expect(renderer.activeNotes.has(60)).toBe(true);
 
     // Frame 2: note has passed
-    renderer.update(song, makeViewport({ currentTime: 6.0 }), false);
+    renderer.update(song, makeViewport({ currentTime: 6.0 }));
     expect(renderer.activeNotes.has(60)).toBe(false);
   });
 
@@ -175,7 +213,7 @@ describe("NoteRenderer", () => {
     ]);
     const vp = makeViewport({ currentTime: 5.5 });
 
-    renderer.update(song, vp, false);
+    renderer.update(song, vp);
 
     expect(renderer.activeNotes.has(60)).toBe(true);
     expect(renderer.activeNotes.has(72)).toBe(true);
@@ -185,7 +223,7 @@ describe("NoteRenderer", () => {
     const song = makeSong([]);
     const vp = makeViewport({ currentTime: 0 });
 
-    renderer.update(song, vp, false);
+    renderer.update(song, vp);
 
     expect(renderer.activeNotes.size).toBe(0);
   });
@@ -194,7 +232,7 @@ describe("NoteRenderer", () => {
     const song = makeSong([{ notes: [] }]);
     const vp = makeViewport({ currentTime: 0 });
 
-    renderer.update(song, vp, false);
+    renderer.update(song, vp);
 
     expect(renderer.activeNotes.size).toBe(0);
   });
@@ -208,12 +246,12 @@ describe("NoteRenderer", () => {
     const song = makeSong([{ notes: [{ midi: 60, time: 0, duration: 0.5 }] }]);
     const vp = makeViewport({ currentTime: 0, height: 600, pps: 200 });
 
-    renderer.update(song, vp, false);
+    renderer.update(song, vp);
 
     // Access the container's children to check sprite positioning
     const sprites = (
       parent as unknown as { children: { children: unknown[] }[] }
-    ).children[0].children as {
+    ).children[1].children as {
       x: number;
       y: number;
       width: number;
@@ -231,14 +269,14 @@ describe("NoteRenderer", () => {
     const song = makeSong([{ notes: [{ midi: 60, time: 0, duration: 3 }] }]);
 
     // Frame 1
-    renderer.update(song, makeViewport({ currentTime: 0 }), false);
+    renderer.update(song, makeViewport({ currentTime: 0 }));
     const containerChildren = (
       parent as unknown as { children: { children: unknown[] }[] }
-    ).children[0].children;
+    ).children[1].children;
     const count1 = containerChildren.length;
 
     // Frame 2 — same note still visible, pool should not grow
-    renderer.update(song, makeViewport({ currentTime: 0.5 }), false);
+    renderer.update(song, makeViewport({ currentTime: 0.5 }));
     const count2 = containerChildren.length;
     expect(count2).toBe(count1);
   });
@@ -247,10 +285,10 @@ describe("NoteRenderer", () => {
     const song = makeSong([{ notes: [{ midi: 60, time: 0, duration: 0.1 }] }]);
 
     // Frame 1: note visible at currentTime=0
-    renderer.update(song, makeViewport({ currentTime: 0 }), false);
+    renderer.update(song, makeViewport({ currentTime: 0 }));
     const sprites = (
       parent as unknown as { children: { children: unknown[] }[] }
-    ).children[0].children as {
+    ).children[1].children as {
       visible: boolean;
     }[];
     const visibleCount1 = sprites.filter(
@@ -259,7 +297,7 @@ describe("NoteRenderer", () => {
     expect(visibleCount1).toBe(1);
 
     // Frame 2: note has scrolled past (currentTime=10, well past the note)
-    renderer.update(song, makeViewport({ currentTime: 10 }), false);
+    renderer.update(song, makeViewport({ currentTime: 10 }));
     const visibleCount2 = sprites.filter(
       (s) => s.visible && !("text" in s),
     ).length;
@@ -273,11 +311,11 @@ describe("NoteRenderer", () => {
     ]);
     const vp = makeViewport({ currentTime: 0 });
 
-    renderer.update(song, vp, false);
+    renderer.update(song, vp);
 
     const sprites = (
       parent as unknown as { children: { children: unknown[] }[] }
-    ).children[0].children as {
+    ).children[1].children as {
       visible: boolean;
       tint: number;
     }[];
@@ -301,11 +339,11 @@ describe("NoteRenderer", () => {
     ]);
     const vp = makeViewport({ currentTime: 0 });
 
-    renderer.update(song, vp, false);
+    renderer.update(song, vp);
 
     const sprites = (
       parent as unknown as { children: { children: unknown[] }[] }
-    ).children[0].children as {
+    ).children[1].children as {
       visible: boolean;
     }[];
     const visible = sprites.filter((s) => s.visible && !("text" in s));
@@ -319,7 +357,7 @@ describe("NoteRenderer", () => {
     const song = makeSong([{ notes: [{ midi: 60, time: 5, duration: 0.5 }] }]);
     const vp = makeViewport({ currentTime: 5.53 });
 
-    renderer.update(song, vp, false);
+    renderer.update(song, vp);
 
     expect(renderer.activeNotes.has(60)).toBe(true);
   });
@@ -330,7 +368,7 @@ describe("NoteRenderer", () => {
     const song = makeSong([{ notes: [{ midi: 60, time: 5, duration: 0.5 }] }]);
     const vp = makeViewport({ currentTime: 5.6 });
 
-    renderer.update(song, vp, false);
+    renderer.update(song, vp);
 
     expect(renderer.activeNotes.has(60)).toBe(false);
   });
@@ -342,19 +380,15 @@ describe("NoteRenderer", () => {
     ]);
     const vp = makeViewport({ currentTime: 0, pps: 200 });
 
-    renderer.update(song, vp, false);
+    renderer.update(song, vp);
 
     const sprites = (
       parent as unknown as { children: { children: unknown[] }[] }
-    ).children[0].children as {
+    ).children[1].children as {
       visible: boolean;
       height: number;
-      text?: string;
     }[];
-    // Filter out Text objects (labels) — only check Sprites
-    const visible = sprites.filter(
-      (s) => s.visible && typeof s.text !== "string",
-    );
+    const visible = sprites.filter((s) => s.visible);
     expect(visible.length).toBe(1);
     expect(visible[0].height).toBe(2);
   });
@@ -382,11 +416,11 @@ describe("NoteRenderer", () => {
     ]);
     const vp = makeViewport({ currentTime: 1 });
 
-    renderer.update(song, vp, false);
+    renderer.update(song, vp);
 
     const sprites = (
       parent as unknown as { children: { children: unknown[] }[] }
-    ).children[0].children as {
+    ).children[1].children as {
       visible: boolean;
       height: number;
     }[];
@@ -409,11 +443,11 @@ describe("NoteRenderer", () => {
       });
 
       const song = makeSong([{ notes: [{ midi: 60, time: 0, duration: 1 }] }]);
-      renderer.update(song, makeViewport({ currentTime: 0 }), false);
+      renderer.update(song, makeViewport({ currentTime: 0 }));
 
       const sprites = (
         parent as unknown as { children: { children: unknown[] }[] }
-      ).children[0].children as {
+      ).children[1].children as {
         visible: boolean;
         tint: number;
         alpha: number;
@@ -444,11 +478,11 @@ describe("NoteRenderer", () => {
       });
 
       const song = makeSong([{ notes: [{ midi: 60, time: 0, duration: 1 }] }]);
-      renderer.update(song, makeViewport({ currentTime: 0 }), false);
+      renderer.update(song, makeViewport({ currentTime: 0 }));
 
       const sprites = (
         parent as unknown as { children: { children: unknown[] }[] }
-      ).children[0].children as {
+      ).children[1].children as {
         visible: boolean;
         tint: number;
         alpha: number;
@@ -460,8 +494,8 @@ describe("NoteRenderer", () => {
       expect(rafCb).not.toBeNull();
       // Fire first frame at t=0
       rafCb!(0);
-      // Fire at end of animation (300ms red flash + 150ms gray fade = 450ms total)
-      rafCb!(450);
+      // Fire at end of animation (150ms)
+      rafCb!(150);
 
       // At the end, tint should be 0x888888 and alpha ~0.4
       expect(sprite.tint).toBe(0x888888);
@@ -483,7 +517,7 @@ describe("NoteRenderer", () => {
 
       const containerChildren = (
         parent as unknown as { children: { children: unknown[] }[] }
-      ).children[0].children;
+      ).children[1].children;
 
       const countBefore = containerChildren.length;
       renderer.showCombo(5, 100, 200);
@@ -499,7 +533,7 @@ describe("NoteRenderer", () => {
       // Run animation to completion
       // First call registers the tick
       calls[0](0); // start
-      calls[1](1200); // end (duration increased from 600 to 1200ms)
+      calls[1](600); // end
 
       // Text removed after animation completes
       expect(containerChildren.length).toBe(countBefore);
@@ -517,14 +551,14 @@ describe("NoteRenderer", () => {
     test("returns null for non-existent note", () => {
       // After update, try a note that doesn't exist
       const song = makeSong([{ notes: [{ midi: 60, time: 0, duration: 1 }] }]);
-      renderer.update(song, makeViewport({ currentTime: 0 }), false);
+      renderer.update(song, makeViewport({ currentTime: 0 }));
       const sprite = renderer.findSpriteForNote(99, 999, 999);
       expect(sprite).toBeNull();
     });
 
     test("returns the active sprite for a visible note", () => {
       const song = makeSong([{ notes: [{ midi: 60, time: 0, duration: 1 }] }]);
-      renderer.update(song, makeViewport({ currentTime: 0 }), false);
+      renderer.update(song, makeViewport({ currentTime: 0 }));
 
       const sprite = renderer.findSpriteForNote(0, 60, 0);
       expect(sprite).not.toBeNull();
@@ -536,7 +570,7 @@ describe("NoteRenderer", () => {
         { notes: [{ midi: 60, time: 0, duration: 1 }] },
         { notes: [{ midi: 72, time: 0, duration: 1 }] },
       ]);
-      renderer.update(song, makeViewport({ currentTime: 0 }), false);
+      renderer.update(song, makeViewport({ currentTime: 0 }));
 
       const s0 = renderer.findSpriteForNote(0, 60, 0);
       const s1 = renderer.findSpriteForNote(1, 72, 0);
@@ -558,7 +592,7 @@ describe("NoteRenderer", () => {
       const song = makeSong([
         { notes: [{ midi: 60, time: 0, duration: 0.1 }] },
       ]);
-      renderer.update(song, makeViewport({ currentTime: 0 }), false);
+      renderer.update(song, makeViewport({ currentTime: 0 }));
 
       const sprite = renderer.findSpriteForNote(0, 60, 0)!;
       expect(sprite).not.toBeNull();
@@ -567,7 +601,7 @@ describe("NoteRenderer", () => {
       renderer.flashHit(sprite as unknown as Sprite);
 
       // Move time forward so the note is no longer visible — sprite gets released
-      renderer.update(song, makeViewport({ currentTime: 10 }), false);
+      renderer.update(song, makeViewport({ currentTime: 10 }));
 
       // The animation should have been cancelled during release
       expect(cancelledId).toBe(42);
@@ -584,11 +618,11 @@ describe("NoteRenderer", () => {
       const song = makeSong([
         { notes: [{ midi: 60, time: 0, duration: 0.5 }] },
       ]);
-      renderer.update(song, makeViewport({ currentTime: 0, pps: 200 }), false);
+      renderer.update(song, makeViewport({ currentTime: 0, pps: 200 }));
 
       const containerChildren = (
         parent as unknown as { children: { children: unknown[] }[] }
-      ).children[0].children as {
+      ).children[1].children as {
         text?: string;
         visible: boolean;
       }[];
@@ -600,38 +634,16 @@ describe("NoteRenderer", () => {
       expect(labels[0].text).toBe("C4");
     });
 
-    test("shows small label above short notes near hit line", () => {
+    test("does not create labels for notes shorter than MIN_HEIGHT_FOR_LABEL", () => {
       // duration=0.01 at pps=200 → h=2px, below 16px threshold
-      // Note at time=0, currentTime=0 → within 2s window → gets small label
       const song = makeSong([
         { notes: [{ midi: 60, time: 0, duration: 0.01 }] },
       ]);
-      renderer.update(song, makeViewport({ currentTime: 0, pps: 200 }), false);
+      renderer.update(song, makeViewport({ currentTime: 0, pps: 200 }));
 
       const containerChildren = (
         parent as unknown as { children: { children: unknown[] }[] }
-      ).children[0].children as {
-        text?: string;
-        visible: boolean;
-      }[];
-      const labels = containerChildren.filter(
-        (c) => typeof c.text === "string" && c.text !== "" && c.visible,
-      );
-      expect(labels.length).toBe(1);
-      expect(labels[0].text).toBe("C4");
-    });
-
-    test("does not create labels for short notes far from hit line", () => {
-      // duration=0.01 at pps=200 → h=2px, below 16px threshold
-      // Note at time=5.0, currentTime=0 → 5s away > 2s window → no label
-      const song = makeSong([
-        { notes: [{ midi: 60, time: 5.0, duration: 0.01 }] },
-      ]);
-      renderer.update(song, makeViewport({ currentTime: 0, pps: 200 }), false);
-
-      const containerChildren = (
-        parent as unknown as { children: { children: unknown[] }[] }
-      ).children[0].children as {
+      ).children[1].children as {
         text?: string;
         visible: boolean;
       }[];
@@ -646,11 +658,11 @@ describe("NoteRenderer", () => {
       const song = makeSong([
         { notes: [{ midi: 60, time: 0, duration: 0.5 }] },
       ]);
-      renderer.update(song, makeViewport({ currentTime: 0, pps: 200 }), false);
+      renderer.update(song, makeViewport({ currentTime: 0, pps: 200 }));
 
       const containerChildren = (
         parent as unknown as { children: { children: unknown[] }[] }
-      ).children[0].children as {
+      ).children[1].children as {
         text?: string;
         visible: boolean;
       }[];
@@ -669,11 +681,11 @@ describe("NoteRenderer", () => {
           ],
         },
       ]);
-      renderer.update(song, makeViewport({ currentTime: 0, pps: 200 }), false);
+      renderer.update(song, makeViewport({ currentTime: 0, pps: 200 }));
 
       const containerChildren = (
         parent as unknown as { children: { children: unknown[] }[] }
-      ).children[0].children as {
+      ).children[1].children as {
         text?: string;
         visible: boolean;
       }[];
@@ -694,19 +706,17 @@ describe("NoteRenderer", () => {
       renderer.update(
         song,
         makeViewport({ currentTime: 0, pps: 200, height: 600 }),
-        false,
       );
 
       // Frame 2: note is gone
       renderer.update(
         song,
         makeViewport({ currentTime: 10, pps: 200, height: 600 }),
-        false,
       );
 
       const containerChildren = (
         parent as unknown as { children: { children: unknown[] }[] }
-      ).children[0].children as {
+      ).children[1].children as {
         text?: string;
         visible: boolean;
       }[];
@@ -720,7 +730,7 @@ describe("NoteRenderer", () => {
       const song = makeSong([
         { notes: [{ midi: 60, time: 0, duration: 0.5 }] },
       ]);
-      renderer.update(song, makeViewport({ currentTime: 0 }), false);
+      renderer.update(song, makeViewport({ currentTime: 0 }));
       renderer.destroy();
       // No crash, and all state is clean
       expect(renderer.activeNotes.size).toBe(0);

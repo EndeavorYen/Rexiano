@@ -1,10 +1,3 @@
-/**
- * ─── Phase 6: Practice Store ────────────────────────────────
- *
- * Zustand store bridging practice engine state to React.
- * Holds mode selection, speed, loop range, active tracks,
- * live score, and display-mode preferences for the practice session.
- */
 import { create } from "zustand";
 import type { PracticeMode, PracticeScore, NoteResult } from "@shared/types";
 import type { DisplayMode } from "@renderer/features/sheetMusic/types";
@@ -16,12 +9,14 @@ const initialScore: PracticeScore = {
   accuracy: 0,
   currentStreak: 0,
   bestStreak: 0,
+  avgTimingDeltaMs: null,
+  lastTimingDeltaMs: null,
 };
 
 interface PracticeState {
   /** Current practice mode */
   mode: PracticeMode;
-  /** Playback speed multiplier (0.10–2.0) */
+  /** Playback speed multiplier (0.25-2.0) */
   speed: number;
   /** A/B loop range in seconds, or null if no loop set */
   loopRange: [number, number] | null;
@@ -39,7 +34,7 @@ interface PracticeState {
   setLoopRange: (range: [number, number] | null) => void;
   setActiveTracks: (tracks: Set<number>) => void;
   setDisplayMode: (mode: DisplayMode) => void;
-  recordHit: (noteKey: string) => void;
+  recordHit: (noteKey: string, timingDeltaMs?: number) => void;
   recordMiss: (noteKey: string) => void;
   resetScore: () => void;
 }
@@ -65,7 +60,7 @@ export const usePracticeStore = create<PracticeState>()((set) => ({
       noteResults: new Map(),
     }),
 
-  setSpeed: (speed) => set({ speed: Math.max(0.1, Math.min(2.0, speed)) }),
+  setSpeed: (speed) => set({ speed: Math.max(0.25, Math.min(2.0, speed)) }),
 
   setLoopRange: (range) => set({ loopRange: range }),
 
@@ -73,13 +68,24 @@ export const usePracticeStore = create<PracticeState>()((set) => ({
 
   setActiveTracks: (tracks) => set({ activeTracks: tracks }),
 
-  recordHit: (noteKey) =>
+  recordHit: (noteKey, timingDeltaMs) =>
     set((state) => {
       const newResults = new Map(state.noteResults);
       newResults.set(noteKey, "hit");
       const hitNotes = state.score.hitNotes + 1;
       const totalNotes = state.score.totalNotes + 1;
       const currentStreak = state.score.currentStreak + 1;
+
+      // R2-004: Track timing deltas
+      let avgTimingDeltaMs = state.score.avgTimingDeltaMs;
+      const lastTimingDeltaMs = timingDeltaMs ?? state.score.lastTimingDeltaMs;
+      if (timingDeltaMs !== undefined) {
+        const prevSum =
+          (state.score.avgTimingDeltaMs ?? 0) * state.score.hitNotes;
+        avgTimingDeltaMs =
+          Math.round(((prevSum + timingDeltaMs) / hitNotes) * 10) / 10;
+      }
+
       return {
         noteResults: newResults,
         score: {
@@ -89,6 +95,8 @@ export const usePracticeStore = create<PracticeState>()((set) => ({
           accuracy: computeAccuracy(hitNotes, totalNotes),
           currentStreak,
           bestStreak: Math.max(state.score.bestStreak, currentStreak),
+          avgTimingDeltaMs,
+          lastTimingDeltaMs,
         },
       };
     }),
@@ -108,6 +116,8 @@ export const usePracticeStore = create<PracticeState>()((set) => ({
           accuracy: computeAccuracy(state.score.hitNotes, totalNotes),
           currentStreak: 0,
           bestStreak: state.score.bestStreak,
+          avgTimingDeltaMs: state.score.avgTimingDeltaMs,
+          lastTimingDeltaMs: state.score.lastTimingDeltaMs,
         },
       };
     }),

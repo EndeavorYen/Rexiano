@@ -181,7 +181,7 @@ export const useSettingsStore = create<SettingsState>()((set) => {
       set({ muted: v });
     },
     setDefaultSpeed: (v) => {
-      const clamped = Math.max(0.1, Math.min(2.0, v));
+      const clamped = Math.max(0.25, Math.min(2.0, v));
       persist({ defaultSpeed: clamped });
       set({ defaultSpeed: clamped });
     },

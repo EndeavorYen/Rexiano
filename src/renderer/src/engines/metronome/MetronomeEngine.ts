@@ -1,31 +1,22 @@
 // ─── Phase 6.5: MetronomeEngine — Web Audio API metronome ───
 //
-// Generates wood-block-style click sounds using white noise bursts
-// shaped by a bandpass filter. Schedules clicks in advance using
-// AudioContext timing (same look-ahead approach as AudioScheduler).
+// Generates click sounds using short sine wave pulses.
+// Schedules clicks in advance using AudioContext timing
+// (same look-ahead approach as AudioScheduler).
 //
 // Usage:
 //   const metronome = new MetronomeEngine(audioContext);
 //   metronome.start(120, 4);   // 120 BPM, 4/4 time
 //   metronome.stop();
 
-/** Duration of each click pulse in seconds (short for crisp click) */
-const CLICK_DURATION = 0.03;
+/** Frequency for normal (weak) beats */
+const NORMAL_FREQ = 1000;
 
-/** Bandpass filter cutoff for accent (strong) beats — higher = brighter */
-const ACCENT_CUTOFF = 2000;
+/** Frequency for the strong (first) beat of a measure */
+const STRONG_FREQ = 1500;
 
-/** Bandpass filter cutoff for normal (weak) beats — lower = softer */
-const NORMAL_CUTOFF = 800;
-
-/** Gain for accent beats */
-const ACCENT_GAIN = 0.7;
-
-/** Gain for normal beats */
-const NORMAL_GAIN = 0.4;
-
-/** Bandpass Q factor (resonance) */
-const BANDPASS_Q = 2.0;
+/** Duration of each click pulse in seconds */
+const CLICK_DURATION = 0.05;
 
 /** How far ahead to schedule clicks, in seconds */
 const LOOK_AHEAD = 0.1;
@@ -39,6 +30,8 @@ export class MetronomeEngine {
   private _bpm = 120;
   private _beatsPerMeasure = 4;
   private _intervalId: ReturnType<typeof setInterval> | null = null;
+  /** Master gain for metronome volume (0.0–1.0) */
+  private _volume = 0.5;
 
   /** AudioContext time of the next click to schedule */
   private _nextClickTime = 0;
@@ -51,9 +44,6 @@ export class MetronomeEngine {
 
   /** Callback fired when count-in finishes */
   private _onCountInComplete: (() => void) | null = null;
-
-  /** Cached noise buffer for wood-block click generation */
-  private _noiseBuffer: AudioBuffer | null = null;
 
   constructor(audioContext: AudioContext) {
     this._audioContext = audioContext;
@@ -84,6 +74,16 @@ export class MetronomeEngine {
     return this._beatsPerMeasure;
   }
 
+  /** Master volume (0.0–1.0) for metronome click sounds */
+  get volume(): number {
+    return this._volume;
+  }
+
+  /** Set the metronome click volume (0.0–1.0, clamped) */
+  setVolume(v: number): void {
+    this._volume = Math.max(0, Math.min(1, v));
+  }
+
   setEnabled(enabled: boolean): void {
     this._enabled = enabled;
     if (!enabled && this._intervalId !== null) {
@@ -92,7 +92,35 @@ export class MetronomeEngine {
   }
 
   setBpm(bpm: number): void {
+    const oldBpm = this._bpm;
     this._bpm = Math.max(20, Math.min(300, bpm));
+    // R2-005: Recalculate _nextClickTime to avoid drift when BPM changes mid-run
+    if (this._intervalId !== null && oldBpm !== this._bpm) {
+      const now = this._audioContext.currentTime;
+      if (this._nextClickTime > now) {
+        const remaining = this._nextClickTime - now;
+        const ratio = oldBpm / this._bpm;
+        this._nextClickTime = now + remaining * ratio;
+      }
+    }
+  }
+
+  /** Update beats per measure (e.g. when time signature changes) */
+  setBeatsPerMeasure(beatsPerMeasure: number): void {
+    this._beatsPerMeasure = Math.max(1, beatsPerMeasure);
+    if (this._currentBeat >= this._beatsPerMeasure) {
+      this._currentBeat = 0;
+    }
+  }
+
+  /**
+   * R2-009: Reset beat position after a seek operation.
+   * Resets currentBeat to 0 and recalculates nextClickTime from the given time.
+   * @param seekTime The AudioContext time at which playback will resume.
+   */
+  resetBeat(seekTime?: number): void {
+    this._currentBeat = 0;
+    this._nextClickTime = seekTime ?? this._audioContext.currentTime;
   }
 
   /**
@@ -147,7 +175,6 @@ export class MetronomeEngine {
 
   dispose(): void {
     this.stop();
-    this._noiseBuffer = null;
   }
 
   // ─── Private ─────────────────────────────────────
@@ -188,58 +215,29 @@ export class MetronomeEngine {
   }
 
   /**
-   * Create a short mono noise buffer for wood-block-style clicks.
-   * Cached per AudioContext to avoid repeated allocations.
-   */
-  private _getNoiseBuffer(): AudioBuffer {
-    if (this._noiseBuffer) return this._noiseBuffer;
-
-    const sampleRate = this._audioContext.sampleRate;
-    const length = Math.ceil(sampleRate * CLICK_DURATION);
-    const buffer = this._audioContext.createBuffer(1, length, sampleRate);
-    const data = buffer.getChannelData(0);
-
-    for (let i = 0; i < length; i++) {
-      data[i] = Math.random() * 2 - 1;
-    }
-
-    this._noiseBuffer = buffer;
-    return buffer;
-  }
-
-  /**
-   * Schedule a single wood-block click at the given AudioContext time.
-   * Uses a white noise burst shaped by a bandpass filter for a crisp,
-   * percussive sound that cuts through piano audio.
+   * Schedule a single click at the given AudioContext time.
    */
   private _scheduleClick(time: number, isStrong: boolean): void {
-    const source = this._audioContext.createBufferSource();
-    source.buffer = this._getNoiseBuffer();
-
-    // Bandpass filter shapes the noise into a wood-block tone
-    const filter = this._audioContext.createBiquadFilter();
-    filter.type = "bandpass";
-    filter.frequency.value = isStrong ? ACCENT_CUTOFF : NORMAL_CUTOFF;
-    filter.Q.value = BANDPASS_Q;
-
-    // Gain envelope: sharp attack, quick decay
+    const osc = this._audioContext.createOscillator();
     const gain = this._audioContext.createGain();
-    const peakGain = isStrong ? ACCENT_GAIN : NORMAL_GAIN;
-    gain.gain.setValueAtTime(peakGain, time);
+
+    osc.type = "sine";
+    osc.frequency.value = isStrong ? STRONG_FREQ : NORMAL_FREQ;
+
+    // Sharp attack, quick decay — scaled by _volume
+    const peakGain = this._volume * 0.5;
+    gain.gain.setValueAtTime(Math.max(peakGain, 0.001), time);
     gain.gain.exponentialRampToValueAtTime(0.001, time + CLICK_DURATION);
 
-    // Connect: source → bandpass → gain → destination
-    source.connect(filter);
-    filter.connect(gain);
+    osc.connect(gain);
     gain.connect(this._audioContext.destination);
 
-    source.start(time);
-    source.stop(time + CLICK_DURATION);
+    osc.start(time);
+    osc.stop(time + CLICK_DURATION);
 
     // Cleanup after the pulse finishes
-    source.onended = () => {
-      source.disconnect();
-      filter.disconnect();
+    osc.onended = () => {
+      osc.disconnect();
       gain.disconnect();
     };
   }

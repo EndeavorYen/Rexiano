@@ -1,14 +1,14 @@
 // ─── useMetronomeBeat — Poll MetronomeEngine for visual beat tracking ───
 //
 // Returns the current beat index, beats per measure, and whether the
-// metronome is running. Polls the engine at ~20 Hz (50 ms interval) to
+// metronome is running. Polls the engine at ~60 Hz (16 ms interval) to
 // keep React state in sync without coupling the engine to React directly.
 
 import { useState, useEffect } from "react";
 import { getMetronome } from "@renderer/engines/metronome/metronomeManager";
 
-/** Polling interval in milliseconds */
-const POLL_INTERVAL = 50;
+/** Polling interval in milliseconds — 16ms ≈ 1 frame at 60fps for tight visual sync */
+const POLL_INTERVAL = 16;
 
 export interface MetronomeBeatState {
   currentBeat: number;

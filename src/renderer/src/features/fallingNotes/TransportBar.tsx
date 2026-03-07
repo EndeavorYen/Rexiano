@@ -1,11 +1,3 @@
-/**
- * ─── Phase 3: Transport Bar ─────────────────────────────────
- *
- * Playback control bar with play/pause, restart, seek slider,
- * volume, metronome toggle, and MIDI device status. Sits at the
- * bottom of the falling-notes view and integrates with the
- * playback store and audio engine.
- */
 import { useState } from "react";
 import {
   Play,
@@ -21,7 +13,6 @@ import { useSongStore } from "@renderer/stores/useSongStore";
 import { usePracticeStore } from "@renderer/stores/usePracticeStore";
 import { useSettingsStore } from "@renderer/stores/useSettingsStore";
 import { VolumeControl } from "@renderer/features/audio/VolumeControl";
-import { DifficultyHeatmap } from "@renderer/features/practice/DifficultyHeatmap";
 import { MetronomePulse } from "@renderer/features/metronome/MetronomePulse";
 import { useMetronomeBeat } from "@renderer/hooks/useMetronomeBeat";
 import { useTranslation } from "@renderer/i18n/useTranslation";
@@ -63,6 +54,7 @@ export function TransportBar({
   const song = useSongStore((s) => s.song);
   const currentTime = usePlaybackStore((s) => s.currentTime);
   const isPlaying = usePlaybackStore((s) => s.isPlaying);
+  const isCountingIn = usePlaybackStore((s) => s.isCountingIn);
   const volume = usePlaybackStore((s) => s.volume);
   const setPlaying = usePlaybackStore((s) => s.setPlaying);
   const setCurrentTime = usePlaybackStore((s) => s.setCurrentTime);
@@ -108,12 +100,12 @@ export function TransportBar({
       data-testid="transport-strip"
     >
       <div
-        className={`grid md:grid-cols-[auto_minmax(0,1fr)_auto] md:items-center ${
-          compact ? "gap-1.5 md:gap-2.5" : "gap-2 md:gap-3"
+        className={`grid lg:grid-cols-[auto_1fr_auto] lg:items-center ${
+          compact ? "gap-1.5 lg:gap-2.5" : "gap-2 lg:gap-3"
         }`}
       >
         <div
-          className={`flex items-center gap-2 overflow-x-auto md:overflow-visible rounded-xl ${
+          className={`flex items-center gap-2 overflow-x-auto lg:overflow-visible rounded-xl ${
             compact ? "px-1.5 py-0.5" : "px-1.5 py-1"
           }`}
           style={{
@@ -122,40 +114,36 @@ export function TransportBar({
             border: "1px solid var(--color-border)",
           }}
         >
-          <div className="flex flex-col items-center gap-0.5">
-            <button
-              onClick={handlePlayPause}
-              disabled={!song}
-              className="flex items-center justify-center rounded-full text-white disabled:opacity-40 cursor-pointer"
-              style={{
-                width: primaryButtonSize,
-                height: primaryButtonSize,
-                background: "var(--color-accent)",
-                boxShadow: playPulse
-                  ? "0 0 0 6px color-mix(in srgb, var(--color-accent) 25%, transparent)"
-                  : "0 2px 8px color-mix(in srgb, var(--color-accent) 30%, transparent)",
-                transition: "box-shadow 0.3s ease, transform 0.1s ease",
-                transform: playPulse ? "scale(0.93)" : "scale(1)",
-                animation: isPlaying
-                  ? "status-dot-pulse 2.6s ease-out infinite"
-                  : "none",
-              }}
-              title={isPlaying ? t("transport.pause") : t("transport.play")}
-              aria-label={
-                isPlaying ? t("transport.pause") : t("transport.play")
-              }
-            >
-              {isPlaying ? (
-                <Pause size={iconSize} fill="currentColor" />
-              ) : (
-                <Play
-                  size={iconSize}
-                  fill="currentColor"
-                  style={{ marginLeft: 2 }}
-                />
-              )}
-            </button>
-          </div>
+          <button
+            onClick={handlePlayPause}
+            disabled={!song}
+            className="flex items-center justify-center rounded-full text-white disabled:opacity-40 cursor-pointer"
+            style={{
+              width: primaryButtonSize,
+              height: primaryButtonSize,
+              background: "var(--color-accent)",
+              boxShadow: playPulse
+                ? "0 0 0 6px color-mix(in srgb, var(--color-accent) 25%, transparent)"
+                : "0 2px 8px color-mix(in srgb, var(--color-accent) 30%, transparent)",
+              transition: "box-shadow 0.3s ease, transform 0.1s ease",
+              transform: playPulse ? "scale(0.93)" : "scale(1)",
+              animation: isPlaying
+                ? "status-dot-pulse 2.6s ease-out infinite"
+                : "none",
+            }}
+            title={isPlaying ? t("transport.pause") : t("transport.play")}
+            aria-label={isPlaying ? t("transport.pause") : t("transport.play")}
+          >
+            {isPlaying ? (
+              <Pause size={iconSize} fill="currentColor" />
+            ) : (
+              <Play
+                size={iconSize}
+                fill="currentColor"
+                style={{ marginLeft: 2 }}
+              />
+            )}
+          </button>
 
           <button
             onClick={reset}
@@ -204,13 +192,11 @@ export function TransportBar({
             <Timer size={compact ? 13 : 14} />
           </button>
 
-          <div className="hidden md:block">
-            <MetronomePulse
-              isPlaying={metronomeBeat.isRunning}
-              currentBeat={metronomeBeat.currentBeat}
-              beatsPerMeasure={metronomeBeat.beatsPerMeasure}
-            />
-          </div>
+          <MetronomePulse
+            isPlaying={metronomeBeat.isRunning}
+            currentBeat={metronomeBeat.currentBeat}
+            beatsPerMeasure={metronomeBeat.beatsPerMeasure}
+          />
 
           {audioStatus === "loading" && audioRecoveryState !== "recovering" && (
             <span
@@ -287,8 +273,8 @@ export function TransportBar({
         </div>
 
         <div
-          className={`flex flex-col min-w-0 md:min-w-[240px] rounded-xl px-2 ${
-            compact ? "gap-0.5 py-0.5" : "gap-1 py-1"
+          className={`flex items-center min-w-0 lg:min-w-[280px] rounded-xl px-2 ${
+            compact ? "gap-2 py-0.5" : "gap-3 py-1"
           }`}
           style={{
             background:
@@ -296,68 +282,68 @@ export function TransportBar({
             border: "1px solid var(--color-border)",
           }}
         >
-          <div className={`flex items-center ${compact ? "gap-2" : "gap-3"}`}>
-            <span
-              className="text-xs font-mono tabular-nums shrink-0"
-              style={{
-                color: "var(--color-text)",
-                minWidth: 36,
-                textAlign: "right",
-              }}
-            >
-              {formatTime(currentTime)}
-            </span>
+          <span
+            className="text-xs font-mono tabular-nums shrink-0"
+            style={{
+              color: "var(--color-text)",
+              minWidth: 36,
+              textAlign: "right",
+            }}
+          >
+            {formatTime(currentTime)}
+          </span>
 
-            <div
-              className="relative flex-1 flex items-center"
-              style={{ height: compact ? 18 : 20 }}
-            >
-              {loopHighlight && (
-                <div
-                  className="absolute rounded-full pointer-events-none"
-                  style={{
-                    left: `${loopHighlight.left}%`,
-                    width: `${loopHighlight.width}%`,
-                    top: "50%",
-                    height: 5,
-                    transform: "translateY(-50%)",
-                    background: `linear-gradient(90deg, color-mix(in srgb, var(--color-accent) 40%, transparent), var(--color-accent), color-mix(in srgb, var(--color-accent) 40%, transparent))`,
-                    borderRadius: 3,
-                  }}
-                  data-testid="loop-highlight"
-                  aria-label="A-B loop range"
-                />
-              )}
-              <input
-                type="range"
-                min={0}
-                max={duration || 1}
-                step={0.1}
-                value={currentTime}
-                onChange={(e) => setCurrentTime(parseFloat(e.target.value))}
-                disabled={!song}
-                className="w-full relative z-10"
-                style={{ accentColor: "var(--color-accent)" }}
-                aria-label={t("transport.seekPosition")}
+          <div
+            className="relative flex-1 flex items-center"
+            style={{ height: compact ? 18 : 20 }}
+          >
+            {loopHighlight && (
+              <div
+                className="absolute rounded-full pointer-events-none"
+                style={{
+                  left: `${loopHighlight.left}%`,
+                  width: `${loopHighlight.width}%`,
+                  top: "50%",
+                  height: 5,
+                  transform: "translateY(-50%)",
+                  background: `linear-gradient(90deg, color-mix(in srgb, var(--color-accent) 40%, transparent), var(--color-accent), color-mix(in srgb, var(--color-accent) 40%, transparent))`,
+                  borderRadius: 3,
+                }}
+                data-testid="loop-highlight"
+                aria-label="A-B loop range"
               />
-            </div>
-
-            <span
-              className="text-xs font-mono tabular-nums shrink-0"
-              style={{
-                color: "var(--color-text-muted)",
-                minWidth: 36,
+            )}
+            <input
+              type="range"
+              min={0}
+              max={duration || 1}
+              step={0.1}
+              value={currentTime}
+              onChange={(e) => {
+                // R3-006: Block seek during count-in to prevent corrupted state
+                if (isCountingIn) return;
+                setCurrentTime(parseFloat(e.target.value));
               }}
-            >
-              {formatTime(duration)}
-            </span>
+              disabled={!song || isCountingIn}
+              className="w-full relative z-10"
+              style={{ accentColor: "var(--color-accent)" }}
+              aria-label={t("transport.seekPosition")}
+            />
           </div>
 
-          {song && <DifficultyHeatmap />}
+          <span
+            className="text-xs font-mono tabular-nums shrink-0"
+            style={{
+              color: "var(--color-text-muted)",
+              minWidth: 36,
+            }}
+          >
+            {formatTime(duration)}
+          </span>
         </div>
 
         <div
-          className={`flex items-center justify-between md:justify-end rounded-xl px-1.5 ${
+          className={`flex items-center justify-end rounded-xl px-1.5 ${
             compact ? "gap-2 py-1" : "gap-2.5 py-1.5"
           }`}
           style={{

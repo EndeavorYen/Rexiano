@@ -1,8 +1,3 @@
-/**
- * Phase 4: Playback state store — manages live transport position, play/pause,
- * audio engine status, volume, and the recovery UI badge lifecycle.
- * The audio engine reads volume via `getState()` (not hooks) at scheduling time.
- */
 import { create } from "zustand";
 import type { AudioEngineStatus } from "@renderer/engines/audio/types";
 
@@ -15,6 +10,8 @@ interface PlaybackState {
   isPlaying: boolean;
   /** Vertical zoom: how many pixels represent one second of music */
   pixelsPerSecond: number;
+  /** R2-010: True during count-in — tickerLoop freezes time, audio is paused */
+  isCountingIn: boolean;
 
   // ─── Phase 4: Audio state ──────────────────
   /** AudioEngine lifecycle status */
@@ -31,17 +28,13 @@ interface PlaybackState {
   audioRecoverySuccessVisible: boolean;
   /** Monotonic trigger value for user-initiated recovery */
   audioRecoverySignal: number;
-  /**
-   * Monotonic counter incremented when currentTime is explicitly set while
-   * NOT playing (e.g. reset / skip-back while paused). The App.tsx audio
-   * subscriber watches this to call `scheduler.seek()` even when the
-   * playback-state transition subscriber would not fire.
-   */
+  /** Monotonically increasing counter — bumped on seek-while-paused for scheduler sync */
   seekVersion: number;
 
   setCurrentTime: (time: number) => void;
   setPlaying: (playing: boolean) => void;
   setPixelsPerSecond: (pps: number) => void;
+  setCountingIn: (counting: boolean) => void;
   setAudioStatus: (status: AudioEngineStatus) => void;
   setVolume: (volume: number) => void;
   setAudioRecovering: (attempt: number, maxAttempts: number) => void;
@@ -53,22 +46,13 @@ interface PlaybackState {
   reset: () => void;
 }
 
-/**
- * Module-level timer handle for the recovery-success badge auto-dismiss.
- *
- * This lives outside the Zustand store because `setTimeout` callbacks need a
- * stable reference that survives store re-creations. The trade-off is that
- * during Vite HMR (or test-runner module reloads) this variable resets to
- * `null` while a pending timeout from the previous module instance may still
- * fire — the orphaned callback calls `set()` on the old store copy, which is
- * harmless but worth knowing about when debugging flaky HMR behavior.
- */
 let recoverySuccessTimer: ReturnType<typeof setTimeout> | null = null;
 
 export const usePlaybackStore = create<PlaybackState>()((set) => ({
   currentTime: 0,
   isPlaying: false,
   pixelsPerSecond: 200,
+  isCountingIn: false,
 
   // Phase 4 defaults
   audioStatus: "uninitialized",
@@ -81,14 +65,15 @@ export const usePlaybackStore = create<PlaybackState>()((set) => ({
   seekVersion: 0,
 
   setCurrentTime: (time) =>
-    set((state) => ({
-      currentTime: time,
-      // Bump seekVersion when seeking while paused so the audio subscriber
-      // can detect the change and call scheduler.seek()
-      seekVersion: state.isPlaying ? state.seekVersion : state.seekVersion + 1,
-    })),
-  setPlaying: (playing) => set({ isPlaying: playing }),
+    set((state) =>
+      state.isPlaying
+        ? { currentTime: time }
+        : { currentTime: time, seekVersion: state.seekVersion + 1 },
+    ),
+  setPlaying: (playing) =>
+    set({ isPlaying: playing, ...(playing ? {} : { isCountingIn: false }) }),
   setPixelsPerSecond: (pps) => set({ pixelsPerSecond: pps }),
+  setCountingIn: (counting) => set({ isCountingIn: counting }),
   setAudioStatus: (status) => set({ audioStatus: status }),
   setVolume: (volume) => set({ volume: Math.max(0, Math.min(1, volume)) }),
   setAudioRecovering: (attempt, maxAttempts) =>
@@ -131,7 +116,8 @@ export const usePlaybackStore = create<PlaybackState>()((set) => ({
     set((state) => ({
       currentTime: 0,
       isPlaying: false,
-      audioStatus: "uninitialized",
+      isCountingIn: false,
+      audioStatus: "uninitialized" as AudioEngineStatus,
       audioRecoveryState: "idle" as const,
       audioRecoveryAttempt: 0,
       audioRecoveryMaxAttempts: 0,

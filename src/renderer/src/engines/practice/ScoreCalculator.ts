@@ -3,6 +3,10 @@ import type { PracticeScore } from "@shared/types";
 /**
  * Tracks hit/miss events and computes practice session scores.
  * Pure logic — no React or DOM dependencies.
+ *
+ * R2-004: Now tracks timing deltas (early/late) for each hit.
+ * The actual hit timestamp is passed by the caller (e.g. performance.now()
+ * converted to playback time), avoiding dependence on frozen WaitMode time.
  */
 export class ScoreCalculator {
   private _totalNotes = 0;
@@ -11,14 +15,32 @@ export class ScoreCalculator {
   private _currentStreak = 0;
   private _bestStreak = 0;
 
-  /** Record a successful note hit */
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  noteHit(_midi: number, _time: number): void {
+  /** Sum of all timing deltas in ms (for computing average) */
+  private _timingDeltaSum = 0;
+  /** Number of delta measurements */
+  private _timingDeltaCount = 0;
+  /** Most recent timing delta in ms */
+  private _lastTimingDeltaMs: number | null = null;
+
+  /**
+   * Record a successful note hit.
+   * @param _midi  MIDI note number
+   * @param _time  Expected note time in seconds
+   * @param timingDeltaMs  Timing delta in ms (negative=early, positive=late). Optional.
+   */
+  noteHit(_midi: number, _time: number, timingDeltaMs?: number): void {
     this._totalNotes++;
     this._hitNotes++;
     this._currentStreak++;
     if (this._currentStreak > this._bestStreak) {
       this._bestStreak = this._currentStreak;
+    }
+
+    // R2-004: Track timing delta if provided
+    if (timingDeltaMs !== undefined) {
+      this._timingDeltaSum += timingDeltaMs;
+      this._timingDeltaCount++;
+      this._lastTimingDeltaMs = timingDeltaMs;
     }
   }
 
@@ -30,31 +52,13 @@ export class ScoreCalculator {
     this._currentStreak = 0;
   }
 
-  /**
-   * Record a successful chord hit (all notes in the chord were played).
-   * Streak increments by 1 per chord event, not per individual note.
-   */
-  chordHit(noteCount: number): void {
-    this._totalNotes += noteCount;
-    this._hitNotes += noteCount;
-    this._currentStreak++;
-    if (this._currentStreak > this._bestStreak) {
-      this._bestStreak = this._currentStreak;
-    }
-  }
-
-  /**
-   * Record a missed chord (not all notes were played in time).
-   * Streak resets on any missed chord.
-   */
-  chordMiss(noteCount: number): void {
-    this._totalNotes += noteCount;
-    this._missedNotes += noteCount;
-    this._currentStreak = 0;
-  }
-
   /** Get the current score snapshot */
   getScore(): PracticeScore {
+    const avgTimingDeltaMs =
+      this._timingDeltaCount > 0
+        ? Math.round((this._timingDeltaSum / this._timingDeltaCount) * 10) / 10
+        : null;
+
     return {
       totalNotes: this._totalNotes,
       hitNotes: this._hitNotes,
@@ -65,6 +69,8 @@ export class ScoreCalculator {
           : Math.round((this._hitNotes / this._totalNotes) * 10000) / 100,
       currentStreak: this._currentStreak,
       bestStreak: this._bestStreak,
+      avgTimingDeltaMs,
+      lastTimingDeltaMs: this._lastTimingDeltaMs,
     };
   }
 
@@ -75,5 +81,8 @@ export class ScoreCalculator {
     this._missedNotes = 0;
     this._currentStreak = 0;
     this._bestStreak = 0;
+    this._timingDeltaSum = 0;
+    this._timingDeltaCount = 0;
+    this._lastTimingDeltaMs = null;
   }
 }

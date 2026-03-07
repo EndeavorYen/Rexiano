@@ -5,6 +5,7 @@ import { usePlaybackStore } from "@renderer/stores/usePlaybackStore";
 import { usePracticeStore } from "@renderer/stores/usePracticeStore";
 import { useSettingsStore } from "@renderer/stores/useSettingsStore";
 import { getPracticeEngines } from "@renderer/engines/practice/practiceManager";
+import { getMetronome } from "@renderer/engines/metronome/metronomeManager";
 
 /** Cap frame delta to prevent large time jumps (e.g. after tab backgrounding) */
 const MAX_DELTA_SECONDS = 0.1;
@@ -41,46 +42,39 @@ export function createTickerUpdate(
     const engines = getPracticeEngines();
     const { waitMode, speedController, loopController } = engines;
 
-    // Advance smooth speed interpolation and compute effective pps
-    if (speedController) {
-      speedController.tick(performance.now());
-    }
+    // Compute effective pps with speed multiplier
     const effectivePps = speedController
       ? speedController.effectivePixelsPerSecond(playState.pixelsPerSecond)
       : playState.pixelsPerSecond;
 
     let effectiveTime = playState.currentTime;
 
-    const settingsState = useSettingsStore.getState();
-    const showFingering = settingsState.showFingering;
-    const practiceMode = usePracticeStore.getState().mode;
-    const isWatchMode = practiceMode === "watch";
-
     if (playState.isPlaying) {
-      // ── StepMode: freeze at current step position, don't advance time ──
-      if (practiceMode === "step" && engines.stepMode) {
-        const chord = engines.stepMode.getCurrentNotes();
-        if (chord) {
-          effectiveTime = chord.time;
-          playState.setCurrentTime(effectiveTime);
+      // ── R2-010: Count-in freeze — don't advance time during count-in ──
+      // R3-002 safety: if isCountingIn but no metronome is running, auto-clear
+      if (playState.isCountingIn) {
+        const metronome = getMetronome();
+        if (metronome && !metronome.isRunning) {
+          // Safety check: metronome stopped but isCountingIn stuck — clear it
+          usePlaybackStore.getState().setCountingIn(false);
+        } else {
+          const screen = getScreenSize();
+          const vp: Viewport = {
+            width: screen.width,
+            height: screen.height,
+            pps: effectivePps,
+            currentTime: effectiveTime,
+          };
+          noteRenderer.update(songState.song, vp);
+          return;
         }
-        const screen = getScreenSize();
-        const vp: Viewport = {
-          width: screen.width,
-          height: screen.height,
-          pps: effectivePps,
-          currentTime: effectiveTime,
-        };
-        noteRenderer.update(songState.song, vp, showFingering, false);
-        return;
       }
 
       // ── WaitMode gate: if waiting, freeze time ──
-      if (practiceMode === "wait" && waitMode) {
-        const shouldContinue = waitMode.tick(
-          effectiveTime,
-          settingsState.latencyCompensation,
-        );
+      if (usePracticeStore.getState().mode === "wait" && waitMode) {
+        // R2-007: Read latencyCompensation from store and pass as parameter
+        const latencyMs = useSettingsStore.getState().latencyCompensation;
+        const shouldContinue = waitMode.tick(effectiveTime, latencyMs);
         if (!shouldContinue) {
           // Don't advance time — waiting for user input
           // Still update renderer so notes stay visible
@@ -91,7 +85,7 @@ export function createTickerUpdate(
             pps: effectivePps,
             currentTime: effectiveTime,
           };
-          noteRenderer.update(songState.song, vp, showFingering, false);
+          noteRenderer.update(songState.song, vp);
           return;
         }
       }
@@ -132,7 +126,7 @@ export function createTickerUpdate(
       currentTime: effectiveTime,
     };
 
-    noteRenderer.update(songState.song, vp, showFingering, isWatchMode);
+    noteRenderer.update(songState.song, vp);
 
     // Only notify React when active notes actually change
     if (onActiveNotesChangeRef.current) {

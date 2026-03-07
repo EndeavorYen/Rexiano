@@ -66,21 +66,21 @@ describe("useMetronomeBeat", () => {
 
     renderHook(() => useMetronomeBeat());
 
-    // After 50ms: first poll
+    // After 16ms: first poll
     act(() => {
-      vi.advanceTimersByTime(50);
+      vi.advanceTimersByTime(16);
     });
     expect(mockGetMetronome).toHaveBeenCalledTimes(1);
 
-    // After 100ms: second poll
+    // After 32ms: second poll
     act(() => {
-      vi.advanceTimersByTime(50);
+      vi.advanceTimersByTime(16);
     });
     expect(mockGetMetronome).toHaveBeenCalledTimes(2);
 
-    // After 250ms: 5 polls total
+    // After 80ms: 5 polls total
     act(() => {
-      vi.advanceTimersByTime(150);
+      vi.advanceTimersByTime(48);
     });
     expect(mockGetMetronome).toHaveBeenCalledTimes(5);
   });

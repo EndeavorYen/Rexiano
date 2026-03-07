@@ -1,9 +1,3 @@
-/**
- * Phase 6: WaitMode — core state machine for wait-mode practice.
- * Pauses playback when upcoming notes are reached, waits for the user to play
- * the correct MIDI input, then resumes. Uses a callback pattern (not EventEmitter)
- * for integration with stores and the ticker loop.
- */
 import type { ParsedTrack } from "../midi/types";
 import type { NoteResult } from "@shared/types";
 
@@ -51,13 +45,6 @@ export class WaitMode {
   /** Structured info for currently pending notes (avoids string parsing) */
   private _pendingNoteDetails: PendingNoteInfo[] = [];
 
-  /** Max time (seconds) within which near-simultaneous notes are grouped as a chord */
-  private _chordWindowSec = 0.08; // 80ms
-  /** Max seconds to wait for user input before auto-missing */
-  private _maxWaitSec = 10;
-  /** Playback time when we entered the waiting state (for timeout detection) */
-  private _waitEnteredTime = 0;
-
   /**
    * @param toleranceMs Time window (±ms) around the hit line for accepting input.
    *                     Default ±200ms.
@@ -76,6 +63,15 @@ export class WaitMode {
 
   get noteResults(): ReadonlyMap<string, NoteResult> {
     return this._noteResults;
+  }
+
+  /** R2-007: Allow tolerance to be updated at runtime (e.g. from settings) */
+  get toleranceMs(): number {
+    return this._toleranceMs;
+  }
+
+  setToleranceMs(ms: number): void {
+    this._toleranceMs = Math.max(50, Math.min(500, ms));
   }
 
   /** Register event callbacks */
@@ -115,27 +111,20 @@ export class WaitMode {
    * Scans for notes at the current time and pauses if needed.
    * Uses per-track cursors and sorted-note early-exit for O(window) per frame.
    *
+   * R2-007: latencyCompensationMs is injected by the caller (tickerLoop reads
+   * from useSettingsStore) instead of the engine importing a store directly.
+   * This preserves the "engines/ = pure logic" architectural principle.
+   *
    * @param currentTime Current playback time in seconds
-   * @param latencyMs   Latency compensation in milliseconds (shifts detection window).
-   *                     Passed in by the caller (e.g. tickerLoop) so the engine stays pure.
+   * @param latencyCompensationMs Latency compensation in ms (default 0).
+   *        Shifts the effective time backward so MIDI input arriving late still matches.
    * @returns true if playback should continue, false if paused (waiting)
    */
-  tick(currentTime: number, latencyMs = 0): boolean {
+  tick(currentTime: number, latencyCompensationMs = 0): boolean {
     if (this._state === "idle") return true;
-    if (this._state === "waiting") {
-      // Timeout: auto-miss all pending notes after _maxWaitSec
-      if (currentTime - this._waitEnteredTime > this._maxWaitSec) {
-        this._markPendingAs("miss");
-        this._targetNotes.clear();
-        this._state = "playing";
-        this._callbacks.onResume?.();
-        return true;
-      }
-      return false;
-    }
+    if (this._state === "waiting") return false;
 
-    // Shift the effective time backward so MIDI input arriving late still matches.
-    const adjustedTime = currentTime - latencyMs / 1000;
+    const adjustedTime = currentTime - latencyCompensationMs / 1000;
 
     const toleranceSec = this._toleranceMs / 1000;
     const pendingMidis = this._pendingMidis;
@@ -183,34 +172,10 @@ export class WaitMode {
       this._trackCursors.set(trackIndex, cursor);
     }
 
-    // If there are pending notes, apply chord grouping then pause
+    // If there are pending notes, pause and wait for input
     if (pendingMidis.size > 0) {
-      // Find the earliest pending note time for the chord window
-      let earliestTime = Infinity;
-      for (const pn of this._pendingNoteDetails) {
-        if (pn.time < earliestTime) earliestTime = pn.time;
-      }
-
-      // Keep only notes within the chord window of the earliest note.
-      // Notes outside the window are reverted from "pending" to unjudged
-      // so they'll be picked up in a future tick.
-      const chordMidis = new Set<number>();
-      const chordDetails: PendingNoteInfo[] = [];
-      for (const pn of this._pendingNoteDetails) {
-        const key = `${pn.trackIndex}:${pn.noteIndex}`;
-        if (pn.time - earliestTime <= this._chordWindowSec) {
-          chordMidis.add(pn.midi);
-          chordDetails.push(pn);
-        } else {
-          // Revert — not part of this chord
-          this._noteResults.delete(key);
-        }
-      }
-      this._pendingNoteDetails = chordDetails;
-
-      this._targetNotes = new Set(chordMidis);
+      this._targetNotes = new Set(pendingMidis);
       this._state = "waiting";
-      this._waitEnteredTime = currentTime;
       this._callbacks.onWait?.();
       return false;
     }
@@ -242,15 +207,13 @@ export class WaitMode {
     return true;
   }
 
-  /** Mark all currently pending notes as hit or miss and fire callbacks */
+  /** Mark all currently pending notes as hit or miss */
   private _markPendingAs(result: NoteResult): void {
     for (const pn of this._pendingNoteDetails) {
       const key = `${pn.trackIndex}:${pn.noteIndex}`;
       this._noteResults.set(key, result);
       if (result === "hit") {
         this._callbacks.onHit?.(pn.midi, pn.time);
-      } else if (result === "miss") {
-        this._callbacks.onMiss?.(pn.midi, pn.time);
       }
     }
     this._pendingNoteDetails.length = 0;
@@ -263,53 +226,5 @@ export class WaitMode {
     this._trackCursors.clear();
     this._pendingNoteDetails.length = 0;
     this._state = "idle";
-  }
-
-  /**
-   * Seek to a specific time without clearing all results.
-   * Clears pending notes and rewinds track cursors to the first note
-   * at or after `time`, preserving already-judged results for notes before `time`.
-   * This allows mid-song seeking (e.g. click on timeline) to work correctly
-   * without ghost "pending" notes lingering from before the seek point.
-   *
-   * @param time The playback time (in seconds) to seek to
-   */
-  seekTo(time: number): void {
-    // Clear any notes currently awaiting input
-    this._targetNotes.clear();
-    this._pendingNoteDetails.length = 0;
-
-    // Remove "pending" results — they are stale after a seek
-    for (const [key, result] of this._noteResults) {
-      if (result === "pending") {
-        this._noteResults.delete(key);
-      }
-    }
-
-    // Rewind cursors so notes at/after `time` will be re-scanned
-    for (const trackIndex of this._activeTracks) {
-      const track = this._tracks[trackIndex];
-      if (!track) continue;
-
-      let cursor = 0;
-      for (let ni = 0; ni < track.notes.length; ni++) {
-        if (track.notes[ni].time >= time) {
-          cursor = ni;
-          break;
-        }
-        // Only advance cursor past notes that have final results (hit/miss)
-        const key = `${trackIndex}:${ni}`;
-        const result = this._noteResults.get(key);
-        if (result === "hit" || result === "miss") {
-          cursor = ni + 1;
-        }
-      }
-      this._trackCursors.set(trackIndex, cursor);
-    }
-
-    // If we were waiting, return to playing so the next tick re-evaluates
-    if (this._state === "waiting") {
-      this._state = "playing";
-    }
   }
 }

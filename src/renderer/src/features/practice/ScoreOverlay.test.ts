@@ -12,6 +12,8 @@ describe("ScoreOverlay logic", () => {
         accuracy: 0,
         currentStreak: 0,
         bestStreak: 0,
+        avgTimingDeltaMs: null,
+        lastTimingDeltaMs: null,
       },
       noteResults: new Map(),
     });

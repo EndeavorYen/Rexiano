@@ -150,9 +150,9 @@ describe("Speed clamping consistency", () => {
   test("practice store and settings store use the same speed range", async () => {
     const { usePracticeStore } = await import("./stores/usePracticeStore");
 
-    // Both should clamp to 0.10-2.0
+    // Both should clamp to 0.25-2.0
     usePracticeStore.getState().setSpeed(0.05);
-    expect(usePracticeStore.getState().speed).toBe(0.1);
+    expect(usePracticeStore.getState().speed).toBe(0.25);
 
     usePracticeStore.getState().setSpeed(5.0);
     expect(usePracticeStore.getState().speed).toBe(2.0);

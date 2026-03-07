@@ -69,6 +69,32 @@ export function ScoreOverlay(): React.JSX.Element {
         </span>
       </div>
 
+      {/* R1-005: Early / Late / On time timing indicator */}
+      {mode !== "wait" && score.lastTimingDeltaMs != null && (
+        <div
+          className="flex items-baseline gap-1 mt-0.5"
+          key={`timing-${score.hitNotes}`}
+        >
+          <span
+            className="text-xs font-display font-bold tabular-nums"
+            style={{
+              color:
+                Math.abs(score.lastTimingDeltaMs) < 30
+                  ? "var(--color-accent)"
+                  : score.lastTimingDeltaMs < 0
+                    ? "var(--color-timing-early, #5b9bd5)"
+                    : "var(--color-timing-late, #e8a838)",
+            }}
+          >
+            {Math.abs(score.lastTimingDeltaMs) < 30
+              ? t("practice.timingOnTime")
+              : score.lastTimingDeltaMs < 0
+                ? `${t("practice.timingEarly")} ${Math.abs(Math.round(score.lastTimingDeltaMs))}ms`
+                : `${t("practice.timingLate")} ${Math.round(score.lastTimingDeltaMs)}ms`}
+          </span>
+        </div>
+      )}
+
       {/* Combo streak with pop animation */}
       {score.currentStreak > 1 && (
         <div

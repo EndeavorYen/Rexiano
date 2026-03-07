@@ -1,4 +1,4 @@
-import { describe, test, expect, vi, beforeEach, afterEach } from "vitest";
+import { describe, test, expect, vi, beforeEach } from "vitest";
 
 // --- Mock pixi.js ---
 
@@ -44,6 +44,7 @@ vi.mock("pixi.js", () => {
     }
   }
   class MockTextStyle {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     constructor(_opts?: unknown) {
       /* noop */
     }
@@ -61,9 +62,21 @@ vi.mock("pixi.js", () => {
       this.children.length = 0;
     }
   }
+  class MockGraphics {
+    clear(): MockGraphics {
+      return this;
+    }
+    rect(): MockGraphics {
+      return this;
+    }
+    fill(): MockGraphics {
+      return this;
+    }
+  }
   return {
     Application: vi.fn(),
     Container: MockContainer,
+    Graphics: MockGraphics,
     Sprite: MockSprite,
     Text: MockText,
     TextStyle: MockTextStyle,
@@ -74,6 +87,26 @@ vi.mock("pixi.js", () => {
 // --- Mock noteColors ---
 vi.mock("@renderer/engines/fallingNotes/noteColors", () => ({
   getTrackColor: (trackIndex: number) => [0x3b82f6, 0xf97316][trackIndex % 2],
+  getHitLineColor: () => 0x705a87,
+}));
+
+// --- Mock useThemeStore ---
+vi.mock("@renderer/stores/useThemeStore", () => ({
+  useThemeStore: {
+    getState: () => ({
+      theme: {
+        colors: {
+          gridLine: "#E8E2EE",
+          hitLine: "#705A87",
+        },
+      },
+    }),
+  },
+}));
+
+// --- Mock themes/tokens ---
+vi.mock("@renderer/themes/tokens", () => ({
+  hexToPixi: (hex: string) => parseInt(hex.replace("#", ""), 16),
 }));
 
 // --- Mock Zustand stores ---
@@ -81,6 +114,7 @@ let songStoreState = { song: null as unknown };
 let playbackStoreState = {
   currentTime: 0,
   isPlaying: false,
+  isCountingIn: false,
   pixelsPerSecond: 200,
   setCurrentTime: vi.fn((t: number) => {
     playbackStoreState.currentTime = t;
@@ -102,7 +136,25 @@ vi.mock("@renderer/stores/usePlaybackStore", () => ({
   }),
 }));
 
-// Top-level imports — use the mocked modules
+vi.mock("@renderer/stores/useSettingsStore", () => ({
+  useSettingsStore: {
+    getState: () => ({ showFingering: false, latencyCompensation: 0 }),
+  },
+}));
+
+vi.mock("@renderer/engines/practice/FingeringEngine", () => ({
+  FingeringEngine: class {
+    computeFingering(): unknown[] {
+      return [];
+    }
+  },
+}));
+
+vi.mock("@renderer/engines/metronome/metronomeManager", () => ({
+  getMetronome: () => null,
+}));
+
+// Top-level imports -- use the mocked modules
 import { NoteRenderer } from "@renderer/engines/fallingNotes/NoteRenderer";
 import { createTickerUpdate } from "@renderer/engines/fallingNotes/tickerLoop";
 import { Container } from "pixi.js";
@@ -115,7 +167,6 @@ function makeSong(overrides: Partial<ParsedSong> = {}): ParsedSong {
     noteCount: 4,
     tempos: [{ time: 0, bpm: 120 }],
     timeSignatures: [{ time: 0, numerator: 4, denominator: 4 }],
-    keySignatures: [],
     tracks: [
       {
         name: "Track 0",
@@ -139,16 +190,13 @@ describe("FallingNotesCanvas ticker logic (via createTickerUpdate)", () => {
   let noteRenderer: NoteRenderer;
 
   beforeEach(() => {
-    // Stub requestAnimationFrame/cancelAnimationFrame for Watch mode glow animations
-    vi.stubGlobal("requestAnimationFrame", () => 0);
-    vi.stubGlobal("cancelAnimationFrame", () => undefined);
-
     noteRenderer = new NoteRenderer(new Container());
     noteRenderer.init(SCREEN.width);
 
     playbackStoreState = {
       currentTime: 0,
       isPlaying: false,
+      isCountingIn: false,
       pixelsPerSecond: 200,
       setCurrentTime: vi.fn((t: number) => {
         playbackStoreState.currentTime = t;
@@ -158,10 +206,6 @@ describe("FallingNotesCanvas ticker logic (via createTickerUpdate)", () => {
       }),
     };
     songStoreState = { song: null };
-  });
-
-  afterEach(() => {
-    vi.unstubAllGlobals();
   });
 
   test("does nothing when no song is loaded", () => {

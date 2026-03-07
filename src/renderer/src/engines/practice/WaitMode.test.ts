@@ -25,7 +25,7 @@ describe("WaitMode", () => {
   let wm: WaitMode;
 
   beforeEach(() => {
-    wm = new WaitMode(200); // ±200ms tolerance
+    wm = new WaitMode(200); // +/-200ms tolerance
   });
 
   it("starts in idle state", () => {
@@ -43,7 +43,7 @@ describe("WaitMode", () => {
     wm.init(makeTracks([{ midi: 60, time: 1.0 }]), new Set([0]));
     wm.start();
 
-    // At time 0.85 → note at 1.0 is within ±200ms (0.8–1.2)
+    // At time 0.85 -> note at 1.0 is within +/-200ms (0.8-1.2)
     const result = wm.tick(0.85);
     expect(result).toBe(false);
     expect(wm.state).toBe("waiting");
@@ -76,7 +76,7 @@ describe("WaitMode", () => {
     expect(wm.state).toBe("waiting");
   });
 
-  it("handles chords — all notes must be pressed", () => {
+  it("handles chords -- all notes must be pressed", () => {
     const tracks: ParsedTrack[] = [
       {
         name: "RH",
@@ -186,7 +186,7 @@ describe("WaitMode", () => {
     wm.start();
 
     // Verify callbacks fire before clearing
-    wm.tick(0.85); // note at 1.0 within ±200ms → onWait fires
+    wm.tick(0.85); // note at 1.0 within +/-200ms -> onWait fires
     expect(onWait).toHaveBeenCalledOnce();
 
     // Clear and reset for a fresh pass
@@ -194,41 +194,33 @@ describe("WaitMode", () => {
     wm.reset();
     wm.start();
 
-    // Same tick — note is again in window, but callbacks must not fire
+    // Same tick -- note is again in window, but callbacks must not fire
     wm.tick(0.85);
     expect(onWait).toHaveBeenCalledOnce(); // still only once from before
 
-    // Past tolerance — onMiss must also not fire
+    // Past tolerance -- onMiss must also not fire
     wm.reset();
     wm.start();
     wm.tick(1.5);
     expect(onMiss).not.toHaveBeenCalled();
   });
 
-  // ─── Latency compensation tests ───────────────────
+  // ── Latency compensation tests (R2-007: passed as parameter) ───────
 
   it("latency compensation shifts detection window backward", () => {
-    // Note at time 1.0, tolerance ±200ms → window [0.8, 1.2]
-    // With 50ms latency compensation, adjusted time = currentTime - 0.05
-    // So at currentTime=0.83, adjustedTime=0.78 → note at 1.0 is NOT in [0.58, 0.98] wait... let's think again
-    // adjustedTime = 0.83 - 0.05 = 0.78. Window = [0.78-0.2, 0.78+0.2] = [0.58, 0.98]
-    // note at 1.0 is outside → returns true (no waiting)
     wm.init(makeTracks([{ midi: 60, time: 1.0 }]), new Set([0]));
     wm.start();
 
-    // Without latency compensation, 0.85 would trigger waiting (note 1.0 in [0.65, 1.05])
     // With 50ms latency, adjustedTime = 0.85 - 0.05 = 0.80, window = [0.60, 1.00]
-    // note at 1.0 is exactly at boundary → pending
+    // note at 1.0 is exactly at boundary -> pending
     const result = wm.tick(0.85, 50);
     expect(result).toBe(false);
     expect(wm.state).toBe("waiting");
   });
 
   it("latency compensation delays miss detection", () => {
-    // Note at time 1.0, tolerance ±200ms
-    // Without latency: at time 1.25, note would be missed (past 1.2 window end)
     // With 100ms latency: adjustedTime = 1.25 - 0.10 = 1.15, window = [0.95, 1.35]
-    // note at 1.0 is within window → pending (not missed yet)
+    // note at 1.0 is within window -> pending (not missed yet)
     const onMiss = vi.fn();
     wm.setCallbacks({ onMiss });
     wm.init(makeTracks([{ midi: 60, time: 1.0 }]), new Set([0]));
@@ -245,172 +237,24 @@ describe("WaitMode", () => {
     wm.init(makeTracks([{ midi: 60, time: 1.0 }]), new Set([0]));
     wm.start();
 
-    // At time 0.85 → note at 1.0 is within ±200ms
+    // At time 0.85 -> note at 1.0 is within +/-200ms
     wm.tick(0.85, 0);
     expect(wm.state).toBe("waiting");
     expect(onWait).toHaveBeenCalledOnce();
   });
 
-  // ─── Chord grouping tests (80ms window) ───────────────────
+  // ── toleranceMs getter/setter (R2-007) ─────────────────
 
-  it("groups notes within 80ms as a single chord event", () => {
-    // Notes at 1.0s, 1.05s, 1.06s should be one chord
-    const tracks: ParsedTrack[] = [
-      {
-        name: "RH",
-        instrument: "Piano",
-        channel: 0,
-        notes: [
-          { midi: 60, name: "C4", time: 1.0, duration: 0.5, velocity: 80 },
-          { midi: 64, name: "E4", time: 1.05, duration: 0.5, velocity: 80 },
-          { midi: 67, name: "G4", time: 1.06, duration: 0.5, velocity: 80 },
-        ],
-      },
-    ];
-
-    wm.init(tracks, new Set([0]));
-    wm.start();
-
-    // Tick at exactly the first note's time — all 3 should be grouped
-    wm.tick(1.0);
-    expect(wm.state).toBe("waiting");
-    expect(wm.targetNotes.has(60)).toBe(true);
-    expect(wm.targetNotes.has(64)).toBe(true);
-    expect(wm.targetNotes.has(67)).toBe(true);
-    expect(wm.targetNotes.size).toBe(3);
+  it("toleranceMs getter returns current value", () => {
+    expect(wm.toleranceMs).toBe(200);
   });
 
-  it("does NOT group notes beyond 80ms apart from the first", () => {
-    const tracks: ParsedTrack[] = [
-      {
-        name: "RH",
-        instrument: "Piano",
-        channel: 0,
-        notes: [
-          { midi: 60, name: "C4", time: 1.0, duration: 0.5, velocity: 80 },
-          { midi: 64, name: "E4", time: 1.1, duration: 0.5, velocity: 80 },
-        ],
-      },
-    ];
-
-    wm.init(tracks, new Set([0]));
-    wm.start();
-
-    // First note at 1.0, second at 1.1 (100ms gap > 80ms)
-    wm.tick(1.0);
-    expect(wm.state).toBe("waiting");
-    expect(wm.targetNotes.has(60)).toBe(true);
-    expect(wm.targetNotes.has(64)).toBe(false);
-    expect(wm.targetNotes.size).toBe(1);
-  });
-
-  it("groups chord notes across multiple active tracks", () => {
-    const tracks: ParsedTrack[] = [
-      {
-        name: "RH",
-        instrument: "Piano",
-        channel: 0,
-        notes: [
-          { midi: 60, name: "C4", time: 1.0, duration: 0.5, velocity: 80 },
-        ],
-      },
-      {
-        name: "LH",
-        instrument: "Piano",
-        channel: 1,
-        notes: [
-          { midi: 48, name: "C3", time: 1.04, duration: 0.5, velocity: 80 },
-        ],
-      },
-    ];
-
-    wm.init(tracks, new Set([0, 1]));
-    wm.start();
-
-    wm.tick(1.0);
-    expect(wm.state).toBe("waiting");
-    expect(wm.targetNotes.has(60)).toBe(true);
-    expect(wm.targetNotes.has(48)).toBe(true);
-    expect(wm.targetNotes.size).toBe(2);
-  });
-
-  // ─── Wait timeout tests (10s) ───────────────────
-
-  it("auto-misses after 10 seconds of waiting", () => {
-    const onMiss = vi.fn();
-    const onResume = vi.fn();
-    wm.setCallbacks({ onMiss, onResume });
-    wm.init(makeTracks([{ midi: 60, time: 1.0 }]), new Set([0]));
-    wm.start();
-
-    // Enter waiting state
-    wm.tick(1.0);
-    expect(wm.state).toBe("waiting");
-
-    // Tick again with time > 10s later — should auto-miss and resume
-    wm.tick(11.5);
-    expect(wm.state).toBe("playing");
-    expect(onMiss).toHaveBeenCalledWith(60, 1.0);
-    expect(onResume).toHaveBeenCalled();
-  });
-
-  it("does not timeout before 10 seconds", () => {
-    const onMiss = vi.fn();
-    wm.setCallbacks({ onMiss });
-    wm.init(makeTracks([{ midi: 60, time: 1.0 }]), new Set([0]));
-    wm.start();
-
-    wm.tick(1.0);
-    expect(wm.state).toBe("waiting");
-
-    // Only 5 seconds later — should still be waiting
-    wm.tick(6.0);
-    expect(wm.state).toBe("waiting");
-    expect(onMiss).not.toHaveBeenCalled();
-  });
-
-  // ─── seekTo() tests ───────────────────
-
-  it("seekTo() clears pending notes and rewinds cursors", () => {
-    const tracks = makeTracks([
-      { midi: 60, time: 1.0 },
-      { midi: 62, time: 2.0 },
-      { midi: 64, time: 3.0 },
-    ]);
-    wm.init(tracks, new Set([0]));
-    wm.start();
-
-    // Trigger waiting on first note
-    wm.tick(1.0);
-    expect(wm.state).toBe("waiting");
-    expect(wm.targetNotes.has(60)).toBe(true);
-
-    // Seek to time 2.5 — clears pending, keeps state as playing
-    wm.seekTo(2.5);
-    expect(wm.state).toBe("playing");
-    expect(wm.targetNotes.size).toBe(0);
-
-    // Next tick at time 3.0 should pick up the note at 3.0
-    const result = wm.tick(3.0);
-    expect(result).toBe(false);
-    expect(wm.targetNotes.has(64)).toBe(true);
-  });
-
-  it("seekTo() preserves hit/miss results for notes before seek point", () => {
-    const tracks = makeTracks([
-      { midi: 60, time: 1.0 },
-      { midi: 62, time: 3.0 },
-    ]);
-    wm.init(tracks, new Set([0]));
-    wm.start();
-
-    // Play through first note — hit it
-    wm.tick(1.0);
-    wm.checkInput(new Set([60]));
-    expect(wm.noteResults.get("0:0")).toBe("hit");
-
-    // Seek forward — the hit result should be preserved
-    wm.seekTo(2.5);
-    expect(wm.noteResults.get("0:0")).toBe("hit");
+  it("setToleranceMs clamps to [50, 500]", () => {
+    wm.setToleranceMs(10);
+    expect(wm.toleranceMs).toBe(50);
+    wm.setToleranceMs(999);
+    expect(wm.toleranceMs).toBe(500);
+    wm.setToleranceMs(300);
+    expect(wm.toleranceMs).toBe(300);
   });
 });

@@ -48,17 +48,11 @@ export interface BuiltinSongMeta {
   id: string;
   file: string;
   title: string;
-  /** Traditional Chinese title (e.g. "乖乖愛麗絲" for "Für Elise") */
-  titleZh?: string;
   composer: string;
-  /** Traditional Chinese composer name (e.g. "貝多芬" for "Beethoven") */
-  composerZh?: string;
   difficulty: "beginner" | "intermediate" | "advanced";
   category?: "exercise" | "classical" | "popular" | "holiday";
   durationSeconds: number;
   tags: string[];
-  /** Piano techniques featured in this piece, shown as secondary info */
-  techniques?: string[];
   /**
    * Granular difficulty level (0–8), aligned with the Rexiano Level Guide.
    * L0=Pre-Starter, L1=Starter, L2=Early Beginner, L3=Beginner,
@@ -67,8 +61,6 @@ export interface BuiltinSongMeta {
    * See docs/midi-level-guide.md for full criteria.
    */
   grade?: 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8;
-  /** Attribution for MIDI source, e.g. "mfiles.co.uk". */
-  source?: string;
 }
 
 // ─── Phase 5: MIDI Device Connection ─────────────────────────────────
@@ -90,7 +82,7 @@ export interface MidiDeviceInfo {
 // ─── Phase 6: Practice Mode ─────────────────────────────────────────
 
 /** Available practice modes */
-export type PracticeMode = "watch" | "wait" | "free" | "step";
+export type PracticeMode = "watch" | "wait" | "free";
 
 /** Scoring result for a practice session */
 export interface PracticeScore {
@@ -101,6 +93,10 @@ export interface PracticeScore {
   accuracy: number;
   currentStreak: number;
   bestStreak: number;
+  /** Average timing delta in ms (negative = early, positive = late). Null until first hit. */
+  avgTimingDeltaMs: number | null;
+  /** Most recent timing delta in ms (for real-time UI feedback) */
+  lastTimingDeltaMs: number | null;
 }
 
 /** Result status for an individual note in practice mode */

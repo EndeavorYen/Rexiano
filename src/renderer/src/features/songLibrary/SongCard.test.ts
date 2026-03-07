@@ -89,6 +89,8 @@ function makeSession(
       accuracy,
       currentStreak: 0,
       bestStreak: 0,
+      avgTimingDeltaMs: null,
+      lastTimingDeltaMs: null,
     },
     durationSeconds: 60,
     tracksPlayed: [0],

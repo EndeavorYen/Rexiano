@@ -3,21 +3,29 @@
  * Manages a double-buffered sprite pool, per-frame viewport updates, and
  * practice mode visual feedback (hit flash, miss fade, combo text pop).
  */
-import { Container, Sprite, Text, TextStyle, Texture } from "pixi.js";
-import type { ParsedSong, ParsedNote } from "@renderer/engines/midi/types";
+import { Container, Graphics, Sprite, Text, TextStyle, Texture } from "pixi.js";
+import type {
+  ParsedSong,
+  ParsedNote,
+  TempoEvent,
+  TimeSignatureEvent,
+} from "@renderer/engines/midi/types";
 import { buildKeyPositions, type KeyPosition } from "./keyPositions";
-import { getTrackColor } from "./noteColors";
+import { getTrackColor, getHitLineColor } from "./noteColors";
+import { useThemeStore } from "@renderer/stores/useThemeStore";
+import { hexToPixi } from "@renderer/themes/tokens";
 import {
   noteToScreenY,
   durationToHeight,
   getVisibleNotes,
+  getVisibleTimeRange,
   type Viewport,
 } from "./ViewportManager";
 import {
   FingeringEngine,
   type Finger,
 } from "@renderer/engines/practice/FingeringEngine";
-import { spellNote } from "../../utils/enharmonicSpelling";
+import { useSettingsStore } from "@renderer/stores/useSettingsStore";
 
 function noteKey(trackIdx: number, midi: number, time: number): string {
   // Convert time to microseconds integer to avoid float-to-string instability
@@ -32,12 +40,6 @@ const MIN_HEIGHT_FOR_LABEL = 16;
 /** Minimum note height (px) at which we show the fingering label */
 const MIN_HEIGHT_FOR_FINGERING = 14;
 
-/** Time window (seconds) before the hit line in which small notes get labels */
-const SMALL_NOTE_LABEL_WINDOW = 2.0;
-
-/** Font size for small note labels shown above short notes near hit line */
-const SMALL_NOTE_LABEL_SIZE = 8;
-
 /** Circled digit characters for finger numbers 1-5 */
 const CIRCLED_DIGITS: Record<Finger, string> = {
   1: "\u2460",
@@ -47,39 +49,27 @@ const CIRCLED_DIGITS: Record<Finger, string> = {
   5: "\u2464",
 };
 
-/**
- * Assign hand based on track convention for 2-track songs (track 0 = right,
- * track 1 = left). Falls back to average MIDI pitch heuristic otherwise.
- */
-function assignHand(
-  trackIndex: number,
-  trackCount: number,
-  avgMidi: number,
-): "left" | "right" {
-  if (trackCount === 2) {
-    return trackIndex === 0 ? "right" : "left";
-  }
-  return avgMidi < 60 ? "left" : "right";
-}
+/** Chromatic note names indexed by (midi % 12). */
+const NOTE_NAMES = [
+  "C",
+  "C#",
+  "D",
+  "D#",
+  "E",
+  "F",
+  "F#",
+  "G",
+  "G#",
+  "A",
+  "A#",
+  "B",
+] as const;
 
-/** Cached TextStyle for combo counter text. */
-let _comboStyle: TextStyle | null = null;
-function getComboStyle(): TextStyle {
-  if (!_comboStyle) {
-    _comboStyle = new TextStyle({
-      fontFamily: "Nunito Variable, Nunito, sans-serif",
-      fontSize: 28,
-      fontWeight: "800",
-      fill: 0xffffff,
-      dropShadow: {
-        color: 0x000000,
-        blur: 4,
-        distance: 1,
-        alpha: 0.35,
-      },
-    });
-  }
-  return _comboStyle;
+/** Convert a MIDI note number to a short display name (e.g. "C4", "F#5"). */
+function midiToNoteName(midi: number): string {
+  const name = NOTE_NAMES[midi % 12];
+  const octave = Math.floor(midi / 12) - 1;
+  return `${name}${octave}`;
 }
 
 /** Shared text style for note labels on falling note sprites. */
@@ -94,40 +84,6 @@ function getLabelStyle(): TextStyle {
     });
   }
   return _labelStyle;
-}
-
-/** Larger text style for Watch mode prominent note labels at the hit line. */
-let _watchLabelStyle: TextStyle | null = null;
-function getWatchLabelStyle(): TextStyle {
-  if (!_watchLabelStyle) {
-    _watchLabelStyle = new TextStyle({
-      fontFamily: "Nunito Variable, Nunito, sans-serif",
-      fontSize: 22,
-      fontWeight: "800",
-      fill: 0xffffff,
-      dropShadow: {
-        color: 0x000000,
-        blur: 4,
-        distance: 1,
-        alpha: 0.45,
-      },
-    });
-  }
-  return _watchLabelStyle;
-}
-
-/** Text style for small labels shown above short notes near the hit line. */
-let _smallLabelStyle: TextStyle | null = null;
-function getSmallLabelStyle(): TextStyle {
-  if (!_smallLabelStyle) {
-    _smallLabelStyle = new TextStyle({
-      fontFamily: "'JetBrains Mono Variable', 'JetBrains Mono', monospace",
-      fontSize: SMALL_NOTE_LABEL_SIZE,
-      fontWeight: "bold",
-      fill: 0xffffff,
-    });
-  }
-  return _smallLabelStyle;
 }
 
 /** Linearly interpolate between two 0xRRGGBB colors by factor t ∈ [0,1]. */
@@ -165,26 +121,14 @@ export class NoteRenderer {
   private _spriteLabels = new Map<Sprite, Text>();
   /** Whether note labels on falling notes are enabled */
   public showNoteLabels = true;
-  /** Key signature (negative = flats, positive = sharps, 0 = C major) */
-  public keySig = 0;
-
-  // ── Small note label pool (for notes too short for inline labels) ──
-  /** Text pool for small labels shown above short notes near hit line */
-  private _smallLabelPool: Text[] = [];
-  /** Maps each active sprite to its associated small label Text object */
-  private _spriteSmallLabels = new Map<Sprite, Text>();
 
   public activeNotes = new Set<number>();
 
-  // ── Watch mode hit-line label pool ───────────────────────────────
-  /** Pool of reusable Text objects for Watch mode prominent labels */
-  private _watchLabelPool: Text[] = [];
-  /** Currently visible Watch mode labels (noteKey → Text) */
-  private _activeWatchLabels = new Map<string, Text>();
-  /** Double-buffer for Watch mode labels */
-  private _nextWatchLabels = new Map<string, Text>();
-  /** Set of note keys that already had a Watch glow triggered (avoid re-triggering) */
-  private _watchGlowedKeys = new Set<string>();
+  // ── Beat grid and hit line (R2-006: cached with dirty flag) ──────
+  private _gridGraphics: Graphics;
+  private _hitLineGraphics: Graphics;
+  /** R2-006: Last viewport state used to draw grid -- skip redraw if unchanged */
+  private _lastGridVpKey = "";
 
   // ── Fingering overlay ──────────────────────────────────────────
   private fingeringEngine = new FingeringEngine();
@@ -193,14 +137,22 @@ export class NoteRenderer {
   /** Currently visible fingering labels (key → Text) */
   private activeFingeringLabels = new Map<string, Text>();
   private nextFingeringLabels = new Map<string, Text>();
-  /** Cached fingering results per song, keyed by "trackIdx" → composite "midi:time" → Finger */
-  private fingeringCache = new Map<string, Map<string, Finger>>();
+  /** Cached fingering results per song, keyed by "trackIdx" */
+  private fingeringCache = new Map<string, Map<number, Finger>>();
   /** ID of the last song we computed fingering for */
   private lastSongFileName = "";
 
   constructor(parentContainer: Container) {
+    // Grid lines go behind notes
+    this._gridGraphics = new Graphics();
+    parentContainer.addChild(this._gridGraphics);
+
     this.container = new Container();
     parentContainer.addChild(this.container);
+
+    // Hit line goes on top of notes
+    this._hitLineGraphics = new Graphics();
+    parentContainer.addChild(this._hitLineGraphics);
   }
 
   /**
@@ -238,18 +190,14 @@ export class NoteRenderer {
    * @param song Currently loaded parsed song
    * @param vp   Current viewport (position + dimensions)
    */
-  update(
-    song: ParsedSong,
-    vp: Viewport,
-    showFingering: boolean,
-    watchMode = false,
-  ): void {
+  update(song: ParsedSong, vp: Viewport): void {
     // Double-buffer swap: reuse nextActive map instead of allocating each frame
     const nextActive = this.nextActive;
     nextActive.clear();
     this.activeNotes.clear();
 
     const hitWindow = 0.05;
+    const showFingering = useSettingsStore.getState().showFingering;
     const maxVisibleLabels =
       vp.height < 200 ? 14 : vp.height < 280 ? 22 : vp.height < 360 ? 30 : 42;
     let shownLabelCount = 0;
@@ -263,18 +211,6 @@ export class NoteRenderer {
     // Double-buffer for fingering labels
     const nextFLabels = this.nextFingeringLabels;
     nextFLabels.clear();
-
-    // Double-buffer for Watch mode labels
-    const nextWLabels = this._nextWatchLabels;
-    nextWLabels.clear();
-
-    /**
-     * Watch mode hit-line detection: a note is "at" the hit line when
-     * its time range overlaps the current time within a small window.
-     * We use a slightly wider window than hitWindow so the glow starts
-     * just before the note reaches the line and lingers briefly.
-     */
-    const watchHitWindow = 0.12; // seconds
 
     for (let trackIdx = 0; trackIdx < song.tracks.length; trackIdx++) {
       const track = song.tracks[trackIdx];
@@ -307,12 +243,6 @@ export class NoteRenderer {
         sprite.width = kp.width;
         sprite.height = Math.max(h, 2);
         sprite.visible = true;
-
-        // Vary alpha based on velocity (0-127 -> 0.4-1.0) for dynamics visualization
-        if (note.velocity > 0) {
-          sprite.alpha = 0.4 + (note.velocity / 127) * 0.6;
-        }
-
         nextActive.set(key, sprite);
 
         // ── Note label management ──
@@ -326,48 +256,17 @@ export class NoteRenderer {
             label = this.allocateLabel();
             this._spriteLabels.set(sprite, label);
           }
-          label.text = spellNote(note.midi, this.keySig);
+          label.text = midiToNoteName(note.midi);
           label.x = kp.x + kp.width / 2;
           label.y = rectY + Math.max(h, 2) / 2;
           label.visible = true;
           shownLabelCount += 1;
-        } else if (
-          this.showNoteLabels &&
-          h < MIN_HEIGHT_FOR_LABEL &&
-          shownLabelCount < maxVisibleLabels &&
-          note.time - vp.currentTime <= SMALL_NOTE_LABEL_WINDOW &&
-          note.time - vp.currentTime >= -0.1
-        ) {
-          // Small note near hit line — show a small label above the note
-          let smallLabel = this._spriteSmallLabels.get(sprite);
-          if (!smallLabel) {
-            smallLabel = this.allocateSmallLabel();
-            this._spriteSmallLabels.set(sprite, smallLabel);
-          }
-          smallLabel.text = spellNote(note.midi, this.keySig);
-          smallLabel.x = kp.x + kp.width / 2;
-          smallLabel.y = rectY - 4;
-          smallLabel.visible = true;
-          shownLabelCount += 1;
-
-          // Hide inline label if present
-          const existingLabel = this._spriteLabels.get(sprite);
-          if (existingLabel) {
-            this.releaseLabel(existingLabel);
-            this._spriteLabels.delete(sprite);
-          }
         } else {
           // Hide label if note is too small or labels are disabled
           const existingLabel = this._spriteLabels.get(sprite);
           if (existingLabel) {
             this.releaseLabel(existingLabel);
             this._spriteLabels.delete(sprite);
-          }
-          // Hide small label if present
-          const existingSmall = this._spriteSmallLabels.get(sprite);
-          if (existingSmall) {
-            this.releaseSmallLabel(existingSmall);
-            this._spriteSmallLabels.delete(sprite);
           }
         }
 
@@ -394,35 +293,6 @@ export class NoteRenderer {
             nextFLabels.set(key, label);
           }
         }
-
-        // ── Watch mode: glow + prominent note name at hit line ──
-        if (watchMode) {
-          const noteAtHitLine =
-            note.time <= vp.currentTime + watchHitWindow &&
-            note.time + note.duration >= vp.currentTime - watchHitWindow;
-
-          if (noteAtHitLine) {
-            // Subtle glow: brighten sprite tint toward white (30%)
-            // Only trigger once per note to avoid re-brightening every frame
-            if (!this._watchGlowedKeys.has(key)) {
-              this._watchGlowedKeys.add(key);
-              this.glowWatch(sprite);
-            }
-
-            // Prominent note name label above the note at the hit line
-            let wLabel =
-              this._activeWatchLabels.get(key) ?? nextWLabels.get(key);
-            if (!wLabel) {
-              wLabel = this.allocateWatchLabel();
-            }
-            wLabel.text = spellNote(note.midi, this.keySig);
-            wLabel.x = kp.x + kp.width / 2;
-            // Position the label centered on the note at the hit line area
-            wLabel.y = vp.height - 6;
-            wLabel.visible = true;
-            nextWLabels.set(key, wLabel);
-          }
-        }
       }
     }
 
@@ -446,20 +316,6 @@ export class NoteRenderer {
       }
     }
 
-    // Release unused Watch mode labels
-    for (const [key, label] of this._activeWatchLabels) {
-      if (!nextWLabels.has(key)) {
-        this.releaseWatchLabel(label);
-      }
-    }
-    // Hide all Watch labels if not in Watch mode
-    if (!watchMode) {
-      for (const [, label] of this._activeWatchLabels) {
-        this.releaseWatchLabel(label);
-      }
-      this._watchGlowedKeys.clear();
-    }
-
     // Swap buffers: active ↔ nextActive
     this.nextActive = this.active;
     this.active = nextActive;
@@ -468,9 +324,9 @@ export class NoteRenderer {
     this.nextFingeringLabels = this.activeFingeringLabels;
     this.activeFingeringLabels = nextFLabels;
 
-    // Swap Watch mode label buffers
-    this._nextWatchLabels = this._activeWatchLabels;
-    this._activeWatchLabels = nextWLabels;
+    // Draw beat grid lines and hit line
+    this._drawBeatGrid(song, vp);
+    this._drawHitLine(vp);
   }
 
   /**
@@ -488,6 +344,8 @@ export class NoteRenderer {
     }
     this._comboHandles.clear();
 
+    this._gridGraphics.clear();
+    this._hitLineGraphics.clear();
     this.container.removeChildren();
     this.pool.length = 0;
     this.active.clear();
@@ -495,11 +353,9 @@ export class NoteRenderer {
     this.activeNotes.clear();
     this.keyPositions.clear();
 
-    // Clean up label pools
+    // Clean up label pool
     this._labelPool.length = 0;
     this._spriteLabels.clear();
-    this._smallLabelPool.length = 0;
-    this._spriteSmallLabels.clear();
 
     // Clean up fingering overlay
     this.fingeringLabelPool.length = 0;
@@ -507,12 +363,6 @@ export class NoteRenderer {
     this.nextFingeringLabels.clear();
     this.fingeringCache.clear();
     this.lastSongFileName = "";
-
-    // Clean up Watch mode overlay
-    this._watchLabelPool.length = 0;
-    this._activeWatchLabels.clear();
-    this._nextWatchLabels.clear();
-    this._watchGlowedKeys.clear();
   }
 
   private createSprite(): Sprite {
@@ -556,32 +406,6 @@ export class NoteRenderer {
     this._labelPool.push(label);
   }
 
-  // ── Small note label pool (above short notes near hit line) ──
-
-  private createSmallLabel(): Text {
-    const t = new Text({ text: "", style: getSmallLabelStyle() });
-    t.anchor.set(0.5, 1); // bottom-center anchor (label sits above the note)
-    t.visible = false;
-    t.alpha = 0.85;
-    this.container.addChild(t);
-    return t;
-  }
-
-  private allocateSmallLabel(): Text {
-    if (this._smallLabelPool.length === 0) {
-      const grow = 16;
-      for (let i = 0; i < grow; i++) {
-        this._smallLabelPool.push(this.createSmallLabel());
-      }
-    }
-    return this._smallLabelPool.pop()!;
-  }
-
-  private releaseSmallLabel(label: Text): void {
-    label.visible = false;
-    this._smallLabelPool.push(label);
-  }
-
   private release(sprite: Sprite): void {
     // Cancel any in-flight animation before returning sprite to pool
     const handle = this._animHandles.get(sprite);
@@ -599,73 +423,6 @@ export class NoteRenderer {
       this.releaseLabel(label);
       this._spriteLabels.delete(sprite);
     }
-
-    // Release the associated small label if present
-    const smallLabel = this._spriteSmallLabels.get(sprite);
-    if (smallLabel) {
-      this.releaseSmallLabel(smallLabel);
-      this._spriteSmallLabels.delete(sprite);
-    }
-  }
-
-  // ── Watch mode label pool ────────────────────────────────────────
-
-  private createWatchLabel(): Text {
-    const t = new Text({ text: "", style: getWatchLabelStyle() });
-    t.anchor.set(0.5);
-    t.visible = false;
-    this.container.addChild(t);
-    return t;
-  }
-
-  private allocateWatchLabel(): Text {
-    if (this._watchLabelPool.length === 0) {
-      const grow = 16;
-      for (let i = 0; i < grow; i++) {
-        this._watchLabelPool.push(this.createWatchLabel());
-      }
-    }
-    return this._watchLabelPool.pop()!;
-  }
-
-  private releaseWatchLabel(label: Text): void {
-    label.visible = false;
-    this._watchLabelPool.push(label);
-  }
-
-  /**
-   * Apply a subtle glow to a note sprite in Watch mode.
-   * Brightens the tint toward white (30%) with a gentle pulse over 350ms,
-   * then eases back to the original tint. Designed to be noticeable but
-   * not distracting — purely educational highlight.
-   */
-  private glowWatch(sprite: Sprite): void {
-    const existing = this._animHandles.get(sprite);
-    if (existing !== undefined) cancelAnimationFrame(existing);
-
-    const originalTint = sprite.tint;
-    const duration = 350; // ms
-    let start = -1;
-
-    const tick = (now: number): void => {
-      if (!this._animHandles.has(sprite)) return;
-
-      if (start < 0) start = now;
-      const t = Math.min((now - start) / duration, 1);
-
-      // Ease in-out: brighten to 30% white then back
-      const brightness =
-        t < 0.4 ? (t / 0.4) * 0.3 : 0.3 * (1 - (t - 0.4) / 0.6);
-      sprite.tint = lerpColor(originalTint, 0xffffff, brightness);
-
-      if (t < 1) {
-        this._animHandles.set(sprite, requestAnimationFrame(tick));
-      } else {
-        this._animHandles.delete(sprite);
-        sprite.tint = originalTint;
-      }
-    };
-    this._animHandles.set(sprite, requestAnimationFrame(tick));
   }
 
   // ── Fingering label pool ──────────────────────────────────────────
@@ -718,20 +475,16 @@ export class NoteRenderer {
       const track = song.tracks[trackIdx];
       if (track.notes.length === 0) continue;
 
+      // Heuristic: tracks with mostly lower notes (avg midi < 60) are left hand
       const avgMidi =
         track.notes.reduce((sum, n) => sum + n.midi, 0) / track.notes.length;
-      const hand = assignHand(trackIdx, song.tracks.length, avgMidi);
+      const hand = avgMidi < 60 ? "left" : "right";
 
       const results = this.fingeringEngine.computeFingering(track.notes, hand);
-      const trackCache = new Map<string, Finger>();
+      const trackCache = new Map<number, Finger>();
 
-      for (let i = 0; i < results.length; i++) {
-        // Use the original note's time for the composite key so lookups
-        // by ParsedNote (midi + time) work correctly even when the same
-        // pitch appears multiple times with different fingerings.
-        const note = track.notes[i];
-        const key = `${note.midi}:${Math.round(note.time * 1e6)}`;
-        trackCache.set(key, results[i].finger);
+      for (const result of results) {
+        trackCache.set(result.midi, result.finger);
       }
 
       this.fingeringCache.set(String(trackIdx), trackCache);
@@ -742,16 +495,14 @@ export class NoteRenderer {
   private getFingerForNote(trackIdx: number, note: ParsedNote): Finger | null {
     const trackCache = this.fingeringCache.get(String(trackIdx));
     if (!trackCache) return null;
-    const key = `${note.midi}:${Math.round(note.time * 1e6)}`;
-    return trackCache.get(key) ?? null;
+    return trackCache.get(note.midi) ?? null;
   }
 
   // ── Practice mode visual feedback ──────────────────────────────────
 
   /**
    * Flash a bright hit effect on a note sprite.
-   * Tint pulses from white → bright accent color over ~400ms with a
-   * more dramatic effect so young children can easily notice it.
+   * Tint shifts to white and alpha pulses, then restores over ~200ms.
    * Animation is automatically cancelled if the sprite is recycled.
    */
   flashHit(sprite: Sprite): void {
@@ -761,9 +512,7 @@ export class NoteRenderer {
 
     const originalTint = sprite.tint;
     const originalAlpha = sprite.alpha;
-    /** Bright accent color to pulse toward after the initial white flash */
-    const accentColor = 0x66ffcc;
-    const duration = 400; // ms (increased from 200 for child visibility)
+    const duration = 200; // ms
     let start = -1;
 
     const tick = (now: number): void => {
@@ -774,29 +523,10 @@ export class NoteRenderer {
       const elapsed = now - start;
       const t = Math.min(elapsed / duration, 1);
 
-      // Phase 1 (0–0.2): flash to white
-      // Phase 2 (0.2–0.5): transition white → accent color
-      // Phase 3 (0.5–1.0): ease accent → original tint
-      if (t < 0.2) {
-        const p = t / 0.2;
-        sprite.tint = lerpColor(originalTint, 0xffffff, p * 0.85);
-        sprite.alpha = originalAlpha + (1 - originalAlpha) * p * 0.6;
-      } else if (t < 0.5) {
-        const p = (t - 0.2) / 0.3;
-        sprite.tint = lerpColor(0xffffff, accentColor, p * 0.7);
-        sprite.alpha =
-          originalAlpha + (1 - originalAlpha) * 0.6 * (1 - p * 0.3);
-      } else {
-        const p = (t - 0.5) / 0.5;
-        const easeOut = p * (2 - p); // ease-out quad
-        sprite.tint = lerpColor(
-          lerpColor(0xffffff, accentColor, 0.7),
-          originalTint,
-          easeOut,
-        );
-        sprite.alpha =
-          originalAlpha + (1 - originalAlpha) * 0.42 * (1 - easeOut);
-      }
+      // Quick flash up then ease back
+      const flash = t < 0.3 ? t / 0.3 : 1 - (t - 0.3) / 0.7;
+      sprite.tint = lerpColor(originalTint, 0xffffff, flash * 0.7);
+      sprite.alpha = originalAlpha + (1 - originalAlpha) * flash * 0.5;
 
       if (t < 1) {
         this._animHandles.set(sprite, requestAnimationFrame(tick));
@@ -810,10 +540,8 @@ export class NoteRenderer {
   }
 
   /**
-   * Mark a note sprite as missed: brief red tint flash (300ms), then
-   * fade to gray with reduced opacity. More visible than a plain fade
-   * so children clearly notice they missed the note.
-   * Cancelled if sprite is recycled.
+   * Mark a note sprite as missed: fade to gray and reduce opacity.
+   * Transition runs over ~150ms. Cancelled if sprite is recycled.
    */
   markMiss(sprite: Sprite): void {
     const existing = this._animHandles.get(sprite);
@@ -821,33 +549,18 @@ export class NoteRenderer {
 
     const originalTint = sprite.tint;
     const originalAlpha = sprite.alpha;
-    /** Red tint color for the initial miss flash */
-    const missRedTint = 0xff4444;
-    const redDuration = 300; // ms — red flash phase
-    const fadeDuration = 150; // ms — gray fade phase
-    const totalDuration = redDuration + fadeDuration;
+    const duration = 150;
     let start = -1;
 
     const tick = (now: number): void => {
       if (!this._animHandles.has(sprite)) return;
 
       if (start < 0) start = now;
-      const elapsed = now - start;
-      const t = Math.min(elapsed / totalDuration, 1);
+      const t = Math.min((now - start) / duration, 1);
+      const ease = t * (2 - t); // ease-out quad
 
-      if (elapsed < redDuration) {
-        // Phase 1: flash red then ease back toward original
-        const p = elapsed / redDuration;
-        const flash = p < 0.3 ? p / 0.3 : 1 - (p - 0.3) / 0.7;
-        sprite.tint = lerpColor(originalTint, missRedTint, flash * 0.8);
-        sprite.alpha = originalAlpha;
-      } else {
-        // Phase 2: fade to gray + reduce opacity
-        const p = (elapsed - redDuration) / fadeDuration;
-        const ease = p * (2 - p); // ease-out quad
-        sprite.tint = lerpColor(originalTint, 0x888888, ease);
-        sprite.alpha = originalAlpha - (originalAlpha - 0.4) * ease;
-      }
+      sprite.tint = lerpColor(originalTint, 0x888888, ease);
+      sprite.alpha = originalAlpha - (originalAlpha - 0.4) * ease;
 
       if (t < 1) {
         this._animHandles.set(sprite, requestAnimationFrame(tick));
@@ -860,12 +573,21 @@ export class NoteRenderer {
 
   /**
    * Show a floating combo counter at the given canvas position.
-   * The number pops in with a scale bounce (1.0 → 1.3 → 1.0),
-   * drifts upward, then fades out over 1200ms total so children
-   * can clearly see their streak count.
+   * The number pops in with scale, drifts upward, then fades out.
    */
   showCombo(count: number, x: number, y: number): void {
-    const style = getComboStyle();
+    const style = new TextStyle({
+      fontFamily: "Nunito Variable, Nunito, sans-serif",
+      fontSize: 28,
+      fontWeight: "800",
+      fill: 0xffffff,
+      dropShadow: {
+        color: 0x000000,
+        blur: 4,
+        distance: 1,
+        alpha: 0.35,
+      },
+    });
     const label = new Text({ text: `${count}x`, style });
     label.anchor.set(0.5);
     label.x = x;
@@ -874,7 +596,7 @@ export class NoteRenderer {
     label.scale.set(0.3);
     this.container.addChild(label);
 
-    const duration = 1200; // ms (increased from 600 for child visibility)
+    const duration = 600;
     let start = -1;
 
     const tick = (now: number): void => {
@@ -884,19 +606,14 @@ export class NoteRenderer {
       if (start < 0) start = now;
       const t = Math.min((now - start) / duration, 1);
 
-      // Phase 1 (0–0.12): pop in with overshoot to 1.3x
-      // Phase 2 (0.12–0.25): bounce back from 1.3x → 1.0x
-      // Phase 3 (0.25–0.7): hold at full scale + drift
-      // Phase 4 (0.7–1.0): fade out
-      if (t < 0.12) {
-        const p = t / 0.12;
-        label.scale.set(0.3 + p * 1.0); // 0.3 → 1.3
-        label.alpha = Math.min(p * 1.5, 1);
-      } else if (t < 0.25) {
-        const p = (t - 0.12) / 0.13;
-        const easeOut = p * (2 - p);
-        label.scale.set(1.3 - 0.3 * easeOut); // 1.3 → 1.0
-        label.alpha = 1;
+      // Phase 1 (0–0.2): pop in
+      // Phase 2 (0.2–0.7): hold + drift
+      // Phase 3 (0.7–1.0): fade out
+      if (t < 0.2) {
+        const p = t / 0.2;
+        const overshoot = 1 + 0.2 * Math.sin(p * Math.PI);
+        label.scale.set(overshoot);
+        label.alpha = p;
       } else if (t < 0.7) {
         label.scale.set(1);
         label.alpha = 1;
@@ -906,7 +623,7 @@ export class NoteRenderer {
         label.scale.set(1 - p * 0.3);
       }
 
-      label.y = y - 60 * t; // drift further (40 → 60) given longer duration
+      label.y = y - 40 * t;
 
       if (t < 1) {
         this._comboHandles.delete(handle);
@@ -935,4 +652,151 @@ export class NoteRenderer {
     const key = noteKey(trackIdx, midi, time);
     return this.active.get(key) ?? null;
   }
+
+  // ── Beat grid lines (measure lines thick, beat lines thin) ──────
+
+  /**
+   * Draw horizontal lines at each beat and measure boundary within the visible
+   * time range. Measure lines are thicker and more opaque than beat lines.
+   * R2-006: Skips redraw if the viewport key hasn't changed.
+   */
+  private _drawBeatGrid(song: ParsedSong, vp: Viewport): void {
+    // R2-006: Build a key from the viewport state that affects the grid
+    const vpKey = `${vp.currentTime.toFixed(4)}:${vp.pps}:${vp.width}:${vp.height}`;
+    if (vpKey === this._lastGridVpKey) return;
+    this._lastGridVpKey = vpKey;
+
+    const g = this._gridGraphics;
+    g.clear();
+
+    const [startTime, endTime] = getVisibleTimeRange(vp);
+    const gridColor = hexToPixi(useThemeStore.getState().theme.colors.gridLine);
+
+    const beats = computeBeatTimesInRange(
+      startTime,
+      endTime,
+      song.tempos,
+      song.timeSignatures,
+    );
+
+    for (const beat of beats) {
+      const screenY = noteToScreenY(beat.time, vp);
+      if (screenY < -2 || screenY > vp.height + 2) continue;
+
+      const isMeasure = beat.beatInMeasure === 0;
+      const thickness = isMeasure ? 2 : 1;
+      const alpha = isMeasure ? 0.5 : 0.2;
+
+      g.rect(0, screenY - thickness / 2, vp.width, thickness);
+      g.fill({ color: gridColor, alpha });
+    }
+  }
+
+  // ── Hit line (horizontal line at the bottom where notes are hit) ──
+
+  private _drawHitLine(vp: Viewport): void {
+    const g = this._hitLineGraphics;
+    g.clear();
+
+    const hitColor = getHitLineColor();
+    const hitY = vp.height;
+
+    // Glow layer
+    g.rect(0, hitY - 2, vp.width, 4);
+    g.fill({ color: hitColor, alpha: 0.15 });
+
+    // Main line
+    g.rect(0, hitY - 1, vp.width, 2);
+    g.fill({ color: hitColor, alpha: 0.7 });
+  }
+}
+
+// ── Beat time computation helper ──────────────────────────────────────
+
+interface BeatInfo {
+  time: number;
+  /** 0 = first beat of the measure (downbeat) */
+  beatInMeasure: number;
+}
+
+/**
+ * Compute beat times within a given time range, respecting tempo and
+ * time signature changes. Used for rendering beat grid lines.
+ *
+ * R2-003: Walks the full tempo map to accumulate actual beat positions,
+ * rather than using a single BPM at startTime. This correctly handles
+ * songs with multiple tempo changes.
+ *
+ * R2-012: Falls back to 120 BPM / 4/4 when tempos or timeSignatures are empty.
+ */
+function computeBeatTimesInRange(
+  startTime: number,
+  endTime: number,
+  tempos: TempoEvent[],
+  timeSignatures: TimeSignatureEvent[],
+): BeatInfo[] {
+  const results: BeatInfo[] = [];
+
+  // R2-012: Safe defaults when arrays are empty
+  const defaultBpm = tempos.length > 0 ? tempos[0].bpm : 120;
+  const defaultNumerator =
+    timeSignatures.length > 0 ? timeSignatures[0].numerator : 4;
+
+  // R2-003: Walk from time=0 through the tempo map, accumulating beat positions.
+  let currentBpm = defaultBpm;
+  let currentNumerator = defaultNumerator;
+  let tempoIdx = 0;
+  let tsIdx = 0;
+  let beatTime = 0;
+  let beatInMeasure = 0;
+
+  // Skip past tempo/time-sig events that are at time 0
+  while (tempoIdx < tempos.length && tempos[tempoIdx].time <= 0) {
+    currentBpm = tempos[tempoIdx].bpm;
+    tempoIdx++;
+  }
+  while (tsIdx < timeSignatures.length && timeSignatures[tsIdx].time <= 0) {
+    currentNumerator = timeSignatures[tsIdx].numerator;
+    tsIdx++;
+  }
+
+  const maxBeats = 2000; // safety cap
+  let emitted = 0;
+
+  while (beatTime < endTime + 0.001 && emitted < maxBeats) {
+    let secondsPerBeat = 60 / currentBpm;
+
+    // Apply any tempo/time-sig changes at this beat position
+    let changed = false;
+    while (tempoIdx < tempos.length && tempos[tempoIdx].time <= beatTime) {
+      currentBpm = tempos[tempoIdx].bpm;
+      secondsPerBeat = 60 / currentBpm;
+      tempoIdx++;
+      changed = true;
+    }
+    while (
+      tsIdx < timeSignatures.length &&
+      timeSignatures[tsIdx].time <= beatTime
+    ) {
+      currentNumerator = timeSignatures[tsIdx].numerator;
+      tsIdx++;
+      beatInMeasure = 0;
+      changed = true;
+    }
+    if (changed) {
+      secondsPerBeat = 60 / currentBpm;
+    }
+
+    // Emit this beat if it's in the visible range
+    if (beatTime >= startTime - 0.01) {
+      results.push({ time: beatTime, beatInMeasure });
+      emitted++;
+    }
+
+    // Advance to next beat
+    beatTime += secondsPerBeat;
+    beatInMeasure = (beatInMeasure + 1) % currentNumerator;
+  }
+
+  return results;
 }

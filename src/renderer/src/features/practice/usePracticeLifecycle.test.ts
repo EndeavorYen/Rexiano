@@ -388,13 +388,16 @@ describe("usePracticeLifecycle", () => {
     );
   });
 
-  test("keeps existing valid activeTracks selection", () => {
+  test("always initializes activeTracks to all tracks for a new song", () => {
     const audioRef = makeAudioRef();
     const song = makeSong(3);
     practiceState.activeTracks = new Set([0, 1]);
     renderHook(() => usePracticeLifecycle(song, audioRef));
 
-    expect(practiceState.setActiveTracks).not.toHaveBeenCalled();
+    // R2-008: Always set all tracks for a new song
+    expect(practiceState.setActiveTracks).toHaveBeenCalledWith(
+      new Set([0, 1, 2]),
+    );
   });
 
   test("does not call waitMode.init when getPracticeEngines returns null waitMode", () => {
@@ -424,12 +427,13 @@ describe("usePracticeLifecycle", () => {
   });
 
   describe("onResume callback", () => {
-    test("resumes audio engine and starts scheduler", async () => {
+    test("resumes audio engine and starts scheduler when isPlaying", async () => {
       const audioRef = makeAudioRef();
       const mockScheduler = { stop: vi.fn(), start: vi.fn(), seek: vi.fn() };
       const mockEngine = { resume: vi.fn().mockResolvedValue(undefined) };
       audioRef.current.scheduler = mockScheduler as unknown as AudioScheduler;
       audioRef.current.engine = mockEngine as unknown as AudioEngine;
+      playbackState.isPlaying = true;
       const song = makeSong();
 
       renderHook(() => usePracticeLifecycle(song, audioRef));
@@ -447,16 +451,21 @@ describe("usePracticeLifecycle", () => {
   });
 
   describe("onHit callback", () => {
-    test("records a hit in practice store", () => {
+    test("records a hit in practice store with timing delta", () => {
       const audioRef = makeAudioRef();
       const song = makeSong();
+      // In wait mode, timing delta is undefined (not meaningful)
+      practiceState.mode = "wait";
 
       renderHook(() => usePracticeLifecycle(song, audioRef));
 
       const callbacks = mockWaitMode.setCallbacks.mock.calls[0][0];
       callbacks.onHit(60, 1.0);
 
-      expect(practiceState.recordHit).toHaveBeenCalledWith("60:1000000");
+      expect(practiceState.recordHit).toHaveBeenCalledWith(
+        "60:1000000",
+        undefined,
+      );
     });
   });
 

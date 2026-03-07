@@ -123,6 +123,9 @@ export interface TranslationMap {
   "practice.encourageGettingThere": string;
   "practice.encourageYouCanDoIt": string;
   "practice.scoreLabel": string;
+  "practice.timingEarly": string;
+  "practice.timingLate": string;
+  "practice.timingOnTime": string;
   "practice.mode.watchDesc": string;
   "practice.mode.waitDesc": string;
   "practice.mode.freeDesc": string;

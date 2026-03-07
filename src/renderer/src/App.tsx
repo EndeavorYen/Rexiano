@@ -574,18 +574,9 @@ function App(): React.JSX.Element {
     return () => setMidiCCHandler(null);
   }, []);
 
-  // ─── Phase 6.5: Startup wiring — speed sync to AudioScheduler ──
-  // When practice speed changes, sync the multiplier to the AudioScheduler
-  // so audio playback rate matches the visual slow-down.
-  useEffect(() => {
-    const unsub = usePracticeStore.subscribe((state, prev) => {
-      if (state.speed === prev.speed) return;
-      audioRef.current.scheduler?.setSpeed(state.speed);
-    });
-    return unsub;
-  }, []);
-
   // ─── Phase 6: Practice Engine lifecycle (extracted to hook) ──
+  // R3-003: Speed -> AudioScheduler sync is now inside usePracticeLifecycle
+  // to avoid duplicate subscribers.
   const { handleNoteRendererReady, noteRendererRef } = usePracticeLifecycle(
     song,
     audioRef,

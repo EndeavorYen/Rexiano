@@ -29,6 +29,8 @@ function makeScore(accuracy: number, total = 10): PracticeScore {
     accuracy,
     currentStreak: 0,
     bestStreak: 5,
+    avgTimingDeltaMs: null,
+    lastTimingDeltaMs: null,
   };
 }
 
@@ -53,7 +55,6 @@ const fakeSong: ParsedSong = {
   tracks: [{ name: "Piano", instrument: "Piano", channel: 0, notes: [] }],
   tempos: [{ time: 0, bpm: 120 }],
   timeSignatures: [{ time: 0, numerator: 4, denominator: 4 }],
-  keySignatures: [],
   noteCount: 100,
 };
 
@@ -222,6 +223,8 @@ describe("initAutoSave()", () => {
         accuracy: 0,
         currentStreak: 0,
         bestStreak: 0,
+        avgTimingDeltaMs: null,
+        lastTimingDeltaMs: null,
       },
       noteResults: new Map(),
     });

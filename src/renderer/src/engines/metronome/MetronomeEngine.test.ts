@@ -5,8 +5,9 @@ import { MetronomeEngine } from "./MetronomeEngine";
 function createMockAudioContext(): AudioContext {
   let currentTime = 0;
 
-  const mockBufferSource = {
-    buffer: null as AudioBuffer | null,
+  const mockOscillator = {
+    type: "sine" as OscillatorType,
+    frequency: { value: 0 },
     connect: vi.fn(),
     start: vi.fn(),
     stop: vi.fn(),
@@ -24,22 +25,6 @@ function createMockAudioContext(): AudioContext {
     disconnect: vi.fn(),
   };
 
-  const mockFilter = {
-    type: "bandpass" as BiquadFilterType,
-    frequency: { value: 0 },
-    Q: { value: 0 },
-    connect: vi.fn(),
-    disconnect: vi.fn(),
-  };
-
-  const mockBuffer = {
-    getChannelData: vi.fn(() => new Float32Array(128)),
-    length: 128,
-    sampleRate: 44100,
-    numberOfChannels: 1,
-    duration: 128 / 44100,
-  };
-
   return {
     get currentTime() {
       return currentTime;
@@ -47,13 +32,7 @@ function createMockAudioContext(): AudioContext {
     set currentTime(t: number) {
       currentTime = t;
     },
-    sampleRate: 44100,
-    createBufferSource: vi.fn(() => ({ ...mockBufferSource })),
-    createBiquadFilter: vi.fn(() => ({
-      ...mockFilter,
-      frequency: { value: 0 },
-      Q: { value: 0 },
-    })),
+    createOscillator: vi.fn(() => ({ ...mockOscillator })),
     createGain: vi.fn(() => ({
       ...mockGain,
       gain: {
@@ -62,7 +41,6 @@ function createMockAudioContext(): AudioContext {
         exponentialRampToValueAtTime: vi.fn(),
       },
     })),
-    createBuffer: vi.fn(() => ({ ...mockBuffer })),
     destination: {},
   } as unknown as AudioContext;
 }
@@ -134,24 +112,21 @@ describe("MetronomeEngine", () => {
     // Advance timer to trigger at least one tick
     vi.advanceTimersByTime(30);
 
-    expect(ctx.createBufferSource).toHaveBeenCalled();
-    expect(ctx.createBiquadFilter).toHaveBeenCalled();
+    expect(ctx.createOscillator).toHaveBeenCalled();
     expect(ctx.createGain).toHaveBeenCalled();
   });
 
-  it("uses higher bandpass cutoff for strong beats (beat 0)", () => {
+  it("uses higher frequency for strong beats (beat 0)", () => {
     metronome.setEnabled(true);
     metronome.start(120, 4);
 
-    // First tick should create a bandpass filter at accent cutoff (2000Hz)
+    // First tick should create oscillator at strong frequency (1500Hz)
     vi.advanceTimersByTime(30);
 
-    const filterCall = vi.mocked(ctx.createBiquadFilter).mock.results[0];
-    if (filterCall) {
-      const filter = filterCall.value as unknown as {
-        frequency: { value: number };
-      };
-      expect(filter.frequency.value).toBe(2000); // accent beat
+    const oscCall = vi.mocked(ctx.createOscillator).mock.results[0];
+    if (oscCall) {
+      const osc = oscCall.value as unknown as { frequency: { value: number } };
+      expect(osc.frequency.value).toBe(1500); // strong beat
     }
   });
 
@@ -211,5 +186,47 @@ describe("MetronomeEngine", () => {
     // Initially should be 0 (or advance to next after first tick)
     expect(metronome.currentBeat).toBeGreaterThanOrEqual(0);
     expect(metronome.currentBeat).toBeLessThan(4);
+  });
+
+  // ── R2-009: resetBeat() ──────────────────────────────
+  it("resetBeat() resets currentBeat to 0", () => {
+    metronome.setEnabled(true);
+    metronome.start(120, 4);
+
+    // Advance some beats
+    for (let i = 0; i < 20; i++) {
+      (ctx as unknown as { currentTime: number }).currentTime = i * 0.025;
+      vi.advanceTimersByTime(25);
+    }
+
+    metronome.resetBeat();
+    expect(metronome.currentBeat).toBe(0);
+  });
+
+  // ── R2-005: setBpm ratio recalculation ──────────────
+  it("setBpm() recalculates nextClickTime while running", () => {
+    metronome.setEnabled(true);
+    metronome.start(120, 4);
+    // Just verify it doesn't throw and BPM updates
+    metronome.setBpm(180);
+    expect(metronome.bpm).toBe(180);
+  });
+
+  // ── setBeatsPerMeasure ────────────────────────────────
+  it("setBeatsPerMeasure clamps to minimum 1", () => {
+    metronome.setEnabled(true);
+    metronome.start(120, 4);
+    metronome.setBeatsPerMeasure(0);
+    expect(metronome.beatsPerMeasure).toBe(1);
+  });
+
+  // ── Volume control ────────────────────────────────────
+  it("setVolume() clamps to [0, 1]", () => {
+    metronome.setVolume(-0.5);
+    expect(metronome.volume).toBe(0);
+    metronome.setVolume(1.5);
+    expect(metronome.volume).toBe(1);
+    metronome.setVolume(0.7);
+    expect(metronome.volume).toBe(0.7);
   });
 });
