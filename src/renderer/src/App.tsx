@@ -1086,7 +1086,18 @@ function App(): React.JSX.Element {
             {/* Sheet music panel */}
             <div
               className="relative"
-              style={{ display: displayMode === "falling" ? "none" : "block" }}
+              style={{
+                display: displayMode === "falling" ? "none" : "block",
+                ...(displayMode === "split"
+                  ? {
+                      flex: "0 0 30%",
+                      minHeight: 140,
+                      maxHeight: "40%",
+                      borderBottom: "1px solid var(--color-border, #e0e0e0)",
+                      overflow: "auto",
+                    }
+                  : {}),
+              }}
             >
               <SheetMusicPanel notationData={notationData} mode={displayMode} />
             </div>

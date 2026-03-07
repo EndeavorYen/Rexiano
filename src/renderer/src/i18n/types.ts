@@ -200,6 +200,7 @@ export interface TranslationMap {
   "sheetMusic.vexflowError": string;
   "sheetMusic.vexflowErrorHint": string;
   "sheetMusic.modeFalling": string;
+  "sheetMusic.modeSplit": string;
   "sheetMusic.modeSheet": string;
   "sheetMusic.displayMode": string;
   "sheetMusic.zoomIn": string;

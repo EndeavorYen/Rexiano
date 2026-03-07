@@ -11,7 +11,8 @@ import type { TempoEvent } from "@renderer/engines/midi/types";
 /** Display mode for the sheet music panel */
 export type DisplayMode =
   | "sheet" // Sheet music only
-  | "falling"; // Falling notes only (default)
+  | "falling" // Falling notes only (default)
+  | "split"; // Sheet music + falling notes side by side
 
 /** A quantized note ready for notation rendering */
 export interface NotationNote {

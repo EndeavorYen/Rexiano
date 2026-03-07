@@ -200,6 +200,7 @@ export const zhTW: TranslationMap = {
   "sheetMusic.vexflowError": "樂譜渲染器載入失敗",
   "sheetMusic.vexflowErrorHint": "請嘗試重新載入應用程式",
   "sheetMusic.modeFalling": "音符",
+  "sheetMusic.modeSplit": "雙顯示",
   "sheetMusic.modeSheet": "樂譜",
   "sheetMusic.displayMode": "顯示模式",
   "sheetMusic.zoomIn": "放大",

@@ -3,7 +3,7 @@
  * falling notes or sheet music display modes.
  */
 
-import { Music, Piano } from "lucide-react";
+import { Music, Piano, Columns2 } from "lucide-react";
 import { usePracticeStore } from "@renderer/stores/usePracticeStore";
 import { useTranslation } from "@renderer/i18n/useTranslation";
 import type { DisplayMode } from "./types";
@@ -15,6 +15,7 @@ const modes: {
   Icon: typeof Music;
 }[] = [
   { value: "falling", labelKey: "sheetMusic.modeFalling", Icon: Piano },
+  { value: "split", labelKey: "sheetMusic.modeSplit", Icon: Columns2 },
   { value: "sheet", labelKey: "sheetMusic.modeSheet", Icon: Music },
 ];
 
