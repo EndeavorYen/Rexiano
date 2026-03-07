@@ -68,6 +68,11 @@ export class AudioEngine implements IAudioEngine {
     return this._audioContext;
   }
 
+  /** Expose master gain node so other engines can route audio through it */
+  get masterGain(): GainNode | null {
+    return this._masterGain;
+  }
+
   setRuntimeErrorHandler(handler: ((error: unknown) => void) | null): void {
     this._onRuntimeError = handler;
   }
@@ -181,8 +186,8 @@ export class AudioEngine implements IAudioEngine {
       const notes = this._activeNotes.get(midi);
       if (!notes || notes.length === 0) return;
 
-      // Release the oldest active note for this MIDI key
-      const activeNote = notes.shift()!;
+      // Release the most recently started note for this MIDI key (LIFO)
+      const activeNote = notes.pop()!;
       if (notes.length === 0) this._activeNotes.delete(midi);
 
       // If sustain pedal is active, hold the note instead of releasing
@@ -320,8 +325,12 @@ export class AudioEngine implements IAudioEngine {
   }
 
   setVolume(volume: number): void {
-    if (this._masterGain) {
-      this._masterGain.gain.value = Math.max(0, Math.min(1, volume));
+    if (this._masterGain && this._audioContext) {
+      const clamped = Math.max(0, Math.min(1, volume));
+      const now = this._audioContext.currentTime;
+      this._masterGain.gain.cancelScheduledValues(now);
+      this._masterGain.gain.setValueAtTime(this._masterGain.gain.value, now);
+      this._masterGain.gain.linearRampToValueAtTime(clamped, now + 0.008);
     }
   }
 

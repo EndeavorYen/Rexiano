@@ -11,10 +11,15 @@ let _engine: MetronomeEngine | null = null;
 /**
  * Initialise the metronome singleton.
  * Safe to call multiple times — only the first call creates the instance.
+ * @param audioContext The AudioContext for scheduling
+ * @param destination  Audio node to route clicks through (e.g. master GainNode)
  */
-export function initMetronome(audioContext: AudioContext): MetronomeEngine {
+export function initMetronome(
+  audioContext: AudioContext,
+  destination?: AudioNode,
+): MetronomeEngine {
   if (!_engine) {
-    _engine = new MetronomeEngine(audioContext);
+    _engine = new MetronomeEngine(audioContext, destination);
   }
   return _engine;
 }

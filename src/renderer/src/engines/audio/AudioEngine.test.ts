@@ -208,26 +208,40 @@ describe("AudioEngine", () => {
       expect(() => engine.setVolume(0.5)).not.toThrow();
     });
 
-    test("sets clamped value on masterGain when available", () => {
-      const mockGainParam = { value: 0.5 };
+    test("ramps to clamped value on masterGain when available", () => {
+      let lastRampTarget = 0;
+      const mockGainParam = {
+        value: 0.5,
+        cancelScheduledValues: vi.fn(),
+        setValueAtTime: vi.fn(),
+        linearRampToValueAtTime: vi.fn((val: number) => {
+          lastRampTarget = val;
+        }),
+      };
       const mockGain = { gain: mockGainParam } as unknown as GainNode;
+      const mockCtx = { currentTime: 0 } as unknown as AudioContext;
 
       (engine as any)._masterGain = mockGain;
+      (engine as any)._audioContext = mockCtx;
 
       engine.setVolume(0.7);
-      expect(mockGainParam.value).toBe(0.7);
+      expect(lastRampTarget).toBe(0.7);
 
       engine.setVolume(-0.5);
-      expect(mockGainParam.value).toBe(0); // clamped to 0
+      expect(lastRampTarget).toBe(0); // clamped to 0
 
       engine.setVolume(1.5);
-      expect(mockGainParam.value).toBe(1); // clamped to 1
+      expect(lastRampTarget).toBe(1); // clamped to 1
 
       engine.setVolume(0);
-      expect(mockGainParam.value).toBe(0);
+      expect(lastRampTarget).toBe(0);
 
       engine.setVolume(1);
-      expect(mockGainParam.value).toBe(1);
+      expect(lastRampTarget).toBe(1);
+
+      // Verify smooth ramp is used (not direct assignment)
+      expect(mockGainParam.cancelScheduledValues).toHaveBeenCalled();
+      expect(mockGainParam.linearRampToValueAtTime).toHaveBeenCalledTimes(5);
     });
   });
 

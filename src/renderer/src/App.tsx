@@ -273,7 +273,7 @@ function App(): React.JSX.Element {
       // Rebind metronome to the latest live AudioContext after recovery/rebuild.
       disposeMetronome();
       if (engine.audioContext) {
-        initMetronome(engine.audioContext);
+        initMetronome(engine.audioContext, engine.masterGain ?? undefined);
       }
 
       scheduler.setSong(targetSong);

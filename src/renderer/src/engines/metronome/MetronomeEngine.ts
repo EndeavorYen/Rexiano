@@ -26,6 +26,7 @@ const SCHEDULE_INTERVAL = 25;
 
 export class MetronomeEngine {
   private _audioContext: AudioContext;
+  private _destination: AudioNode;
   private _enabled = false;
   private _bpm = 120;
   private _beatsPerMeasure = 4;
@@ -45,8 +46,14 @@ export class MetronomeEngine {
   /** Callback fired when count-in finishes */
   private _onCountInComplete: (() => void) | null = null;
 
-  constructor(audioContext: AudioContext) {
+  /**
+   * @param audioContext The AudioContext to use for scheduling
+   * @param destination  Audio node to connect clicks to (e.g. master GainNode).
+   *                     Defaults to audioContext.destination if not provided.
+   */
+  constructor(audioContext: AudioContext, destination?: AudioNode) {
     this._audioContext = audioContext;
+    this._destination = destination ?? audioContext.destination;
   }
 
   /** Current BPM */
@@ -225,12 +232,13 @@ export class MetronomeEngine {
     osc.frequency.value = isStrong ? STRONG_FREQ : NORMAL_FREQ;
 
     // Sharp attack, quick decay — scaled by _volume
-    const peakGain = this._volume * 0.5;
+    // Metronome routes through master GainNode, so no extra attenuation needed
+    const peakGain = this._volume;
     gain.gain.setValueAtTime(Math.max(peakGain, 0.001), time);
     gain.gain.exponentialRampToValueAtTime(0.001, time + CLICK_DURATION);
 
     osc.connect(gain);
-    gain.connect(this._audioContext.destination);
+    gain.connect(this._destination);
 
     osc.start(time);
     osc.stop(time + CLICK_DURATION);
