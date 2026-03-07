@@ -66,14 +66,14 @@ export function PracticeModeSelector(): React.JSX.Element {
               boxShadow: isActive ? "0 1px 4px rgba(0,0,0,0.15)" : "none",
               transition: "all 0.2s ease",
               transform: isActive ? "scale(1)" : "scale(0.98)",
-              minWidth: 54,
-              minHeight: 36,
-              padding: "6px 12px",
+              minWidth: "3.5rem",
+              minHeight: "2.75rem",
+              padding: "0.5rem 0.875rem",
             }}
             title={desc}
             data-testid={`practice-mode-${id}`}
           >
-            <span className="text-[12px] leading-tight">{label}</span>
+            <span className="text-xs leading-tight">{label}</span>
           </button>
         );
       })}

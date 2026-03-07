@@ -63,7 +63,7 @@ export function ScoreOverlay(): React.JSX.Element {
       {/* Encouragement text */}
       {!isWaiting && (
         <span
-          className="text-xs font-display font-semibold"
+          className="text-sm font-display font-semibold"
           style={{ color: "var(--color-accent)" }}
         >
           {encouragement}
@@ -106,8 +106,8 @@ export function ScoreOverlay(): React.JSX.Element {
             {Math.abs(score.lastTimingDeltaMs) < 30
               ? t("practice.timingOnTime")
               : score.lastTimingDeltaMs < 0
-                ? `${t("practice.timingEarly")} ${Math.abs(Math.round(score.lastTimingDeltaMs))}ms`
-                : `${t("practice.timingLate")} ${Math.round(score.lastTimingDeltaMs)}ms`}
+                ? t("practice.timingEarly")
+                : t("practice.timingLate")}
           </span>
         </div>
       )}
