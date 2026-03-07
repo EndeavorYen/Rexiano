@@ -65,6 +65,9 @@ export function FallingNotesCanvas({
         resolution: window.devicePixelRatio || 1,
       });
 
+      // Cap at 60fps to avoid wasting CPU/GPU on high-refresh-rate monitors
+      app.ticker.maxFPS = 60;
+
       if (destroyed) {
         app.destroy();
         return;

@@ -162,6 +162,8 @@ export class NoteRenderer {
   private _hitLineGraphics: Graphics;
   /** R2-006: Last viewport state used to draw grid -- skip redraw if unchanged */
   private _lastGridVpKey = "";
+  /** Last viewport width+height used for hit line — skip redraw if unchanged */
+  private _lastHitLineKey = "";
 
   // ── Fingering overlay ──────────────────────────────────────────
   private fingeringEngine = new FingeringEngine();
@@ -222,6 +224,9 @@ export class NoteRenderer {
     this._cachedMissGray = hexToPixi(colors.missGray);
     this._cachedComboText = hexToPixi(colors.comboText);
     this._cachedGridLine = hexToPixi(colors.gridLine);
+    // Invalidate dirty flags so hit line and combo style pick up new colors
+    this._lastHitLineKey = "";
+    this._comboStyle = null;
   }
 
   /**
@@ -410,6 +415,10 @@ export class NoteRenderer {
     // Unsubscribe from theme store
     this._themeUnsub?.();
     this._themeUnsub = null;
+
+    // Clean up combo pool
+    this._comboPool.length = 0;
+    this._comboStyle = null;
 
     // Clean up fingering overlay
     this.fingeringLabelPool.length = 0;
@@ -635,25 +644,12 @@ export class NoteRenderer {
   showCombo(count: number, x?: number, y?: number): void {
     const cx = x ?? this._canvasWidth / 2;
     const cy = y ?? 200;
-    const comboColor = this._cachedComboText;
-    const style = new TextStyle({
-      fontFamily: "Nunito Variable, Nunito, sans-serif",
-      fontSize: 28,
-      fontWeight: "800",
-      fill: comboColor,
-      dropShadow: {
-        color: 0x000000,
-        blur: 4,
-        distance: 1,
-        alpha: 0.35,
-      },
-    });
-    const label = new Text({ text: `${count}x`, style });
-    label.anchor.set(0.5);
+    const label = this.allocateComboLabel(`${count}x`);
     label.x = cx;
     label.y = cy;
     label.alpha = 0;
     label.scale.set(0.3);
+    label.visible = true;
     this.container.addChild(label);
 
     const duration = 600;
@@ -693,7 +689,7 @@ export class NoteRenderer {
       } else {
         this._comboHandles.delete(handle);
         this.container.removeChild(label);
-        label.destroy();
+        this.releaseComboLabel(label);
       }
     };
     let handle = requestAnimationFrame(tick);
@@ -711,6 +707,46 @@ export class NoteRenderer {
   ): Sprite | null {
     const key = noteKey(trackIdx, midi, time);
     return this.active.get(key) ?? null;
+  }
+
+  // ── Combo text pool (avoids TextStyle + Text allocation per combo) ──────
+  private _comboStyle: TextStyle | null = null;
+  private _comboPool: Text[] = [];
+
+  private getComboStyle(): TextStyle {
+    if (!this._comboStyle) {
+      this._comboStyle = new TextStyle({
+        fontFamily: "Nunito Variable, Nunito, sans-serif",
+        fontSize: 28,
+        fontWeight: "800",
+        fill: this._cachedComboText,
+        dropShadow: {
+          color: 0x000000,
+          blur: 4,
+          distance: 1,
+          alpha: 0.35,
+        },
+      });
+    }
+    return this._comboStyle;
+  }
+
+  private allocateComboLabel(text: string): Text {
+    let label: Text;
+    if (this._comboPool.length > 0) {
+      label = this._comboPool.pop()!;
+      label.text = text;
+      label.style = this.getComboStyle();
+    } else {
+      label = new Text({ text, style: this.getComboStyle() });
+      label.anchor.set(0.5);
+    }
+    return label;
+  }
+
+  private releaseComboLabel(label: Text): void {
+    label.visible = false;
+    this._comboPool.push(label);
   }
 
   // ── Beat grid lines (measure lines thick, beat lines thin) ──────
@@ -755,6 +791,10 @@ export class NoteRenderer {
   // ── Hit line (horizontal line at the bottom where notes are hit) ──
 
   private _drawHitLine(vp: Viewport): void {
+    const hlKey = `${vp.width}:${vp.height}`;
+    if (hlKey === this._lastHitLineKey) return;
+    this._lastHitLineKey = hlKey;
+
     const g = this._hitLineGraphics;
     g.clear();
 
