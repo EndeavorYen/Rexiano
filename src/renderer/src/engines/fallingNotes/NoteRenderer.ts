@@ -224,6 +224,9 @@ export class NoteRenderer {
     this._cachedMissGray = hexToPixi(colors.missGray);
     this._cachedComboText = hexToPixi(colors.comboText);
     this._cachedGridLine = hexToPixi(colors.gridLine);
+    // Invalidate dirty flags so hit line and combo style pick up new colors
+    this._lastHitLineKey = "";
+    this._comboStyle = null;
   }
 
   /**
@@ -725,8 +728,6 @@ export class NoteRenderer {
         },
       });
     }
-    // Keep fill color in sync with theme
-    this._comboStyle.fill = this._cachedComboText;
     return this._comboStyle;
   }
 
