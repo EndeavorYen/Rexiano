@@ -99,6 +99,7 @@ export function SongLibrary({
 
   const handleSelectSong = useCallback(
     async (songId: string) => {
+      if (!window.api?.loadBuiltinSong) return;
       setError(null);
       setLoadingId(songId);
       try {
@@ -128,6 +129,7 @@ export function SongLibrary({
 
   const handleSelectRecent = useCallback(
     async (file: RecentFile) => {
+      if (!window.api) return;
       setRecentError(null);
       setLoadingRecentPath(file.path);
       try {

@@ -39,6 +39,13 @@ export class SoundFontLoader implements ISoundFontLoader {
 
     if (typeof source === "string") {
       // Load via IPC from Electron main process
+      if (!window.api?.loadSoundFont) {
+        console.warn(
+          "SoundFontLoader: window.api not available, using fallback",
+        );
+        this._initFallback(audioContext);
+        return;
+      }
       const result = await window.api.loadSoundFont(source);
       if (result) {
         arrayBuffer = new Uint8Array(result.data).buffer;

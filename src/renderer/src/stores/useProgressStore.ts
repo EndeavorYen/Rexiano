@@ -96,6 +96,10 @@ export const useProgressStore = create<ProgressState>()((set, get) => ({
 
   loadSessions: async () => {
     try {
+      if (!window.api?.loadSessions) {
+        set({ sessions: [], isLoaded: true });
+        return;
+      }
       const sessions = await window.api.loadSessions();
       set({ sessions, isLoaded: true });
     } catch (err) {

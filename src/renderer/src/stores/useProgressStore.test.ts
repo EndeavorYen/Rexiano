@@ -99,6 +99,18 @@ describe("useProgressStore", () => {
     expect(s.sessions).toEqual([]);
   });
 
+  test("loadSessions() handles missing window.api without crash", async () => {
+    const savedApi = window.api;
+    Object.defineProperty(window, "api", { value: undefined, writable: true });
+
+    await useProgressStore.getState().loadSessions();
+    const s = useProgressStore.getState();
+    expect(s.isLoaded).toBe(true);
+    expect(s.sessions).toEqual([]);
+
+    Object.defineProperty(window, "api", { value: savedApi, writable: true });
+  });
+
   // ─── addSession() ────────────────────────────────────
   test("addSession() persists via IPC and adds to local state", async () => {
     const session = makeSession();

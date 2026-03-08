@@ -596,6 +596,13 @@ function App(): React.JSX.Element {
     return unsub;
   }, []);
 
+  const handleExitPlayback = useCallback(() => {
+    setShowSongComplete(false);
+    useSongStore.getState().clearSong();
+    usePlaybackStore.getState().reset();
+    applyRoute("menu");
+  }, [applyRoute]);
+
   const handlePlayAgain = useCallback(() => {
     setShowSongComplete(false);
     usePlaybackStore.getState().reset();
@@ -677,7 +684,8 @@ function App(): React.JSX.Element {
       noteRendererRef.current.showNoteLabels = showFallingNoteLabels;
       noteRendererRef.current.keySig = song?.keySignatures?.[0]?.key ?? 0;
     }
-  }, [showFallingNoteLabels, noteRendererRef, song]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- noteRendererRef is stable; initial sync handled in handleNoteRendererReadyWithSync
+  }, [showFallingNoteLabels, song]);
   // Wrap the practice lifecycle callback so we also sync settings on init.
   // The useEffect above won't re-fire when the ref is first assigned (ref
   // identity is stable), so we eagerly apply the setting here.
@@ -694,6 +702,7 @@ function App(): React.JSX.Element {
   // ─── End Phase 6.5 ───────────────────────────────────
 
   const handleOpenFile = useCallback(async (): Promise<void> => {
+    if (!window.api?.openMidiFile) return;
     try {
       const result = await window.api.openMidiFile();
       if (result) {
@@ -717,6 +726,7 @@ function App(): React.JSX.Element {
   // Load a MIDI file directly by path (used by recent files in MainMenu)
   const handleLoadMidiPath = useCallback(
     async (filePath: string): Promise<void> => {
+      if (!window.api?.loadMidiPath) return;
       try {
         const result = await window.api.loadMidiPath(filePath);
         if (result) {
@@ -829,13 +839,6 @@ function App(): React.JSX.Element {
     [loadSong, reset, t],
   );
   // ─── End Phase 6.5 ─────────────────────────────────────
-
-  const handleExitPlayback = useCallback(() => {
-    setShowSongComplete(false);
-    useSongStore.getState().clearSong();
-    usePlaybackStore.getState().reset();
-    applyRoute("menu");
-  }, [applyRoute]);
 
   const keyboardHeightMap = { normal: 100, large: 130, xlarge: 160 } as const;
   const keyboardHeight = keyboardHeightMap[uiScale];

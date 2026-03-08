@@ -152,4 +152,21 @@ describe("useRecentFiles", () => {
       })(),
     ).resolves.toBeUndefined();
   });
+
+  test("handles missing window.api gracefully (no crash)", () => {
+    // Simulate browser environment without Electron preload
+    const savedApi = window.api;
+    Object.defineProperty(window, "api", { value: undefined, writable: true });
+
+    // Should not throw — returns empty array + loading false
+    const result = useRecentFiles();
+    // Execute the effect
+    capturedEffects[0]();
+
+    expect(result.recentFiles).toEqual([]);
+    expect(window.api).toBeUndefined();
+
+    // Restore
+    Object.defineProperty(window, "api", { value: savedApi, writable: true });
+  });
 });

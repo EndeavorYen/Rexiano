@@ -32,6 +32,10 @@ export const useSongLibraryStore = create<SongLibraryState>()((set) => ({
   fetchSongs: async () => {
     set({ isLoading: true });
     try {
+      if (!window.api?.listBuiltinSongs) {
+        set({ songs: [], isLoading: false });
+        return;
+      }
       const songs = await window.api.listBuiltinSongs();
       set({ songs, isLoading: false });
     } catch {

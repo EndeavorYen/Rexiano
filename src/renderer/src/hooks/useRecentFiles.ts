@@ -22,6 +22,13 @@ export function useRecentFiles(): UseRecentFilesResult {
   const mountedRef = useRef(true);
 
   const fetchRecents = useCallback(() => {
+    if (!window.api?.loadRecentFiles) {
+      // Defer setState to avoid synchronous setState inside effect
+      Promise.resolve().then(() => {
+        if (mountedRef.current) setLoading(false);
+      });
+      return;
+    }
     window.api
       .loadRecentFiles()
       .then((files: RecentFile[]) => {
