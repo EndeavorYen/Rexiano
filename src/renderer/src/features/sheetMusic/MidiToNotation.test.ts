@@ -570,5 +570,84 @@ describe("MidiToNotation", () => {
       const m1Treble = result.measures[1].trebleNotes.filter((n) => !n.isRest);
       expect(m1Treble.length).toBe(1);
     });
+
+    it("filters suspicious 4/4→2/4 change after 1 measure (MIDI artifact)", () => {
+      const notes = [
+        { midi: 60, name: "C4", time: 2.0, duration: 0.25, velocity: 80 },
+        { midi: 62, name: "D4", time: 4.0, duration: 0.25, velocity: 80 },
+      ];
+      const timeSignatures = [
+        { time: 0, numerator: 4, denominator: 4 },
+        { time: 4.0, numerator: 2, denominator: 4 }, // suspicious!
+      ];
+
+      const result = convertToNotation(
+        notes,
+        [{ time: 0, bpm: 60 }],
+        960,
+        4,
+        4,
+        0,
+        0,
+        1,
+        undefined,
+        timeSignatures,
+      );
+
+      // The 2/4 change should be filtered out — all measures stay 4/4
+      for (const m of result.measures) {
+        expect(m.timeSignatureTop).toBe(4);
+        expect(m.timeSignatureBottom).toBe(4);
+      }
+    });
+  });
+
+  describe("single-track clef assignment", () => {
+    it("splits simultaneous pairs even when all below middle C", () => {
+      // Hanon-style: parallel octaves below C4 — should still split pairs
+      // so that the upper note of each pair goes to treble (with ledger lines)
+      const notes = [
+        { midi: 48, name: "C3", time: 0, duration: 0.25, velocity: 80 },
+        { midi: 36, name: "C2", time: 0, duration: 0.25, velocity: 80 },
+        { midi: 52, name: "E3", time: 0.25, duration: 0.25, velocity: 80 },
+        { midi: 40, name: "E2", time: 0.25, duration: 0.25, velocity: 80 },
+      ];
+
+      const result = convertToNotation(notes, 120, 480, 4, 4, 0, 0, 1);
+
+      const m0Treble = result.measures[0].trebleNotes.filter((n) => !n.isRest);
+      const m0Bass = result.measures[0].bassNotes.filter((n) => !n.isRest);
+
+      // Upper notes (48, 52) → treble, lower (36, 40) → bass
+      expect(m0Treble.length).toBe(2);
+      expect(m0Treble[0].midi).toBe(48);
+      expect(m0Treble[1].midi).toBe(52);
+      expect(m0Bass.length).toBe(2);
+      expect(m0Bass[0].midi).toBe(36);
+      expect(m0Bass[1].midi).toBe(40);
+    });
+
+    it("splits simultaneous pairs when range spans both registers", () => {
+      // Notes span across middle C → should split higher→treble, lower→bass
+      const notes = [
+        { midi: 48, name: "C3", time: 0, duration: 0.25, velocity: 80 },
+        { midi: 64, name: "E4", time: 0, duration: 0.25, velocity: 80 },
+        { midi: 52, name: "E3", time: 0.25, duration: 0.25, velocity: 80 },
+        { midi: 67, name: "G4", time: 0.25, duration: 0.25, velocity: 80 },
+      ];
+
+      const result = convertToNotation(notes, 120, 480, 4, 4, 0, 0, 1);
+
+      const m0Treble = result.measures[0].trebleNotes.filter((n) => !n.isRest);
+      const m0Bass = result.measures[0].bassNotes.filter((n) => !n.isRest);
+
+      // Higher notes (64, 67) → treble, lower (48, 52) → bass
+      expect(m0Treble.length).toBe(2);
+      expect(m0Treble[0].midi).toBe(64);
+      expect(m0Treble[1].midi).toBe(67);
+      expect(m0Bass.length).toBe(2);
+      expect(m0Bass[0].midi).toBe(48);
+      expect(m0Bass[1].midi).toBe(52);
+    });
   });
 });

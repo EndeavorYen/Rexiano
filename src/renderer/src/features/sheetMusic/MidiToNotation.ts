@@ -184,6 +184,71 @@ export function assignClef(
 }
 
 /**
+ * Re-assign clefs for single-track piano input by grouping simultaneous notes.
+ *
+ * For each onset (quantized tick), if there are 2+ notes, the higher half goes
+ * to treble and the lower half to bass. For single notes, use the pitch relative
+ * to a running split point (median of recent paired groups), falling back to
+ * middle C if no pairs have been seen.
+ *
+ * Mutates the clef field of each note in-place.
+ */
+function reassignClefsForSingleTrack(notes: QuantizedNote[]): void {
+  if (notes.length === 0) return;
+
+  // Group notes by quantized start tick to find simultaneous note pairs.
+  const groups = new Map<number, number[]>(); // tick → indices into notes[]
+  for (let i = 0; i < notes.length; i++) {
+    const tick = notes[i].startTick;
+    const group = groups.get(tick);
+    if (group) {
+      group.push(i);
+    } else {
+      groups.set(tick, [i]);
+    }
+  }
+
+  // First pass: compute a stable split point from all simultaneous pairs.
+  // For each pair, the midpoint between the highest bass note and lowest treble
+  // note gives a local split. We average these to get a global split point.
+  let splitSum = 0;
+  let splitCount = 0;
+  for (const indices of groups.values()) {
+    if (indices.length >= 2) {
+      indices.sort((a, b) => notes[a].midi - notes[b].midi);
+      const half = Math.ceil(indices.length / 2);
+      const highestBass = notes[indices[half - 1]].midi;
+      const lowestTreble = notes[indices[half]].midi;
+      splitSum += (highestBass + lowestTreble) / 2;
+      splitCount++;
+    }
+  }
+
+  // If no simultaneous pairs exist, there's nothing to split — keep default assignment.
+  if (splitCount === 0) return;
+
+  const splitPoint = Math.round(splitSum / splitCount);
+
+  // Second pass: assign clefs using the computed split point.
+  // Pairs are always split: lower half → bass, upper half → treble.
+  // Single notes use the global split point.
+  // No absolute pitch threshold — treble clef can show notes below C4 with ledger lines,
+  // which is standard notation for piano music (e.g. Hanon exercises in low register).
+  for (const indices of groups.values()) {
+    if (indices.length >= 2) {
+      indices.sort((a, b) => notes[a].midi - notes[b].midi);
+      const half = Math.ceil(indices.length / 2);
+      for (let i = 0; i < indices.length; i++) {
+        notes[indices[i]].clef = i < half ? "bass" : "treble";
+      }
+    } else {
+      const note = notes[indices[0]];
+      note.clef = note.midi >= splitPoint ? "treble" : "bass";
+    }
+  }
+}
+
+/**
  * Fill gaps between notes in a measure with rests.
  * Also adds trailing rest to fill measure, and returns a whole rest
  * for completely empty measures.
@@ -325,6 +390,15 @@ export function convertToNotation(
       clef,
     };
   });
+
+  // For single-track input: re-assign clefs by grouping simultaneous notes.
+  // Higher notes in each group → treble, lower → bass.
+  // This handles piano exercises (e.g. Hanon) where both hands are in one track
+  // and all notes may be below middle C, making the naive pitch split useless.
+  if (trackCount === 1 && quantizedRaw.length > 0) {
+    reassignClefsForSingleTrack(quantizedRaw);
+  }
+
   const quantized = clampOverlappingDurations(quantizedRaw, minTick);
 
   const maxTick = Math.max(...quantized.map((n) => n.endTick));
@@ -589,11 +663,47 @@ function normalizeTimeSigEvents(
   }
 
   if (deduped[0].startTick !== 0) {
-    return [
-      { startTick: 0, numerator: defaultTop, denominator: defaultBottom },
-      ...deduped,
-    ];
+    deduped.unshift({
+      startTick: 0,
+      numerator: defaultTop,
+      denominator: defaultBottom,
+    });
   }
+
+  // Filter suspicious time-signature artifacts:
+  // If the first event only lasts 1 measure before a change, and the change
+  // reduces beats-per-measure, the first event is likely a MIDI export artifact
+  // (e.g., a count-in measure). Keep the first sig but drop the suspicious change.
+  // Also: if a later event's beats-per-measure is a strict divisor of the default
+  // (e.g., 4/4 → 2/4 after 1 measure), it's almost certainly a MIDI encoding error.
+  if (deduped.length >= 2) {
+    const first = deduped[0];
+    const firstBeats = (first.numerator * 4) / first.denominator;
+    const firstMeasureTicks = Math.round(
+      (ticksPerQuarter * first.numerator * 4) / first.denominator,
+    );
+
+    const filtered = [first];
+    for (let i = 1; i < deduped.length; i++) {
+      const ev = deduped[i];
+      const evBeats = (ev.numerator * 4) / ev.denominator;
+
+      // Skip if: change happens within the first 2 measures AND reduces beat count
+      // AND the new beat count divides evenly into the original (e.g., 4→2, 6→3)
+      const measuresElapsed =
+        (ev.startTick - first.startTick) / firstMeasureTicks;
+      if (
+        measuresElapsed <= 2 &&
+        evBeats < firstBeats &&
+        firstBeats % evBeats === 0
+      ) {
+        continue; // skip this suspicious event
+      }
+      filtered.push(ev);
+    }
+    return filtered;
+  }
+
   return deduped;
 }
 

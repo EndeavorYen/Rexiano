@@ -21,7 +21,7 @@ export interface CursorPosition {
   tick: number;
 }
 
-const DISPLAY_MEASURE_COUNT = 8;
+const DEFAULT_DISPLAY_MEASURE_COUNT = 8;
 
 /**
  * Compute the cursor position from a playback time.
@@ -179,37 +179,38 @@ export function getScrollTarget(
 export function getMeasureWindow(
   currentMeasureIndex: number,
   totalMeasures: number,
+  displayCount: number = DEFAULT_DISPLAY_MEASURE_COUNT,
 ): number[] {
   if (totalMeasures <= 0) return [];
 
+  const count = Math.max(1, Math.floor(displayCount));
   const current = Math.max(
     0,
     Math.min(Math.floor(currentMeasureIndex), totalMeasures - 1),
   );
-  const groupStart =
-    Math.floor(current / DISPLAY_MEASURE_COUNT) * DISPLAY_MEASURE_COUNT;
+  const groupStart = Math.floor(current / count) * count;
   const positionInGroup = current - groupStart;
 
   if (
-    positionInGroup === DISPLAY_MEASURE_COUNT - 1 &&
-    groupStart + DISPLAY_MEASURE_COUNT < totalMeasures
+    positionInGroup === count - 1 &&
+    groupStart + count < totalMeasures
   ) {
-    const nextGroupStart = groupStart + DISPLAY_MEASURE_COUNT;
+    const nextGroupStart = groupStart + count;
     const nextMeasures: number[] = [];
-    for (let offset = 0; offset < DISPLAY_MEASURE_COUNT - 1; offset++) {
+    for (let offset = 0; offset < count - 1; offset++) {
       const index = nextGroupStart + offset;
       if (index >= totalMeasures) break;
       nextMeasures.push(index);
     }
 
     // Keep the current measure as the trailing anchor.
-    return [...nextMeasures, current].slice(0, DISPLAY_MEASURE_COUNT);
+    return [...nextMeasures, current].slice(0, count);
   }
 
   const window: number[] = [];
   for (
     let i = groupStart;
-    i < groupStart + DISPLAY_MEASURE_COUNT && i < totalMeasures;
+    i < groupStart + count && i < totalMeasures;
     i++
   ) {
     window.push(i);

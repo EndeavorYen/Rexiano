@@ -2,7 +2,7 @@
  * SheetMusicPanel — Renders sheet music with VexFlow 5.
  *
  * Rendering model:
- * - Always displays 8 measure slots (configurable via DISPLAY_MEASURE_COUNT).
+ * - Displays an adaptive number of measure slots based on note density.
  * - On the last measure of a group, preload the next measures while
  *   keeping the current one as anchor.
  * - Displays measure numbers on odd measures (1, 3, 5, ...) above treble staff.
@@ -55,8 +55,15 @@ const SYSTEM_GAP = 20;
 const SYSTEM_HEIGHT = STAVE_HEIGHT * 2 + SYSTEM_GAP;
 const LEFT_MARGIN = 28;
 const TOP_MARGIN = 10;
-const DISPLAY_MEASURE_COUNT = 8;
+const MAX_DISPLAY_MEASURES = 8;
 const FIRST_MEASURE_MIN_WIDTH = 220;
+
+/**
+ * Pixels per unique onset (chord position) needed for readable spacing.
+ * With beamed 16th notes (4 per beat, 16 onsets per 4/4 measure), each
+ * onset needs ~20px for the notehead + beam + stem.
+ */
+const PX_PER_ONSET = 20;
 const ACTIVE_NOTEHEAD_STROKE_WIDTH_PX = 2.2;
 const ACTIVE_NOTEHEAD_GLOW_BLUR_PX = 4.2;
 const ACTIVE_BEAT_SNAP_RATIO = 0.62;
@@ -715,7 +722,7 @@ function renderMeasure(
   }).setStrict(false);
   bassVoice.addTickables(bassVexNotes);
 
-  const formatter = new Formatter()
+  const formatter = new Formatter({ softmaxFactor: 5 })
     .joinVoices([trebleVoice])
     .joinVoices([bassVoice]);
   // Use VexFlow's stave-aware formatter to avoid collisions with clef/time/key modifiers.
@@ -728,12 +735,15 @@ function renderMeasure(
   bassVoice.draw(context, bass);
 
   // Draw beams for treble and bass notes.
-  // Beam.generateBeams automatically groups 8th/16th/32nd notes into beamed
-  // groups and ignores quarter notes and longer. We pass only non-rest notes
-  // since rests break beam groups.
+  // Pass beat-based grouping so VexFlow beams 8th/16th notes per beat
+  // (e.g. 4 sixteenths per beat in 4/4). maintainStemDirections preserves
+  // treble-up / bass-down orientation set during StaveNote creation.
   try {
-    const { Beam } = VF;
-    if (Beam) {
+    const { Beam, Fraction } = VF;
+    if (Beam && Fraction) {
+      const timeSig = `${measure.timeSignatureTop}/${measure.timeSignatureBottom}`;
+      const groups = Beam.getDefaultBeamGroups(timeSig);
+
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const drawBeams = (vexNotes: any[], chords: ChordGroup[]): void => {
         const nonRestNotes = vexNotes.filter(
@@ -741,7 +751,10 @@ function renderMeasure(
             chords[i] && !chords[i].duration.includes("r"),
         );
         if (nonRestNotes.length > 1) {
-          const beams = Beam.generateBeams(nonRestNotes);
+          const beams = Beam.generateBeams(nonRestNotes, {
+            groups,
+            maintainStemDirections: true,
+          });
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           beams.forEach((b: any) => b.setContext(context).draw());
         }
@@ -777,7 +790,9 @@ function renderMeasure(
     if (svg) {
       const beatsPerMeasure = measure.timeSignatureTop;
       for (const expr of expressions) {
-        if (expr.type === "staccato") continue;
+        // Only render tempo-related text marks (rit., accel.); skip staccato
+        // (handled as note articulation) and legato (too noisy for dense pieces).
+        if (expr.type === "staccato" || expr.type === "legato") continue;
 
         const label =
           expr.type === "rit"
@@ -934,18 +949,55 @@ export function SheetMusicPanel({
   }, [currentTime, notationData]);
   const activeMeasureIndex = cursorPosition?.measureIndex ?? 0;
 
-  const visibleMeasures = useMemo(() => {
-    if (!notationData || notationData.measures.length === 0) return [];
-    return getMeasureWindow(activeMeasureIndex, notationData.measures.length);
-  }, [notationData, activeMeasureIndex]);
-
   const availableWidth = Math.max(
     1,
     Math.floor(containerWidth - LEFT_MARGIN * 2),
   );
+
+  // Adaptive measure count: compute how many measures fit based on note density.
+  // Dense measures (16th notes) get fewer measures per screen for readability.
+  const displayMeasureCount = useMemo(() => {
+    if (!notationData || notationData.measures.length === 0)
+      return MAX_DISPLAY_MEASURES;
+
+    // Sample the measures around the active index to estimate density.
+    // Count unique onset ticks per stave (simultaneous notes stack vertically).
+    const total = notationData.measures.length;
+    const sampleStart = Math.floor(activeMeasureIndex / MAX_DISPLAY_MEASURES) * MAX_DISPLAY_MEASURES;
+    let totalOnsets = 0;
+    let sampleCount = 0;
+    for (let i = sampleStart; i < sampleStart + MAX_DISPLAY_MEASURES && i < total; i++) {
+      const m = notationData.measures[i];
+      const trebleOnsets = new Set(
+        m.trebleNotes.filter((n) => !n.isRest).map((n) => n.startTick),
+      ).size;
+      const bassOnsets = new Set(
+        m.bassNotes.filter((n) => !n.isRest).map((n) => n.startTick),
+      ).size;
+      totalOnsets += Math.max(trebleOnsets, bassOnsets);
+      sampleCount++;
+    }
+
+    if (sampleCount === 0) return MAX_DISPLAY_MEASURES;
+    const avgOnsetsPerMeasure = totalOnsets / sampleCount;
+    const neededPerMeasure = avgOnsetsPerMeasure * PX_PER_ONSET;
+    const effectiveWidth = availableWidth - FIRST_MEASURE_MIN_WIDTH;
+    // First measure takes FIRST_MEASURE_MIN_WIDTH; rest share the remainder
+    const fittable = neededPerMeasure > 0
+      ? 1 + Math.floor(effectiveWidth / neededPerMeasure)
+      : MAX_DISPLAY_MEASURES;
+
+    return Math.max(2, Math.min(MAX_DISPLAY_MEASURES, fittable));
+  }, [notationData, activeMeasureIndex, availableWidth]);
+
+  const visibleMeasures = useMemo(() => {
+    if (!notationData || notationData.measures.length === 0) return [];
+    return getMeasureWindow(activeMeasureIndex, notationData.measures.length, displayMeasureCount);
+  }, [notationData, activeMeasureIndex, displayMeasureCount]);
+
   const rawSlotWidths = useMemo(() => {
     const noteCounts = Array.from(
-      { length: DISPLAY_MEASURE_COUNT },
+      { length: displayMeasureCount },
       (_unused, slot) => {
         const measureIndex = visibleMeasures[slot];
         if (measureIndex === undefined || !notationData) return 0;
@@ -957,7 +1009,7 @@ export function SheetMusicPanel({
       },
     );
     return calcMeasureWidths(noteCounts, availableWidth);
-  }, [availableWidth, notationData, visibleMeasures]);
+  }, [availableWidth, displayMeasureCount, notationData, visibleMeasures]);
   const slotWidths = useMemo(() => {
     if (rawSlotWidths.length === 0) return rawSlotWidths;
     const next = [...rawSlotWidths];
@@ -967,12 +1019,12 @@ export function SheetMusicPanel({
   const slotLefts = useMemo(() => {
     const lefts: number[] = [];
     let cursor = LEFT_MARGIN;
-    for (let i = 0; i < DISPLAY_MEASURE_COUNT; i++) {
+    for (let i = 0; i < displayMeasureCount; i++) {
       lefts.push(cursor);
       cursor += slotWidths[i] ?? 0;
     }
     return lefts;
-  }, [slotWidths]);
+  }, [displayMeasureCount, slotWidths]);
   const contentWidth =
     LEFT_MARGIN * 2 + slotWidths.reduce((sum, width) => sum + width, 0);
   const totalHeight = SYSTEM_HEIGHT + TOP_MARGIN * 2 + 16;
@@ -1105,7 +1157,7 @@ export function SheetMusicPanel({
         const slotMeasureIndices: (number | undefined)[] = [];
         const nextMeasureTickAnchors: Record<number, TickAnchor[]> = {};
 
-        for (let slot = 0; slot < DISPLAY_MEASURE_COUNT; slot++) {
+        for (let slot = 0; slot < displayMeasureCount; slot++) {
           const measureIndex = visibleMeasures[slot];
           const x = slotLefts[slot] ?? LEFT_MARGIN;
           const width = slotWidths[slot] ?? 1;
@@ -1174,7 +1226,7 @@ export function SheetMusicPanel({
 
         // Draw ties between consecutive measures for notes marked as tied
         if (StaveTie) {
-          for (let slot = 0; slot < DISPLAY_MEASURE_COUNT - 1; slot++) {
+          for (let slot = 0; slot < displayMeasureCount - 1; slot++) {
             const currentResult = slotResults[slot];
             const nextResult = slotResults[slot + 1];
             const currentMeasureIdx = slotMeasureIndices[slot];
@@ -1264,6 +1316,7 @@ export function SheetMusicPanel({
     notationData,
     containerWidth,
     contentWidth,
+    displayMeasureCount,
     height,
     slotLefts,
     slotWidths,
