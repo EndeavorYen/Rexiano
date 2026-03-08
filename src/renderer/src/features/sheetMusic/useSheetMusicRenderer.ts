@@ -1,8 +1,13 @@
-import { useState } from "react";
+import { type Dispatch, type SetStateAction, useState } from "react";
 
 export type SheetMusicRenderer = "vexflow" | "osmd";
 
-export function useSheetMusicRenderer() {
-  const [renderer, setRenderer] = useState<SheetMusicRenderer>("vexflow");
+interface UseSheetMusicRendererResult {
+  readonly renderer: SheetMusicRenderer;
+  readonly setRenderer: Dispatch<SetStateAction<SheetMusicRenderer>>;
+}
+
+export function useSheetMusicRenderer(): UseSheetMusicRendererResult {
+  const [renderer, setRenderer] = useState<SheetMusicRenderer>("osmd");
   return { renderer, setRenderer } as const;
 }

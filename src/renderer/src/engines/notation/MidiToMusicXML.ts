@@ -238,14 +238,6 @@ function fillRestsForVoice(
 // XML serialization helpers
 // ---------------------------------------------------------------------------
 
-function escapeXml(s: string): string {
-  return s
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;");
-}
-
 function pitchToXml(pitch: MusicXMLPitch): string {
   let xml = `<pitch><step>${pitch.step}</step>`;
   if (pitch.alter !== undefined) {

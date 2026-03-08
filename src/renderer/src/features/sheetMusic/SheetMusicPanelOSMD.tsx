@@ -1,4 +1,4 @@
-import { useRef, useEffect, useMemo } from "react";
+import React, { useRef, useEffect, useMemo } from "react";
 import type { ParsedSong } from "@renderer/engines/midi/types";
 import type { DisplayMode } from "./types";
 import { convertToMusicXML } from "@renderer/engines/notation/MidiToMusicXML";
@@ -8,7 +8,7 @@ interface SheetMusicPanelOSMDProps {
   mode: DisplayMode;
 }
 
-export function SheetMusicPanelOSMD({ song, mode }: SheetMusicPanelOSMDProps) {
+export function SheetMusicPanelOSMD({ song, mode }: SheetMusicPanelOSMDProps): React.ReactElement | null {
   const containerRef = useRef<HTMLDivElement>(null);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const osmdRef = useRef<any>(null);
