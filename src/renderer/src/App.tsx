@@ -35,7 +35,9 @@ import { ScoreOverlay } from "./features/practice/ScoreOverlay";
 import { useKeyboardShortcuts } from "./hooks/useKeyboardShortcuts";
 import { useTranslation } from "./i18n/useTranslation";
 import { SheetMusicPanel } from "./features/sheetMusic/SheetMusicPanel";
+import { SheetMusicPanelOSMD } from "./features/sheetMusic/SheetMusicPanelOSMD";
 import { DisplayModeToggle } from "./features/sheetMusic/DisplayModeToggle";
+import { useSheetMusicRenderer } from "./features/sheetMusic/useSheetMusicRenderer";
 import { convertToNotation } from "./features/sheetMusic/MidiToNotation";
 import { usePracticeStore } from "./stores/usePracticeStore";
 import { SongCompleteOverlay } from "./features/practice/SongCompleteOverlay";
@@ -129,6 +131,7 @@ function App(): React.JSX.Element {
 
   // ─── Phase 7: Sheet Music ──────────────────────────────
   const displayMode = usePracticeStore((s) => s.displayMode);
+  const { renderer: sheetRenderer } = useSheetMusicRenderer();
   const isPlaying = usePlaybackStore((s) => s.isPlaying);
 
   const notationData = useMemo(() => {
@@ -1102,7 +1105,11 @@ function App(): React.JSX.Element {
                   : {}),
               }}
             >
-              <SheetMusicPanel notationData={notationData} mode={displayMode} />
+              {sheetRenderer === "osmd" ? (
+                <SheetMusicPanelOSMD song={song} mode={displayMode} />
+              ) : (
+                <SheetMusicPanel notationData={notationData} mode={displayMode} />
+              )}
             </div>
 
             {/* Falling notes canvas — always mounted so PixiJS ticker keeps
