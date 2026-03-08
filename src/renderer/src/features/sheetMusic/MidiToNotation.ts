@@ -28,7 +28,7 @@ import type {
 const MIDDLE_C = 60;
 
 /** Supported quantization grid sizes in ticks per quarter note */
-const QUANTIZE_GRID = 4; // 16th note = ticksPerQuarter / 4
+export const QUANTIZE_GRID = 4; // 16th note = ticksPerQuarter / 4
 
 /** Note name lookup for VexFlow key conversion */
 const NOTE_NAMES = [
@@ -73,7 +73,7 @@ interface TimeSigTickEvent {
 }
 
 /** Internal structure for generated measure boundaries */
-interface MeasureBoundary {
+export interface MeasureBoundary {
   startTick: number;
   endTick: number;
   numerator: number;
@@ -81,7 +81,7 @@ interface MeasureBoundary {
 }
 
 /** Internal note with absolute tick positions before measure splitting */
-interface QuantizedNote {
+export interface QuantizedNote {
   midi: number;
   startTick: number;
   endTick: number;
@@ -193,7 +193,7 @@ export function assignClef(
  *
  * Mutates the clef field of each note in-place.
  */
-function reassignClefsForSingleTrack(notes: QuantizedNote[]): void {
+export function reassignClefsForSingleTrack(notes: QuantizedNote[]): void {
   if (notes.length === 0) return;
 
   // Group notes by quantized start tick to find simultaneous note pairs.
@@ -511,7 +511,7 @@ export function convertToNotation(
  * This renderer intentionally uses a single voice per clef.
  * Clamp same-clef overlaps to the next onset so one measure stays rhythmically readable.
  */
-function clampOverlappingDurations(
+export function clampOverlappingDurations(
   notes: QuantizedNote[],
   minTick: number,
 ): QuantizedNote[] {
@@ -552,7 +552,7 @@ function clampOverlappingDurations(
 }
 
 /** Ensure tempo events are sorted and always include a t=0 anchor. */
-function normalizeTempos(bpmOrTempos: number | TempoEvent[]): TempoEvent[] {
+export function normalizeTempos(bpmOrTempos: number | TempoEvent[]): TempoEvent[] {
   if (typeof bpmOrTempos === "number") {
     return [{ time: 0, bpm: bpmOrTempos }];
   }
@@ -579,13 +579,13 @@ function normalizeTempos(bpmOrTempos: number | TempoEvent[]): TempoEvent[] {
 }
 
 /** Quantize a tick value to the configured beat grid (default 16th). */
-function quantizeTick(rawTick: number, ticksPerQuarter: number): number {
+export function quantizeTick(rawTick: number, ticksPerQuarter: number): number {
   const grid = ticksPerQuarter / QUANTIZE_GRID;
   return Math.round(rawTick / grid) * grid;
 }
 
 /** Convert absolute seconds to absolute ticks by integrating over tempo segments. */
-function secondsToAbsoluteTicks(
+export function secondsToAbsoluteTicks(
   timeSeconds: number,
   tempos: TempoEvent[],
   ticksPerQuarter: number,
@@ -621,7 +621,7 @@ function secondsToAbsoluteTicks(
 }
 
 /** Build normalized time-signature events in absolute tick space. */
-function normalizeTimeSigEvents(
+export function normalizeTimeSigEvents(
   ticksPerQuarter: number,
   defaultTop: number,
   defaultBottom: number,
@@ -708,7 +708,7 @@ function normalizeTimeSigEvents(
 }
 
 /** Generate measure boundaries up to the last note end tick. */
-function buildMeasureBoundaries(
+export function buildMeasureBoundaries(
   maxTick: number,
   ticksPerQuarter: number,
   defaultTop: number,
@@ -779,7 +779,7 @@ function buildMeasureBoundaries(
 }
 
 /** Binary search helper for locating a measure by absolute tick. */
-function findMeasureIndexByTick(
+export function findMeasureIndexByTick(
   measureStarts: number[],
   targetTick: number,
 ): number {
