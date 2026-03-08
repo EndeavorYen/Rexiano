@@ -10,4 +10,5 @@ Thumbs.db
 playwright-report/
 test-results/
 coverage/
+.worktrees/
 nul
