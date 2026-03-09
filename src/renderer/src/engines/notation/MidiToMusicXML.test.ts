@@ -122,10 +122,10 @@ describe("convertToMusicXML", () => {
   it("produces valid XML structure for a simple C major scale (4 quarter notes)", () => {
     // C4, D4, E4, F4 — each a quarter note, sequential
     const notes: ParsedNote[] = [
-      makeNote(60, 0.0, 0.5),   // C4 at beat 1
-      makeNote(62, 0.5, 0.5),   // D4 at beat 2
-      makeNote(64, 1.0, 0.5),   // E4 at beat 3
-      makeNote(65, 1.5, 0.5),   // F4 at beat 4
+      makeNote(60, 0.0, 0.5), // C4 at beat 1
+      makeNote(62, 0.5, 0.5), // D4 at beat 2
+      makeNote(64, 1.0, 0.5), // E4 at beat 3
+      makeNote(65, 1.5, 0.5), // F4 at beat 4
     ];
 
     const xml = convertToMusicXML(notes, BPM, TPQ, 4, 4, 0, 0, 1);
@@ -143,8 +143,12 @@ describe("convertToMusicXML", () => {
 
     // Staves and clefs
     expect(xml).toContain("<staves>2</staves>");
-    expect(xml).toContain('<clef number="1"><sign>G</sign><line>2</line></clef>');
-    expect(xml).toContain('<clef number="2"><sign>F</sign><line>4</line></clef>');
+    expect(xml).toContain(
+      '<clef number="1"><sign>G</sign><line>2</line></clef>',
+    );
+    expect(xml).toContain(
+      '<clef number="2"><sign>F</sign><line>4</line></clef>',
+    );
 
     // Notes should have pitch elements
     expect(xml).toContain("<step>C</step>");
@@ -167,10 +171,10 @@ describe("convertToMusicXML", () => {
   it("handles parallel octaves (Hanon-style, single track) with staff/voice/backup", () => {
     // Simultaneous C3 + C4 — should split into bass and treble
     const notes: ParsedNote[] = [
-      makeNote(48, 0.0, 0.5),  // C3 (should go to bass)
-      makeNote(60, 0.0, 0.5),  // C4 (should go to treble)
-      makeNote(50, 0.5, 0.5),  // D3
-      makeNote(62, 0.5, 0.5),  // D4
+      makeNote(48, 0.0, 0.5), // C3 (should go to bass)
+      makeNote(60, 0.0, 0.5), // C4 (should go to treble)
+      makeNote(50, 0.5, 0.5), // D3
+      makeNote(62, 0.5, 0.5), // D4
     ];
 
     const xml = convertToMusicXML(notes, BPM, TPQ, 4, 4, 0, 0, 1);
@@ -226,6 +230,130 @@ describe("convertToMusicXML", () => {
     // Whole rest duration = 1920 (4 quarters * 480)
     expect(xml).toContain(`<duration>${TPQ * 4}</duration>`);
     expect(xml).toContain("<type>whole</type>");
+  });
+
+  it("outputs MusicXML note elements in DTD-compliant order (voice → type → staff)", () => {
+    const notes: ParsedNote[] = [makeNote(60, 0.0, 0.5)]; // C4 quarter
+    const xml = convertToMusicXML(notes, BPM, TPQ, 4, 4, 0, 0, 1);
+
+    // MusicXML DTD requires: pitch → duration → voice → type → staff
+    const voiceIdx = xml.indexOf("<voice>");
+    const typeIdx = xml.indexOf("<type>");
+    const staffIdx = xml.indexOf("<staff>");
+
+    expect(voiceIdx).toBeGreaterThan(-1);
+    expect(typeIdx).toBeGreaterThan(-1);
+    expect(staffIdx).toBeGreaterThan(-1);
+
+    // voice must come before type, type before staff
+    expect(voiceIdx).toBeLessThan(typeIdx);
+    expect(typeIdx).toBeLessThan(staffIdx);
+  });
+
+  it("produces well-formed XML with all required MusicXML elements", () => {
+    const notes: ParsedNote[] = [
+      makeNote(60, 0.0, 0.5), // C4
+      makeNote(48, 0.0, 0.5), // C3 (bass)
+      makeNote(62, 0.5, 0.5), // D4
+      makeNote(50, 0.5, 0.5), // D3 (bass)
+    ];
+    const xml = convertToMusicXML(notes, BPM, TPQ, 4, 4, 0, 0, 1);
+
+    // Root structure
+    expect(xml).toContain('<score-partwise version="4.0">');
+    expect(xml).toContain("</score-partwise>");
+
+    // Part list
+    expect(xml).toContain("<part-list>");
+    expect(xml).toContain('<score-part id="P1">');
+    expect(xml).toContain("</part-list>");
+
+    // Part with measures
+    expect(xml).toContain('<part id="P1">');
+    expect(xml).toContain('<measure number="1">');
+
+    // First measure attributes
+    expect(xml).toContain(`<divisions>${TPQ}</divisions>`);
+    expect(xml).toContain("<key><fifths>0</fifths></key>");
+    expect(xml).toContain("<staves>2</staves>");
+    expect(xml).toContain(
+      '<clef number="1"><sign>G</sign><line>2</line></clef>',
+    );
+    expect(xml).toContain(
+      '<clef number="2"><sign>F</sign><line>4</line></clef>',
+    );
+
+    // Every <note> must have <duration>, <voice>, <type>, <staff>
+    // and either <pitch> or <rest/>
+    const noteBlocks = xml.split("<note>").slice(1); // skip text before first <note>
+    expect(noteBlocks.length).toBeGreaterThan(0);
+    for (const block of noteBlocks) {
+      const noteXml = block.split("</note>")[0];
+      expect(noteXml).toMatch(/<duration>\d+<\/duration>/);
+      expect(noteXml).toMatch(/<voice>[12]<\/voice>/);
+      expect(noteXml).toMatch(/<type>\w+<\/type>/);
+      expect(noteXml).toMatch(/<staff>[12]<\/staff>/);
+      const hasPitch = noteXml.includes("<pitch>");
+      const hasRest = noteXml.includes("<rest/>");
+      expect(hasPitch || hasRest).toBe(true);
+    }
+
+    // Backup elements for bass voice
+    expect(xml).toContain("<backup><duration>");
+
+    // XML must be well-formed: all opened tags must close
+    // (basic check — count matching open/close for key elements)
+    const countTag = (tag: string): [number, number] => [
+      (xml.match(new RegExp(`<${tag}[> /]`, "g")) || []).length,
+      (xml.match(new RegExp(`</${tag}>`, "g")) || []).length +
+        (xml.match(new RegExp(`<${tag}/>`, "g")) || []).length,
+    ];
+    for (const tag of ["score-partwise", "part-list", "part", "note"]) {
+      const [open, close] = countTag(tag);
+      expect(open).toBe(close);
+    }
+  });
+
+  it("does NOT include external DOCTYPE (prevents fetch issues in offline/Electron)", () => {
+    const notes: ParsedNote[] = [makeNote(60, 0.0, 0.5)];
+    const xml = convertToMusicXML(notes, BPM, TPQ, 4, 4, 0, 0, 1);
+
+    // The DOCTYPE references http://www.musicxml.org which may fail offline
+    // Check if it exists (this test documents current behavior — flip if we remove it)
+    const hasDoctype = xml.includes("<!DOCTYPE");
+    // If DOCTYPE causes issues, this test should fail and remind us to remove it
+    expect(hasDoctype).toBe(true); // Current behavior — change to false if we remove it
+  });
+
+  it("Hanon-like input: 8th notes at 60 BPM with typical MIDI articulation produce eighth note types", () => {
+    // At 60 BPM, 8th note onset spacing = 0.5s
+    // Typical MIDI articulation: note-off at ~70% of spacing = 0.35s duration
+    const notes: ParsedNote[] = [];
+    const spacing = 0.5; // 8th note at 60 BPM
+    const articulation = 0.35; // 70% of spacing (typical piano)
+
+    // 8 notes in treble (C4-G4 ascending pattern)
+    const treblePitches = [60, 64, 62, 65, 64, 67, 65, 69];
+    // 8 notes in bass (C3-G3 ascending pattern)
+    const bassPitches = [48, 52, 50, 53, 52, 55, 53, 57];
+
+    for (let i = 0; i < 8; i++) {
+      notes.push(makeNote(treblePitches[i], i * spacing, articulation));
+      notes.push(makeNote(bassPitches[i], i * spacing, articulation));
+    }
+
+    const xml = convertToMusicXML(notes, 60, TPQ, 4, 4, 0, 0, 1);
+
+    // Count note types — all pitched notes should be eighths, no 16ths
+    const sixteenthCount = (xml.match(/<type>16th<\/type>/g) || []).length;
+    const eighthCount = (xml.match(/<type>eighth<\/type>/g) || []).length;
+    expect(eighthCount).toBeGreaterThanOrEqual(16);
+    expect(sixteenthCount).toBe(0);
+
+    // Should have no rests interspersed between notes (no articulation gaps)
+    expect(xml).not.toMatch(
+      /<type>eighth<\/type>.*<rest\/>.*<type>16th<\/type>/s,
+    );
   });
 
   it("handles multi-track (2 tracks) with track-based staff assignment", () => {

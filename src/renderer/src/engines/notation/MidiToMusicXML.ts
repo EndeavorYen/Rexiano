@@ -53,18 +53,18 @@ export interface MusicXMLDuration {
  * Index = midi % 12.
  */
 const CHROMATIC_STEPS: { step: string; alter?: number }[] = [
-  { step: "C" },              // 0
-  { step: "C", alter: 1 },    // 1  C#
-  { step: "D" },              // 2
-  { step: "E", alter: -1 },   // 3  Eb
-  { step: "E" },              // 4
-  { step: "F" },              // 5
-  { step: "F", alter: 1 },    // 6  F#
-  { step: "G" },              // 7
-  { step: "A", alter: -1 },   // 8  Ab
-  { step: "A" },              // 9
-  { step: "B", alter: -1 },   // 10 Bb
-  { step: "B" },              // 11
+  { step: "C" }, // 0
+  { step: "C", alter: 1 }, // 1  C#
+  { step: "D" }, // 2
+  { step: "E", alter: -1 }, // 3  Eb
+  { step: "E" }, // 4
+  { step: "F" }, // 5
+  { step: "F", alter: 1 }, // 6  F#
+  { step: "G" }, // 7
+  { step: "A", alter: -1 }, // 8  Ab
+  { step: "A" }, // 9
+  { step: "B", alter: -1 }, // 10 Bb
+  { step: "B" }, // 11
 ];
 
 /**
@@ -125,27 +125,28 @@ export function durationToMusicXML(
     }
   }
 
-  // Fallback: find nearest type
+  // Fallback: find nearest type (track undotted and dotted separately)
   let bestType = "quarter";
   let bestDiff = Infinity;
+  let bestDottedType: string | null = null;
+  let bestDottedDiff = Infinity;
+
   for (const [baseRatio, typeName] of DURATION_TABLE) {
     const diff = Math.abs(ratio - baseRatio);
     if (diff < bestDiff) {
       bestDiff = diff;
       bestType = typeName;
     }
-    // Also check dotted
     const dottedDiff = Math.abs(ratio - baseRatio * 1.5);
-    if (dottedDiff < bestDiff) {
-      bestDiff = dottedDiff;
-      bestType = typeName;
-      // If dotted is closest, return with dots
-      if (dottedDiff < diff) {
-        return { duration: durationTicks, type: typeName, dots: 1 };
-      }
+    if (dottedDiff < bestDottedDiff) {
+      bestDottedDiff = dottedDiff;
+      bestDottedType = typeName;
     }
   }
 
+  if (bestDottedType && bestDottedDiff < bestDiff) {
+    return { duration: durationTicks, type: bestDottedType, dots: 1 };
+  }
   return { duration: durationTicks, type: bestType };
 }
 
@@ -277,6 +278,8 @@ function noteToXml(
     xml += '<tie type="start"/>';
   }
 
+  // MusicXML DTD order: voice → type → dot → staff
+  xml += `<voice>${voice}</voice>`;
   xml += `<type>${dur.type}</type>`;
 
   if (dur.dots) {
@@ -286,7 +289,6 @@ function noteToXml(
   }
 
   xml += `<staff>${staff}</staff>`;
-  xml += `<voice>${voice}</voice>`;
 
   // Notations (tied)
   if (note.tiedFromPrevious || note.tiedToNext) {
@@ -364,19 +366,23 @@ export function convertToMusicXML(
   // --- Step 1: Quantize notes to tick domain ---
   const minTick = Math.max(1, Math.round(ticksPerQuarter / QUANTIZE_GRID));
 
+  const grid = ticksPerQuarter / QUANTIZE_GRID;
+
   const quantizedRaw: QuantizedNote[] = notes.map((note, idx) => {
     const absoluteStart = quantizeTick(
       secondsToAbsoluteTicks(note.time, tempos, ticksPerQuarter),
       ticksPerQuarter,
     );
-    const absoluteEndRaw = quantizeTick(
-      secondsToAbsoluteTicks(
-        note.time + note.duration,
-        tempos,
-        ticksPerQuarter,
-      ),
+    // Use Math.ceil for the end tick so that typical MIDI articulation
+    // (note-off before the next onset) doesn't shrink rhythmic durations.
+    // E.g., a 0.35s note at 60 BPM (8th-note spacing = 0.5s) should
+    // still produce an eighth note, not a 16th + 16th rest.
+    const rawEndTicks = secondsToAbsoluteTicks(
+      note.time + note.duration,
+      tempos,
       ticksPerQuarter,
     );
+    const absoluteEndRaw = Math.ceil(rawEndTicks / grid) * grid;
     const absoluteEnd = Math.max(absoluteStart + minTick, absoluteEndRaw);
 
     const perNoteTrackIndex = noteTrackIndices?.[idx] ?? trackIndex;
@@ -417,18 +423,24 @@ export function convertToMusicXML(
   const measureNotes: MeasureNote[][] = measureBoundaries.map(() => []);
 
   for (const note of quantized) {
-    let measureIndex = findMeasureIndexByTick(measureStartTicks, note.startTick);
+    let measureIndex = findMeasureIndexByTick(
+      measureStartTicks,
+      note.startTick,
+    );
     let cursorTick = note.startTick;
     let isFirst = true;
 
-    while (cursorTick < note.endTick && measureIndex < measureBoundaries.length) {
+    while (
+      cursorTick < note.endTick &&
+      measureIndex < measureBoundaries.length
+    ) {
       const measureStart = measureStartTicks[measureIndex];
       const measureEnd = measureEndTicks[measureIndex];
       const segmentEnd = Math.min(note.endTick, measureEnd);
 
       if (segmentEnd <= cursorTick) break;
 
-      const durationTicks = Math.max(minTick, segmentEnd - cursorTick);
+      const durationTicks = segmentEnd - cursorTick;
       const tiedToNext = segmentEnd < note.endTick;
       const tiedFromPrevious = !isFirst;
 
@@ -448,7 +460,12 @@ export function convertToMusicXML(
     }
   }
 
-  return buildMusicXML(measureBoundaries, measureNotes, ticksPerQuarter, keySig);
+  return buildMusicXML(
+    measureBoundaries,
+    measureNotes,
+    ticksPerQuarter,
+    keySig,
+  );
 }
 
 // ---------------------------------------------------------------------------
@@ -508,7 +525,11 @@ function buildMusicXML(
     const bassNotes = notes.filter((n) => n.clef === "bass");
 
     // Fill rests
-    const trebleFilled = fillRestsForVoice(trebleNotes, ticksPerMeasure, "treble");
+    const trebleFilled = fillRestsForVoice(
+      trebleNotes,
+      ticksPerMeasure,
+      "treble",
+    );
     const bassFilled = fillRestsForVoice(bassNotes, ticksPerMeasure, "bass");
 
     // Sort notes by startTick, then midi

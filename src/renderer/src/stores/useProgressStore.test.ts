@@ -55,6 +55,7 @@ const fakeSong: ParsedSong = {
   tracks: [{ name: "Piano", instrument: "Piano", channel: 0, notes: [] }],
   tempos: [{ time: 0, bpm: 120 }],
   timeSignatures: [{ time: 0, numerator: 4, denominator: 4 }],
+  keySignatures: [],
   noteCount: 100,
 };
 
@@ -131,9 +132,9 @@ describe("useProgressStore", () => {
     const session = makeSession();
     await useProgressStore.getState().addSession(session);
 
-    // Session should NOT be added to local state on error
+    // Session IS kept in memory even when disk save fails (prevents data loss)
     const s = useProgressStore.getState();
-    expect(s.sessions).toHaveLength(0);
+    expect(s.sessions).toHaveLength(1);
   });
 
   // ─── getSessionsBySong() ─────────────────────────────

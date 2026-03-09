@@ -104,6 +104,8 @@ export class WaitMode {
   stop(): void {
     this._state = "idle";
     this._targetNotes.clear();
+    this._pendingNoteDetails.length = 0;
+    this._pendingMidis.clear();
   }
 
   /**

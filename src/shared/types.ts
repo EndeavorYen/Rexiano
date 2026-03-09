@@ -48,7 +48,11 @@ export interface BuiltinSongMeta {
   id: string;
   file: string;
   title: string;
+  /** Chinese (zh-TW) title for i18n display */
+  titleZh?: string;
   composer: string;
+  /** Chinese (zh-TW) composer name for i18n display */
+  composerZh?: string;
   difficulty: "beginner" | "intermediate" | "advanced";
   category?: "exercise" | "classical" | "popular" | "holiday";
   durationSeconds: number;
@@ -82,7 +86,7 @@ export interface MidiDeviceInfo {
 // ─── Phase 6: Practice Mode ─────────────────────────────────────────
 
 /** Available practice modes */
-export type PracticeMode = "watch" | "wait" | "free";
+export type PracticeMode = "watch" | "wait" | "free" | "step";
 
 /** Scoring result for a practice session */
 export interface PracticeScore {

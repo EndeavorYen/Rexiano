@@ -963,10 +963,16 @@ export function SheetMusicPanel({
     // Sample the measures around the active index to estimate density.
     // Count unique onset ticks per stave (simultaneous notes stack vertically).
     const total = notationData.measures.length;
-    const sampleStart = Math.floor(activeMeasureIndex / MAX_DISPLAY_MEASURES) * MAX_DISPLAY_MEASURES;
+    const sampleStart =
+      Math.floor(activeMeasureIndex / MAX_DISPLAY_MEASURES) *
+      MAX_DISPLAY_MEASURES;
     let totalOnsets = 0;
     let sampleCount = 0;
-    for (let i = sampleStart; i < sampleStart + MAX_DISPLAY_MEASURES && i < total; i++) {
+    for (
+      let i = sampleStart;
+      i < sampleStart + MAX_DISPLAY_MEASURES && i < total;
+      i++
+    ) {
       const m = notationData.measures[i];
       const trebleOnsets = new Set(
         m.trebleNotes.filter((n) => !n.isRest).map((n) => n.startTick),
@@ -983,16 +989,21 @@ export function SheetMusicPanel({
     const neededPerMeasure = avgOnsetsPerMeasure * PX_PER_ONSET;
     const effectiveWidth = availableWidth - FIRST_MEASURE_MIN_WIDTH;
     // First measure takes FIRST_MEASURE_MIN_WIDTH; rest share the remainder
-    const fittable = neededPerMeasure > 0
-      ? 1 + Math.floor(effectiveWidth / neededPerMeasure)
-      : MAX_DISPLAY_MEASURES;
+    const fittable =
+      neededPerMeasure > 0
+        ? 1 + Math.floor(effectiveWidth / neededPerMeasure)
+        : MAX_DISPLAY_MEASURES;
 
     return Math.max(2, Math.min(MAX_DISPLAY_MEASURES, fittable));
   }, [notationData, activeMeasureIndex, availableWidth]);
 
   const visibleMeasures = useMemo(() => {
     if (!notationData || notationData.measures.length === 0) return [];
-    return getMeasureWindow(activeMeasureIndex, notationData.measures.length, displayMeasureCount);
+    return getMeasureWindow(
+      activeMeasureIndex,
+      notationData.measures.length,
+      displayMeasureCount,
+    );
   }, [notationData, activeMeasureIndex, displayMeasureCount]);
 
   const rawSlotWidths = useMemo(() => {

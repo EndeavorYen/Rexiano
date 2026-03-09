@@ -316,9 +316,10 @@ function App(): React.JSX.Element {
               return;
             }
 
-            const { isPlaying, currentTime } = usePlaybackStore.getState();
             await rebuildAudioStack(liveSong);
 
+            // Read state AFTER async rebuild to avoid stale snapshot
+            const { isPlaying, currentTime } = usePlaybackStore.getState();
             if (isPlaying) {
               const { engine, scheduler } = audioRef.current;
               if (engine && scheduler) {
@@ -1108,7 +1109,10 @@ function App(): React.JSX.Element {
               {sheetRenderer === "osmd" ? (
                 <SheetMusicPanelOSMD song={song} mode={displayMode} />
               ) : (
-                <SheetMusicPanel notationData={notationData} mode={displayMode} />
+                <SheetMusicPanel
+                  notationData={notationData}
+                  mode={displayMode}
+                />
               )}
             </div>
 

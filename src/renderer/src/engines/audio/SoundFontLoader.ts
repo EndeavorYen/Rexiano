@@ -43,7 +43,7 @@ export class SoundFontLoader implements ISoundFontLoader {
         console.warn(
           "SoundFontLoader: window.api not available, using fallback",
         );
-        this._initFallback(audioContext);
+        this._generateSynthSamples(audioContext);
         return;
       }
       const result = await window.api.loadSoundFont(source);

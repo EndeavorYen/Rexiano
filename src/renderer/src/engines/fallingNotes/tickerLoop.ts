@@ -42,6 +42,11 @@ export function createTickerUpdate(
     const engines = getPracticeEngines();
     const { waitMode, speedController, loopController } = engines;
 
+    // Advance the speed lerp so visual scroll matches the target speed
+    if (speedController) {
+      speedController.tick(performance.now());
+    }
+
     // Compute effective pps with speed multiplier
     const effectivePps = speedController
       ? speedController.effectivePixelsPerSecond(playState.pixelsPerSecond)

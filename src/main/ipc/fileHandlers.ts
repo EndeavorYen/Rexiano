@@ -106,8 +106,15 @@ export function registerFileHandlers(): void {
         return [];
       }
 
-      const raw = await readFile(manifestPath, "utf-8");
-      return JSON.parse(raw) as BuiltinSongMeta[];
+      try {
+        const raw = await readFile(manifestPath, "utf-8");
+        const parsed = JSON.parse(raw);
+        if (!Array.isArray(parsed)) return [];
+        return parsed as BuiltinSongMeta[];
+      } catch (err) {
+        console.warn("Failed to parse song library manifest:", err);
+        return [];
+      }
     },
   );
 

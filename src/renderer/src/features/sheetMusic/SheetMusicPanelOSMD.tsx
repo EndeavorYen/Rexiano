@@ -8,7 +8,10 @@ interface SheetMusicPanelOSMDProps {
   mode: DisplayMode;
 }
 
-export function SheetMusicPanelOSMD({ song, mode }: SheetMusicPanelOSMDProps): React.ReactElement | null {
+export function SheetMusicPanelOSMD({
+  song,
+  mode,
+}: SheetMusicPanelOSMDProps): React.ReactElement | null {
   const containerRef = useRef<HTMLDivElement>(null);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const osmdRef = useRef<any>(null);
@@ -43,49 +46,52 @@ export function SheetMusicPanelOSMD({ song, mode }: SheetMusicPanelOSMDProps): R
     );
   }, [song]);
 
+  // Re-run when musicXml changes OR when mode transitions away from "falling"
+  // (since the container div is conditionally rendered based on mode).
   useEffect(() => {
+    if (mode === "falling") return;
     if (!containerRef.current || !musicXml) return;
 
     let cancelled = false;
 
-    import("opensheetmusicdisplay").then(({ OpenSheetMusicDisplay }) => {
-      if (cancelled || !containerRef.current) return;
+    import("opensheetmusicdisplay")
+      .then(({ OpenSheetMusicDisplay }) => {
+        if (cancelled || !containerRef.current) return;
 
-      if (!osmdRef.current) {
-        osmdRef.current = new OpenSheetMusicDisplay(containerRef.current, {
-          autoResize: true,
-          drawTitle: false,
-          drawComposer: false,
-          drawPartNames: false,
-        });
-      }
+        if (!osmdRef.current) {
+          osmdRef.current = new OpenSheetMusicDisplay(containerRef.current, {
+            autoResize: true,
+            drawTitle: false,
+            drawComposer: false,
+            drawPartNames: false,
+          });
+        }
 
-      osmdRef.current
-        .load(musicXml)
-        .then(() => {
+        return osmdRef.current.load(musicXml).then(() => {
           if (!cancelled) {
             osmdRef.current?.render();
           }
-        })
-        .catch((err: unknown) => {
-          console.warn("[SheetMusicPanelOSMD] Failed to render:", err);
         });
-    });
+      })
+      .catch((err: unknown) => {
+        console.error("[SheetMusicPanelOSMD] Failed to load/render:", err);
+      });
 
     return () => {
       cancelled = true;
-    };
-  }, [musicXml]);
-
-  // Cleanup on unmount
-  useEffect(() => {
-    return () => {
+      // Clear the OSMD instance so that if the container div is recreated
+      // (e.g. mode toggles away and back), we construct a fresh instance
+      // bound to the new DOM node instead of rendering into a detached one.
       if (osmdRef.current) {
         osmdRef.current.clear();
         osmdRef.current = null;
       }
     };
-  }, []);
+  }, [musicXml, mode]);
+
+  // NOTE: unmount cleanup is handled by the main useEffect's cleanup above.
+  // No separate unmount effect needed — when the component unmounts, React
+  // runs the cleanup of the [musicXml, mode] effect, which clears osmdRef.
 
   if (mode === "falling") return null;
 

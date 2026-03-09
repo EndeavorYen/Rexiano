@@ -24,7 +24,7 @@ export function parseMidiFile(fileName: string, data: number[]): ParsedSong {
     .map((track) => {
       const notes: ParsedNote[] = track.notes.map((note) => ({
         midi: note.midi,
-        name: note.name + note.octave,
+        name: note.name,
         time: note.time,
         duration: note.duration,
         velocity: Math.round(note.velocity * 127),

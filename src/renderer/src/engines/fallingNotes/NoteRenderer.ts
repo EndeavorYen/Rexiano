@@ -364,12 +364,8 @@ export class NoteRenderer {
       }
     }
 
-    // Hide all labels if fingering is disabled
-    if (!showFingering) {
-      for (const [, label] of this.activeFingeringLabels) {
-        this.releaseFingeringLabel(label);
-      }
-    }
+    // NOTE: When showFingering is false, nextFLabels is empty, so the loop
+    // above already releases all labels. No second release needed.
 
     // Swap buffers: active ↔ nextActive
     this.nextActive = this.active;

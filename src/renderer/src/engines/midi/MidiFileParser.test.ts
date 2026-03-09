@@ -420,7 +420,7 @@ describe("MidiFileParser — parseMidiFile", () => {
           notes: [
             {
               midi: 60,
-              name: "C",
+              name: "C4",
               octave: 4,
               time: 0,
               duration: 1,
@@ -428,7 +428,7 @@ describe("MidiFileParser — parseMidiFile", () => {
             },
             {
               midi: 61,
-              name: "C#",
+              name: "C#4",
               octave: 4,
               time: 1,
               duration: 1,
@@ -436,7 +436,7 @@ describe("MidiFileParser — parseMidiFile", () => {
             },
             {
               midi: 69,
-              name: "A",
+              name: "A4",
               octave: 4,
               time: 2,
               duration: 1,

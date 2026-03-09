@@ -109,11 +109,12 @@ export const useProgressStore = create<ProgressState>()((set, get) => ({
   },
 
   addSession: async (record) => {
+    // Always update in-memory state so the current session is visible
+    set((state) => ({ sessions: [...state.sessions, record] }));
     try {
       await window.api.saveSession(record);
-      set((state) => ({ sessions: [...state.sessions, record] }));
     } catch (err) {
-      console.error("Failed to save session:", err);
+      console.error("Failed to persist session to disk:", err);
     }
   },
 

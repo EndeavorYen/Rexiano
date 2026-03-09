@@ -191,28 +191,20 @@ export function getMeasureWindow(
   const groupStart = Math.floor(current / count) * count;
   const positionInGroup = current - groupStart;
 
-  if (
-    positionInGroup === count - 1 &&
-    groupStart + count < totalMeasures
-  ) {
+  if (positionInGroup === count - 1 && groupStart + count < totalMeasures) {
+    // Show current measure first, then upcoming measures from the next group
     const nextGroupStart = groupStart + count;
-    const nextMeasures: number[] = [];
+    const window = [current];
     for (let offset = 0; offset < count - 1; offset++) {
       const index = nextGroupStart + offset;
       if (index >= totalMeasures) break;
-      nextMeasures.push(index);
+      window.push(index);
     }
-
-    // Keep the current measure as the trailing anchor.
-    return [...nextMeasures, current].slice(0, count);
+    return window.slice(0, count);
   }
 
   const window: number[] = [];
-  for (
-    let i = groupStart;
-    i < groupStart + count && i < totalMeasures;
-    i++
-  ) {
+  for (let i = groupStart; i < groupStart + count && i < totalMeasures; i++) {
     window.push(i);
   }
   return window;

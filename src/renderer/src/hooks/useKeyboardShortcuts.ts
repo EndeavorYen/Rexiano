@@ -189,9 +189,11 @@ export function createKeyboardHandler(
         const songA = useSongStore.getState().song;
         const timeA = usePlaybackStore.getState().currentTime;
         const loopA = usePracticeStore.getState().loopRange;
-        usePracticeStore
-          .getState()
-          .setLoopRange([timeA, loopA?.[1] ?? songA?.duration ?? timeA + 1]);
+        const endA = loopA?.[1] ?? songA?.duration ?? timeA + 1;
+        // Only set if A < B to prevent invalid loop range
+        if (timeA < endA) {
+          usePracticeStore.getState().setLoopRange([timeA, endA]);
+        }
         break;
       }
 
@@ -199,7 +201,11 @@ export function createKeyboardHandler(
         if (!hasSong) return;
         const timeB = usePlaybackStore.getState().currentTime;
         const loopB = usePracticeStore.getState().loopRange;
-        usePracticeStore.getState().setLoopRange([loopB?.[0] ?? 0, timeB]);
+        const startB = loopB?.[0] ?? 0;
+        // Only set if A < B to prevent invalid loop range
+        if (startB < timeB) {
+          usePracticeStore.getState().setLoopRange([startB, timeB]);
+        }
         break;
       }
 

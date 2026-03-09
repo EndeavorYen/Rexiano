@@ -155,8 +155,8 @@ describe("CursorSync", () => {
     });
 
     it("preloads next measures when cursor reaches the last measure of group", () => {
-      // At measure index 7 (last of first group of 8), preload next group
-      expect(getMeasureWindow(7, 20)).toEqual([8, 9, 10, 11, 12, 13, 14, 7]);
+      // At measure index 7 (last of first group of 8), show current + next group
+      expect(getMeasureWindow(7, 20)).toEqual([7, 8, 9, 10, 11, 12, 13, 14]);
     });
 
     it("advances to next full 8-measure window on the next measure", () => {
@@ -164,7 +164,7 @@ describe("CursorSync", () => {
     });
 
     it("does not return out-of-range indices near the song end", () => {
-      expect(getMeasureWindow(15, 18)).toEqual([16, 17, 15]);
+      expect(getMeasureWindow(15, 18)).toEqual([15, 16, 17]);
       for (const index of getMeasureWindow(15, 18)) {
         expect(index).toBeLessThan(18);
       }

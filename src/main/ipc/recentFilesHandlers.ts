@@ -42,6 +42,9 @@ async function writeRecents(recents: RecentFile[]): Promise<void> {
   await writeFile(filePath, JSON.stringify(recents, null, 2), "utf-8");
 }
 
+// Serialize writes to prevent concurrent read-then-write from losing data
+let writeChain: Promise<void> = Promise.resolve();
+
 export function registerRecentFilesHandlers(): void {
   ipcMain.handle(
     IpcChannels.LOAD_RECENT_FILES,
@@ -53,15 +56,22 @@ export function registerRecentFilesHandlers(): void {
   ipcMain.handle(
     IpcChannels.SAVE_RECENT_FILE,
     async (_event, file: RecentFile): Promise<void> => {
-      const recents = await readRecents();
+      writeChain = writeChain
+        .then(async () => {
+          const recents = await readRecents();
 
-      // Remove existing entry for this path (if any) so it moves to front
-      const filtered = recents.filter((r) => r.path !== file.path);
-      filtered.unshift(file);
+          // Remove existing entry for this path (if any) so it moves to front
+          const filtered = recents.filter((r) => r.path !== file.path);
+          filtered.unshift(file);
 
-      // Keep only the most recent entries
-      const trimmed = filtered.slice(0, MAX_RECENTS);
-      await writeRecents(trimmed);
+          // Keep only the most recent entries
+          const trimmed = filtered.slice(0, MAX_RECENTS);
+          await writeRecents(trimmed);
+        })
+        .catch((err) => {
+          console.error("Failed to save recent file:", err);
+        });
+      await writeChain;
     },
   );
 }

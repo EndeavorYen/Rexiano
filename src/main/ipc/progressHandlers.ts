@@ -40,6 +40,9 @@ async function writeSessions(sessions: SessionRecord[]): Promise<void> {
   await writeFile(filePath, JSON.stringify(sessions, null, 2), "utf-8");
 }
 
+// Serialize writes to prevent concurrent read-then-write from losing data
+let writeChain: Promise<void> = Promise.resolve();
+
 export function registerProgressHandlers(): void {
   ipcMain.handle(
     IpcChannels.LOAD_SESSIONS,
@@ -51,9 +54,16 @@ export function registerProgressHandlers(): void {
   ipcMain.handle(
     IpcChannels.SAVE_SESSION,
     async (_event, record: SessionRecord): Promise<void> => {
-      const sessions = await readSessions();
-      sessions.push(record);
-      await writeSessions(sessions);
+      writeChain = writeChain
+        .then(async () => {
+          const sessions = await readSessions();
+          sessions.push(record);
+          await writeSessions(sessions);
+        })
+        .catch((err) => {
+          console.error("Failed to save session:", err);
+        });
+      await writeChain;
     },
   );
 }

@@ -552,7 +552,9 @@ export function clampOverlappingDurations(
 }
 
 /** Ensure tempo events are sorted and always include a t=0 anchor. */
-export function normalizeTempos(bpmOrTempos: number | TempoEvent[]): TempoEvent[] {
+export function normalizeTempos(
+  bpmOrTempos: number | TempoEvent[],
+): TempoEvent[] {
   if (typeof bpmOrTempos === "number") {
     return [{ time: 0, bpm: bpmOrTempos }];
   }

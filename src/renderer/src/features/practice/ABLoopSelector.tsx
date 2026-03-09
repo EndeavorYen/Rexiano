@@ -56,8 +56,11 @@ export function ABLoopSelector(): React.JSX.Element {
       setLoopRange([start, Math.max(start + 0.1, currentTime)]);
       setFlashMessage(`B ${fmtSec(Math.max(start + 0.1, currentTime))}`);
     } else {
-      setLoopRange([0, currentTime]);
-      setFlashMessage(`B ${fmtSec(currentTime)}`);
+      // No A point set yet — set A to 0 explicitly so the user knows.
+      // If currentTime is very small, ensure a minimum loop length.
+      const end = Math.max(0.1, currentTime);
+      setLoopRange([0, end]);
+      setFlashMessage(`A 0:00 → B ${fmtSec(end)}`);
     }
   };
 
