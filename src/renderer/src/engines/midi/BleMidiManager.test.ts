@@ -122,8 +122,9 @@ describe("BleMidiManager", () => {
       const onNoteOn = vi.fn();
       manager.setCallbacks({ onNoteOn });
 
-      // Note value with bit 7 accidentally set — should be masked
-      const data = new Uint8Array([0x80, 0x80, 0x90, 0x3c, 0x64]);
+      // Data bytes with bit 7 set: 0xBC = 0x3C | 0x80, 0xE4 = 0x64 | 0x80
+      // The parser should mask them to 7-bit: 0x3C (60) and 0x64 (100)
+      const data = new Uint8Array([0x80, 0x80, 0x90, 0xbc, 0xe4]);
       manager._parseBlePacket(data);
 
       expect(onNoteOn).toHaveBeenCalledWith(0x3c, 0x64);

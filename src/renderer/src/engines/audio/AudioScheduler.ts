@@ -44,6 +44,9 @@ export class AudioScheduler implements IAudioScheduler {
   /** Playback speed multiplier (0.25–2.0). 1.0 = normal speed. */
   private _speed = 1.0;
 
+  /** Generation counter: incremented on start/seek to invalidate stale interval ticks */
+  private _generation = 0;
+
   constructor(engine: IAudioEngine, config?: Partial<AudioSchedulerConfig>) {
     this._engine = engine;
     this._config = { ...DEFAULT_CONFIG, ...config };
@@ -78,7 +81,11 @@ export class AudioScheduler implements IAudioScheduler {
     this._startAudioTime = ctx.currentTime;
     this._seekOffset = songTime;
     this._resetCursors(songTime);
-    this._intervalId = setInterval(() => this._tick(), this._config.intervalMs);
+    const gen = ++this._generation;
+    this._intervalId = setInterval(() => {
+      if (this._generation !== gen) return;
+      this._tick();
+    }, this._config.intervalMs);
   }
 
   stop(): void {
@@ -101,13 +108,14 @@ export class AudioScheduler implements IAudioScheduler {
     this._startAudioTime = ctx.currentTime;
     this._resetCursors(songTime);
 
-    // If currently playing, restart the interval
+    // If currently playing, restart the interval with a new generation
     if (this._intervalId !== null) {
       clearInterval(this._intervalId);
-      this._intervalId = setInterval(
-        () => this._tick(),
-        this._config.intervalMs,
-      );
+      const gen = ++this._generation;
+      this._intervalId = setInterval(() => {
+        if (this._generation !== gen) return;
+        this._tick();
+      }, this._config.intervalMs);
     }
   }
 

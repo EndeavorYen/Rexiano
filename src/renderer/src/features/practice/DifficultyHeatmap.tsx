@@ -49,7 +49,7 @@ export function DifficultyHeatmap(): React.JSX.Element | null {
     return getSegmentDifficulties(2);
   }, [song, getSegmentDifficulties]);
 
-  if (!song || segments.length === 0) return null;
+  if (!song || segments.length === 0 || song.duration <= 0) return null;
 
   const duration = song.duration;
 

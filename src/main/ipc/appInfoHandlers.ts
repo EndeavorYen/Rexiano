@@ -1,6 +1,7 @@
 import { app, ipcMain } from "electron";
 import * as path from "path";
 import * as fs from "fs";
+import { IpcChannels } from "../../shared/types";
 import type { AppInfo } from "../../shared/types";
 
 /**
@@ -14,7 +15,7 @@ import type { AppInfo } from "../../shared/types";
  * In prod: read from process.resourcesPath.
  */
 export function registerAppInfoHandlers(): void {
-  ipcMain.handle("app:getAppInfo", async (): Promise<AppInfo> => {
+  ipcMain.handle(IpcChannels.APP_GET_INFO, async (): Promise<AppInfo> => {
     const version = app.getVersion();
 
     const changelogPath = !app.isPackaged

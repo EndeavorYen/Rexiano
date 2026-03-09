@@ -385,10 +385,9 @@ export function SettingsPanel({
                       onChange={(nextMuted) => {
                         setSettingsMuted(nextMuted);
                         if (nextMuted) {
+                          const liveVol = usePlaybackStore.getState().volume;
                           preMuteVolumeRef.current =
-                            playbackVolume > 0
-                              ? playbackVolume
-                              : preMuteVolumeRef.current;
+                            liveVol > 0 ? liveVol : preMuteVolumeRef.current;
                           setPlaybackVolume(0);
                         } else {
                           setPlaybackVolume(preMuteVolumeRef.current);

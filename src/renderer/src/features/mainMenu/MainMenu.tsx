@@ -42,12 +42,12 @@ export function MainMenu({
     return t("practice.watch");
   }, [defaultMode, t]);
 
-  const greeting = useMemo(() => {
+  const greeting = (() => {
     const hour = new Date().getHours();
     if (hour < 12) return t("library.greeting.morning");
     if (hour < 18) return t("library.greeting.afternoon");
     return t("library.greeting.evening");
-  }, [t]);
+  })();
 
   const totalSessions = sessions.length;
   const practicedSongs = new Set(sessions.map((s) => s.songId)).size;

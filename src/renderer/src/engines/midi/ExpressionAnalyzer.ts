@@ -126,16 +126,15 @@ export function deduplicateExpressions(
 ): ExpressionMarking[] {
   const sorted = [...expressions].sort((a, b) => a.time - b.time);
   const deduped: ExpressionMarking[] = [];
+  // Track last-seen time per expression type to correctly dedup interleaved types
+  const lastSeenByType = new Map<string, number>();
 
   for (const expr of sorted) {
-    const prev = deduped[deduped.length - 1];
-    if (
-      prev &&
-      prev.type === expr.type &&
-      expr.time - prev.time < DEDUP_WINDOW_SECONDS
-    ) {
+    const lastTime = lastSeenByType.get(expr.type);
+    if (lastTime !== undefined && expr.time - lastTime < DEDUP_WINDOW_SECONDS) {
       continue;
     }
+    lastSeenByType.set(expr.type, expr.time);
     deduped.push(expr);
   }
 

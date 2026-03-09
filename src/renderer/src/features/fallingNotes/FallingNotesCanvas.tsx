@@ -107,7 +107,9 @@ export function FallingNotesCanvas({
       resizeObserver.observe(container);
     };
 
-    setup();
+    void setup().catch((err) => {
+      console.error("[FallingNotesCanvas] WebGL/PixiJS init failed:", err);
+    });
 
     return () => {
       destroyed = true;

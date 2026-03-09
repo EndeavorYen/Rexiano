@@ -30,6 +30,8 @@ interface PracticeState {
   displayMode: DisplayMode;
   /** Whether WaitMode is currently paused waiting for user input */
   isWaiting: boolean;
+  /** Count of hits that provided a timing delta (for correct average calculation) */
+  _timingDeltaCount: number;
 
   setMode: (mode: PracticeMode) => void;
   setSpeed: (speed: number) => void;
@@ -56,6 +58,7 @@ export const usePracticeStore = create<PracticeState>()((set) => ({
   noteResults: new Map<string, NoteResult>(),
   displayMode: "falling",
   isWaiting: false,
+  _timingDeltaCount: 0,
 
   setMode: (mode) =>
     set({
@@ -63,6 +66,7 @@ export const usePracticeStore = create<PracticeState>()((set) => ({
       isWaiting: false,
       score: { ...initialScore },
       noteResults: new Map(),
+      _timingDeltaCount: 0,
     }),
 
   setSpeed: (speed) => set({ speed: Math.max(0.25, Math.min(2.0, speed)) }),
@@ -83,18 +87,21 @@ export const usePracticeStore = create<PracticeState>()((set) => ({
       const totalNotes = state.score.totalNotes + 1;
       const currentStreak = state.score.currentStreak + 1;
 
-      // R2-004: Track timing deltas
+      // R2-004: Track timing deltas — use _timingDeltaCount (not hitNotes)
+      // to avoid diluting the average when some hits have no timing data
       let avgTimingDeltaMs = state.score.avgTimingDeltaMs;
       const lastTimingDeltaMs = timingDeltaMs ?? state.score.lastTimingDeltaMs;
+      let timingDeltaCount = state._timingDeltaCount;
       if (timingDeltaMs !== undefined) {
-        const prevSum =
-          (state.score.avgTimingDeltaMs ?? 0) * state.score.hitNotes;
+        const prevSum = (state.score.avgTimingDeltaMs ?? 0) * timingDeltaCount;
+        timingDeltaCount += 1;
         avgTimingDeltaMs =
-          Math.round(((prevSum + timingDeltaMs) / hitNotes) * 10) / 10;
+          Math.round(((prevSum + timingDeltaMs) / timingDeltaCount) * 10) / 10;
       }
 
       return {
         noteResults: newResults,
+        _timingDeltaCount: timingDeltaCount,
         score: {
           totalNotes,
           hitNotes,
@@ -134,5 +141,6 @@ export const usePracticeStore = create<PracticeState>()((set) => ({
       score: { ...initialScore },
       noteResults: new Map(),
       isWaiting: false,
+      _timingDeltaCount: 0,
     }),
 }));

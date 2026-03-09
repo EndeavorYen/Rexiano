@@ -27,7 +27,8 @@ const api = {
     ipcRenderer.invoke(IpcChannels.LOAD_MIDI_PATH, filePath),
 
   // Release pipeline: app version + changelog
-  getAppInfo: (): Promise<AppInfo> => ipcRenderer.invoke("app:getAppInfo"),
+  getAppInfo: (): Promise<AppInfo> =>
+    ipcRenderer.invoke(IpcChannels.APP_GET_INFO),
 };
 
 if (process.contextIsolated) {

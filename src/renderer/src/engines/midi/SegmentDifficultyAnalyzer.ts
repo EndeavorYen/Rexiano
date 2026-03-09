@@ -54,6 +54,14 @@ export function analyzeSegments(
   );
   const hasMultipleTracks = sortedTracks.length >= 2;
 
+  // Pre-sort per-track notes by time for binary search in getNotesInWindow
+  const sortedTrackANotes = hasMultipleTracks
+    ? [...sortedTracks[0].notes].sort((a, b) => a.time - b.time)
+    : [];
+  const sortedTrackBNotes = hasMultipleTracks
+    ? [...sortedTracks[1].notes].sort((a, b) => a.time - b.time)
+    : [];
+
   for (let i = 0; i < segmentCount; i++) {
     const startTime = i * segmentDurationSec;
     const endTime = Math.min((i + 1) * segmentDurationSec, song.duration);
@@ -81,12 +89,12 @@ export function analyzeSegments(
     let nIndependence = 0;
     if (hasMultipleTracks) {
       const trackANotes = getNotesInWindow(
-        sortedTracks[0].notes,
+        sortedTrackANotes,
         startTime,
         endTime,
       );
       const trackBNotes = getNotesInWindow(
-        sortedTracks[1].notes,
+        sortedTrackBNotes,
         startTime,
         endTime,
       );

@@ -208,9 +208,8 @@ describe("AudioScheduler", () => {
 
       // Only one set of scheduling should be active
       vi.advanceTimersByTime(25);
-      // noteOn should be called, but not duplicated
-      const callCount = engine.noteOn.mock.calls.length;
-      expect(callCount).toBeGreaterThan(0);
+      // noteOn should be called exactly once — not duplicated by two intervals
+      expect(engine.noteOn).toHaveBeenCalledTimes(1);
     });
   });
 

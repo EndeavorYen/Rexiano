@@ -121,6 +121,9 @@ export class AudioEngine implements IAudioEngine {
       this._status = "ready";
     } catch (err) {
       this._status = "error";
+      // Close AudioContext to prevent OS audio resource leak on failed init
+      void this._audioContext?.close().catch(() => {});
+      this._audioContext = null;
       console.error("AudioEngine.init() failed:", err);
       throw err;
     }
@@ -168,11 +171,19 @@ export class AudioEngine implements IAudioEngine {
         // Disconnect audio graph nodes to prevent GainNode leak
         source.disconnect();
         velocityGain.disconnect();
+        // Remove from active notes
         const notes = this._activeNotes.get(midi);
         if (notes) {
           const idx = notes.indexOf(activeNote);
           if (idx !== -1) notes.splice(idx, 1);
           if (notes.length === 0) this._activeNotes.delete(midi);
+        }
+        // Also remove from sustained notes (note may have been moved there by noteOff)
+        const sustained = this._sustainedNotes.get(midi);
+        if (sustained) {
+          const sIdx = sustained.indexOf(activeNote);
+          if (sIdx !== -1) sustained.splice(sIdx, 1);
+          if (sustained.length === 0) this._sustainedNotes.delete(midi);
         }
       };
     } catch (err) {
@@ -215,7 +226,8 @@ export class AudioEngine implements IAudioEngine {
   /** Release sustain pedal -- all held notes are released with proper envelope */
   sustainOff(): void {
     this._sustainActive = false;
-    const now = this._audioContext?.currentTime ?? 0;
+    if (!this._audioContext) return;
+    const now = this._audioContext.currentTime;
     for (const [, notes] of this._sustainedNotes) {
       for (const activeNote of notes) {
         this._releaseNote(activeNote, now);
@@ -225,7 +237,14 @@ export class AudioEngine implements IAudioEngine {
   }
 
   allNotesOff(): void {
-    const now = this._audioContext?.currentTime ?? 0;
+    if (!this._audioContext) {
+      // No context — just clear the maps to release references
+      this._activeNotes.clear();
+      this._sustainedNotes.clear();
+      this._sustainActive = false;
+      return;
+    }
+    const now = this._audioContext.currentTime;
     const killAll = (noteMap: Map<number, ActiveNote[]>): void => {
       for (const [, notes] of noteMap) {
         for (const { source, gain } of notes) {

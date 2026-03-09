@@ -56,7 +56,10 @@ function createWindow(): void {
     "select-bluetooth-device",
     (event, devices, callback) => {
       event.preventDefault();
-      // Store the callback for later if no devices found yet
+      // Cancel stale callback from a previous scan to prevent Chromium resource leak
+      if (pendingBluetoothCallback && pendingBluetoothCallback !== callback) {
+        pendingBluetoothCallback("");
+      }
       pendingBluetoothCallback = callback;
 
       if (devices.length === 0) return; // Keep waiting

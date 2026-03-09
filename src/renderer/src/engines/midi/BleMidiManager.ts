@@ -90,6 +90,7 @@ export class BleMidiManager {
         ),
       ]);
 
+      this._clearScanTimeout();
       this._device = device;
       this._status = "connecting";
 
@@ -113,6 +114,7 @@ export class BleMidiManager {
       this._status = "connected";
       this._error = null;
     } catch (err) {
+      this._clearScanTimeout();
       // User cancelled the picker or connection failed
       const msg = err instanceof Error ? err.message : "Connection failed";
       console.warn(`[BLE MIDI] Error: ${msg}`);
@@ -127,10 +129,20 @@ export class BleMidiManager {
     }
   }
 
+  /** Timer handle for the active scan timeout — cleared on success or error */
+  private _scanTimeoutId: ReturnType<typeof setTimeout> | null = null;
+
   private _timeout(ms: number, message: string): Promise<never> {
     return new Promise((_resolve, reject) => {
-      setTimeout(() => reject(new Error(message)), ms);
+      this._scanTimeoutId = setTimeout(() => reject(new Error(message)), ms);
     });
+  }
+
+  private _clearScanTimeout(): void {
+    if (this._scanTimeoutId !== null) {
+      clearTimeout(this._scanTimeoutId);
+      this._scanTimeoutId = null;
+    }
   }
 
   /** Disconnect from the BLE MIDI device */
@@ -238,6 +250,10 @@ export class BleMidiManager {
       } else if (cmd === 0xe0) {
         // Pitch Bend — 2 data bytes
         pos += 2;
+      } else if (cmd === 0xf0) {
+        // SysEx: skip until we find 0xF7 (end of SysEx) or run out of data
+        while (pos < data.length && data[pos] !== 0xf7) pos++;
+        if (pos < data.length) pos++; // skip the 0xF7 byte
       } else {
         // Unknown command, skip
         pos++;
