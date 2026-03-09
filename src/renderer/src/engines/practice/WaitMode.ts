@@ -100,12 +100,14 @@ export class WaitMode {
     this._state = "playing";
   }
 
-  /** Stop wait mode */
+  /** Stop wait mode — reset all state so a subsequent start() begins cleanly */
   stop(): void {
     this._state = "idle";
     this._targetNotes.clear();
     this._pendingNoteDetails.length = 0;
     this._pendingMidis.clear();
+    this._trackCursors.clear();
+    this._noteResults.clear();
   }
 
   /**
@@ -147,9 +149,9 @@ export class WaitMode {
 
         const key = `${trackIndex}:${ni}`;
 
-        // Already judged — advance cursor past contiguous judged notes
+        // Already judged — always advance cursor past judged notes
         if (this._noteResults.has(key)) {
-          if (ni === cursor) cursor = ni + 1;
+          cursor = ni + 1;
           continue;
         }
 
@@ -167,7 +169,7 @@ export class WaitMode {
           // Past tolerance window → missed
           this._noteResults.set(key, "miss");
           this._callbacks.onMiss?.(note.midi, note.time);
-          if (ni === cursor) cursor = ni + 1;
+          cursor = ni + 1;
         }
       }
 

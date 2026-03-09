@@ -31,6 +31,8 @@ export const IpcChannels = {
   LOAD_RECENT_FILES: "recents:loadRecentFiles",
   /** Phase 6.5: Load a MIDI file by absolute path (for recent files) */
   LOAD_MIDI_PATH: "dialog:loadMidiPath",
+  /** Release pipeline: app version + changelog */
+  APP_GET_INFO: "app:getAppInfo",
 } as const;
 
 /** Result of loading a SoundFont file via IPC */

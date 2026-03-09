@@ -76,6 +76,9 @@ export class SoundFontLoader implements ISoundFontLoader {
 
   dispose(): void {
     this._samples.clear();
+    // Clear static cache so AudioBuffers from the old (closed) AudioContext
+    // are not reused with a new context after audio recovery.
+    SoundFontLoader._synthCache.clear();
   }
 
   // ─── SF2 Parsing ─────────────────────────────────────

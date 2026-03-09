@@ -114,6 +114,12 @@ function App(): React.JSX.Element {
     void loadProgressSessions();
   }, [isProgressLoaded, loadProgressSessions]);
 
+  // Sync persisted volume from settings (0-100) → playback store (0-1) on mount
+  useEffect(() => {
+    const persistedVolume = useSettingsStore.getState().volume;
+    usePlaybackStore.getState().setVolume(persistedVolume / 100);
+  }, []);
+
   // Core playback stats
   const speed = usePracticeStore((s) => s.speed);
   // Close drawer with Escape.

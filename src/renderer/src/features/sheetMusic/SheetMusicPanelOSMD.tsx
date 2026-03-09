@@ -11,7 +11,7 @@ interface SheetMusicPanelOSMDProps {
 export function SheetMusicPanelOSMD({
   song,
   mode,
-}: SheetMusicPanelOSMDProps): React.ReactElement | null {
+}: SheetMusicPanelOSMDProps): React.ReactElement {
   const containerRef = useRef<HTMLDivElement>(null);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const osmdRef = useRef<any>(null);
@@ -93,13 +93,18 @@ export function SheetMusicPanelOSMD({
   // No separate unmount effect needed — when the component unmounts, React
   // runs the cleanup of the [musicXml, mode] effect, which clears osmdRef.
 
-  if (mode === "falling") return null;
-
+  // Always render the container div so containerRef stays attached across
+  // mode transitions. Returning null would detach the ref, causing the
+  // useEffect to silently skip OSMD init when switching back from "falling".
   return (
     <div
       ref={containerRef}
       className="sheet-music-osmd w-full overflow-y-auto"
-      style={{ minHeight: 200, padding: "8px 0" }}
+      style={{
+        minHeight: mode === "falling" ? 0 : 200,
+        padding: mode === "falling" ? 0 : "8px 0",
+        display: mode === "falling" ? "none" : undefined,
+      }}
     />
   );
 }
