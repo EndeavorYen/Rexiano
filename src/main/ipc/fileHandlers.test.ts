@@ -400,7 +400,7 @@ describe("fileHandlers", () => {
     const result = await handlers["library:loadBuiltinSong"](null, "twinkle");
 
     expect(result).not.toBeNull();
-    expect(result!.fileName).toBe("Twinkle Twinkle Little Star");
+    expect(result!.fileName).toBe("twinkle.mid");
     expect(result!.data).toEqual(Array.from(fakeSongBuffer));
   });
 });

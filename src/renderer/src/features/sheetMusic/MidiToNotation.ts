@@ -149,7 +149,8 @@ export function ticksToVexDuration(
   if (ratio >= 0.75) return "q"; // quarter (1 beat)
   if (ratio >= 0.5625) return "8d"; // dotted eighth (0.75 beats)
   if (ratio >= 0.375) return "8"; // eighth (0.5 beats)
-  return "16"; // sixteenth
+  if (ratio >= 0.1875) return "16"; // sixteenth (0.25 beats)
+  return "32"; // thirty-second
 }
 
 /**
@@ -401,7 +402,7 @@ export function convertToNotation(
 
   const quantized = clampOverlappingDurations(quantizedRaw, minTick);
 
-  const maxTick = Math.max(...quantized.map((n) => n.endTick));
+  const maxTick = quantized.reduce((m, n) => Math.max(m, n.endTick), 0);
   const measureBoundaries = buildMeasureBoundaries(
     maxTick,
     ticksPerQuarter,
@@ -738,7 +739,7 @@ export function buildMeasureBoundaries(
     );
 
     let cursor = event.startTick;
-    while (cursor <= maxTick && cursor < nextStart) {
+    while (cursor < maxTick && cursor < nextStart) {
       const endTick = Math.min(cursor + ticksPerMeasure, nextStart);
       if (endTick <= cursor) break;
       boundaries.push({

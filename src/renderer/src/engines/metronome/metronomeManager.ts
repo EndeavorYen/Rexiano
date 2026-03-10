@@ -18,6 +18,10 @@ export function initMetronome(
   audioContext: AudioContext,
   destination?: AudioNode,
 ): MetronomeEngine {
+  if (_engine && _engine.audioContext !== audioContext) {
+    _engine.dispose();
+    _engine = null;
+  }
   if (!_engine) {
     _engine = new MetronomeEngine(audioContext, destination);
   }

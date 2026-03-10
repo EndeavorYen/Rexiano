@@ -19,6 +19,8 @@ let mockScore = {
   accuracy: 80,
   currentStreak: 3,
   bestStreak: 5,
+  avgTimingDeltaMs: null as number | null,
+  lastTimingDeltaMs: null as number | null,
 };
 
 vi.mock("@renderer/stores/usePracticeStore", () => ({
@@ -26,6 +28,7 @@ vi.mock("@renderer/stores/usePracticeStore", () => ({
     selector({
       mode: mockMode,
       score: mockScore,
+      isWaiting: false,
     }),
 }));
 
@@ -41,6 +44,8 @@ describe("ScoreOverlay render", () => {
       accuracy: 80,
       currentStreak: 3,
       bestStreak: 5,
+      avgTimingDeltaMs: null,
+      lastTimingDeltaMs: null,
     };
   });
 
@@ -67,6 +72,8 @@ describe("ScoreOverlay render", () => {
       accuracy: 0,
       currentStreak: 0,
       bestStreak: 0,
+      avgTimingDeltaMs: null,
+      lastTimingDeltaMs: null,
     };
     const { container } = render(<ScoreOverlay />);
     expect(container.innerHTML).toBe("");
@@ -80,6 +87,8 @@ describe("ScoreOverlay render", () => {
       accuracy: 100,
       currentStreak: 5,
       bestStreak: 5,
+      avgTimingDeltaMs: null,
+      lastTimingDeltaMs: null,
     };
     render(<ScoreOverlay />);
     // Should show combo count and label

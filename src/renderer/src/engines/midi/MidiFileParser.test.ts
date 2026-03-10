@@ -566,7 +566,7 @@ describe("MidiFileParser — parseMidiFile", () => {
     expect(result.timeSignatures).toEqual([]);
   });
 
-  it("rounds BPM values to integers", () => {
+  it("rounds BPM values to one decimal place", () => {
     prepareMidi({
       tracks: [
         {
@@ -582,12 +582,13 @@ describe("MidiFileParser — parseMidiFile", () => {
           ],
         },
       ],
-      tempos: [{ ticks: 0, bpm: 119.99 }],
+      tempos: [{ ticks: 0, bpm: 119.94 }],
     });
 
     const result = parseMidiFile("bpm-round.mid", []);
 
-    expect(result.tempos[0].bpm).toBe(120);
+    // Math.round(119.94 * 10) / 10 = 119.9 (one decimal place, not integer)
+    expect(result.tempos[0].bpm).toBe(119.9);
   });
 
   describe("key signature parsing", () => {

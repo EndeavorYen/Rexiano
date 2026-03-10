@@ -406,7 +406,7 @@ export function convertToMusicXML(
   const quantized = clampOverlappingDurations(quantizedRaw, minTick);
 
   // --- Step 4: Build measure boundaries ---
-  const maxTick = Math.max(...quantized.map((n) => n.endTick));
+  const maxTick = quantized.reduce((m, n) => Math.max(m, n.endTick), 0);
   const measureBoundaries = buildMeasureBoundaries(
     maxTick,
     ticksPerQuarter,

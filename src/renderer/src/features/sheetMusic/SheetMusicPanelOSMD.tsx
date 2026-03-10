@@ -52,6 +52,7 @@ export function SheetMusicPanelOSMD({
     if (mode === "falling") return;
     if (!containerRef.current || !musicXml) return;
 
+    const container = containerRef.current;
     let cancelled = false;
 
     import("opensheetmusicdisplay")
@@ -60,7 +61,7 @@ export function SheetMusicPanelOSMD({
 
         if (!osmdRef.current) {
           osmdRef.current = new OpenSheetMusicDisplay(containerRef.current, {
-            autoResize: true,
+            autoResize: false,
             drawTitle: false,
             drawComposer: false,
             drawPartNames: false,
@@ -86,12 +87,25 @@ export function SheetMusicPanelOSMD({
         osmdRef.current.clear();
         osmdRef.current = null;
       }
+      // Remove any residual SVG content synchronously so stale sheet music
+      // is not visible while the next async import resolves.
+      container.textContent = "";
     };
   }, [musicXml, mode]);
 
-  // NOTE: unmount cleanup is handled by the main useEffect's cleanup above.
-  // No separate unmount effect needed — when the component unmounts, React
-  // runs the cleanup of the [musicXml, mode] effect, which clears osmdRef.
+  // Re-render OSMD on container resize (since autoResize is disabled to
+  // avoid leaking internal resize observers across OSMD instance lifecycles).
+  useEffect(() => {
+    if (mode === "falling" || !containerRef.current) return;
+    const el = containerRef.current;
+    const ro = new ResizeObserver(() => {
+      if (osmdRef.current) {
+        osmdRef.current.render();
+      }
+    });
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [mode]);
 
   // Always render the container div so containerRef stays attached across
   // mode transitions. Returning null would detach the ref, causing the

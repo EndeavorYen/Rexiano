@@ -11,7 +11,7 @@ export function ThemePicker(): React.JSX.Element {
   const popoverRef = useRef<HTMLDivElement>(null);
 
   // First-visit pulse to draw attention to theme picker
-  const [isFirstVisit] = useState(() => {
+  const [isFirstVisit, setIsFirstVisit] = useState(() => {
     try {
       return !localStorage.getItem("rexiano-theme-picker-seen");
     } catch {
@@ -22,6 +22,7 @@ export function ThemePicker(): React.JSX.Element {
   const handleOpen = useCallback(() => {
     setOpen((prev) => !prev);
     if (isFirstVisit) {
+      setIsFirstVisit(false);
       try {
         localStorage.setItem("rexiano-theme-picker-seen", "1");
       } catch {

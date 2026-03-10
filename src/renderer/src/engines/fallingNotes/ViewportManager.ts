@@ -36,13 +36,13 @@ export function getVisibleNotes(
   const [startTime, endTime] = getVisibleTimeRange(vp);
   const adjustedStart = startTime - marginBefore;
 
-  // Binary search for first note that could be visible.
-  // A note is visible if: note.time + note.duration > adjustedStart AND note.time < endTime
+  // Binary search for first note whose start time >= adjustedStart.
+  // Notes are sorted by time (start), so this is a valid lower bound.
   let lo = 0;
   let hi = notes.length;
   while (lo < hi) {
     const mid = (lo + hi) >>> 1;
-    if (notes[mid].time + notes[mid].duration < adjustedStart) {
+    if (notes[mid].time < adjustedStart) {
       lo = mid + 1;
     } else {
       hi = mid;
@@ -51,6 +51,21 @@ export function getVisibleNotes(
 
   const result = out ?? [];
   result.length = 0;
+
+  // Scan backwards from `lo` to include long-sustain notes that started
+  // before the viewport but are still active (time + duration > adjustedStart).
+  for (let i = lo - 1; i >= 0; i--) {
+    const note = notes[i];
+    if (note.time + note.duration > adjustedStart) {
+      result.push(note);
+    }
+    // Once we hit a note that started more than one viewport ago and has
+    // ended, earlier notes won't be visible either (they started even earlier).
+    // But duration varies, so we can't break early in general.
+    // Limit the backward scan to avoid O(N) worst case.
+    if (lo - i > 128) break;
+  }
+
   for (let i = lo; i < notes.length; i++) {
     const note = notes[i];
     if (note.time > endTime) break;

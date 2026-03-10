@@ -21,6 +21,11 @@ vi.mock("@renderer/stores/useSettingsStore", () => ({
     }),
 }));
 
+// Mock useTranslation (consistent with other render tests)
+vi.mock("@renderer/i18n/useTranslation", () => ({
+  useTranslation: () => ({ t: (key: string) => key, lang: "en" }),
+}));
+
 import { SongCard } from "./SongCard";
 
 const mockSong = {
@@ -59,8 +64,8 @@ describe("SongCard render", () => {
 
   test("shows difficulty dots", () => {
     render(<SongCard song={mockSong} onSelect={vi.fn()} colorIndex={0} />);
-    // Beginner = 1 dot filled, the difficulty label used in aria
-    const diffLabel = screen.getByLabelText(/Difficulty/);
+    // With mocked t(), aria-label returns the raw key "songCard.difficulty"
+    const diffLabel = screen.getByLabelText(/songCard\.difficulty/);
     expect(diffLabel).toBeDefined();
   });
 

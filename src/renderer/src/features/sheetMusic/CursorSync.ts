@@ -10,6 +10,7 @@
  */
 
 import type { NotationData } from "./types";
+import { secondsToAbsoluteTicks } from "./MidiToNotation";
 
 /** Position on the score */
 export interface CursorPosition {
@@ -97,46 +98,6 @@ function findMeasureIndexByTick(
   }
 
   return Math.max(0, Math.min(high, measureStarts.length - 1));
-}
-
-function secondsToAbsoluteTicks(
-  timeSeconds: number,
-  tempos: Array<{ time: number; bpm: number }>,
-  ticksPerQuarter: number,
-): number {
-  if (timeSeconds <= 0) return 0;
-
-  const sorted = [...tempos].sort((a, b) => a.time - b.time);
-  const anchored =
-    sorted.length > 0 && sorted[0].time <= 0
-      ? sorted
-      : [{ time: 0, bpm: sorted[0]?.bpm ?? 120 }, ...sorted];
-
-  let ticks = 0;
-  let previousTime = 0;
-  let currentBpm = anchored[0]?.bpm ?? 120;
-
-  for (const tempo of anchored) {
-    if (tempo.time <= 0) {
-      currentBpm = tempo.bpm;
-      continue;
-    }
-    if (tempo.time >= timeSeconds) break;
-
-    const delta = tempo.time - previousTime;
-    if (delta > 0) {
-      ticks += (delta * (currentBpm * ticksPerQuarter)) / 60;
-    }
-    previousTime = tempo.time;
-    currentBpm = tempo.bpm;
-  }
-
-  const tail = timeSeconds - previousTime;
-  if (tail > 0) {
-    ticks += (tail * (currentBpm * ticksPerQuarter)) / 60;
-  }
-
-  return ticks;
 }
 
 /**

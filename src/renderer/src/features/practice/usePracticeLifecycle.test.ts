@@ -41,12 +41,18 @@ const {
       accuracy: 0,
       currentStreak: 0,
       bestStreak: 0,
+      avgTimingDeltaMs: null as number | null,
+      lastTimingDeltaMs: null as number | null,
     },
     noteResults: new Map<string, string>(),
+    displayMode: "falling" as string,
+    isWaiting: false,
+    _timingDeltaCount: 0,
     setMode: vi.fn(),
     setSpeed: vi.fn(),
     setLoopRange: vi.fn(),
     setActiveTracks: vi.fn(),
+    setDisplayMode: vi.fn(),
     recordHit: vi.fn(),
     recordMiss: vi.fn(),
     resetScore: vi.fn(),
@@ -93,7 +99,10 @@ const {
     checkInput: vi.fn(),
   };
 
-  const mockSpeedController = { setSpeed: vi.fn() };
+  const mockSpeedController = {
+    setSpeed: vi.fn(),
+    setSpeedImmediate: vi.fn(),
+  };
   const mockLoopController = {
     setRange: vi.fn(),
     clear: vi.fn(),
@@ -282,7 +291,12 @@ describe("usePracticeLifecycle", () => {
       accuracy: 0,
       currentStreak: 0,
       bestStreak: 0,
+      avgTimingDeltaMs: null,
+      lastTimingDeltaMs: null,
     };
+    practiceState.isWaiting = false;
+    practiceState.displayMode = "falling";
+    practiceState._timingDeltaCount = 0;
     songState.song = null;
     playbackState.currentTime = 0;
     playbackState.isPlaying = false;

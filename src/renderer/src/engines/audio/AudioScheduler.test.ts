@@ -486,6 +486,34 @@ describe("AudioScheduler", () => {
       // Should not throw
     });
 
+    test("setSpeed during playback does not cause time discontinuity", () => {
+      engine._setCurrentTime(10);
+      const s = song([track([note(5, 0.5)])]);
+      scheduler.setSong(s);
+      scheduler.start(0); // startAudioTime=10, seekOffset=0, speed=1.0
+
+      // Advance to audioTime=12 → songTime = (12-10)*1.0 + 0 = 2.0
+      engine._setCurrentTime(12);
+      scheduler.setSpeed(0.5);
+
+      // Immediately after setSpeed, getCurrentTime should still read ~2.0
+      expect(scheduler.getCurrentTime()).toBeCloseTo(2.0, 6);
+
+      // Advance 2 more audio-seconds at 0.5x → 1.0 song-second
+      engine._setCurrentTime(14);
+      expect(scheduler.getCurrentTime()).toBeCloseTo(3.0, 6);
+    });
+
+    test("setSpeed while stopped does not re-anchor timing", () => {
+      const s = song([track([note(1, 0.5)])]);
+      scheduler.setSong(s);
+      scheduler.setSpeed(0.5);
+      // No crash, no timing state to corrupt
+      scheduler.start(0);
+      engine._setCurrentTime(2); // 2 audio-seconds * 0.5x = 1.0 song-second
+      expect(scheduler.getCurrentTime()).toBeCloseTo(1.0, 6);
+    });
+
     test("custom config overrides defaults", () => {
       const customScheduler = new AudioScheduler(engine, {
         lookAheadSeconds: 0.5,

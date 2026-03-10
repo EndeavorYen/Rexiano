@@ -87,8 +87,18 @@ export function usePracticeLifecycle(
     if (!song) return;
 
     initPracticeEngines();
-    const { waitMode } = getPracticeEngines();
-    if (!waitMode) return;
+    const { waitMode, speedController } = getPracticeEngines();
+    if (!waitMode) {
+      return () => {
+        disposePracticeEngines();
+      };
+    }
+
+    // Sync current store speed to newly-created SpeedController so it doesn't
+    // default to 1.0 when the user had a different speed set previously.
+    // Use setSpeedImmediate to skip the lerp — avoids a ~200ms window of wrong speed.
+    const currentSpeed = usePracticeStore.getState().speed;
+    speedController?.setSpeedImmediate(currentSpeed);
 
     // R2-008: Always initialize activeTracks to all tracks for a new song.
     const allTracks = new Set(song.tracks.map((_, i) => i));
@@ -197,7 +207,6 @@ export function usePracticeLifecycle(
           waitMode.stop();
         }
         scoreCalculator?.reset();
-        usePracticeStore.getState().resetScore();
       }
 
       // Speed change -- also sync metronome BPM and AudioScheduler (R2-002 + R3-003: merged)
@@ -353,8 +362,21 @@ export function usePracticeLifecycle(
         metronome?.resetBeat();
 
         if (practiceMode === "wait" && waitMode) {
+          const wasWaiting = usePracticeStore.getState().isWaiting;
           waitMode.reset();
           waitMode.start();
+          // If onWait had stopped the scheduler, restart it for the new loop iteration
+          if (wasWaiting) {
+            usePracticeStore.getState().setWaiting(false);
+            const { scheduler, engine } = audioRef.current;
+            if (scheduler && engine && usePlaybackStore.getState().isPlaying) {
+              void engine.resume().then(() => {
+                if (usePlaybackStore.getState().isPlaying) {
+                  scheduler.start(usePlaybackStore.getState().currentTime);
+                }
+              });
+            }
+          }
         }
       }
 

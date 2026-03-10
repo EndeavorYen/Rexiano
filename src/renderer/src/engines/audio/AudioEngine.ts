@@ -55,6 +55,9 @@ export class AudioEngine implements IAudioEngine {
   /** Guard against concurrent init() calls */
   private _initPromise: Promise<void> | null = null;
 
+  /** Set by dispose() so in-flight _doInit() can bail out */
+  private _disposed = false;
+
   constructor(options?: AudioEngineOptions) {
     this._onRuntimeError = options?.onRuntimeError ?? null;
     this._latencyHint = options?.latencyHint;
@@ -88,9 +91,15 @@ export class AudioEngine implements IAudioEngine {
   async init(): Promise<void> {
     if (this._status === "ready") return;
 
-    // If already initializing, return the in-flight promise
-    if (this._initPromise) return this._initPromise;
+    // If already initializing and not disposed, return the in-flight promise.
+    // If disposed, wait for the in-flight promise to finish first (it will bail),
+    // then fall through to start a fresh init.
+    if (this._initPromise) {
+      if (!this._disposed) return this._initPromise;
+      await this._initPromise.catch(() => {});
+    }
 
+    this._disposed = false;
     this._initPromise = this._doInit();
     try {
       await this._initPromise;
@@ -117,7 +126,18 @@ export class AudioEngine implements IAudioEngine {
       // 3. Load SoundFont via IPC (falls back to oscillator synthesis if unavailable)
       await this._soundFontLoader.load(DEFAULT_SOUNDFONT, this._audioContext);
 
-      // 4. Ready
+      // 4. If dispose() was called while we were loading, bail out.
+      //    Close the AudioContext we just created to prevent OS audio resource leak,
+      //    and reset status so a future init() can start fresh.
+      if (this._disposed) {
+        void this._audioContext?.close().catch(() => {});
+        this._audioContext = null;
+        this._masterGain = null;
+        this._status = "uninitialized";
+        return;
+      }
+
+      // 5. Ready
       this._status = "ready";
     } catch (err) {
       this._status = "error";
@@ -354,6 +374,10 @@ export class AudioEngine implements IAudioEngine {
   }
 
   dispose(): void {
+    this._disposed = true;
+    // Do NOT null _initPromise here — the in-flight _doInit() coroutine's
+    // finally block will clear it. Nulling early allows a concurrent init()
+    // to bypass the guard and create an orphaned AudioContext.
     this.allNotesOff();
     this._sustainActive = false;
     this._sustainedNotes.clear();

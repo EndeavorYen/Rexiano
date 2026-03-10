@@ -102,20 +102,23 @@ export class StepMode {
     // Sort by time, then by pitch
     allNotes.sort((a, b) => a.time - b.time || a.midi - b.midi);
 
-    // Group into chords using the same window as WaitMode
+    // Group into chords using a rolling window (same logic as WaitMode):
+    // each note must be within _chordWindowSec of the previous note in the group
     const steps: StepChord[] = [];
     let currentGroup: ParsedNote[] = [allNotes[0]];
     let groupStart = allNotes[0].time;
+    let prevTime = allNotes[0].time;
 
     for (let i = 1; i < allNotes.length; i++) {
       const note = allNotes[i];
-      if (note.time - groupStart <= this._chordWindowSec) {
+      if (note.time - prevTime <= this._chordWindowSec) {
         currentGroup.push(note);
       } else {
         steps.push({ notes: currentGroup, time: groupStart });
         currentGroup = [note];
         groupStart = note.time;
       }
+      prevTime = note.time;
     }
     // Push the last group
     steps.push({ notes: currentGroup, time: groupStart });

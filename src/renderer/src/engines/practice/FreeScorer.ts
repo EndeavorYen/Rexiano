@@ -107,14 +107,14 @@ export class FreeScorer {
 
         // Already judged — advance cursor
         if (this._judged.has(key)) {
-          if (ni === cursor) cursor = ni + 1;
+          cursor = ni + 1;
           continue;
         }
 
         // Note has passed the grace window without being hit => miss
         this._judged.add(key);
         this._callbacks.onMiss?.(note.midi, note.time);
-        if (ni === cursor) cursor = ni + 1;
+        cursor = ni + 1;
       }
 
       this._trackCursors.set(trackIndex, cursor);

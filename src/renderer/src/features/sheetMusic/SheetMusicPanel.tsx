@@ -590,7 +590,7 @@ function renderMeasure(
     .setContext(context)
     .draw();
 
-  // Draw measure number above treble staff on odd measures (1, 3, 5, ...)
+  // Draw measure number above treble staff
   if (measureNumber !== undefined) {
     const svg = context.svg as SVGSVGElement | undefined;
     if (svg) {

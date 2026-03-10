@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useCallback, useState } from "react";
+import { useEffect, useMemo, useCallback, useState, useRef } from "react";
 import {
   Upload,
   Clock,
@@ -58,6 +58,13 @@ export function SongLibrary({
     null,
   );
   const [showDeviceDrawer, setShowDeviceDrawer] = useState(false);
+  const recentErrorTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (recentErrorTimer.current) clearTimeout(recentErrorTimer.current);
+    };
+  }, []);
 
   useEffect(() => {
     fetchSongs();
@@ -100,6 +107,7 @@ export function SongLibrary({
   const handleSelectSong = useCallback(
     async (songId: string) => {
       if (!window.api?.loadBuiltinSong) return;
+      if (loadingId !== null || loadingRecentPath !== null) return;
       setError(null);
       setLoadingId(songId);
       try {
@@ -122,7 +130,7 @@ export function SongLibrary({
         setLoadingId(null);
       }
     },
-    [loadFromMidiData, reset, refreshRecents, t],
+    [loadFromMidiData, reset, refreshRecents, t, loadingId, loadingRecentPath],
   );
 
   const visibleRecents = recentFiles.slice(0, 5);
@@ -130,6 +138,7 @@ export function SongLibrary({
   const handleSelectRecent = useCallback(
     async (file: RecentFile) => {
       if (!window.api) return;
+      if (loadingId !== null || loadingRecentPath !== null) return;
       setRecentError(null);
       setLoadingRecentPath(file.path);
       try {
@@ -139,7 +148,8 @@ export function SongLibrary({
 
         if (!result) {
           setRecentError(t("general.error"));
-          setTimeout(() => setRecentError(null), 3000);
+          if (recentErrorTimer.current) clearTimeout(recentErrorTimer.current);
+          recentErrorTimer.current = setTimeout(() => setRecentError(null), 3000);
           return;
         }
 
@@ -154,13 +164,14 @@ export function SongLibrary({
       } catch (e) {
         const msg = e instanceof Error ? e.message : t("general.error");
         setRecentError(msg);
-        setTimeout(() => setRecentError(null), 3000);
+        if (recentErrorTimer.current) clearTimeout(recentErrorTimer.current);
+        recentErrorTimer.current = setTimeout(() => setRecentError(null), 3000);
         console.error("Failed to load recent file:", e);
       } finally {
         setLoadingRecentPath(null);
       }
     },
-    [loadFromMidiData, reset, refreshRecents, t],
+    [loadFromMidiData, reset, refreshRecents, t, loadingId, loadingRecentPath],
   );
 
   return (
@@ -238,7 +249,7 @@ export function SongLibrary({
                 <button
                   key={file.path}
                   onClick={() => handleSelectRecent(file)}
-                  disabled={loadingRecentPath === file.path}
+                  disabled={loadingRecentPath !== null || loadingId !== null}
                   className="card-hover animate-page-enter group relative min-w-[190px] max-w-[280px] flex flex-col items-start gap-1 rounded-lg px-3 py-2 text-xs font-body font-medium cursor-pointer transition-all duration-150 disabled:opacity-50 disabled:cursor-wait"
                   style={{
                     background:

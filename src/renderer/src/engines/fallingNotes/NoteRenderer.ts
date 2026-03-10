@@ -175,7 +175,7 @@ export class NoteRenderer {
   /** Cached fingering results per song, keyed by "trackIdx" */
   private fingeringCache = new Map<string, Map<number, Finger>>();
   /** ID of the last song we computed fingering for */
-  private lastSongFileName = "";
+  private lastFingeredSong: ParsedSong | null = null;
 
   constructor(parentContainer: Container) {
     // Grid lines go behind notes
@@ -224,8 +224,9 @@ export class NoteRenderer {
     this._cachedMissGray = hexToPixi(colors.missGray);
     this._cachedComboText = hexToPixi(colors.comboText);
     this._cachedGridLine = hexToPixi(colors.gridLine);
-    // Invalidate dirty flags so hit line and combo style pick up new colors
+    // Invalidate dirty flags so hit line, beat grid, and combo style pick up new colors
     this._lastHitLineKey = "";
+    this._lastGridVpKey = "";
     this._comboStyle = null;
   }
 
@@ -257,10 +258,11 @@ export class NoteRenderer {
       vp.height < 200 ? 14 : vp.height < 280 ? 22 : vp.height < 360 ? 30 : 42;
     let shownLabelCount = 0;
 
-    // Recompute fingering cache when song changes
-    if (showFingering && song.fileName !== this.lastSongFileName) {
+    // Recompute fingering cache when song changes (use object identity
+    // so reloading the same file correctly invalidates the cache)
+    if (showFingering && song !== this.lastFingeredSong) {
       this.computeFingeringForSong(song);
-      this.lastSongFileName = song.fileName;
+      this.lastFingeredSong = song;
     }
 
     // Double-buffer for fingering labels
@@ -277,7 +279,16 @@ export class NoteRenderer {
         this.visibleBuf,
       );
 
-      for (const note of visibleNotes) {
+      // Find the original index of the first visible note for fingering lookup.
+      // visibleNotes contains references to the same objects in track.notes,
+      // so indexOf (identity check) is O(n) but only runs once per track per frame.
+      const visibleStartIdx =
+        showFingering && visibleNotes.length > 0
+          ? track.notes.indexOf(visibleNotes[0])
+          : 0;
+
+      for (let vi = 0; vi < visibleNotes.length; vi++) {
+        const note = visibleNotes[vi];
         const key = noteKey(trackIdx, note.midi, note.time);
         const kp = this.keyPositions.get(note.midi);
         if (!kp) continue;
@@ -334,7 +345,10 @@ export class NoteRenderer {
 
         // ── Fingering label overlay ──────────────────────────────
         if (showFingering && h >= MIN_HEIGHT_FOR_FINGERING) {
-          const finger = this.getFingerForNote(trackIdx, note);
+          const finger = this.getFingerForNote(
+            trackIdx,
+            visibleStartIdx + vi,
+          );
           if (finger) {
             let label =
               this.activeFingeringLabels.get(key) ?? nextFLabels.get(key);
@@ -421,7 +435,7 @@ export class NoteRenderer {
     this.activeFingeringLabels.clear();
     this.nextFingeringLabels.clear();
     this.fingeringCache.clear();
-    this.lastSongFileName = "";
+    this.lastFingeredSong = null;
   }
 
   private createSprite(): Sprite {
@@ -543,19 +557,22 @@ export class NoteRenderer {
       const results = this.fingeringEngine.computeFingering(track.notes, hand);
       const trackCache = new Map<number, Finger>();
 
-      for (const result of results) {
-        trackCache.set(result.midi, result.finger);
+      for (let i = 0; i < results.length; i++) {
+        trackCache.set(i, results[i].finger);
       }
 
       this.fingeringCache.set(String(trackIdx), trackCache);
     }
   }
 
-  /** Look up the cached finger for a specific note */
-  private getFingerForNote(trackIdx: number, note: ParsedNote): Finger | null {
+  /** Look up the cached finger for a specific note by its index in the track */
+  private getFingerForNote(
+    trackIdx: number,
+    noteIndex: number,
+  ): Finger | null {
     const trackCache = this.fingeringCache.get(String(trackIdx));
     if (!trackCache) return null;
-    return trackCache.get(note.midi) ?? null;
+    return trackCache.get(noteIndex) ?? null;
   }
 
   // ── Practice mode visual feedback ──────────────────────────────────

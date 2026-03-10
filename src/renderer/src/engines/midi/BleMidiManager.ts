@@ -17,7 +17,7 @@ const SCAN_TIMEOUT_MS = 30_000;
 
 export interface BleMidiCallbacks {
   onNoteOn?: (note: number, velocity: number) => void;
-  onNoteOff?: (note: number, velocity: number) => void;
+  onNoteOff?: (note: number) => void;
   onCC?: (controller: number, value: number) => void;
 }
 
@@ -235,7 +235,7 @@ export class BleMidiManager {
         if (cmd === 0x90 && velocity > 0) {
           this._callbacks.onNoteOn?.(note, velocity);
         } else {
-          this._callbacks.onNoteOff?.(note, velocity);
+          this._callbacks.onNoteOff?.(note);
         }
       } else if (cmd === 0xb0) {
         // Control Change — 2 data bytes

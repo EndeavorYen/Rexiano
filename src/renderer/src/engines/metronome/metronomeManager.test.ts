@@ -6,8 +6,10 @@ const createdInstances: Array<{ dispose: ReturnType<typeof vi.fn> }> = [];
 // Mock MetronomeEngine as a real class so `new MetronomeEngine(...)` works
 vi.mock("./MetronomeEngine", () => ({
   MetronomeEngine: class MockMetronomeEngine {
+    audioContext: AudioContext;
     dispose = vi.fn();
-    constructor(_audioContext: AudioContext) {
+    constructor(audioContext: AudioContext) {
+      this.audioContext = audioContext;
       createdInstances.push(this);
     }
   },
@@ -47,16 +49,28 @@ describe("metronomeManager", () => {
     expect(getMetronome()).not.toBeNull();
   });
 
-  it("initMetronome is idempotent — second call returns same instance", () => {
+  it("initMetronome is idempotent — second call with same context returns same instance", () => {
+    const ctx = {} as AudioContext;
+
+    const first = initMetronome(ctx);
+    const second = initMetronome(ctx);
+
+    expect(first).toBe(second);
+    // Constructor should only have been called once
+    expect(createdInstances).toHaveLength(1);
+  });
+
+  it("initMetronome recreates engine when AudioContext changes", () => {
     const ctx1 = {} as AudioContext;
     const ctx2 = {} as AudioContext;
 
     const first = initMetronome(ctx1);
     const second = initMetronome(ctx2);
 
-    expect(first).toBe(second);
-    // Constructor should only have been called once
-    expect(createdInstances).toHaveLength(1);
+    expect(first).not.toBe(second);
+    expect(createdInstances).toHaveLength(2);
+    // Old engine should have been disposed
+    expect(createdInstances[0].dispose).toHaveBeenCalledTimes(1);
   });
 
   it("initMetronome returns the engine instance", () => {

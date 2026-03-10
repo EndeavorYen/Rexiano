@@ -228,6 +228,7 @@ describe("initAutoSave()", () => {
     usePracticeStore.setState({
       mode: "wait",
       speed: 1.0,
+      loopRange: null,
       activeTracks: new Set([0]),
       score: {
         totalNotes: 0,

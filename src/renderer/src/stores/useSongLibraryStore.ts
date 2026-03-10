@@ -23,13 +23,14 @@ interface SongLibraryState {
 
 export type { GradeFilter };
 
-export const useSongLibraryStore = create<SongLibraryState>()((set) => ({
+export const useSongLibraryStore = create<SongLibraryState>()((set, get) => ({
   songs: [],
   isLoading: false,
   searchQuery: "",
   gradeFilter: "all",
 
   fetchSongs: async () => {
+    if (get().isLoading) return;
     set({ isLoading: true });
     try {
       if (!window.api?.listBuiltinSongs) {

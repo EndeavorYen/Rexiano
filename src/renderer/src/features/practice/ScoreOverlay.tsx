@@ -120,7 +120,7 @@ export function ScoreOverlay(): React.JSX.Element {
         >
           <span
             className="text-sm font-display font-bold tabular-nums"
-            style={{ color: "var(--color-combo-text)" }}
+            style={{ color: "var(--color-combo-text, var(--color-accent))" }}
           >
             {score.currentStreak}
           </span>

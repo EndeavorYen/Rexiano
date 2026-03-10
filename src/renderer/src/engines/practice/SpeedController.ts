@@ -9,7 +9,7 @@ export class SpeedController {
   private _lastLerpTime: number = -1;
   private _lerpDurationMs: number = 200;
 
-  static readonly MIN = 0.1;
+  static readonly MIN = 0.25;
   static readonly MAX = 2.0;
 
   constructor(initialSpeed = 1.0) {
@@ -28,10 +28,18 @@ export class SpeedController {
     return this._targetSpeed;
   }
 
-  /** Set target speed multiplier (clamped to 0.10–2.0). Lerps toward it over ~200ms. */
+  /** Set target speed multiplier (clamped to 0.25–2.0). Lerps toward it over ~200ms. */
   setSpeed(value: number): void {
     this._targetSpeed = SpeedController._clamp(value);
     this._lastLerpTime = -1; // will be set on next tick
+  }
+
+  /** Set speed immediately without lerp (use for initialization / sync). */
+  setSpeedImmediate(value: number): void {
+    const clamped = SpeedController._clamp(value);
+    this._currentSpeed = clamped;
+    this._targetSpeed = clamped;
+    this._lastLerpTime = -1;
   }
 
   /**
@@ -57,7 +65,7 @@ export class SpeedController {
       this._lastLerpTime = nowMs;
     }
 
-    const elapsed = nowMs - this._lastLerpTime;
+    const elapsed = Math.max(0, nowMs - this._lastLerpTime);
     const t = Math.min(1, elapsed / this._lerpDurationMs);
     this._currentSpeed =
       this._currentSpeed + (this._targetSpeed - this._currentSpeed) * t;

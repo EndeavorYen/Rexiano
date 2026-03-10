@@ -54,10 +54,23 @@ export class AudioScheduler implements IAudioScheduler {
 
   /**
    * Set the playback speed multiplier.
-   * Must be called before start() or after seek() to take immediate effect.
+   * Safe to call during playback — re-anchors timing to avoid discontinuities.
    * @param speed  Multiplier in range 0.25–2.0 (clamped by SpeedController upstream)
    */
   setSpeed(speed: number): void {
+    // Re-anchor timing if currently playing to prevent position jump
+    if (this._intervalId !== null) {
+      const ctx = this._engine.audioContext;
+      if (ctx) {
+        const now = ctx.currentTime;
+        const currentSongTime =
+          (now - this._startAudioTime) * this._speed + this._seekOffset;
+        this._seekOffset = currentSongTime;
+        this._startAudioTime = now;
+        // Reset cursors to avoid re-scheduling notes already in the look-ahead window
+        this._resetCursors(currentSongTime);
+      }
+    }
     this._speed = speed;
   }
 

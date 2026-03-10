@@ -75,11 +75,15 @@ export function registerFileHandlers(): void {
     IpcChannels.LOAD_MIDI_PATH,
     async (_event, filePath: string): Promise<MidiFileResult | null> => {
       if (typeof filePath !== "string" || filePath.length === 0) return null;
-      if (!existsSync(filePath)) return null;
+
+      // Path must be absolute to avoid CWD-relative tricks
+      if (!isAbsolute(filePath)) return null;
 
       // Only allow .mid/.midi files
       const lower = filePath.toLowerCase();
       if (!lower.endsWith(".mid") && !lower.endsWith(".midi")) return null;
+
+      if (!existsSync(filePath)) return null;
 
       const buffer = await readFile(filePath);
       return {
@@ -130,23 +134,28 @@ export function registerFileHandlers(): void {
 
       if (!existsSync(manifestPath)) return null;
 
-      const manifest: BuiltinSongMeta[] = JSON.parse(
-        await readFile(manifestPath, "utf-8"),
-      );
-      const entry = manifest.find((s) => s.id === songId);
-      if (!entry) return null;
+      try {
+        const manifest: BuiltinSongMeta[] = JSON.parse(
+          await readFile(manifestPath, "utf-8"),
+        );
+        const entry = manifest.find((s) => s.id === songId);
+        if (!entry) return null;
 
-      const filePath = resolve(midiDir, entry.file);
-      // Path traversal guard: use relative() so /midi-evil paths can't sneak through.
-      const midiRel = relative(resolve(midiDir), filePath);
-      if (midiRel.startsWith("..") || isAbsolute(midiRel)) return null;
-      if (!existsSync(filePath)) return null;
+        const filePath = resolve(midiDir, entry.file);
+        // Path traversal guard: use relative() so /midi-evil paths can't sneak through.
+        const midiRel = relative(resolve(midiDir), filePath);
+        if (midiRel.startsWith("..") || isAbsolute(midiRel)) return null;
+        if (!existsSync(filePath)) return null;
 
-      const buffer = await readFile(filePath);
-      return {
-        fileName: entry.title,
-        data: Array.from(buffer),
-      };
+        const buffer = await readFile(filePath);
+        return {
+          fileName: basename(filePath),
+          data: Array.from(buffer),
+        };
+      } catch (err) {
+        console.warn("Failed to load builtin song:", err);
+        return null;
+      }
     },
   );
 }

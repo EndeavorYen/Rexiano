@@ -15,6 +15,9 @@ export interface PracticeEngines {
   stepMode: StepMode | null;
 }
 
+/** Guard: true only after all engines are successfully constructed. */
+let _initialized = false;
+
 /**
  * Stable singleton — mutated in place by init/dispose.
  * Avoids allocating a new object per `getPracticeEngines()` call
@@ -34,13 +37,14 @@ const _engines: PracticeEngines = {
  * Must be called before `getPracticeEngines()` returns useful values.
  */
 export function initPracticeEngines(): void {
-  if (_engines.waitMode) return; // already initialized
+  if (_initialized) return;
   _engines.waitMode = new WaitMode();
   _engines.speedController = new SpeedController();
   _engines.loopController = new LoopController();
   _engines.scoreCalculator = new ScoreCalculator();
   _engines.freeScorer = new FreeScorer();
   _engines.stepMode = new StepMode();
+  _initialized = true;
 }
 
 /** Returns the stable singleton object (same reference every call). */
@@ -66,4 +70,5 @@ export function disposePracticeEngines(): void {
   _engines.freeScorer = null;
   _engines.stepMode?.reset();
   _engines.stepMode = null;
+  _initialized = false;
 }

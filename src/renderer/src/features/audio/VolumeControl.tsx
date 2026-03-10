@@ -1,4 +1,4 @@
-import { useCallback, useRef } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import { VolumeX, Volume1, Volume2 } from "lucide-react";
 import { usePlaybackStore } from "@renderer/stores/usePlaybackStore";
 import { useTranslation } from "@renderer/i18n/useTranslation";
@@ -14,6 +14,9 @@ export function VolumeControl(): React.JSX.Element {
   const volume = usePlaybackStore((s) => s.volume);
   const setVolume = usePlaybackStore((s) => s.setVolume);
   const preMuteVolume = useRef(volume > 0 ? volume : 0.8);
+  useEffect(() => {
+    if (volume > 0) preMuteVolume.current = volume;
+  }, [volume]);
 
   const displayValue = Math.round(volume * 100);
   const isMuted = volume === 0;

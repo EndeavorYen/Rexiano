@@ -92,6 +92,7 @@ export class WaitMode {
     this._targetNotes.clear();
     this._trackCursors.clear();
     this._pendingNoteDetails.length = 0;
+    this._pendingMidis.clear();
     this._state = "idle";
   }
 

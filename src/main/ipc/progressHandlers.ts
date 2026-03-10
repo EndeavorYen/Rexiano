@@ -54,16 +54,36 @@ export function registerProgressHandlers(): void {
   ipcMain.handle(
     IpcChannels.SAVE_SESSION,
     async (_event, record: SessionRecord): Promise<void> => {
-      writeChain = writeChain
-        .then(async () => {
+      // Basic shape validation — renderer data is untrusted
+      if (
+        !record ||
+        typeof record.id !== "string" ||
+        typeof record.songId !== "string" ||
+        typeof record.timestamp !== "number" ||
+        typeof record.durationSeconds !== "number"
+      ) {
+        console.warn("Invalid session record received, ignoring");
+        return;
+      }
+
+      let resolve!: () => void;
+      let reject!: (e: unknown) => void;
+      const gate = new Promise<void>((res, rej) => {
+        resolve = res;
+        reject = rej;
+      });
+      // Chain never rejects — serialization is preserved even on error
+      writeChain = writeChain.then(async () => {
+        try {
           const sessions = await readSessions();
           sessions.push(record);
           await writeSessions(sessions);
-        })
-        .catch((err) => {
-          console.error("Failed to save session:", err);
-        });
-      await writeChain;
+          resolve();
+        } catch (err) {
+          reject(err);
+        }
+      });
+      await gate;
     },
   );
 }

@@ -26,6 +26,7 @@ export class LoopController {
    * Returns false if the range is invalid.
    */
   setRange(start: number, end: number): boolean {
+    if (!Number.isFinite(start) || !Number.isFinite(end)) return false;
     if (start >= end || start < 0) return false;
     this._startTime = start;
     this._endTime = end;

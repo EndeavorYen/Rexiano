@@ -56,8 +56,26 @@ export function registerRecentFilesHandlers(): void {
   ipcMain.handle(
     IpcChannels.SAVE_RECENT_FILE,
     async (_event, file: RecentFile): Promise<void> => {
-      writeChain = writeChain
-        .then(async () => {
+      // Basic shape validation — renderer data is untrusted
+      if (
+        !file ||
+        typeof file.path !== "string" ||
+        typeof file.name !== "string" ||
+        typeof file.timestamp !== "number"
+      ) {
+        console.warn("Invalid recent file received, ignoring");
+        return;
+      }
+
+      let resolve!: () => void;
+      let reject!: (e: unknown) => void;
+      const gate = new Promise<void>((res, rej) => {
+        resolve = res;
+        reject = rej;
+      });
+      // Chain never rejects — serialization is preserved even on error
+      writeChain = writeChain.then(async () => {
+        try {
           const recents = await readRecents();
 
           // Remove existing entry for this path (if any) so it moves to front
@@ -67,11 +85,12 @@ export function registerRecentFilesHandlers(): void {
           // Keep only the most recent entries
           const trimmed = filtered.slice(0, MAX_RECENTS);
           await writeRecents(trimmed);
-        })
-        .catch((err) => {
-          console.error("Failed to save recent file:", err);
-        });
-      await writeChain;
+          resolve();
+        } catch (err) {
+          reject(err);
+        }
+      });
+      await gate;
     },
   );
 }

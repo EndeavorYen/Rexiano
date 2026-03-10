@@ -314,15 +314,14 @@ describe("convertToMusicXML", () => {
     }
   });
 
-  it("does NOT include external DOCTYPE (prevents fetch issues in offline/Electron)", () => {
+  it("includes external DOCTYPE declaration (current behavior — remove if it causes offline issues)", () => {
     const notes: ParsedNote[] = [makeNote(60, 0.0, 0.5)];
     const xml = convertToMusicXML(notes, BPM, TPQ, 4, 4, 0, 0, 1);
 
-    // The DOCTYPE references http://www.musicxml.org which may fail offline
-    // Check if it exists (this test documents current behavior — flip if we remove it)
+    // The DOCTYPE references http://www.musicxml.org which may fail offline.
+    // This test documents current behavior — flip assertion if we remove it.
     const hasDoctype = xml.includes("<!DOCTYPE");
-    // If DOCTYPE causes issues, this test should fail and remind us to remove it
-    expect(hasDoctype).toBe(true); // Current behavior — change to false if we remove it
+    expect(hasDoctype).toBe(true);
   });
 
   it("Hanon-like input: 8th notes at 60 BPM with typical MIDI articulation produce eighth note types", () => {

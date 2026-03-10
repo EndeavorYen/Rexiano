@@ -270,10 +270,15 @@ function App(): React.JSX.Element {
         },
       });
       const scheduler = new AudioScheduler(engine);
-      audioRef.current = { engine, scheduler };
 
+      // Do NOT write audioRef until engine.init() completes — otherwise
+      // the subscriber may call scheduler.start() / engine.resume() on a
+      // partially initialized engine, producing silent visual playback.
       usePlaybackStore.getState().setAudioStatus("loading");
       await engine.init();
+
+      // Now safe to expose to the rest of the app
+      audioRef.current = { engine, scheduler };
 
       const { muted, noteReleaseMs } = useSettingsStore.getState();
       engine.setVolume(muted ? 0 : usePlaybackStore.getState().volume);
@@ -463,6 +468,7 @@ function App(): React.JSX.Element {
       }
 
       try {
+        if (cancelled) return;
         await rebuildAudioStack(song);
       } catch (err) {
         if (cancelled) return;
@@ -736,9 +742,11 @@ function App(): React.JSX.Element {
   // Load a MIDI file directly by path (used by recent files in MainMenu)
   const handleLoadMidiPath = useCallback(
     async (filePath: string): Promise<void> => {
-      if (!window.api?.loadMidiPath) return;
+      if (!window.api) return;
       try {
-        const result = await window.api.loadMidiPath(filePath);
+        const result = filePath.startsWith("builtin:")
+          ? await window.api.loadBuiltinSong(filePath.slice("builtin:".length))
+          : await window.api.loadMidiPath(filePath);
         if (result) {
           const parsed = parseMidiFile(result.fileName, result.data);
           loadSong(parsed);

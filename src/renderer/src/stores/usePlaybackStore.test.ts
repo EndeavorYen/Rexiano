@@ -7,6 +7,8 @@ describe("usePlaybackStore", () => {
     usePlaybackStore.setState({
       currentTime: 0,
       isPlaying: false,
+      isCountingIn: false,
+      songEndedNaturally: false,
       pixelsPerSecond: 200,
       audioStatus: "uninitialized",
       volume: 0.8,

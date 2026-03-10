@@ -12,7 +12,7 @@ import { useTranslation } from "@renderer/i18n/useTranslation";
 const mainPresets = [0.25, 0.5, 0.75, 1.0] as const;
 
 /** Full range for the continuous slider */
-const SPEED_MIN = 10;
+const SPEED_MIN = 25; // Must match SpeedController.MIN * 100
 const SPEED_MAX = 200;
 const SPEED_STEP = 5;
 

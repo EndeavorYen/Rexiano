@@ -16,10 +16,11 @@ export function DailyGoal(): React.JSX.Element {
   const goalMinutes = useProgressStore((s) => s.dailyGoalMinutes);
   const todayMs = useProgressStore((s) => s.todayPracticeMs);
 
+  const safeGoal = Math.max(1, goalMinutes);
   const practicedMinutes = Math.floor(todayMs / 60_000);
-  const progress = Math.min(practicedMinutes / goalMinutes, 1);
+  const progress = Math.min(practicedMinutes / safeGoal, 1);
   const dashOffset = CIRCUMFERENCE * (1 - progress);
-  const goalReached = practicedMinutes >= goalMinutes;
+  const goalReached = practicedMinutes >= safeGoal;
 
   return (
     <div

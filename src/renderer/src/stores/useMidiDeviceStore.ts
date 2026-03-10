@@ -147,6 +147,7 @@ export const useMidiDeviceStore = create<MidiDeviceState>()((set, get) => ({
   bleDeviceName: null,
 
   connect: async () => {
+    if (get().isConnected) return;
     const manager = MidiDeviceManager.getInstance();
 
     // Wire up device list changes

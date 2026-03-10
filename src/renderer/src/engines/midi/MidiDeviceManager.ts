@@ -159,7 +159,7 @@ export class MidiDeviceManager {
 
   // ─── Init ───────────────────────────────────────
   async init(): Promise<void> {
-    if (this._status === "ready") return;
+    if (this._status === "ready" || this._status === "requesting") return;
     if (this._status === "unsupported" || this._status === "denied") return;
 
     if (!navigator.requestMIDIAccess) {
@@ -251,9 +251,11 @@ export class MidiDeviceManager {
     const hasInput = this._activeInputId !== null;
 
     // Detect disconnect: had an active input, now gone
-    if (hadInput && !hasInput && this._lastInputName) {
+    if (hadInput && !hasInput) {
       this._onDisconnect?.();
-      this._startReconnect();
+      if (this._lastInputName) {
+        this._startReconnect();
+      }
       return;
     }
 
@@ -330,26 +332,34 @@ export class MidiDeviceManager {
 
     // Auto-reconnect output by ID first, then by name
     if (!this._activeOutputId && (this._lastOutputId || this._lastOutputName)) {
+      let outputReconnected = false;
+
       // Try by ID first
       if (this._lastOutputId) {
         const port = this._midiAccess.outputs.get(this._lastOutputId);
         if (port && port.state === "connected") {
           this.connectOutput(this._lastOutputId);
-          return;
+          outputReconnected = true;
         }
       }
 
       // Try by name
-      if (this._lastOutputName) {
+      if (!outputReconnected && this._lastOutputName) {
         for (const [, port] of this._midiAccess.outputs) {
           if (
             port.name === this._lastOutputName &&
             port.state === "connected"
           ) {
             this.connectOutput(port.id);
+            outputReconnected = true;
             break;
           }
         }
+      }
+
+      if (outputReconnected) {
+        this._cancelReconnect();
+        this._onReconnect?.();
       }
     }
   }

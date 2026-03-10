@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import {
   Play,
   Pause,
@@ -82,11 +82,19 @@ export function TransportBar({
   const volumePercent = Math.round(volume * 100);
 
   const [playPulse, setPlayPulse] = useState(false);
+  const playPulseTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(
+    () => () => {
+      if (playPulseTimer.current) clearTimeout(playPulseTimer.current);
+    },
+    [],
+  );
 
   const handlePlayPause = (): void => {
     setPlaying(!isPlaying);
     setPlayPulse(true);
-    setTimeout(() => setPlayPulse(false), 300);
+    if (playPulseTimer.current) clearTimeout(playPulseTimer.current);
+    playPulseTimer.current = setTimeout(() => setPlayPulse(false), 300);
   };
   const primaryButtonSize = compact ? "2.25rem" : "2.5rem";
   const iconSize = compact ? 16 : 18;

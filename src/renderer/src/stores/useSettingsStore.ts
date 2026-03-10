@@ -10,6 +10,12 @@ export type Language = "en" | "zh-TW";
 export type UiScale = "normal" | "large" | "xlarge";
 
 const VALID_UI_SCALES: readonly UiScale[] = ["normal", "large", "xlarge"];
+const VALID_PRACTICE_MODES: readonly PracticeMode[] = [
+  "watch",
+  "wait",
+  "free",
+  "step",
+];
 
 const STORAGE_KEY = "rexiano-settings";
 
@@ -116,11 +122,18 @@ function loadSavedSettings(): PersistedSettings {
   return { ...defaults };
 }
 
+/** In-memory cache of persisted settings to avoid stale-read race when
+ *  multiple settings are written synchronously in the same microtask. */
+let _persistedCache: PersistedSettings | null = null;
+
 function persist(patch: Partial<PersistedSettings>): void {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    const current = raw ? (JSON.parse(raw) as PersistedSettings) : {};
-    localStorage.setItem(STORAGE_KEY, JSON.stringify({ ...current, ...patch }));
+    if (!_persistedCache) {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      _persistedCache = raw ? (JSON.parse(raw) as PersistedSettings) : {};
+    }
+    _persistedCache = { ..._persistedCache, ...patch };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(_persistedCache));
   } catch {
     // localStorage might not be available
   }
@@ -139,7 +152,11 @@ export const useSettingsStore = create<SettingsState>()((set) => {
     volume: saved.volume ?? defaults.volume!,
     muted: saved.muted ?? defaults.muted!,
     defaultSpeed: saved.defaultSpeed ?? defaults.defaultSpeed!,
-    defaultMode: saved.defaultMode ?? defaults.defaultMode!,
+    defaultMode: VALID_PRACTICE_MODES.includes(
+      saved.defaultMode as PracticeMode,
+    )
+      ? (saved.defaultMode as PracticeMode)
+      : "watch",
     metronomeEnabled: saved.metronomeEnabled ?? defaults.metronomeEnabled!,
     countInBeats: saved.countInBeats ?? defaults.countInBeats!,
     latencyCompensation:
@@ -186,6 +203,7 @@ export const useSettingsStore = create<SettingsState>()((set) => {
       set({ defaultSpeed: clamped });
     },
     setDefaultMode: (m) => {
+      if (!VALID_PRACTICE_MODES.includes(m)) return;
       persist({ defaultMode: m });
       set({ defaultMode: m });
     },

@@ -29,7 +29,7 @@ describe("BleMidiManager", () => {
       const data = new Uint8Array([0x80, 0x80, 0x80, 60, 64]);
       manager._parseBlePacket(data);
 
-      expect(onNoteOff).toHaveBeenCalledWith(60, 64);
+      expect(onNoteOff).toHaveBeenCalledWith(60);
     });
 
     it("treats Note On with velocity 0 as Note Off", () => {
@@ -41,7 +41,7 @@ describe("BleMidiManager", () => {
       const data = new Uint8Array([0x80, 0x80, 0x90, 60, 0]);
       manager._parseBlePacket(data);
 
-      expect(onNoteOff).toHaveBeenCalledWith(60, 0);
+      expect(onNoteOff).toHaveBeenCalledWith(60);
       expect(onNoteOn).not.toHaveBeenCalled();
     });
 
@@ -115,7 +115,7 @@ describe("BleMidiManager", () => {
       manager._parseBlePacket(data);
 
       expect(onNoteOn).toHaveBeenCalledWith(60, 100);
-      expect(onNoteOff).toHaveBeenCalledWith(60, 64);
+      expect(onNoteOff).toHaveBeenCalledWith(60);
     });
 
     it("masks data bytes to 7 bits", () => {
@@ -306,7 +306,7 @@ describe("BleMidiManager", () => {
 
       // Verify onNoteOff is wired
       manager._parseBlePacket(new Uint8Array([0x80, 0x80, 0x80, 60, 64]));
-      expect(onNoteOff).toHaveBeenCalledWith(60, 64);
+      expect(onNoteOff).toHaveBeenCalledWith(60);
 
       // Verify onCC is wired
       manager._parseBlePacket(new Uint8Array([0x80, 0x80, 0xb0, 64, 127]));

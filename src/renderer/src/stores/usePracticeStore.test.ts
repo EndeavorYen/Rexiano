@@ -8,6 +8,9 @@ describe("usePracticeStore", () => {
       speed: 1.0,
       loopRange: null,
       activeTracks: new Set(),
+      displayMode: "falling",
+      isWaiting: false,
+      _timingDeltaCount: 0,
       score: {
         totalNotes: 0,
         hitNotes: 0,

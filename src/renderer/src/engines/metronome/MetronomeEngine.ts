@@ -56,6 +56,11 @@ export class MetronomeEngine {
     this._destination = destination ?? audioContext.destination;
   }
 
+  /** The AudioContext this engine is bound to */
+  get audioContext(): AudioContext {
+    return this._audioContext;
+  }
+
   /** Current BPM */
   get bpm(): number {
     return this._bpm;
@@ -225,6 +230,9 @@ export class MetronomeEngine {
    * Schedule a single click at the given AudioContext time.
    */
   private _scheduleClick(time: number, isStrong: boolean): void {
+    // Skip entirely when muted — avoids inaudible oscillator allocation
+    if (this._volume <= 0) return;
+
     const osc = this._audioContext.createOscillator();
     const gain = this._audioContext.createGain();
 
@@ -234,7 +242,7 @@ export class MetronomeEngine {
     // Sharp attack, quick decay — scaled by _volume
     // Metronome routes through master GainNode, so no extra attenuation needed
     const peakGain = this._volume;
-    gain.gain.setValueAtTime(Math.max(peakGain, 0.001), time);
+    gain.gain.setValueAtTime(peakGain, time);
     gain.gain.exponentialRampToValueAtTime(0.001, time + CLICK_DURATION);
 
     osc.connect(gain);

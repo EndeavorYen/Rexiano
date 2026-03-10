@@ -81,6 +81,8 @@ export const usePracticeStore = create<PracticeState>()((set) => ({
 
   recordHit: (noteKey, timingDeltaMs) =>
     set((state) => {
+      // Idempotent: if already recorded as hit, skip to prevent double-counting
+      if (state.noteResults.get(noteKey) === "hit") return {};
       const newResults = new Map(state.noteResults);
       newResults.set(noteKey, "hit");
       const hitNotes = state.score.hitNotes + 1;
@@ -117,6 +119,8 @@ export const usePracticeStore = create<PracticeState>()((set) => ({
 
   recordMiss: (noteKey) =>
     set((state) => {
+      // Idempotent: if already recorded as miss, skip to prevent double-counting
+      if (state.noteResults.get(noteKey) === "miss") return {};
       const newResults = new Map(state.noteResults);
       newResults.set(noteKey, "miss");
       const missedNotes = state.score.missedNotes + 1;

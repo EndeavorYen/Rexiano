@@ -17,12 +17,12 @@ describe("SpeedController", () => {
     expect(c.multiplier).toBe(0.5);
   });
 
-  it("clamps below minimum (0.10)", () => {
+  it("clamps below minimum (0.25)", () => {
     ctrl.setSpeed(0.05);
     // Target is set; tick to reach it immediately
     ctrl.tick(1000);
     ctrl.tick(1300);
-    expect(ctrl.multiplier).toBe(0.1);
+    expect(ctrl.multiplier).toBe(0.25);
   });
 
   it("clamps above maximum (2.0)", () => {
@@ -54,10 +54,10 @@ describe("SpeedController", () => {
   });
 
   it("handles boundary values", () => {
-    ctrl.setSpeed(0.1);
+    ctrl.setSpeed(0.25);
     ctrl.tick(0);
     ctrl.tick(300);
-    expect(ctrl.multiplier).toBe(0.1);
+    expect(ctrl.multiplier).toBe(0.25);
 
     ctrl.setSpeed(2.0);
     ctrl.tick(400);
@@ -86,11 +86,11 @@ describe("SpeedController", () => {
     });
 
     it("clamps at MIN when bumping down", () => {
-      ctrl.setSpeed(0.15);
+      ctrl.setSpeed(0.3);
       ctrl.tick(0);
       ctrl.tick(300);
       const result = ctrl.bumpSpeed(-0.1);
-      expect(result).toBe(0.1);
+      expect(result).toBe(0.25);
     });
 
     it("clamps at MAX when bumping up", () => {

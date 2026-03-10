@@ -55,7 +55,12 @@ const MODE_MAP: Record<string, PracticeMode> = {
 function isTextInput(target: EventTarget | null): boolean {
   if (!target || !(target instanceof HTMLElement)) return false;
   const tag = target.tagName.toLowerCase();
-  return tag === "input" || tag === "textarea" || target.isContentEditable;
+  return (
+    tag === "input" ||
+    tag === "textarea" ||
+    tag === "select" ||
+    target.isContentEditable
+  );
 }
 
 function hasShortcutBlockingOverlay(): boolean {
@@ -91,8 +96,8 @@ export function createKeyboardHandler(
     switch (e.code) {
       // ── Playback ────────────────────────────────────
       case "Space": {
-        e.preventDefault();
         if (!hasSong) return;
+        e.preventDefault();
         const pb = usePlaybackStore.getState();
         pb.setPlaying(!pb.isPlaying);
         break;
@@ -106,8 +111,8 @@ export function createKeyboardHandler(
       }
 
       case "ArrowLeft": {
-        e.preventDefault();
         if (!hasSong) return;
+        e.preventDefault();
         // In step mode, ArrowLeft goes to previous note/chord
         if (usePracticeStore.getState().mode === "step") {
           const { stepMode } = getPracticeEngines();
@@ -136,8 +141,8 @@ export function createKeyboardHandler(
       }
 
       case "ArrowRight": {
-        e.preventDefault();
         if (!hasSong) return;
+        e.preventDefault();
         // In step mode, ArrowRight advances to next note/chord
         if (usePracticeStore.getState().mode === "step") {
           const { stepMode } = getPracticeEngines();

@@ -24,6 +24,8 @@ export class SoundFontLoader implements ISoundFontLoader {
   private _samples = new Map<number, NoteSample>();
   /** Cache synthesized fallback samples by sample rate to avoid repeated heavy generation. */
   private static _synthCache = new Map<number, Map<number, NoteSample>>();
+  /** Set by dispose() so in-flight load() can bail out */
+  private _disposed = false;
 
   get isLoaded(): boolean {
     return this._samples.size > 0;
@@ -33,6 +35,7 @@ export class SoundFontLoader implements ISoundFontLoader {
     source: string | ArrayBuffer,
     audioContext: AudioContext,
   ): Promise<void> {
+    if (this._disposed) return; // don't resurrect a disposed instance
     this._samples.clear();
 
     let arrayBuffer: ArrayBuffer | null = null;
@@ -47,6 +50,7 @@ export class SoundFontLoader implements ISoundFontLoader {
         return;
       }
       const result = await window.api.loadSoundFont(source);
+      if (this._disposed) return;
       if (result) {
         arrayBuffer = new Uint8Array(result.data).buffer;
       }
@@ -75,6 +79,7 @@ export class SoundFontLoader implements ISoundFontLoader {
   }
 
   dispose(): void {
+    this._disposed = true;
     this._samples.clear();
     // Clear static cache so AudioBuffers from the old (closed) AudioContext
     // are not reused with a new context after audio recovery.
