@@ -36,6 +36,7 @@ export function computeLoopHighlight(
 ): { left: number; width: number } | null {
   if (!loopRange || duration <= 0) return null;
   const [a, b] = loopRange;
+  if (!Number.isFinite(a) || !Number.isFinite(b)) return null;
   const left = Math.max(0, Math.min(100, (a / duration) * 100));
   const right = Math.max(0, Math.min(100, (b / duration) * 100));
   const width = right - left;
@@ -247,6 +248,7 @@ export function TransportBar({
                 onClick={() => requestAudioRecovery()}
                 className="btn-surface-themed rounded-md px-2 py-0.5 text-[10px] font-body cursor-pointer"
                 style={{ color: "var(--color-text)" }}
+                aria-label={t("audio.retry")}
                 data-testid="audio-recovery-retry"
               >
                 <span className="inline-flex items-center gap-1">

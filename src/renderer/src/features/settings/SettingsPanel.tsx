@@ -356,7 +356,7 @@ export function SettingsPanel({
                                     : "var(--color-surface-alt)",
                                 color:
                                   uiScale === option.value
-                                    ? "#fff"
+                                    ? "var(--color-bg)"
                                     : "var(--color-text-muted)",
                               }}
                               data-testid={`ui-scale-${option.value}`}

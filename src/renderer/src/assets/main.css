@@ -699,6 +699,22 @@ input[type="range"]:disabled::-moz-range-thumb {
   opacity: 0.5;
 }
 
+.seek-bar:focus-visible {
+  outline: none;
+}
+
+.seek-bar:focus-visible::-webkit-slider-thumb {
+  box-shadow:
+    0 1px 4px rgba(0, 0, 0, 0.18),
+    0 0 0 3px color-mix(in srgb, var(--color-accent) 36%, transparent);
+}
+
+.seek-bar:focus-visible::-moz-range-thumb {
+  box-shadow:
+    0 1px 4px rgba(0, 0, 0, 0.18),
+    0 0 0 3px color-mix(in srgb, var(--color-accent) 36%, transparent);
+}
+
 /* Seek bar — progress fill overlay */
 .seek-bar-fill {
   background: linear-gradient(
@@ -1003,7 +1019,7 @@ input[type="range"]:disabled::-moz-range-thumb {
   to { opacity: 1; transform: scale(1); }
 }
 .animate-fade-in {
-  animation: song-complete-fade-in 0.25s ease-out both;
+  animation: song-complete-fade-in 0.3s ease-out both;
 }
 .animate-scale-in {
   animation: song-complete-scale-in 0.35s cubic-bezier(0.22, 0.61, 0.36, 1) both;

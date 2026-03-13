@@ -337,7 +337,10 @@ export function SongLibrary({
                 {songs.length === 0 ? (
                   <>
                     {/* Animated piano keys illustration */}
-                    <div className="flex items-start justify-center gap-1 mb-5">
+                    <div
+                      className="flex items-start justify-center gap-1 mb-5"
+                      aria-hidden="true"
+                    >
                       <div className="empty-piano-key" />
                       <div className="empty-piano-key" />
                       <div className="empty-piano-key" />
@@ -355,7 +358,7 @@ export function SongLibrary({
                       {t("library.emptyHint")}
                     </p>
                     {/* Animated arrow pointing down */}
-                    <div className="flex justify-center">
+                    <div className="flex justify-center" aria-hidden="true">
                       <div className="empty-arrow-down" />
                     </div>
                   </>

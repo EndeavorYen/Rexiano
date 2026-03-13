@@ -24,6 +24,7 @@ const SPARKLE_CONFIGS: Array<[number, number, number, number]> = [
 ];
 
 function useCountUp(target: number, durationMs: number = 1000): number {
+  const safeTarget = Number.isFinite(target) ? target : 0;
   const [value, setValue] = useState(0);
   const hasAnimated = useRef(false);
 
@@ -39,7 +40,7 @@ function useCountUp(target: number, durationMs: number = 1000): number {
       const progress = Math.min(elapsed / durationMs, 1);
       // Ease-out cubic for a satisfying deceleration
       const eased = 1 - Math.pow(1 - progress, 3);
-      setValue(Math.round(eased * target));
+      setValue(Math.round(eased * safeTarget));
 
       if (progress < 1) {
         rafId = requestAnimationFrame(tick);
@@ -48,7 +49,7 @@ function useCountUp(target: number, durationMs: number = 1000): number {
 
     rafId = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(rafId);
-  }, [target, durationMs]);
+  }, [safeTarget, durationMs]);
 
   return value;
 }
@@ -107,7 +108,10 @@ export function SongCompleteOverlay({
     >
       {/* Sparkles for 3-star results */}
       {showScore && starCount === 3 && (
-        <div className="absolute inset-0 pointer-events-none overflow-hidden">
+        <div
+          className="absolute inset-0 pointer-events-none overflow-hidden"
+          aria-hidden="true"
+        >
           {SPARKLE_CONFIGS.map(([top, left, dx, delay], i) => (
             <span
               key={i}
@@ -258,7 +262,7 @@ export function SongCompleteOverlay({
                   className="text-lg font-display font-bold tabular-nums"
                   style={{ color: "var(--color-streak-gold)" }}
                 >
-                  {score.bestStreak}
+                  {Math.max(0, score.bestStreak)}
                 </span>
                 <span
                   className="text-xs font-body"

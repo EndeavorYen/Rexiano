@@ -5,6 +5,7 @@ import { useTranslation } from "@renderer/i18n/useTranslation";
 import type { TranslationKey } from "@renderer/i18n/types";
 
 function getEncouragementKey(accuracy: number, streak: number): TranslationKey {
+  if (!Number.isFinite(accuracy)) return "practice.encourageYouCanDoIt";
   if (streak >= 25) return "practice.encourageOnFire";
   if (streak >= 10) return "practice.encourageStreak";
   if (accuracy >= 95) return "practice.encouragePerfect";
@@ -36,7 +37,7 @@ export function ScoreOverlay(): React.JSX.Element {
 
   return (
     <div
-      className="absolute top-3 right-3 z-50 flex flex-col items-end gap-1 px-4 py-3 rounded-xl pointer-events-none select-none animate-score-enter"
+      className="absolute top-3 right-3 z-50 flex flex-col items-end gap-1 px-4 py-3 rounded-xl pointer-events-none select-none animate-score-enter max-w-[200px]"
       style={{
         background: "color-mix(in srgb, var(--color-surface) 92%, transparent)",
         border:
@@ -51,7 +52,7 @@ export function ScoreOverlay(): React.JSX.Element {
         <span
           className="text-xs font-display font-bold animate-pulse"
           style={{
-            color: "var(--color-streak-gold, var(--color-accent))",
+            color: "var(--color-streak-gold)",
             borderBottom: "2px solid currentColor",
             paddingBottom: "1px",
           }}
@@ -120,7 +121,7 @@ export function ScoreOverlay(): React.JSX.Element {
         >
           <span
             className="text-sm font-display font-bold tabular-nums"
-            style={{ color: "var(--color-combo-text, var(--color-accent))" }}
+            style={{ color: "var(--color-combo-text)" }}
           >
             {score.currentStreak}
           </span>
