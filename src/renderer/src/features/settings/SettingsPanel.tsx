@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from "react";
-import { X, Settings, Palette, Volume2, Music } from "lucide-react";
+import { X, Settings, Palette, Volume2, Music, Globe } from "lucide-react";
 import { useThemeStore } from "@renderer/stores/useThemeStore";
 import { useSettingsStore } from "@renderer/stores/useSettingsStore";
 import { usePlaybackStore } from "@renderer/stores/usePlaybackStore";
@@ -370,7 +370,12 @@ export function SettingsPanel({
                   </div>
 
                   <div className="mt-6">
-                    <SectionTitle>{t("settings.language")}</SectionTitle>
+                    <SectionTitle>
+                      <span className="inline-flex items-center gap-1.5">
+                        <Globe size={12} />
+                        {t("settings.language")}
+                      </span>
+                    </SectionTitle>
                     <div className="flex flex-col gap-2 mt-3">
                       {getAvailableLanguages().map((lang) => (
                         <button
@@ -409,7 +414,7 @@ export function SettingsPanel({
 
               {activeTab === "sound" && (
                 <TabContent>
-                  <SectionTitle>{t("settings.tab.audio")}</SectionTitle>
+                  <SectionTitle>{t("settings.audioSettings")}</SectionTitle>
                   <div className="flex flex-col gap-3 mt-3">
                     <ToggleRow
                       label={t("settings.muteAudio")}

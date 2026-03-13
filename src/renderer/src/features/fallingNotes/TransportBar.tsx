@@ -328,9 +328,11 @@ export function TransportBar({
               <div
                 className="seek-bar-fill"
                 style={{
-                  width: `${duration > 0 ? (currentTime / duration) * 100 : 0}%`,
+                  width: "100%",
                   height: 6,
                   borderRadius: 3,
+                  transform: `scaleX(${duration > 0 ? currentTime / duration : 0})`,
+                  transformOrigin: "left",
                 }}
               />
             </div>

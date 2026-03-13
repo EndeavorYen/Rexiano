@@ -38,12 +38,10 @@ export function ScoreOverlay(): React.JSX.Element {
     <div
       className="absolute top-3 right-3 z-50 flex flex-col items-end gap-1 px-4 py-3 rounded-xl pointer-events-none select-none animate-score-enter"
       style={{
-        background: "color-mix(in srgb, var(--color-surface) 80%, transparent)",
+        background: "color-mix(in srgb, var(--color-surface) 92%, transparent)",
         border:
           "1px solid color-mix(in srgb, var(--color-border) 60%, transparent)",
         boxShadow: "0 4px 24px rgba(0,0,0,0.08), 0 1px 4px rgba(0,0,0,0.04)",
-        backdropFilter: "blur(16px)",
-        WebkitBackdropFilter: "blur(16px)",
       }}
       role="status"
       aria-label={t("practice.scoreLabel")}
@@ -101,8 +99,8 @@ export function ScoreOverlay(): React.JSX.Element {
                 Math.abs(score.lastTimingDeltaMs) < 30
                   ? "var(--color-accent)"
                   : score.lastTimingDeltaMs < 0
-                    ? "var(--color-timing-early, #6B8FC2)"
-                    : "var(--color-timing-late, #C27B6B)",
+                    ? "var(--color-timing-early)"
+                    : "var(--color-timing-late)",
             }}
           >
             {Math.abs(score.lastTimingDeltaMs) < 30

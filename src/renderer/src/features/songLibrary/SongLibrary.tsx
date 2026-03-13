@@ -348,7 +348,10 @@ export function SongLibrary({
                     >
                       {t("library.emptyTitle")}
                     </p>
-                    <p className="text-sm font-body opacity-70 mb-5">
+                    <p
+                      className="text-sm font-body mb-5"
+                      style={{ color: "var(--color-text-muted)" }}
+                    >
                       {t("library.emptyHint")}
                     </p>
                     {/* Animated arrow pointing down */}
@@ -377,7 +380,10 @@ export function SongLibrary({
                     >
                       {t("library.noMatchTitle")}
                     </p>
-                    <p className="text-sm font-body opacity-70">
+                    <p
+                      className="text-sm font-body"
+                      style={{ color: "var(--color-text-muted)" }}
+                    >
                       {t("library.noMatchAction")}
                     </p>
                   </>
