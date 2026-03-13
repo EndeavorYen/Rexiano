@@ -8,6 +8,7 @@
 import { useState } from "react";
 import { ChevronDown, ChevronUp } from "lucide-react";
 import { useTranslation } from "@renderer/i18n/useTranslation";
+import { useSettingsStore } from "@renderer/stores/useSettingsStore";
 import { PracticeModeSelector } from "./PracticeModeSelector";
 import { SpeedSlider } from "./SpeedSlider";
 import { ABLoopSelector } from "./ABLoopSelector";
@@ -20,7 +21,27 @@ export function PracticeToolbar({
   compact = false,
 }: PracticeToolbarProps): React.JSX.Element {
   const { t } = useTranslation();
+  const kidMode = useSettingsStore((s) => s.kidMode);
   const [showAdvanced, setShowAdvanced] = useState(() => !compact);
+
+  if (kidMode) {
+    return (
+      <div
+        className="mx-3 mt-3 rounded-2xl surface-panel overflow-hidden"
+        style={{
+          border: "1px solid var(--color-border)",
+        }}
+        data-testid="practice-toolbar"
+      >
+        <div
+          className="flex items-center gap-3 px-4 py-2.5"
+          style={{ minHeight: 44 }}
+        >
+          <PracticeModeSelector />
+        </div>
+      </div>
+    );
+  }
 
   if (!compact) {
     return (

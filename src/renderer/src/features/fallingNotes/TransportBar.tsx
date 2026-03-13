@@ -307,7 +307,7 @@ export function TransportBar({
           >
             {loopHighlight && (
               <div
-                className="absolute rounded-full pointer-events-none"
+                className="absolute rounded-full pointer-events-none z-[5]"
                 style={{
                   left: `${loopHighlight.left}%`,
                   width: `${loopHighlight.width}%`,
@@ -321,6 +321,19 @@ export function TransportBar({
                 aria-label="A-B loop range"
               />
             )}
+            <div
+              className="absolute inset-0 flex items-center pointer-events-none"
+              style={{ height: compact ? 18 : 20 }}
+            >
+              <div
+                className="seek-bar-fill"
+                style={{
+                  width: `${duration > 0 ? (currentTime / duration) * 100 : 0}%`,
+                  height: 6,
+                  borderRadius: 3,
+                }}
+              />
+            </div>
             <input
               type="range"
               min={0}
@@ -333,7 +346,7 @@ export function TransportBar({
                 setCurrentTime(parseFloat(e.target.value));
               }}
               disabled={!song || isCountingIn}
-              className="w-full relative z-10"
+              className="seek-bar w-full relative z-10"
               style={{ accentColor: "var(--color-accent)" }}
               aria-label={t("transport.seekPosition")}
             />

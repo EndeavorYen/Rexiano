@@ -50,6 +50,10 @@ export interface TranslationMap {
   "library.noSongsHint": string;
   "library.noMatchSearch": string;
   "library.noMatchHint": string;
+  "library.emptyTitle": string;
+  "library.emptyHint": string;
+  "library.noMatchTitle": string;
+  "library.noMatchAction": string;
   "library.category.exercise": string;
   "library.category.popular": string;
   "library.category.holiday": string;
@@ -131,6 +135,11 @@ export interface TranslationMap {
   "practice.watchComplete": string;
   "practice.finalAccuracy": string;
   "practice.bestStreak": string;
+  "practice.complete.amazing": string;
+  "practice.complete.great": string;
+  "practice.complete.good": string;
+  "practice.complete.tryAgain": string;
+  "practice.complete.niceListening": string;
   "practice.playAgain": string;
   "practice.backToLibrary": string;
   "practice.mode.watchDesc": string;
@@ -153,6 +162,8 @@ export interface TranslationMap {
   "settings.tab.audio": string;
   "settings.tab.practice": string;
   "settings.tab.lang": string;
+  "settings.tab.appearance": string;
+  "settings.tab.sound": string;
   "about.version": string;
   "about.changelog": string;
   "about.noChangelog": string;
@@ -191,6 +202,8 @@ export interface TranslationMap {
   "settings.uiScale.normal": string;
   "settings.uiScale.large": string;
   "settings.uiScale.xlarge": string;
+  "settings.kidMode": string;
+  "settings.kidModeDesc": string;
 
   // ── Fingering ──────────────────────────────────────────────────
   "fingering.label": string;

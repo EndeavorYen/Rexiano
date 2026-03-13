@@ -1,5 +1,6 @@
 import { useMemo } from "react";
 import { usePracticeStore } from "@renderer/stores/usePracticeStore";
+import { useSettingsStore } from "@renderer/stores/useSettingsStore";
 import { useTranslation } from "@renderer/i18n/useTranslation";
 import type { TranslationKey } from "@renderer/i18n/types";
 
@@ -18,6 +19,7 @@ export function ScoreOverlay(): React.JSX.Element {
   const score = usePracticeStore((s) => s.score);
   const mode = usePracticeStore((s) => s.mode);
   const isWaiting = usePracticeStore((s) => s.isWaiting);
+  const kidMode = useSettingsStore((s) => s.kidMode);
 
   // useMemo must be called before any early returns (Rules of Hooks)
   const encouragementKey = useMemo(
@@ -87,7 +89,7 @@ export function ScoreOverlay(): React.JSX.Element {
       </div>
 
       {/* R1-005: Early / Late / On time timing indicator */}
-      {mode !== "wait" && score.lastTimingDeltaMs != null && (
+      {!kidMode && mode !== "wait" && score.lastTimingDeltaMs != null && (
         <div
           className="flex items-baseline gap-1 mt-0.5"
           key={`timing-${score.hitNotes}`}
@@ -113,7 +115,7 @@ export function ScoreOverlay(): React.JSX.Element {
       )}
 
       {/* Combo streak with pop animation */}
-      {score.currentStreak > 1 && (
+      {!kidMode && score.currentStreak > 1 && (
         <div
           className="flex items-baseline gap-1 mt-0.5 animate-combo-pop"
           key={`combo-${score.currentStreak}`}

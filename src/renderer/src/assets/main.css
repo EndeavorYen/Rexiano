@@ -609,6 +609,108 @@ input[type="range"]:disabled::-moz-range-thumb {
   opacity: 0.42;
 }
 
+/* ── Seek bar (TransportBar progress slider) ── */
+.seek-bar {
+  height: 22px;
+  padding: 0;
+}
+
+.seek-bar::-webkit-slider-runnable-track {
+  height: 6px;
+  border-radius: 3px;
+  background: color-mix(in srgb, var(--color-border) 60%, var(--color-surface));
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.06);
+  transition: background 0.15s ease;
+}
+
+.seek-bar:hover::-webkit-slider-runnable-track {
+  background: color-mix(in srgb, var(--color-border) 72%, var(--color-surface));
+}
+
+.seek-bar::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--color-accent);
+  margin-top: -4px;
+  border: 2px solid color-mix(in srgb, var(--color-surface) 82%, #fff);
+  box-shadow:
+    0 1px 4px rgba(0, 0, 0, 0.18),
+    0 0 0 3px color-mix(in srgb, var(--color-accent) 20%, transparent);
+  cursor: pointer;
+  transition:
+    width 0.15s ease,
+    height 0.15s ease,
+    margin-top 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+.seek-bar:hover::-webkit-slider-thumb {
+  width: 16px;
+  height: 16px;
+  margin-top: -5px;
+  box-shadow:
+    0 2px 8px rgba(0, 0, 0, 0.22),
+    0 0 0 4px color-mix(in srgb, var(--color-accent) 18%, transparent),
+    0 0 12px color-mix(in srgb, var(--color-accent) 24%, transparent);
+}
+
+.seek-bar:disabled::-webkit-slider-runnable-track {
+  background: color-mix(in srgb, var(--color-border) 40%, var(--color-surface));
+}
+
+.seek-bar:disabled::-webkit-slider-thumb {
+  background: var(--color-text-muted);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+  cursor: default;
+  opacity: 0.5;
+}
+
+/* Seek bar — Firefox */
+.seek-bar::-moz-range-track {
+  height: 6px;
+  border-radius: 3px;
+  background: color-mix(in srgb, var(--color-border) 60%, var(--color-surface));
+  border: none;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.06);
+}
+
+.seek-bar::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--color-accent);
+  border: 2px solid color-mix(in srgb, var(--color-surface) 82%, #fff);
+  box-shadow:
+    0 1px 4px rgba(0, 0, 0, 0.18),
+    0 0 0 3px color-mix(in srgb, var(--color-accent) 20%, transparent);
+  cursor: pointer;
+}
+
+.seek-bar:disabled::-moz-range-track {
+  background: color-mix(in srgb, var(--color-border) 40%, var(--color-surface));
+}
+
+.seek-bar:disabled::-moz-range-thumb {
+  background: var(--color-text-muted);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+  opacity: 0.5;
+}
+
+/* Seek bar — progress fill overlay */
+.seek-bar-fill {
+  background: linear-gradient(
+    90deg,
+    var(--color-accent),
+    color-mix(in srgb, var(--color-accent) 70%, var(--color-surface))
+  );
+  box-shadow: 0 0 8px color-mix(in srgb, var(--color-accent) 22%, transparent);
+  transition: width 0.08s linear;
+  will-change: width;
+}
+
 .speed-slider-input {
   height: 22px;
   padding: 2px 0;
@@ -907,6 +1009,44 @@ input[type="range"]:disabled::-moz-range-thumb {
   animation: song-complete-scale-in 0.35s cubic-bezier(0.22, 0.61, 0.36, 1) both;
 }
 
+/* ── Song complete sparkle effect (3-star results) ── */
+@keyframes sparkle-float {
+  0% {
+    opacity: 0;
+    transform: translate(0, 0) scale(0.4);
+  }
+  15% {
+    opacity: 1;
+    transform: translate(var(--sparkle-dx, 0), -8px) scale(1);
+  }
+  80% {
+    opacity: 0.6;
+    transform: translate(calc(var(--sparkle-dx, 0) * 1.5), -48px) scale(0.7);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(calc(var(--sparkle-dx, 0) * 2), -72px) scale(0.3);
+  }
+}
+
+@keyframes star-glow-pulse {
+  0%, 100% {
+    filter: drop-shadow(0 0 6px var(--color-streak-gold, #C89C49));
+  }
+  50% {
+    filter: drop-shadow(0 0 14px var(--color-streak-gold, #C89C49))
+           drop-shadow(0 0 4px var(--color-accent));
+  }
+}
+
+.animate-sparkle-float {
+  animation: sparkle-float 1.8s ease-out both;
+}
+
+.animate-star-glow {
+  animation: star-glow-pulse 2s ease-in-out infinite;
+}
+
 /* ── Card hover lift ── */
 .card-hover {
   transition:
@@ -929,6 +1069,64 @@ input[type="range"]:disabled::-moz-range-thumb {
 
 .card-hover:active {
   transform: translateY(0);
+}
+
+/* ── Empty state: piano keys bounce ── */
+@keyframes piano-key-bounce {
+  0%, 100% { transform: scaleY(1); }
+  40% { transform: scaleY(0.82); }
+  60% { transform: scaleY(1.04); }
+}
+
+.empty-piano-key {
+  width: 18px;
+  height: 52px;
+  border-radius: 0 0 5px 5px;
+  background: color-mix(in srgb, var(--color-surface) 96%, #fff);
+  border: 1.5px solid color-mix(in srgb, var(--color-border) 80%, transparent);
+  transform-origin: top center;
+  animation: piano-key-bounce 1.6s ease-in-out infinite;
+  box-shadow:
+    inset 0 -8px 12px color-mix(in srgb, var(--color-accent) 6%, transparent),
+    0 3px 8px rgba(0, 0, 0, 0.06);
+}
+
+.empty-piano-key:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+.empty-piano-key:nth-child(3) {
+  animation-delay: 0.4s;
+}
+
+/* ── Empty state: arrow bounce ── */
+@keyframes arrow-float {
+  0%, 100% { transform: translateY(0); opacity: 0.5; }
+  50% { transform: translateY(6px); opacity: 0.85; }
+}
+
+.empty-arrow-down {
+  width: 0;
+  height: 0;
+  border-left: 7px solid transparent;
+  border-right: 7px solid transparent;
+  border-top: 9px solid var(--color-accent);
+  opacity: 0.5;
+  animation: arrow-float 1.8s ease-in-out infinite;
+}
+
+/* ── Empty state: magnifying glass wobble ── */
+@keyframes search-wobble {
+  0%, 100% { transform: rotate(0deg); }
+  20% { transform: rotate(-8deg); }
+  40% { transform: rotate(6deg); }
+  60% { transform: rotate(-4deg); }
+  80% { transform: rotate(2deg); }
+}
+
+.empty-search-wobble {
+  animation: search-wobble 2.4s ease-in-out infinite;
+  transform-origin: 60% 60%;
 }
 
 /* ── Staggered entrance for grid children ── */
@@ -1026,6 +1224,12 @@ input[type="range"]:disabled::-moz-range-thumb {
 
   .card-hover:hover {
     transform: none;
+  }
+
+  .animate-sparkle-float,
+  .animate-star-glow {
+    animation: none !important;
+    opacity: 0 !important;
   }
 
   .app-shell::before,

@@ -55,6 +55,7 @@ interface SettingsState {
   audioCompatibilityMode: boolean;
   noteReleaseMs: number;
   uiScale: UiScale;
+  kidMode: boolean;
 
   setShowNoteLabels: (v: boolean) => void;
   setShowFallingNoteLabels: (v: boolean) => void;
@@ -71,6 +72,7 @@ interface SettingsState {
   setAudioCompatibilityMode: (v: boolean) => void;
   setNoteReleaseMs: (ms: number) => void;
   setUiScale: (scale: UiScale) => void;
+  setKidMode: (v: boolean) => void;
 }
 
 interface PersistedSettings {
@@ -89,6 +91,7 @@ interface PersistedSettings {
   audioCompatibilityMode?: boolean;
   noteReleaseMs?: number;
   uiScale?: UiScale;
+  kidMode?: boolean;
 }
 
 const defaults: PersistedSettings = {
@@ -107,6 +110,7 @@ const defaults: PersistedSettings = {
   audioCompatibilityMode: false,
   noteReleaseMs: 150,
   uiScale: "normal",
+  kidMode: false,
 };
 
 function loadSavedSettings(): PersistedSettings {
@@ -167,6 +171,7 @@ export const useSettingsStore = create<SettingsState>()((set) => {
     uiScale: VALID_UI_SCALES.includes(saved.uiScale as UiScale)
       ? (saved.uiScale as UiScale)
       : "normal",
+    kidMode: saved.kidMode ?? defaults.kidMode!,
 
     setShowNoteLabels: (v) => {
       persist({ showNoteLabels: v });
@@ -234,6 +239,10 @@ export const useSettingsStore = create<SettingsState>()((set) => {
       if (!VALID_UI_SCALES.includes(scale)) return;
       persist({ uiScale: scale });
       set({ uiScale: scale });
+    },
+    setKidMode: (v) => {
+      persist({ kidMode: v });
+      set({ kidMode: v });
     },
   };
 });

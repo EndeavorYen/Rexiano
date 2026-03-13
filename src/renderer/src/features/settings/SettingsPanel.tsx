@@ -1,13 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from "react";
-import {
-  X,
-  Settings,
-  Palette,
-  Monitor,
-  Volume2,
-  Music,
-  Globe,
-} from "lucide-react";
+import { X, Settings, Palette, Volume2, Music } from "lucide-react";
 import { useThemeStore } from "@renderer/stores/useThemeStore";
 import { useSettingsStore } from "@renderer/stores/useSettingsStore";
 import { usePlaybackStore } from "@renderer/stores/usePlaybackStore";
@@ -26,15 +18,17 @@ const uiScaleOptions: { value: UiScale; key: TranslationKey }[] = [
   { value: "xlarge", key: "settings.uiScale.xlarge" },
 ];
 
-type SettingsTab = "theme" | "display" | "audio" | "practice" | "language";
+type SettingsTab = "appearance" | "sound" | "practice";
 
 const tabs: { id: SettingsTab; key: TranslationKey; icon: React.ReactNode }[] =
   [
-    { id: "theme", key: "settings.tab.theme", icon: <Palette size={14} /> },
-    { id: "display", key: "settings.tab.display", icon: <Monitor size={14} /> },
-    { id: "audio", key: "settings.tab.audio", icon: <Volume2 size={14} /> },
+    {
+      id: "appearance",
+      key: "settings.tab.appearance",
+      icon: <Palette size={14} />,
+    },
+    { id: "sound", key: "settings.tab.sound", icon: <Volume2 size={14} /> },
     { id: "practice", key: "settings.tab.practice", icon: <Music size={14} /> },
-    { id: "language", key: "settings.tab.lang", icon: <Globe size={14} /> },
   ];
 
 const practiceModeKeys: {
@@ -72,7 +66,7 @@ export function SettingsPanel({
 }: SettingsPanelProps = {}): React.JSX.Element {
   const { t } = useTranslation();
   const [open, setOpen] = useState(inline);
-  const [activeTab, setActiveTab] = useState<SettingsTab>("theme");
+  const [activeTab, setActiveTab] = useState<SettingsTab>("appearance");
   const panelRef = useRef<HTMLDivElement>(null);
 
   const currentThemeId = useThemeStore((s) => s.themeId);
@@ -104,6 +98,8 @@ export function SettingsPanel({
   const setPlaybackVolume = usePlaybackStore((s) => s.setVolume);
   const setDefaultSpeed = useSettingsStore((s) => s.setDefaultSpeed);
   const setDefaultMode = useSettingsStore((s) => s.setDefaultMode);
+  const kidMode = useSettingsStore((s) => s.kidMode);
+  const setKidMode = useSettingsStore((s) => s.setKidMode);
   const setUiScale = useSettingsStore((s) => s.setUiScale);
 
   const handleClose = useCallback(() => {
@@ -275,7 +271,7 @@ export function SettingsPanel({
             </div>
 
             <div className="flex-1 overflow-y-auto px-5 py-4">
-              {activeTab === "theme" && (
+              {activeTab === "appearance" && (
                 <TabContent>
                   <SectionTitle>{t("settings.chooseTheme")}</SectionTitle>
                   <div className="flex gap-4 mt-3 flex-wrap">
@@ -311,73 +307,107 @@ export function SettingsPanel({
                       );
                     })}
                   </div>
-                </TabContent>
-              )}
 
-              {activeTab === "display" && (
-                <TabContent>
-                  <SectionTitle>{t("settings.tab.display")}</SectionTitle>
-                  <div className="flex flex-col gap-3 mt-3">
-                    <ToggleRow
-                      label={t("settings.showNoteLabels")}
-                      checked={showNoteLabels}
-                      onChange={setShowNoteLabels}
-                      testId="toggle-note-labels"
-                    />
-                    <ToggleRow
-                      label={t("settings.showFallingLabels")}
-                      checked={showFallingNoteLabels}
-                      onChange={setShowFallingNoteLabels}
-                      testId="toggle-falling-labels"
-                    />
-                    <ToggleRow
-                      label={t("settings.showFingering")}
-                      checked={showFingering}
-                      onChange={setShowFingering}
-                      testId="toggle-fingering"
-                    />
-                    <ToggleRow
-                      label={t("settings.compactKeyLabels")}
-                      checked={compactKeyLabels}
-                      onChange={setCompactKeyLabels}
-                      testId="toggle-compact-labels"
-                    />
+                  <div className="mt-6">
+                    <SectionTitle>{t("settings.displayOptions")}</SectionTitle>
+                    <div className="flex flex-col gap-3 mt-3">
+                      <ToggleRow
+                        label={t("settings.showNoteLabels")}
+                        checked={showNoteLabels}
+                        onChange={setShowNoteLabels}
+                        testId="toggle-note-labels"
+                      />
+                      <ToggleRow
+                        label={t("settings.showFallingLabels")}
+                        checked={showFallingNoteLabels}
+                        onChange={setShowFallingNoteLabels}
+                        testId="toggle-falling-labels"
+                      />
+                      <ToggleRow
+                        label={t("settings.showFingering")}
+                        checked={showFingering}
+                        onChange={setShowFingering}
+                        testId="toggle-fingering"
+                      />
+                      <ToggleRow
+                        label={t("settings.compactKeyLabels")}
+                        checked={compactKeyLabels}
+                        onChange={setCompactKeyLabels}
+                        testId="toggle-compact-labels"
+                      />
 
-                    <div>
-                      <span
-                        className="text-xs font-body block mb-1.5"
-                        style={{ color: "var(--color-text)" }}
-                      >
-                        {t("settings.uiScale")}
-                      </span>
-                      <div className="flex gap-1.5">
-                        {uiScaleOptions.map((option) => (
-                          <button
-                            key={option.value}
-                            onClick={() => setUiScale(option.value)}
-                            className="px-2.5 py-1 text-[11px] font-body rounded-lg cursor-pointer transition-colors"
-                            style={{
-                              background:
-                                uiScale === option.value
-                                  ? "var(--color-accent)"
-                                  : "var(--color-surface-alt)",
-                              color:
-                                uiScale === option.value
-                                  ? "#fff"
-                                  : "var(--color-text-muted)",
-                            }}
-                            data-testid={`ui-scale-${option.value}`}
-                          >
-                            {t(option.key)}
-                          </button>
-                        ))}
+                      <div>
+                        <span
+                          className="text-xs font-body block mb-1.5"
+                          style={{ color: "var(--color-text)" }}
+                        >
+                          {t("settings.uiScale")}
+                        </span>
+                        <div className="flex gap-1.5">
+                          {uiScaleOptions.map((option) => (
+                            <button
+                              key={option.value}
+                              onClick={() => setUiScale(option.value)}
+                              className="px-2.5 py-1 text-[11px] font-body rounded-lg cursor-pointer transition-colors"
+                              style={{
+                                background:
+                                  uiScale === option.value
+                                    ? "var(--color-accent)"
+                                    : "var(--color-surface-alt)",
+                                color:
+                                  uiScale === option.value
+                                    ? "#fff"
+                                    : "var(--color-text-muted)",
+                              }}
+                              data-testid={`ui-scale-${option.value}`}
+                            >
+                              {t(option.key)}
+                            </button>
+                          ))}
+                        </div>
                       </div>
+                    </div>
+                  </div>
+
+                  <div className="mt-6">
+                    <SectionTitle>{t("settings.language")}</SectionTitle>
+                    <div className="flex flex-col gap-2 mt-3">
+                      {getAvailableLanguages().map((lang) => (
+                        <button
+                          key={lang.code}
+                          onClick={() => setLanguage(lang.code as Language)}
+                          className="flex items-center gap-3 px-4 py-3 rounded-xl cursor-pointer transition-colors text-left"
+                          style={{
+                            background:
+                              language === lang.code
+                                ? "color-mix(in srgb, var(--color-accent) 12%, var(--color-surface))"
+                                : "var(--color-surface-alt)",
+                            border:
+                              language === lang.code
+                                ? "1.5px solid var(--color-accent)"
+                                : "1.5px solid transparent",
+                          }}
+                          data-testid={`lang-btn-${lang.code}`}
+                        >
+                          <span
+                            className="text-sm font-body font-medium"
+                            style={{
+                              color:
+                                language === lang.code
+                                  ? "var(--color-accent)"
+                                  : "var(--color-text)",
+                            }}
+                          >
+                            {lang.label}
+                          </span>
+                        </button>
+                      ))}
                     </div>
                   </div>
                 </TabContent>
               )}
 
-              {activeTab === "audio" && (
+              {activeTab === "sound" && (
                 <TabContent>
                   <SectionTitle>{t("settings.tab.audio")}</SectionTitle>
                   <div className="flex flex-col gap-3 mt-3">
@@ -437,6 +467,17 @@ export function SettingsPanel({
 
               {activeTab === "practice" && (
                 <TabContent>
+                  <div className="mb-4">
+                    <ToggleRow
+                      label={t("settings.kidMode")}
+                      description={t("settings.kidModeDesc")}
+                      checked={kidMode}
+                      onChange={setKidMode}
+                      testId="toggle-kid-mode"
+                      highlight={kidMode}
+                    />
+                  </div>
+
                   <SectionTitle>{t("settings.practiceDefaults")}</SectionTitle>
                   <div className="flex flex-col gap-4 mt-3">
                     <div>
@@ -502,44 +543,6 @@ export function SettingsPanel({
                   </div>
                 </TabContent>
               )}
-
-              {activeTab === "language" && (
-                <TabContent>
-                  <SectionTitle>{t("settings.language")}</SectionTitle>
-                  <div className="flex flex-col gap-2 mt-3">
-                    {getAvailableLanguages().map((lang) => (
-                      <button
-                        key={lang.code}
-                        onClick={() => setLanguage(lang.code as Language)}
-                        className="flex items-center gap-3 px-4 py-3 rounded-xl cursor-pointer transition-colors text-left"
-                        style={{
-                          background:
-                            language === lang.code
-                              ? "color-mix(in srgb, var(--color-accent) 12%, var(--color-surface))"
-                              : "var(--color-surface-alt)",
-                          border:
-                            language === lang.code
-                              ? "1.5px solid var(--color-accent)"
-                              : "1.5px solid transparent",
-                        }}
-                        data-testid={`lang-btn-${lang.code}`}
-                      >
-                        <span
-                          className="text-sm font-body font-medium"
-                          style={{
-                            color:
-                              language === lang.code
-                                ? "var(--color-accent)"
-                                : "var(--color-text)",
-                          }}
-                        >
-                          {lang.label}
-                        </span>
-                      </button>
-                    ))}
-                  </div>
-                </TabContent>
-              )}
             </div>
           </div>
         </div>
@@ -573,31 +576,48 @@ function SectionTitle({
 
 function ToggleRow({
   label,
+  description,
   checked,
   onChange,
   testId,
+  highlight,
 }: {
   label: string;
+  description?: string;
   checked: boolean;
   onChange: (v: boolean) => void;
   testId?: string;
+  highlight?: boolean;
 }): React.JSX.Element {
   return (
     <div
       role="group"
       className="flex items-center justify-between gap-3 rounded-xl px-3 py-2.5"
       style={{
-        background:
-          "color-mix(in srgb, var(--color-surface-alt) 52%, var(--color-surface))",
-        border: "1px solid var(--color-border)",
+        background: highlight
+          ? "color-mix(in srgb, var(--color-accent) 10%, var(--color-surface))"
+          : "color-mix(in srgb, var(--color-surface-alt) 52%, var(--color-surface))",
+        border: highlight
+          ? "1px solid color-mix(in srgb, var(--color-accent) 30%, var(--color-border))"
+          : "1px solid var(--color-border)",
       }}
     >
-      <span
-        className="text-xs font-body"
-        style={{ color: "var(--color-text)" }}
-      >
-        {label}
-      </span>
+      <div className="flex flex-col gap-0.5">
+        <span
+          className="text-xs font-body"
+          style={{ color: "var(--color-text)" }}
+        >
+          {label}
+        </span>
+        {description && (
+          <span
+            className="text-[10px] font-body"
+            style={{ color: "var(--color-text-muted)" }}
+          >
+            {description}
+          </span>
+        )}
+      </div>
       <button
         role="switch"
         aria-checked={checked}

@@ -3,7 +3,7 @@ import {
   Upload,
   Clock,
   AlertCircle,
-  Music,
+  Search,
   ArrowLeft,
   PanelRightOpen,
   X,
@@ -331,43 +331,54 @@ export function SongLibrary({
               </div>
             ) : filteredSongs.length === 0 ? (
               <div
-                className="text-center py-16 px-4"
+                className="text-center py-16 px-4 animate-page-enter"
                 style={{ color: "var(--color-text-muted)" }}
               >
-                <div
-                  className="w-16 h-16 mx-auto mb-4 rounded-2xl flex items-center justify-center"
-                  style={{
-                    background:
-                      "color-mix(in srgb, var(--color-accent) 10%, var(--color-surface))",
-                  }}
-                >
-                  <Music
-                    size={28}
-                    style={{ color: "var(--color-accent)", opacity: 0.6 }}
-                  />
-                </div>
                 {songs.length === 0 ? (
                   <>
+                    {/* Animated piano keys illustration */}
+                    <div className="flex items-start justify-center gap-1 mb-5">
+                      <div className="empty-piano-key" />
+                      <div className="empty-piano-key" />
+                      <div className="empty-piano-key" />
+                    </div>
                     <p
-                      className="text-sm font-body font-medium mb-1"
+                      className="text-base font-display font-semibold mb-1.5"
                       style={{ color: "var(--color-text)" }}
                     >
-                      {t("library.noSongsYet")}
+                      {t("library.emptyTitle")}
                     </p>
-                    <p className="text-xs font-body opacity-70">
-                      {t("library.noSongsHint")}
+                    <p className="text-sm font-body opacity-70 mb-5">
+                      {t("library.emptyHint")}
                     </p>
+                    {/* Animated arrow pointing down */}
+                    <div className="flex justify-center">
+                      <div className="empty-arrow-down" />
+                    </div>
                   </>
                 ) : (
                   <>
+                    {/* Wobbling search icon */}
+                    <div
+                      className="w-14 h-14 mx-auto mb-4 rounded-2xl flex items-center justify-center empty-search-wobble"
+                      style={{
+                        background:
+                          "color-mix(in srgb, var(--color-accent) 10%, var(--color-surface))",
+                      }}
+                    >
+                      <Search
+                        size={24}
+                        style={{ color: "var(--color-accent)", opacity: 0.55 }}
+                      />
+                    </div>
                     <p
-                      className="text-sm font-body font-medium mb-1"
+                      className="text-base font-display font-semibold mb-1"
                       style={{ color: "var(--color-text)" }}
                     >
-                      {t("library.noMatchSearch")}
+                      {t("library.noMatchTitle")}
                     </p>
-                    <p className="text-xs font-body opacity-70">
-                      {t("library.noMatchHint")}
+                    <p className="text-sm font-body opacity-70">
+                      {t("library.noMatchAction")}
                     </p>
                   </>
                 )}
