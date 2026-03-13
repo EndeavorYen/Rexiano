@@ -190,8 +190,8 @@ export function ABLoopSelector(): React.JSX.Element {
               onClick={handleClear}
               className="flex items-center justify-center rounded-md cursor-pointer"
               style={{
-                width: "1.75rem",
-                height: "1.75rem",
+                width: "2.75rem",
+                height: "2.75rem",
                 background: "var(--color-surface-alt)",
                 color: "var(--color-text-muted)",
                 transition: "color 0.15s",
@@ -274,8 +274,8 @@ export function ABLoopSelector(): React.JSX.Element {
               onClick={handleClear}
               className="flex items-center justify-center rounded-md cursor-pointer"
               style={{
-                width: "1.75rem",
-                height: "1.75rem",
+                width: "2.75rem",
+                height: "2.75rem",
                 background: "var(--color-surface-alt)",
                 color: "var(--color-text-muted)",
                 transition: "color 0.15s",

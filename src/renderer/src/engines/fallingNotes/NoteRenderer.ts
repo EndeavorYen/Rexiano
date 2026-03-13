@@ -345,10 +345,7 @@ export class NoteRenderer {
 
         // ── Fingering label overlay ──────────────────────────────
         if (showFingering && h >= MIN_HEIGHT_FOR_FINGERING) {
-          const finger = this.getFingerForNote(
-            trackIdx,
-            visibleStartIdx + vi,
-          );
+          const finger = this.getFingerForNote(trackIdx, visibleStartIdx + vi);
           if (finger) {
             let label =
               this.activeFingeringLabels.get(key) ?? nextFLabels.get(key);
@@ -566,10 +563,7 @@ export class NoteRenderer {
   }
 
   /** Look up the cached finger for a specific note by its index in the track */
-  private getFingerForNote(
-    trackIdx: number,
-    noteIndex: number,
-  ): Finger | null {
+  private getFingerForNote(trackIdx: number, noteIndex: number): Finger | null {
     const trackCache = this.fingeringCache.get(String(trackIdx));
     if (!trackCache) return null;
     return trackCache.get(noteIndex) ?? null;

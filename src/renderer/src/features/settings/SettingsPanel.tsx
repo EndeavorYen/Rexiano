@@ -212,7 +212,7 @@ export function SettingsPanel({
             }}
             role="dialog"
             aria-modal="true"
-            aria-label={t("settings.title")}
+            aria-labelledby="settings-dialog-title"
             data-testid="settings-panel"
             tabIndex={-1}
           >
@@ -221,6 +221,7 @@ export function SettingsPanel({
               style={{ borderBottom: "1px solid var(--color-border)" }}
             >
               <h2
+                id="settings-dialog-title"
                 className="text-base font-display font-bold"
                 style={{ color: "var(--color-text)" }}
               >
@@ -228,7 +229,7 @@ export function SettingsPanel({
               </h2>
               <button
                 onClick={handleClose}
-                className="btn-surface-themed w-7 h-7 flex items-center justify-center rounded-full cursor-pointer transition-colors"
+                className="btn-surface-themed w-9 h-9 flex items-center justify-center rounded-full cursor-pointer transition-colors"
                 title={t("settings.close")}
                 data-testid="settings-close"
               >
@@ -284,6 +285,7 @@ export function SettingsPanel({
                         <button
                           key={id}
                           onClick={() => setTheme(id)}
+                          aria-label={themes[id].label}
                           className="flex flex-col items-center gap-2 cursor-pointer"
                         >
                           <div

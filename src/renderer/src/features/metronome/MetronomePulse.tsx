@@ -50,7 +50,8 @@ export function MetronomePulse({
               borderRadius: "50%",
               backgroundColor: color,
               opacity,
-              transition: "all 150ms ease-out",
+              transition:
+                "opacity 150ms ease-out, background-color 150ms ease-out",
             }}
           />
         );

@@ -96,9 +96,9 @@ export function TransportBar({
     if (playPulseTimer.current) clearTimeout(playPulseTimer.current);
     playPulseTimer.current = setTimeout(() => setPlayPulse(false), 300);
   };
-  const primaryButtonSize = compact ? "2.25rem" : "2.5rem";
+  const primaryButtonSize = compact ? "2.75rem" : "2.75rem";
   const iconSize = compact ? 16 : 18;
-  const utilityButtonSize = compact ? "1.875rem" : "2rem";
+  const utilityButtonSize = compact ? "2.5rem" : "2.5rem";
 
   return (
     <div
@@ -236,7 +236,7 @@ export function TransportBar({
           {audioRecoveryState === "failed" && (
             <span
               className="control-chip text-xs font-body gap-1.5"
-              style={{ color: "var(--color-error, #e53e3e)" }}
+              style={{ color: "var(--color-error)" }}
               aria-label="Audio recovery failed"
               data-testid="audio-status-recovery-failed"
             >
@@ -259,7 +259,7 @@ export function TransportBar({
           {audioStatus === "error" && audioRecoveryState !== "failed" && (
             <span
               className="control-chip text-xs font-body"
-              style={{ color: "var(--color-error, #e53e3e)" }}
+              style={{ color: "var(--color-error)" }}
               aria-label="Audio error"
               data-testid="audio-status-error"
             >

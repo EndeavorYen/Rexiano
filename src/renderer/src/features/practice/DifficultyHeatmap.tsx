@@ -73,6 +73,8 @@ export function DifficultyHeatmap(): React.JSX.Element | null {
           <div
             key={i}
             className="relative"
+            role="img"
+            aria-label={t(difficultyLabelKey(seg.difficulty))}
             style={{
               width: `${widthPercent}%`,
               height: "100%",

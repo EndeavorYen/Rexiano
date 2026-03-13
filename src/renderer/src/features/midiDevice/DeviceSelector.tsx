@@ -303,7 +303,7 @@ export function DeviceSelector(): React.JSX.Element {
       {/* Error message */}
       {connectionError && (
         <div
-          className="flex items-center gap-2 rounded-lg px-2 py-1.5 max-w-[360px]"
+          className="flex items-center gap-2 rounded-lg px-2 py-1.5 max-w-[min(360px,calc(100vw-2rem))]"
           style={{
             color: "#f87171",
             background: "color-mix(in srgb, #ef4444 8%, var(--color-surface))",

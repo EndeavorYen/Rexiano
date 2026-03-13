@@ -75,7 +75,7 @@ export function getDifficultyDotColor(grade: number | undefined): string {
 export function getBestScoreColor(accuracy: number): string {
   if (accuracy >= 90) return "#22c55e"; // green
   if (accuracy >= 70) return "var(--color-accent)";
-  return "var(--color-text-secondary)";
+  return "var(--color-text-muted)";
 }
 
 // ─── Category grouping ──────────────────────────────────────────────

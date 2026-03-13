@@ -36,6 +36,7 @@
   --color-timing-early: #5b9bd5;
   --color-timing-late: #e8a838;
   --color-combo-text: #3a9e86;
+  --color-error: #C4534F;
 
   /* UI scale system — default (normal) */
   --ui-font-scale: 1;
@@ -138,6 +139,7 @@ textarea:focus-visible {
   top: -20vh;
   background: color-mix(in srgb, var(--color-accent) 18%, transparent);
   animation: ambient-drift-a 24s ease-in-out infinite alternate;
+  will-change: transform;
 }
 
 .app-shell::after {
@@ -147,6 +149,7 @@ textarea:focus-visible {
   bottom: -16vh;
   background: color-mix(in srgb, var(--color-note3) 14%, transparent);
   animation: ambient-drift-b 28s ease-in-out infinite alternate;
+  will-change: transform;
 }
 
 @keyframes ambient-drift-a {
@@ -332,12 +335,14 @@ textarea:focus-visible {
     color-mix(in srgb, var(--color-accent) 72%, #ffffff)
   );
   transition: width 0.24s ease;
+  will-change: width;
   box-shadow: 0 0 12px color-mix(in srgb, var(--color-accent) 28%, transparent);
 }
 
 .progress-fill-live {
   background-size: 180% 100%;
   animation: progress-flow 2.2s linear infinite;
+  will-change: background-position;
 }
 
 @keyframes progress-flow {
@@ -634,6 +639,7 @@ input[type="range"]:disabled::-moz-range-thumb {
   background-size: 220% 100%;
   animation: shimmer 1.8s ease-in-out infinite;
   border-radius: 0.75rem;
+  will-change: background-position;
 }
 
 /* ── Page transition ── */
@@ -741,6 +747,7 @@ input[type="range"]:disabled::-moz-range-thumb {
     filter 0.16s ease,
     transform 0.1s ease,
     box-shadow 0.16s ease;
+  will-change: filter, transform;
 }
 
 .btn-primary-themed::after {
@@ -986,6 +993,16 @@ input[type="range"]:disabled::-moz-range-thumb {
   }
 }
 
+@media (max-width: 768px) {
+  .surface-panel {
+    border-radius: var(--radius-lg);
+  }
+
+  .app-side-drawer {
+    width: min(320px, 88vw);
+  }
+}
+
 @media (max-width: 640px) {
   .control-chip {
     padding: 0.32rem 0.58rem;
@@ -1009,6 +1026,15 @@ input[type="range"]:disabled::-moz-range-thumb {
 
   .card-hover:hover {
     transform: none;
+  }
+
+  .app-shell::before,
+  .app-shell::after,
+  .progress-fill,
+  .progress-fill-live,
+  .skeleton,
+  .btn-primary-themed {
+    will-change: auto;
   }
 }
 

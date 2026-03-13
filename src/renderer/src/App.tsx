@@ -904,6 +904,8 @@ function App(): React.JSX.Element {
       {isDragging && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center"
+          role="region"
+          aria-label="Drop zone"
           style={{
             background: "rgba(6, 10, 12, 0.55)",
             backdropFilter: "blur(8px)",
@@ -945,6 +947,7 @@ function App(): React.JSX.Element {
       {/* Drag error toast */}
       {dragError && (
         <div
+          role="alert"
           className="fixed top-4 left-1/2 -translate-x-1/2 z-50 px-4 py-2 rounded-lg text-sm font-body subtle-shadow"
           style={{
             background: "color-mix(in srgb, #dc2626 55%, var(--color-surface))",

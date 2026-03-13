@@ -55,8 +55,8 @@ export function VolumeControl(): React.JSX.Element {
         onClick={handleToggleMute}
         className="flex items-center justify-center rounded-md cursor-pointer"
         style={{
-          width: 28,
-          height: 28,
+          width: 36,
+          height: 36,
           color: isMuted ? "var(--color-text-muted)" : "var(--color-text)",
           opacity: isMuted ? 0.5 : 0.92,
           transition: "opacity 0.15s, color 0.15s, background 0.15s",
@@ -76,6 +76,9 @@ export function VolumeControl(): React.JSX.Element {
         className="volume-slider-input"
         style={{ accentColor: "var(--color-accent)", width: 88 }}
         aria-label={t("transport.volume")}
+        aria-valuemin={0}
+        aria-valuemax={100}
+        aria-valuenow={displayValue}
         title={`${t("transport.volume")}: ${displayValue}%`}
         data-testid="volume-slider"
       />

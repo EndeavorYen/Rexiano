@@ -81,6 +81,9 @@ export function SpeedSlider(): React.JSX.Element {
         className="speed-slider-input shrink-0"
         style={{ accentColor: "var(--color-accent)", width: 96 }}
         aria-label="Playback speed percentage"
+        aria-valuemin={SPEED_MIN}
+        aria-valuemax={SPEED_MAX}
+        aria-valuenow={speedPercent}
         data-testid="speed-slider"
       />
 

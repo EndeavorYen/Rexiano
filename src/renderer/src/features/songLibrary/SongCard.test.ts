@@ -55,9 +55,9 @@ describe("getBestScoreColor", () => {
   });
 
   test("returns secondary text color for accuracy < 70", () => {
-    expect(getBestScoreColor(0)).toBe("var(--color-text-secondary)");
-    expect(getBestScoreColor(50)).toBe("var(--color-text-secondary)");
-    expect(getBestScoreColor(69)).toBe("var(--color-text-secondary)");
+    expect(getBestScoreColor(0)).toBe("var(--color-text-muted)");
+    expect(getBestScoreColor(50)).toBe("var(--color-text-muted)");
+    expect(getBestScoreColor(69)).toBe("var(--color-text-muted)");
   });
 
   test("boundary: 89.5 rounds visually but function uses raw value", () => {

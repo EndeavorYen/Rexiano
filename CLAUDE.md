@@ -165,3 +165,36 @@ engines/audio/
 - **時間基準**：播放中使用 `AudioContext.currentTime`（硬體時鐘），非 `requestAnimationFrame`
 - **SoundFont**：`resources/piano.sf2`（TimGM6mb, 6MB），透過 IPC 以 `number[]` 傳送到 renderer
 - **合成器 fallback**：若 SF2 載入失敗，退回正弦波合成音色
+
+## Design Context
+
+### Users
+
+- **主要用戶**：Rex（6 歲），正在學鋼琴的小朋友
+- **次要用戶**：開源鋼琴愛好者（從初學者到中階學習者）
+- **使用情境**：在家用電腦 + MIDI 鍵盤（如 Roland）練琴，需要視覺引導的節奏遊戲式體驗
+- **語言**：繁體中文（主要）、英文
+
+### Brand Personality
+
+- **三個關鍵詞**：好玩 · 精準 · 溫暖（Playful · Precise · Warm）
+- **語氣**：鼓勵性、友善、像一個耐心的老師（「今天要練什麼呢？」「早安！準備好練琴了嗎？」）
+- **視覺識別**：暴龍骨骼 + 鋼琴鍵 + 電路板組成的 "R" 字母 — 結合恐龍的童趣與音樂的精準
+- **不是什麼**：不是冰冷的專業工具，不是幼稚的卡通遊戲，不是極簡到無聊
+
+### Aesthetic Direction
+
+- **參考風格**：Synthesia（但更好）— 保留下落音符的清晰感與功能性，但增加視覺個性、溫暖質感和精緻度
+- **反面教材**：Generic AI slop（紫色漸層白底、Inter 字體、千篇一律的 SaaS 風格）
+- **當前主題系統**：4 個主題（Lavender / Ocean / Peach / Midnight），使用 ~50 個 CSS custom property tokens
+- **表面風格**：Glassmorphic surfaces（backdrop-filter blur）、多層陰影、`color-mix()` 透明度混合
+- **動效**：環境漂移動畫（ambient drift）、頁面進場（fade-slide-in）、卡片懸停上浮、呼吸光暈
+- **字型**：Nunito Variable（display / 標題）、DM Sans Variable（body / 內文）、JetBrains Mono Variable（monospace / 數據）
+
+### Design Principles
+
+1. **清晰優先（Clarity First）**：音符下落、琴鍵高亮、節拍指示必須一目了然 — 6 歲小孩要能看懂
+2. **溫暖但不幼稚（Warm, Not Childish）**：鼓勵性的語氣與色彩，但不是卡通風格 — 要讓成人使用者也覺得舒適
+3. **主題一致性（Theme Coherence）**：所有 UI 元素通過 `var(--color-*)` tokens 著色，永不硬編碼顏色值
+4. **動效有目的（Motion With Purpose）**：每個動畫都服務於 UX 目標（引導注意力、確認操作、建立節奏感），不是裝飾
+5. **漸進式複雜度（Progressive Complexity）**：預設介面簡單直覺，進階功能（速度控制、段落循環、評分）在需要時才展開

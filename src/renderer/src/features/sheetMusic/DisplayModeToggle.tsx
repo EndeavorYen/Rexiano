@@ -26,6 +26,8 @@ export function DisplayModeToggle(): React.JSX.Element {
 
   return (
     <div
+      role="group"
+      aria-label="Display mode"
       className="flex items-center gap-1 rounded-xl p-1"
       style={{
         background: "color-mix(in srgb, var(--color-surface) 78%, transparent)",

@@ -89,6 +89,7 @@ export function SongCard({
   return (
     <button
       onClick={handleClick}
+      aria-label={displayTitle}
       className="group card-hover text-left rounded-xl overflow-hidden cursor-pointer w-full"
       style={{
         background: "color-mix(in srgb, var(--color-surface) 88%, transparent)",
@@ -96,7 +97,7 @@ export function SongCard({
       }}
     >
       <div
-        className="h-1.5 transition-all duration-300 group-hover:h-2"
+        className="h-1.5 transition-[height] duration-300 group-hover:h-2"
         style={{
           background: `linear-gradient(95deg, ${stripeColor}, color-mix(in srgb, ${stripeColor} 38%, var(--color-surface)))`,
         }}
@@ -128,6 +129,8 @@ export function SongCard({
                   "0 0 0 4px color-mix(in srgb, var(--color-accent) 18%, transparent)",
               }}
               title={t("songCard.practiced")}
+              role="img"
+              aria-label={t("songCard.practiced")}
             />
           )}
         </div>

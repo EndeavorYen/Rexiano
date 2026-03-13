@@ -149,7 +149,10 @@ export function SongLibrary({
         if (!result) {
           setRecentError(t("general.error"));
           if (recentErrorTimer.current) clearTimeout(recentErrorTimer.current);
-          recentErrorTimer.current = setTimeout(() => setRecentError(null), 3000);
+          recentErrorTimer.current = setTimeout(
+            () => setRecentError(null),
+            3000,
+          );
           return;
         }
 
@@ -179,7 +182,7 @@ export function SongLibrary({
       className="flex-1 min-h-0 app-shell overflow-y-auto overflow-x-hidden"
       data-testid="song-library-view"
     >
-      <div className="mx-auto w-full max-w-6xl px-6 py-6 pb-24">
+      <div className="mx-auto w-full max-w-6xl px-3 py-4 sm:px-6 sm:py-6 pb-24">
         <header
           className="surface-panel subtle-shadow sticky top-4 z-20 mb-5 p-4 sm:p-5 animate-page-enter"
           data-testid="song-library-header"
@@ -293,7 +296,7 @@ export function SongLibrary({
             {recentError && (
               <div
                 className="flex items-center gap-1.5 mt-2 text-xs font-body"
-                style={{ color: "#dc2626" }}
+                style={{ color: "var(--color-error)" }}
               >
                 <AlertCircle size={12} />
                 {recentError}
@@ -443,7 +446,7 @@ export function SongLibrary({
         {error && (
           <p
             className="mt-4 text-sm font-body"
-            style={{ color: "var(--color-accent)" }}
+            style={{ color: "var(--color-error)" }}
           >
             {error}
           </p>

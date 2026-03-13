@@ -33,6 +33,8 @@ export function DailyGoal(): React.JSX.Element {
         height={RING_SIZE}
         viewBox={`0 0 ${RING_SIZE} ${RING_SIZE}`}
         className="shrink-0"
+        role="img"
+        aria-label={`${practicedMinutes} / ${goalMinutes} ${t("progress.min")}`}
       >
         {/* Background track */}
         <circle

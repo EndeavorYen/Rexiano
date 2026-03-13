@@ -178,6 +178,7 @@ export function MainMenu({
                         animationDelay: `${idx * 55}ms`,
                       }}
                       title={file.name}
+                      aria-label={file.name}
                     >
                       <div className="flex items-start justify-between gap-2">
                         <p className="text-sm font-body font-medium truncate">

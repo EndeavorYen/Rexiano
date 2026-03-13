@@ -49,6 +49,8 @@ export interface ThemeTokens {
     timingEarly: string;
     /** Practice mode — timing indicator: late */
     timingLate: string;
+    /** Semantic error color for alerts and destructive states */
+    error: string;
   };
 }
 
@@ -91,6 +93,7 @@ export const themes: Record<ThemeId, ThemeTokens> = {
       streakGold: "#C89C49",
       timingEarly: "#6B8FC2",
       timingLate: "#D4A04A",
+      error: "#C75050",
     },
   },
   /**
@@ -131,6 +134,7 @@ export const themes: Record<ThemeId, ThemeTokens> = {
       streakGold: "#CFB066",
       timingEarly: "#5B9BD5",
       timingLate: "#E8A838",
+      error: "#C4534F",
     },
   },
   /**
@@ -171,6 +175,7 @@ export const themes: Record<ThemeId, ThemeTokens> = {
       streakGold: "#C99A4E",
       timingEarly: "#6FA0C4",
       timingLate: "#DBA24A",
+      error: "#C24B3D",
     },
   },
   /**
@@ -211,6 +216,7 @@ export const themes: Record<ThemeId, ThemeTokens> = {
       streakGold: "#D4B670",
       timingEarly: "#7BAED8",
       timingLate: "#E8B04A",
+      error: "#E07373",
     },
   },
 };

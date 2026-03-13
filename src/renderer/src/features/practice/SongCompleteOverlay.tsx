@@ -37,7 +37,12 @@ export function SongCompleteOverlay({
   }, [onBackToLibrary]);
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center modal-backdrop-cinematic animate-fade-in">
+    <div
+      className="fixed inset-0 z-[100] flex items-center justify-center modal-backdrop-cinematic animate-fade-in"
+      role="dialog"
+      aria-modal="true"
+      aria-label="Song complete"
+    >
       <div
         className="modal-card-cinematic rounded-2xl px-10 py-8 text-center max-w-sm w-full mx-4 animate-scale-in"
         style={{
