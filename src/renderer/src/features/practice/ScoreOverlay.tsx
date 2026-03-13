@@ -37,7 +37,7 @@ export function ScoreOverlay(): React.JSX.Element {
 
   return (
     <div
-      className="absolute top-3 right-3 z-50 flex flex-col items-end gap-1 px-4 py-3 rounded-xl pointer-events-none select-none animate-score-enter max-w-[200px]"
+      className="absolute top-3 right-3 z-50 flex flex-col items-end gap-1 px-4 py-3 rounded-xl pointer-events-none select-none animate-score-enter max-w-[12.5rem]"
       style={{
         background: "color-mix(in srgb, var(--color-surface) 92%, transparent)",
         border:
