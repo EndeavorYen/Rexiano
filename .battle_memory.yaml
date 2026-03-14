@@ -1,25 +1,26 @@
 # AGENT MEMORY — 團隊累積的實戰智慧（~30 行上限）
-record: { total: 5, red_wins: 0, white_wins: 5, streak: "WHITE x5" }
-past_topics: ["State Sync", "UI & IPC Safety", "Sheet Music Rendering", "App.tsx Root Component", "UI/UX Polish & Design System Consistency"]
+record: { total: 6, red_wins: 0, white_wins: 6, streak: "WHITE x6" }
+past_topics: ["State Sync", "UI & IPC Safety", "Sheet Music Rendering", "App.tsx Root Component", "UI/UX Polish & Design System Consistency", "Practice Engine Correctness & Cross-Engine Consistency"]
 
 red_growth:
-  learned: "songCardUtils 的 color 函式混用 hardcoded hex + theme token — 同一函式內不一致是最有力的 finding"
-  working_on: "五連敗。表面問題白隊秒修 — 需要找到白隊無法一回合修好的架構級問題"
-  hard_won_principle: "color-mix(in srgb, ...) 可以讓 hardcoded 色彩變成 theme-aware — 但更好的做法是加 token"
+  learned: "找到整個 engine 未整合比找個別 bug 更有價值 — FreeScorer 三個 major 構成一個系統性發現"
+  working_on: "六連敗。發現品質到位（S6 是歷來最好）但白隊仍能全修。需要找到跨檔案依賴太深、無法乾淨修復的問題"
+  hard_won_principle: "engine 存在 ≠ engine 整合 — 有 test 通過的純邏輯引擎可能完全沒接入 lifecycle"
 
 white_growth:
-  learned: "text-on-accent 必須統一 — #fff vs var(--color-bg) 的不一致跨 7 個元件散布，快修但容易漏"
-  working_on: "i18n key 新增要同步更新 types.ts + en.ts + zh-TW.ts + test mock — 一個都不能漏"
-  hard_won_principle: "will-change 只用在即將改變的元素，不要撒在 88 個靜態元素上"
+  learned: "FreeScorer 整合需要 5 個觸點（mode change, play/pause, loop seek, MIDI input, tickerLoop）— 遺漏任一個都會導致靜默失效"
+  working_on: "DRY 回收要及時 — R2-01 的 60 行重複只在 R1 修復時產生，Round 2 才被紅隊發現"
+  hard_won_principle: "新引擎整合要檢查 6 個面向：init/dispose, callbacks, mode switch, play/pause, loop seek, activeTracks"
 
 battle_tested_principles:
   - "併發 async 需要 generation counter（S1）"
-  - "重複 pattern 先集中再修（S1-S4）"
+  - "engine 存在 ≠ engine 整合 — 要檢查 lifecycle 6 面向（S6）"
   - "engine.status + AudioContext.state 同時檢查（S4）"
-  - "text-on-accent 必須統一：全部用 #fff，不混 var(--color-bg)（S5）"
-  - "hardcoded 色彩用 color-mix 混 --color-text 保證暗色主題對比度（S5）"
-  - "ARIA 語義（role/aria-checked/aria-label）不能只加在部分元件（S5）"
-  - "will-change 只用在即將改變的元素，靜態 88 鍵全加 = 88 compositor layers（S5）"
-  - "新增 i18n key 要同步 types.ts + 所有 locale files + test mocks（S5）"
+  - "text-on-accent 必須統一（S5）"
+  - "hardcoded 色彩用 color-mix 混 --color-text（S5）"
+  - "will-change 只用在即將改變的元素（S5）"
+  - "新增 i18n key 要同步 types.ts + 所有 locale files（S5）"
+  - "hit/miss callback 用 shared helper 避免 DRY violation（S6）"
+  - "60fps hot path 的 store read 要合併為一次（S6）"
 
-judge_calibration: "白隊五連勝。紅隊的 finding 品質在提升（S5 R3 的 songCardUtils 很有價值），但白隊修復速度太快。紅隊需要找到修復成本極高的架構問題。"
+judge_calibration: "白隊六連勝但 S6 紅隊發現了整個 FreeScorer 未整合 — 歷來最有力的攻擊。評分機制（unresolved=0 → WHITE wins）保護了白隊，但紅隊的 finding 品質已達架構級。下一場裁判可考慮更窄的 scope 迫使更深的挖掘。"

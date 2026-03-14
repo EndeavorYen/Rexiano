@@ -147,7 +147,7 @@ export function usePracticeLifecycle(
     if (!song) return;
 
     initPracticeEngines();
-    const { waitMode, speedController } = getPracticeEngines();
+    const { waitMode, speedController, freeScorer } = getPracticeEngines();
     if (!waitMode) {
       return () => {
         disposePracticeEngines();
@@ -165,65 +165,67 @@ export function usePracticeLifecycle(
     usePracticeStore.getState().setActiveTracks(allTracks);
     waitMode.init(song.tracks, allTracks);
 
-    // Wire callbacks -- read song from store inside to avoid stale closure
+    // S6-R3-03: Sync kidMode setting to WaitMode's extra-key tolerance
+    waitMode.setAllowExtraKeys(useSettingsStore.getState().kidMode);
+
+    // S6-R2-01: Shared hit/miss handlers to eliminate duplication across
+    // WaitMode and FreeScorer callbacks. Single source of truth for scoring,
+    // visual feedback, combo milestones, and keyboard highlights.
+    function handleNoteHit(midi: number, time: number, skipTimingDelta = false): void {
+      const key = `${midi}:${Math.round(time * 1e6)}`;
+      let timingDeltaMs: number | undefined;
+      if (!skipTimingDelta) {
+        const currentTime = usePlaybackStore.getState().currentTime;
+        timingDeltaMs = (currentTime - time) * 1000;
+      }
+      usePracticeStore.getState().recordHit(key, timingDeltaMs);
+
+      const currentSong = useSongStore.getState().song;
+      const nr = noteRendererRef.current;
+      if (nr && currentSong) {
+        for (let t = 0; t < currentSong.tracks.length; t++) {
+          const sprite = nr.findSpriteForNote(t, midi, time);
+          if (sprite) {
+            nr.flashHit(sprite);
+            break;
+          }
+        }
+      }
+      const score = usePracticeStore.getState().score;
+      if (nr && COMBO_MILESTONES.has(score.currentStreak)) {
+        nr.showCombo(score.currentStreak);
+      }
+      callbacksRef.current?.onHitNote?.(midi);
+    }
+
+    function handleNoteMiss(midi: number, time: number): void {
+      const key = `${midi}:${Math.round(time * 1e6)}`;
+      usePracticeStore.getState().recordMiss(key);
+
+      const currentSong = useSongStore.getState().song;
+      const nr = noteRendererRef.current;
+      if (nr && currentSong) {
+        for (let t = 0; t < currentSong.tracks.length; t++) {
+          const sprite = nr.findSpriteForNote(t, midi, time);
+          if (sprite) {
+            nr.markMiss(sprite);
+            break;
+          }
+        }
+      }
+      callbacksRef.current?.onMissNote?.(midi);
+    }
+
+    // Wire WaitMode callbacks using shared handlers
     waitMode.setCallbacks({
+      // R3-001: In WaitMode, timing delta is not meaningful (user waits indefinitely)
       onHit: (midi, time) => {
-        const key = `${midi}:${Math.round(time * 1e6)}`;
-        // R2-004: Compute timing delta using current playback time (not frozen WaitMode time)
-        // R3-001: In WaitMode, timing delta is not meaningful (user waits indefinitely),
-        // so we pass undefined to skip delta tracking for wait mode.
-        const practiceMode = usePracticeStore.getState().mode;
-        let timingDeltaMs: number | undefined;
-        if (practiceMode !== "wait") {
-          const currentTime = usePlaybackStore.getState().currentTime;
-          timingDeltaMs = (currentTime - time) * 1000;
-        }
-        usePracticeStore.getState().recordHit(key, timingDeltaMs);
-
-        // Visual feedback on falling notes
-        const currentSong = useSongStore.getState().song;
-        const nr = noteRendererRef.current;
-        if (nr && currentSong) {
-          for (let t = 0; t < currentSong.tracks.length; t++) {
-            const sprite = nr.findSpriteForNote(t, midi, time);
-            if (sprite) {
-              nr.flashHit(sprite);
-              break;
-            }
-          }
-        }
-        // Show combo at milestones
-        const score = usePracticeStore.getState().score;
-        if (nr && COMBO_MILESTONES.has(score.currentStreak)) {
-          nr.showCombo(score.currentStreak);
-        }
-        // Notify keyboard highlight
-        callbacksRef.current?.onHitNote?.(midi);
+        const isWaitMode = usePracticeStore.getState().mode === "wait";
+        handleNoteHit(midi, time, isWaitMode);
       },
-      onMiss: (midi, time) => {
-        const key = `${midi}:${Math.round(time * 1e6)}`;
-        usePracticeStore.getState().recordMiss(key);
-
-        // Visual feedback on falling notes
-        const currentSong = useSongStore.getState().song;
-        const nr = noteRendererRef.current;
-        if (nr && currentSong) {
-          for (let t = 0; t < currentSong.tracks.length; t++) {
-            const sprite = nr.findSpriteForNote(t, midi, time);
-            if (sprite) {
-              nr.markMiss(sprite);
-              break;
-            }
-          }
-        }
-        // Notify keyboard highlight
-        callbacksRef.current?.onMissNote?.(midi);
-      },
+      onMiss: handleNoteMiss,
       onWait: () => {
-        // R2-01 fix: Increment generation to invalidate ALL pending resumes.
-        // Any in-flight .then() will see its captured gen !== current and skip.
         resumeGenRef.current++;
-        // Pause audio when waiting for user input
         audioRef.current.scheduler?.stop();
         usePracticeStore.getState().setWaiting(true);
       },
@@ -236,6 +238,14 @@ export function usePracticeLifecycle(
       },
     });
 
+    // Wire FreeScorer callbacks using the same shared handlers
+    if (freeScorer) {
+      freeScorer.setCallbacks({
+        onHit: (midi, time) => handleNoteHit(midi, time, false),
+        onMiss: handleNoteMiss,
+      });
+    }
+
     return () => {
       disposePracticeEngines();
     };
@@ -244,29 +254,62 @@ export function usePracticeLifecycle(
   // ── Sync practice store -> engine singletons (permanent subscriber) ──
   useEffect(() => {
     const unsub = usePracticeStore.subscribe((state, prev) => {
-      const { waitMode, speedController, loopController, scoreCalculator } =
-        getPracticeEngines();
+      const {
+        waitMode,
+        speedController,
+        loopController,
+        freeScorer,
+        stepMode,
+      } = getPracticeEngines();
       const currentSong = useSongStore.getState().song;
 
       // Mode change
-      if (state.mode !== prev.mode && waitMode && currentSong) {
-        if (state.mode === "wait") {
+      if (state.mode !== prev.mode && currentSong) {
+        // S6-R1-01: Reset FreeScorer + StepMode on mode change to prevent stale
+        // _judged / cursor state from a previous session leaking into the next.
+        if (prev.mode === "free" && freeScorer) {
+          freeScorer.stop();
+          freeScorer.reset();
+        }
+        if (prev.mode === "step" && stepMode) {
+          stepMode.reset();
+        }
+
+        if (state.mode === "wait" && waitMode) {
           waitMode.init(currentSong.tracks, state.activeTracks);
           if (usePlaybackStore.getState().isPlaying) {
             waitMode.start();
           }
-        } else {
+        } else if (waitMode) {
           waitMode.stop();
         }
+
+        // S6-R1-01: Initialize FreeScorer when entering free mode
+        if (state.mode === "free" && freeScorer) {
+          freeScorer.init(currentSong.tracks, state.activeTracks);
+          if (usePlaybackStore.getState().isPlaying) {
+            freeScorer.start();
+          }
+        }
+
+        // S6-R1-01: Initialize StepMode when entering step mode
+        if (state.mode === "step" && stepMode) {
+          stepMode.setTracks(currentSong.tracks, state.activeTracks);
+        }
+
         // R1-08: Only reset score when entering/leaving modes that track score
         // (wait or free). watch↔step switches don't use scoring.
+        // S6-R2-04: Score is now exclusively tracked via usePracticeStore (single
+        // source of truth). ScoreCalculator engine had its noteHit/noteMiss never
+        // called — removed the misleading reset-only usage. The store's resetScore()
+        // handles all score reset concerns (noteResults, _timingDeltaCount, isWaiting).
         if (
           state.mode === "wait" ||
           state.mode === "free" ||
           prev.mode === "wait" ||
           prev.mode === "free"
         ) {
-          scoreCalculator?.reset();
+          usePracticeStore.getState().resetScore();
         }
       }
 
@@ -302,26 +345,42 @@ export function usePracticeLifecycle(
         }
       }
 
-      // Active tracks change — re-init WaitMode with new tracks, and restart
-      // if currently playing so it doesn't stay stuck in "idle" state.
-      if (state.activeTracks !== prev.activeTracks && waitMode && currentSong) {
-        waitMode.init(currentSong.tracks, state.activeTracks);
-        if (state.mode === "wait" && usePlaybackStore.getState().isPlaying) {
-          waitMode.start();
+      // Active tracks change — re-init all practice engines with new tracks.
+      if (state.activeTracks !== prev.activeTracks && currentSong) {
+        if (waitMode) {
+          waitMode.init(currentSong.tracks, state.activeTracks);
+          if (state.mode === "wait" && usePlaybackStore.getState().isPlaying) {
+            waitMode.start();
+          }
+        }
+        // S6-R2-03: Re-init FreeScorer when active tracks change
+        if (freeScorer && state.mode === "free") {
+          freeScorer.init(currentSong.tracks, state.activeTracks);
+          if (usePlaybackStore.getState().isPlaying) {
+            freeScorer.start();
+          }
+        }
+        // S6-R2-03: Re-init StepMode when active tracks change
+        if (stepMode && state.mode === "step") {
+          stepMode.setTracks(currentSong.tracks, state.activeTracks);
         }
       }
     });
     return unsub;
   }, [audioRef]);
 
-  // ── Wire MIDI input -> WaitMode.checkInput() ──
+  // ── Wire MIDI input -> WaitMode.checkInput() + FreeScorer.checkInput() ──
   useEffect(() => {
     const unsub = useMidiDeviceStore.subscribe((state, prev) => {
       if (state.activeNotes !== prev.activeNotes) {
-        const { waitMode } = getPracticeEngines();
+        const { waitMode, freeScorer } = getPracticeEngines();
         const practiceMode = usePracticeStore.getState().mode;
-        if (waitMode && practiceMode === "wait") {
+        // S6-R1-02: Route MIDI input to WaitMode (wait) or FreeScorer (free)
+        if (practiceMode === "wait" && waitMode) {
           waitMode.checkInput(state.activeNotes);
+        } else if (practiceMode === "free" && freeScorer) {
+          const currentTime = usePlaybackStore.getState().currentTime;
+          freeScorer.checkInput(state.activeNotes, currentTime);
         }
       }
     });
@@ -336,7 +395,7 @@ export function usePracticeLifecycle(
     let lastBeatsPerMeasure = 0;
 
     const unsub = usePlaybackStore.subscribe((state, prev) => {
-      const { waitMode, loopController } = getPracticeEngines();
+      const { waitMode, loopController, freeScorer } = getPracticeEngines();
       const practiceMode = usePracticeStore.getState().mode;
       const currentSong = useSongStore.getState().song;
       const metronome = getMetronome();
@@ -389,6 +448,11 @@ export function usePracticeLifecycle(
                 if (waitMode && freshMode === "wait") {
                   waitMode.start();
                 }
+                // S6-R1-01: Start FreeScorer after count-in if in free mode
+                if (freeScorer && freshMode === "free" && currentSong) {
+                  freeScorer.init(currentSong.tracks, usePracticeStore.getState().activeTracks);
+                  freeScorer.start();
+                }
 
                 const { scheduler: sch, engine } = audioRef.current;
                 if (sch && engine) {
@@ -420,6 +484,11 @@ export function usePracticeLifecycle(
             if (waitMode && practiceMode === "wait") {
               waitMode.start();
             }
+            // S6-R1-01: Start FreeScorer immediately when no count-in
+            if (freeScorer && practiceMode === "free" && currentSong) {
+              freeScorer.init(currentSong.tracks, usePracticeStore.getState().activeTracks);
+              freeScorer.start();
+            }
 
             if (metronomeEnabled) {
               metronome.start(effectiveBpm, beatsPerMeasure);
@@ -430,6 +499,14 @@ export function usePracticeLifecycle(
           if (waitMode && practiceMode === "wait") {
             waitMode.start();
           }
+          // S6-R1-01: Start FreeScorer even without metronome
+          if (freeScorer && practiceMode === "free") {
+            const s = useSongStore.getState().song;
+            if (s) {
+              freeScorer.init(s.tracks, usePracticeStore.getState().activeTracks);
+              freeScorer.start();
+            }
+          }
         }
       }
 
@@ -437,6 +514,10 @@ export function usePracticeLifecycle(
       if (!state.isPlaying && prev.isPlaying) {
         if (waitMode && practiceMode === "wait") {
           waitMode.stop();
+        }
+        // S6-R1-01: Stop FreeScorer on pause
+        if (freeScorer && practiceMode === "free") {
+          freeScorer.stop();
         }
         metronome?.stop();
         // R2-04: metronome.stop() nulls the onComplete callback, so
@@ -474,6 +555,12 @@ export function usePracticeLifecycle(
               guardedResumeAndStart(engine, scheduler, resumeGenRef, "Loop-seek");
             }
           }
+        }
+
+        // S6-R2-02: Reset FreeScorer on loop seek so notes can be re-judged
+        // in the next loop iteration (clears _judged set and resets cursors)
+        if (practiceMode === "free" && freeScorer) {
+          freeScorer.reset();
         }
       }
 
@@ -542,6 +629,12 @@ export function usePracticeLifecycle(
           );
           metronome.start(bpm * speed, beatsPerMeasure);
         }
+      }
+
+      // S6-R3-03: Sync kidMode toggle to WaitMode's extra-key tolerance
+      if (state.kidMode !== prev.kidMode) {
+        const { waitMode: wm } = getPracticeEngines();
+        wm?.setAllowExtraKeys(state.kidMode);
       }
     });
     return unsub;

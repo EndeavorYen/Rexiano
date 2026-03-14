@@ -26,6 +26,8 @@ const {
   mockSpeedController,
   mockLoopController,
   mockScoreCalculator,
+  mockFreeScorer,
+  mockStepMode,
   mockEngines,
   mockInitPracticeEngines,
   mockGetPracticeEngines,
@@ -128,6 +130,7 @@ const {
     setCallbacks: vi.fn(),
     clearCallbacks: vi.fn(),
     checkInput: vi.fn(),
+    setAllowExtraKeys: vi.fn(),
   };
 
   const mockSpeedController = {
@@ -141,12 +144,28 @@ const {
     getLoopStart: vi.fn(() => 0),
   };
   const mockScoreCalculator = { reset: vi.fn() };
+  const mockFreeScorer = {
+    init: vi.fn(),
+    start: vi.fn(),
+    stop: vi.fn(),
+    reset: vi.fn(),
+    setCallbacks: vi.fn(),
+    clearCallbacks: vi.fn(),
+    checkInput: vi.fn(),
+    tick: vi.fn(),
+  };
+  const mockStepMode = {
+    setTracks: vi.fn(),
+    reset: vi.fn(),
+  };
 
   const mockEngines = {
     waitMode: mockWaitMode as unknown,
     speedController: mockSpeedController as unknown,
     loopController: mockLoopController as unknown,
     scoreCalculator: mockScoreCalculator as unknown,
+    freeScorer: mockFreeScorer as unknown,
+    stepMode: mockStepMode as unknown,
   };
 
   const mockInitPracticeEngines = vi.fn();
@@ -187,6 +206,8 @@ const {
     mockSpeedController,
     mockLoopController,
     mockScoreCalculator,
+    mockFreeScorer,
+    mockStepMode,
     mockEngines,
     mockInitPracticeEngines,
     mockGetPracticeEngines,
@@ -408,6 +429,8 @@ describe("usePracticeLifecycle", () => {
     mockEngines.speedController = mockSpeedController;
     mockEngines.loopController = mockLoopController;
     mockEngines.scoreCalculator = mockScoreCalculator;
+    mockEngines.freeScorer = mockFreeScorer;
+    mockEngines.stepMode = mockStepMode;
   });
 
   afterEach(() => {
@@ -968,8 +991,10 @@ describe("usePracticeLifecycle", () => {
     });
   });
 
-  // ── R1-08: scoreCalculator.reset guard ──────────────────
-  describe("R1-08: scoreCalculator.reset only for scoring modes", () => {
+  // ── R1-08: score reset guard ──────────────────
+  // S6-R2-04: Score is now tracked via usePracticeStore (single source of truth).
+  // Tests updated to verify store.resetScore() instead of engine scoreCalculator.reset().
+  describe("R1-08: score reset only for scoring modes", () => {
     test("resets score when entering wait mode", () => {
       const audioRef = makeAudioRef();
       const song = makeSong();
@@ -980,7 +1005,7 @@ describe("usePracticeLifecycle", () => {
       const next = { ...practiceState, mode: "wait" };
       practiceSubscribers[0](next, prev);
 
-      expect(mockScoreCalculator.reset).toHaveBeenCalled();
+      expect(practiceState.resetScore).toHaveBeenCalled();
     });
 
     test("resets score when leaving free mode", () => {
@@ -993,7 +1018,7 @@ describe("usePracticeLifecycle", () => {
       const next = { ...practiceState, mode: "watch" };
       practiceSubscribers[0](next, prev);
 
-      expect(mockScoreCalculator.reset).toHaveBeenCalled();
+      expect(practiceState.resetScore).toHaveBeenCalled();
     });
 
     test("does NOT reset score for watch to step transition", () => {
@@ -1006,7 +1031,7 @@ describe("usePracticeLifecycle", () => {
       const next = { ...practiceState, mode: "step" };
       practiceSubscribers[0](next, prev);
 
-      expect(mockScoreCalculator.reset).not.toHaveBeenCalled();
+      expect(practiceState.resetScore).not.toHaveBeenCalled();
     });
   });
 

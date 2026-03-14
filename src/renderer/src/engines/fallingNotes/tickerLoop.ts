@@ -40,7 +40,7 @@ export function createTickerUpdate(
 
     // Read practice state only when playing (avoids getState + destructure at idle)
     const engines = getPracticeEngines();
-    const { waitMode, speedController, loopController } = engines;
+    const { waitMode, speedController, loopController, freeScorer } = engines;
 
     // Advance the speed lerp so visual scroll matches the target speed
     if (speedController) {
@@ -75,8 +75,12 @@ export function createTickerUpdate(
         }
       }
 
+      // S6-R3-02: Read practice mode once per frame to avoid redundant store
+      // access and ensure consistent mode across all checks in the same frame
+      const practiceMode = usePracticeStore.getState().mode;
+
       // ── WaitMode gate: if waiting, freeze time ──
-      if (usePracticeStore.getState().mode === "wait" && waitMode) {
+      if (practiceMode === "wait" && waitMode) {
         // R2-007: Read latencyCompensation from store and pass as parameter
         const latencyMs = useSettingsStore.getState().latencyCompensation;
         const shouldContinue = waitMode.tick(effectiveTime, latencyMs);
@@ -113,6 +117,11 @@ export function createTickerUpdate(
         loopController.shouldLoop(effectiveTime)
       ) {
         effectiveTime = loopController.getLoopStart();
+      }
+
+      // S6-R1-03: Tick FreeScorer so missed notes are detected during playback
+      if (practiceMode === "free" && freeScorer) {
+        freeScorer.tick(effectiveTime);
       }
 
       // Single setCurrentTime per frame (avoids double-fire to subscribers)

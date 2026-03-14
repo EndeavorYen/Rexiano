@@ -48,6 +48,13 @@ export class WaitMode {
   private _pendingNoteDetails: PendingNoteInfo[] = [];
 
   /**
+   * S6-R3-03: When true, accept input if all target notes are pressed
+   * even if extra keys are held. This is friendlier for children who
+   * may accidentally brush adjacent keys while playing chords.
+   */
+  private _allowExtraKeys = false;
+
+  /**
    * @param toleranceMs Time window (±ms) around the hit line for accepting input.
    *                     Default ±200ms.
    */
@@ -74,6 +81,15 @@ export class WaitMode {
 
   setToleranceMs(ms: number): void {
     this._toleranceMs = Math.max(50, Math.min(500, ms));
+  }
+
+  /** S6-R3-03: Enable/disable extra-key tolerance for kid-friendly input */
+  get allowExtraKeys(): boolean {
+    return this._allowExtraKeys;
+  }
+
+  setAllowExtraKeys(allow: boolean): void {
+    this._allowExtraKeys = allow;
   }
 
   /** Register event callbacks */
@@ -213,10 +229,21 @@ export class WaitMode {
     if (this._state !== "waiting") return false;
     if (this._targetNotes.size === 0) return false;
 
-    // Exact match: user must press exactly the target notes (no extra keys)
-    if (activeNotes.size !== this._targetNotes.size) return false;
-    for (const midi of this._targetNotes) {
-      if (!activeNotes.has(midi)) return false;
+    // S6-R3-03: In allowExtraKeys mode (kid-friendly), accept if all target
+    // notes are pressed even with extra keys held. In strict mode, require
+    // exact match (no extra keys).
+    if (this._allowExtraKeys) {
+      // Superset match: user must press at least all target notes
+      if (activeNotes.size < this._targetNotes.size) return false;
+      for (const midi of this._targetNotes) {
+        if (!activeNotes.has(midi)) return false;
+      }
+    } else {
+      // Exact match: user must press exactly the target notes (no extra keys)
+      if (activeNotes.size !== this._targetNotes.size) return false;
+      for (const midi of this._targetNotes) {
+        if (!activeNotes.has(midi)) return false;
+      }
     }
 
     // All matched — mark pending notes as hit and resume

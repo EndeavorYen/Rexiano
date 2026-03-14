@@ -137,21 +137,28 @@ export class FingeringEngine {
     // Group notes by time to detect chords vs. single notes
     const groups = this.groupByTime(notes);
     const results: FingeringResult[] = [];
+    // S6-R3-01: Track which result indices are chord notes so the sequential
+    // pass doesn't overwrite correctly-assigned chord fingering.
+    const chordIndices = new Set<number>();
 
     for (const group of groups) {
       if (group.length > 1) {
-        // Chord: use chord fingering
+        // Chord: use chord fingering — mark indices as chord notes
         const chordMidis = group.map((n) => n.midi);
         const chordResults = this.computeChordFingering(chordMidis, hand);
+        const startIdx = results.length;
         results.push(...chordResults);
+        for (let i = startIdx; i < results.length; i++) {
+          chordIndices.add(i);
+        }
       } else {
         // Single note: will be processed in the sequential pass below
         results.push({ midi: group[0].midi, finger: 1, hand });
       }
     }
 
-    // Sequential fingering pass for single notes
-    this.assignSequentialFingering(results, midis, hand);
+    // Sequential fingering pass for single notes only (skip chord indices)
+    this.assignSequentialFingering(results, midis, hand, chordIndices);
 
     return results;
   }
@@ -361,19 +368,24 @@ export class FingeringEngine {
   /**
    * Assign fingering to sequential single notes using scale detection
    * and stepwise heuristics.
+   * S6-R3-01: chordIndices parameter prevents overwriting chord fingering.
    */
   private assignSequentialFingering(
     results: FingeringResult[],
     _allMidis: number[],
     hand: Hand,
+    chordIndices?: Set<number>,
   ): void {
     if (results.length <= 1) return;
 
-    // Try scale pattern detection first
-    if (this.tryScalePattern(results, hand)) return;
+    // If there are chord notes, skip scale detection (mixed chords+scales
+    // are rare and the stepwise heuristic handles them better)
+    if (!chordIndices || chordIndices.size === 0) {
+      if (this.tryScalePattern(results, hand)) return;
+    }
 
-    // Fallback: stepwise heuristic
-    this.assignStepwise(results, hand);
+    // Fallback: stepwise heuristic (skips chord indices)
+    this.assignStepwise(results, hand, chordIndices);
   }
 
   /** Attempt to match the note sequence against known scale patterns */
@@ -425,28 +437,44 @@ export class FingeringEngine {
     return true;
   }
 
-  /** Stepwise heuristic for passages that are not pure scales */
-  private assignStepwise(results: FingeringResult[], hand: Hand): void {
+  /** Stepwise heuristic for passages that are not pure scales.
+   *  S6-R3-01: chordIndices are skipped to preserve chord fingering. */
+  private assignStepwise(
+    results: FingeringResult[],
+    hand: Hand,
+    chordIndices?: Set<number>,
+  ): void {
     if (results.length === 0) return;
 
+    // Find the first non-chord index to start from
+    let startIdx = 0;
+    while (startIdx < results.length && chordIndices?.has(startIdx)) {
+      startIdx++;
+    }
+    if (startIdx >= results.length) return;
+
     // Start with a sensible finger
-    const firstMidi = results[0].midi;
+    const firstMidi = results[startIdx].midi;
     const lastMidi = results[results.length - 1].midi;
     const overallDirection = lastMidi - firstMidi;
 
     if (hand === "right") {
-      results[0].finger = overallDirection >= 0 ? 1 : 5;
+      results[startIdx].finger = overallDirection >= 0 ? 1 : 5;
     } else {
-      results[0].finger = overallDirection >= 0 ? 5 : 1;
+      results[startIdx].finger = overallDirection >= 0 ? 5 : 1;
     }
 
     // Avoid thumb on black keys for the starting note
-    if (results[0].finger === 1 && isBlackKey(results[0].midi)) {
-      results[0].finger = 2;
+    if (results[startIdx].finger === 1 && isBlackKey(results[startIdx].midi)) {
+      results[startIdx].finger = 2;
     }
 
-    for (let i = 1; i < results.length; i++) {
-      const prev = results[i - 1];
+    let prevIdx = startIdx;
+    for (let i = startIdx + 1; i < results.length; i++) {
+      // S6-R3-01: Skip chord notes — their fingering is already set
+      if (chordIndices?.has(i)) continue;
+
+      const prev = results[prevIdx];
       const curr = results[i];
       const interval = curr.midi - prev.midi;
       const absInterval = Math.abs(interval);
@@ -454,6 +482,7 @@ export class FingeringEngine {
       // Same note: same finger
       if (interval === 0) {
         curr.finger = prev.finger;
+        prevIdx = i;
         continue;
       }
 
@@ -464,6 +493,7 @@ export class FingeringEngine {
         } else {
           curr.finger = interval > 0 ? 5 : 1;
         }
+        prevIdx = i;
         continue;
       }
 
@@ -474,6 +504,8 @@ export class FingeringEngine {
       if (curr.finger === 1 && isBlackKey(curr.midi)) {
         curr.finger = 2;
       }
+
+      prevIdx = i;
     }
   }
 

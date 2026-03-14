@@ -6,6 +6,8 @@
 export class SpeedController {
   private _currentSpeed: number;
   private _targetSpeed: number;
+  /** Speed value at the start of the current lerp (S6-R1-04: for true linear interpolation) */
+  private _lerpStartSpeed: number;
   private _lastLerpTime: number = -1;
   private _lerpDurationMs: number = 200;
 
@@ -16,6 +18,7 @@ export class SpeedController {
     const clamped = SpeedController._clamp(initialSpeed);
     this._currentSpeed = clamped;
     this._targetSpeed = clamped;
+    this._lerpStartSpeed = clamped;
   }
 
   /** Current interpolated speed multiplier */
@@ -31,6 +34,8 @@ export class SpeedController {
   /** Set target speed multiplier (clamped to 0.25–2.0). Lerps toward it over ~200ms. */
   setSpeed(value: number): void {
     this._targetSpeed = SpeedController._clamp(value);
+    // S6-R1-04: Capture current speed as lerp start for true linear interpolation
+    this._lerpStartSpeed = this._currentSpeed;
     this._lastLerpTime = -1; // will be set on next tick
   }
 
@@ -39,6 +44,7 @@ export class SpeedController {
     const clamped = SpeedController._clamp(value);
     this._currentSpeed = clamped;
     this._targetSpeed = clamped;
+    this._lerpStartSpeed = clamped;
     this._lastLerpTime = -1;
   }
 
@@ -48,6 +54,8 @@ export class SpeedController {
    */
   bumpSpeed(delta: number): number {
     this._targetSpeed = SpeedController._clamp(this._targetSpeed + delta);
+    // S6-R1-04: Capture current speed as lerp start
+    this._lerpStartSpeed = this._currentSpeed;
     this._lastLerpTime = -1;
     return this._targetSpeed;
   }
@@ -67,8 +75,10 @@ export class SpeedController {
 
     const elapsed = Math.max(0, nowMs - this._lastLerpTime);
     const t = Math.min(1, elapsed / this._lerpDurationMs);
+    // S6-R1-04: True linear interpolation from stored start speed to target,
+    // instead of applying t to remaining distance (which is exponential ease)
     this._currentSpeed =
-      this._currentSpeed + (this._targetSpeed - this._currentSpeed) * t;
+      this._lerpStartSpeed + (this._targetSpeed - this._lerpStartSpeed) * t;
 
     if (t >= 1) {
       this._currentSpeed = this._targetSpeed;
@@ -89,6 +99,7 @@ export class SpeedController {
   reset(): void {
     this._currentSpeed = 1.0;
     this._targetSpeed = 1.0;
+    this._lerpStartSpeed = 1.0;
     this._lastLerpTime = -1;
   }
 
