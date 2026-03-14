@@ -42,6 +42,8 @@ export class WaitMode {
   private _trackCursors = new Map<number, number>();
   /** Reusable set for pending MIDI numbers (avoids allocation per tick) */
   private _pendingMidis = new Set<number>();
+  /** Reusable set for deduplicating direct miss callbacks per tick (R1-02 fix) */
+  private _missedMidis = new Set<number>();
   /** Structured info for currently pending notes (avoids string parsing) */
   private _pendingNoteDetails: PendingNoteInfo[] = [];
 
@@ -93,6 +95,7 @@ export class WaitMode {
     this._trackCursors.clear();
     this._pendingNoteDetails.length = 0;
     this._pendingMidis.clear();
+    this._missedMidis.clear();
     this._state = "idle";
   }
 
@@ -107,6 +110,7 @@ export class WaitMode {
     this._targetNotes.clear();
     this._pendingNoteDetails.length = 0;
     this._pendingMidis.clear();
+    this._missedMidis.clear();
     this._trackCursors.clear();
     this._noteResults.clear();
   }
@@ -129,11 +133,15 @@ export class WaitMode {
     if (this._state === "idle") return true;
     if (this._state === "waiting") return false;
 
-    const adjustedTime = currentTime - latencyCompensationMs / 1000;
+    const adjustedTime = Math.max(
+      0,
+      currentTime - latencyCompensationMs / 1000,
+    );
 
     const toleranceSec = this._toleranceMs / 1000;
     const pendingMidis = this._pendingMidis;
     pendingMidis.clear();
+    this._missedMidis.clear();
     this._pendingNoteDetails.length = 0;
 
     for (const trackIndex of this._activeTracks) {
@@ -169,7 +177,11 @@ export class WaitMode {
         } else {
           // Past tolerance window → missed
           this._noteResults.set(key, "miss");
-          this._callbacks.onMiss?.(note.midi, note.time);
+          // R1-02 fix: deduplicate miss callbacks by MIDI, matching _markPendingAs behavior
+          if (!this._missedMidis.has(note.midi)) {
+            this._missedMidis.add(note.midi);
+            this._callbacks.onMiss?.(note.midi, note.time);
+          }
           cursor = ni + 1;
         }
       }
@@ -201,7 +213,8 @@ export class WaitMode {
     if (this._state !== "waiting") return false;
     if (this._targetNotes.size === 0) return false;
 
-    // Check if all target notes are pressed
+    // Exact match: user must press exactly the target notes (no extra keys)
+    if (activeNotes.size !== this._targetNotes.size) return false;
     for (const midi of this._targetNotes) {
       if (!activeNotes.has(midi)) return false;
     }
@@ -214,13 +227,21 @@ export class WaitMode {
     return true;
   }
 
-  /** Mark all currently pending notes as hit or miss */
+  /** Mark all currently pending notes as hit or miss.
+   *  Deduplicates callbacks by MIDI number so that the same pitch
+   *  appearing in multiple tracks only fires onHit/onMiss once. */
   private _markPendingAs(result: NoteResult): void {
+    const firedMidis = new Set<number>();
     for (const pn of this._pendingNoteDetails) {
       const key = `${pn.trackIndex}:${pn.noteIndex}`;
       this._noteResults.set(key, result);
-      if (result === "hit") {
-        this._callbacks.onHit?.(pn.midi, pn.time);
+      if (!firedMidis.has(pn.midi)) {
+        firedMidis.add(pn.midi);
+        if (result === "hit") {
+          this._callbacks.onHit?.(pn.midi, pn.time);
+        } else if (result === "miss") {
+          this._callbacks.onMiss?.(pn.midi, pn.time);
+        }
       }
     }
     this._pendingNoteDetails.length = 0;
@@ -232,6 +253,8 @@ export class WaitMode {
     this._targetNotes.clear();
     this._trackCursors.clear();
     this._pendingNoteDetails.length = 0;
+    this._pendingMidis.clear();
+    this._missedMidis.clear();
     this._state = "idle";
   }
 }

@@ -131,6 +131,15 @@ export class NoteRenderer {
   private _animHandles = new Map<Sprite, number>();
   /** Tracks in-flight rAF handles for showCombo text animations (cancelled on destroy) */
   private _comboHandles = new Set<number>();
+  /** R2-01: Tracks combo Text objects currently mid-animation (not yet returned to pool).
+   *  destroy() iterates this set to call .destroy() on orphaned labels. */
+  private _comboInFlight = new Set<Text>();
+
+  /** R1-02/R1-05: Canonical base tint per sprite, set on allocation, used by all animations.
+   *  Prevents mid-animation captures of intermediate tint values. */
+  private _baseTint = new Map<Sprite, number>();
+  /** R1-02/R1-05: Canonical base alpha per sprite, set on allocation, used by all animations. */
+  private _baseAlpha = new Map<Sprite, number>();
 
   // ── Note label pool (parallel to sprite pool) ──
   /** Text pool for reusable note labels */
@@ -304,6 +313,9 @@ export class NoteRenderer {
         if (!sprite) {
           sprite = this.allocate();
           sprite.tint = color;
+          // R1-02/R1-05: Record canonical base values for animation reference
+          this._baseTint.set(sprite, color);
+          this._baseAlpha.set(sprite, 1);
         }
 
         sprite.x = kp.x;
@@ -410,27 +422,62 @@ export class NoteRenderer {
 
     this._gridGraphics.clear();
     this._hitLineGraphics.clear();
+    // R1-06: Reset dirty-check keys so re-init with same viewport doesn't skip first draw
+    this._lastGridVpKey = "";
+    this._lastHitLineKey = "";
     this.container.removeChildren();
     this.pool.length = 0;
     this.active.clear();
     this.nextActive.clear();
     this.activeNotes.clear();
     this.keyPositions.clear();
+    // R1-02/R1-05: Clear base value maps
+    this._baseTint.clear();
+    this._baseAlpha.clear();
 
-    // Clean up label pool
+    // R1-07: Destroy Text objects in label pool to free PixiJS resources
+    for (const label of this._labelPool) {
+      label.destroy();
+    }
     this._labelPool.length = 0;
+    // Also destroy labels still attached to sprites
+    for (const label of this._spriteLabels.values()) {
+      label.destroy();
+    }
     this._spriteLabels.clear();
 
     // Unsubscribe from theme store
     this._themeUnsub?.();
     this._themeUnsub = null;
 
-    // Clean up combo pool
+    // R2-01: Destroy in-flight combo labels that were mid-animation
+    // (not yet returned to _comboPool). These would otherwise be orphaned
+    // because their rAF handles were cancelled above, so releaseComboLabel
+    // never runs for them.
+    for (const label of this._comboInFlight) {
+      label.destroy();
+    }
+    this._comboInFlight.clear();
+
+    // R1-07: Destroy combo Text objects already returned to pool
+    for (const label of this._comboPool) {
+      label.destroy();
+    }
     this._comboPool.length = 0;
     this._comboStyle = null;
 
-    // Clean up fingering overlay
+    // R1-07: Destroy fingering Text objects before truncating pool, null the style
+    for (const label of this.fingeringLabelPool) {
+      label.destroy();
+    }
+    for (const label of this.activeFingeringLabels.values()) {
+      label.destroy();
+    }
+    for (const label of this.nextFingeringLabels.values()) {
+      label.destroy();
+    }
     this.fingeringLabelPool.length = 0;
+    this._fingeringLabelStyle = null;
     this.activeFingeringLabels.clear();
     this.nextFingeringLabels.clear();
     this.fingeringCache.clear();
@@ -455,7 +502,11 @@ export class NoteRenderer {
 
   private allocate(): Sprite {
     if (this.pool.length === 0) {
-      const grow = Math.max(64, Math.floor(this.active.size * 0.5));
+      // R1-04: Use nextActive.size (current frame's count) instead of
+      // active.size (last frame's count) to avoid repeated small grows
+      // after song jumps. Fall back to a minimum of 64 sprites.
+      const currentFrameCount = this.nextActive.size;
+      const grow = Math.max(64, Math.floor(currentFrameCount * 0.5));
       for (let i = 0; i < grow; i++) {
         this.pool.push(this.createSprite());
       }
@@ -488,6 +539,9 @@ export class NoteRenderer {
     sprite.alpha = 1;
     sprite.tint = 0xffffff; // Reset tint to prevent color leak into pool
     sprite.visible = false;
+    // R1-02/R1-05: Clean up base value tracking for released sprite
+    this._baseTint.delete(sprite);
+    this._baseAlpha.delete(sprite);
     this.pool.push(sprite);
 
     // Release the associated label if present
@@ -583,8 +637,9 @@ export class NoteRenderer {
     const existing = this._animHandles.get(sprite);
     if (existing !== undefined) cancelAnimationFrame(existing);
 
-    const originalTint = sprite.tint;
-    const originalAlpha = sprite.alpha;
+    // R1-02: Read canonical base values, not current (potentially mid-animation) values
+    const baseTint = this._baseTint.get(sprite) ?? sprite.tint;
+    const baseAlpha = this._baseAlpha.get(sprite) ?? sprite.alpha;
     const hitGlow = this._cachedHitGlow;
     const duration = 200; // ms
     let start = -1;
@@ -599,15 +654,15 @@ export class NoteRenderer {
 
       // Quick flash up then ease back
       const flash = t < 0.3 ? t / 0.3 : 1 - (t - 0.3) / 0.7;
-      sprite.tint = lerpColor(originalTint, hitGlow, flash * 0.7);
-      sprite.alpha = originalAlpha + (1 - originalAlpha) * flash * 0.5;
+      sprite.tint = lerpColor(baseTint, hitGlow, flash * 0.7);
+      sprite.alpha = baseAlpha + (1 - baseAlpha) * flash * 0.5;
 
       if (t < 1) {
         this._animHandles.set(sprite, requestAnimationFrame(tick));
       } else {
         this._animHandles.delete(sprite);
-        sprite.tint = originalTint;
-        sprite.alpha = originalAlpha;
+        sprite.tint = baseTint;
+        sprite.alpha = baseAlpha;
       }
     };
     this._animHandles.set(sprite, requestAnimationFrame(tick));
@@ -621,8 +676,9 @@ export class NoteRenderer {
     const existing = this._animHandles.get(sprite);
     if (existing !== undefined) cancelAnimationFrame(existing);
 
-    const originalTint = sprite.tint;
-    const originalAlpha = sprite.alpha;
+    // R1-05: Read canonical base values, not current (potentially mid-animation) values
+    const baseTint = this._baseTint.get(sprite) ?? sprite.tint;
+    const baseAlpha = this._baseAlpha.get(sprite) ?? sprite.alpha;
     const missGray = this._cachedMissGray;
     const duration = 150;
     let start = -1;
@@ -634,8 +690,8 @@ export class NoteRenderer {
       const t = Math.min((now - start) / duration, 1);
       const ease = t * (2 - t); // ease-out quad
 
-      sprite.tint = lerpColor(originalTint, missGray, ease);
-      sprite.alpha = originalAlpha - (originalAlpha - 0.4) * ease;
+      sprite.tint = lerpColor(baseTint, missGray, ease);
+      sprite.alpha = baseAlpha - (baseAlpha - 0.4) * ease;
 
       if (t < 1) {
         this._animHandles.set(sprite, requestAnimationFrame(tick));
@@ -660,6 +716,8 @@ export class NoteRenderer {
     label.scale.set(0.3);
     label.visible = true;
     this.container.addChild(label);
+    // R2-01: Track in-flight label so destroy() can .destroy() it
+    this._comboInFlight.add(label);
 
     const duration = 600;
     let start = -1;
@@ -691,13 +749,18 @@ export class NoteRenderer {
       label.y = cy - 40 * t;
 
       if (t < 1) {
-        this._comboHandles.delete(handle);
+        // R1-01: Add new handle BEFORE deleting old one to prevent
+        // destroy() from clearing the set in the gap between delete and add,
+        // which would orphan the label.
         const next = requestAnimationFrame(tick);
         this._comboHandles.add(next);
+        if (next !== handle) this._comboHandles.delete(handle);
         handle = next;
       } else {
         this._comboHandles.delete(handle);
-        this.container.removeChild(label);
+        // R2-01: Remove from in-flight tracking before returning to pool
+        this._comboInFlight.delete(label);
+        // R1-03: releaseComboLabel now handles removeChild internally
         this.releaseComboLabel(label);
       }
     };
@@ -754,6 +817,10 @@ export class NoteRenderer {
   }
 
   private releaseComboLabel(label: Text): void {
+    // R1-03: Remove from container before returning to pool to prevent
+    // duplicate addChild on re-allocation (pool invariant: pooled labels
+    // must not be children of the container).
+    this.container.removeChild(label);
     label.visible = false;
     this._comboPool.push(label);
   }

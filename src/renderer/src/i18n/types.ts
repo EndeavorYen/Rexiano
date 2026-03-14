@@ -249,6 +249,7 @@ export interface TranslationMap {
   // ── General ────────────────────────────────────────────────────
   "general.loading": string;
   "general.error": string;
+  "general.retry": string;
   "general.close": string;
   "general.save": string;
   "general.cancel": string;

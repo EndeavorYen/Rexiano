@@ -16,6 +16,8 @@ interface SongCardProps {
   song: BuiltinSongMeta;
   onSelect: (songId: string) => void;
   colorIndex: number;
+  /** When true, the card button is disabled (e.g. another song is loading) */
+  disabled?: boolean;
 }
 
 function formatDuration(seconds: number): string {
@@ -52,6 +54,7 @@ export function SongCard({
   song,
   onSelect,
   colorIndex,
+  disabled = false,
 }: SongCardProps): React.JSX.Element {
   const { t } = useTranslation();
   const noteColors = [
@@ -89,8 +92,9 @@ export function SongCard({
   return (
     <button
       onClick={handleClick}
+      disabled={disabled}
       aria-label={displayTitle}
-      className="group card-hover text-left rounded-xl overflow-hidden cursor-pointer w-full"
+      className="group card-hover text-left rounded-xl overflow-hidden cursor-pointer w-full disabled:opacity-50 disabled:cursor-wait disabled:pointer-events-none"
       style={{
         background: "color-mix(in srgb, var(--color-surface) 88%, transparent)",
         border: "1px solid var(--color-border)",

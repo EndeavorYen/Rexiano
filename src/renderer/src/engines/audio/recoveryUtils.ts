@@ -2,6 +2,8 @@ export const AUDIO_RECOVERY_MAX_ATTEMPTS = 4;
 export const AUDIO_RECOVERY_BASE_DELAY_MS = 250;
 export const AUDIO_RECOVERY_MAX_DELAY_MS = 4000;
 export const AUDIO_DEVICECHANGE_DEBOUNCE_MS = 300;
+/** Maximum time (ms) to wait for a single rebuildAudioStack attempt before timing out. */
+export const AUDIO_REBUILD_TIMEOUT_MS = 15_000;
 
 interface DeviceLike {
   kind: string;
@@ -43,4 +45,31 @@ export function hasAudioOutputChanged(
     if (prevIds[i] !== nextIds[i]) return true;
   }
   return false;
+}
+
+/**
+ * Race a promise against a timeout. If the promise does not resolve within
+ * `ms` milliseconds, the returned promise rejects with a descriptive error.
+ */
+export function withTimeout<T>(
+  promise: Promise<T>,
+  ms: number,
+  label = "operation",
+): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    const timer = setTimeout(
+      () => reject(new Error(`${label} timed out after ${ms}ms`)),
+      ms,
+    );
+    promise.then(
+      (value) => {
+        clearTimeout(timer);
+        resolve(value);
+      },
+      (err) => {
+        clearTimeout(timer);
+        reject(err);
+      },
+    );
+  });
 }

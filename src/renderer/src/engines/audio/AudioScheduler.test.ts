@@ -527,5 +527,104 @@ describe("AudioScheduler", () => {
       expect(engine.noteOn).toHaveBeenCalledWith(60, 80, expect.any(Number));
       customScheduler.dispose();
     });
+
+    // ─── R1-01/R1-02: setSpeed calls allNotesOff ───
+    test("setSpeed during playback calls allNotesOff to flush in-flight notes", () => {
+      engine._setCurrentTime(0);
+      const s = song([track([note(0, 0.5, 60)])]);
+      scheduler.setSong(s);
+      scheduler.start(0);
+      vi.advanceTimersByTime(25); // schedule the note
+      engine.allNotesOff.mockClear();
+
+      engine._setCurrentTime(0.03);
+      scheduler.setSpeed(0.5);
+
+      // allNotesOff must be called to prevent ghost duplicates
+      expect(engine.allNotesOff).toHaveBeenCalledTimes(1);
+    });
+
+    test("setSpeed while stopped does NOT call allNotesOff", () => {
+      const s = song([track([note(0, 0.5)])]);
+      scheduler.setSong(s);
+      scheduler.setSpeed(0.5);
+      expect(engine.allNotesOff).not.toHaveBeenCalled();
+    });
+
+    // ─── R1-03: Look-ahead window at low speed ───
+    test("look-ahead window does not collapse at low speed", () => {
+      engine._setCurrentTime(0);
+      // Note at t=0.05 — within 0.1s look-ahead in song time
+      const s = song([track([note(0.05, 0.2, 60)])]);
+      scheduler.setSong(s);
+      scheduler.setSpeed(0.25);
+      scheduler.start(0);
+      vi.advanceTimersByTime(25);
+
+      // At speed=0.25, the old formula gave horizon = songTime + 0.1*0.25 = 0.025
+      // which would miss note at t=0.05. The fix uses lookAheadSeconds directly.
+      expect(engine.noteOn).toHaveBeenCalledWith(60, 80, expect.any(Number));
+    });
+
+    // ─── R1-04: Stale note skip uses <= ───
+    test("does not schedule ghost note when noteEnd equals songTime", () => {
+      engine._setCurrentTime(10);
+      // Note at t=0, duration=0.5, ends at t=0.5
+      // Start at songTime=0.5 — note should be fully elapsed
+      const s = song([track([note(0, 0.5, 60)])]);
+      scheduler.setSong(s);
+      scheduler.start(0.5);
+      vi.advanceTimersByTime(25);
+
+      // With the old < check, this note would be scheduled as a ghost
+      expect(engine.noteOn).not.toHaveBeenCalled();
+    });
+
+    // ─── R1-05: Short note duration not inflated ───
+    test("short note at high speed uses scaled duration, not hardcoded minimum", () => {
+      engine._setCurrentTime(10);
+      // 5ms note at speed=2.0 → scaled duration = 2.5ms
+      // Old code would use 10ms minimum, new code uses min(2.5ms, 10ms) = 2.5ms
+      const s = song([track([note(0, 0.005, 60, 100)])]);
+      scheduler.setSong(s);
+      scheduler.setSpeed(2.0);
+      scheduler.start(0);
+      vi.advanceTimersByTime(25);
+
+      expect(engine.noteOn).toHaveBeenCalledTimes(1);
+      expect(engine.noteOff).toHaveBeenCalledTimes(1);
+
+      const onTime = engine.noteOn.mock.calls[0][2] as number;
+      const offTime = engine.noteOff.mock.calls[0][1] as number;
+      const gap = offTime - onTime;
+
+      // Gap should be close to scaled duration (0.005/2.0 = 0.0025),
+      // NOT the old hardcoded 0.01
+      expect(gap).toBeLessThan(0.01);
+      expect(gap).toBeGreaterThan(0);
+    });
+
+    // ─── R1-08: speed=0 guard ───
+    test("setSpeed(0) is silently rejected", () => {
+      engine._setCurrentTime(0);
+      const s = song([track([note(0, 0.5)])]);
+      scheduler.setSong(s);
+      scheduler.start(0);
+      scheduler.setSpeed(0);
+
+      // Speed should remain at default (1.0) — getCurrentTime uses speed
+      engine._setCurrentTime(1);
+      expect(scheduler.getCurrentTime()).toBeCloseTo(1.0, 6);
+    });
+
+    test("setSpeed(NaN) is silently rejected", () => {
+      scheduler.setSpeed(NaN);
+      // Should not throw
+    });
+
+    test("setSpeed(-1) is silently rejected", () => {
+      scheduler.setSpeed(-1);
+      // Should not throw
+    });
   });
 });

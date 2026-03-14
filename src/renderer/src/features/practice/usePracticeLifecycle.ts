@@ -18,6 +18,21 @@
  * R2-009: Metronome resetBeat() called on seek.
  * R3-002: Metronome disable during count-in clears isCountingIn.
  * R3-003: Speed subscriber merged — scheduler.setSpeed included here.
+ *
+ * Match 3 Round 1 fixes:
+ * R1-01: WaitMode.start() deferred to after count-in completes (prevents deadlock).
+ * R1-02: Missing .catch() on loop-seek resume() promise.
+ * R1-03: Fresh speed read inside count-in onComplete (prevents stale BPM closure).
+ * R1-05/R1-09: isResumePendingRef guards against concurrent onWait/onResume race.
+ * R1-06: scheduler.setSpeed() guarded during count-in (scheduler is stopped).
+ * R1-08: scoreCalculator.reset() only fires for scoring-relevant mode changes.
+ *
+ * Match 3 Round 2 fixes:
+ * R2-01: Loop-seek resume uses isResumePendingRef guard (same pattern as onResume).
+ * R2-02: Count-in onComplete resume uses isResumePendingRef guard.
+ * R2-03: practiceMode read fresh inside onComplete (avoids stale closure).
+ * R2-04: Pause handler clears isCountingIn (metronome.stop nulls onComplete).
+ * R2-06: Pause handler clears isResumePendingRef (prevents stale .then() firing).
  */
 import { useRef, useEffect, useCallback } from "react";
 import { useSongStore } from "@renderer/stores/useSongStore";
@@ -34,10 +49,9 @@ import { getMetronome } from "@renderer/engines/metronome/metronomeManager";
 import type { NoteRenderer } from "@renderer/engines/fallingNotes/NoteRenderer";
 import type { AudioEngine } from "@renderer/engines/audio/AudioEngine";
 import type { AudioScheduler } from "@renderer/engines/audio/AudioScheduler";
-import type {
-  ParsedSong,
-  TempoEvent,
-  TimeSignatureEvent,
+import {
+  getTempoAtTime,
+  type ParsedSong,
 } from "@renderer/engines/midi/types";
 
 interface AudioRef {
@@ -47,6 +61,44 @@ interface AudioRef {
 
 /** Streak milestones that trigger a combo pop -- defined once, not on every hit. */
 const COMBO_MILESTONES = new Set([5, 10, 25, 50, 100]);
+
+/**
+ * R2-01/R2-02 fix: Extracted resume-and-start pattern into a single helper.
+ * Uses a generation counter (not a boolean) to eliminate the ABA race:
+ * each call increments the counter; the .then() only proceeds if its
+ * captured generation still matches the current value.
+ *
+ * @param engine      The AudioEngine to resume
+ * @param scheduler   The AudioScheduler to start after resume
+ * @param genRef      Mutable ref holding the current generation counter
+ * @param label       Log label for error context
+ * @param onSettled   Optional callback invoked after resume settles (success or failure)
+ */
+function guardedResumeAndStart(
+  engine: AudioEngine,
+  scheduler: AudioScheduler,
+  genRef: React.MutableRefObject<number>,
+  label: string,
+  onSettled?: () => void,
+): void {
+  const gen = ++genRef.current;
+  void engine
+    .resume()
+    .then(() => {
+      if (genRef.current === gen && usePlaybackStore.getState().isPlaying) {
+        scheduler.start(usePlaybackStore.getState().currentTime);
+      }
+      onSettled?.();
+    })
+    .catch((err) => {
+      console.error(`${label} audio resume failed:`, err);
+      // R3-01 fix: Stop playback on resume failure so the UI doesn't show
+      // an active play button with no audio. Without this, Rex sees a
+      // "playing" state but hears nothing and won't know to press stop.
+      usePlaybackStore.getState().setPlaying(false);
+      onSettled?.();
+    });
+}
 
 interface PracticeLifecycleCallbacks {
   onHitNote?: (midi: number) => void;
@@ -73,10 +125,18 @@ export function usePracticeLifecycle(
   callbacks?: PracticeLifecycleCallbacks,
 ): PracticeLifecycleResult {
   const callbacksRef = useRef(callbacks);
-  useEffect(() => {
-    callbacksRef.current = callbacks;
-  });
+  // R1-04 fix: update ref during render (sync) instead of post-paint useEffect (async).
+  // Eliminates the stale-ref window between render and effect execution.
+  callbacksRef.current = callbacks;
   const noteRendererRef = useRef<NoteRenderer | null>(null);
+
+  /**
+   * R2-01 fix: Generation counter for the resume-and-start guard.
+   * Replaces the boolean isResumePendingRef to eliminate the ABA race.
+   * Each guardedResumeAndStart() call increments this counter; the .then()
+   * only starts the scheduler if its captured generation still matches.
+   */
+  const resumeGenRef = useRef(0);
 
   const handleNoteRendererReady = useCallback((renderer: NoteRenderer) => {
     noteRendererRef.current = renderer;
@@ -160,26 +220,18 @@ export function usePracticeLifecycle(
         callbacksRef.current?.onMissNote?.(midi);
       },
       onWait: () => {
+        // R2-01 fix: Increment generation to invalidate ALL pending resumes.
+        // Any in-flight .then() will see its captured gen !== current and skip.
+        resumeGenRef.current++;
         // Pause audio when waiting for user input
         audioRef.current.scheduler?.stop();
         usePracticeStore.getState().setWaiting(true);
       },
       onResume: () => {
         usePracticeStore.getState().setWaiting(false);
-        // R2-001: Check isPlaying before resuming, and await engine.resume()
         const { scheduler, engine } = audioRef.current;
         if (scheduler && engine && usePlaybackStore.getState().isPlaying) {
-          void engine
-            .resume()
-            .then(() => {
-              // Re-check isPlaying after async resume (user may have paused)
-              if (usePlaybackStore.getState().isPlaying) {
-                scheduler.start(usePlaybackStore.getState().currentTime);
-              }
-            })
-            .catch((err) => {
-              console.error("WaitMode audio resume failed:", err);
-            });
+          guardedResumeAndStart(engine, scheduler, resumeGenRef, "WaitMode");
         }
       },
     });
@@ -206,15 +258,28 @@ export function usePracticeLifecycle(
         } else {
           waitMode.stop();
         }
-        scoreCalculator?.reset();
+        // R1-08: Only reset score when entering/leaving modes that track score
+        // (wait or free). watch↔step switches don't use scoring.
+        if (
+          state.mode === "wait" ||
+          state.mode === "free" ||
+          prev.mode === "wait" ||
+          prev.mode === "free"
+        ) {
+          scoreCalculator?.reset();
+        }
       }
 
       // Speed change -- also sync metronome BPM and AudioScheduler (R2-002 + R3-003: merged)
       if (state.speed !== prev.speed) {
         speedController?.setSpeed(state.speed);
 
-        // R3-003: Sync AudioScheduler speed here instead of in App.tsx
-        audioRef.current.scheduler?.setSpeed(state.speed);
+        // R1-06: Only sync AudioScheduler speed when not counting in —
+        // during count-in the scheduler is stopped, and setSpeed() re-anchors
+        // timing which is meaningless on a stopped scheduler.
+        if (!usePlaybackStore.getState().isCountingIn) {
+          audioRef.current.scheduler?.setSpeed(state.speed);
+        }
 
         const metronome = getMetronome();
         if (metronome?.isRunning && currentSong) {
@@ -278,11 +343,6 @@ export function usePracticeLifecycle(
 
       // ── Play start ──
       if (state.isPlaying && !prev.isPlaying) {
-        // Start WaitMode
-        if (waitMode && practiceMode === "wait") {
-          waitMode.start();
-        }
-
         // Start metronome (with optional count-in)
         if (metronome && currentSong) {
           const { metronomeEnabled, countInBeats } =
@@ -303,6 +363,11 @@ export function usePracticeLifecycle(
             const { scheduler } = audioRef.current;
             scheduler?.stop();
 
+            // R1-01: Do NOT start WaitMode here — it would enter "playing"
+            // state, and tickerLoop would call tick() during count-in,
+            // transitioning to "waiting" before the scheduler even starts.
+            // WaitMode is started inside onComplete below.
+
             metronome.startCountIn(
               countInBeats,
               effectiveBpm,
@@ -316,28 +381,54 @@ export function usePracticeLifecycle(
                   return;
                 }
 
+                // R1-01: Start WaitMode AFTER count-in completes, right
+                // before the scheduler starts, so tick() can't fire prematurely.
+                // R2-03: Read practiceMode fresh — user may have changed mode
+                // during count-in, so the closure-captured value is stale.
+                const freshMode = usePracticeStore.getState().mode;
+                if (waitMode && freshMode === "wait") {
+                  waitMode.start();
+                }
+
                 const { scheduler: sch, engine } = audioRef.current;
                 if (sch && engine) {
-                  void engine
-                    .resume()
-                    .then(() => {
-                      // Re-check after async resume
-                      if (usePlaybackStore.getState().isPlaying) {
-                        sch.start(usePlaybackStore.getState().currentTime);
-                      }
-                      usePlaybackStore.getState().setCountingIn(false);
-                    })
-                    .catch((err: unknown) => {
-                      console.error("Audio resume after count-in failed:", err);
-                      usePlaybackStore.getState().setCountingIn(false);
-                    });
+                  // R1-03: Read current speed fresh to avoid stale closure
+                  const freshSpeed = usePracticeStore.getState().speed;
+                  const { bpm: freshBpm } = getTempoAtTime(
+                    usePlaybackStore.getState().currentTime,
+                    currentSong.tempos,
+                    currentSong.timeSignatures,
+                  );
+                  sch.setSpeed(freshSpeed);
+                  metronome.setBpm(freshBpm * freshSpeed);
+
+                  // R2-01/R2-02 fix: use shared helper with generation counter
+                  guardedResumeAndStart(
+                    engine,
+                    sch,
+                    resumeGenRef,
+                    "Count-in",
+                    () => usePlaybackStore.getState().setCountingIn(false),
+                  );
                 } else {
                   usePlaybackStore.getState().setCountingIn(false);
                 }
               },
             );
-          } else if (metronomeEnabled) {
-            metronome.start(effectiveBpm, beatsPerMeasure);
+          } else {
+            // R1-01: No count-in — start WaitMode immediately (no deadlock risk)
+            if (waitMode && practiceMode === "wait") {
+              waitMode.start();
+            }
+
+            if (metronomeEnabled) {
+              metronome.start(effectiveBpm, beatsPerMeasure);
+            }
+          }
+        } else {
+          // No metronome or no song — start WaitMode immediately
+          if (waitMode && practiceMode === "wait") {
+            waitMode.start();
           }
         }
       }
@@ -348,6 +439,12 @@ export function usePracticeLifecycle(
           waitMode.stop();
         }
         metronome?.stop();
+        // R2-04: metronome.stop() nulls the onComplete callback, so
+        // setCountingIn(false) would never fire from it. Clear here.
+        usePlaybackStore.getState().setCountingIn(false);
+        // R2-06: Cancel any in-flight resume — if .then() fires after pause,
+        // it must not start the scheduler in a new play session.
+        resumeGenRef.current++;
       }
 
       // ── R3-006: Block seek during count-in ──
@@ -374,11 +471,7 @@ export function usePracticeLifecycle(
             usePracticeStore.getState().setWaiting(false);
             const { scheduler, engine } = audioRef.current;
             if (scheduler && engine && usePlaybackStore.getState().isPlaying) {
-              void engine.resume().then(() => {
-                if (usePlaybackStore.getState().isPlaying) {
-                  scheduler.start(usePlaybackStore.getState().currentTime);
-                }
-              });
+              guardedResumeAndStart(engine, scheduler, resumeGenRef, "Loop-seek");
             }
           }
         }
@@ -457,29 +550,4 @@ export function usePracticeLifecycle(
   return { noteRendererRef, handleNoteRendererReady };
 }
 
-// ── Helper: resolve tempo and time signature at a given playback time ──
-function getTempoAtTime(
-  time: number,
-  tempos: TempoEvent[],
-  timeSignatures: TimeSignatureEvent[],
-): { bpm: number; beatsPerMeasure: number } {
-  // Find the effective tempo at `time`
-  let bpm = 120; // MIDI default
-  for (let i = tempos.length - 1; i >= 0; i--) {
-    if (tempos[i].time <= time) {
-      bpm = tempos[i].bpm;
-      break;
-    }
-  }
-
-  // Find the effective time signature at `time`
-  let beatsPerMeasure = 4; // default 4/4
-  for (let i = timeSignatures.length - 1; i >= 0; i--) {
-    if (timeSignatures[i].time <= time) {
-      beatsPerMeasure = timeSignatures[i].numerator;
-      break;
-    }
-  }
-
-  return { bpm, beatsPerMeasure };
-}
+// getTempoAtTime is now imported from @renderer/engines/midi/types (R1-04 S4 fix)

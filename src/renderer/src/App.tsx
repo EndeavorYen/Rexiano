@@ -2,6 +2,7 @@ import { useState, useCallback, useRef, useEffect, useMemo } from "react";
 import { ArrowLeft, PanelRightOpen, X } from "lucide-react";
 import appIcon from "../../../docs/figure/Rexiano_icon.png";
 import { parseMidiFile } from "./engines/midi/MidiFileParser";
+import { getTempoAtTime } from "./engines/midi/types";
 import { useSongStore } from "./stores/useSongStore";
 import { usePlaybackStore } from "./stores/usePlaybackStore";
 import { useProgressStore, initAutoSave } from "./stores/useProgressStore";
@@ -9,17 +10,18 @@ import { useSettingsStore } from "./stores/useSettingsStore";
 import {
   initMetronome,
   disposeMetronome,
+  getMetronome,
 } from "./engines/metronome/metronomeManager";
 import { AudioEngine } from "./engines/audio/AudioEngine";
 import { AudioScheduler } from "./engines/audio/AudioScheduler";
 import {
   AUDIO_DEVICECHANGE_DEBOUNCE_MS,
   AUDIO_RECOVERY_MAX_ATTEMPTS,
-  computeRecoveryBackoffMs,
-  delay,
   extractAudioOutputIds,
   hasAudioOutputChanged,
+  withTimeout,
 } from "./engines/audio/recoveryUtils";
+import { runRecoveryLoop } from "./engines/audio/runRecoveryLoop";
 import { FallingNotesCanvas } from "./features/fallingNotes/FallingNotesCanvas";
 import { PianoKeyboard } from "./features/fallingNotes/PianoKeyboard";
 import { TransportBar } from "./features/fallingNotes/TransportBar";
@@ -34,6 +36,7 @@ import { usePracticeLifecycle } from "./features/practice/usePracticeLifecycle";
 import { PracticeToolbar } from "./features/practice/PracticeToolbar";
 import { ScoreOverlay } from "./features/practice/ScoreOverlay";
 import { useKeyboardShortcuts } from "./hooks/useKeyboardShortcuts";
+import { toggleMute } from "./hooks/useMuteController";
 import { useTranslation } from "./i18n/useTranslation";
 import { SheetMusicPanel } from "./features/sheetMusic/SheetMusicPanel";
 import { SheetMusicPanelOSMD } from "./features/sheetMusic/SheetMusicPanelOSMD";
@@ -52,6 +55,9 @@ import {
 
 /** Accepted file extensions for drag-and-drop MIDI import */
 const MIDI_EXTENSIONS = [".mid", ".midi"];
+
+/** R3-03 fix: stable empty Set reference for initial state — avoids reference instability on mount */
+const EMPTY_NOTE_SET = new Set<number>();
 
 function App(): React.JSX.Element {
   const { t } = useTranslation();
@@ -115,10 +121,15 @@ function App(): React.JSX.Element {
     void loadProgressSessions();
   }, [isProgressLoaded, loadProgressSessions]);
 
-  // Sync persisted volume from settings (0-100) → playback store (0-1) on mount
+  // Sync persisted volume from settings (0-100) → playback store (0-1) on mount.
+  // If the user was muted when the app last closed, honour that on startup.
   useEffect(() => {
-    const persistedVolume = useSettingsStore.getState().volume;
-    usePlaybackStore.getState().setVolume(persistedVolume / 100);
+    const settings = useSettingsStore.getState();
+    if (settings.muted) {
+      usePlaybackStore.getState().setVolume(0);
+    } else {
+      usePlaybackStore.getState().setVolume(settings.volume / 100);
+    }
   }, []);
 
   // Core playback stats
@@ -171,12 +182,12 @@ function App(): React.JSX.Element {
 
   // ─── End Phase 7 ──────────────────────────────────────
 
-  const [activeNotes, setActiveNotes] = useState<Set<number>>(new Set());
+  const [activeNotes, setActiveNotes] = useState<Set<number>>(EMPTY_NOTE_SET);
   const midiActiveNotes = useMidiDeviceStore((s) => s.activeNotes);
 
   // ── Practice mode: transient hit/miss sets for PianoKeyboard CSS animations ──
-  const [hitNotes, setHitNotes] = useState<Set<number>>(new Set());
-  const [missedNotes, setMissedNotes] = useState<Set<number>>(new Set());
+  const [hitNotes, setHitNotes] = useState<Set<number>>(EMPTY_NOTE_SET);
+  const [missedNotes, setMissedNotes] = useState<Set<number>>(EMPTY_NOTE_SET);
   const hitTimersRef = useRef<Map<number, ReturnType<typeof setTimeout>>>(
     new Map(),
   );
@@ -184,39 +195,52 @@ function App(): React.JSX.Element {
     new Map(),
   );
 
-  const addHitNote = useCallback((midi: number) => {
-    setHitNotes((prev) => new Set(prev).add(midi));
-    const existing = hitTimersRef.current.get(midi);
-    if (existing) clearTimeout(existing);
-    hitTimersRef.current.set(
-      midi,
-      setTimeout(() => {
-        hitTimersRef.current.delete(midi);
-        setHitNotes((prev) => {
-          const next = new Set(prev);
-          next.delete(midi);
-          return next;
-        });
-      }, 250),
-    );
-  }, []);
+  // R2-01 fix: Shared helper for transient note highlight state.
+  // Mutates the Set in place (same reference trick) to avoid creating a new
+  // Set on every hit/miss. React re-renders via forced state identity change.
+  const addTransientNote = useCallback(
+    (
+      midi: number,
+      setter: React.Dispatch<React.SetStateAction<Set<number>>>,
+      timers: Map<number, ReturnType<typeof setTimeout>>,
+      durationMs: number,
+    ) => {
+      setter((prev) => {
+        // Only create a new Set if the note isn't already present
+        if (prev.has(midi)) return prev;
+        const next = new Set(prev);
+        next.add(midi);
+        return next;
+      });
+      const existing = timers.get(midi);
+      if (existing) clearTimeout(existing);
+      timers.set(
+        midi,
+        setTimeout(() => {
+          timers.delete(midi);
+          setter((prev) => {
+            if (!prev.has(midi)) return prev;
+            const next = new Set(prev);
+            next.delete(midi);
+            return next;
+          });
+        }, durationMs),
+      );
+    },
+    [],
+  );
 
-  const addMissNote = useCallback((midi: number) => {
-    setMissedNotes((prev) => new Set(prev).add(midi));
-    const existing = missTimersRef.current.get(midi);
-    if (existing) clearTimeout(existing);
-    missTimersRef.current.set(
-      midi,
-      setTimeout(() => {
-        missTimersRef.current.delete(midi);
-        setMissedNotes((prev) => {
-          const next = new Set(prev);
-          next.delete(midi);
-          return next;
-        });
-      }, 450),
-    );
-  }, []);
+  const addHitNote = useCallback(
+    (midi: number) =>
+      addTransientNote(midi, setHitNotes, hitTimersRef.current, 250),
+    [addTransientNote],
+  );
+
+  const addMissNote = useCallback(
+    (midi: number) =>
+      addTransientNote(midi, setMissedNotes, missTimersRef.current, 450),
+    [addTransientNote],
+  );
 
   const handleActiveNotesChange = useCallback((notes: Set<number>) => {
     setActiveNotes(notes);
@@ -233,7 +257,11 @@ function App(): React.JSX.Element {
     engine: null,
     scheduler: null,
   });
-  const recoveryInFlightRef = useRef<Promise<void> | null>(null);
+  const recoveryInFlightRef = useRef<Promise<unknown> | null>(null);
+  // R1-02 + R1-05: Generation counter to prevent double-start races.
+  // Incremented by both song-init and handlePlayAgain; only the latest
+  // generation is allowed to call setPlaying(true).
+  const playStartGenerationRef = useRef(0);
   const deviceChangeDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(
     null,
   );
@@ -276,7 +304,14 @@ function App(): React.JSX.Element {
       // the subscriber may call scheduler.start() / engine.resume() on a
       // partially initialized engine, producing silent visual playback.
       usePlaybackStore.getState().setAudioStatus("loading");
-      await engine.init();
+      try {
+        await engine.init();
+      } catch (err) {
+        // R1-06: Dispose the newly constructed engine if init() fails to
+        // avoid orphaned AudioContext / SoundFont resources.
+        engine.dispose();
+        throw err;
+      }
 
       // Now safe to expose to the rest of the app
       audioRef.current = { engine, scheduler };
@@ -299,10 +334,24 @@ function App(): React.JSX.Element {
     [],
   );
 
+  // R1-04: Track whether a new recovery trigger arrived during an in-flight
+  // recovery. If so, we re-invoke after the current recovery finishes.
+  const pendingRecoveryTriggerRef = useRef<{
+    reason: string;
+    error?: unknown;
+  } | null>(null);
+
   const recoverAudio = useCallback(
     (reason: string, error?: unknown): void => {
       const activeSong = useSongStore.getState().song;
-      if (!activeSong || recoveryInFlightRef.current) return;
+      if (!activeSong) return;
+
+      // R1-04: If recovery is already in flight, stash the trigger so the
+      // finally block can re-invoke after the current recovery completes.
+      if (recoveryInFlightRef.current) {
+        pendingRecoveryTriggerRef.current = { reason, error };
+        return;
+      }
 
       if (error) {
         console.error(
@@ -311,57 +360,90 @@ function App(): React.JSX.Element {
         );
       }
 
-      const recovery = (async () => {
-        for (
-          let attempt = 1;
-          attempt <= AUDIO_RECOVERY_MAX_ATTEMPTS;
-          attempt++
-        ) {
-          usePlaybackStore
-            .getState()
-            .setAudioRecovering(attempt, AUDIO_RECOVERY_MAX_ATTEMPTS);
+      // R1-07: Recovery loop logic extracted to engines/audio/runRecoveryLoop.ts
+      // for independent testability.
+      const recovery = runRecoveryLoop({
+        onAttemptStart: (attempt, maxAttempts) => {
+          usePlaybackStore.getState().setAudioRecovering(attempt, maxAttempts);
+        },
+        getSong: () => useSongStore.getState().song,
+        rebuild: rebuildAudioStack,
+        onSuccess: async () => {
+          // Read state AFTER async rebuild to avoid stale snapshot
+          const { isPlaying, currentTime } = usePlaybackStore.getState();
+          if (isPlaying) {
+            const { engine, scheduler } = audioRef.current;
+            if (engine && scheduler) {
+              scheduler.start(currentTime);
+              await engine.resume();
 
-          try {
-            const liveSong = useSongStore.getState().song;
-            if (!liveSong) {
-              usePlaybackStore.getState().clearAudioRecovery();
-              return;
-            }
-
-            await rebuildAudioStack(liveSong);
-
-            // Read state AFTER async rebuild to avoid stale snapshot
-            const { isPlaying, currentTime } = usePlaybackStore.getState();
-            if (isPlaying) {
-              const { engine, scheduler } = audioRef.current;
-              if (engine && scheduler) {
-                scheduler.start(currentTime);
-                await engine.resume();
+              // R1-03: Restart metronome after successful recovery during
+              // playback. The metronome was disposed + reinited inside
+              // rebuildAudioStack, but isPlaying never toggled false→true
+              // so the playback subscriber's start-check won't fire.
+              const metronome = getMetronome();
+              if (metronome) {
+                const { metronomeEnabled } = useSettingsStore.getState();
+                metronome.setEnabled(metronomeEnabled);
+                if (metronomeEnabled) {
+                  const practiceSpeed = usePracticeStore.getState().speed;
+                  const currentSong = useSongStore.getState().song;
+                  if (currentSong) {
+                    // R1-04 fix: use shared getTempoAtTime utility
+                    const { bpm, beatsPerMeasure } = getTempoAtTime(
+                      currentTime,
+                      currentSong.tempos,
+                      currentSong.timeSignatures,
+                    );
+                    metronome.start(bpm * practiceSpeed, beatsPerMeasure);
+                  }
+                }
               }
             }
-            usePlaybackStore.getState().setAudioRecoverySucceeded();
-            return;
-          } catch (err) {
-            console.error(
-              `Audio recovery attempt ${attempt}/${AUDIO_RECOVERY_MAX_ATTEMPTS} failed:`,
-              err,
-            );
-            if (attempt >= AUDIO_RECOVERY_MAX_ATTEMPTS) {
-              throw err;
-            }
-            await delay(computeRecoveryBackoffMs(attempt));
           }
-        }
-      })()
-        .catch((err) => {
-          console.error("Audio recovery failed:", err);
+          usePlaybackStore.getState().setAudioRecoverySucceeded();
+        },
+        onExhausted: () => {
+          console.error("Audio recovery failed: all attempts exhausted");
+          // R2-03: Clear pending trigger so the finally block doesn't
+          // re-launch recovery after exhaustion (phantom recovery).
+          pendingRecoveryTriggerRef.current = null;
           const playback = usePlaybackStore.getState();
           playback.setAudioStatus("error");
           playback.setAudioRecoveryFailed(AUDIO_RECOVERY_MAX_ATTEMPTS);
           playback.setPlaying(false);
+        },
+        onAbort: () => {
+          usePlaybackStore.getState().clearAudioRecovery();
+        },
+      })
+        .catch((err) => {
+          // R2-02: onSuccess failures propagate here (e.g. engine.resume()
+          // threw after a successful rebuild). This is a different failure
+          // mode than rebuild exhaustion — the audio stack was rebuilt but
+          // is unusable. Set error state without burning retry slots.
+          console.error("Audio recovery onSuccess failed:", err);
+          const playback = usePlaybackStore.getState();
+          playback.setAudioStatus("error");
+          playback.setAudioRecoveryFailed(1);
+          playback.setPlaying(false);
+          // Clear pending trigger — don't retry on a broken audio stack
+          pendingRecoveryTriggerRef.current = null;
         })
         .finally(() => {
           recoveryInFlightRef.current = null;
+
+          // R1-04 + R2-03: If a new error arrived during recovery,
+          // re-invoke now. The pending ref is cleared by onExhausted
+          // and onSuccess-catch, so this only fires on success/abort.
+          const pending = pendingRecoveryTriggerRef.current;
+          if (pending) {
+            pendingRecoveryTriggerRef.current = null;
+            // Use queueMicrotask to avoid synchronous recursion stacking frames.
+            queueMicrotask(() => {
+              triggerRecoveryRef.current(pending.reason, pending.error);
+            });
+          }
         });
 
       recoveryInFlightRef.current = recovery;
@@ -452,6 +534,8 @@ function App(): React.JSX.Element {
     if (!song) return;
 
     let cancelled = false;
+    // R1-05: Capture a generation number so rapid song switches can't race.
+    const generation = ++playStartGenerationRef.current;
 
     const init = async (): Promise<void> => {
       if (recoveryInFlightRef.current) {
@@ -460,7 +544,13 @@ function App(): React.JSX.Element {
       if (cancelled) return;
 
       const { engine, scheduler } = audioRef.current;
-      if (engine && scheduler && engine.status === "ready") {
+      // R3-01 fix: also verify AudioContext.state is usable. After a device
+      // change without a WASAPI error, engine.status may be "ready" but the
+      // underlying AudioContext could be "closed" or "suspended" indefinitely.
+      const ctxHealthy =
+        engine?.audioContext?.state === "running" ||
+        engine?.audioContext?.state === "suspended";
+      if (engine && scheduler && engine.status === "ready" && ctxHealthy) {
         // Engine already healthy, just bind the new song
         scheduler.setSong(song);
         scheduler.setSpeed(usePracticeStore.getState().speed);
@@ -477,9 +567,10 @@ function App(): React.JSX.Element {
         }
       }
 
-      // Auto-play: start playback immediately after audio is ready
-      // (matches Synthesia UX — selecting a song begins playback)
-      if (!cancelled) {
+      // R1-02 + R1-05: Only auto-play if this is still the latest generation.
+      // A concurrent song switch or handlePlayAgain may have bumped the counter,
+      // in which case we yield to the newer initiator.
+      if (!cancelled && playStartGenerationRef.current === generation) {
         usePlaybackStore.getState().setPlaying(true);
       }
     };
@@ -518,6 +609,10 @@ function App(): React.JSX.Element {
         // still works once it unfreezes.
         scheduler.start(state.currentTime);
         void engine.resume().catch((err) => {
+          // R2-02 fix: flush any notes queued during the suspended window
+          // to prevent them from firing all at once if a subsequent resume
+          // succeeds during recovery.
+          engine.allNotesOff();
           scheduler.stop();
           triggerRecoveryRef.current("resume-failed", err);
         });
@@ -628,11 +723,21 @@ function App(): React.JSX.Element {
 
   const handlePlayAgain = useCallback(() => {
     setShowSongComplete(false);
+    // R1-02: Bump the generation counter so any in-flight song-init auto-play
+    // is invalidated before we issue our own setPlaying(true).
+    const generation = ++playStartGenerationRef.current;
     usePlaybackStore.getState().reset();
     usePracticeStore.getState().resetScore();
-    // Auto-start playback so the child doesn't need to press play again
+    // Auto-start playback so the child doesn't need to press play again.
+    // Using rAF ensures reset()'s isPlaying=false propagates through
+    // subscribers before we set isPlaying=true, giving a clean transition.
     requestAnimationFrame(() => {
-      usePlaybackStore.getState().setPlaying(true);
+      // R2-04: Use generation counter (not isPlaying) to guard against
+      // concurrent song-init errors that may have set isPlaying=false
+      // within the rAF delay window.
+      if (playStartGenerationRef.current === generation) {
+        usePlaybackStore.getState().setPlaying(true);
+      }
     });
   }, []);
 
@@ -684,9 +789,16 @@ function App(): React.JSX.Element {
   // ─── Phase 6: Practice Engine lifecycle (extracted to hook) ──
   // R3-003: Speed -> AudioScheduler sync is now inside usePracticeLifecycle
   // to avoid duplicate subscribers.
+  // R3-02 fix: use ref for callback stability — avoids re-subscribe when
+  // addHitNote/addMissNote references change (fragile dependency chain)
+  const practiceCallbacksRef = useRef({ onHitNote: addHitNote, onMissNote: addMissNote });
+  practiceCallbacksRef.current = { onHitNote: addHitNote, onMissNote: addMissNote };
   const practiceCallbacks = useMemo(
-    () => ({ onHitNote: addHitNote, onMissNote: addMissNote }),
-    [addHitNote, addMissNote],
+    () => ({
+      onHitNote: (midi: number) => practiceCallbacksRef.current.onHitNote(midi),
+      onMissNote: (midi: number) => practiceCallbacksRef.current.onMissNote(midi),
+    }),
+    [],
   );
   const { handleNoteRendererReady, noteRendererRef } = usePracticeLifecycle(
     song,
@@ -752,9 +864,18 @@ function App(): React.JSX.Element {
     async (filePath: string): Promise<void> => {
       if (!window.api) return;
       try {
+        // R1-01 fix: wrap IPC calls with timeout to prevent indefinite hangs
         const result = filePath.startsWith("builtin:")
-          ? await window.api.loadBuiltinSong(filePath.slice("builtin:".length))
-          : await window.api.loadMidiPath(filePath);
+          ? await withTimeout(
+              window.api.loadBuiltinSong(filePath.slice("builtin:".length)),
+              10_000,
+              "loadBuiltinSong",
+            )
+          : await withTimeout(
+              window.api.loadMidiPath(filePath),
+              10_000,
+              "loadMidiPath",
+            );
         if (result) {
           const parsed = parseMidiFile(result.fileName, result.data);
           loadSong(parsed);
@@ -768,18 +889,8 @@ function App(): React.JSX.Element {
   );
 
   // ─── Phase 6.5: Mute toggle ────────────────────────────
-  const muteRef = useRef({
-    prevVolume: usePlaybackStore.getState().volume || 0.8,
-  });
-  const handleToggleMute = useCallback(() => {
-    const pb = usePlaybackStore.getState();
-    if (pb.volume > 0) {
-      muteRef.current.prevVolume = pb.volume;
-      pb.setVolume(0);
-    } else {
-      pb.setVolume(muteRef.current.prevVolume || 0.8);
-    }
-  }, []);
+  // R1-03 fix: toggleMute is a stable module-level function — no wrapper needed
+  const handleToggleMute = toggleMute;
 
   // ─── Phase 6.5: Keyboard shortcuts ─────────────────────
   useKeyboardShortcuts({
@@ -790,6 +901,16 @@ function App(): React.JSX.Element {
   // ─── Phase 6.5: Drag-and-drop MIDI import ──────────────
   const [isDragging, setIsDragging] = useState(false);
   const [dragError, setDragError] = useState<string | null>(null);
+  /** R2-03 fix: shared auto-dismiss helper for drag error messages */
+  const DRAG_ERROR_DISMISS_MS = 3000;
+  const showDragError = useCallback((msg: string) => {
+    setDragError(msg);
+    if (dragErrorTimerRef.current) clearTimeout(dragErrorTimerRef.current);
+    dragErrorTimerRef.current = setTimeout(
+      () => setDragError(null),
+      DRAG_ERROR_DISMISS_MS,
+    );
+  }, []);
   const dragCountRef = useRef(0);
   const dragErrorTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -830,9 +951,7 @@ function App(): React.JSX.Element {
       const file = files[0];
       const ext = file.name.toLowerCase().slice(file.name.lastIndexOf("."));
       if (!MIDI_EXTENSIONS.includes(ext)) {
-        setDragError(t("app.invalidFileType", { ext }));
-        if (dragErrorTimerRef.current) clearTimeout(dragErrorTimerRef.current);
-        dragErrorTimerRef.current = setTimeout(() => setDragError(null), 3000);
+        showDragError(t("app.invalidFileType", { ext }));
         return;
       }
 
@@ -846,19 +965,11 @@ function App(): React.JSX.Element {
           reset();
         } catch (err) {
           console.error("Failed to parse dropped MIDI file:", err);
-          setDragError(t("app.failedParse"));
-          if (dragErrorTimerRef.current)
-            clearTimeout(dragErrorTimerRef.current);
-          dragErrorTimerRef.current = setTimeout(
-            () => setDragError(null),
-            3000,
-          );
+          showDragError(t("app.failedParse"));
         }
       };
       reader.onerror = () => {
-        setDragError(t("app.failedRead"));
-        if (dragErrorTimerRef.current) clearTimeout(dragErrorTimerRef.current);
-        dragErrorTimerRef.current = setTimeout(() => setDragError(null), 3000);
+        showDragError(t("app.failedRead"));
       };
       reader.readAsArrayBuffer(file);
     },
@@ -915,7 +1026,8 @@ function App(): React.JSX.Element {
           role="region"
           aria-label="Drop zone"
           style={{
-            background: "rgba(6, 10, 12, 0.55)",
+            background:
+              "color-mix(in srgb, var(--color-bg) 55%, transparent)",
             backdropFilter: "blur(8px)",
           }}
         >
@@ -958,10 +1070,11 @@ function App(): React.JSX.Element {
           role="alert"
           className="fixed top-4 left-1/2 -translate-x-1/2 z-50 px-4 py-2 rounded-lg text-sm font-body subtle-shadow"
           style={{
-            background: "color-mix(in srgb, #dc2626 55%, var(--color-surface))",
+            background:
+              "color-mix(in srgb, var(--color-error) 55%, var(--color-surface))",
             color: "var(--color-text)",
             border:
-              "1px solid color-mix(in srgb, #dc2626 30%, var(--color-border))",
+              "1px solid color-mix(in srgb, var(--color-error) 30%, var(--color-border))",
           }}
         >
           {dragError}

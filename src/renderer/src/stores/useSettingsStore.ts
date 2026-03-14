@@ -47,6 +47,13 @@ interface SettingsState {
    * preference survives app restarts.
    */
   muted: boolean;
+  /**
+   * Persisted last non-zero volume (0-100 scale). Used as the canonical
+   * restore-target when unmuting. Updated whenever volume is set to a value > 0.
+   * This eliminates stale-ref issues and ensures consistent unmute behavior
+   * across SettingsPanel toggles and keyboard shortcuts.
+   */
+  lastNonZeroVolume: number;
   defaultSpeed: number;
   defaultMode: PracticeMode;
   metronomeEnabled: boolean;
@@ -83,6 +90,7 @@ interface PersistedSettings {
   language?: Language;
   volume?: number;
   muted?: boolean;
+  lastNonZeroVolume?: number;
   defaultSpeed?: number;
   defaultMode?: PracticeMode;
   metronomeEnabled?: boolean;
@@ -102,6 +110,7 @@ const defaults: PersistedSettings = {
   language: detectLanguage(),
   volume: 80,
   muted: false,
+  lastNonZeroVolume: 80,
   defaultSpeed: 1.0,
   defaultMode: "watch",
   metronomeEnabled: false,
@@ -113,12 +122,61 @@ const defaults: PersistedSettings = {
   kidMode: false,
 };
 
+/** Clamp a value to a valid range, falling back to a default if not a finite number. */
+function clampNum(
+  value: unknown,
+  min: number,
+  max: number,
+  fallback: number,
+): number {
+  if (typeof value !== "number" || !isFinite(value)) return fallback;
+  return Math.max(min, Math.min(max, Math.round(value)));
+}
+
 function loadSavedSettings(): PersistedSettings {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (raw) {
       const parsed = JSON.parse(raw) as PersistedSettings;
-      return { ...defaults, ...parsed };
+      const merged = { ...defaults, ...parsed };
+      // R3-02 fix: Validate numeric ranges on load — same clamping as setters.
+      // Without this, corrupted localStorage can create out-of-range values
+      // that bypass setter validation (setters clamp, but initial load doesn't).
+      merged.volume = clampNum(merged.volume, 0, 100, defaults.volume!);
+      merged.lastNonZeroVolume = clampNum(
+        merged.lastNonZeroVolume,
+        0,
+        100,
+        merged.volume,
+      );
+      merged.defaultSpeed = Math.max(
+        0.25,
+        Math.min(
+          2.0,
+          typeof merged.defaultSpeed === "number" && isFinite(merged.defaultSpeed)
+            ? merged.defaultSpeed
+            : defaults.defaultSpeed!,
+        ),
+      );
+      merged.countInBeats = clampNum(
+        merged.countInBeats,
+        0,
+        8,
+        defaults.countInBeats!,
+      );
+      merged.latencyCompensation = clampNum(
+        merged.latencyCompensation,
+        0,
+        200,
+        defaults.latencyCompensation!,
+      );
+      merged.noteReleaseMs = clampNum(
+        merged.noteReleaseMs,
+        50,
+        300,
+        defaults.noteReleaseMs!,
+      );
+      return merged;
     }
   } catch {
     // localStorage might not be available
@@ -155,6 +213,8 @@ export const useSettingsStore = create<SettingsState>()((set) => {
     language: saved.language ?? defaults.language!,
     volume: saved.volume ?? defaults.volume!,
     muted: saved.muted ?? defaults.muted!,
+    lastNonZeroVolume:
+      saved.lastNonZeroVolume ?? saved.volume ?? defaults.lastNonZeroVolume!,
     defaultSpeed: saved.defaultSpeed ?? defaults.defaultSpeed!,
     defaultMode: VALID_PRACTICE_MODES.includes(
       saved.defaultMode as PracticeMode,
@@ -195,8 +255,13 @@ export const useSettingsStore = create<SettingsState>()((set) => {
     },
     setVolume: (v) => {
       const clamped = Math.max(0, Math.min(100, v));
-      persist({ volume: clamped });
-      set({ volume: clamped });
+      if (clamped > 0) {
+        persist({ volume: clamped, lastNonZeroVolume: clamped });
+        set({ volume: clamped, lastNonZeroVolume: clamped });
+      } else {
+        persist({ volume: clamped });
+        set({ volume: clamped });
+      }
     },
     setMuted: (v) => {
       persist({ muted: v });

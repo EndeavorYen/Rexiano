@@ -6,6 +6,7 @@ import {
   Search,
   ArrowLeft,
   PanelRightOpen,
+  RefreshCw,
   X,
 } from "lucide-react";
 import { useSongStore } from "../../stores/useSongStore";
@@ -20,8 +21,15 @@ import { groupSongsByCategory, categoryI18nKeys } from "./songCardUtils";
 import type { TranslationKey } from "../../i18n/types";
 import { DeviceSelector } from "../midiDevice/DeviceSelector";
 import { useTranslation } from "../../i18n/useTranslation";
+import { withTimeout } from "@renderer/engines/audio/recoveryUtils";
 import appIcon from "../../../../../docs/figure/Rexiano_icon.png";
 import type { RecentFile } from "../../../../shared/types";
+
+/** IPC timeout in milliseconds — prevents indefinite hangs (R1-02) */
+const IPC_TIMEOUT_MS = 10_000;
+
+/** Auto-dismiss timer for inline error messages (R1-04) */
+const ERROR_AUTO_DISMISS_MS = 5_000;
 
 interface SongLibraryProps {
   onOpenFile: () => Promise<void>;
@@ -34,15 +42,19 @@ export function SongLibrary({
 }: SongLibraryProps): React.JSX.Element {
   const { t } = useTranslation();
 
-  const greeting = useMemo(() => {
-    const hour = new Date().getHours();
-    if (hour < 12) return t("library.greeting.morning");
-    if (hour < 17) return t("library.greeting.afternoon");
-    return t("library.greeting.evening");
-  }, [t]);
+  // R3-02 fix: removed useMemo — cheap computation, and stale greeting across
+  // time-of-day boundaries was a UX issue for long sessions. Re-evaluates every render.
+  const hour = new Date().getHours();
+  const greeting =
+    hour < 12
+      ? t("library.greeting.morning")
+      : hour < 17
+        ? t("library.greeting.afternoon")
+        : t("library.greeting.evening");
 
   const songs = useSongLibraryStore((s) => s.songs);
   const isLoading = useSongLibraryStore((s) => s.isLoading);
+  const fetchError = useSongLibraryStore((s) => s.fetchError);
   const searchQuery = useSongLibraryStore((s) => s.searchQuery);
   const gradeFilter = useSongLibraryStore((s) => s.gradeFilter);
   const fetchSongs = useSongLibraryStore((s) => s.fetchSongs);
@@ -58,11 +70,21 @@ export function SongLibrary({
     null,
   );
   const [showDeviceDrawer, setShowDeviceDrawer] = useState(false);
+
+  // R1-03: mountedRef guards async setState after unmount
+  const mountedRef = useRef(true);
+  // R1-01: synchronous interlock prevents double-click races
+  const loadingRef = useRef(false);
   const recentErrorTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // R1-04: auto-dismiss timer for builtin song error
+  const builtinErrorTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
+    mountedRef.current = true;
     return () => {
+      mountedRef.current = false;
       if (recentErrorTimer.current) clearTimeout(recentErrorTimer.current);
+      if (builtinErrorTimer.current) clearTimeout(builtinErrorTimer.current);
     };
   }, []);
 
@@ -104,77 +126,109 @@ export function SongLibrary({
     [filteredSongs],
   );
 
-  const handleSelectSong = useCallback(
-    async (songId: string) => {
-      if (!window.api?.loadBuiltinSong) return;
-      if (loadingId !== null || loadingRecentPath !== null) return;
-      setError(null);
-      setLoadingId(songId);
+  // Derived: true when any song or recent file is currently loading
+  const isGloballyLoading = loadingId !== null || loadingRecentPath !== null;
+
+  /**
+   * R2-02 fix: shared song-loading helper. Both handleSelectSong and handleSelectRecent
+   * delegate here to eliminate the ~50-line duplication. Differences are parameterized.
+   */
+  const loadSongViaIpc = useCallback(
+    async (opts: {
+      ipcCall: () => Promise<{ fileName: string; data: number[] } | null>;
+      recentEntry: { path: string; name?: string };
+      setErr: (msg: string | null) => void;
+      setLoading: (v: string | null) => void;
+      loadingKey: string;
+      timerRef: React.MutableRefObject<ReturnType<typeof setTimeout> | null>;
+      label: string;
+    }) => {
+      if (loadingRef.current) return;
+      loadingRef.current = true;
+
+      if (mountedRef.current) {
+        opts.setErr(null);
+        opts.setLoading(opts.loadingKey);
+      }
+      if (opts.timerRef.current) {
+        clearTimeout(opts.timerRef.current);
+        opts.timerRef.current = null;
+      }
       try {
-        const result = await window.api.loadBuiltinSong(songId);
-        if (result) {
-          loadFromMidiData(result.fileName, result.data);
-          reset();
-          void window.api.saveRecentFile({
-            path: `builtin:${songId}`,
-            name: result.fileName,
-            timestamp: Date.now(),
-          });
-          refreshRecents();
+        const result = await withTimeout(
+          opts.ipcCall(),
+          IPC_TIMEOUT_MS,
+          opts.label,
+        );
+        if (!mountedRef.current) return;
+        if (!result) {
+          opts.setErr(t("general.error"));
+          opts.timerRef.current = setTimeout(() => {
+            if (mountedRef.current) opts.setErr(null);
+          }, ERROR_AUTO_DISMISS_MS);
+          return;
         }
+        loadFromMidiData(result.fileName, result.data);
+        reset();
+        void window.api?.saveRecentFile({
+          path: opts.recentEntry.path,
+          name: opts.recentEntry.name ?? result.fileName,
+          timestamp: Date.now(),
+        });
+        refreshRecents();
       } catch (e) {
+        if (!mountedRef.current) return;
         const msg = e instanceof Error ? e.message : t("general.error");
-        setError(msg);
-        console.error("Failed to load built-in song:", e);
+        opts.setErr(msg);
+        opts.timerRef.current = setTimeout(() => {
+          if (mountedRef.current) opts.setErr(null);
+        }, ERROR_AUTO_DISMISS_MS);
+        console.error(`Failed to load song (${opts.label}):`, e);
       } finally {
-        setLoadingId(null);
+        loadingRef.current = false;
+        if (mountedRef.current) opts.setLoading(null);
       }
     },
-    [loadFromMidiData, reset, refreshRecents, t, loadingId, loadingRecentPath],
+    [loadFromMidiData, reset, refreshRecents, t],
+  );
+
+  const handleSelectSong = useCallback(
+    (songId: string) => {
+      if (!window.api?.loadBuiltinSong) return;
+      void loadSongViaIpc({
+        ipcCall: () => window.api!.loadBuiltinSong(songId),
+        recentEntry: { path: `builtin:${songId}` },
+        setErr: setError,
+        setLoading: setLoadingId,
+        loadingKey: songId,
+        timerRef: builtinErrorTimer,
+        label: "loadBuiltinSong",
+      });
+    },
+    [loadSongViaIpc],
   );
 
   const visibleRecents = recentFiles.slice(0, 5);
 
   const handleSelectRecent = useCallback(
-    async (file: RecentFile) => {
+    (file: RecentFile) => {
       if (!window.api) return;
-      if (loadingId !== null || loadingRecentPath !== null) return;
-      setRecentError(null);
-      setLoadingRecentPath(file.path);
-      try {
-        const result = file.path.startsWith("builtin:")
-          ? await window.api.loadBuiltinSong(file.path.slice("builtin:".length))
-          : await window.api.loadMidiPath(file.path);
-
-        if (!result) {
-          setRecentError(t("general.error"));
-          if (recentErrorTimer.current) clearTimeout(recentErrorTimer.current);
-          recentErrorTimer.current = setTimeout(
-            () => setRecentError(null),
-            3000,
-          );
-          return;
-        }
-
-        loadFromMidiData(result.fileName, result.data);
-        reset();
-        void window.api.saveRecentFile({
-          path: file.path,
-          name: file.name,
-          timestamp: Date.now(),
-        });
-        refreshRecents();
-      } catch (e) {
-        const msg = e instanceof Error ? e.message : t("general.error");
-        setRecentError(msg);
-        if (recentErrorTimer.current) clearTimeout(recentErrorTimer.current);
-        recentErrorTimer.current = setTimeout(() => setRecentError(null), 3000);
-        console.error("Failed to load recent file:", e);
-      } finally {
-        setLoadingRecentPath(null);
-      }
+      void loadSongViaIpc({
+        ipcCall: () =>
+          file.path.startsWith("builtin:")
+            ? window.api!.loadBuiltinSong(file.path.slice("builtin:".length))
+            : window.api!.loadMidiPath(file.path),
+        recentEntry: { path: file.path, name: file.name },
+        setErr: setRecentError,
+        setLoading: setLoadingRecentPath,
+        loadingKey: file.path,
+        timerRef: recentErrorTimer,
+        label: file.path.startsWith("builtin:")
+          ? "loadBuiltinSong"
+          : "loadMidiPath",
+      });
     },
-    [loadFromMidiData, reset, refreshRecents, t, loadingId, loadingRecentPath],
+    [loadSongViaIpc],
   );
 
   return (
@@ -252,7 +306,7 @@ export function SongLibrary({
                 <button
                   key={file.path}
                   onClick={() => handleSelectRecent(file)}
-                  disabled={loadingRecentPath !== null || loadingId !== null}
+                  disabled={isGloballyLoading}
                   className="card-hover animate-page-enter group relative min-w-[190px] max-w-[280px] flex flex-col items-start gap-1 rounded-lg px-3 py-2 text-xs font-body font-medium cursor-pointer transition-all duration-150 disabled:opacity-50 disabled:cursor-wait"
                   style={{
                     background:
@@ -329,6 +383,44 @@ export function SongLibrary({
                   </div>
                 ))}
               </div>
+            ) : fetchError && songs.length === 0 ? (
+              /* R1-05: fetchSongs failure shown with retry button */
+              <div
+                className="text-center py-16 px-4 animate-page-enter"
+                style={{ color: "var(--color-text-muted)" }}
+              >
+                <div
+                  className="w-14 h-14 mx-auto mb-4 rounded-2xl flex items-center justify-center"
+                  style={{
+                    background:
+                      "color-mix(in srgb, var(--color-error) 10%, var(--color-surface))",
+                  }}
+                >
+                  <AlertCircle
+                    size={24}
+                    style={{ color: "var(--color-error)", opacity: 0.7 }}
+                  />
+                </div>
+                <p
+                  className="text-base font-display font-semibold mb-1.5"
+                  style={{ color: "var(--color-text)" }}
+                >
+                  {t("library.emptyTitle")}
+                </p>
+                <p
+                  className="text-sm font-body mb-4"
+                  style={{ color: "var(--color-error)" }}
+                >
+                  {fetchError}
+                </p>
+                <button
+                  onClick={() => fetchSongs()}
+                  className="btn-surface-themed inline-flex items-center gap-1.5 rounded-lg px-4 py-2 text-sm font-medium cursor-pointer"
+                >
+                  <RefreshCw size={14} />
+                  {t("general.retry")}
+                </button>
+              </div>
             ) : filteredSongs.length === 0 ? (
               <div
                 className="text-center py-16 px-4 animate-page-enter"
@@ -394,6 +486,23 @@ export function SongLibrary({
               </div>
             ) : (
               <div className="space-y-7">
+                {/* R1-02 fix: error rendered ONCE above all groups, not per-group */}
+                {error && (
+                  <div
+                    className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-body"
+                    style={{
+                      color: "var(--color-error)",
+                      background:
+                        "color-mix(in srgb, var(--color-error) 8%, var(--color-surface))",
+                      border:
+                        "1px solid color-mix(in srgb, var(--color-error) 25%, transparent)",
+                    }}
+                  >
+                    <AlertCircle size={12} className="shrink-0" />
+                    {error}
+                  </div>
+                )}
+
                 {categoryGroups.map((group, groupIdx) => (
                   <section
                     key={group.category}
@@ -431,10 +540,12 @@ export function SongLibrary({
                             animationDelay: `${(groupIdx * 4 + i) * 30}ms`,
                           }}
                         >
+                          {/* R1-06: pass disabled when any song is loading */}
                           <SongCard
                             song={song}
                             onSelect={handleSelectSong}
                             colorIndex={groupIdx * 4 + i}
+                            disabled={isGloballyLoading}
                           />
                           {loadingId === song.id && (
                             <div
@@ -463,14 +574,7 @@ export function SongLibrary({
           </div>
         </section>
 
-        {error && (
-          <p
-            className="mt-4 text-sm font-body"
-            style={{ color: "var(--color-error)" }}
-          >
-            {error}
-          </p>
-        )}
+        {/* R1-02 fix: error now renders once above the groups (handled inside the song grid section) */}
 
         <button
           onClick={() => setShowDeviceDrawer(true)}

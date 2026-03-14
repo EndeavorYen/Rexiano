@@ -249,6 +249,7 @@ export const zhTW: TranslationMap = {
   // ── General ────────────────────────────────────────────────────
   "general.loading": "載入中…",
   "general.error": "錯誤",
+  "general.retry": "重試",
   "general.close": "關閉",
   "general.save": "儲存",
   "general.cancel": "取消",

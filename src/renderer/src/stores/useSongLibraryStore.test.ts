@@ -39,6 +39,7 @@ describe("useSongLibraryStore", () => {
     useSongLibraryStore.setState({
       songs: [],
       isLoading: false,
+      fetchError: null,
       searchQuery: "",
       gradeFilter: "all",
     });
@@ -51,6 +52,7 @@ describe("useSongLibraryStore", () => {
     const s = useSongLibraryStore.getState();
     expect(s.songs).toEqual([]);
     expect(s.isLoading).toBe(false);
+    expect(s.fetchError).toBeNull();
     expect(s.searchQuery).toBe("");
     expect(s.gradeFilter).toBe("all");
   });
@@ -131,7 +133,7 @@ describe("useSongLibraryStore", () => {
 
   // ─── fetchSongs() — error handling ───────────────────
 
-  test("fetchSongs sets empty songs on IPC error", async () => {
+  test("fetchSongs sets empty songs and fetchError on IPC error", async () => {
     mockListBuiltinSongs.mockRejectedValue(new Error("IPC connection failed"));
 
     await useSongLibraryStore.getState().fetchSongs();
@@ -139,17 +141,41 @@ describe("useSongLibraryStore", () => {
     const s = useSongLibraryStore.getState();
     expect(s.songs).toEqual([]);
     expect(s.isLoading).toBe(false);
+    expect(s.fetchError).toBe("IPC connection failed");
   });
 
-  test("fetchSongs clears previously loaded songs on error", async () => {
+  test("fetchSongs preserves existing songs on error (R1-03 fix)", async () => {
     // First: load songs successfully
     mockListBuiltinSongs.mockResolvedValue(sampleSongs);
     await useSongLibraryStore.getState().fetchSongs();
     expect(useSongLibraryStore.getState().songs).toHaveLength(2);
+    expect(useSongLibraryStore.getState().fetchError).toBeNull();
 
-    // Second: fetch fails
+    // Second: fetch fails — songs should be preserved, error shown
     mockListBuiltinSongs.mockRejectedValue(new Error("Network error"));
     await useSongLibraryStore.getState().fetchSongs();
-    expect(useSongLibraryStore.getState().songs).toEqual([]);
+    expect(useSongLibraryStore.getState().songs).toHaveLength(2); // preserved!
+    expect(useSongLibraryStore.getState().fetchError).toBe("Network error");
+  });
+
+  test("fetchSongs clears fetchError on subsequent success", async () => {
+    // First: fail
+    mockListBuiltinSongs.mockRejectedValue(new Error("Failed"));
+    await useSongLibraryStore.getState().fetchSongs();
+    expect(useSongLibraryStore.getState().fetchError).toBe("Failed");
+
+    // Second: succeed
+    mockListBuiltinSongs.mockResolvedValue(sampleSongs);
+    await useSongLibraryStore.getState().fetchSongs();
+    expect(useSongLibraryStore.getState().fetchError).toBeNull();
+    expect(useSongLibraryStore.getState().songs).toHaveLength(2);
+  });
+
+  test("fetchSongs uses fallback message for non-Error throws", async () => {
+    mockListBuiltinSongs.mockRejectedValue("string error");
+    await useSongLibraryStore.getState().fetchSongs();
+    expect(useSongLibraryStore.getState().fetchError).toBe(
+      "Failed to load song library",
+    );
   });
 });

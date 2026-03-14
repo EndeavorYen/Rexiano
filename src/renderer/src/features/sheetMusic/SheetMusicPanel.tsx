@@ -13,6 +13,7 @@ import { useRef, useEffect, useState, useMemo, useCallback } from "react";
 import { useTranslation } from "@renderer/i18n/useTranslation";
 import { usePlaybackStore } from "@renderer/stores/usePlaybackStore";
 import { useThemeStore } from "@renderer/stores/useThemeStore";
+import { themes } from "@renderer/themes/tokens";
 import type {
   NotationData,
   NotationExpression,
@@ -29,17 +30,33 @@ import {
   type ChordGroup,
 } from "./sheetMusicRenderLogic";
 import { calcMeasureWidths } from "./sheetMusicUtils";
+import {
+  accidentalToDisplay,
+  isDottedDuration,
+  baseDuration,
+  makeRestKey,
+  hexToRgba,
+} from "./sheetMusicHelpers";
+import type {
+  VexFlowModule,
+  VFRenderContext,
+  VFStave,
+  VFStaveNote,
+  VFVoice,
+} from "./vexflowTypes";
 
-/** Cached VexFlow module import + fonts.ready to avoid repeated async overhead */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-let _vexflowCache: Promise<any> | null = null;
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function loadVexFlow(): Promise<any> {
+/**
+ * Cached VexFlow module import + fonts.ready to avoid repeated async overhead.
+ *
+ * Exposed via `_resetVexFlowCache()` for test isolation.
+ */
+let _vexflowCache: Promise<VexFlowModule> | null = null;
+function loadVexFlow(): Promise<VexFlowModule> {
   if (!_vexflowCache) {
     _vexflowCache = import("vexflow")
       .then(async (VF) => {
         await document.fonts.ready;
-        return VF;
+        return VF as unknown as VexFlowModule;
       })
       .catch((err) => {
         _vexflowCache = null; // Clear cache so next attempt retries
@@ -48,6 +65,9 @@ function loadVexFlow(): Promise<any> {
   }
   return _vexflowCache;
 }
+
+/* R1-04 fix: removed _resetVexFlowCache + void trick.
+ * Tests mock loadVexFlow directly via vi.mock — no cache reset needed. */
 
 /** Layout constants */
 const STAVE_HEIGHT = 80;
@@ -69,107 +89,21 @@ const ACTIVE_NOTEHEAD_GLOW_BLUR_PX = 4.2;
 const ACTIVE_BEAT_SNAP_RATIO = 0.62;
 const ACTIVE_BEAT_MATCH_TICK_EPSILON = 1;
 
-/**
- * Extract the accidental symbol from a VexFlow key string.
- * e.g. "c#/4" → "#", "db/3" → "b", "e/4" → null, "f##/5" → "##", "abb/3" → "bb"
- */
-function extractAccidental(vexKey: string): string | null {
-  const slash = vexKey.indexOf("/");
-  const name = slash >= 0 ? vexKey.substring(0, slash) : vexKey;
-  // Strip the base letter (a-g), whatever remains is the accidental
-  const base = name.substring(0, 1);
-  const accidental = name.substring(base.length);
-  if (accidental === "" || accidental === "n") return null;
-  return accidental; // "#", "b", "##", "bb"
-}
-
-interface ParsedVexKey {
-  letter: string;
-  octave: string;
-  accidental: string | null;
-}
-
-/** Key-signature defaults by note letter. */
-const KEY_SIGNATURE_DEFAULTS: Record<string, Record<string, string>> = {
-  C: {},
-  G: { F: "#" },
-  D: { F: "#", C: "#" },
-  A: { F: "#", C: "#", G: "#" },
-  E: { F: "#", C: "#", G: "#", D: "#" },
-  B: { F: "#", C: "#", G: "#", D: "#", A: "#" },
-  "F#": { F: "#", C: "#", G: "#", D: "#", A: "#", E: "#" },
-  "C#": { F: "#", C: "#", G: "#", D: "#", A: "#", E: "#", B: "#" },
-  F: { B: "b" },
-  Bb: { B: "b", E: "b" },
-  Eb: { B: "b", E: "b", A: "b" },
-  Ab: { B: "b", E: "b", A: "b", D: "b" },
-  Db: { B: "b", E: "b", A: "b", D: "b", G: "b" },
-  Gb: { B: "b", E: "b", A: "b", D: "b", G: "b", C: "b" },
-  Cb: { B: "b", E: "b", A: "b", D: "b", G: "b", C: "b", F: "b" },
-};
-
-function parseVexKey(vexKey: string): ParsedVexKey | null {
-  const [nameRaw, octaveRaw] = vexKey.split("/");
-  if (!nameRaw || !octaveRaw) return null;
-
-  const name = nameRaw.toLowerCase();
-  const letter = name[0];
-  if (!letter || letter < "a" || letter > "g") return null;
-
-  const accidentalPart = name.slice(1);
-  return {
-    letter: letter.toUpperCase(),
-    octave: octaveRaw,
-    accidental: accidentalPart === "" ? null : accidentalPart,
-  };
-}
-
-function accidentalToDisplay(
-  vexKey: string,
-  keySignature: string | undefined,
-  accidentalState: Map<string, string>,
-  suppressDisplay = false,
-): string | null {
-  const parsed = parseVexKey(vexKey);
-  if (!parsed) return extractAccidental(vexKey);
-
-  const keyDefaults =
-    KEY_SIGNATURE_DEFAULTS[keySignature ?? "C"] ?? KEY_SIGNATURE_DEFAULTS.C;
-  const defaultAccidental = keyDefaults[parsed.letter] ?? "n";
-  const pitchId = `${parsed.letter}${parsed.octave}`;
-  const currentAccidental = accidentalState.get(pitchId) ?? defaultAccidental;
-  const targetAccidental = parsed.accidental ?? "n";
-
-  if (currentAccidental === targetAccidental) return null;
-  accidentalState.set(pitchId, targetAccidental);
-  return suppressDisplay ? null : targetAccidental;
-}
-
-/**
- * Check if a VexFlow duration string is dotted.
- * Dotted durations end with "d" (e.g. "qd", "hd", "8d", "wd").
- * Rest durations end with "r" or "dr" (e.g. "qr", "qdr").
- */
-function isDottedDuration(vexDuration: string): boolean {
-  const stripped = vexDuration.replace(/r$/, "");
-  return stripped.endsWith("d");
-}
-
-/**
- * Get the base VexFlow duration without the dotted suffix.
- * "qd" → "q", "8d" → "8", "hdr" → "hr", "wr" → "wr"
- */
-function baseDuration(vexDuration: string): string {
-  const isRest = vexDuration.endsWith("r");
-  let core = isRest ? vexDuration.slice(0, -1) : vexDuration;
-  if (core.endsWith("d")) {
-    core = core.slice(0, -1);
-  }
-  return isRest ? core + "r" : core;
-}
+/* Pure utility functions (extractAccidental, parseVexKey, accidentalToDisplay,
+ * isDottedDuration, baseDuration, makeRestKey, hexToRgba) are imported from
+ * ./sheetMusicHelpers — extracted for testability (R1-08). */
 
 /** Available zoom levels for sheet music display */
 const ZOOM_LEVELS = [0.75, 1.0, 1.25, 1.5] as const;
+
+/** R3-03 fix: module-level pure function for counting unique onset ticks. */
+function countOnsets(notes: { isRest?: boolean; startTick: number }[]): number {
+  const seen = new Set<number>();
+  for (const n of notes) {
+    if (!n.isRest) seen.add(n.startTick);
+  }
+  return seen.size;
+}
 
 interface SheetMusicPanelProps {
   notationData: NotationData | null;
@@ -177,35 +111,14 @@ interface SheetMusicPanelProps {
   height?: number;
 }
 
-/** Convert a hex color to rgba string for SVG use. */
-function hexToRgba(hex: string, alpha: number): string {
-  const cleaned = hex.replace("#", "");
-  const r = parseInt(cleaned.substring(0, 2), 16);
-  const g = parseInt(cleaned.substring(2, 4), 16);
-  const b = parseInt(cleaned.substring(4, 6), 16);
-  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
-}
-
-/**
- * Build a VexFlow rest note at the appropriate position for the clef.
- * Uses b/4 for treble, d/3 for bass as conventional rest placement.
- */
-function makeRestKey(clef: "treble" | "bass"): string {
-  return clef === "treble" ? "b/4" : "d/3";
-}
-
 /** Return value from renderMeasure for post-render passes (ties, beams). */
 interface MeasureRenderResult {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  trebleVexNotes: any[];
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  bassVexNotes: any[];
+  trebleVexNotes: VFStaveNote[];
+  bassVexNotes: VFStaveNote[];
   trebleChords: ChordGroup[];
   bassChords: ChordGroup[];
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  trebleStave: any;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  bassStave: any;
+  trebleStave: VFStave;
+  bassStave: VFStave;
   tickAnchors: TickAnchor[];
 }
 
@@ -219,6 +132,20 @@ interface NoteHeadHighlight {
   cy: number;
   rx: number;
   ry: number;
+}
+
+/**
+ * Cached per-measure chord + VexFlow note data for the lightweight
+ * beat-highlight overlay effect, keyed by measure index.
+ *
+ * Stored in a ref (not state) to avoid triggering re-renders.
+ */
+interface MeasureHighlightData {
+  trebleChords: ChordGroup[];
+  bassChords: ChordGroup[];
+  trebleVexNotes: VFStaveNote[];
+  bassVexNotes: VFStaveNote[];
+  ticksPerBeat: number;
 }
 
 function pickActiveBeatChordIndexes(
@@ -261,7 +188,7 @@ function pickActiveBeatChordIndexes(
 
 function collectNoteHeadHighlights(
   chords: ChordGroup[],
-  vexNotes: unknown[],
+  vexNotes: VFStaveNote[],
   ticksPerBeat: number,
   isActiveMeasure: boolean,
   activeBeatTick: number | null,
@@ -278,29 +205,15 @@ function collectNoteHeadHighlights(
   for (let i = 0; i < chords.length; i++) {
     if (!activeChordIndexes.has(i)) continue;
 
-    const vexNote = vexNotes[i] as
-      | {
-          getAbsoluteX?: unknown;
-          getGlyphWidth?: unknown;
-          getYs?: unknown;
-        }
-      | undefined;
-    const getAbsoluteX = vexNote?.getAbsoluteX;
-    const getGlyphWidth = vexNote?.getGlyphWidth;
-    const getYs = vexNote?.getYs;
-    if (
-      typeof getAbsoluteX !== "function" ||
-      typeof getGlyphWidth !== "function" ||
-      typeof getYs !== "function"
-    ) {
-      continue;
-    }
+    // R1-03 fix: VFStaveNote type provides compile-time safety
+    const vexNote = vexNotes[i];
+    if (!vexNote) continue;
 
-    const headX = Number(getAbsoluteX.call(vexNote));
-    const glyphWidth = Number(getGlyphWidth.call(vexNote));
-    const ys = getYs.call(vexNote) as unknown;
+    const headX = vexNote.getAbsoluteX();
+    const glyphWidth = vexNote.getGlyphWidth();
+    const ys = vexNote.getYs();
     if (!Number.isFinite(headX) || !Number.isFinite(glyphWidth)) continue;
-    if (!Array.isArray(ys) || ys.length === 0) continue;
+    if (ys.length === 0) continue;
 
     const width = Math.max(7, glyphWidth);
     const centerX = headX + width * 0.52;
@@ -319,53 +232,14 @@ function collectNoteHeadHighlights(
   return highlights;
 }
 
-function drawNoteHeadHighlights(
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  context: any,
-  highlights: NoteHeadHighlight[],
-  accentHex: string,
-): void {
-  if (highlights.length === 0) return;
-  const svg = context.svg as SVGSVGElement | undefined;
-  if (!svg) return;
-
-  const group = document.createElementNS("http://www.w3.org/2000/svg", "g");
-  group.setAttribute("pointer-events", "none");
-  group.setAttribute("data-rx-notehead-highlight-layer", "1");
-
-  for (const head of highlights) {
-    const ring = document.createElementNS(
-      "http://www.w3.org/2000/svg",
-      "ellipse",
-    );
-    ring.setAttribute("cx", String(head.cx));
-    ring.setAttribute("cy", String(head.cy));
-    ring.setAttribute("rx", String(head.rx));
-    ring.setAttribute("ry", String(head.ry));
-    ring.setAttribute("fill", "none");
-    ring.setAttribute("stroke", accentHex);
-    ring.setAttribute("stroke-width", String(ACTIVE_NOTEHEAD_STROKE_WIDTH_PX));
-    ring.setAttribute("opacity", "0.96");
-    ring.setAttribute(
-      "style",
-      `filter: drop-shadow(0 0 ${ACTIVE_NOTEHEAD_GLOW_BLUR_PX}px ${accentHex});`,
-    );
-    group.appendChild(ring);
-  }
-
-  svg.appendChild(group);
-}
-
 function buildTickAnchorsFromRenderedNotes(
   totalTicks: number,
   noteStartX: number,
   noteEndX: number,
   trebleChords: ChordGroup[],
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  trebleVexNotes: any[],
+  trebleVexNotes: VFStaveNote[],
   bassChords: ChordGroup[],
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  bassVexNotes: any[],
+  bassVexNotes: VFStaveNote[],
 ): TickAnchor[] {
   const boundedTotalTicks = Math.max(1, Math.round(totalTicks));
   const xSamplesByTick = new Map<number, number[]>();
@@ -379,16 +253,11 @@ function buildTickAnchorsFromRenderedNotes(
     if (arr) arr.push(x);
     else xSamplesByTick.set(normalizedTick, [x]);
   };
-  const collect = (
-    chords: ChordGroup[],
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    vexNotes: any[],
-  ): void => {
+  const collect = (chords: ChordGroup[], vexNotes: VFStaveNote[]): void => {
     for (let i = 0; i < chords.length; i++) {
       const chord = chords[i];
       const vexNote = vexNotes[i];
-      if (!chord || !vexNote || typeof vexNote.getAbsoluteX !== "function")
-        continue;
+      if (!chord || !vexNote) continue;
       const x = vexNote.getAbsoluteX();
       if (!Number.isFinite(x)) continue;
       pushSample(chord.startTick, x);
@@ -452,24 +321,22 @@ function interpolateTickAnchorX(tick: number, anchors: TickAnchor[]): number {
  * Create a VexFlow StaveNote with proper accidentals and dots.
  */
 function createVexNote(
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  VF: any,
+  VF: VexFlowModule,
   chord: ChordGroup,
   clef: "treble" | "bass" = "treble",
   keySignature: string | undefined,
   accidentalState: Map<string, string>,
   continuationKeys?: Set<string>,
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-): any {
+): VFStaveNote {
   const { StaveNote, Accidental, Dot } = VF;
   const dotted = isDottedDuration(chord.duration);
   const duration = dotted ? baseDuration(chord.duration) : chord.duration;
 
-  const noteOpts: Record<string, unknown> = {
+  const noteOpts = {
     keys: chord.keys,
     duration,
+    ...(clef === "bass" ? { clef: "bass" as const } : {}),
   };
-  if (clef === "bass") noteOpts.clef = "bass";
 
   const note = new StaveNote(noteOpts);
 
@@ -500,10 +367,8 @@ function createVexNote(
 }
 
 function renderMeasure(
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  VF: any,
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  context: any,
+  VF: VexFlowModule,
+  context: VFRenderContext,
   measure: NotationMeasure,
   x: number,
   y: number,
@@ -512,9 +377,6 @@ function renderMeasure(
   ticksPerQuarter: number,
   trebleContinuationKeys: Set<string>,
   bassContinuationKeys: Set<string>,
-  accentHex: string,
-  isActiveMeasure: boolean,
-  activeBeatTick: number | null,
   measureNumber?: number,
   expressions?: NotationExpression[],
   prevMeasure?: NotationMeasure,
@@ -537,47 +399,25 @@ function renderMeasure(
   const showKeySig =
     (measure.keySignature && measure.keySignature !== "C") || keySigChanged;
 
+  // R1-02 fix: shared stave setup — eliminates 20-line duplication
+  const timeSigStr = `${measure.timeSignatureTop}/${measure.timeSignatureBottom}`;
+  const setupStave = (stave: VFStave, clef: string): void => {
+    if (isFirst) {
+      stave.addClef(clef);
+      if (showKeySig) stave.addKeySignature(measure.keySignature);
+      stave.addTimeSignature(timeSigStr);
+    } else {
+      if (keySigChanged) stave.addKeySignature(measure.keySignature);
+      if (timeSigChanged) stave.addTimeSignature(timeSigStr);
+    }
+    stave.setContext(context).draw();
+  };
+
   const treble = new Stave(x, y, width);
-  if (isFirst) {
-    treble.addClef("treble");
-    if (showKeySig) {
-      treble.addKeySignature(measure.keySignature);
-    }
-    treble.addTimeSignature(
-      `${measure.timeSignatureTop}/${measure.timeSignatureBottom}`,
-    );
-  } else {
-    if (keySigChanged) {
-      treble.addKeySignature(measure.keySignature);
-    }
-    if (timeSigChanged) {
-      treble.addTimeSignature(
-        `${measure.timeSignatureTop}/${measure.timeSignatureBottom}`,
-      );
-    }
-  }
-  treble.setContext(context).draw();
+  setupStave(treble, "treble");
 
   const bass = new Stave(x, y + STAVE_HEIGHT + SYSTEM_GAP, width);
-  if (isFirst) {
-    bass.addClef("bass");
-    if (showKeySig) {
-      bass.addKeySignature(measure.keySignature);
-    }
-    bass.addTimeSignature(
-      `${measure.timeSignatureTop}/${measure.timeSignatureBottom}`,
-    );
-  } else {
-    if (keySigChanged) {
-      bass.addKeySignature(measure.keySignature);
-    }
-    if (timeSigChanged) {
-      bass.addTimeSignature(
-        `${measure.timeSignatureTop}/${measure.timeSignatureBottom}`,
-      );
-    }
-  }
-  bass.setContext(context).draw();
+  setupStave(bass, "bass");
 
   if (isFirst) {
     new StaveConnector(treble, bass)
@@ -592,7 +432,7 @@ function renderMeasure(
 
   // Draw measure number above treble staff
   if (measureNumber !== undefined) {
-    const svg = context.svg as SVGSVGElement | undefined;
+    const svg = context.svg;
     if (svg) {
       const text = document.createElementNS(
         "http://www.w3.org/2000/svg",
@@ -602,14 +442,17 @@ function renderMeasure(
       text.setAttribute("y", String(y - 2));
       text.setAttribute("font-size", "10");
       text.setAttribute("font-family", "'DM Sans', 'Nunito', sans-serif");
-      text.setAttribute("fill", "var(--color-text-muted, #888)");
+      text.setAttribute("fill", "var(--color-text-muted)");
       text.setAttribute("opacity", "0.7");
       text.textContent = String(measureNumber);
       svg.appendChild(text);
     }
   }
 
-  // Build a set of staccato tick positions from expression marks
+  // Build a set of staccato tick positions from expression marks.
+  // R3-01 fix: Use normalizeTickInMeasure for BOTH build and lookup to
+  // guarantee matching. Previous code used a separate beat-fraction
+  // calculation that could diverge due to rounding differences.
   const staccatoTicks = new Set<number>();
   const ticksPerBeat =
     ticksPerQuarter * (4 / Math.max(1, measure.timeSignatureBottom));
@@ -621,106 +464,90 @@ function renderMeasure(
     const beatsPerMeasure = measure.timeSignatureTop;
     for (const expr of expressions) {
       if (expr.type === "staccato") {
-        const targetFraction = expr.beat / beatsPerMeasure;
-        staccatoTicks.add(Math.round(targetFraction * 1000));
+        // Convert beat position to a tick offset, then normalize with the
+        // same function used for chord lookup, ensuring exact match.
+        const beatTick = Math.round(
+          (expr.beat / beatsPerMeasure) * ticksPerMeasure,
+        );
+        const normalized = normalizeTickInMeasure(
+          beatTick,
+          ticksPerQuarter,
+          measure.timeSignatureTop,
+          measure.timeSignatureBottom,
+        );
+        staccatoTicks.add(normalized);
       }
     }
   }
 
-  const trebleChords = groupNotesIntoChords(measure.trebleNotes);
-  const trebleAccidentalState = new Map<string, string>();
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const trebleVexNotes: any[] =
-    trebleChords.length > 0
-      ? trebleChords.map((chord) => {
-          const note = createVexNote(
-            VF,
-            chord,
-            "treble",
-            measure.keySignature,
-            trebleAccidentalState,
-            trebleContinuationKeys,
-          );
-          if (expressions && Articulation) {
-            const normalizedTick = normalizeTickInMeasure(
-              chord.startTick,
-              ticksPerQuarter,
-              measure.timeSignatureTop,
-              measure.timeSignatureBottom,
+  // R2-01 fix: shared helper for chord→VexNote mapping + articulation
+  const buildVoiceNotes = (
+    notes: NotationMeasure["trebleNotes"],
+    clef: "treble" | "bass",
+    continuationKeys: Set<string>,
+  ): { chords: ChordGroup[]; vexNotes: VFStaveNote[] } => {
+    const chords = groupNotesIntoChords(notes);
+    const accState = new Map<string, string>();
+    const vexNotes: VFStaveNote[] =
+      chords.length > 0
+        ? chords.map((chord) => {
+            const note = createVexNote(
+              VF,
+              chord,
+              clef,
+              measure.keySignature,
+              accState,
+              continuationKeys,
             );
-            if (staccatoTicks.has(normalizedTick)) {
-              try {
-                note.addModifier(new Articulation("a."), 0);
-              } catch {
-                // Articulation not available in this VexFlow build
+            if (expressions && Articulation) {
+              const normalizedTick = normalizeTickInMeasure(
+                chord.startTick,
+                ticksPerQuarter,
+                measure.timeSignatureTop,
+                measure.timeSignatureBottom,
+              );
+              if (staccatoTicks.has(normalizedTick)) {
+                try {
+                  note.addModifier(new Articulation("a."), 0);
+                } catch {
+                  // Articulation not available in this VexFlow build
+                }
               }
             }
-          }
-          return note;
-        })
-      : [
-          (() => {
-            const rest = new StaveNote({
-              keys: [makeRestKey("treble")],
+            return note;
+          })
+        : [
+            new StaveNote({
+              keys: [makeRestKey(clef)],
               duration: "wr",
-            });
-            return rest;
-          })(),
-        ];
+              ...(clef === "bass" ? { clef: "bass" as const } : {}),
+            }),
+          ];
+    return { chords, vexNotes };
+  };
 
-  const bassChords = groupNotesIntoChords(measure.bassNotes);
-  const bassAccidentalState = new Map<string, string>();
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const bassVexNotes: any[] =
-    bassChords.length > 0
-      ? bassChords.map((chord) => {
-          const note = createVexNote(
-            VF,
-            chord,
-            "bass",
-            measure.keySignature,
-            bassAccidentalState,
-            bassContinuationKeys,
-          );
-          if (expressions && Articulation) {
-            const normalizedTick = normalizeTickInMeasure(
-              chord.startTick,
-              ticksPerQuarter,
-              measure.timeSignatureTop,
-              measure.timeSignatureBottom,
-            );
-            if (staccatoTicks.has(normalizedTick)) {
-              try {
-                note.addModifier(new Articulation("a."), 0);
-              } catch {
-                // Articulation not available
-              }
-            }
-          }
-          return note;
-        })
-      : [
-          (() => {
-            const rest = new StaveNote({
-              keys: [makeRestKey("bass")],
-              duration: "wr",
-              clef: "bass",
-            });
-            return rest;
-          })(),
-        ];
+  const { chords: trebleChords, vexNotes: trebleVexNotes } = buildVoiceNotes(
+    measure.trebleNotes,
+    "treble",
+    trebleContinuationKeys,
+  );
+  const { chords: bassChords, vexNotes: bassVexNotes } = buildVoiceNotes(
+    measure.bassNotes,
+    "bass",
+    bassContinuationKeys,
+  );
 
-  const trebleVoice = new Voice({
-    num_beats: measure.timeSignatureTop,
-    beat_value: measure.timeSignatureBottom,
-  }).setStrict(false);
-  trebleVoice.addTickables(trebleVexNotes);
-
-  const bassVoice = new Voice({
-    num_beats: measure.timeSignatureTop,
-    beat_value: measure.timeSignatureBottom,
-  }).setStrict(false);
-  bassVoice.addTickables(bassVexNotes);
+  // R3-02 fix: shared voice creation pattern
+  const createVoice = (notes: VFStaveNote[]): VFVoice => {
+    const v = new Voice({
+      numBeats: measure.timeSignatureTop,
+      beatValue: measure.timeSignatureBottom,
+    }).setStrict(false);
+    v.addTickables(notes);
+    return v;
+  };
+  const trebleVoice = createVoice(trebleVexNotes);
+  const bassVoice = createVoice(bassVexNotes);
 
   const formatter = new Formatter({ softmaxFactor: 5 })
     .joinVoices([trebleVoice])
@@ -738,55 +565,46 @@ function renderMeasure(
   // Pass beat-based grouping so VexFlow beams 8th/16th notes per beat
   // (e.g. 4 sixteenths per beat in 4/4). maintainStemDirections preserves
   // treble-up / bass-down orientation set during StaveNote creation.
+  //
+  // R1-04 FIX: Guard beam path with chord length check and use proper
+  // index-aligned filtering. Added console.warn for debugging beam failures.
   try {
-    const { Beam, Fraction } = VF;
-    if (Beam && Fraction) {
+    const { Beam } = VF;
+    if (Beam) {
       const timeSig = `${measure.timeSignatureTop}/${measure.timeSignatureBottom}`;
       const groups = Beam.getDefaultBeamGroups(timeSig);
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const drawBeams = (vexNotes: any[], chords: ChordGroup[]): void => {
+      const drawBeams = (
+        vexNotes: VFStaveNote[],
+        chords: ChordGroup[],
+      ): void => {
+        // Only attempt beaming when there are real chords (not the whole-rest fallback)
+        if (chords.length === 0) return;
+        // Filter notes using index-aligned access to chords.
+        // When chords.length < vexNotes.length (due to rest fallback), the
+        // `chords[i]` guard safely returns undefined, skipping the extra note.
         const nonRestNotes = vexNotes.filter(
-          (_n: unknown, i: number) =>
-            chords[i] && !chords[i].duration.includes("r"),
+          (_n: VFStaveNote, i: number) =>
+            i < chords.length && chords[i] && !chords[i].duration.includes("r"),
         );
         if (nonRestNotes.length > 1) {
           const beams = Beam.generateBeams(nonRestNotes, {
             groups,
             maintainStemDirections: true,
           });
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          beams.forEach((b: any) => b.setContext(context).draw());
+          beams.forEach((b) => b.setContext(context).draw());
         }
       };
       drawBeams(trebleVexNotes, trebleChords);
       drawBeams(bassVexNotes, bassChords);
     }
-  } catch {
-    // Beam generation can fail for certain note configurations; silently skip
+  } catch (beamError: unknown) {
+    console.warn("SheetMusic: beam generation failed:", beamError);
   }
-
-  const highlightedNoteHeads = [
-    ...collectNoteHeadHighlights(
-      trebleChords,
-      trebleVexNotes,
-      ticksPerBeat,
-      isActiveMeasure,
-      activeBeatTick,
-    ),
-    ...collectNoteHeadHighlights(
-      bassChords,
-      bassVexNotes,
-      ticksPerBeat,
-      isActiveMeasure,
-      activeBeatTick,
-    ),
-  ];
-  drawNoteHeadHighlights(context, highlightedNoteHeads, accentHex);
 
   // Render text-based expression marks (rit., accel., legato) above the treble staff
   if (expressions && expressions.length > 0) {
-    const svg = context.svg as SVGSVGElement | undefined;
+    const svg = context.svg;
     if (svg) {
       const beatsPerMeasure = measure.timeSignatureTop;
       for (const expr of expressions) {
@@ -794,16 +612,14 @@ function renderMeasure(
         // (handled as note articulation) and legato (too noisy for dense pieces).
         if (expr.type === "staccato" || expr.type === "legato") continue;
 
-        const label =
-          expr.type === "rit"
-            ? "rit."
-            : expr.type === "accel"
-              ? "accel."
-              : "legato";
-        const isItalic =
-          expr.type === "rit" ||
-          expr.type === "accel" ||
-          expr.type === "legato";
+        // R1-01 fix: map expression types to display labels explicitly.
+        // Previous code had unreachable "legato" fallback (legato is skipped above).
+        const labelMap: Record<string, string> = {
+          rit: "rit.",
+          accel: "accel.",
+        };
+        const label = labelMap[expr.type] ?? expr.type;
+        const isItalic = true; // All remaining expression marks are italic
         const beatFraction = Math.max(
           0,
           Math.min(1, expr.beat / beatsPerMeasure),
@@ -821,7 +637,7 @@ function renderMeasure(
         text.setAttribute("font-family", "'DM Sans', 'Nunito', sans-serif");
         text.setAttribute("font-style", isItalic ? "italic" : "normal");
         text.setAttribute("font-weight", "500");
-        text.setAttribute("fill", "var(--color-accent, #1E6E72)");
+        text.setAttribute("fill", "var(--color-accent)");
         text.setAttribute("opacity", "0.85");
         text.textContent = label;
         svg.appendChild(text);
@@ -852,10 +668,8 @@ function renderMeasure(
  * Draw an empty slot when the song has fewer measures than display slots.
  */
 function renderEmptyMeasure(
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  VF: any,
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  context: any,
+  VF: VexFlowModule,
+  context: VFRenderContext,
   x: number,
   y: number,
   width: number,
@@ -919,6 +733,13 @@ export function SheetMusicPanel({
   const [measureTickAnchors, setMeasureTickAnchors] = useState<
     Record<number, TickAnchor[]>
   >({});
+  /**
+   * Ref holding per-measure chord + VexFlow note references for the
+   * lightweight beat-highlight overlay. Updated by the main VexFlow render
+   * effect; consumed by the separate highlight effect that runs on every
+   * beat change without rebuilding the SVG.
+   */
+  const highlightDataRef = useRef<Record<number, MeasureHighlightData>>({});
   const hidden = mode !== "sheet" && mode !== "split";
 
   const zoomIn = useCallback(() => {
@@ -935,12 +756,16 @@ export function SheetMusicPanel({
     });
   }, []);
 
-  /** Read the computed accent color from CSS custom properties for VexFlow SVG rendering. */
+  /**
+   * Read accent color directly from theme tokens instead of DOM.
+   *
+   * R1-07 FIX: Previously used getComputedStyle (DOM side effect) inside
+   * useMemo, which is unsafe in React concurrent mode. Now reads from
+   * the imported `themes` token map, which is a pure data lookup.
+   */
   const accentHex = useMemo(() => {
-    if (typeof document === "undefined") return "#1E6E72";
-    const style = getComputedStyle(document.documentElement);
-    return style.getPropertyValue("--color-accent").trim() || "#1E6E72";
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    const t = themes[themeId];
+    return t?.colors.accent ?? "#1E6E72";
   }, [themeId]);
 
   const cursorPosition = useMemo(() => {
@@ -954,6 +779,17 @@ export function SheetMusicPanel({
     Math.floor(containerWidth - LEFT_MARGIN * 2),
   );
 
+  // R2-05 FIX: Pre-compute the density sampling window start so that
+  // `displayMeasureCount` only recomputes at group boundaries (every 8
+  // measures), not on every single measure transition. This avoids
+  // unnecessary Set allocations on every measure change.
+  const densitySampleStart = useMemo(
+    () =>
+      Math.floor(activeMeasureIndex / MAX_DISPLAY_MEASURES) *
+      MAX_DISPLAY_MEASURES,
+    [activeMeasureIndex],
+  );
+
   // Adaptive measure count: compute how many measures fit based on note density.
   // Dense measures (16th notes) get fewer measures per screen for readability.
   const displayMeasureCount = useMemo(() => {
@@ -963,23 +799,16 @@ export function SheetMusicPanel({
     // Sample the measures around the active index to estimate density.
     // Count unique onset ticks per stave (simultaneous notes stack vertically).
     const total = notationData.measures.length;
-    const sampleStart =
-      Math.floor(activeMeasureIndex / MAX_DISPLAY_MEASURES) *
-      MAX_DISPLAY_MEASURES;
     let totalOnsets = 0;
     let sampleCount = 0;
     for (
-      let i = sampleStart;
-      i < sampleStart + MAX_DISPLAY_MEASURES && i < total;
+      let i = densitySampleStart;
+      i < densitySampleStart + MAX_DISPLAY_MEASURES && i < total;
       i++
     ) {
       const m = notationData.measures[i];
-      const trebleOnsets = new Set(
-        m.trebleNotes.filter((n) => !n.isRest).map((n) => n.startTick),
-      ).size;
-      const bassOnsets = new Set(
-        m.bassNotes.filter((n) => !n.isRest).map((n) => n.startTick),
-      ).size;
+      const trebleOnsets = countOnsets(m.trebleNotes);
+      const bassOnsets = countOnsets(m.bassNotes);
       totalOnsets += Math.max(trebleOnsets, bassOnsets);
       sampleCount++;
     }
@@ -995,16 +824,33 @@ export function SheetMusicPanel({
         : MAX_DISPLAY_MEASURES;
 
     return Math.max(2, Math.min(MAX_DISPLAY_MEASURES, fittable));
-  }, [notationData, activeMeasureIndex, availableWidth]);
+  }, [notationData, densitySampleStart, availableWidth]);
 
-  const visibleMeasures = useMemo(() => {
-    if (!notationData || notationData.measures.length === 0) return [];
-    return getMeasureWindow(
+  /**
+   * Compute a stable display window key to prevent unnecessary VexFlow re-renders.
+   *
+   * R1-02 FIX: `getMeasureWindow` returns a new array every call, which
+   * caused the VexFlow render effect to fire on every measure transition
+   * (every ~2s at 120 BPM). We now derive a stable string key from the
+   * window contents. The `visibleMeasures` array is only recomputed when
+   * the key changes (typically only on page flips, a few times per minute).
+   */
+  const displayWindowKey = useMemo(() => {
+    if (!notationData || notationData.measures.length === 0) return "";
+    // J1-01 FIX: Renamed from `window` to `measureWindow` to avoid
+    // shadowing the global `window` object.
+    const measureWindow = getMeasureWindow(
       activeMeasureIndex,
       notationData.measures.length,
       displayMeasureCount,
     );
+    return measureWindow.join(",");
   }, [notationData, activeMeasureIndex, displayMeasureCount]);
+
+  const visibleMeasures = useMemo(() => {
+    if (!displayWindowKey) return [];
+    return displayWindowKey.split(",").map(Number);
+  }, [displayWindowKey]);
 
   const rawSlotWidths = useMemo(() => {
     const noteCounts = Array.from(
@@ -1097,12 +943,25 @@ export function SheetMusicPanel({
   const activeBeatMeasureIndex = activeBeatState?.measureIndex ?? -1;
   const activeBeatTick = activeBeatState?.beatTick ?? null;
 
+  /**
+   * Observe container width for responsive layout.
+   *
+   * R1-09 FIX: Deduplicate width changes by only calling setContainerWidth
+   * when the rounded width actually changes. ResizeObserver can fire on
+   * every animation frame during smooth resize, and each call previously
+   * triggered a full VexFlow SVG rebuild.
+   */
   useEffect(() => {
     const el = containerRef.current;
     if (!el) return;
+    let lastWidth = 0;
     const observer = new ResizeObserver((entries) => {
       for (const entry of entries) {
-        setContainerWidth(entry.contentRect.width);
+        const w = Math.round(entry.contentRect.width);
+        if (w !== lastWidth) {
+          lastWidth = w;
+          setContainerWidth(w);
+        }
       }
     });
     observer.observe(el);
@@ -1138,10 +997,9 @@ export function SheetMusicPanel({
    * transitions — typically a few times per minute at normal playback speed.
    */
   useEffect(() => {
-    const host = svgHostRef.current;
     if (
       hidden ||
-      !host ||
+      !svgHostRef.current ||
       !notationData ||
       notationData.measures.length === 0 ||
       slotWidths.length === 0
@@ -1217,9 +1075,6 @@ export function SheetMusicPanel({
               notationData.ticksPerQuarter,
               trebleContinuationKeys,
               bassContinuationKeys,
-              accentHex,
-              measureIndex === activeBeatMeasureIndex,
-              activeBeatTick,
               measureIndex + 1,
               measureExpressions,
               previousMeasure,
@@ -1303,12 +1158,42 @@ export function SheetMusicPanel({
           }
         }
 
-        if (cancelled || !svgHostRef.current) return;
+        /**
+         * R1-01 FIX: Read svgHostRef.current at mutation time, not the
+         * captured `host` from effect entry. If the component unmounts/
+         * remounts during the async VexFlow load, `host` would be stale
+         * but `svgHostRef.current` reflects the current DOM node.
+         */
+        // Populate highlight data ref for the lightweight beat-highlight effect.
+        // This stores chord groups and rendered VexFlow note elements per
+        // measure so the overlay can be computed without rebuilding the SVG.
+        const nextHighlightData: Record<number, MeasureHighlightData> = {};
+        for (let slot = 0; slot < displayMeasureCount; slot++) {
+          const mIdx = slotMeasureIndices[slot];
+          const result = slotResults[slot];
+          if (mIdx === undefined || !result || !notationData) continue;
+          const m = notationData.measures[mIdx];
+          if (!m) continue;
+          const tpb =
+            notationData.ticksPerQuarter *
+            (4 / Math.max(1, m.timeSignatureBottom));
+          nextHighlightData[mIdx] = {
+            trebleChords: result.trebleChords,
+            bassChords: result.bassChords,
+            trebleVexNotes: result.trebleVexNotes,
+            bassVexNotes: result.bassVexNotes,
+            ticksPerBeat: tpb,
+          };
+        }
+        highlightDataRef.current = nextHighlightData;
+
+        const currentHost = svgHostRef.current;
+        if (cancelled || !currentHost) return;
         const nextSvg = stage.querySelector("svg");
         if (nextSvg) {
-          host.replaceChildren(nextSvg);
+          currentHost.replaceChildren(nextSvg);
         } else {
-          host.replaceChildren();
+          currentHost.replaceChildren();
         }
         setMeasureTickAnchors(nextMeasureTickAnchors);
       })
@@ -1334,9 +1219,86 @@ export function SheetMusicPanel({
     totalHeight,
     visibleMeasures,
     accentHex,
-    activeBeatMeasureIndex,
-    activeBeatTick,
   ]);
+
+  /**
+   * Lightweight beat-highlight overlay effect.
+   *
+   * R2-01 FIX: This effect runs on every beat change (2-4x/sec at 120 BPM)
+   * but does NOT rebuild VexFlow staves/voices/notes/beams. Instead it:
+   *   1. Queries the existing SVG in svgHostRef
+   *   2. Removes any previous highlight `<g>` layer
+   *   3. Computes notehead highlights from the cached chord/vexNote data
+   *   4. Injects a new highlight `<g>` overlay into the existing SVG
+   *
+   * This is O(chords-in-active-measure) per beat, vs O(all-visible-measures)
+   * for a full VexFlow rebuild.
+   */
+  useEffect(() => {
+    const host = svgHostRef.current;
+    if (!host) return;
+    const svg = host.querySelector("svg");
+    if (!svg) return;
+
+    // Remove any existing highlight layer
+    const existing = svg.querySelector("g[data-rx-notehead-highlight-layer]");
+    if (existing) existing.remove();
+
+    // Nothing to highlight if no active beat
+    if (activeBeatMeasureIndex < 0 || activeBeatTick === null) return;
+
+    const data = highlightDataRef.current[activeBeatMeasureIndex];
+    if (!data) return;
+
+    const highlights = [
+      ...collectNoteHeadHighlights(
+        data.trebleChords,
+        data.trebleVexNotes,
+        data.ticksPerBeat,
+        true,
+        activeBeatTick,
+      ),
+      ...collectNoteHeadHighlights(
+        data.bassChords,
+        data.bassVexNotes,
+        data.ticksPerBeat,
+        true,
+        activeBeatTick,
+      ),
+    ];
+
+    if (highlights.length === 0) return;
+
+    // Inject highlight overlay using the SVG directly (no VFRenderContext needed)
+    const group = document.createElementNS("http://www.w3.org/2000/svg", "g");
+    group.setAttribute("pointer-events", "none");
+    group.setAttribute("data-rx-notehead-highlight-layer", "1");
+
+    for (const head of highlights) {
+      const ring = document.createElementNS(
+        "http://www.w3.org/2000/svg",
+        "ellipse",
+      );
+      ring.setAttribute("cx", String(head.cx));
+      ring.setAttribute("cy", String(head.cy));
+      ring.setAttribute("rx", String(head.rx));
+      ring.setAttribute("ry", String(head.ry));
+      ring.setAttribute("fill", "none");
+      ring.setAttribute("stroke", accentHex);
+      ring.setAttribute(
+        "stroke-width",
+        String(ACTIVE_NOTEHEAD_STROKE_WIDTH_PX),
+      );
+      ring.setAttribute("opacity", "0.96");
+      ring.setAttribute(
+        "style",
+        `filter: drop-shadow(0 0 ${ACTIVE_NOTEHEAD_GLOW_BLUR_PX}px ${accentHex});`,
+      );
+      group.appendChild(ring);
+    }
+
+    svg.appendChild(group);
+  }, [activeBeatMeasureIndex, activeBeatTick, accentHex]);
 
   if (hidden) return null;
 

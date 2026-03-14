@@ -19,6 +19,8 @@ import { SoundFontLoader } from "./SoundFontLoader";
 interface ActiveNote {
   source: AudioBufferSourceNode;
   gain: GainNode;
+  /** Original velocity gain (0–1) for deterministic release envelope start */
+  velocityGain: number;
 }
 
 /** Default release time in seconds for noteOff envelope */
@@ -26,6 +28,9 @@ const DEFAULT_RELEASE_TIME = 0.15;
 
 /** Default SoundFont file name in resources/ */
 const DEFAULT_SOUNDFONT = "piano.sf2";
+
+/** Maximum simultaneous notes per MIDI key to prevent unbounded polyphony */
+const MAX_NOTES_PER_KEY = 4;
 
 interface AudioEngineOptions {
   onRuntimeError?: (error: unknown) => void;
@@ -150,6 +155,12 @@ export class AudioEngine implements IAudioEngine {
   }
 
   noteOn(midi: number, velocity: number, time: number): void {
+    // R1-05: MIDI spec — velocity 0 noteOn ≡ noteOff
+    if (velocity === 0) {
+      this.noteOff(midi, time);
+      return;
+    }
+
     if (this._status !== "ready" || !this._audioContext || !this._masterGain)
       return;
 
@@ -167,20 +178,31 @@ export class AudioEngine implements IAudioEngine {
       }
 
       // Velocity gain: map 0-127 → 0.0-1.0
-      const velocityGain = this._audioContext.createGain();
-      velocityGain.gain.value = Math.max(0, Math.min(1, velocity / 127));
+      const velocityGainNode = this._audioContext.createGain();
+      const velGainValue = Math.max(0, Math.min(1, velocity / 127));
+      velocityGainNode.gain.value = velGainValue;
 
-      // Connect: source → velocityGain → masterGain → destination
-      source.connect(velocityGain);
-      velocityGain.connect(this._masterGain);
+      // Connect: source → velocityGainNode → masterGain → destination
+      source.connect(velocityGainNode);
+      velocityGainNode.connect(this._masterGain);
 
       // Schedule start
       source.start(time);
 
-      // Track the active note
-      const activeNote: ActiveNote = { source, gain: velocityGain };
+      // Track the active note (R1-02: store velocity for deterministic release)
+      const activeNote: ActiveNote = {
+        source,
+        gain: velocityGainNode,
+        velocityGain: velGainValue,
+      };
+
+      // R1-08: Cap per-key polyphony — release oldest before adding new
       const existing = this._activeNotes.get(midi);
       if (existing) {
+        while (existing.length >= MAX_NOTES_PER_KEY) {
+          const oldest = existing.shift()!;
+          this._releaseNote(oldest, time);
+        }
         existing.push(activeNote);
       } else {
         this._activeNotes.set(midi, [activeNote]);
@@ -188,9 +210,18 @@ export class AudioEngine implements IAudioEngine {
 
       // Auto-cleanup when source finishes naturally
       source.onended = () => {
-        // Disconnect audio graph nodes to prevent GainNode leak
-        source.disconnect();
-        velocityGain.disconnect();
+        // R1-03: Wrap disconnect in try/catch — nodes may already be
+        // disconnected by allNotesOff(), which would cause InvalidStateError
+        try {
+          source.disconnect();
+        } catch {
+          /* already disconnected */
+        }
+        try {
+          velocityGainNode.disconnect();
+        } catch {
+          /* already disconnected */
+        }
         // Remove from active notes
         const notes = this._activeNotes.get(midi);
         if (notes) {
@@ -308,13 +339,18 @@ export class AudioEngine implements IAudioEngine {
 
   /** Apply release envelope to a single active note.
    *  Cancels any in-flight ramps first to prevent overlapping gain schedules
-   *  (which cause audible clicks when the same MIDI key is released rapidly). */
+   *  (which cause audible clicks when the same MIDI key is released rapidly).
+   *  R1-02: Uses stored velocityGain (not gain.gain.value snapshot) for
+   *  deterministic release start — avoids stale-value discontinuity after
+   *  cancelScheduledValues. */
   private _releaseNote(activeNote: ActiveNote, time: number): void {
-    const { source, gain } = activeNote;
+    const { source, gain, velocityGain } = activeNote;
     try {
       // Cancel prior automation to avoid overlapping exponential ramps
       gain.gain.cancelScheduledValues(time);
-      gain.gain.setValueAtTime(Math.max(gain.gain.value, 0.001), time);
+      // Use the stored velocity gain (deterministic) instead of gain.gain.value
+      // (which is a snapshot at JS call time, not at the scheduled `time`)
+      gain.gain.setValueAtTime(Math.max(velocityGain, 0.001), time);
       gain.gain.exponentialRampToValueAtTime(0.001, time + this._releaseTime);
       source.stop(time + this._releaseTime + 0.01);
     } catch {
@@ -421,9 +457,12 @@ export class AudioEngine implements IAudioEngine {
   }
 
   private _handleRuntimeError(err: unknown, context: string): void {
+    // R1-07: Always log errors so production bugs are visible
+    console.error(`AudioEngine.${context} runtime failure:`, err);
+
     if (!this._isRecoverableAudioError(err)) return;
 
-    console.error(`AudioEngine.${context} runtime failure:`, err);
+    // Only transition state and fire callback for recoverable errors
     this._status = "error";
     this.allNotesOff();
     this._onRuntimeError?.(err);

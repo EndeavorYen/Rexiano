@@ -58,8 +58,15 @@ export class AudioScheduler implements IAudioScheduler {
    * @param speed  Multiplier in range 0.25–2.0 (clamped by SpeedController upstream)
    */
   setSpeed(speed: number): void {
+    // R1-08: Guard against invalid speed values (zero → division by zero, negative/NaN)
+    if (speed <= 0 || !isFinite(speed)) return;
+
     // Re-anchor timing if currently playing to prevent position jump
     if (this._intervalId !== null) {
+      // R1-01/R1-02: Flush all in-flight notes before re-anchoring to prevent
+      // ghost duplicates from notes already dispatched to Web Audio
+      this._engine.allNotesOff();
+
       const ctx = this._engine.audioContext;
       if (ctx) {
         const now = ctx.currentTime;
@@ -76,6 +83,21 @@ export class AudioScheduler implements IAudioScheduler {
 
   /** Bind a song for scheduling. Call before start(). */
   setSong(song: ParsedSong): void {
+    // R1-07: DEV-mode assertion — binary search requires sorted notes
+    if (import.meta.env.DEV) {
+      for (let t = 0; t < song.tracks.length; t++) {
+        const notes = song.tracks[t].notes;
+        for (let i = 1; i < notes.length; i++) {
+          if (notes[i].time < notes[i - 1].time) {
+            console.error(
+              `[AudioScheduler] Track ${t} ("${song.tracks[t].name}") has unsorted notes at index ${i}: ` +
+                `time ${notes[i].time} < previous ${notes[i - 1].time}`,
+            );
+            break;
+          }
+        }
+      }
+    }
     this._song = song;
     this._trackCursors = song.tracks.map(() => 0);
   }
@@ -112,10 +134,12 @@ export class AudioScheduler implements IAudioScheduler {
   seek(songTime: number): void {
     if (!this._song) return;
 
-    this._engine.allNotesOff();
-
+    // R1-06: Guard ctx before calling allNotesOff, and always update
+    // seekOffset/cursors regardless of ctx availability
     const ctx = this._engine.audioContext;
     if (!ctx) return;
+
+    this._engine.allNotesOff();
 
     this._seekOffset = songTime;
     this._startAudioTime = ctx.currentTime;
@@ -194,8 +218,11 @@ export class AudioScheduler implements IAudioScheduler {
     // Speed-aware song time: real elapsed × speed + offset
     const songTime =
       (ctx.currentTime - this._startAudioTime) * this._speed + this._seekOffset;
-    // Look-ahead window in song time: real 100ms maps to (100ms × speed) of song
-    const horizon = songTime + this._config.lookAheadSeconds * this._speed;
+    // R1-03: Use lookAheadSeconds as a fixed song-time window, independent of speed.
+    // At speed=0.25, the old formula gave only 25ms real-time margin (= tick interval).
+    // The new formula guarantees a constant song-time look-ahead, which translates
+    // to lookAheadSeconds/speed real-time — always >= lookAheadSeconds.
+    const horizon = songTime + this._config.lookAheadSeconds;
 
     for (let t = 0; t < this._song.tracks.length; t++) {
       const notes = this._song.tracks[t].notes;
@@ -207,8 +234,9 @@ export class AudioScheduler implements IAudioScheduler {
         // Note is beyond our look-ahead window — stop scanning this track
         if (note.time >= horizon) break;
 
-        // Skip notes that have already fully elapsed (noteOff in the past)
-        if (note.time + note.duration < songTime) {
+        // R1-04: Skip notes that have already fully elapsed (noteOff at or before songTime).
+        // Changed < to <= to avoid scheduling a 0-length ghost note when end === songTime.
+        if (note.time + note.duration <= songTime) {
           cursor++;
           continue;
         }
@@ -223,8 +251,12 @@ export class AudioScheduler implements IAudioScheduler {
         const offTime =
           this._startAudioTime +
           (note.time + note.duration - this._seekOffset) / this._speed;
-        // Ensure noteOff is always after noteOn (noteOn may have been clamped forward)
-        const clampedOffTime = Math.max(offTime, clampedOnTime + 0.01);
+        // R1-05: Use the note's actual scaled duration as the minimum gap,
+        // not a hardcoded 0.01. This prevents artificially inflating short notes
+        // (e.g. at speed=2.0, a 5ms note would become 10ms with the old code).
+        const scaledDuration = note.duration / this._speed;
+        const minOffTime = clampedOnTime + Math.min(scaledDuration, 0.01);
+        const clampedOffTime = Math.max(offTime, minOffTime);
         this._engine.noteOff(note.midi, clampedOffTime);
 
         cursor++;

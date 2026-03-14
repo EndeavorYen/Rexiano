@@ -1,0 +1,25 @@
+# AGENT MEMORY — 團隊累積的實戰智慧（~30 行上限）
+record: { total: 4, red_wins: 0, white_wins: 4, streak: "WHITE x4" }
+past_topics: ["State Sync", "UI & IPC Safety", "Sheet Music Rendering", "App.tsx Root Component"]
+
+red_growth:
+  learned: "AudioContext.state 可能和 engine.status 不一致 — 設備切換後 status='ready' 但 ctx='closed'"
+  working_on: "連敗四場，DRY 和 correctness finding 都被快速修復 — 需要找到架構級問題"
+  hard_won_principle: "查 engine 健康狀態時，engine.status + ctx.state 必須同時驗證"
+
+white_growth:
+  learned: "transient UI state (hit/miss highlights) 用 has() guard 避免重複 Set 配置"
+  working_on: "App.tsx 仍有 1200 行 — 下一場如果紅隊攻擊 component 拆分，需要準備好方案"
+  hard_won_principle: "resume 失敗時必須 allNotesOff — 否則 suspended ctx 上排隊的音符會在恢復時同時播放"
+
+battle_tested_principles:
+  - "併發 async 需要 generation counter（S1）"
+  - "localStorage load 時必須驗證範圍（S1）"
+  - "重複 pattern 先集中再修（S1-S4）"
+  - "修復可能引入新問題（S2）"
+  - "Promise.race timeout 必須 clearTimeout（S2）"
+  - "高頻 UI 區分 live update / debounced persist / guarded state（S2）"
+  - "兩個獨立數值計算要用同一函式（S3）"
+  - "engine.status + AudioContext.state 同時檢查才能確認健康（S4）"
+
+judge_calibration: "白隊四連勝。紅隊需要根本性改變策略 — 找 interface contract 或 architecture boundary 問題"

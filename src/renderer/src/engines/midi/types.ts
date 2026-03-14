@@ -94,3 +94,34 @@ export interface ParsedSong {
   /** Expression markings inferred from tempo changes, note durations, and overlaps */
   expressions?: ExpressionMarking[];
 }
+
+/**
+ * Resolve the effective tempo and time signature at a given playback time.
+ * Shared by App.tsx (recovery metronome restart) and usePracticeLifecycle
+ * (play start, speed change, tempo tracking).
+ *
+ * R1-04 fix (S4): Extracted from usePracticeLifecycle to eliminate duplication.
+ */
+export function getTempoAtTime(
+  time: number,
+  tempos: TempoEvent[],
+  timeSignatures: TimeSignatureEvent[],
+): { bpm: number; beatsPerMeasure: number } {
+  let bpm = 120; // MIDI default
+  for (let i = tempos.length - 1; i >= 0; i--) {
+    if (tempos[i].time <= time) {
+      bpm = tempos[i].bpm;
+      break;
+    }
+  }
+
+  let beatsPerMeasure = 4; // default 4/4
+  for (let i = timeSignatures.length - 1; i >= 0; i--) {
+    if (timeSignatures[i].time <= time) {
+      beatsPerMeasure = timeSignatures[i].numerator;
+      break;
+    }
+  }
+
+  return { bpm, beatsPerMeasure };
+}

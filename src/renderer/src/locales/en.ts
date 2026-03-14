@@ -253,6 +253,7 @@ export const en: TranslationMap = {
   // ── General ────────────────────────────────────────────────────
   "general.loading": "Loading...",
   "general.error": "Error",
+  "general.retry": "Retry",
   "general.close": "Close",
   "general.save": "Save",
   "general.cancel": "Cancel",

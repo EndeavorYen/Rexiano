@@ -3,6 +3,7 @@ import { X, Settings, Palette, Volume2, Music, Globe } from "lucide-react";
 import { useThemeStore } from "@renderer/stores/useThemeStore";
 import { useSettingsStore } from "@renderer/stores/useSettingsStore";
 import { usePlaybackStore } from "@renderer/stores/usePlaybackStore";
+import { useMuteController } from "@renderer/hooks/useMuteController";
 import type { Language, UiScale } from "@renderer/stores/useSettingsStore";
 import type { TranslationKey } from "@renderer/i18n/types";
 import { themes, type ThemeId } from "@renderer/themes/tokens";
@@ -68,6 +69,7 @@ export function SettingsPanel({
   const [open, setOpen] = useState(inline);
   const [activeTab, setActiveTab] = useState<SettingsTab>("appearance");
   const panelRef = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
 
   const currentThemeId = useThemeStore((s) => s.themeId);
   const setTheme = useThemeStore((s) => s.setTheme);
@@ -84,7 +86,8 @@ export function SettingsPanel({
   const defaultMode = useSettingsStore((s) => s.defaultMode);
   const uiScale = useSettingsStore((s) => s.uiScale);
   const playbackVolume = usePlaybackStore((s) => s.volume);
-  const preMuteVolumeRef = useRef(playbackVolume > 0 ? playbackVolume : 0.8);
+
+  const { setMuted: muteControllerSetMuted } = useMuteController();
 
   const setShowNoteLabels = useSettingsStore((s) => s.setShowNoteLabels);
   const setShowFallingNoteLabels = useSettingsStore(
@@ -94,8 +97,16 @@ export function SettingsPanel({
   const setCompactKeyLabels = useSettingsStore((s) => s.setCompactKeyLabels);
   const setLanguage = useSettingsStore((s) => s.setLanguage);
   const setSettingsVolume = useSettingsStore((s) => s.setVolume);
-  const setSettingsMuted = useSettingsStore((s) => s.setMuted);
   const setPlaybackVolume = usePlaybackStore((s) => s.setVolume);
+  // R3-01 fix: debounce settings persistence during slider drag.
+  // Live audio volume updates instantly; localStorage write fires 200ms after last drag.
+  const volumePersistTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(
+    () => () => {
+      if (volumePersistTimer.current) clearTimeout(volumePersistTimer.current);
+    },
+    [],
+  );
   const setDefaultSpeed = useSettingsStore((s) => s.setDefaultSpeed);
   const setDefaultMode = useSettingsStore((s) => s.setDefaultMode);
   const kidMode = useSettingsStore((s) => s.kidMode);
@@ -114,7 +125,10 @@ export function SettingsPanel({
   useEffect(() => {
     if (!open) return;
     const handler = (e: PointerEvent): void => {
-      if (panelRef.current && !panelRef.current.contains(e.target as Node)) {
+      const target = e.target as Node;
+      // Exclude clicks on the trigger button to prevent close+reopen flicker
+      if (triggerRef.current?.contains(target)) return;
+      if (panelRef.current && !panelRef.current.contains(target)) {
         handleClose();
       }
     };
@@ -180,6 +194,7 @@ export function SettingsPanel({
     <>
       {!inline && (
         <button
+          ref={triggerRef}
           onClick={handleOpen}
           className="btn-surface-themed flex items-center gap-1.5 rounded-full px-3 py-1.5 cursor-pointer"
           style={{ border: "1px solid var(--color-border)" }}
@@ -419,17 +434,7 @@ export function SettingsPanel({
                     <ToggleRow
                       label={t("settings.muteAudio")}
                       checked={muted}
-                      onChange={(nextMuted) => {
-                        setSettingsMuted(nextMuted);
-                        if (nextMuted) {
-                          const liveVol = usePlaybackStore.getState().volume;
-                          preMuteVolumeRef.current =
-                            liveVol > 0 ? liveVol : preMuteVolumeRef.current;
-                          setPlaybackVolume(0);
-                        } else {
-                          setPlaybackVolume(preMuteVolumeRef.current);
-                        }
-                      }}
+                      onChange={muteControllerSetMuted}
                       testId="toggle-muted"
                     />
 
@@ -457,9 +462,17 @@ export function SettingsPanel({
                         value={Math.round(playbackVolume * 100)}
                         onChange={(e) => {
                           const next = Number(e.target.value) / 100;
+                          // Live audio: instant (no I/O)
                           setPlaybackVolume(next);
-                          setSettingsVolume(Math.round(next * 100));
-                          setSettingsMuted(next === 0);
+                          // R3-01 fix: debounce persist — fire 200ms after last drag
+                          if (volumePersistTimer.current)
+                            clearTimeout(volumePersistTimer.current);
+                          volumePersistTimer.current = setTimeout(() => {
+                            setSettingsVolume(Math.round(next * 100));
+                          }, 200);
+                          // R2-01 fix: mute guard
+                          if (next === 0 && !muted) muteControllerSetMuted(true);
+                          else if (next > 0 && muted) muteControllerSetMuted(false);
                         }}
                         className="w-full"
                         data-testid="settings-volume-slider"
@@ -505,7 +518,7 @@ export function SettingsPanel({
                                   : "var(--color-surface-alt)",
                               color:
                                 defaultMode === m.value
-                                  ? "#fff"
+                                  ? "var(--color-bg)"
                                   : "var(--color-text-muted)",
                             }}
                             data-testid={`mode-btn-${m.value}`}
@@ -536,7 +549,7 @@ export function SettingsPanel({
                                   : "var(--color-surface-alt)",
                               color:
                                 defaultSpeed === s
-                                  ? "#fff"
+                                  ? "var(--color-bg)"
                                   : "var(--color-text-muted)",
                             }}
                           >
@@ -640,11 +653,10 @@ function ToggleRow({
         data-testid={testId}
       >
         <span
-          className="absolute top-[2px] w-4 h-4 rounded-full transition-all duration-150"
+          className="absolute top-[2px] w-4 h-4 rounded-full transition-all duration-150 subtle-shadow"
           style={{
-            background: checked ? "#fff" : "var(--color-text-muted)",
+            background: checked ? "var(--color-bg)" : "var(--color-text-muted)",
             left: checked ? "calc(100% - 19px)" : "2px",
-            boxShadow: "0 1px 2px rgba(0,0,0,0.12)",
           }}
         />
       </button>

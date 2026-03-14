@@ -257,4 +257,215 @@ describe("WaitMode", () => {
     wm.setToleranceMs(300);
     expect(wm.toleranceMs).toBe(300);
   });
+
+  // ── R1-01: Negative adjustedTime at song start ─────────────────
+
+  it("R1-01: clamps adjustedTime to 0 when latencyCompensation exceeds currentTime", () => {
+    // Note at time 0.1 (very early in song), tolerance ±200ms -> window [0, 0.3]
+    wm.init(makeTracks([{ midi: 60, time: 0.1 }]), new Set([0]));
+    wm.start();
+
+    // currentTime=0.05, latency=200ms -> raw adjustedTime = 0.05 - 0.2 = -0.15
+    // With clamp: adjustedTime = 0, window = [-0.2, 0.2] -> note at 0.1 is within window
+    const result = wm.tick(0.05, 200);
+    expect(result).toBe(false);
+    expect(wm.state).toBe("waiting");
+    expect(wm.targetNotes.has(60)).toBe(true);
+  });
+
+  it("R1-01: does not falsely miss early notes with high latency compensation", () => {
+    const onMiss = vi.fn();
+    wm.setCallbacks({ onMiss });
+    // Note at 0.05s, tolerance ±200ms
+    wm.init(makeTracks([{ midi: 60, time: 0.05 }]), new Set([0]));
+    wm.start();
+
+    // currentTime=0.0, latency=200ms -> clamped adjustedTime = 0
+    // window = [-0.2, 0.2], note at 0.05 is within window -> pending, not miss
+    wm.tick(0.0, 200);
+    expect(onMiss).not.toHaveBeenCalled();
+    expect(wm.state).toBe("waiting");
+  });
+
+  // ── R1-03: checkInput rejects superset of target notes ─────────
+
+  it("R1-03: rejects input when extra keys are held beyond target notes", () => {
+    wm.init(makeTracks([{ midi: 60, time: 1.0 }]), new Set([0]));
+    wm.start();
+    wm.tick(1.0);
+    expect(wm.state).toBe("waiting");
+
+    // Target is {60}, user holds {60, 62} -> should reject (extra key)
+    expect(wm.checkInput(new Set([60, 62]))).toBe(false);
+    expect(wm.state).toBe("waiting");
+
+    // Exact match should still work
+    expect(wm.checkInput(new Set([60]))).toBe(true);
+    expect(wm.state).toBe("playing");
+  });
+
+  it("R1-03: rejects input with many extra keys on a chord target", () => {
+    const tracks: ParsedTrack[] = [
+      {
+        name: "RH",
+        instrument: "Piano",
+        channel: 0,
+        notes: [
+          { midi: 60, name: "C4", time: 1.0, duration: 0.5, velocity: 80 },
+          { midi: 64, name: "E4", time: 1.0, duration: 0.5, velocity: 80 },
+        ],
+      },
+    ];
+    wm.init(tracks, new Set([0]));
+    wm.start();
+    wm.tick(1.0);
+
+    // Target is {60, 64}, user holds {60, 64, 67, 72} -> too many keys
+    expect(wm.checkInput(new Set([60, 64, 67, 72]))).toBe(false);
+    expect(wm.state).toBe("waiting");
+  });
+
+  // ── R1-05: reset() clears _pendingMidis ─────────────────────────
+
+  it("R1-05: reset() clears pendingMidis so stale state does not persist", () => {
+    wm.init(makeTracks([{ midi: 60, time: 1.0 }]), new Set([0]));
+    wm.start();
+    wm.tick(1.0); // enters waiting, _pendingMidis has {60}
+    expect(wm.state).toBe("waiting");
+
+    // Reset while waiting (e.g. loop restart)
+    wm.reset();
+    expect(wm.state).toBe("idle");
+
+    // Re-init with a different track, start fresh
+    wm.init(makeTracks([{ midi: 72, time: 2.0 }]), new Set([0]));
+    wm.start();
+
+    // Tick before the note's window — should pass through (no stale pending)
+    expect(wm.tick(0.5)).toBe(true);
+    expect(wm.state).toBe("playing");
+  });
+
+  // ── R1-06: Same MIDI in two tracks → deduplicated callbacks ─────
+
+  it("R1-06: same MIDI in two tracks fires onHit only once", () => {
+    const onHit = vi.fn();
+    wm.setCallbacks({ onHit });
+
+    const tracks: ParsedTrack[] = [
+      {
+        name: "RH",
+        instrument: "Piano",
+        channel: 0,
+        notes: [
+          { midi: 60, name: "C4", time: 1.0, duration: 0.5, velocity: 80 },
+        ],
+      },
+      {
+        name: "LH",
+        instrument: "Piano",
+        channel: 1,
+        notes: [
+          { midi: 60, name: "C4", time: 1.0, duration: 0.5, velocity: 80 },
+        ],
+      },
+    ];
+
+    // Both tracks active, same MIDI 60 at same time
+    wm.init(tracks, new Set([0, 1]));
+    wm.start();
+    wm.tick(1.0);
+    expect(wm.state).toBe("waiting");
+
+    // Play the note — should match (only one unique MIDI in target)
+    wm.checkInput(new Set([60]));
+    expect(wm.state).toBe("playing");
+
+    // onHit should fire exactly once despite two track entries
+    expect(onHit).toHaveBeenCalledTimes(1);
+    expect(onHit).toHaveBeenCalledWith(60, 1.0);
+
+    // Both track entries should be marked as "hit" in noteResults
+    expect(wm.noteResults.get("0:0")).toBe("hit");
+    expect(wm.noteResults.get("1:0")).toBe("hit");
+  });
+
+  it("R1-06: same MIDI in two tracks fires onMiss only once when missed", () => {
+    const onMiss = vi.fn();
+    wm.setCallbacks({ onMiss });
+
+    const tracks: ParsedTrack[] = [
+      {
+        name: "RH",
+        instrument: "Piano",
+        channel: 0,
+        notes: [
+          { midi: 60, name: "C4", time: 1.0, duration: 0.5, velocity: 80 },
+        ],
+      },
+      {
+        name: "LH",
+        instrument: "Piano",
+        channel: 1,
+        notes: [
+          { midi: 60, name: "C4", time: 1.0, duration: 0.5, velocity: 80 },
+        ],
+      },
+    ];
+
+    wm.init(tracks, new Set([0, 1]));
+    wm.start();
+
+    // Time well past tolerance window -> both entries missed
+    wm.tick(1.5);
+
+    // R1-02 fix: direct miss path now deduplicates by MIDI, matching _markPendingAs.
+    // onMiss should fire exactly once for MIDI 60, not once per track.
+    expect(onMiss).toHaveBeenCalledTimes(1);
+    expect(onMiss).toHaveBeenCalledWith(60, 1.0);
+
+    // Both track entries should still be marked as "miss" in noteResults
+    expect(wm.noteResults.get("0:0")).toBe("miss");
+    expect(wm.noteResults.get("1:0")).toBe("miss");
+  });
+
+  // ── R1-02: Disputed — tickerLoop freezes time during wait ────────
+
+  it("R1-02: time does not advance during wait, so next note is not falsely missed", () => {
+    // This test verifies the design: tickerLoop freezes currentTime during wait.
+    // Simulating: note1 triggers wait, user takes time, resumes, note2 is reachable.
+    const onMiss = vi.fn();
+    const onWait = vi.fn();
+    const onResume = vi.fn();
+    wm.setCallbacks({ onMiss, onWait, onResume });
+
+    wm.init(
+      makeTracks([
+        { midi: 60, time: 1.0 },
+        { midi: 62, time: 1.3 },
+      ]),
+      new Set([0]),
+    );
+    wm.start();
+
+    // Tick at 0.9 — note at 1.0 enters window, state -> waiting
+    wm.tick(0.9);
+    expect(wm.state).toBe("waiting");
+    expect(onWait).toHaveBeenCalledTimes(1);
+
+    // Simulate: user takes 5 seconds, but tickerLoop freezes time at 0.9.
+    // Multiple ticks at the SAME time (time is frozen)
+    wm.tick(0.9); // returns false, still waiting — no time advancement
+    wm.tick(0.9);
+
+    // User finally plays the note
+    wm.checkInput(new Set([60]));
+    expect(wm.state).toBe("playing");
+
+    // Next tick at 0.9 (same frozen time) — note at 1.3 not yet in window
+    // (window is [0.7, 1.1], note 1.3 > 1.1)
+    const result = wm.tick(0.9);
+    expect(result).toBe(true); // no new pending notes
+    expect(onMiss).not.toHaveBeenCalled(); // note 62 NOT missed
+  });
 });

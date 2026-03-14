@@ -34,6 +34,7 @@ function createMockAudioBufferSourceNode() {
     buffer: null,
     playbackRate: { value: 1.0 },
     connect: vi.fn(),
+    disconnect: vi.fn(),
     start: vi.fn(),
     stop: vi.fn(),
     onended: null as (() => void) | null,
@@ -330,6 +331,167 @@ describe("AudioEngine", () => {
       expect(mockCtx.createBufferSource).not.toHaveBeenCalled();
     });
 
+    test("noteOn with velocity=0 delegates to noteOff (MIDI spec R1-05)", async () => {
+      const { mockCtx } = stubGlobalAudioContext();
+
+      const mockSample = {
+        midi: 60,
+        buffer: {} as AudioBuffer,
+        sampleRate: 44100,
+        basePitch: 60,
+      };
+
+      const loader = (engine as any)._soundFontLoader;
+      loader.getSample.mockReturnValue(mockSample);
+
+      await engine.init();
+
+      const mockSource = createMockAudioBufferSourceNode();
+      const mockVelocityGain = createMockGainNode();
+      mockCtx.createBufferSource.mockReturnValue(mockSource);
+      mockCtx.createGain.mockReturnValue(mockVelocityGain);
+
+      // First create a real note
+      engine.noteOn(60, 100, 1.0);
+
+      // Now send velocity=0 noteOn — should act as noteOff
+      engine.noteOn(60, 0, 2.0);
+
+      // The note should have been released (stop called via release envelope)
+      expect(mockSource.stop).toHaveBeenCalled();
+      // No additional source should have been created (only the first noteOn)
+      expect(mockCtx.createBufferSource).toHaveBeenCalledTimes(1);
+    });
+
+    test("velocity=0 noteOn does not create a source node when no active note exists", async () => {
+      const { mockCtx } = stubGlobalAudioContext();
+      await engine.init();
+
+      // velocity=0 with no active note — should be a no-op (noteOff on empty)
+      engine.noteOn(60, 0, 0);
+      expect(mockCtx.createBufferSource).not.toHaveBeenCalled();
+    });
+
+    test("per-key polyphony is capped at MAX_NOTES_PER_KEY (R1-08)", async () => {
+      const { mockCtx } = stubGlobalAudioContext();
+
+      const mockSample = {
+        midi: 60,
+        buffer: {} as AudioBuffer,
+        sampleRate: 44100,
+        basePitch: 60,
+      };
+
+      const loader = (engine as any)._soundFontLoader;
+      loader.getSample.mockReturnValue(mockSample);
+
+      await engine.init();
+
+      const sources: ReturnType<typeof createMockAudioBufferSourceNode>[] = [];
+      const gains: ReturnType<typeof createMockGainNode>[] = [];
+
+      // Create fresh mock for each noteOn call
+      mockCtx.createBufferSource.mockImplementation(() => {
+        const s = createMockAudioBufferSourceNode();
+        sources.push(s);
+        return s;
+      });
+      mockCtx.createGain.mockImplementation(() => {
+        const g = createMockGainNode();
+        gains.push(g);
+        return g;
+      });
+
+      // Fire 6 rapid noteOns on the same key (MAX_NOTES_PER_KEY = 4)
+      for (let i = 0; i < 6; i++) {
+        engine.noteOn(60, 100, 0);
+      }
+
+      // 6 sources should have been created
+      expect(sources.length).toBe(6);
+
+      // The oldest 2 should have been released (stop called)
+      expect(sources[0].stop).toHaveBeenCalled();
+      expect(sources[1].stop).toHaveBeenCalled();
+
+      // The active notes map should have exactly 4 entries for this key
+      const activeNotes = (engine as any)._activeNotes as Map<
+        number,
+        unknown[]
+      >;
+      expect(activeNotes.get(60)?.length).toBe(4);
+    });
+
+    test("release envelope uses stored velocityGain, not gain.gain.value (R1-02)", async () => {
+      const { mockCtx } = stubGlobalAudioContext();
+
+      const mockSample = {
+        midi: 60,
+        buffer: {} as AudioBuffer,
+        sampleRate: 44100,
+        basePitch: 60,
+      };
+
+      const loader = (engine as any)._soundFontLoader;
+      loader.getSample.mockReturnValue(mockSample);
+
+      await engine.init();
+
+      const mockSource = createMockAudioBufferSourceNode();
+      const mockVelocityGain = createMockGainNode();
+      mockCtx.createBufferSource.mockReturnValue(mockSource);
+      mockCtx.createGain.mockReturnValue(mockVelocityGain);
+
+      // noteOn with velocity 100 → velGainValue = 100/127 ≈ 0.787
+      engine.noteOn(60, 100, 1.0);
+
+      // Simulate gain.gain.value going stale (e.g., mid-ramp snapshot)
+      mockVelocityGain.gain.value = 0.0001;
+
+      engine.noteOff(60, 2.0);
+
+      // setValueAtTime should use the stored velocity (100/127), NOT the stale 0.0001
+      const setValueCalls = mockVelocityGain.gain.setValueAtTime.mock.calls;
+      const releaseCall = setValueCalls[setValueCalls.length - 1];
+      const expectedVelocityGain = Math.max(100 / 127, 0.001);
+      expect(releaseCall[0]).toBeCloseTo(expectedVelocityGain, 3);
+    });
+
+    test("onended handler does not throw when nodes are already disconnected (R1-03)", async () => {
+      const { mockCtx } = stubGlobalAudioContext();
+
+      const mockSample = {
+        midi: 60,
+        buffer: {} as AudioBuffer,
+        sampleRate: 44100,
+        basePitch: 60,
+      };
+
+      const loader = (engine as any)._soundFontLoader;
+      loader.getSample.mockReturnValue(mockSample);
+
+      await engine.init();
+
+      const mockSource = createMockAudioBufferSourceNode();
+      const mockVelocityGain = createMockGainNode();
+      // Make disconnect throw (simulating already-disconnected state from allNotesOff)
+      mockSource.disconnect = vi.fn(() => {
+        throw new DOMException("InvalidStateError");
+      });
+      mockVelocityGain.disconnect = vi.fn(() => {
+        throw new DOMException("InvalidStateError");
+      });
+
+      mockCtx.createBufferSource.mockReturnValue(mockSource);
+      mockCtx.createGain.mockReturnValue(mockVelocityGain);
+
+      engine.noteOn(60, 100, 0);
+
+      // Simulate onended firing after allNotesOff has already disconnected nodes
+      expect(mockSource.onended).toBeTypeOf("function");
+      expect(() => mockSource.onended!()).not.toThrow();
+    });
+
     test("noteOn reports recoverable runtime failures for auto-rebuild", async () => {
       const { mockCtx } = stubGlobalAudioContext();
       const runtimeError = new Error(
@@ -360,6 +522,54 @@ describe("AudioEngine", () => {
       expect(() => engine.noteOn(60, 100, 0)).not.toThrow();
       expect(engine.status).toBe("error");
       expect(onRuntimeError).toHaveBeenCalledWith(runtimeError);
+    });
+
+    test("non-recoverable errors are logged but do not change status (R1-07)", async () => {
+      const { mockCtx } = stubGlobalAudioContext();
+      // A non-recoverable error (not WASAPI/InvalidState/etc.)
+      const nonRecoverableError = new TypeError(
+        "Cannot read properties of undefined",
+      );
+      const onRuntimeError = vi.fn();
+      engine.setRuntimeErrorHandler(onRuntimeError);
+
+      const mockSample = {
+        midi: 60,
+        buffer: {} as AudioBuffer,
+        sampleRate: 44100,
+        basePitch: 60,
+      };
+
+      const loader = (engine as any)._soundFontLoader;
+      loader.getSample.mockReturnValue(mockSample);
+
+      await engine.init();
+      expect(engine.status).toBe("ready");
+
+      const failingSource = createMockAudioBufferSourceNode();
+      failingSource.start = vi.fn(() => {
+        throw nonRecoverableError;
+      });
+      mockCtx.createBufferSource.mockReturnValue(failingSource);
+      mockCtx.createGain.mockReturnValue(createMockGainNode());
+
+      const consoleSpy = vi
+        .spyOn(console, "error")
+        .mockImplementation(() => {});
+
+      expect(() => engine.noteOn(60, 100, 0)).not.toThrow();
+
+      // Status should NOT change for non-recoverable errors
+      expect(engine.status).toBe("ready");
+      // Callback should NOT fire for non-recoverable errors
+      expect(onRuntimeError).not.toHaveBeenCalled();
+      // But the error SHOULD be logged
+      expect(consoleSpy).toHaveBeenCalledWith(
+        "AudioEngine.noteOn runtime failure:",
+        nonRecoverableError,
+      );
+
+      consoleSpy.mockRestore();
     });
   });
 
