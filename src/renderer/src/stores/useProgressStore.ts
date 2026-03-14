@@ -17,16 +17,26 @@ import { useSongStore } from "./useSongStore";
 const DAILY_GOAL_STORAGE_KEY = "rexiano:dailyGoal";
 const DAILY_PROGRESS_STORAGE_KEY = "rexiano:dailyProgress";
 
-/** Get today's date key in YYYY-MM-DD format */
+/** Get today's date key in YYYY-MM-DD format using LOCAL timezone (R1-04 fix).
+ *  Using local date ensures practice time accumulated at e.g. 11pm in UTC+8
+ *  is credited to the correct local day, not the next UTC day. */
 function todayKey(): string {
-  return new Date().toISOString().slice(0, 10);
+  const d = new Date();
+  const yyyy = d.getFullYear();
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  const dd = String(d.getDate()).padStart(2, "0");
+  return `${yyyy}-${mm}-${dd}`;
 }
 
-/** Load daily goal from localStorage */
+/** Load daily goal from localStorage, clamped to valid range (R1-02 fix) */
 function loadDailyGoal(): number {
   try {
     const raw = localStorage.getItem(DAILY_GOAL_STORAGE_KEY);
-    if (raw) return Number(raw) || 15;
+    if (raw) {
+      const num = Number(raw);
+      if (!isFinite(num)) return 15;
+      return Math.max(1, Math.min(120, Math.round(num)));
+    }
   } catch {
     /* ignore */
   }
@@ -137,16 +147,37 @@ export const useProgressStore = create<ProgressState>()((set, get) => ({
   },
 
   setDailyGoal: (minutes) => {
-    set({ dailyGoalMinutes: minutes });
+    // R1-02 fix: Clamp to valid range (1–120 minutes) with NaN/Infinity guard,
+    // matching the clamping pattern used by all other numeric setters in useSettingsStore.
+    if (typeof minutes !== "number" || !isFinite(minutes)) return;
+    const clamped = Math.max(1, Math.min(120, Math.round(minutes)));
+    set({ dailyGoalMinutes: clamped });
     try {
-      localStorage.setItem(DAILY_GOAL_STORAGE_KEY, String(minutes));
+      localStorage.setItem(DAILY_GOAL_STORAGE_KEY, String(clamped));
     } catch {
       /* ignore */
     }
   },
 
   addPracticeTime: (ms) => {
-    const current = get().todayPracticeMs;
+    // R3-02 fix: Detect midnight boundary — if the stored date doesn't match
+    // todayKey(), the in-memory value is stale (from yesterday). Reset to 0
+    // before adding the new practice time so we don't carry over yesterday's total.
+    const storedDate = (() => {
+      try {
+        const raw = localStorage.getItem(DAILY_PROGRESS_STORAGE_KEY);
+        if (raw) {
+          const parsed = JSON.parse(raw) as { date: string; ms: number };
+          return parsed.date;
+        }
+      } catch {
+        /* ignore */
+      }
+      return null;
+    })();
+
+    const today = todayKey();
+    const current = storedDate === today ? get().todayPracticeMs : 0;
     const updated = current + ms;
     set({ todayPracticeMs: updated });
     saveTodayPracticeMs(updated);
@@ -203,14 +234,22 @@ export function initAutoSave(): () => void {
       _sessionSongFileName = currentSong?.fileName ?? null;
     }
 
-    // When transitioning from playing to stopped, save session
+    // When transitioning from playing to stopped, save session + daily time
     if (!state.isPlaying && prev.isPlaying && _sessionStartTime !== null) {
+      const elapsedMs = Date.now() - _sessionStartTime;
       const practiceState = usePracticeStore.getState();
       const songState = useSongStore.getState();
 
-      // Only save if there's actual score data
+      // R1-03 fix: Consolidate daily practice time tracking here instead of
+      // duplicating the play start/stop measurement in App.tsx.
+      // Uses the same _sessionStartTime that session records use — single timestamp source.
+      if (elapsedMs > 1000) {
+        useProgressStore.getState().addPracticeTime(elapsedMs);
+      }
+
+      // Only save session record if there's actual score data
       if (practiceState.score.totalNotes > 0 && songState.song) {
-        const durationSeconds = (Date.now() - _sessionStartTime) / 1000;
+        const durationSeconds = elapsedMs / 1000;
         const song = songState.song;
 
         const record: SessionRecord = {
@@ -243,10 +282,14 @@ export function initAutoSave(): () => void {
     }
   });
 
-  // Wrap unsubscribe to also clear the guard ref, allowing re-initialization
+  // Wrap unsubscribe to also clear ALL module-level state, allowing clean re-initialization.
+  // R2-02 fix: Reset _sessionStartTime and _sessionSongFileName on cleanup to prevent
+  // stale timestamps from leaking into a remounted subscriber (hot reload, strict mode).
   _autoSaveUnsub = () => {
     playbackUnsub();
     songUnsub();
+    _sessionStartTime = null;
+    _sessionSongFileName = null;
     _autoSaveUnsub = null;
   };
 

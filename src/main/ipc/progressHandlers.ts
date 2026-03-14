@@ -40,14 +40,28 @@ async function writeSessions(sessions: SessionRecord[]): Promise<void> {
   await writeFile(filePath, JSON.stringify(sessions, null, 2), "utf-8");
 }
 
-// Serialize writes to prevent concurrent read-then-write from losing data
+// Serialize writes to prevent concurrent read-then-write from losing data.
+// In-memory cache ensures a failed write doesn't cause the next write to
+// re-read stale data from disk (R1-01 fix: eliminated silent data loss).
 let writeChain: Promise<void> = Promise.resolve();
+let cachedSessions: SessionRecord[] | null = null;
 
 export function registerProgressHandlers(): void {
+  // Reset cache on registration (production: called once; tests: called per-test for isolation)
+  cachedSessions = null;
+  writeChain = Promise.resolve();
+
   ipcMain.handle(
     IpcChannels.LOAD_SESSIONS,
     async (): Promise<SessionRecord[]> => {
-      return readSessions();
+      if (cachedSessions === null) {
+        cachedSessions = await readSessions();
+      }
+      // R3-01 fix: Return a defensive copy so the renderer's mutations
+      // (e.g. optimistic addSession) don't accidentally alias the cache.
+      // IPC structured clone already copies, but being explicit makes the
+      // contract clear and future-proof for same-process callers.
+      return [...cachedSessions];
     },
   );
 
@@ -72,17 +86,30 @@ export function registerProgressHandlers(): void {
         resolve = res;
         reject = rej;
       });
-      // Chain never rejects — serialization is preserved even on error
-      writeChain = writeChain.then(async () => {
-        try {
-          const sessions = await readSessions();
-          sessions.push(record);
-          await writeSessions(sessions);
-          resolve();
-        } catch (err) {
-          reject(err);
-        }
-      });
+      // R2-01 fix: The chain MUST always resolve so subsequent writes are not
+      // blocked. The .catch(() => {}) ensures that even if the inner function
+      // throws, the writeChain promise resolves — keeping serialization alive.
+      // Errors are forwarded to the caller via the gate Promise independently.
+      writeChain = writeChain
+        .then(async () => {
+          try {
+            // Initialize cache from disk if needed
+            if (cachedSessions === null) {
+              cachedSessions = await readSessions();
+            }
+            cachedSessions = [...cachedSessions, record];
+            await writeSessions(cachedSessions);
+            resolve();
+          } catch (err) {
+            // Even on write failure, the in-memory cache retains the new record
+            // so the next write attempt includes it (no silent data loss).
+            reject(err);
+          }
+        })
+        .catch(() => {
+          // Swallow chain-level rejection to keep the chain alive for future writes.
+          // The caller already received the error via the gate promise's reject().
+        });
       await gate;
     },
   );

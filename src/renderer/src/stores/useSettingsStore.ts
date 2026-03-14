@@ -185,8 +185,21 @@ function loadSavedSettings(): PersistedSettings {
 }
 
 /** In-memory cache of persisted settings to avoid stale-read race when
- *  multiple settings are written synchronously in the same microtask. */
+ *  multiple settings are written synchronously in the same microtask.
+ *
+ *  R3-03 fix: A 'storage' event listener invalidates the cache when
+ *  localStorage is modified externally (DevTools, another window, etc).
+ *  This prevents persist() from silently overwriting external changes. */
 let _persistedCache: PersistedSettings | null = null;
+
+// Invalidate cache when localStorage is modified by another context
+if (typeof window !== "undefined") {
+  window.addEventListener("storage", (e) => {
+    if (e.key === STORAGE_KEY) {
+      _persistedCache = null;
+    }
+  });
+}
 
 function persist(patch: Partial<PersistedSettings>): void {
   try {

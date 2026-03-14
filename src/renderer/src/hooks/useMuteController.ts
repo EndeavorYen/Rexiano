@@ -15,24 +15,34 @@ const DEFAULT_VOLUME = 0.8;
 /**
  * Core mute/unmute logic. Both toggleMute() and setMuted() delegate here
  * to eliminate duplication (R1-01 fix).
+ *
+ * R2-03 fix: Operation ordering ensures consistent cross-store state.
+ * Live state (usePlaybackStore.volume) is updated FIRST so any subscriber
+ * triggered by the settings persistence sees the correct live volume.
+ * Read → mutate live → persist: no transient desync window.
  */
 function applyMuteState(nextMuted: boolean): void {
   const pb = usePlaybackStore.getState();
   const settings = useSettingsStore.getState();
 
   if (nextMuted) {
-    // Muting: save current volume as lastNonZeroVolume if > 0, then set to 0
-    if (pb.volume > 0) {
-      settings.setVolume(Math.round(pb.volume * 100));
+    // 1. Capture current volume for persistence BEFORE zeroing
+    const currentVol100 = pb.volume > 0 ? Math.round(pb.volume * 100) : 0;
+    // 2. Set live volume to 0 first (audio engine sees this immediately)
+    pb.setVolume(0);
+    // 3. Persist: save volume snapshot + muted flag to settings/localStorage
+    if (currentVol100 > 0) {
+      settings.setVolume(currentVol100);
     }
     settings.setMuted(true);
-    pb.setVolume(0);
   } else {
-    // Unmuting: restore from persisted lastNonZeroVolume
+    // 1. Read restore target before any mutation
     const restoreVolume = settings.lastNonZeroVolume;
     const vol01 = restoreVolume > 0 ? restoreVolume / 100 : DEFAULT_VOLUME;
-    settings.setMuted(false);
+    // 2. Set live volume first (audio engine sees this immediately)
     pb.setVolume(vol01);
+    // 3. Persist unmuted flag
+    settings.setMuted(false);
   }
 }
 

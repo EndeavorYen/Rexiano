@@ -685,24 +685,8 @@ function App(): React.JSX.Element {
     return cleanup;
   }, []);
 
-  // ─── Daily practice time tracking ──────────────────────
-  // Track elapsed playback time and add to daily progress when playback stops.
-  useEffect(() => {
-    let playStartTime: number | null = null;
-    const unsub = usePlaybackStore.subscribe((state, prev) => {
-      if (state.isPlaying && !prev.isPlaying) {
-        playStartTime = Date.now();
-      }
-      if (!state.isPlaying && prev.isPlaying && playStartTime !== null) {
-        const elapsed = Date.now() - playStartTime;
-        if (elapsed > 1000) {
-          useProgressStore.getState().addPracticeTime(elapsed);
-        }
-        playStartTime = null;
-      }
-    });
-    return unsub;
-  }, []);
+  // R1-03 fix: Daily practice time tracking consolidated into initAutoSave()
+  // in useProgressStore.ts — single timestamp source eliminates duplication.
 
   // ─── Song completion detection ─────────────────────────
   useEffect(() => {
