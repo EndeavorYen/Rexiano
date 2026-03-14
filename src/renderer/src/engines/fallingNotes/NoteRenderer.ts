@@ -11,7 +11,7 @@ import type {
   TimeSignatureEvent,
 } from "@renderer/engines/midi/types";
 import { buildKeyPositions, type KeyPosition } from "./keyPositions";
-import { getTrackColor, getHitLineColor } from "./noteColors";
+import { getTrackColor } from "./noteColors";
 import { useThemeStore } from "@renderer/stores/useThemeStore";
 import { hexToPixi } from "@renderer/themes/tokens";
 import {
@@ -157,8 +157,16 @@ export class NoteRenderer {
   private _cachedMissGray = 0x888888;
   private _cachedComboText = 0xffffff;
   private _cachedGridLine = 0x444444;
+  /** S9-R1-03: Cache hit line color to match grid line caching pattern */
+  private _cachedHitLine = 0x705a87;
   /** Unsubscribe handle for theme store subscription */
   private _themeUnsub: (() => void) | null = null;
+  /** S9-R3-03: Cached showFingering to avoid per-frame store access */
+  private _cachedShowFingering = false;
+  /** S9-R3-03: Unsubscribe handle for settings store subscription */
+  private _settingsUnsub: (() => void) | null = null;
+  /** S9-R3-03: Cached track color palette (updated on theme change) */
+  private _cachedTrackPalette: number[] = [];
 
   public activeNotes = new Set<number>();
 
@@ -169,10 +177,14 @@ export class NoteRenderer {
   // ── Beat grid and hit line (R2-006: cached with dirty flag) ──────
   private _gridGraphics: Graphics;
   private _hitLineGraphics: Graphics;
-  /** R2-006: Last viewport state used to draw grid -- skip redraw if unchanged */
-  private _lastGridVpKey = "";
-  /** Last viewport width+height used for hit line — skip redraw if unchanged */
-  private _lastHitLineKey = "";
+  /** S9-R2-03: Numeric dirty-check fields for grid — avoids string allocation per frame */
+  private _lastGridTime = -1;
+  private _lastGridPps = -1;
+  private _lastGridW = -1;
+  private _lastGridH = -1;
+  /** S9-R2-03: Numeric dirty-check for hit line */
+  private _lastHitLineW = -1;
+  private _lastHitLineH = -1;
 
   // ── Fingering overlay ──────────────────────────────────────────
   private fingeringEngine = new FingeringEngine();
@@ -183,6 +195,9 @@ export class NoteRenderer {
   private nextFingeringLabels = new Map<string, Text>();
   /** Cached fingering results per song, keyed by "trackIdx" */
   private fingeringCache = new Map<string, Map<number, Finger>>();
+  /** S9-R2-01: Precomputed note→originalIndex map per track for O(1) fingering lookup.
+   *  Built in computeFingeringForSong alongside fingeringCache. */
+  private _noteIndexMap = new Map<string, Map<ParsedNote, number>>();
   /** ID of the last song we computed fingering for */
   private lastFingeredSong: ParsedSong | null = null;
 
@@ -226,6 +241,13 @@ export class NoteRenderer {
     this._themeUnsub = useThemeStore.subscribe(() =>
       this._updateCachedColors(),
     );
+
+    // S9-R3-03: Cache settings and subscribe for changes — avoids per-frame getState()
+    this._settingsUnsub?.();
+    this._cachedShowFingering = useSettingsStore.getState().showFingering;
+    this._settingsUnsub = useSettingsStore.subscribe((state) => {
+      this._cachedShowFingering = state.showFingering;
+    });
   }
 
   /** Refresh cached PixiJS color values from the current theme. */
@@ -235,9 +257,22 @@ export class NoteRenderer {
     this._cachedMissGray = hexToPixi(colors.missGray);
     this._cachedComboText = hexToPixi(colors.comboText);
     this._cachedGridLine = hexToPixi(colors.gridLine);
-    // Invalidate dirty flags so hit line, beat grid, and combo style pick up new colors
-    this._lastHitLineKey = "";
-    this._lastGridVpKey = "";
+    // S9-R1-03: Cache hit line color alongside other theme colors
+    this._cachedHitLine = hexToPixi(colors.hitLine);
+    // S9-R3-03: Cache track color palette to avoid per-track getState() calls
+    this._cachedTrackPalette = [
+      hexToPixi(colors.note1),
+      hexToPixi(colors.note2),
+      hexToPixi(colors.note3),
+      hexToPixi(colors.note4),
+      hexToPixi(colors.note5),
+      hexToPixi(colors.note6),
+      hexToPixi(colors.note7),
+      hexToPixi(colors.note8),
+    ];
+    // S9-R2-03: Invalidate numeric dirty flags for grid and hit line redraws
+    this._lastGridTime = -1;
+    this._lastHitLineW = -1;
     this._comboStyle = null;
   }
 
@@ -264,7 +299,8 @@ export class NoteRenderer {
     this.activeNotes.clear();
 
     const hitWindow = 0.05;
-    const showFingering = useSettingsStore.getState().showFingering;
+    // S9-R3-03: Use cached value instead of per-frame store access
+    const showFingering = this._cachedShowFingering;
     const maxVisibleLabels =
       vp.height < 200 ? 14 : vp.height < 280 ? 22 : vp.height < 360 ? 30 : 42;
     let shownLabelCount = 0;
@@ -282,21 +318,17 @@ export class NoteRenderer {
 
     for (let trackIdx = 0; trackIdx < song.tracks.length; trackIdx++) {
       const track = song.tracks[trackIdx];
-      const color = getTrackColor(trackIdx);
+      // S9-R3-03: Use cached palette instead of per-track getTrackColor (store access)
+      const palette = this._cachedTrackPalette;
+      const color = palette.length > 0
+        ? palette[trackIdx % palette.length]
+        : getTrackColor(trackIdx);
       const visibleNotes = getVisibleNotes(
         track.notes,
         vp,
         hitWindow,
         this.visibleBuf,
       );
-
-      // Find the original index of the first visible note for fingering lookup.
-      // visibleNotes contains references to the same objects in track.notes,
-      // so indexOf (identity check) is O(n) but only runs once per track per frame.
-      const visibleStartIdx =
-        showFingering && visibleNotes.length > 0
-          ? track.notes.indexOf(visibleNotes[0])
-          : 0;
 
       for (let vi = 0; vi < visibleNotes.length; vi++) {
         const note = visibleNotes[vi];
@@ -358,8 +390,15 @@ export class NoteRenderer {
         }
 
         // ── Fingering label overlay ──────────────────────────────
+        // S9-R1-01: Look up each note's original index via precomputed map
+        // instead of arithmetic offset. getVisibleNotes()'s backward scan
+        // produces unsorted results, so sequential indexing was wrong.
+        // S9-R2-01: Use _noteIndexMap for O(1) lookup instead of O(n) indexOf.
         if (showFingering && h >= MIN_HEIGHT_FOR_FINGERING) {
-          const finger = this.getFingerForNote(trackIdx, visibleStartIdx + vi);
+          const trackIdxStr = String(trackIdx);
+          const noteIdx = this._noteIndexMap.get(trackIdxStr)?.get(note);
+          const finger =
+            noteIdx != null ? this.getFingerForNote(trackIdx, noteIdx) : null;
           if (finger) {
             let label =
               this.activeFingeringLabels.get(key) ?? nextFLabels.get(key);
@@ -422,9 +461,13 @@ export class NoteRenderer {
 
     this._gridGraphics.clear();
     this._hitLineGraphics.clear();
-    // R1-06: Reset dirty-check keys so re-init with same viewport doesn't skip first draw
-    this._lastGridVpKey = "";
-    this._lastHitLineKey = "";
+    // R1-06/S9-R2-03: Reset numeric dirty-check fields so re-init draws correctly
+    this._lastGridTime = -1;
+    this._lastGridPps = -1;
+    this._lastGridW = -1;
+    this._lastGridH = -1;
+    this._lastHitLineW = -1;
+    this._lastHitLineH = -1;
     this.container.removeChildren();
     this.pool.length = 0;
     this.active.clear();
@@ -449,6 +492,10 @@ export class NoteRenderer {
     // Unsubscribe from theme store
     this._themeUnsub?.();
     this._themeUnsub = null;
+
+    // S9-R3-03: Unsubscribe from settings store
+    this._settingsUnsub?.();
+    this._settingsUnsub = null;
 
     // R2-01: Destroy in-flight combo labels that were mid-animation
     // (not yet returned to _comboPool). These would otherwise be orphaned
@@ -481,6 +528,7 @@ export class NoteRenderer {
     this.activeFingeringLabels.clear();
     this.nextFingeringLabels.clear();
     this.fingeringCache.clear();
+    this._noteIndexMap.clear();
     this.lastFingeredSong = null;
   }
 
@@ -594,13 +642,22 @@ export class NoteRenderer {
 
   /**
    * Pre-compute fingering for all tracks in a song.
+   * S9-R2-01: Also builds _noteIndexMap for O(1) note→index lookup.
    */
   private computeFingeringForSong(song: ParsedSong): void {
     this.fingeringCache.clear();
+    this._noteIndexMap.clear();
 
     for (let trackIdx = 0; trackIdx < song.tracks.length; trackIdx++) {
       const track = song.tracks[trackIdx];
       if (track.notes.length === 0) continue;
+
+      // S9-R2-01: Build note→index map for O(1) lookup in hot path
+      const indexMap = new Map<ParsedNote, number>();
+      for (let i = 0; i < track.notes.length; i++) {
+        indexMap.set(track.notes[i], i);
+      }
+      this._noteIndexMap.set(String(trackIdx), indexMap);
 
       // Heuristic: tracks with mostly lower notes (avg midi < 60) are left hand
       const avgMidi =
@@ -833,10 +890,19 @@ export class NoteRenderer {
    * R2-006: Skips redraw if the viewport key hasn't changed.
    */
   private _drawBeatGrid(song: ParsedSong, vp: Viewport): void {
-    // R2-006: Build a key from the viewport state that affects the grid
-    const vpKey = `${vp.currentTime.toFixed(4)}:${vp.pps}:${vp.width}:${vp.height}`;
-    if (vpKey === this._lastGridVpKey) return;
-    this._lastGridVpKey = vpKey;
+    // S9-R2-03: Numeric dirty check — avoids string allocation + toFixed per frame
+    if (
+      vp.currentTime === this._lastGridTime &&
+      vp.pps === this._lastGridPps &&
+      vp.width === this._lastGridW &&
+      vp.height === this._lastGridH
+    ) {
+      return;
+    }
+    this._lastGridTime = vp.currentTime;
+    this._lastGridPps = vp.pps;
+    this._lastGridW = vp.width;
+    this._lastGridH = vp.height;
 
     const g = this._gridGraphics;
     g.clear();
@@ -867,14 +933,18 @@ export class NoteRenderer {
   // ── Hit line (horizontal line at the bottom where notes are hit) ──
 
   private _drawHitLine(vp: Viewport): void {
-    const hlKey = `${vp.width}:${vp.height}`;
-    if (hlKey === this._lastHitLineKey) return;
-    this._lastHitLineKey = hlKey;
+    // S9-R2-03: Numeric dirty check
+    if (vp.width === this._lastHitLineW && vp.height === this._lastHitLineH) {
+      return;
+    }
+    this._lastHitLineW = vp.width;
+    this._lastHitLineH = vp.height;
 
     const g = this._hitLineGraphics;
     g.clear();
 
-    const hitColor = getHitLineColor();
+    // S9-R1-03: Use cached color instead of store access in render path
+    const hitColor = this._cachedHitLine;
     const hitY = vp.height;
 
     // Glow layer
@@ -899,11 +969,15 @@ interface BeatInfo {
  * Compute beat times within a given time range, respecting tempo and
  * time signature changes. Used for rendering beat grid lines.
  *
- * R2-003: Walks the full tempo map to accumulate actual beat positions,
+ * R2-003: Walks the tempo map to accumulate actual beat positions,
  * rather than using a single BPM at startTime. This correctly handles
  * songs with multiple tempo changes.
  *
  * R2-012: Falls back to 120 BPM / 4/4 when tempos or timeSignatures are empty.
+ *
+ * S9-R1-02: Optimized to skip directly to the tempo segment containing
+ * startTime instead of walking from time=0. This reduces per-frame cost
+ * from O(total_beats_in_song) to O(visible_beats + tempo_events).
  */
 function computeBeatTimesInRange(
   startTime: number,
@@ -918,15 +992,19 @@ function computeBeatTimesInRange(
   const defaultNumerator =
     timeSignatures.length > 0 ? timeSignatures[0].numerator : 4;
 
-  // R2-003: Walk from time=0 through the tempo map, accumulating beat positions.
+  // ── Phase 1: Fast-forward to the tempo segment containing startTime ──
+  // Walk through tempo and time-sig events in chronological order to
+  // reach the segment containing startTime. This is O(events) not O(beats).
+  // S9-R2-02: Interleave tempo and time-sig events to correctly handle
+  // time-sig changes that occur between tempo events.
   let currentBpm = defaultBpm;
   let currentNumerator = defaultNumerator;
   let tempoIdx = 0;
   let tsIdx = 0;
-  let beatTime = 0;
+  let segmentStartTime = 0;
   let beatInMeasure = 0;
 
-  // Skip past tempo/time-sig events that are at time 0
+  // Consume events at time 0
   while (tempoIdx < tempos.length && tempos[tempoIdx].time <= 0) {
     currentBpm = tempos[tempoIdx].bpm;
     tempoIdx++;
@@ -936,19 +1014,59 @@ function computeBeatTimesInRange(
     tsIdx++;
   }
 
-  const maxBeats = 2000; // safety cap
-  let emitted = 0;
+  // Walk through events chronologically until we reach startTime.
+  // At each event boundary, count beats in the segment and advance state.
+  while (true) {
+    // Find the next event (tempo or time-sig) before startTime
+    const nextTempoTime =
+      tempoIdx < tempos.length && tempos[tempoIdx].time < startTime
+        ? tempos[tempoIdx].time
+        : Infinity;
+    const nextTsTime =
+      tsIdx < timeSignatures.length &&
+      timeSignatures[tsIdx].time < startTime
+        ? timeSignatures[tsIdx].time
+        : Infinity;
+    const nextEventTime = Math.min(nextTempoTime, nextTsTime);
 
-  while (beatTime < endTime + 0.001 && emitted < maxBeats) {
-    let secondsPerBeat = 60 / currentBpm;
+    if (nextEventTime === Infinity) break; // No more events before startTime
 
-    // Apply any tempo/time-sig changes at this beat position
-    let changed = false;
+    // Count beats from segmentStartTime to this event
+    const secondsPerBeat = 60 / currentBpm;
+    const segmentDuration = nextEventTime - segmentStartTime;
+    const beatsInSegment = Math.floor(segmentDuration / secondsPerBeat);
+    beatInMeasure = (beatInMeasure + beatsInSegment) % currentNumerator;
+    segmentStartTime = segmentStartTime + beatsInSegment * secondsPerBeat;
+
+    // Apply the event(s) at this time
+    if (nextTempoTime <= nextTsTime) {
+      currentBpm = tempos[tempoIdx].bpm;
+      tempoIdx++;
+    }
+    if (nextTsTime <= nextTempoTime) {
+      currentNumerator = timeSignatures[tsIdx].numerator;
+      beatInMeasure = 0;
+      tsIdx++;
+    }
+  }
+
+  // S9-R3-01: Arithmetic jump to the first beat near startTime instead of
+  // walking beat-by-beat. This provides O(1) skip for single-tempo songs
+  // (the most common case) and eliminates the O(beats) loop entirely.
+  // S9-R3-02: Uses exact arithmetic to avoid floating-point drift.
+  let secondsPerBeat = 60 / currentBpm;
+  const gap = startTime - segmentStartTime;
+  let beatTime: number;
+  if (gap > secondsPerBeat) {
+    // Jump directly: compute how many full beats fit in the gap
+    const beatsToSkip = Math.floor(gap / secondsPerBeat);
+    beatTime = segmentStartTime + beatsToSkip * secondsPerBeat;
+    beatInMeasure = (beatInMeasure + beatsToSkip) % currentNumerator;
+    // Consume any tempo/ts events that we jumped over (between segmentStartTime and beatTime)
     while (tempoIdx < tempos.length && tempos[tempoIdx].time <= beatTime) {
       currentBpm = tempos[tempoIdx].bpm;
       secondsPerBeat = 60 / currentBpm;
       tempoIdx++;
-      changed = true;
     }
     while (
       tsIdx < timeSignatures.length &&
@@ -957,17 +1075,35 @@ function computeBeatTimesInRange(
       currentNumerator = timeSignatures[tsIdx].numerator;
       tsIdx++;
       beatInMeasure = 0;
-      changed = true;
     }
-    if (changed) {
+  } else {
+    beatTime = segmentStartTime;
+  }
+
+  // ── Phase 2: Emit beats within the visible range ──
+  const maxBeats = 2000; // safety cap
+  let emitted = 0;
+
+  while (beatTime < endTime + 0.001 && emitted < maxBeats) {
+    secondsPerBeat = 60 / currentBpm;
+
+    // Apply any tempo/time-sig changes at this beat position
+    while (tempoIdx < tempos.length && tempos[tempoIdx].time <= beatTime) {
+      currentBpm = tempos[tempoIdx].bpm;
       secondsPerBeat = 60 / currentBpm;
+      tempoIdx++;
+    }
+    while (
+      tsIdx < timeSignatures.length &&
+      timeSignatures[tsIdx].time <= beatTime
+    ) {
+      currentNumerator = timeSignatures[tsIdx].numerator;
+      tsIdx++;
+      beatInMeasure = 0;
     }
 
-    // Emit this beat if it's in the visible range
-    if (beatTime >= startTime - 0.01) {
-      results.push({ time: beatTime, beatInMeasure });
-      emitted++;
-    }
+    results.push({ time: beatTime, beatInMeasure });
+    emitted++;
 
     // Advance to next beat
     beatTime += secondsPerBeat;

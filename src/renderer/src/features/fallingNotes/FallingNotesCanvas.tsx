@@ -92,8 +92,19 @@ export function FallingNotesCanvas({
         ),
       );
 
+      // S9-R1-04: Guard against destroyed state before creating subscriptions.
+      // If the component unmounted while app.init() was awaiting, setup() continues
+      // past the first `destroyed` check but creates subscriptions on a doomed app.
+      if (destroyed) {
+        noteRenderer.destroy();
+        app.destroy();
+        return;
+      }
+
       // Update canvas background when theme changes
       unsubTheme = useThemeStore.subscribe(() => {
+        // S9-R1-04: Guard callback — prevent writes to destroyed renderer
+        if (destroyed) return;
         app.renderer.background.color = getCanvasBgColor();
       });
 

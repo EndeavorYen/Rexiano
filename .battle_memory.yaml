@@ -1,27 +1,27 @@
 # AGENT MEMORY — 團隊累積的實戰智慧（~30 行上限）
-record: { total: 8, red_wins: 0, white_wins: 8, streak: "WHITE x8" }
-past_topics: ["State Sync", "UI & IPC Safety", "Sheet Music Rendering", "App.tsx Root Component", "UI/UX Polish & Design System Consistency", "Practice Engine Correctness & Cross-Engine Consistency", "Audio Pipeline Correctness & Resilience", "Zustand Store Layer & Data Persistence Integrity"]
+record: { total: 9, red_wins: 0, white_wins: 9, streak: "WHITE x9" }
+past_topics: ["State Sync", "UI & IPC Safety", "Sheet Music Rendering", "App.tsx Root Component", "UI/UX Polish & Design System Consistency", "Practice Engine Correctness & Cross-Engine Consistency", "Audio Pipeline Correctness & Resilience", "Zustand Store Layer & Data Persistence Integrity", "PixiJS Falling Notes Rendering Pipeline"]
 
 red_growth:
-  learned: "Promise chain .catch() is critical — writeChain.then(async () => throw) kills the chain permanently. fix-in-fix 連續兩場成功（S7, S8）"
-  working_on: "八連敗。finding 品質已達 production-critical（S8 R2-01 chain-death），但白隊修復速度仍無法突破"
-  hard_won_principle: "module-level state in store files needs lifecycle cleanup — cleanup functions must reset ALL module vars, not just unsubscribe"
+  learned: "fix-in-fix chain attack across 3 rounds (R1-02→R2-02→R3-01) is the most effective technique — each round compounds the original finding"
+  working_on: "九連敗。finding 品質持續提升（S9 R2-02 interleaving bug, R3-01 arithmetic jump），但需要找到白隊根本無法修復的架構問題"
+  hard_won_principle: "hot-path optimization fixes must be verified against the MOST COMMON case (single-tempo songs), not just the complex case the fix targets"
 
 white_growth:
-  learned: "in-memory caching + .catch chain guard is the correct persistence pattern — cache absorbs write failures, chain survives errors"
-  working_on: "applying fixes consistently across parallel implementations (R3-01 applied to progressHandlers but missed recentFilesHandlers)"
-  hard_won_principle: "cross-store operations need explicit ordering: Read → Mutate Live → Persist to prevent transient desync"
+  learned: "adaptive improvement across rounds (indexOf→Map) and subscriber-based caching pattern eliminates all store access from 60fps hot path"
+  working_on: "applying optimization patterns consistently — R1-03 fixed ONE uncached color but left others; R3-03 had to clean up the rest"
+  hard_won_principle: "every store.getState() in a render loop should be replaced with subscribe+cache — the pattern is: init subscribes, callback caches, hot path reads cache, destroy unsubscribes"
 
 battle_tested_principles:
   - "併發 async 需要 generation counter（S1）"
   - "engine 存在 ≠ engine 整合 — 要檢查 lifecycle 6 面向（S6）"
-  - "hardcoded 色彩用 color-mix 混 --color-text（S5）"
-  - "hit/miss callback 用 shared helper 避免 DRY violation（S6）"
-  - "timeline search 需要 end-time awareness（S7）"
-  - "fix-in-fix 攻擊: 證明修復不完整比找新 bug 更有價值（S7, S8）"
+  - "fix-in-fix 攻擊: 證明修復不完整比找新 bug 更有價值（S7, S8, S9）"
   - "Promise chain 必須 .catch() 保活 — 否則一次失敗永久斷鏈（S8）"
-  - "module-level state cleanup 必須涵蓋 ALL vars，不只 unsubscribe（S8）"
   - "cross-store mutation ordering: Read → Mutate Live → Persist（S8）"
-  - "midnight boundary: localStorage date 必須與 todayKey() 比對（S8）"
+  - "hot-path 優化必須驗證 common case — 單一 tempo 佔 90%+ MIDI 檔案（S9）"
+  - "interleave chronological events — 分離處理 tempo 和 time-sig 會導致 mid-segment 錯誤（S9）"
+  - "render loop 零 getState(): subscribe+cache 取代 per-frame store access（S9）"
+  - "unsorted backward scan 不能用 arithmetic offset — 需要 identity-based lookup（S9）"
+  - "numeric dirty-check 優於 string dirty-check — 避免 toFixed + template literal 分配（S9）"
 
-judge_calibration: "白隊八連勝。紅隊 S8 R2-01 (chain-death) 是歷來最有實際影響的 critical finding — 一次寫入失敗就永久殺死 persistence chain。但白隊加 .catch() 即修復。紅隊需要找到白隊無法用簡單修復解決的架構性問題。考慮 PixiJS rendering、test quality、或 Electron build/packaging 等未覆蓋領域。"
+judge_calibration: "白隊九連勝。紅隊 fix-in-fix 三連鏈（R1-02→R2-02→R3-01）是歷來最持久的攻擊鏈，但白隊每次都能修復。紅隊需要找到結構性問題，而非可以用局部重寫修復的 bug。考慮 test quality gaps、cross-module integration boundaries、或 error recovery paths。"

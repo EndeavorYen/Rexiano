@@ -100,6 +100,14 @@ vi.mock("@renderer/stores/useThemeStore", () => ({
           hitGlow: "#D8BE74",
           missGray: "#8B8596",
           comboText: "#9268B8",
+          note1: "#9B7FD4",
+          note2: "#C084CF",
+          note3: "#7BA4D9",
+          note4: "#A8D4A0",
+          note5: "#D4A87F",
+          note6: "#CF84C0",
+          note7: "#84CFCF",
+          note8: "#D4D4A0",
         },
       },
     }),
@@ -143,6 +151,7 @@ vi.mock("@renderer/stores/usePlaybackStore", () => ({
 vi.mock("@renderer/stores/useSettingsStore", () => ({
   useSettingsStore: {
     getState: () => ({ showFingering: false, latencyCompensation: 0 }),
+    subscribe: () => () => {},
   },
 }));
 
