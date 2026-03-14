@@ -36,7 +36,23 @@ export const gradeEmoji: Record<number, string> = {
   8: "\u{1F48E}", // gem
 };
 
-/** Tooltip description for each grade level */
+/** i18n keys for grade level descriptions. Use t(gradeDescriptionKeys[grade]) */
+export const gradeDescriptionKeys: Record<number, string> = {
+  0: "library.gradeDesc.0",
+  1: "library.gradeDesc.1",
+  2: "library.gradeDesc.2",
+  3: "library.gradeDesc.3",
+  4: "library.gradeDesc.4",
+  5: "library.gradeDesc.5",
+  6: "library.gradeDesc.6",
+  7: "library.gradeDesc.7",
+  8: "library.gradeDesc.8",
+};
+
+/**
+ * @deprecated Use `gradeDescriptionKeys` + `t()` instead for i18n support.
+ * Kept for backward-compatibility in non-i18n contexts (tests, etc.).
+ */
 export const gradeDescriptions: Record<number, string> = {
   0: "Pre-Starter — 3–5 notes, right hand only (C-E)",
   1: "Starter — 5-note position, stepwise (C-G)",
@@ -50,30 +66,34 @@ export const gradeDescriptions: Record<number, string> = {
 };
 
 /**
- * Returns an accent color for the grade badge.
+ * Returns a theme-aware accent color for the grade badge.
  * Green family for L0-L2, amber for L3-L4, orange for L5-L6, red for L7-L8.
+ * Uses color-mix with --color-text to ensure contrast on both light and dark themes.
  */
 export function getGradeColor(grade: number): string {
-  if (grade <= 2) return "#22c55e"; // green
-  if (grade <= 4) return "#f59e0b"; // amber
-  if (grade <= 6) return "#f97316"; // orange
-  return "#ef4444"; // red
+  if (grade <= 2) return "color-mix(in srgb, #22c55e 85%, var(--color-text))"; // green
+  if (grade <= 4) return "color-mix(in srgb, #f59e0b 80%, var(--color-text))"; // amber
+  if (grade <= 6) return "color-mix(in srgb, #f97316 85%, var(--color-text))"; // orange
+  return "color-mix(in srgb, var(--color-error) 90%, var(--color-text))"; // red — uses token
 }
 
 /**
- * Returns a semantic color for filled difficulty dots based on song grade.
+ * Returns a theme-aware semantic color for filled difficulty dots based on song grade.
  * Green = easy (L0-2), yellow = medium (L3-5), red = hard (L6-8).
- * Uses fixed colors (not theme vars) since they carry universal difficulty meaning.
+ * Mixes with --color-text for contrast on both light and dark themes.
  */
 export function getDifficultyDotColor(grade: number | undefined): string {
-  if (grade === undefined || grade <= 2) return "#22c55e"; // green — easy
-  if (grade <= 5) return "#eab308"; // yellow — medium
-  return "#ef4444"; // red — hard
+  if (grade === undefined || grade <= 2)
+    return "color-mix(in srgb, #22c55e 85%, var(--color-text))"; // green — easy
+  if (grade <= 5)
+    return "color-mix(in srgb, #eab308 80%, var(--color-text))"; // yellow — medium
+  return "color-mix(in srgb, var(--color-error) 90%, var(--color-text))"; // red — hard
 }
 
-/** Determine the color for a best-score badge based on accuracy */
+/** Determine the color for a best-score badge based on accuracy.
+ * Uses theme tokens consistently — no mixed hardcoded/token returns. */
 export function getBestScoreColor(accuracy: number): string {
-  if (accuracy >= 90) return "#22c55e"; // green
+  if (accuracy >= 90) return "var(--color-hit-glow)";
   if (accuracy >= 70) return "var(--color-accent)";
   return "var(--color-text-muted)";
 }

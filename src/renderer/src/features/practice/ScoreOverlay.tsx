@@ -37,12 +37,11 @@ export function ScoreOverlay(): React.JSX.Element {
 
   return (
     <div
-      className="absolute top-3 right-3 z-50 flex flex-col items-end gap-1 px-4 py-3 rounded-xl pointer-events-none select-none animate-score-enter max-w-[12.5rem]"
+      className="absolute top-3 right-3 z-50 flex flex-col items-end gap-1 px-4 py-3 rounded-xl pointer-events-none select-none animate-score-enter max-w-[12.5rem] subtle-shadow"
       style={{
         background: "color-mix(in srgb, var(--color-surface) 92%, transparent)",
         border:
           "1px solid color-mix(in srgb, var(--color-border) 60%, transparent)",
-        boxShadow: "0 4px 24px rgba(0,0,0,0.08), 0 1px 4px rgba(0,0,0,0.04)",
       }}
       role="status"
       aria-label={t("practice.scoreLabel")}

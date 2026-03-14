@@ -42,10 +42,10 @@ describe("difficultyDescriptions", () => {
 // ─── getBestScoreColor ──────────────────────────────────────────────
 
 describe("getBestScoreColor", () => {
-  test("returns green for accuracy >= 90", () => {
-    expect(getBestScoreColor(90)).toBe("#22c55e");
-    expect(getBestScoreColor(95)).toBe("#22c55e");
-    expect(getBestScoreColor(100)).toBe("#22c55e");
+  test("returns hit-glow token for accuracy >= 90", () => {
+    expect(getBestScoreColor(90)).toBe("var(--color-hit-glow)");
+    expect(getBestScoreColor(95)).toBe("var(--color-hit-glow)");
+    expect(getBestScoreColor(100)).toBe("var(--color-hit-glow)");
   });
 
   test("returns accent color for accuracy >= 70 and < 90", () => {
@@ -64,7 +64,7 @@ describe("getBestScoreColor", () => {
     // 89.5 < 90, so it should be accent
     expect(getBestScoreColor(89.5)).toBe("var(--color-accent)");
     // 90.0 exactly → green
-    expect(getBestScoreColor(90.0)).toBe("#22c55e");
+    expect(getBestScoreColor(90.0)).toBe("var(--color-hit-glow)");
   });
 });
 

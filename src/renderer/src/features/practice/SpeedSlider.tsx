@@ -58,7 +58,9 @@ export function SpeedSlider(): React.JSX.Element {
                   ? "var(--color-accent)"
                   : "var(--color-surface-alt)",
                 color: isActive ? "#fff" : "var(--color-text-muted)",
-                boxShadow: isActive ? "0 1px 4px rgba(0,0,0,0.12)" : "none",
+                boxShadow: isActive
+                  ? "0 1px 4px color-mix(in srgb, var(--color-text) 12%, transparent)"
+                  : "none",
                 transition: "all 0.15s ease",
               }}
               aria-label={`Set speed to ${presetLabel(v)}`}

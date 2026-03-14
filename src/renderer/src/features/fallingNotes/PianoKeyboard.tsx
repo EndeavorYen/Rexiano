@@ -174,14 +174,15 @@ function getKeyTransform(
   return "translateY(0)";
 }
 
-/** Shared label style for key note names */
+/** Shared label style for key note names.
+ * Uses var(--font-mono) to stay in sync with the Tailwind theme token. */
 const KEY_LABEL_STYLE: React.CSSProperties = {
   position: "absolute",
   bottom: 4,
   left: 0,
   right: 0,
   textAlign: "center",
-  fontFamily: "'JetBrains Mono Variable', 'JetBrains Mono', monospace",
+  fontFamily: "var(--font-mono)",
   fontSize: 10,
   lineHeight: 1,
   opacity: 0.6,
@@ -228,7 +229,6 @@ export function PianoKeyboard({
               transform: getKeyTransform(songActive, midiActive, false),
               transition:
                 "transform 0.06s ease-out, box-shadow 0.08s ease-out, background 0.06s ease-out",
-              willChange: "transform, box-shadow",
               contain: "layout paint",
             }}
           >
@@ -270,7 +270,6 @@ export function PianoKeyboard({
               transform: getKeyTransform(songActive, midiActive, true),
               transition:
                 "transform 0.06s ease-out, box-shadow 0.08s ease-out, background 0.06s ease-out",
-              willChange: "transform, box-shadow",
               contain: "layout paint",
             }}
           >
@@ -278,7 +277,7 @@ export function PianoKeyboard({
               <span
                 style={{
                   ...KEY_LABEL_STYLE,
-                  color: "rgba(255, 255, 255, 0.7)",
+                  color: "color-mix(in srgb, var(--color-key-white) 70%, transparent)",
                 }}
               >
                 {getBlackKeyLabel(key.midi)}

@@ -7,10 +7,11 @@ import {
   difficultyDescriptions,
   gradeLabelShort,
   gradeEmoji,
-  gradeDescriptions,
+  gradeDescriptionKeys,
   getGradeColor,
   getDifficultyDotColor,
 } from "./songCardUtils";
+import type { TranslationKey } from "@renderer/i18n/types";
 
 interface SongCardProps {
   song: BuiltinSongMeta;
@@ -84,8 +85,11 @@ export function SongCard({
     song.grade !== undefined
       ? `${gradeEmoji[song.grade] ?? ""} ${gradeLabelShort[song.grade]}`
       : null;
-  const gradeDesc =
-    song.grade !== undefined ? gradeDescriptions[song.grade] : null;
+  const gradeDescKey =
+    song.grade !== undefined ? gradeDescriptionKeys[song.grade] : null;
+  const gradeDesc = gradeDescKey
+    ? t(gradeDescKey as TranslationKey)
+    : null;
   const gradeColor =
     song.grade !== undefined ? getGradeColor(song.grade) : null;
 

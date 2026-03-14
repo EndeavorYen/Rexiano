@@ -27,6 +27,7 @@ export interface TranslationMap {
   "library.difficulty.beginner": string;
   "library.difficulty.intermediate": string;
   "library.difficulty.advanced": string;
+  "library.gradeFilter": string;
   "library.grade.all": string;
   "library.grade.0": string;
   "library.grade.1": string;
@@ -37,6 +38,15 @@ export interface TranslationMap {
   "library.grade.6": string;
   "library.grade.7": string;
   "library.grade.8": string;
+  "library.gradeDesc.0": string;
+  "library.gradeDesc.1": string;
+  "library.gradeDesc.2": string;
+  "library.gradeDesc.3": string;
+  "library.gradeDesc.4": string;
+  "library.gradeDesc.5": string;
+  "library.gradeDesc.6": string;
+  "library.gradeDesc.7": string;
+  "library.gradeDesc.8": string;
   "library.greeting.morning": string;
   "library.greeting.afternoon": string;
   "library.greeting.evening": string;

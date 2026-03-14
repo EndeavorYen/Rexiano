@@ -1,25 +1,25 @@
 # AGENT MEMORY — 團隊累積的實戰智慧（~30 行上限）
-record: { total: 4, red_wins: 0, white_wins: 4, streak: "WHITE x4" }
-past_topics: ["State Sync", "UI & IPC Safety", "Sheet Music Rendering", "App.tsx Root Component"]
+record: { total: 5, red_wins: 0, white_wins: 5, streak: "WHITE x5" }
+past_topics: ["State Sync", "UI & IPC Safety", "Sheet Music Rendering", "App.tsx Root Component", "UI/UX Polish & Design System Consistency"]
 
 red_growth:
-  learned: "AudioContext.state 可能和 engine.status 不一致 — 設備切換後 status='ready' 但 ctx='closed'"
-  working_on: "連敗四場，DRY 和 correctness finding 都被快速修復 — 需要找到架構級問題"
-  hard_won_principle: "查 engine 健康狀態時，engine.status + ctx.state 必須同時驗證"
+  learned: "songCardUtils 的 color 函式混用 hardcoded hex + theme token — 同一函式內不一致是最有力的 finding"
+  working_on: "五連敗。表面問題白隊秒修 — 需要找到白隊無法一回合修好的架構級問題"
+  hard_won_principle: "color-mix(in srgb, ...) 可以讓 hardcoded 色彩變成 theme-aware — 但更好的做法是加 token"
 
 white_growth:
-  learned: "transient UI state (hit/miss highlights) 用 has() guard 避免重複 Set 配置"
-  working_on: "App.tsx 仍有 1200 行 — 下一場如果紅隊攻擊 component 拆分，需要準備好方案"
-  hard_won_principle: "resume 失敗時必須 allNotesOff — 否則 suspended ctx 上排隊的音符會在恢復時同時播放"
+  learned: "text-on-accent 必須統一 — #fff vs var(--color-bg) 的不一致跨 7 個元件散布，快修但容易漏"
+  working_on: "i18n key 新增要同步更新 types.ts + en.ts + zh-TW.ts + test mock — 一個都不能漏"
+  hard_won_principle: "will-change 只用在即將改變的元素，不要撒在 88 個靜態元素上"
 
 battle_tested_principles:
   - "併發 async 需要 generation counter（S1）"
-  - "localStorage load 時必須驗證範圍（S1）"
   - "重複 pattern 先集中再修（S1-S4）"
-  - "修復可能引入新問題（S2）"
-  - "Promise.race timeout 必須 clearTimeout（S2）"
-  - "高頻 UI 區分 live update / debounced persist / guarded state（S2）"
-  - "兩個獨立數值計算要用同一函式（S3）"
-  - "engine.status + AudioContext.state 同時檢查才能確認健康（S4）"
+  - "engine.status + AudioContext.state 同時檢查（S4）"
+  - "text-on-accent 必須統一：全部用 #fff，不混 var(--color-bg)（S5）"
+  - "hardcoded 色彩用 color-mix 混 --color-text 保證暗色主題對比度（S5）"
+  - "ARIA 語義（role/aria-checked/aria-label）不能只加在部分元件（S5）"
+  - "will-change 只用在即將改變的元素，靜態 88 鍵全加 = 88 compositor layers（S5）"
+  - "新增 i18n key 要同步 types.ts + 所有 locale files + test mocks（S5）"
 
-judge_calibration: "白隊四連勝。紅隊需要根本性改變策略 — 找 interface contract 或 architecture boundary 問題"
+judge_calibration: "白隊五連勝。紅隊的 finding 品質在提升（S5 R3 的 songCardUtils 很有價值），但白隊修復速度太快。紅隊需要找到修復成本極高的架構問題。"

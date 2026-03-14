@@ -6,14 +6,18 @@ import {
 import { useTranslation } from "@renderer/i18n/useTranslation";
 
 /**
- * Map a 0-1 difficulty score to a color string.
- * Uses fixed semantic colors (green/yellow/orange/red) that work across all themes.
+ * Map a 0-1 difficulty score to a CSS color expression.
+ *
+ * Uses theme-aware colors via color-mix so they remain readable on both
+ * light themes (Lavender/Ocean/Peach) and the dark Midnight theme.
+ * Green/yellow/orange/red carry universal semantic meaning for difficulty;
+ * mixing with --color-surface ensures minimum contrast on any background.
  */
 function difficultyColor(d: number): string {
-  if (d < 0.3) return "#4ade80"; // green — easy
-  if (d < 0.6) return "#facc15"; // yellow — medium
-  if (d < 0.8) return "#fb923c"; // orange — hard
-  return "#ef4444"; // red — very hard
+  if (d < 0.3) return "color-mix(in srgb, #4ade80 85%, var(--color-text))"; // green — easy
+  if (d < 0.6) return "color-mix(in srgb, #facc15 80%, var(--color-text))"; // yellow — medium
+  if (d < 0.8) return "color-mix(in srgb, #fb923c 85%, var(--color-text))"; // orange — hard
+  return "color-mix(in srgb, var(--color-error) 90%, var(--color-text))"; // red — very hard (uses token)
 }
 
 /**

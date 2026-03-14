@@ -139,7 +139,7 @@ export function SongCompleteOverlay({
       )}
 
       <div
-        className="modal-card-cinematic rounded-2xl px-10 py-8 text-center max-w-sm w-full mx-4 animate-scale-in relative"
+        className="modal-card-cinematic rounded-2xl px-10 py-8 text-center max-w-sm w-full mx-4 animate-scale-in relative subtle-shadow-md"
         style={{
           background:
             "color-mix(in srgb, var(--color-surface) 94%, transparent)",
@@ -147,8 +147,6 @@ export function SongCompleteOverlay({
             "1px solid color-mix(in srgb, var(--color-border) 70%, transparent)",
           backdropFilter: "blur(20px)",
           WebkitBackdropFilter: "blur(20px)",
-          boxShadow:
-            "0 24px 64px rgba(0,0,0,0.15), 0 4px 12px rgba(0,0,0,0.08)",
         }}
       >
         {/* Stars — the hero element, larger with staggered entrance */}

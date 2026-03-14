@@ -25,6 +25,11 @@ vi.mock("@renderer/themes/tokens", () => ({
   },
 }));
 
+// Mock useTranslation — return key as-is
+vi.mock("@renderer/i18n/useTranslation", () => ({
+  useTranslation: () => ({ t: (key: string) => key }),
+}));
+
 describe("ThemePicker render", () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -40,13 +45,13 @@ describe("ThemePicker render", () => {
 
   test("renders toggle button", () => {
     render(<ThemePicker />);
-    const button = screen.getByTitle("Change theme");
+    const button = screen.getByTitle("settings.chooseTheme");
     expect(button).toBeDefined();
   });
 
   test("opens popover with theme buttons on click", () => {
     render(<ThemePicker />);
-    fireEvent.click(screen.getByTitle("Change theme"));
+    fireEvent.click(screen.getByTitle("settings.chooseTheme"));
 
     // Should now show theme buttons
     expect(screen.getByTitle("Lavender")).toBeDefined();
@@ -57,7 +62,7 @@ describe("ThemePicker render", () => {
 
   test("selecting a theme calls setTheme", () => {
     render(<ThemePicker />);
-    fireEvent.click(screen.getByTitle("Change theme"));
+    fireEvent.click(screen.getByTitle("settings.chooseTheme"));
     fireEvent.click(screen.getByTitle("Lavender"));
     expect(mockSetTheme).toHaveBeenCalledWith("lavender");
   });

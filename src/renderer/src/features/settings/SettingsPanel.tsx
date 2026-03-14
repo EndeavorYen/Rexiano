@@ -371,7 +371,7 @@ export function SettingsPanel({
                                     : "var(--color-surface-alt)",
                                 color:
                                   uiScale === option.value
-                                    ? "var(--color-bg)"
+                                    ? "#fff"
                                     : "var(--color-text-muted)",
                               }}
                               data-testid={`ui-scale-${option.value}`}
@@ -518,7 +518,7 @@ export function SettingsPanel({
                                   : "var(--color-surface-alt)",
                               color:
                                 defaultMode === m.value
-                                  ? "var(--color-bg)"
+                                  ? "#fff"
                                   : "var(--color-text-muted)",
                             }}
                             data-testid={`mode-btn-${m.value}`}
@@ -549,7 +549,7 @@ export function SettingsPanel({
                                   : "var(--color-surface-alt)",
                               color:
                                 defaultSpeed === s
-                                  ? "var(--color-bg)"
+                                  ? "#fff"
                                   : "var(--color-text-muted)",
                             }}
                           >
@@ -641,7 +641,7 @@ function ToggleRow({
         aria-checked={checked}
         aria-label={label}
         onClick={() => onChange(!checked)}
-        className="w-10 h-[22px] rounded-full relative transition-colors shrink-0 cursor-pointer"
+        className="w-12 h-7 rounded-full relative transition-colors shrink-0 cursor-pointer"
         style={{
           background: checked
             ? "var(--color-accent)"
@@ -653,10 +653,10 @@ function ToggleRow({
         data-testid={testId}
       >
         <span
-          className="absolute top-[2px] w-4 h-4 rounded-full transition-all duration-150 subtle-shadow"
+          className="absolute top-[3px] w-5 h-5 rounded-full transition-all duration-150 subtle-shadow"
           style={{
             background: checked ? "var(--color-bg)" : "var(--color-text-muted)",
-            left: checked ? "calc(100% - 19px)" : "2px",
+            left: checked ? "calc(100% - 24px)" : "3px",
           }}
         />
       </button>

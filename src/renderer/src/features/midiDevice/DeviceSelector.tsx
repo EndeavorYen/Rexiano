@@ -190,8 +190,11 @@ export function DeviceSelector(): React.JSX.Element {
               className="btn-surface-themed px-2.5 py-1 rounded text-xs font-medium transition-colors cursor-pointer"
               style={{
                 background:
-                  testState === "ok" ? "#22c55e" : "var(--color-surface)",
-                color: testState === "ok" ? "#fff" : "var(--color-text)",
+                  testState === "ok"
+                    ? "var(--color-hit-glow)"
+                    : "var(--color-surface)",
+                color:
+                  testState === "ok" ? "var(--color-bg)" : "var(--color-text)",
                 opacity: testState === "playing" ? 0.7 : 1,
               }}
               title={t("midi.testTitle")}
@@ -305,10 +308,11 @@ export function DeviceSelector(): React.JSX.Element {
         <div
           className="flex items-center gap-2 rounded-lg px-2 py-1.5 max-w-[min(360px,calc(100vw-2rem))]"
           style={{
-            color: "#f87171",
-            background: "color-mix(in srgb, #ef4444 8%, var(--color-surface))",
+            color: "var(--color-error)",
+            background:
+              "color-mix(in srgb, var(--color-error) 8%, var(--color-surface))",
             border:
-              "1px solid color-mix(in srgb, #ef4444 30%, var(--color-border))",
+              "1px solid color-mix(in srgb, var(--color-error) 30%, var(--color-border))",
           }}
           data-testid="midi-error-guidance"
         >

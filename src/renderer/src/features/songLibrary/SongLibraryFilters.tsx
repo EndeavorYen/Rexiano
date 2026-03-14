@@ -52,7 +52,11 @@ export function SongLibraryFilters(): React.JSX.Element {
         />
       </div>
 
-      <div className="flex flex-wrap items-center gap-1.5">
+      <div
+        className="flex flex-wrap items-center gap-1.5"
+        role="radiogroup"
+        aria-label={t("library.gradeFilter")}
+      >
         {grades.map((g) => {
           const isActive = gradeFilter === g.value;
           const color =
@@ -62,6 +66,8 @@ export function SongLibraryFilters(): React.JSX.Element {
           return (
             <button
               key={String(g.value)}
+              role="radio"
+              aria-checked={isActive}
               onClick={() => setGradeFilter(g.value)}
               className="px-2.5 py-1 rounded-lg text-xs font-body font-medium transition-colors cursor-pointer"
               style={{
@@ -69,6 +75,7 @@ export function SongLibraryFilters(): React.JSX.Element {
                 color: isActive ? "#fff" : "var(--color-text-muted)",
                 border: `1px solid ${isActive ? color : "var(--color-border)"}`,
               }}
+              aria-label={t(g.key)}
             >
               {t(g.key)}
             </button>

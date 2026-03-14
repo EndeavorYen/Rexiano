@@ -98,9 +98,9 @@ export function TransportBar({
     if (playPulseTimer.current) clearTimeout(playPulseTimer.current);
     playPulseTimer.current = setTimeout(() => setPlayPulse(false), 300);
   };
-  const primaryButtonSize = compact ? "2.75rem" : "2.75rem";
-  const iconSize = compact ? 16 : 18;
-  const utilityButtonSize = compact ? "2.5rem" : "2.5rem";
+  const primaryButtonSize = compact ? "2.25rem" : "2.75rem";
+  const iconSize = compact ? 14 : 18;
+  const utilityButtonSize = compact ? "2rem" : "2.5rem";
 
   return (
     <div
