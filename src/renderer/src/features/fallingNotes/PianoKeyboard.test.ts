@@ -93,8 +93,8 @@ describe("PianoKeyboard highlight helpers", () => {
   });
 
   describe("MIDI_HIGHLIGHT constant", () => {
-    test("is a valid hex color", () => {
-      expect(MIDI_HIGHLIGHT).toMatch(/^#[0-9a-f]{6}$/i);
+    test("is a CSS custom property reference", () => {
+      expect(MIDI_HIGHLIGHT).toMatch(/^var\(--color-midi-highlight\)$/);
     });
 
     test("is distinct from generic accent placeholder", () => {

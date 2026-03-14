@@ -210,7 +210,9 @@ export class NoteRenderer {
       this._labelPool.push(this.createLabel());
     }
 
-    // Cache theme colors and subscribe for theme changes
+    // Cache theme colors and subscribe for theme changes.
+    // Guard: disconnect any stale subscription from a prior init() call.
+    this._themeUnsub?.();
     this._updateCachedColors();
     this._themeUnsub = useThemeStore.subscribe(() =>
       this._updateCachedColors(),

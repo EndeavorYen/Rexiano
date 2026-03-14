@@ -84,7 +84,7 @@ export function PracticeModeSelector(): React.JSX.Element {
       {/* Contextual mode description — teaches what each mode does on switch */}
       {activeDesc && (
         <span
-          className="text-[10px] font-body pl-1"
+          className="text-[11px] font-body pl-1"
           style={{ color: "var(--color-text-muted)" }}
           aria-live="polite"
         >

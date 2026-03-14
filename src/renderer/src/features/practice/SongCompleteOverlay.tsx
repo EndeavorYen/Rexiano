@@ -97,6 +97,7 @@ export function SongCompleteOverlay({
 
   return (
     <div
+      data-testid="song-complete-overlay"
       className="fixed inset-0 z-[100] flex items-center justify-center modal-backdrop-cinematic animate-fade-in"
       role="dialog"
       aria-modal="true"

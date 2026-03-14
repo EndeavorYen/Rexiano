@@ -39,7 +39,7 @@ test.describe("Overlay and shortcut guardrails", () => {
     await openPlaybackDrawer(appPage);
     await appPage.getByTestId("settings-trigger").click();
     await expect(appPage.getByTestId("settings-panel")).toBeVisible();
-    await appPage.getByTestId("settings-tab-theme").click();
+    await appPage.getByTestId("settings-tab-appearance").click();
 
     const seekSlider = appPage.getByRole("slider", {
       name: /seek position/i,
@@ -69,7 +69,7 @@ test.describe("Overlay and shortcut guardrails", () => {
     await openPlaybackDrawer(appPage);
     await appPage.getByTestId("settings-trigger").click();
     await expect(appPage.getByTestId("settings-panel")).toBeVisible();
-    await appPage.getByTestId("settings-tab-theme").click();
+    await appPage.getByTestId("settings-tab-appearance").click();
 
     let escapedModal = false;
     for (let i = 0; i < 60; i++) {

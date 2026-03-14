@@ -179,7 +179,9 @@ export class WaitMode {
 
     // If there are pending notes, pause and wait for input
     if (pendingMidis.size > 0) {
-      this._targetNotes = new Set(pendingMidis);
+      // Reuse existing Set to avoid allocation in the 60fps hot path
+      this._targetNotes.clear();
+      for (const midi of pendingMidis) this._targetNotes.add(midi);
       this._state = "waiting";
       this._callbacks.onWait?.();
       return false;

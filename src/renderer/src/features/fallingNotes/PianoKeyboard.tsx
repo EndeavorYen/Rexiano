@@ -125,8 +125,8 @@ function getPracticeClass(
   return "";
 }
 
-/** MIDI input highlight — a distinct warm cyan to contrast the theme accent */
-const MIDI_HIGHLIGHT = "#38bdf8";
+/** MIDI input highlight — uses theme token so it adapts across all themes */
+const MIDI_HIGHLIGHT = "var(--color-midi-highlight)";
 
 function getWhiteKeyBackground(
   songActive: boolean,
@@ -228,6 +228,8 @@ export function PianoKeyboard({
               transform: getKeyTransform(songActive, midiActive, false),
               transition:
                 "transform 0.06s ease-out, box-shadow 0.08s ease-out, background 0.06s ease-out",
+              willChange: "transform, box-shadow",
+              contain: "layout paint",
             }}
           >
             {showLabels && (
@@ -268,6 +270,8 @@ export function PianoKeyboard({
               transform: getKeyTransform(songActive, midiActive, true),
               transition:
                 "transform 0.06s ease-out, box-shadow 0.08s ease-out, background 0.06s ease-out",
+              willChange: "transform, box-shadow",
+              contain: "layout paint",
             }}
           >
             {showLabels && !compactLabels && (

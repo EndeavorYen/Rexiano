@@ -113,9 +113,14 @@ export function SheetMusicPanelOSMD({
   return (
     <div
       ref={containerRef}
+      data-testid="sheet-music-panel"
       className="sheet-music-osmd w-full overflow-y-auto"
       style={{
-        minHeight: mode === "falling" ? 0 : 200,
+        // In split mode, fill the flex-constrained parent exactly and scroll
+        // internally. In sheet mode (full height), use 200px minimum.
+        ...(mode === "split"
+          ? { height: "100%", minHeight: 0 }
+          : { minHeight: mode === "sheet" ? 200 : 0 }),
         padding: mode === "falling" ? 0 : "8px 0",
         display: mode === "falling" ? "none" : undefined,
       }}

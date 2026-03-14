@@ -49,6 +49,8 @@ export interface ThemeTokens {
     timingEarly: string;
     /** Practice mode — timing indicator: late */
     timingLate: string;
+    /** MIDI device input highlight — distinct from accent to show "I pressed this" */
+    midiHighlight: string;
     /** Semantic error color for alerts and destructive states */
     error: string;
   };
@@ -93,6 +95,7 @@ export const themes: Record<ThemeId, ThemeTokens> = {
       streakGold: "#C89C49",
       timingEarly: "#6B8FC2",
       timingLate: "#D4A04A",
+      midiHighlight: "#38bdf8",
       error: "#C75050",
     },
   },
@@ -134,6 +137,7 @@ export const themes: Record<ThemeId, ThemeTokens> = {
       streakGold: "#CFB066",
       timingEarly: "#5B9BD5",
       timingLate: "#E8A838",
+      midiHighlight: "#60A5FA",
       error: "#C4534F",
     },
   },
@@ -175,6 +179,7 @@ export const themes: Record<ThemeId, ThemeTokens> = {
       streakGold: "#C99A4E",
       timingEarly: "#6FA0C4",
       timingLate: "#DBA24A",
+      midiHighlight: "#38bdf8",
       error: "#C24B3D",
     },
   },
@@ -216,6 +221,7 @@ export const themes: Record<ThemeId, ThemeTokens> = {
       streakGold: "#D4B670",
       timingEarly: "#7BAED8",
       timingLate: "#E8B04A",
+      midiHighlight: "#F59E0B",
       error: "#E07373",
     },
   },

@@ -237,9 +237,13 @@ export function usePracticeLifecycle(
         }
       }
 
-      // Active tracks change
+      // Active tracks change — re-init WaitMode with new tracks, and restart
+      // if currently playing so it doesn't stay stuck in "idle" state.
       if (state.activeTracks !== prev.activeTracks && waitMode && currentSong) {
         waitMode.init(currentSong.tracks, state.activeTracks);
+        if (state.mode === "wait" && usePlaybackStore.getState().isPlaying) {
+          waitMode.start();
+        }
       }
     });
     return unsub;

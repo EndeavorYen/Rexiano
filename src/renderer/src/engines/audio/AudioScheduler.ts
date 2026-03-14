@@ -172,9 +172,13 @@ export class AudioScheduler implements IAudioScheduler {
    */
   private _resetCursors(songTime: number): void {
     if (!this._song) return;
-    this._trackCursors = this._song.tracks.map((track) =>
-      this._findCursorPosition(track.notes, songTime),
-    );
+    // Mutate in place to avoid allocating a new array on seek/speed-change
+    for (let i = 0; i < this._song.tracks.length; i++) {
+      this._trackCursors[i] = this._findCursorPosition(
+        this._song.tracks[i].notes,
+        songTime,
+      );
+    }
   }
 
   /**

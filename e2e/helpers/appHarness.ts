@@ -40,6 +40,10 @@ export async function loadFirstBuiltInSong(page: Page): Promise<void> {
     timeout: 20_000,
   });
   await expect(page.getByTestId("playback-drawer-trigger")).toBeVisible();
+
+  // Songs auto-play on selection — pause to give tests a stable starting state
+  await pausePlaybackIfRunning(page);
+  await resetPlaybackPosition(page);
 }
 
 export async function pausePlaybackIfRunning(page: Page): Promise<void> {

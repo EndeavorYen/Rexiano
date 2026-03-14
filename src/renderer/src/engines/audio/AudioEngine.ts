@@ -306,11 +306,15 @@ export class AudioEngine implements IAudioEngine {
     }
   }
 
-  /** Apply release envelope to a single active note */
+  /** Apply release envelope to a single active note.
+   *  Cancels any in-flight ramps first to prevent overlapping gain schedules
+   *  (which cause audible clicks when the same MIDI key is released rapidly). */
   private _releaseNote(activeNote: ActiveNote, time: number): void {
     const { source, gain } = activeNote;
     try {
-      gain.gain.setValueAtTime(gain.gain.value, time);
+      // Cancel prior automation to avoid overlapping exponential ramps
+      gain.gain.cancelScheduledValues(time);
+      gain.gain.setValueAtTime(Math.max(gain.gain.value, 0.001), time);
       gain.gain.exponentialRampToValueAtTime(0.001, time + this._releaseTime);
       source.stop(time + this._releaseTime + 0.01);
     } catch {
@@ -330,6 +334,8 @@ export class AudioEngine implements IAudioEngine {
   playErrorTone(): void {
     if (this._status !== "ready" || !this._audioContext || !this._masterGain)
       return;
+    // Skip if AudioContext is suspended (e.g., user paused) — tone won't play anyway
+    if (this._audioContext.state !== "running") return;
 
     try {
       const ctx = this._audioContext;
@@ -369,7 +375,8 @@ export class AudioEngine implements IAudioEngine {
       const now = this._audioContext.currentTime;
       this._masterGain.gain.cancelScheduledValues(now);
       this._masterGain.gain.setValueAtTime(this._masterGain.gain.value, now);
-      this._masterGain.gain.linearRampToValueAtTime(clamped, now + 0.008);
+      // 20ms ramp avoids audible clicks when dragging the volume slider
+      this._masterGain.gain.linearRampToValueAtTime(clamped, now + 0.02);
     }
   }
 

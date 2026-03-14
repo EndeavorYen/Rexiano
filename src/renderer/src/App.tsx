@@ -1,5 +1,6 @@
 import { useState, useCallback, useRef, useEffect, useMemo } from "react";
 import { ArrowLeft, PanelRightOpen, X } from "lucide-react";
+import appIcon from "../../../docs/figure/Rexiano_icon.png";
 import { parseMidiFile } from "./engines/midi/MidiFileParser";
 import { useSongStore } from "./stores/useSongStore";
 import { usePlaybackStore } from "./stores/usePlaybackStore";
@@ -446,7 +447,7 @@ function App(): React.JSX.Element {
     };
   }, [readAudioOutputSnapshot]);
 
-  // Init audio engine when a song is loaded
+  // Init audio engine when a song is loaded, then auto-play
   useEffect(() => {
     if (!song) return;
 
@@ -464,16 +465,22 @@ function App(): React.JSX.Element {
         scheduler.setSong(song);
         scheduler.setSpeed(usePracticeStore.getState().speed);
         usePlaybackStore.getState().setAudioStatus("ready");
-        return;
+      } else {
+        try {
+          if (cancelled) return;
+          await rebuildAudioStack(song);
+        } catch (err) {
+          if (cancelled) return;
+          console.error("Audio init failed:", err);
+          usePlaybackStore.getState().setAudioStatus("error");
+          return; // Don't auto-play on error
+        }
       }
 
-      try {
-        if (cancelled) return;
-        await rebuildAudioStack(song);
-      } catch (err) {
-        if (cancelled) return;
-        console.error("Audio init failed:", err);
-        usePlaybackStore.getState().setAudioStatus("error");
+      // Auto-play: start playback immediately after audio is ready
+      // (matches Synthesia UX — selecting a song begins playback)
+      if (!cancelled) {
+        usePlaybackStore.getState().setPlaying(true);
       }
     };
 
@@ -695,6 +702,7 @@ function App(): React.JSX.Element {
   );
   const showNoteLabels = useSettingsStore((s) => s.showNoteLabels);
   const compactKeyLabels = useSettingsStore((s) => s.compactKeyLabels);
+  const kidMode = useSettingsStore((s) => s.kidMode);
   useEffect(() => {
     if (noteRendererRef.current) {
       noteRendererRef.current.showNoteLabels = showFallingNoteLabels;
@@ -1003,6 +1011,12 @@ function App(): React.JSX.Element {
                 className="min-w-0 flex-1 flex items-center gap-1.5 overflow-hidden"
                 data-testid="playback-title-meta-row"
               >
+                <img
+                  src={appIcon}
+                  alt=""
+                  className="hidden shrink-0 sm:inline"
+                  style={{ width: 22, height: 22, borderRadius: 5 }}
+                />
                 <span className="kicker-label hidden shrink-0 text-[11px] sm:inline">
                   {t("app.subtitle")}
                 </span>
@@ -1092,12 +1106,17 @@ function App(): React.JSX.Element {
                   <section className="app-side-section">
                     <DisplayModeToggle />
                   </section>
-                  <section className="app-side-section">
-                    <DeviceSelector />
-                  </section>
-                  <section className="app-side-section">
-                    <SettingsPanel />
-                  </section>
+                  {/* Advanced sections hidden in kid mode to reduce clutter */}
+                  {!kidMode && (
+                    <>
+                      <section className="app-side-section">
+                        <DeviceSelector />
+                      </section>
+                      <section className="app-side-section">
+                        <SettingsPanel />
+                      </section>
+                    </>
+                  )}
                 </div>
               </aside>
             </div>
@@ -1134,13 +1153,23 @@ function App(): React.JSX.Element {
             </div>
 
             {/* Falling notes canvas — always mounted so PixiJS ticker keeps
-                running (WaitMode relies on it). Hidden via CSS in sheet mode. */}
+                running (WaitMode relies on it). Hidden via off-screen
+                positioning in sheet mode — display:none would stop the
+                PixiJS RAF loop and break WaitMode's pause gate. */}
             <div
               data-testid="falling-notes-panel"
               className="flex-1 min-h-0 relative flex flex-col"
-              style={{
-                display: displayMode === "sheet" ? "none" : "flex",
-              }}
+              style={
+                displayMode === "sheet"
+                  ? {
+                      position: "absolute",
+                      width: 0,
+                      height: 0,
+                      overflow: "hidden" as const,
+                      pointerEvents: "none" as const,
+                    }
+                  : {}
+              }
             >
               <FallingNotesCanvas
                 onActiveNotesChange={handleActiveNotesChange}

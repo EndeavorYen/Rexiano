@@ -36,6 +36,7 @@ const REQUIRED_COLOR_KEYS: (keyof ThemeTokens["colors"])[] = [
   "streakGold",
   "timingEarly",
   "timingLate",
+  "midiHighlight",
 ];
 
 describe("Theme tokens", () => {

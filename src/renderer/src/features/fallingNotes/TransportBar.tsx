@@ -75,6 +75,7 @@ export function TransportBar({
 
   const metronomeEnabled = useSettingsStore((s) => s.metronomeEnabled);
   const setMetronomeEnabled = useSettingsStore((s) => s.setMetronomeEnabled);
+  const kidMode = useSettingsStore((s) => s.kidMode);
 
   const metronomeBeat = useMetronomeBeat();
 
@@ -169,43 +170,48 @@ export function TransportBar({
             <SkipBack size={compact ? 13 : 14} fill="currentColor" />
           </button>
 
-          <button
-            onClick={() => setMetronomeEnabled(!metronomeEnabled)}
-            className="flex items-center justify-center rounded-lg cursor-pointer transition-colors"
-            style={{
-              width: utilityButtonSize,
-              height: utilityButtonSize,
-              background: metronomeEnabled
-                ? "color-mix(in srgb, var(--color-accent) 15%, transparent)"
-                : "var(--color-surface-alt)",
-              color: metronomeEnabled
-                ? "var(--color-accent)"
-                : "var(--color-text-muted)",
-              border: metronomeEnabled
-                ? "1px solid color-mix(in srgb, var(--color-accent) 30%, transparent)"
-                : "1px solid transparent",
-              transition: "all 0.15s ease",
-            }}
-            title={
-              metronomeEnabled
-                ? t("transport.disableMetronome")
-                : t("transport.enableMetronome")
-            }
-            aria-label={
-              metronomeEnabled
-                ? t("transport.disableMetronome")
-                : t("transport.enableMetronome")
-            }
-            data-testid="metronome-toggle"
-          >
-            <Timer size={compact ? 13 : 14} />
-          </button>
+          {/* Metronome toggle + pulse — hidden in kid mode to reduce clutter */}
+          {!kidMode && (
+            <>
+              <button
+                onClick={() => setMetronomeEnabled(!metronomeEnabled)}
+                className="flex items-center justify-center rounded-lg cursor-pointer transition-colors"
+                style={{
+                  width: utilityButtonSize,
+                  height: utilityButtonSize,
+                  background: metronomeEnabled
+                    ? "color-mix(in srgb, var(--color-accent) 15%, transparent)"
+                    : "var(--color-surface-alt)",
+                  color: metronomeEnabled
+                    ? "var(--color-accent)"
+                    : "var(--color-text-muted)",
+                  border: metronomeEnabled
+                    ? "1px solid color-mix(in srgb, var(--color-accent) 30%, transparent)"
+                    : "1px solid transparent",
+                  transition: "all 0.15s ease",
+                }}
+                title={
+                  metronomeEnabled
+                    ? t("transport.disableMetronome")
+                    : t("transport.enableMetronome")
+                }
+                aria-label={
+                  metronomeEnabled
+                    ? t("transport.disableMetronome")
+                    : t("transport.enableMetronome")
+                }
+                data-testid="metronome-toggle"
+              >
+                <Timer size={compact ? 13 : 14} />
+              </button>
 
-          <MetronomePulse
-            isPlaying={metronomeBeat.isRunning}
-            currentBeat={metronomeBeat.currentBeat}
-            beatsPerMeasure={metronomeBeat.beatsPerMeasure}
-          />
+              <MetronomePulse
+                isPlaying={metronomeBeat.isRunning}
+                currentBeat={metronomeBeat.currentBeat}
+                beatsPerMeasure={metronomeBeat.beatsPerMeasure}
+              />
+            </>
+          )}
 
           {audioStatus === "loading" && audioRecoveryState !== "recovering" && (
             <span
@@ -367,6 +373,7 @@ export function TransportBar({
           </span>
         </div>
 
+        {/* Volume section — simplified in kid mode (no percentage label) */}
         <div
           className={`flex items-center justify-end rounded-xl px-1.5 ${
             compact ? "gap-2 py-1" : "gap-2.5 py-1.5"
@@ -377,15 +384,17 @@ export function TransportBar({
             border: "1px solid var(--color-border)",
           }}
         >
-          <span
-            className="control-chip font-mono tabular-nums"
-            style={{
-              color: "var(--color-text-muted)",
-            }}
-            data-testid="transport-volume-percent"
-          >
-            {volumePercent}%
-          </span>
+          {!kidMode && (
+            <span
+              className="control-chip font-mono tabular-nums"
+              style={{
+                color: "var(--color-text-muted)",
+              }}
+              data-testid="transport-volume-percent"
+            >
+              {volumePercent}%
+            </span>
+          )}
 
           <VolumeControl />
         </div>
