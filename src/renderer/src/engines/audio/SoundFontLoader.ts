@@ -227,32 +227,53 @@ export class SoundFontLoader implements ISoundFontLoader {
     return audioBuffer;
   }
 
-  /** Fill missing piano keys by copying the nearest available sample */
+  /**
+   * Fill missing piano keys by copying the nearest available sample.
+   * Uses a sorted array of direct sample keys for O(G log S) total work
+   * (G = gap count, S = direct sample count) instead of the previous
+   * O(G * total_samples) approach that also iterated gap-filled entries.
+   */
   private _fillGaps(): void {
+    // Collect and sort the keys that have direct samples (pre-fill)
+    const directKeys = Array.from(this._samples.keys()).sort((a, b) => a - b);
+    if (directKeys.length === 0) return;
+
     for (let midi = PIANO_MIN; midi <= PIANO_MAX; midi++) {
       if (this._samples.has(midi)) continue;
 
-      // Search outward for nearest sample
-      let nearest: NoteSample | undefined;
-      let minDist = Infinity;
-
-      for (const [key, sample] of this._samples) {
-        const dist = Math.abs(key - midi);
-        if (dist < minDist) {
-          minDist = dist;
-          nearest = sample;
+      // Binary search for the insertion point in the sorted direct keys
+      let lo = 0;
+      let hi = directKeys.length;
+      while (lo < hi) {
+        const mid = (lo + hi) >>> 1;
+        if (directKeys[mid] < midi) {
+          lo = mid + 1;
+        } else {
+          hi = mid;
         }
       }
 
-      if (nearest) {
-        // Reuse the same AudioBuffer; pitch shift is handled by AudioEngine via playbackRate
-        this._samples.set(midi, {
-          midi,
-          buffer: nearest.buffer,
-          sampleRate: nearest.sampleRate,
-          basePitch: nearest.basePitch,
-        });
+      // lo is the index of the first direct key >= midi
+      // Compare the nearest lower and upper direct keys
+      let nearestKey: number;
+      if (lo === 0) {
+        nearestKey = directKeys[0];
+      } else if (lo >= directKeys.length) {
+        nearestKey = directKeys[directKeys.length - 1];
+      } else {
+        const lower = directKeys[lo - 1];
+        const upper = directKeys[lo];
+        nearestKey = midi - lower <= upper - midi ? lower : upper;
       }
+
+      const nearest = this._samples.get(nearestKey)!;
+      // Reuse the same AudioBuffer; pitch shift is handled by AudioEngine via playbackRate
+      this._samples.set(midi, {
+        midi,
+        buffer: nearest.buffer,
+        sampleRate: nearest.sampleRate,
+        basePitch: nearest.basePitch,
+      });
     }
   }
 

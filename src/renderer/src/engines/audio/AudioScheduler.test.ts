@@ -626,5 +626,113 @@ describe("AudioScheduler", () => {
       scheduler.setSpeed(-1);
       // Should not throw
     });
+
+    // ─── R2-01: Seek into middle of sustained note ───
+    test("seek into middle of a sustained note still schedules it", () => {
+      engine._setCurrentTime(10);
+      // A long sustained note: starts at t=1, lasts 5 seconds (ends at t=6)
+      const s = song([track([note(1, 5, 60, 100)])]);
+      scheduler.setSong(s);
+
+      // Seek to t=3 — the note at t=1 is still sounding (ends at t=6)
+      scheduler.start(3); // startAudioTime=10, seekOffset=3
+      vi.advanceTimersByTime(25);
+
+      // The note should be scheduled even though note.time (1) < seekOffset (3),
+      // because note.time + note.duration (6) > seekOffset (3)
+      expect(engine.noteOn).toHaveBeenCalledWith(60, 100, expect.any(Number));
+    });
+
+    test("seek past the end of a note does NOT schedule it", () => {
+      engine._setCurrentTime(10);
+      // Note at t=1, duration=2 — ends at t=3
+      const s = song([track([note(1, 2, 60, 100)])]);
+      scheduler.setSong(s);
+
+      // Seek to t=3 — note has fully elapsed
+      scheduler.start(3);
+      vi.advanceTimersByTime(25);
+
+      // The note should NOT be scheduled (it ended at exactly t=3)
+      expect(engine.noteOn).not.toHaveBeenCalled();
+    });
+
+    test("seek into sustained note after speed change still works", () => {
+      engine._setCurrentTime(10);
+      // Long note: t=0, duration=10
+      const s = song([track([note(0, 10, 64, 90)])]);
+      scheduler.setSong(s);
+      scheduler.setSpeed(0.5);
+
+      // Start at t=5 — note spans t=0 to t=10, so it should be scheduled
+      scheduler.start(5);
+      vi.advanceTimersByTime(25);
+
+      expect(engine.noteOn).toHaveBeenCalledWith(64, 90, expect.any(Number));
+    });
+
+    // R3-01: Long note with short note in between — backwards scan must not stop early
+    test("seek past short note still finds earlier long sustained note (R3-01)", () => {
+      engine._setCurrentTime(10);
+      // Pattern: bass whole note + passing eighth note + melody note
+      // notes[0]: time=0, duration=20 (bass, still sounding at t=5)
+      // notes[1]: time=1, duration=1  (passing note, ended at t=2)
+      // notes[2]: time=5, duration=1  (melody, about to start)
+      const s = song([
+        track([note(0, 20, 36, 80), note(1, 1, 62, 70), note(5, 1, 72, 90)]),
+      ]);
+      scheduler.setSong(s);
+
+      // Seek to t=5
+      scheduler.start(5);
+      vi.advanceTimersByTime(25);
+
+      // notes[0] (midi 36) should be scheduled — it's still sounding (ends at t=20)
+      expect(engine.noteOn).toHaveBeenCalledWith(36, 80, expect.any(Number));
+      // notes[1] (midi 62) should NOT be scheduled — fully elapsed (ended at t=2)
+      expect(engine.noteOn).not.toHaveBeenCalledWith(
+        62,
+        70,
+        expect.any(Number),
+      );
+      // notes[2] (midi 72) should be scheduled — in the look-ahead window
+      expect(engine.noteOn).toHaveBeenCalledWith(72, 90, expect.any(Number));
+    });
+
+    test("multiple overlapping sustained notes all found after seek", () => {
+      engine._setCurrentTime(10);
+      // Three overlapping long notes with a gap note
+      const s = song([
+        track([
+          note(0, 10, 60, 80),  // C4 bass: ends at 10
+          note(0.5, 0.5, 64, 70), // E4 passing: ends at 1
+          note(1, 8, 67, 80),   // G4: ends at 9
+          note(1.5, 0.5, 69, 70), // A4 passing: ends at 2
+          note(3, 4, 72, 90),   // C5: ends at 7
+        ]),
+      ]);
+      scheduler.setSong(s);
+      scheduler.start(4); // Seek to t=4
+      vi.advanceTimersByTime(25);
+
+      // notes[0] (C4, ends at 10) — still sounding → scheduled
+      expect(engine.noteOn).toHaveBeenCalledWith(60, 80, expect.any(Number));
+      // notes[1] (E4, ends at 1) — fully elapsed → NOT scheduled
+      expect(engine.noteOn).not.toHaveBeenCalledWith(
+        64,
+        70,
+        expect.any(Number),
+      );
+      // notes[2] (G4, ends at 9) — still sounding → scheduled
+      expect(engine.noteOn).toHaveBeenCalledWith(67, 80, expect.any(Number));
+      // notes[3] (A4, ends at 2) — fully elapsed → NOT scheduled
+      expect(engine.noteOn).not.toHaveBeenCalledWith(
+        69,
+        70,
+        expect.any(Number),
+      );
+      // notes[4] (C5, ends at 7) — still sounding → scheduled
+      expect(engine.noteOn).toHaveBeenCalledWith(72, 90, expect.any(Number));
+    });
   });
 });

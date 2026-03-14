@@ -108,12 +108,18 @@ export const usePlaybackStore = create<PlaybackState>()((set) => ({
       recoverySuccessTimer = null;
     }, 1800);
   },
-  clearAudioRecovery: () =>
+  clearAudioRecovery: () => {
+    if (recoverySuccessTimer) {
+      clearTimeout(recoverySuccessTimer);
+      recoverySuccessTimer = null;
+    }
     set({
       audioRecoveryState: "idle",
       audioRecoveryAttempt: 0,
       audioRecoveryMaxAttempts: 0,
-    }),
+      audioRecoverySuccessVisible: false,
+    });
+  },
   requestAudioRecovery: () =>
     set((state) => ({ audioRecoverySignal: state.audioRecoverySignal + 1 })),
   reset: () => {

@@ -1,26 +1,25 @@
 # AGENT MEMORY — 團隊累積的實戰智慧（~30 行上限）
-record: { total: 6, red_wins: 0, white_wins: 6, streak: "WHITE x6" }
-past_topics: ["State Sync", "UI & IPC Safety", "Sheet Music Rendering", "App.tsx Root Component", "UI/UX Polish & Design System Consistency", "Practice Engine Correctness & Cross-Engine Consistency"]
+record: { total: 7, red_wins: 0, white_wins: 7, streak: "WHITE x7" }
+past_topics: ["State Sync", "UI & IPC Safety", "Sheet Music Rendering", "App.tsx Root Component", "UI/UX Polish & Design System Consistency", "Practice Engine Correctness & Cross-Engine Consistency", "Audio Pipeline Correctness & Resilience"]
 
 red_growth:
-  learned: "找到整個 engine 未整合比找個別 bug 更有價值 — FreeScorer 三個 major 構成一個系統性發現"
-  working_on: "六連敗。發現品質到位（S6 是歷來最好）但白隊仍能全修。需要找到跨檔案依賴太深、無法乾淨修復的問題"
-  hard_won_principle: "engine 存在 ≠ engine 整合 — 有 test 通過的純邏輯引擎可能完全沒接入 lifecycle"
+  learned: "攻擊修復本身（fix-in-fix）是 Round 3 最強策略 — R3-01 證明 R2-01 的 backwards scan 假設錯誤"
+  working_on: "七連敗。攻擊品質持續提升（S7 critical finding 直指修復邏輯），但白隊仍能迭代修正"
+  hard_won_principle: "timeline search with variable-length events 需要 end-time awareness，不能只用 start-time binary search"
 
 white_growth:
-  learned: "FreeScorer 整合需要 5 個觸點（mode change, play/pause, loop seek, MIDI input, tickerLoop）— 遺漏任一個都會導致靜默失效"
-  working_on: "DRY 回收要及時 — R2-01 的 60 行重複只在 R1 修復時產生，Round 2 才被紅隊發現"
-  hard_won_principle: "新引擎整合要檢查 6 個面向：init/dispose, callbacks, mode switch, play/pause, loop seek, activeTracks"
+  learned: "pre-computing bounds (maxDuration) 比 query-time scanning 更高效且可證明正確"
+  working_on: "修復自身可能引入新 bug — R2-01 backwards scan 被 R3-01 攻破，需要更嚴謹的修復驗證"
+  hard_won_principle: "greedy early-stop 假設在 non-monotonic data 上會失敗 — 需要 provable bounds"
 
 battle_tested_principles:
   - "併發 async 需要 generation counter（S1）"
   - "engine 存在 ≠ engine 整合 — 要檢查 lifecycle 6 面向（S6）"
   - "engine.status + AudioContext.state 同時檢查（S4）"
-  - "text-on-accent 必須統一（S5）"
   - "hardcoded 色彩用 color-mix 混 --color-text（S5）"
-  - "will-change 只用在即將改變的元素（S5）"
-  - "新增 i18n key 要同步 types.ts + 所有 locale files（S5）"
   - "hit/miss callback 用 shared helper 避免 DRY violation（S6）"
-  - "60fps hot path 的 store read 要合併為一次（S6）"
+  - "timeline search 需要 end-time awareness — binary search on start-time alone skips sustained notes（S7）"
+  - "fix-in-fix 攻擊: 證明修復不完整比找新 bug 更有價值（S7）"
+  - "pre-computed bounds (maxDuration) 讓 backwards scan 有可證明的停止條件（S7）"
 
-judge_calibration: "白隊六連勝但 S6 紅隊發現了整個 FreeScorer 未整合 — 歷來最有力的攻擊。評分機制（unresolved=0 → WHITE wins）保護了白隊，但紅隊的 finding 品質已達架構級。下一場裁判可考慮更窄的 scope 迫使更深的挖掘。"
+judge_calibration: "白隊七連勝但紅隊 S7 首次攻擊修復本身 — 展現了最高層次的攻擊技巧。評分機制持續保護白隊（unresolved=0），但紅隊品質已達 fix-verification 等級。下場可考慮更寬的 scope 讓紅隊有更多攻擊面。"

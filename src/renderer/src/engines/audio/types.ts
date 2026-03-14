@@ -124,18 +124,6 @@ export interface ISoundFontLoader {
 
 // ─── AudioScheduler ─────────────────────────────────
 
-/** A scheduled note event for the look-ahead buffer */
-export interface ScheduledNote {
-  /** Reference to the original parsed note */
-  note: ParsedNote;
-  /** Track index (for multi-track awareness) */
-  trackIndex: number;
-  /** AudioContext time when noteOn should fire */
-  onTime: number;
-  /** AudioContext time when noteOff should fire */
-  offTime: number;
-}
-
 /**
  * Look-ahead audio scheduler.
  *

@@ -927,4 +927,94 @@ describe("AudioEngine", () => {
       expect(gain.disconnect).toHaveBeenCalled();
     });
   });
+
+  describe("setReleaseTime", () => {
+    test("clamps value to minimum 0.05", () => {
+      engine.setReleaseTime(0);
+      expect((engine as any)._releaseTime).toBe(0.05);
+
+      engine.setReleaseTime(0.01);
+      expect((engine as any)._releaseTime).toBe(0.05);
+
+      engine.setReleaseTime(-1);
+      expect((engine as any)._releaseTime).toBe(0.05);
+    });
+
+    test("clamps value to maximum 0.3", () => {
+      engine.setReleaseTime(1);
+      expect((engine as any)._releaseTime).toBe(0.3);
+
+      engine.setReleaseTime(999);
+      expect((engine as any)._releaseTime).toBe(0.3);
+    });
+
+    test("accepts values within valid range", () => {
+      engine.setReleaseTime(0.05);
+      expect((engine as any)._releaseTime).toBe(0.05);
+
+      engine.setReleaseTime(0.15);
+      expect((engine as any)._releaseTime).toBe(0.15);
+
+      engine.setReleaseTime(0.3);
+      expect((engine as any)._releaseTime).toBe(0.3);
+
+      engine.setReleaseTime(0.2);
+      expect((engine as any)._releaseTime).toBe(0.2);
+    });
+  });
+
+  describe("concurrent init / dispose", () => {
+    test("concurrent init() calls do not create multiple AudioContexts", async () => {
+      const stub = stubGlobalAudioContext();
+      const p1 = engine.init();
+      const p2 = engine.init();
+      await Promise.all([p1, p2]);
+      expect(engine.status).toBe("ready");
+      // Only one AudioContext should have been created despite two init() calls
+      expect(stub.constructCount).toBe(1);
+    });
+
+    test("dispose() during in-flight init() leaves engine uninitialized", async () => {
+      const stub = stubGlobalAudioContext();
+      // Make SoundFontLoader.load() hang so we can dispose mid-init
+      const loader = (engine as any)._soundFontLoader;
+      let resolveLoad: () => void;
+      loader.load = vi.fn(
+        () =>
+          new Promise<void>((res) => {
+            resolveLoad = res;
+          }),
+      );
+
+      const initPromise = engine.init();
+      expect(engine.status).toBe("loading");
+
+      // Dispose while init is in-flight
+      engine.dispose();
+
+      // Now let the load complete — _doInit should see _disposed=true and bail
+      resolveLoad!();
+      await initPromise;
+
+      expect(engine.status).toBe("uninitialized");
+      expect(engine.audioContext).toBeNull();
+      // The AudioContext created during _doInit should be closed
+      expect(stub.mockCtx.close).toHaveBeenCalled();
+    });
+
+    test("init() after dispose() starts a fresh initialization", async () => {
+      const stub = stubGlobalAudioContext();
+      await engine.init();
+      expect(engine.status).toBe("ready");
+
+      engine.dispose();
+      expect(engine.status).toBe("uninitialized");
+
+      // Re-init should succeed
+      await engine.init();
+      expect(engine.status).toBe("ready");
+      // Two AudioContext constructions: original + re-init
+      expect(stub.constructCount).toBe(2);
+    });
+  });
 });

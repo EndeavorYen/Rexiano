@@ -47,6 +47,9 @@ export class AudioScheduler implements IAudioScheduler {
   /** Generation counter: incremented on start/seek to invalidate stale interval ticks */
   private _generation = 0;
 
+  /** Per-track maximum note duration — used to bound the backwards scan in _findCursorPosition */
+  private _maxNoteDurations: number[] = [];
+
   constructor(engine: IAudioEngine, config?: Partial<AudioSchedulerConfig>) {
     this._engine = engine;
     this._config = { ...DEFAULT_CONFIG, ...config };
@@ -100,6 +103,14 @@ export class AudioScheduler implements IAudioScheduler {
     }
     this._song = song;
     this._trackCursors = song.tracks.map(() => 0);
+    // Pre-compute max note duration per track for efficient backwards scan
+    this._maxNoteDurations = song.tracks.map((track) => {
+      let max = 0;
+      for (const n of track.notes) {
+        if (n.duration > max) max = n.duration;
+      }
+      return max;
+    });
   }
 
   start(songTime: number): void {
@@ -169,14 +180,34 @@ export class AudioScheduler implements IAudioScheduler {
     this.stop();
     this._song = null;
     this._trackCursors = [];
+    this._maxNoteDurations = [];
   }
 
   // ─── Private ────────────────────────────
 
   /**
-   * Binary search to find the first note index where note.time >= targetTime.
+   * Find the correct cursor position for a given target time.
+   *
+   * Uses binary search to find the first note where note.time >= targetTime,
+   * then scans backwards to include any partially-elapsed notes (notes where
+   * note.time < targetTime but note.time + note.duration > targetTime).
+   * This ensures sustained notes are still heard after seek/start operations.
+   *
+   * The backwards scan uses maxDuration to bound how far back it needs to
+   * look: once notes[lo-1].time <= targetTime - maxDuration, no earlier
+   * note can possibly still be sounding. This gives O(log n + k) where k
+   * is the number of notes within the max-duration window.
+   *
+   * @param notes       Sorted array of notes for a single track
+   * @param targetTime  The song time to position the cursor at
+   * @param maxDuration The maximum note duration in this track (0 if unknown)
    */
-  private _findCursorPosition(notes: ParsedNote[], targetTime: number): number {
+  private _findCursorPosition(
+    notes: ParsedNote[],
+    targetTime: number,
+    maxDuration = 0,
+  ): number {
+    // Binary search: first note where note.time >= targetTime
     let lo = 0;
     let hi = notes.length;
     while (lo < hi) {
@@ -187,6 +218,17 @@ export class AudioScheduler implements IAudioScheduler {
         hi = mid;
       }
     }
+
+    // Scan backwards to include partially-elapsed notes (still sounding).
+    // We must not stop at the first note with end <= targetTime, because
+    // earlier notes may have longer durations and still be sounding.
+    // The maxDuration bound ensures we don't scan further back than necessary:
+    // any note with time <= targetTime - maxDuration has definitely ended.
+    const scanLimit = targetTime - maxDuration;
+    while (lo > 0 && notes[lo - 1].time > scanLimit) {
+      lo--;
+    }
+
     return lo;
   }
 
@@ -201,6 +243,7 @@ export class AudioScheduler implements IAudioScheduler {
       this._trackCursors[i] = this._findCursorPosition(
         this._song.tracks[i].notes,
         songTime,
+        this._maxNoteDurations[i] ?? 0,
       );
     }
   }
