@@ -17,6 +17,12 @@ if (process.env.WSL_DISTRO_NAME) {
   app.commandLine.appendSwitch("force-device-scale-factor", "1.5");
 }
 
+// Enable Chrome DevTools Protocol for external debugging tools (e.g. CDP CLI).
+// Only in dev mode to avoid exposing debug port in production.
+if (!app.isPackaged) {
+  app.commandLine.appendSwitch("remote-debugging-port", "9222");
+}
+
 function createWindow(): void {
   const mainWindow = new BrowserWindow({
     width: 1280,

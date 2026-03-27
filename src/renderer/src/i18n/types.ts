@@ -14,6 +14,7 @@ export interface TranslationMap {
   "app.startPractice": string;
   "app.openSettings": string;
   "app.menuGreeting": string;
+  "app.skipToContent": string;
 
   // ── Song Library ───────────────────────────────────────────────
   "library.title": string;
@@ -58,6 +59,7 @@ export interface TranslationMap {
   "library.recentlyPlayed": string;
   "library.noSongsYet": string;
   "library.noSongsHint": string;
+  "library.exploreSongs": string;
   "library.noMatchSearch": string;
   "library.noMatchHint": string;
   "library.emptyTitle": string;
@@ -110,6 +112,10 @@ export interface TranslationMap {
   "midi.bleDeviceTitle": string;
   "midi.testKeyboard": string;
   "midi.pressAKey": string;
+  "midi.unsupported": string;
+  "midi.denied": string;
+  "midi.unavailable": string;
+  "midi.initFailed": string;
 
   // ── Practice Mode ──────────────────────────────────────────────
   "practice.watch": string;
@@ -160,6 +166,8 @@ export interface TranslationMap {
   "practice.speedBumped": string;
   "practice.loop.byMeasure": string;
   "practice.loop.measure": string;
+  "practice.setSpeedTo": string;
+  "practice.speedSliderLabel": string;
 
   // ── Settings ───────────────────────────────────────────────────
   "settings.title": string;

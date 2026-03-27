@@ -48,6 +48,37 @@ export function ThemePicker(): React.JSX.Element {
     return () => document.removeEventListener("mousedown", handler);
   }, [open]);
 
+  // Close on Escape + focus trap within popover
+  useEffect(() => {
+    if (!open) return;
+    const handler = (e: KeyboardEvent): void => {
+      if (e.key === "Escape") {
+        e.preventDefault();
+        setOpen(false);
+        return;
+      }
+      if (e.key !== "Tab") return;
+      const container = popoverRef.current;
+      if (!container) return;
+      const focusables = Array.from(
+        container.querySelectorAll<HTMLElement>("button"),
+      );
+      if (focusables.length === 0) return;
+      const first = focusables[0];
+      const last = focusables[focusables.length - 1];
+      const active = document.activeElement as HTMLElement | null;
+      if (e.shiftKey && active === first) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && active === last) {
+        e.preventDefault();
+        first.focus();
+      }
+    };
+    document.addEventListener("keydown", handler, true);
+    return () => document.removeEventListener("keydown", handler, true);
+  }, [open]);
+
   return (
     <div className="relative" ref={popoverRef}>
       <button

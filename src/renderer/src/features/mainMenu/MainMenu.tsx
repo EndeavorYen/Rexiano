@@ -17,6 +17,7 @@ import { useProgressStore } from "@renderer/stores/useProgressStore";
 import { useSettingsStore } from "@renderer/stores/useSettingsStore";
 import { useRecentFiles } from "@renderer/hooks/useRecentFiles";
 import { formatRelativeTime } from "@renderer/utils/relativeTime";
+import { getTimeOfDay } from "@renderer/utils/greeting";
 import type { RecentFile } from "@shared/types";
 
 interface MainMenuProps {
@@ -34,19 +35,28 @@ export function MainMenu({
   const sessions = useProgressStore((s) => s.sessions);
   const defaultMode = useSettingsStore((s) => s.defaultMode);
   const defaultSpeed = useSettingsStore((s) => s.defaultSpeed);
+  const kidMode = useSettingsStore((s) => s.kidMode);
   const { recentFiles: allRecents } = useRecentFiles();
   const recentFiles = allRecents.slice(0, 5);
+  /** R3-01 fix: lookup map covers all PracticeMode values (including "step")
+   *  instead of an if-chain that silently fell through to "watch". */
   const defaultModeLabel = useMemo(() => {
-    if (defaultMode === "wait") return t("practice.wait");
-    if (defaultMode === "free") return t("practice.free");
-    return t("practice.watch");
+    const modeI18nMap: Record<
+      string,
+      "practice.watch" | "practice.wait" | "practice.free" | "practice.step"
+    > = {
+      watch: "practice.watch",
+      wait: "practice.wait",
+      free: "practice.free",
+      step: "practice.step",
+    };
+    const key = modeI18nMap[defaultMode] ?? "practice.watch";
+    return t(key);
   }, [defaultMode, t]);
 
   const greeting = (() => {
-    const hour = new Date().getHours();
-    if (hour < 12) return t("library.greeting.morning");
-    if (hour < 18) return t("library.greeting.afternoon");
-    return t("library.greeting.evening");
+    const tod = getTimeOfDay();
+    return t(`library.greeting.${tod}`);
   })();
 
   const totalSessions = sessions.length;
@@ -54,10 +64,10 @@ export function MainMenu({
 
   return (
     <div
-      className="flex-1 min-h-0 app-shell overflow-y-auto overflow-x-hidden px-6 py-8"
+      className="flex-1 min-h-0 app-shell overflow-y-auto overflow-x-hidden px-4 py-4 sm:px-6 sm:py-6 lg:py-8"
       data-testid="main-menu-view"
     >
-      <div className="mx-auto h-full w-full max-w-6xl flex items-center">
+      <div className="mx-auto w-full max-w-6xl flex items-start lg:items-center min-h-full">
         <div
           className="surface-panel subtle-shadow-md w-full p-6 sm:p-8 lg:p-10 animate-page-enter"
           data-testid="main-menu-panel"
@@ -97,26 +107,35 @@ export function MainMenu({
                 {t("app.menuGreeting")}
               </p>
 
-              <div className="flex flex-wrap gap-2.5">
-                <MetaPill
-                  icon={<Library size={14} />}
-                  label={
-                    practicedSongs === 1
-                      ? t("library.songPracticed")
-                      : t("library.songsPracticed")
-                  }
-                  value={practicedSongs}
-                />
-                <MetaPill
-                  icon={<Flame size={14} />}
-                  label={
-                    totalSessions === 1
-                      ? t("library.session")
-                      : t("library.sessions")
-                  }
-                  value={totalSessions}
-                />
-              </div>
+              {totalSessions > 0 ? (
+                <div className="flex flex-wrap gap-2.5">
+                  <MetaPill
+                    icon={<Library size={14} />}
+                    label={
+                      practicedSongs === 1
+                        ? t("library.songPracticed")
+                        : t("library.songsPracticed")
+                    }
+                    value={practicedSongs}
+                  />
+                  <MetaPill
+                    icon={<Flame size={14} />}
+                    label={
+                      totalSessions === 1
+                        ? t("library.session")
+                        : t("library.sessions")
+                    }
+                    value={totalSessions}
+                  />
+                </div>
+              ) : (
+                <p
+                  className="text-sm font-body"
+                  style={{ color: "var(--color-text-muted)" }}
+                >
+                  {t("library.exploreSongs")}
+                </p>
+              )}
 
               <div className="flex flex-wrap gap-3">
                 <button
@@ -135,34 +154,36 @@ export function MainMenu({
                 </button>
               </div>
 
-              <div
-                className="inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-body"
-                style={{
-                  color: "var(--color-text-muted)",
-                  background:
-                    "color-mix(in srgb, var(--color-surface-alt) 70%, var(--color-surface))",
-                  border: "1px solid var(--color-border)",
-                }}
-                data-testid="main-menu-last-used-summary"
-              >
-                <Clock3 size={12} />
-                <span>
-                  {t("settings.defaultMode")}: {defaultModeLabel}
-                </span>
-                <span className="font-mono tabular-nums">
-                  {Math.round(defaultSpeed * 100)}%
-                </span>
-              </div>
+              {!kidMode && (
+                <div
+                  className="inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-body"
+                  style={{
+                    color: "var(--color-text-muted)",
+                    background:
+                      "color-mix(in srgb, var(--color-surface-alt) 70%, var(--color-surface))",
+                    border: "1px solid var(--color-border)",
+                  }}
+                  data-testid="main-menu-last-used-summary"
+                >
+                  <Clock3 size={12} />
+                  <span>
+                    {t("settings.defaultMode")}: {defaultModeLabel}
+                  </span>
+                  <span className="font-mono tabular-nums">
+                    {Math.round(defaultSpeed * 100)}%
+                  </span>
+                </div>
+              )}
             </section>
 
-            <aside className="surface-elevated p-4 sm:p-5 space-y-3">
-              <div
+            <aside className="surface-elevated p-4 sm:p-5 space-y-3" aria-label={recentFiles.length > 0 ? t("library.recentlyPlayed") : t("library.importMidi")}>
+              <h2
                 className="flex items-center gap-2 text-[11px] font-mono uppercase tracking-[0.16em]"
                 style={{ color: "var(--color-text-muted)" }}
               >
                 <Clock3 size={13} />
-                {t("library.recentlyPlayed")}
-              </div>
+                {recentFiles.length > 0 ? t("library.recentlyPlayed") : t("library.importMidi")}
+              </h2>
 
               {recentFiles.length > 0 && onSelectRecent ? (
                 <div className="space-y-2.5">

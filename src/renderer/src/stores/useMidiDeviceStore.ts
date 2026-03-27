@@ -11,6 +11,8 @@ import type { MidiDeviceInfo } from "@shared/types";
 import { MidiDeviceManager } from "@renderer/engines/midi/MidiDeviceManager";
 import { MidiInputParser } from "@renderer/engines/midi/MidiInputParser";
 import { MidiOutputSender } from "@renderer/engines/midi/MidiOutputSender";
+import { translate } from "@renderer/i18n";
+import { useSettingsStore } from "./useSettingsStore";
 import {
   BleMidiManager,
   type BleMidiStatus,
@@ -184,21 +186,22 @@ export const useMidiDeviceStore = create<MidiDeviceState>()((set, get) => ({
       set({ reconnecting: false });
     });
 
+    const lang = useSettingsStore.getState().language;
     try {
       await manager.init();
 
       if (manager.status === "unsupported") {
         set({
-          connectionError: "Web MIDI API is not supported in this browser",
+          connectionError: translate(lang, "midi.unsupported"),
         });
         return;
       }
       if (manager.status === "denied") {
-        set({ connectionError: "MIDI access was denied" });
+        set({ connectionError: translate(lang, "midi.denied") });
         return;
       }
       if (manager.status !== "ready") {
-        set({ connectionError: "MIDI access is not available" });
+        set({ connectionError: translate(lang, "midi.unavailable") });
         return;
       }
 
@@ -209,7 +212,7 @@ export const useMidiDeviceStore = create<MidiDeviceState>()((set, get) => ({
         connectionError: null,
       });
     } catch {
-      set({ connectionError: "Failed to initialize MIDI access" });
+      set({ connectionError: translate(lang, "midi.initFailed") });
     }
   },
 

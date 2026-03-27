@@ -197,7 +197,7 @@ export const themes: Record<ThemeId, ThemeTokens> = {
       accent: "#5DA3B8",
       accentHover: "#6FB5CA",
       text: "#E8EDF2",
-      textMuted: "#97A6B6",
+      textMuted: "#A8B6C4",
       border: "#3A4556",
       canvasBg: "#0A0D12",
       gridLine: "#1D2430",

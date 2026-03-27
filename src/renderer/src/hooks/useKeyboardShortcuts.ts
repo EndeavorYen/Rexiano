@@ -9,6 +9,7 @@ import { usePlaybackStore } from "@renderer/stores/usePlaybackStore";
 import { usePracticeStore } from "@renderer/stores/usePracticeStore";
 import { useSongStore } from "@renderer/stores/useSongStore";
 import { getPracticeEngines } from "@renderer/engines/practice/practiceManager";
+import { SpeedController } from "@renderer/engines/practice/SpeedController";
 import type { PracticeMode } from "@shared/types";
 
 /** Seek offset in seconds for arrow-key shortcuts */
@@ -19,6 +20,9 @@ const SEEK_STEP_LARGE = 15;
 const SPEED_STEP = 0.25;
 const SHORTCUT_BLOCKING_OVERLAY_SELECTOR = [
   "[data-testid='settings-panel']",
+  "[data-testid='playback-settings-drawer']",
+  "[data-testid='library-midi-drawer']",
+  "[data-testid='song-complete-overlay']",
 ].join(", ");
 
 /** Whether the shortcut help overlay is currently shown (toggled by ?) */
@@ -46,6 +50,7 @@ const MODE_MAP: Record<string, PracticeMode> = {
   "1": "watch",
   "2": "wait",
   "3": "free",
+  "4": "step",
 };
 
 /**
@@ -172,18 +177,23 @@ export function createKeyboardHandler(
       // ── Speed ───────────────────────────────────────
       case "ArrowUp":
       case "BracketRight": {
-        e.preventDefault();
         if (!hasSong) return;
+        e.preventDefault();
         const curSpeed = usePracticeStore.getState().speed;
+        // R2-04 fix: Don't call setSpeed when already at ceiling — avoids
+        // silent no-op that confuses a 6-year-old into thinking the app is broken.
+        if (curSpeed >= SpeedController.MAX) break;
         usePracticeStore.getState().setSpeed(curSpeed + SPEED_STEP);
         break;
       }
 
       case "ArrowDown":
       case "BracketLeft": {
-        e.preventDefault();
         if (!hasSong) return;
+        e.preventDefault();
         const curSpeedDown = usePracticeStore.getState().speed;
+        // R2-04 fix: Don't call setSpeed when already at floor.
+        if (curSpeedDown <= SpeedController.MIN) break;
         usePracticeStore.getState().setSpeed(curSpeedDown - SPEED_STEP);
         break;
       }
@@ -238,7 +248,8 @@ export function createKeyboardHandler(
       // ── Mode switching ──────────────────────────────
       case "Digit1":
       case "Digit2":
-      case "Digit3": {
+      case "Digit3":
+      case "Digit4": {
         if (!hasSong) return;
         const mode = MODE_MAP[e.code.replace("Digit", "")];
         if (mode) usePracticeStore.getState().setMode(mode);

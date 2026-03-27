@@ -13,6 +13,7 @@ export const zhTW: TranslationMap = {
   "app.startPractice": "開始練琴",
   "app.openSettings": "設定",
   "app.menuGreeting": "今天要彈什麼呢？",
+  "app.skipToContent": "跳至主要內容",
 
   // ── Song Library ───────────────────────────────────────────────
   "library.title": "Rexiano",
@@ -57,6 +58,7 @@ export const zhTW: TranslationMap = {
   "library.recentlyPlayed": "最近播放",
   "library.noSongsYet": "還沒有曲子",
   "library.noSongsHint": "匯入 MIDI 檔案開始練習吧！",
+  "library.exploreSongs": "來探索你的第一首曲子吧！",
   "library.noMatchSearch": "沒有符合搜尋的曲子",
   "library.noMatchHint": "試試其他關鍵字或清除篩選",
   "library.emptyTitle": "開始你的鋼琴冒險吧！",
@@ -109,6 +111,10 @@ export const zhTW: TranslationMap = {
   "midi.bleDeviceTitle": "藍牙：{name}（點擊中斷連線）",
   "midi.testKeyboard": "測試你的鍵盤",
   "midi.pressAKey": "按一個鍵試試...",
+  "midi.unsupported": "此瀏覽器不支援 Web MIDI API",
+  "midi.denied": "MIDI 存取被拒絕",
+  "midi.unavailable": "MIDI 存取不可用",
+  "midi.initFailed": "無法初始化 MIDI 存取",
 
   // ── Practice Mode ──────────────────────────────────────────────
   "practice.watch": "觀看",
@@ -159,6 +165,8 @@ export const zhTW: TranslationMap = {
   "practice.speedBumped": "加速了！現在 {speed}%",
   "practice.loop.byMeasure": "按小節",
   "practice.loop.measure": "第 {n} 小節",
+  "practice.setSpeedTo": "將速度設為 {speed}",
+  "practice.speedSliderLabel": "播放速度百分比",
 
   // ── Settings ───────────────────────────────────────────────────
   "settings.title": "設定",

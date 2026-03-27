@@ -108,13 +108,17 @@ function App(): React.JSX.Element {
     }
   }, [view]);
 
-  // ─── UI scale: sync data attribute to <html> ─────────
+  // ─── UI scale & lang: sync attributes to <html> ─────────
   const uiScale = useSettingsStore((s) => s.uiScale);
+  const language = useSettingsStore((s) => s.language);
   const isProgressLoaded = useProgressStore((s) => s.isLoaded);
   const loadProgressSessions = useProgressStore((s) => s.loadSessions);
   useEffect(() => {
     document.documentElement.setAttribute("data-ui-scale", uiScale);
   }, [uiScale]);
+  useEffect(() => {
+    document.documentElement.lang = language === "zh-TW" ? "zh-Hant" : "en";
+  }, [language]);
 
   useEffect(() => {
     if (isProgressLoaded) return;
@@ -134,17 +138,21 @@ function App(): React.JSX.Element {
 
   // Core playback stats
   const speed = usePracticeStore((s) => s.speed);
-  // Close drawer with Escape.
+  // R2-01 fix: Close drawer with Escape using capture phase + stopPropagation.
+  // This ensures the drawer Escape takes priority over the global keyboard
+  // shortcut Escape handler, preventing both "close drawer" AND "pause playback"
+  // from firing on the same keypress.
   useEffect(() => {
     if (!showPlaybackDrawer) return;
     const onKeyDown = (event: KeyboardEvent): void => {
       if (event.key !== "Escape") return;
       if (event.defaultPrevented) return;
       event.preventDefault();
+      event.stopPropagation();
       setShowPlaybackDrawer(false);
     };
-    window.addEventListener("keydown", onKeyDown);
-    return () => window.removeEventListener("keydown", onKeyDown);
+    window.addEventListener("keydown", onKeyDown, true);
+    return () => window.removeEventListener("keydown", onKeyDown, true);
   }, [showPlaybackDrawer]);
 
   // ─── Phase 7: Sheet Music ──────────────────────────────
@@ -1001,6 +1009,13 @@ function App(): React.JSX.Element {
       onDragOver={handleDragOver}
       onDrop={handleDrop}
     >
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:absolute focus:z-[200] focus:top-2 focus:left-2 focus:px-4 focus:py-2 focus:rounded-lg focus:text-sm focus:font-body"
+        style={{ background: "var(--color-accent)", color: "#fff" }}
+      >
+        {t("app.skipToContent")}
+      </a>
       {showSceneCurtain && <div className="scene-curtain" />}
 
       {/* Drag-and-drop overlay */}
@@ -1065,29 +1080,30 @@ function App(): React.JSX.Element {
         </div>
       )}
 
-      {/* View: Main Menu */}
-      {!song && view === "menu" && (
-        <>
-          <MainMenu
-            onStartPractice={() => applyRoute("library")}
-            onOpenSettings={() => setShowMenuSettings(true)}
-            onSelectRecent={(file) => void handleLoadMidiPath(file.path)}
-          />
-          {showMenuSettings && (
-            <SettingsPanel inline onClose={() => setShowMenuSettings(false)} />
-          )}
-        </>
-      )}
+      <main id="main-content" className="flex-1 min-h-0 flex flex-col">
+        {/* View: Main Menu */}
+        {!song && view === "menu" && (
+          <>
+            <MainMenu
+              onStartPractice={() => applyRoute("library")}
+              onOpenSettings={() => setShowMenuSettings(true)}
+              onSelectRecent={(file) => void handleLoadMidiPath(file.path)}
+            />
+            {showMenuSettings && (
+              <SettingsPanel inline onClose={() => setShowMenuSettings(false)} />
+            )}
+          </>
+        )}
 
-      {/* View: Song Library */}
-      {!song && view === "library" && (
-        <div key="library" className="flex-1 flex flex-col animate-page-enter">
-          <SongLibrary
-            onOpenFile={handleOpenFile}
-            onBack={() => applyRoute("menu")}
-          />
-        </div>
-      )}
+        {/* View: Song Library */}
+        {!song && view === "library" && (
+          <div key="library" className="flex-1 flex flex-col animate-page-enter">
+            <SongLibrary
+              onOpenFile={handleOpenFile}
+              onBack={() => applyRoute("menu")}
+            />
+          </div>
+        )}
 
       {/* View: Playback */}
       {song && (
@@ -1296,6 +1312,7 @@ function App(): React.JSX.Element {
           />
         </div>
       )}
+      </main>
     </div>
   );
 }

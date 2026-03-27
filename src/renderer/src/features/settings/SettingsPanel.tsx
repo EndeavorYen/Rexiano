@@ -34,11 +34,12 @@ const tabs: { id: SettingsTab; key: TranslationKey; icon: React.ReactNode }[] =
 
 const practiceModeKeys: {
   value: PracticeMode;
-  key: "practice.watch" | "practice.wait" | "practice.free";
+  key: "practice.watch" | "practice.wait" | "practice.free" | "practice.step";
 }[] = [
   { value: "watch", key: "practice.watch" },
   { value: "wait", key: "practice.wait" },
   { value: "free", key: "practice.free" },
+  { value: "step", key: "practice.step" },
 ];
 
 const FOCUSABLE_SELECTOR = [
@@ -215,7 +216,7 @@ export function SettingsPanel({
         <div className="fixed inset-0 z-[100] flex items-center justify-center modal-backdrop-cinematic">
           <div
             ref={panelRef}
-            className="w-[92vw] max-w-[560px] max-h-[85vh] flex flex-col rounded-2xl shadow-2xl modal-card-cinematic overflow-hidden"
+            className="w-[92vw] min-w-[280px] max-w-[560px] max-h-[85vh] flex flex-col rounded-2xl shadow-2xl modal-card-cinematic overflow-hidden"
             style={{
               background:
                 "color-mix(in srgb, var(--color-surface) 90%, transparent)",
@@ -242,6 +243,7 @@ export function SettingsPanel({
                 onClick={handleClose}
                 className="btn-surface-themed w-9 h-9 flex items-center justify-center rounded-full cursor-pointer transition-colors"
                 title={t("settings.close")}
+                aria-label={t("settings.close")}
                 data-testid="settings-close"
               >
                 <X size={14} style={{ color: "var(--color-text-muted)" }} />
@@ -250,6 +252,8 @@ export function SettingsPanel({
 
             <div
               className="flex shrink-0 px-2 pt-2 gap-1 overflow-x-auto"
+              role="tablist"
+              aria-label={t("settings.title")}
               style={{
                 borderBottom: "1px solid var(--color-border)",
                 background:
@@ -259,6 +263,8 @@ export function SettingsPanel({
               {tabs.map((tab) => (
                 <button
                   key={tab.id}
+                  role="tab"
+                  aria-selected={activeTab === tab.id}
                   onClick={() => setActiveTab(tab.id)}
                   className="flex items-center gap-1.5 px-3 py-2 text-xs font-body font-medium rounded-t-lg cursor-pointer transition-colors relative whitespace-nowrap"
                   style={{
@@ -297,6 +303,7 @@ export function SettingsPanel({
                           key={id}
                           onClick={() => setTheme(id)}
                           aria-label={themes[id].label}
+                          aria-pressed={isActive}
                           className="flex flex-col items-center gap-2 cursor-pointer"
                         >
                           <div
@@ -358,10 +365,12 @@ export function SettingsPanel({
                         >
                           {t("settings.uiScale")}
                         </span>
-                        <div className="flex gap-1.5">
+                        <div className="flex gap-1.5" role="radiogroup" aria-label={t("settings.uiScale")}>
                           {uiScaleOptions.map((option) => (
                             <button
                               key={option.value}
+                              role="radio"
+                              aria-checked={uiScale === option.value}
                               onClick={() => setUiScale(option.value)}
                               className="px-2.5 py-1 text-[11px] font-body rounded-lg cursor-pointer transition-colors"
                               style={{
@@ -391,10 +400,12 @@ export function SettingsPanel({
                         {t("settings.language")}
                       </span>
                     </SectionTitle>
-                    <div className="flex flex-col gap-2 mt-3">
+                    <div className="flex flex-col gap-2 mt-3" role="radiogroup" aria-label={t("settings.language")}>
                       {getAvailableLanguages().map((lang) => (
                         <button
                           key={lang.code}
+                          role="radio"
+                          aria-checked={language === lang.code}
                           onClick={() => setLanguage(lang.code as Language)}
                           className="flex items-center gap-3 px-4 py-3 rounded-xl cursor-pointer transition-colors text-left"
                           style={{
@@ -505,10 +516,12 @@ export function SettingsPanel({
                       >
                         {t("settings.defaultMode")}
                       </span>
-                      <div className="flex gap-1.5">
+                      <div className="flex gap-1.5" role="radiogroup" aria-label={t("settings.defaultMode")}>
                         {practiceModeKeys.map((m) => (
                           <button
                             key={m.value}
+                            role="radio"
+                            aria-checked={defaultMode === m.value}
                             onClick={() => setDefaultMode(m.value)}
                             className="px-3 py-1.5 text-xs font-body rounded-lg cursor-pointer transition-colors"
                             style={{
@@ -536,10 +549,12 @@ export function SettingsPanel({
                       >
                         {t("settings.defaultSpeed")}
                       </span>
-                      <div className="flex gap-1 flex-wrap">
+                      <div className="flex gap-1 flex-wrap" role="radiogroup" aria-label={t("settings.defaultSpeed")}>
                         {speedPresets.map((s) => (
                           <button
                             key={s}
+                            role="radio"
+                            aria-checked={defaultSpeed === s}
                             onClick={() => setDefaultSpeed(s)}
                             className="px-2.5 py-1 text-[11px] font-mono rounded-lg cursor-pointer transition-colors"
                             style={{

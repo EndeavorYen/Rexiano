@@ -14,6 +14,7 @@ export const en: TranslationMap = {
   "app.startPractice": "Start Practicing",
   "app.openSettings": "Settings",
   "app.menuGreeting": "What shall we play today?",
+  "app.skipToContent": "Skip to main content",
 
   // ── Song Library ───────────────────────────────────────────────
   "library.title": "Rexiano",
@@ -58,6 +59,7 @@ export const en: TranslationMap = {
   "library.recentlyPlayed": "Recently Played",
   "library.noSongsYet": "No songs here yet",
   "library.noSongsHint": "Import a MIDI file below to get started!",
+  "library.exploreSongs": "Explore your first song!",
   "library.noMatchSearch": "No songs match your search",
   "library.noMatchHint": "Try a different keyword or clear the filter",
   "library.emptyTitle": "Let's start your piano adventure!",
@@ -110,6 +112,10 @@ export const en: TranslationMap = {
   "midi.bleDeviceTitle": "Bluetooth: {name} (click to disconnect)",
   "midi.testKeyboard": "Test your keyboard",
   "midi.pressAKey": "Press any key...",
+  "midi.unsupported": "Web MIDI API is not supported in this browser",
+  "midi.denied": "MIDI access was denied",
+  "midi.unavailable": "MIDI access is not available",
+  "midi.initFailed": "Failed to initialize MIDI access",
 
   // ── Practice Mode ──────────────────────────────────────────────
   "practice.watch": "Watch",
@@ -160,6 +166,8 @@ export const en: TranslationMap = {
   "practice.speedBumped": "Speed up! Now {speed}%",
   "practice.loop.byMeasure": "By measure",
   "practice.loop.measure": "Measure {n}",
+  "practice.setSpeedTo": "Set speed to {speed}",
+  "practice.speedSliderLabel": "Playback speed percentage",
 
   // ── Settings ───────────────────────────────────────────────────
   "settings.title": "Settings",

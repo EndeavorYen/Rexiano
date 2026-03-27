@@ -22,6 +22,7 @@ import type { TranslationKey } from "../../i18n/types";
 import { DeviceSelector } from "../midiDevice/DeviceSelector";
 import { useTranslation } from "../../i18n/useTranslation";
 import { withTimeout } from "@renderer/engines/audio/recoveryUtils";
+import { getTimeOfDay } from "@renderer/utils/greeting";
 import appIcon from "../../../../../docs/figure/Rexiano_icon.png";
 import type { RecentFile } from "../../../../shared/types";
 
@@ -44,13 +45,8 @@ export function SongLibrary({
 
   // R3-02 fix: removed useMemo — cheap computation, and stale greeting across
   // time-of-day boundaries was a UX issue for long sessions. Re-evaluates every render.
-  const hour = new Date().getHours();
-  const greeting =
-    hour < 12
-      ? t("library.greeting.morning")
-      : hour < 17
-        ? t("library.greeting.afternoon")
-        : t("library.greeting.evening");
+  // R1-03 fix: unified cutoff via shared getTimeOfDay() (previously < 17 here vs < 18 in MainMenu)
+  const greeting = t(`library.greeting.${getTimeOfDay()}`);
 
   const songs = useSongLibraryStore((s) => s.songs);
   const isLoading = useSongLibraryStore((s) => s.isLoading);
@@ -97,6 +93,7 @@ export function SongLibrary({
     const onKeyDown = (event: KeyboardEvent): void => {
       if (event.key !== "Escape") return;
       event.preventDefault();
+      event.stopPropagation(); // R3-03 fix: match all other drawer Escape handlers
       setShowDeviceDrawer(false);
     };
     window.addEventListener("keydown", onKeyDown, true);
@@ -437,12 +434,12 @@ export function SongLibrary({
                       <div className="empty-piano-key" />
                       <div className="empty-piano-key" />
                     </div>
-                    <p
+                    <h2
                       className="text-base font-display font-semibold mb-1.5"
                       style={{ color: "var(--color-text)" }}
                     >
                       {t("library.emptyTitle")}
-                    </p>
+                    </h2>
                     <p
                       className="text-sm font-body mb-5"
                       style={{ color: "var(--color-text-muted)" }}

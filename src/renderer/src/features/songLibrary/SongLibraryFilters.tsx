@@ -48,6 +48,7 @@ export function SongLibraryFilters(): React.JSX.Element {
           value={searchQuery}
           onChange={handleSearch}
           placeholder={t("library.searchPlaceholder")}
+          aria-label={t("library.searchPlaceholder")}
           className="w-full pl-9 pr-3.5 py-2.5 rounded-lg text-sm font-body input-themed"
         />
       </div>

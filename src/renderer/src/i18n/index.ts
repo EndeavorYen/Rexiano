@@ -36,7 +36,11 @@ export function translate(
 
   if (params) {
     for (const [k, v] of Object.entries(params)) {
-      text = text.replace(new RegExp(`\\{${k}\\}`, "g"), String(v));
+      // R3-02 fix: Use function form of replace() to avoid JavaScript's
+      // special $ sequences ($&, $', $`) in replacement strings corrupting
+      // output when parameter values contain "$".
+      const replacement = String(v);
+      text = text.replace(new RegExp(`\\{${k}\\}`, "g"), () => replacement);
     }
   }
 

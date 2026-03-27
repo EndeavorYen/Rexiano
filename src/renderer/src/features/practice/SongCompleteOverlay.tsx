@@ -88,11 +88,14 @@ export function SongCompleteOverlay({
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent): void => {
       if (e.key === "Escape") {
+        e.preventDefault();
+        e.stopPropagation();
         onBackToLibrary();
       }
     };
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
+    // Use capture phase so this overlay takes priority over other Escape handlers
+    window.addEventListener("keydown", handleKeyDown, true);
+    return () => window.removeEventListener("keydown", handleKeyDown, true);
   }, [onBackToLibrary]);
 
   return (
