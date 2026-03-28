@@ -409,7 +409,7 @@ describe("BleMidiManager", () => {
       };
 
       // Mock bluetooth API
-      Object.defineProperty(navigator, "bluetooth", {
+      Object.defineProperty(getNavigatorForTest(), "bluetooth", {
         value: {
           requestDevice: vi.fn().mockResolvedValue(mockDevice),
         },
