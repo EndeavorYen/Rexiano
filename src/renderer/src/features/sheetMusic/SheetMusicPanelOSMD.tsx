@@ -159,8 +159,17 @@ export function SheetMusicPanelOSMD({
     }
     osmdRef.current.render();
 
-    // Build cursor steps with time mapping from ParsedNote.time
-    cursorStepsRef.current = buildCursorSteps(osmdRef.current, song);
+    // Build cursor steps. Pass the current playback time as pageStartTime
+    // so note matching skips earlier pages (avoids same-pitch ambiguity).
+    const pageStartTime =
+      measureWindow[0] > 0
+        ? usePlaybackStore.getState().currentTime
+        : 0;
+    cursorStepsRef.current = buildCursorSteps(
+      osmdRef.current,
+      song,
+      pageStartTime,
+    );
 
     // Hide built-in cursor element (we use CSS highlights)
     const cursor = osmdRef.current.cursor;
@@ -176,7 +185,11 @@ export function SheetMusicPanelOSMD({
     const ro = new ResizeObserver(() => {
       if (osmdRef.current && loadedRef.current) {
         osmdRef.current.render();
-        cursorStepsRef.current = buildCursorSteps(osmdRef.current, song);
+        const resizePageStart = measureWindow[0] > 0
+          ? usePlaybackStore.getState().currentTime : 0;
+        cursorStepsRef.current = buildCursorSteps(
+          osmdRef.current, song, resizePageStart,
+        );
         if (osmdRef.current.cursor?.cursorElement) {
           osmdRef.current.cursor.cursorElement.style.display = "none";
         }

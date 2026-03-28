@@ -32,10 +32,18 @@ export interface CursorStep {
  * @param osmd The OSMD instance (after render)
  * @param song The parsed song (source of truth for note times)
  */
+/**
+ * @param osmd  The OSMD instance (after render)
+ * @param song  The parsed song
+ * @param pageStartTime  Approximate time (seconds) when the rendered page begins.
+ *   Notes before this time are skipped during matching to avoid cross-page
+ *   ambiguity when the same pitch appears in multiple measures.
+ */
 export function buildCursorSteps(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   osmd: any,
   song: ParsedSong | null,
+  pageStartTime = 0,
 ): CursorStep[] {
   const cursor = osmd?.cursor;
   if (!cursor || !song) return [];
@@ -58,13 +66,14 @@ export function buildCursorSteps(
     list.sort((a, b) => a.time - b.time);
   }
 
-  // Track the last matched time so we always move forward (avoid re-matching
-  // notes from earlier in the song). Start before 0 to match the very first note.
-  let lastMatchedTime = -1;
-
   cursor.reset();
   const it = cursor.Iterator;
   if (!it) return [];
+
+  // Start matching from just before the page's first note time.
+  // This prevents matching notes from earlier pages when the same
+  // pitch appears in multiple measures (e.g. C4 in m.1 and m.5).
+  let lastMatchedTime = pageStartTime > 0 ? pageStartTime - 0.01 : -1;
 
   const steps: CursorStep[] = [];
 
