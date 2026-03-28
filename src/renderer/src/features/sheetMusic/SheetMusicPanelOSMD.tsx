@@ -12,10 +12,6 @@ interface SheetMusicPanelOSMDProps {
 
 export interface StepTiming {
   time: number;
-  /** Per-MIDI endTime map: each note at this step has its own duration */
-  endTimeByMidi: Map<number, number>;
-  /** Fallback endTime (max across all notes at this step) */
-  maxEndTime: number;
 }
 
 /**
@@ -27,10 +23,7 @@ export function buildStepTimes(osmd: any, song: ParsedSong): StepTiming[] {
   const cursor = osmd?.cursor;
   if (!cursor) return [];
 
-  const notesByMidi = new Map<
-    number,
-    { time: number; duration: number }[]
-  >();
+  const notesByMidi = new Map<number, number[]>();
   for (const track of song.tracks) {
     for (const note of track.notes) {
       let list = notesByMidi.get(note.midi);
@@ -38,11 +31,11 @@ export function buildStepTimes(osmd: any, song: ParsedSong): StepTiming[] {
         list = [];
         notesByMidi.set(note.midi, list);
       }
-      list.push({ time: note.time, duration: note.duration });
+      list.push(note.time);
     }
   }
   for (const list of notesByMidi.values()) {
-    list.sort((a, b) => a.time - b.time);
+    list.sort((a, b) => a - b);
   }
 
   cursor.reset();
@@ -55,8 +48,6 @@ export function buildStepTimes(osmd: any, song: ParsedSong): StepTiming[] {
   while (!it.EndReached) {
     const voices = it.CurrentVoiceEntries || [];
     let bestTime = Infinity;
-    let maxEndTime = 0;
-    const endTimeByMidi = new Map<number, number>();
 
     for (const ve of voices) {
       for (const note of ve.Notes) {
@@ -69,32 +60,24 @@ export function buildStepTimes(osmd: any, song: ParsedSong): StepTiming[] {
         let found = -1;
         while (lo <= hi) {
           const mid = (lo + hi) >>> 1;
-          if (list[mid].time > lastTime + 0.001) {
+          if (list[mid] > lastTime + 0.001) {
             found = mid;
             hi = mid - 1;
           } else {
             lo = mid + 1;
           }
         }
-        if (found >= 0) {
-          const noteTime = list[found].time;
-          const noteEndTime = noteTime + list[found].duration;
-          if (noteTime < bestTime) bestTime = noteTime;
-          if (noteEndTime > maxEndTime) maxEndTime = noteEndTime;
-          endTimeByMidi.set(midi, noteEndTime);
+        if (found >= 0 && list[found] < bestTime) {
+          bestTime = list[found];
         }
       }
     }
 
     if (bestTime < Infinity) {
-      steps.push({ time: bestTime, endTimeByMidi, maxEndTime });
+      steps.push({ time: bestTime });
       lastTime = bestTime;
     } else {
-      steps.push({
-        time: lastTime + 0.01,
-        endTimeByMidi: new Map(),
-        maxEndTime: lastTime + 0.02,
-      });
+      steps.push({ time: lastTime + 0.01 });
     }
 
     cursor.next();
@@ -113,7 +96,7 @@ export function SheetMusicPanelOSMD({
   const osmdRef = useRef<any>(null);
   const loadedRef = useRef(false);
   const stepTimesRef = useRef<StepTiming[]>([]);
-  const highlighterRef = useRef(new HighlightManager());
+  const hlRef = useRef(new HighlightManager());
 
   const musicXml = useMemo(() => {
     if (!song) return null;
@@ -210,12 +193,10 @@ export function SheetMusicPanelOSMD({
   }, [mode]);
 
   // Effect 2: Drive cursor forward during playback.
-  // Uses pre-built stepTimes[] (from ParsedNote.time, respects tempo changes).
-  // HighlightManager tracks per-note endTimes so long notes (whole/half)
-  // stay highlighted even when the cursor advances to shorter notes.
+  // Each step's highlights replace the previous step's (no duration tracking).
   useEffect(() => {
     if (mode === "falling" || !containerRef.current || !song) return;
-    const hl = highlighterRef.current;
+    const hl = hlRef.current;
     let wasPlaying = false;
     let cursorPos = 0;
     let lastHighlightedPos = -1;
@@ -230,9 +211,6 @@ export function SheetMusicPanelOSMD({
       const cursor = osmd.cursor;
       if (!cursor) return;
 
-      // Always expire old highlights based on time
-      hl.tick(currentTime);
-
       if (!isPlaying) {
         wasPlaying = false;
         return;
@@ -240,7 +218,7 @@ export function SheetMusicPanelOSMD({
 
       if (!wasPlaying) {
         cursor.reset();
-        hl.reset();
+        hl.clear();
         cursorPos = 0;
         lastHighlightedPos = -1;
         wasPlaying = true;
@@ -249,7 +227,7 @@ export function SheetMusicPanelOSMD({
       // Seek backward
       if (cursorPos > 0 && currentTime < steps[cursorPos].time - 0.1) {
         cursor.reset();
-        hl.reset();
+        hl.clear();
         cursorPos = 0;
         lastHighlightedPos = -1;
       }
@@ -263,13 +241,12 @@ export function SheetMusicPanelOSMD({
         cursorPos++;
       }
 
-      // Add highlight for the current step (only once per step)
+      // Highlight the current step (replaces previous)
       if (
         currentTime >= steps[cursorPos].time &&
         cursorPos !== lastHighlightedPos
       ) {
-        const step = steps[cursorPos];
-        hl.addFromCursor(osmd, step.endTimeByMidi, step.maxEndTime);
+        hl.highlight(osmd);
         lastHighlightedPos = cursorPos;
       }
     }, 50);
