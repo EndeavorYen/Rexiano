@@ -51,6 +51,7 @@ export function SheetMusicPanelOSMD({
 
   // Cursor step list for highlight engine
   const cursorStepsRef = useRef<CursorStep[]>([]);
+  const pageStartTimeRef = useRef(0);
 
   const currentMeasure = usePlaybackStore(
     useCallback(
@@ -165,6 +166,7 @@ export function SheetMusicPanelOSMD({
       measureWindow[0] > 0
         ? usePlaybackStore.getState().currentTime
         : 0;
+    pageStartTimeRef.current = pageStartTime;
     cursorStepsRef.current = buildCursorSteps(
       osmdRef.current,
       song,
@@ -242,26 +244,85 @@ export function SheetMusicPanelOSMD({
       prevStepIdx = idx;
 
       highlightStep(step, prevStep);
+      // Update debug overlay
+      if (debugRef.current) {
+        const matched = step
+          ? `#${idx} t=${step.time.toFixed(2)}→${step.endTime.toFixed(2)}`
+          : "none";
+        debugRef.current.textContent =
+          `time=${currentTime.toFixed(2)} | measure=${currentMeasure} | window=[${measureWindow}] | steps=${steps.length} | match=${matched} | pageStart=${pageStartTimeRef.current.toFixed(2)}`;
+      }
     }, 50);
 
     return () => {
       clearInterval(intervalId);
       if (containerRef.current) clearHighlights(containerRef.current);
     };
-  }, [song, mode]);
+  }, [song, mode, currentMeasure, measureWindow]);
+
+  const debugRef = useRef<HTMLDivElement>(null);
+  const isDev = import.meta.env.DEV;
 
   return (
-    <div
-      ref={containerRef}
-      data-testid="sheet-music-panel"
-      className="sheet-music-osmd w-full"
-      style={{
-        ...(mode === "split"
-          ? { height: "100%", minHeight: 0 }
-          : { minHeight: mode === "sheet" ? 200 : 0 }),
-        padding: mode === "falling" ? 0 : "8px 0",
-        display: mode === "falling" ? "none" : undefined,
-      }}
-    />
+    <div style={{ position: "relative" }}>
+      {isDev && (
+        <div
+          ref={debugRef}
+          style={{
+            position: "absolute",
+            top: 0,
+            left: 0,
+            right: 0,
+            zIndex: 100,
+            background: "rgba(0,0,0,0.75)",
+            color: "#0f0",
+            fontFamily: "JetBrains Mono, monospace",
+            fontSize: 11,
+            padding: "2px 6px",
+            pointerEvents: "none",
+            whiteSpace: "nowrap",
+            overflow: "hidden",
+          }}
+        >
+          loading...
+        </div>
+      )}
+      <div
+        ref={containerRef}
+        data-testid="sheet-music-panel"
+        className="sheet-music-osmd w-full"
+        style={{
+          ...(mode === "split"
+            ? { height: "100%", minHeight: 0 }
+            : { minHeight: mode === "sheet" ? 200 : 0 }),
+          padding: mode === "falling" ? 0 : "8px 0",
+          display: mode === "falling" ? "none" : undefined,
+        }}
+      />
+      {isDev && (
+        <details
+          style={{
+            fontSize: 10,
+            fontFamily: "JetBrains Mono, monospace",
+            padding: "2px 6px",
+            background: "rgba(0,0,0,0.05)",
+            maxHeight: 120,
+            overflow: "auto",
+          }}
+        >
+          <summary style={{ cursor: "pointer", userSelect: "none" }}>
+            Cursor Steps ({cursorStepsRef.current.length})
+          </summary>
+          <pre style={{ margin: 0, whiteSpace: "pre-wrap", fontSize: 9 }}>
+            {cursorStepsRef.current
+              .map(
+                (s, i) =>
+                  `${String(i).padStart(3)} | t=${s.time.toFixed(3).padStart(8)} → ${s.endTime.toFixed(3).padStart(8)} | svg=${s.svgElements.length}`,
+              )
+              .join("\n")}
+          </pre>
+        </details>
+      )}
+    </div>
   );
 }
