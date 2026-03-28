@@ -234,8 +234,6 @@ export const en: TranslationMap = {
 
   // ── Sheet Music ────────────────────────────────────────────────
   "sheetMusic.loadSong": "Load a song to see sheet music",
-  "sheetMusic.vexflowError": "Failed to load sheet music renderer",
-  "sheetMusic.vexflowErrorHint": "Try reloading the application",
   "sheetMusic.modeFalling": "Notes",
   "sheetMusic.modeSplit": "Both",
   "sheetMusic.modeSheet": "Sheet",

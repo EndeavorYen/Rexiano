@@ -38,11 +38,8 @@ import { ScoreOverlay } from "./features/practice/ScoreOverlay";
 import { useKeyboardShortcuts } from "./hooks/useKeyboardShortcuts";
 import { toggleMute } from "./hooks/useMuteController";
 import { useTranslation } from "./i18n/useTranslation";
-import { SheetMusicPanel } from "./features/sheetMusic/SheetMusicPanel";
 import { SheetMusicPanelOSMD } from "./features/sheetMusic/SheetMusicPanelOSMD";
 import { DisplayModeToggle } from "./features/sheetMusic/DisplayModeToggle";
-import { useSheetMusicRenderer } from "./features/sheetMusic/useSheetMusicRenderer";
-import { convertToNotation } from "./features/sheetMusic/MidiToNotation";
 import { usePracticeStore } from "./stores/usePracticeStore";
 import { SongCompleteOverlay } from "./features/practice/SongCompleteOverlay";
 import { MainMenu } from "./features/mainMenu/MainMenu";
@@ -174,38 +171,7 @@ function App(): React.JSX.Element {
 
   // ─── Phase 7: Sheet Music ──────────────────────────────
   const displayMode = usePracticeStore((s) => s.displayMode);
-  const { renderer: sheetRenderer } = useSheetMusicRenderer();
   const isPlaying = usePlaybackStore((s) => s.isPlaying);
-
-  const notationData = useMemo(() => {
-    if (!song) return null;
-    const flattened = song.tracks.flatMap((track, idx) =>
-      track.notes.map((note) => ({ note, trackIndex: idx })),
-    );
-    const allNotes = flattened.map((x) => x.note);
-    const noteTrackIndices = flattened.map((x) => x.trackIndex);
-    const tempos =
-      song.tempos.length > 0 ? song.tempos : [{ time: 0, bpm: 120 }];
-    const primaryTimeSignature = song.timeSignatures[0];
-    const timeSigTop = primaryTimeSignature?.numerator ?? 4;
-    const timeSigBottom = primaryTimeSignature?.denominator ?? 4;
-    const keySig = song.keySignatures?.[0]?.key ?? 0;
-    return convertToNotation(
-      allNotes,
-      tempos,
-      480,
-      timeSigTop,
-      timeSigBottom,
-      keySig,
-      0,
-      song.tracks.length,
-      song.expressions,
-      song.timeSignatures,
-      noteTrackIndices,
-    );
-  }, [song]);
-
-  // ─── End Phase 7 ──────────────────────────────────────
 
   const [activeNotes, setActiveNotes] = useState<Set<number>>(EMPTY_NOTE_SET);
   const midiActiveNotes = useMidiDeviceStore((s) => s.activeNotes);
@@ -1288,14 +1254,7 @@ function App(): React.JSX.Element {
                     : {}),
                 }}
               >
-                {sheetRenderer === "osmd" ? (
-                  <SheetMusicPanelOSMD song={song} mode={displayMode} />
-                ) : (
-                  <SheetMusicPanel
-                    notationData={notationData}
-                    mode={displayMode}
-                  />
-                )}
+                <SheetMusicPanelOSMD song={song} mode={displayMode} />
               </div>
 
               {/* Falling notes canvas — always mounted so PixiJS ticker keeps

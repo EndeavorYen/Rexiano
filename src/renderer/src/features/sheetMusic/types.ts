@@ -3,9 +3,8 @@ import type { TempoEvent } from "@renderer/engines/midi/types";
 /**
  * Shared types for the sheet music display system (Phase 7).
  *
- * These types bridge the gap between MIDI data (ParsedNote) and
- * notation data (VexFlow StaveNote), defining the intermediate
- * representation used by MidiToNotation and consumed by SheetMusicPanel.
+ * These types define the intermediate notation representation
+ * used by MidiToNotation, CursorSync, and MidiToMusicXML.
  */
 
 /** Display mode for the sheet music panel */
