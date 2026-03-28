@@ -178,9 +178,7 @@ export function SheetMusicPanelOSMD({
   // does not fire subscription callbacks on every frame update.
   useEffect(() => {
     if (mode === "falling" || !containerRef.current || !song) return;
-
     const container = containerRef.current;
-    let rafId = 0;
     let prevBeatKey = "";
 
     const bpm = song.tempos[0]?.bpm ?? 120;
@@ -188,9 +186,10 @@ export function SheetMusicPanelOSMD({
     const num = ts?.numerator ?? 4;
     const den = ts?.denominator ?? 4;
 
-    function tick(): void {
-      rafId = requestAnimationFrame(tick);
-
+    // Use setInterval (not rAF) because Electron may throttle rAF
+    // when the PixiJS canvas is the primary renderer. 100ms (~10 fps)
+    // is sufficient for beat-level highlight updates.
+    const intervalId = setInterval(() => {
       const { isPlaying, currentTime } = usePlaybackStore.getState();
       if (!osmdRef.current || !loadedRef.current) return;
 
@@ -222,12 +221,10 @@ export function SheetMusicPanelOSMD({
           clearHighlights(container);
         }
       }
-    }
-
-    rafId = requestAnimationFrame(tick);
+    }, 100);
 
     return () => {
-      cancelAnimationFrame(rafId);
+      clearInterval(intervalId);
       clearHighlights(container);
     };
   }, [song, mode, measureWindow]);
