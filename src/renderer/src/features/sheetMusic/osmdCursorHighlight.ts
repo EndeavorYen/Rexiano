@@ -13,10 +13,6 @@
 const ACTIVE_CLASS = "osmd-note-active";
 
 export interface CursorStep {
-  /** MIDI note numbers at this cursor position (sorted for comparison) */
-  midis: number[];
-  /** Key string for fast comparison (e.g. "60,64,67") */
-  midiKey: string;
   /** SVG elements to highlight (collected during cursor traversal) */
   svgElements: Element[];
 }
@@ -37,17 +33,6 @@ export function buildCursorSteps(osmd: any): CursorStep[] {
   const steps: CursorStep[] = [];
 
   while (!it.EndReached) {
-    const voices = it.CurrentVoiceEntries || [];
-    const midis: number[] = [];
-    for (const ve of voices) {
-      for (const note of ve.Notes) {
-        if (!note.isRest()) {
-          midis.push(note.halfTone + 12);
-        }
-      }
-    }
-    midis.sort((a, b) => a - b);
-
     // Collect SVG elements at this cursor position
     const gNotes = cursor.GNotesUnderCursor() || [];
     const svgElements: Element[] = [];
@@ -65,8 +50,6 @@ export function buildCursorSteps(osmd: any): CursorStep[] {
     }
 
     steps.push({
-      midis,
-      midiKey: midis.join(","),
       svgElements,
     });
 

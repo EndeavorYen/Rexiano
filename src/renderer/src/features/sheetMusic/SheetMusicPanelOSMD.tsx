@@ -40,13 +40,6 @@ function estimateMeasureIndex(song: ParsedSong, time: number): number {
   return Math.floor(Math.max(0, time) / secPerMeasure);
 }
 
-/**
- * Convert a Set<number> to a sorted comma-joined key for fast comparison.
- */
-function midiSetToKey(notes: Set<number>): string {
-  return [...notes].sort((a, b) => a - b).join(",");
-}
-
 export function SheetMusicPanelOSMD({
   song,
   mode,
@@ -201,13 +194,12 @@ export function SheetMusicPanelOSMD({
 
   // Effect 3: Event-driven note highlighting.
   //
-  // On each activeNotes change, match the MIDI content against the
-  // cursor step list. Search forward from current position (normal
-  // playback), or reset to start if no forward match (seek backward).
+  // Each callback from tickerLoop represents a real note-object change
+  // at the hit line (guarded by activeNoteGeneration in NoteRenderer).
+  // We simply step to the next cursor position when notes are present,
+  // and keep the current highlight during rests (empty set).
   //
-  // This is NOT based on counting events — it matches MIDI content,
-  // so rests (empty activeNotes) and sustained notes (unchanging
-  // activeNotes) don't cause cursor to advance incorrectly.
+  // No MIDI matching, no time calculation — just step forward.
   useEffect(() => {
     if (mode === "falling" || !containerRef.current) return;
     const container = containerRef.current;
@@ -222,33 +214,16 @@ export function SheetMusicPanelOSMD({
         clearHighlights(container);
         cursorPosRef.current = 0;
       }
-      // During playback, keep current highlight (sustained note / rest)
+      // During playback, keep current highlight during rests
       return;
     }
 
-    const key = midiSetToKey(activeNotes);
-
-    // Search forward from current position (most common case)
+    // Step forward and highlight
     const pos = cursorPosRef.current;
-    for (let i = pos; i < steps.length; i++) {
-      if (steps[i].midiKey === key) {
-        cursorPosRef.current = i + 1; // next search starts after this
-        highlightStep(steps[i], container);
-        return;
-      }
+    if (pos < steps.length) {
+      highlightStep(steps[pos], container);
+      cursorPosRef.current = pos + 1;
     }
-
-    // Not found forward — search from beginning (seek / loop)
-    for (let i = 0; i < pos; i++) {
-      if (steps[i].midiKey === key) {
-        cursorPosRef.current = i + 1;
-        highlightStep(steps[i], container);
-        return;
-      }
-    }
-
-    // No match at all — MIDI notes don't correspond to any cursor step
-    // (could be a note from a muted track, or quantization mismatch)
   }, [activeNotes, mode]);
 
   return (

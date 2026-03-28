@@ -40,8 +40,6 @@ describe("highlightStep", () => {
     container.appendChild(el2);
 
     const step: CursorStep = {
-      midis: [60, 64],
-      midiKey: "60,64",
       svgElements: [el1, el2],
     };
 
@@ -61,8 +59,6 @@ describe("highlightStep", () => {
     container.appendChild(newEl);
 
     const step: CursorStep = {
-      midis: [72],
-      midiKey: "72",
       svgElements: [newEl],
     };
 
