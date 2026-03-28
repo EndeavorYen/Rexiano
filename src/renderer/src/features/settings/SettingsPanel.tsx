@@ -291,7 +291,10 @@ export function SettingsPanel({
               ))}
             </div>
 
-            <div className="flex-1 overflow-y-auto px-5 py-4" style={{ minHeight: 340 }}>
+            <div
+              className="flex-1 overflow-y-auto px-5 py-4"
+              style={{ minHeight: 340 }}
+            >
               {activeTab === "appearance" && (
                 <TabContent>
                   <SectionTitle>{t("settings.chooseTheme")}</SectionTitle>
@@ -365,7 +368,11 @@ export function SettingsPanel({
                         >
                           {t("settings.uiScale")}
                         </span>
-                        <div className="flex gap-1.5" role="radiogroup" aria-label={t("settings.uiScale")}>
+                        <div
+                          className="flex gap-1.5"
+                          role="radiogroup"
+                          aria-label={t("settings.uiScale")}
+                        >
                           {uiScaleOptions.map((option) => (
                             <button
                               key={option.value}
@@ -400,7 +407,11 @@ export function SettingsPanel({
                         {t("settings.language")}
                       </span>
                     </SectionTitle>
-                    <div className="flex flex-col gap-2 mt-3" role="radiogroup" aria-label={t("settings.language")}>
+                    <div
+                      className="flex flex-col gap-2 mt-3"
+                      role="radiogroup"
+                      aria-label={t("settings.language")}
+                    >
                       {getAvailableLanguages().map((lang) => (
                         <button
                           key={lang.code}
@@ -482,8 +493,10 @@ export function SettingsPanel({
                             setSettingsVolume(Math.round(next * 100));
                           }, 200);
                           // R2-01 fix: mute guard
-                          if (next === 0 && !muted) muteControllerSetMuted(true);
-                          else if (next > 0 && muted) muteControllerSetMuted(false);
+                          if (next === 0 && !muted)
+                            muteControllerSetMuted(true);
+                          else if (next > 0 && muted)
+                            muteControllerSetMuted(false);
                         }}
                         className="w-full"
                         data-testid="settings-volume-slider"
@@ -516,7 +529,11 @@ export function SettingsPanel({
                       >
                         {t("settings.defaultMode")}
                       </span>
-                      <div className="flex gap-1.5" role="radiogroup" aria-label={t("settings.defaultMode")}>
+                      <div
+                        className="flex gap-1.5"
+                        role="radiogroup"
+                        aria-label={t("settings.defaultMode")}
+                      >
                         {practiceModeKeys.map((m) => (
                           <button
                             key={m.value}
@@ -549,7 +566,11 @@ export function SettingsPanel({
                       >
                         {t("settings.defaultSpeed")}
                       </span>
-                      <div className="flex gap-1 flex-wrap" role="radiogroup" aria-label={t("settings.defaultSpeed")}>
+                      <div
+                        className="flex gap-1 flex-wrap"
+                        role="radiogroup"
+                        aria-label={t("settings.defaultSpeed")}
+                      >
                         {speedPresets.map((s) => (
                           <button
                             key={s}

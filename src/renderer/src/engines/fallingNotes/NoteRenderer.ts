@@ -320,9 +320,10 @@ export class NoteRenderer {
       const track = song.tracks[trackIdx];
       // S9-R3-03: Use cached palette instead of per-track getTrackColor (store access)
       const palette = this._cachedTrackPalette;
-      const color = palette.length > 0
-        ? palette[trackIdx % palette.length]
-        : getTrackColor(trackIdx);
+      const color =
+        palette.length > 0
+          ? palette[trackIdx % palette.length]
+          : getTrackColor(trackIdx);
       const visibleNotes = getVisibleNotes(
         track.notes,
         vp,
@@ -1023,8 +1024,7 @@ function computeBeatTimesInRange(
         ? tempos[tempoIdx].time
         : Infinity;
     const nextTsTime =
-      tsIdx < timeSignatures.length &&
-      timeSignatures[tsIdx].time < startTime
+      tsIdx < timeSignatures.length && timeSignatures[tsIdx].time < startTime
         ? timeSignatures[tsIdx].time
         : Infinity;
     const nextEventTime = Math.min(nextTempoTime, nextTsTime);

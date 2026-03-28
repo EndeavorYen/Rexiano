@@ -153,7 +153,8 @@ function loadSavedSettings(): PersistedSettings {
         0.25,
         Math.min(
           2.0,
-          typeof merged.defaultSpeed === "number" && isFinite(merged.defaultSpeed)
+          typeof merged.defaultSpeed === "number" &&
+            isFinite(merged.defaultSpeed)
             ? merged.defaultSpeed
             : defaults.defaultSpeed!,
         ),

@@ -801,12 +801,19 @@ function App(): React.JSX.Element {
   // to avoid duplicate subscribers.
   // R3-02 fix: use ref for callback stability — avoids re-subscribe when
   // addHitNote/addMissNote references change (fragile dependency chain)
-  const practiceCallbacksRef = useRef({ onHitNote: addHitNote, onMissNote: addMissNote });
-  practiceCallbacksRef.current = { onHitNote: addHitNote, onMissNote: addMissNote };
+  const practiceCallbacksRef = useRef({
+    onHitNote: addHitNote,
+    onMissNote: addMissNote,
+  });
+  practiceCallbacksRef.current = {
+    onHitNote: addHitNote,
+    onMissNote: addMissNote,
+  };
   const practiceCallbacks = useMemo(
     () => ({
       onHitNote: (midi: number) => practiceCallbacksRef.current.onHitNote(midi),
-      onMissNote: (midi: number) => practiceCallbacksRef.current.onMissNote(midi),
+      onMissNote: (midi: number) =>
+        practiceCallbacksRef.current.onMissNote(midi),
     }),
     [],
   );
@@ -1044,8 +1051,7 @@ function App(): React.JSX.Element {
           role="region"
           aria-label="Drop zone"
           style={{
-            background:
-              "color-mix(in srgb, var(--color-bg) 55%, transparent)",
+            background: "color-mix(in srgb, var(--color-bg) 55%, transparent)",
             backdropFilter: "blur(8px)",
           }}
         >
@@ -1106,17 +1112,25 @@ function App(): React.JSX.Element {
             <MainMenu
               onStartPractice={() => applyRoute("library")}
               onOpenSettings={() => setShowMenuSettings(true)}
-              onSelectRecent={(file) => void handleLoadMidiPath(file.path, file.name)}
+              onSelectRecent={(file) =>
+                void handleLoadMidiPath(file.path, file.name)
+              }
             />
             {showMenuSettings && (
-              <SettingsPanel inline onClose={() => setShowMenuSettings(false)} />
+              <SettingsPanel
+                inline
+                onClose={() => setShowMenuSettings(false)}
+              />
             )}
           </>
         )}
 
         {/* View: Song Library */}
         {!song && view === "library" && (
-          <div key="library" className="flex-1 min-h-0 flex flex-col animate-page-enter">
+          <div
+            key="library"
+            className="flex-1 min-h-0 flex flex-col animate-page-enter"
+          >
             <SongLibrary
               onOpenFile={handleOpenFile}
               onBack={() => applyRoute("menu")}
@@ -1124,213 +1138,213 @@ function App(): React.JSX.Element {
           </div>
         )}
 
-      {/* View: Playback */}
-      {song && (
-        <div
-          key="playback"
-          className="flex-1 min-h-0 flex flex-col animate-page-enter overflow-hidden px-3 pb-3 pt-3"
-          data-testid="playback-view"
-        >
+        {/* View: Playback */}
+        {song && (
           <div
-            className="surface-panel subtle-shadow px-2.5 py-2 mb-2"
-            style={{
-              borderRadius: "1.1rem",
-            }}
-            data-testid="playback-header-panel"
+            key="playback"
+            className="flex-1 min-h-0 flex flex-col animate-page-enter overflow-hidden px-3 pb-3 pt-3"
+            data-testid="playback-view"
           >
-            <div className="flex min-w-0 flex-col gap-1.5 sm:flex-row sm:items-center sm:justify-between">
-              <div
-                className="min-w-0 flex-1 flex items-center gap-1.5 overflow-hidden"
-                data-testid="playback-title-meta-row"
-              >
-                <img
-                  src={appIcon}
-                  alt=""
-                  className="hidden shrink-0 sm:inline"
-                  style={{ width: 22, height: 22, borderRadius: 5 }}
-                />
-                <span className="kicker-label hidden shrink-0 text-[11px] sm:inline">
-                  {t("app.subtitle")}
-                </span>
-                <h2
-                  className="min-w-0 max-w-[min(46vw,420px)] truncate text-[1.02rem] leading-tight font-semibold font-body sm:max-w-[min(40vw,420px)]"
-                  data-testid="playback-song-title"
+            <div
+              className="surface-panel subtle-shadow px-2.5 py-2 mb-2"
+              style={{
+                borderRadius: "1.1rem",
+              }}
+              data-testid="playback-header-panel"
+            >
+              <div className="flex min-w-0 flex-col gap-1.5 sm:flex-row sm:items-center sm:justify-between">
+                <div
+                  className="min-w-0 flex-1 flex items-center gap-1.5 overflow-hidden"
+                  data-testid="playback-title-meta-row"
                 >
-                  {song.displayName ?? song.fileName}
-                </h2>
+                  <img
+                    src={appIcon}
+                    alt=""
+                    className="hidden shrink-0 sm:inline"
+                    style={{ width: 22, height: 22, borderRadius: 5 }}
+                  />
+                  <span className="kicker-label hidden shrink-0 text-[11px] sm:inline">
+                    {t("app.subtitle")}
+                  </span>
+                  <h2
+                    className="min-w-0 max-w-[min(46vw,420px)] truncate text-[1.02rem] leading-tight font-semibold font-body sm:max-w-[min(40vw,420px)]"
+                    data-testid="playback-song-title"
+                  >
+                    {song.displayName ?? song.fileName}
+                  </h2>
+
+                  <div
+                    className="[-ms-overflow-style:none] [scrollbar-width:none] flex min-w-0 items-center gap-1 overflow-x-auto whitespace-nowrap sm:overflow-hidden"
+                    data-testid="playback-header-chips"
+                  >
+                    <span className="control-chip playback-header-chip shrink-0">
+                      {song.tracks.length}{" "}
+                      {song.tracks.length > 1
+                        ? t("song.tracks")
+                        : t("song.track")}
+                    </span>
+                    <span className="control-chip playback-header-chip shrink-0">
+                      {song.noteCount} {t("song.notes")}
+                    </span>
+                    <span className="control-chip playback-header-chip tabular-nums shrink-0">
+                      {speedPercent}%
+                    </span>
+                    {effectiveBpm !== null && (
+                      <span className="control-chip playback-header-chip tabular-nums shrink-0">
+                        {effectiveBpm} BPM
+                      </span>
+                    )}
+                  </div>
+                </div>
 
                 <div
-                  className="[-ms-overflow-style:none] [scrollbar-width:none] flex min-w-0 items-center gap-1 overflow-x-auto whitespace-nowrap sm:overflow-hidden"
-                  data-testid="playback-header-chips"
+                  className="flex shrink-0 self-end items-center gap-1 sm:self-auto"
+                  data-testid="playback-header-actions"
                 >
-                  <span className="control-chip playback-header-chip shrink-0">
-                    {song.tracks.length}{" "}
-                    {song.tracks.length > 1
-                      ? t("song.tracks")
-                      : t("song.track")}
-                  </span>
-                  <span className="control-chip playback-header-chip shrink-0">
-                    {song.noteCount} {t("song.notes")}
-                  </span>
-                  <span className="control-chip playback-header-chip tabular-nums shrink-0">
-                    {speedPercent}%
-                  </span>
-                  {effectiveBpm !== null && (
-                    <span className="control-chip playback-header-chip tabular-nums shrink-0">
-                      {effectiveBpm} BPM
-                    </span>
-                  )}
-                </div>
-              </div>
-
-              <div
-                className="flex shrink-0 self-end items-center gap-1 sm:self-auto"
-                data-testid="playback-header-actions"
-              >
-                <button
-                  onClick={() => setShowPlaybackDrawer(true)}
-                  className="btn-surface-themed flex items-center gap-1 rounded-lg font-body cursor-pointer px-2 py-[3px] text-[10px]"
-                  data-testid="playback-drawer-trigger"
-                >
-                  <PanelRightOpen size={13} />
-                  <span className="hidden sm:inline">
-                    {t("settings.title")}
-                  </span>
-                </button>
-                <button
-                  onClick={handleExitPlayback}
-                  className="btn-surface-themed flex items-center gap-1 rounded-lg font-body cursor-pointer px-2 py-[3px] text-[10px]"
-                  data-testid="playback-back-to-library"
-                >
-                  <ArrowLeft size={13} />
-                  <span className="hidden sm:inline">
-                    {t("song.backToLibrary")}
-                  </span>
-                </button>
-              </div>
-            </div>
-          </div>
-
-          {showPlaybackDrawer && (
-            <div
-              className="app-overlay-backdrop"
-              onClick={() => setShowPlaybackDrawer(false)}
-              data-testid="playback-settings-drawer-backdrop"
-            >
-              <aside
-                className="app-side-drawer"
-                onClick={(e) => e.stopPropagation()}
-                role="complementary"
-                aria-label={t("settings.title")}
-                data-testid="playback-settings-drawer"
-              >
-                <div className="app-side-drawer-header">
-                  <span className="kicker-label">{t("settings.title")}</span>
                   <button
-                    onClick={() => setShowPlaybackDrawer(false)}
-                    className="btn-surface-themed w-7 h-7 rounded-full flex items-center justify-center cursor-pointer"
-                    aria-label={t("settings.close")}
+                    onClick={() => setShowPlaybackDrawer(true)}
+                    className="btn-surface-themed flex items-center gap-1 rounded-lg font-body cursor-pointer px-2 py-[3px] text-[10px]"
+                    data-testid="playback-drawer-trigger"
                   >
-                    <X size={14} />
+                    <PanelRightOpen size={13} />
+                    <span className="hidden sm:inline">
+                      {t("settings.title")}
+                    </span>
+                  </button>
+                  <button
+                    onClick={handleExitPlayback}
+                    className="btn-surface-themed flex items-center gap-1 rounded-lg font-body cursor-pointer px-2 py-[3px] text-[10px]"
+                    data-testid="playback-back-to-library"
+                  >
+                    <ArrowLeft size={13} />
+                    <span className="hidden sm:inline">
+                      {t("song.backToLibrary")}
+                    </span>
                   </button>
                 </div>
-                <div className="app-side-drawer-body">
-                  <section className="app-side-section">
-                    <DisplayModeToggle />
-                  </section>
-                  {/* Advanced sections hidden in kid mode to reduce clutter */}
-                  {!kidMode && (
-                    <>
-                      <section className="app-side-section">
-                        <DeviceSelector />
-                      </section>
-                      <section className="app-side-section">
-                        <SettingsPanel />
-                      </section>
-                    </>
-                  )}
-                </div>
-              </aside>
+              </div>
             </div>
-          )}
 
-          {/* Main display area: sheet music / falling notes / both */}
-          <div
-            className={`workspace-frame ${isPlaying ? "workspace-frame-live" : ""} flex-1 relative flex flex-col min-h-0 surface-panel overflow-hidden`}
-          >
-            {/* Sheet music panel */}
+            {showPlaybackDrawer && (
+              <div
+                className="app-overlay-backdrop"
+                onClick={() => setShowPlaybackDrawer(false)}
+                data-testid="playback-settings-drawer-backdrop"
+              >
+                <aside
+                  className="app-side-drawer"
+                  onClick={(e) => e.stopPropagation()}
+                  role="complementary"
+                  aria-label={t("settings.title")}
+                  data-testid="playback-settings-drawer"
+                >
+                  <div className="app-side-drawer-header">
+                    <span className="kicker-label">{t("settings.title")}</span>
+                    <button
+                      onClick={() => setShowPlaybackDrawer(false)}
+                      className="btn-surface-themed w-7 h-7 rounded-full flex items-center justify-center cursor-pointer"
+                      aria-label={t("settings.close")}
+                    >
+                      <X size={14} />
+                    </button>
+                  </div>
+                  <div className="app-side-drawer-body">
+                    <section className="app-side-section">
+                      <DisplayModeToggle />
+                    </section>
+                    {/* Advanced sections hidden in kid mode to reduce clutter */}
+                    {!kidMode && (
+                      <>
+                        <section className="app-side-section">
+                          <DeviceSelector />
+                        </section>
+                        <section className="app-side-section">
+                          <SettingsPanel />
+                        </section>
+                      </>
+                    )}
+                  </div>
+                </aside>
+              </div>
+            )}
+
+            {/* Main display area: sheet music / falling notes / both */}
             <div
-              className="relative"
-              style={{
-                display: displayMode === "falling" ? "none" : "block",
-                ...(displayMode === "split"
-                  ? {
-                      flex: "0 0 30%",
-                      minHeight: 140,
-                      maxHeight: "40%",
-                      borderBottom: "1px solid var(--color-border, #e0e0e0)",
-                      overflow: "auto",
-                    }
-                  : {}),
-              }}
+              className={`workspace-frame ${isPlaying ? "workspace-frame-live" : ""} flex-1 relative flex flex-col min-h-0 surface-panel overflow-hidden`}
             >
-              {sheetRenderer === "osmd" ? (
-                <SheetMusicPanelOSMD song={song} mode={displayMode} />
-              ) : (
-                <SheetMusicPanel
-                  notationData={notationData}
-                  mode={displayMode}
-                />
-              )}
-            </div>
+              {/* Sheet music panel */}
+              <div
+                className="relative"
+                style={{
+                  display: displayMode === "falling" ? "none" : "block",
+                  ...(displayMode === "split"
+                    ? {
+                        flex: "0 0 30%",
+                        minHeight: 140,
+                        maxHeight: "40%",
+                        borderBottom: "1px solid var(--color-border, #e0e0e0)",
+                        overflow: "auto",
+                      }
+                    : {}),
+                }}
+              >
+                {sheetRenderer === "osmd" ? (
+                  <SheetMusicPanelOSMD song={song} mode={displayMode} />
+                ) : (
+                  <SheetMusicPanel
+                    notationData={notationData}
+                    mode={displayMode}
+                  />
+                )}
+              </div>
 
-            {/* Falling notes canvas — always mounted so PixiJS ticker keeps
+              {/* Falling notes canvas — always mounted so PixiJS ticker keeps
                 running (WaitMode relies on it). Hidden via off-screen
                 positioning in sheet mode — display:none would stop the
                 PixiJS RAF loop and break WaitMode's pause gate. */}
-            <div
-              data-testid="falling-notes-panel"
-              className="flex-1 min-h-0 relative flex flex-col"
-              style={
-                displayMode === "sheet"
-                  ? {
-                      position: "absolute",
-                      width: 0,
-                      height: 0,
-                      overflow: "hidden" as const,
-                      pointerEvents: "none" as const,
-                    }
-                  : {}
-              }
-            >
-              <FallingNotesCanvas
-                onActiveNotesChange={handleActiveNotesChange}
-                getAudioCurrentTime={getAudioCurrentTime}
-                onNoteRendererReady={handleNoteRendererReadyWithSync}
-                minHeight={fallingCanvasMinHeight}
-              />
+              <div
+                data-testid="falling-notes-panel"
+                className="flex-1 min-h-0 relative flex flex-col"
+                style={
+                  displayMode === "sheet"
+                    ? {
+                        position: "absolute",
+                        width: 0,
+                        height: 0,
+                        overflow: "hidden" as const,
+                        pointerEvents: "none" as const,
+                      }
+                    : {}
+                }
+              >
+                <FallingNotesCanvas
+                  onActiveNotesChange={handleActiveNotesChange}
+                  getAudioCurrentTime={getAudioCurrentTime}
+                  onNoteRendererReady={handleNoteRendererReadyWithSync}
+                  minHeight={fallingCanvasMinHeight}
+                />
+              </div>
+              <ScoreOverlay />
             </div>
-            <ScoreOverlay />
+
+            {/* Transport bar */}
+            <TransportBar />
+
+            {/* Practice toolbar */}
+            <PracticeToolbar />
+
+            {/* Piano keyboard */}
+            <PianoKeyboard
+              activeNotes={activeNotes}
+              midiActiveNotes={midiActiveNotes}
+              hitNotes={hitNotes}
+              missedNotes={missedNotes}
+              height={keyboardHeight}
+              showLabels={showNoteLabels}
+              compactLabels={compactKeyLabels}
+            />
           </div>
-
-          {/* Transport bar */}
-          <TransportBar />
-
-          {/* Practice toolbar */}
-          <PracticeToolbar />
-
-          {/* Piano keyboard */}
-          <PianoKeyboard
-            activeNotes={activeNotes}
-            midiActiveNotes={midiActiveNotes}
-            hitNotes={hitNotes}
-            missedNotes={missedNotes}
-            height={keyboardHeight}
-            showLabels={showNoteLabels}
-            compactLabels={compactKeyLabels}
-          />
-        </div>
-      )}
+        )}
       </main>
     </div>
   );

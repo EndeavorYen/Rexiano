@@ -11,7 +11,7 @@ import {
   SlidersHorizontal,
   ArrowUpRight,
 } from "lucide-react";
-import appIcon from "../../../../../docs/figure/Rexiano_icon.png";
+import appIcon from "@renderer/assets/icon.png";
 import { useTranslation } from "@renderer/i18n/useTranslation";
 import { useProgressStore } from "@renderer/stores/useProgressStore";
 import { useSettingsStore } from "@renderer/stores/useSettingsStore";
@@ -176,13 +176,22 @@ export function MainMenu({
               )}
             </section>
 
-            <aside className="surface-elevated p-4 sm:p-5 space-y-3" aria-label={recentFiles.length > 0 ? t("library.recentlyPlayed") : t("library.importMidi")}>
+            <aside
+              className="surface-elevated p-4 sm:p-5 space-y-3"
+              aria-label={
+                recentFiles.length > 0
+                  ? t("library.recentlyPlayed")
+                  : t("library.importMidi")
+              }
+            >
               <h2
                 className="flex items-center gap-2 text-[11px] font-mono uppercase tracking-[0.16em]"
                 style={{ color: "var(--color-text-muted)" }}
               >
                 <Clock3 size={13} />
-                {recentFiles.length > 0 ? t("library.recentlyPlayed") : t("library.importMidi")}
+                {recentFiles.length > 0
+                  ? t("library.recentlyPlayed")
+                  : t("library.importMidi")}
               </h2>
 
               {recentFiles.length > 0 && onSelectRecent ? (

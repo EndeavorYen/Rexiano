@@ -23,7 +23,7 @@ import { DeviceSelector } from "../midiDevice/DeviceSelector";
 import { useTranslation } from "../../i18n/useTranslation";
 import { withTimeout } from "@renderer/engines/audio/recoveryUtils";
 import { getTimeOfDay } from "@renderer/utils/greeting";
-import appIcon from "../../../../../docs/figure/Rexiano_icon.png";
+import appIcon from "@renderer/assets/icon.png";
 import type { RecentFile } from "../../../../shared/types";
 
 /** IPC timeout in milliseconds — prevents indefinite hangs (R1-02) */
@@ -79,7 +79,9 @@ export function SongLibrary({
     mountedRef.current = true;
     return () => {
       mountedRef.current = false;
+      // eslint-disable-next-line react-hooks/exhaustive-deps -- timer refs are set after mount; cleanup must read latest value
       if (recentErrorTimer.current) clearTimeout(recentErrorTimer.current);
+      // eslint-disable-next-line react-hooks/exhaustive-deps
       if (builtinErrorTimer.current) clearTimeout(builtinErrorTimer.current);
     };
   }, []);

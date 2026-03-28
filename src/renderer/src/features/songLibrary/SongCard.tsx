@@ -87,9 +87,7 @@ export function SongCard({
       : null;
   const gradeDescKey =
     song.grade !== undefined ? gradeDescriptionKeys[song.grade] : null;
-  const gradeDesc = gradeDescKey
-    ? t(gradeDescKey as TranslationKey)
-    : null;
+  const gradeDesc = gradeDescKey ? t(gradeDescKey as TranslationKey) : null;
   const gradeColor =
     song.grade !== undefined ? getGradeColor(song.grade) : null;
 

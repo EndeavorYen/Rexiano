@@ -85,8 +85,7 @@ export function getGradeColor(grade: number): string {
 export function getDifficultyDotColor(grade: number | undefined): string {
   if (grade === undefined || grade <= 2)
     return "color-mix(in srgb, #22c55e 85%, var(--color-text))"; // green — easy
-  if (grade <= 5)
-    return "color-mix(in srgb, #eab308 80%, var(--color-text))"; // yellow — medium
+  if (grade <= 5) return "color-mix(in srgb, #eab308 80%, var(--color-text))"; // yellow — medium
   return "color-mix(in srgb, var(--color-error) 90%, var(--color-text))"; // red — hard
 }
 

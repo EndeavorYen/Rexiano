@@ -49,10 +49,7 @@ import { getMetronome } from "@renderer/engines/metronome/metronomeManager";
 import type { NoteRenderer } from "@renderer/engines/fallingNotes/NoteRenderer";
 import type { AudioEngine } from "@renderer/engines/audio/AudioEngine";
 import type { AudioScheduler } from "@renderer/engines/audio/AudioScheduler";
-import {
-  getTempoAtTime,
-  type ParsedSong,
-} from "@renderer/engines/midi/types";
+import { getTempoAtTime, type ParsedSong } from "@renderer/engines/midi/types";
 
 interface AudioRef {
   engine: AudioEngine | null;
@@ -125,8 +122,9 @@ export function usePracticeLifecycle(
   callbacks?: PracticeLifecycleCallbacks,
 ): PracticeLifecycleResult {
   const callbacksRef = useRef(callbacks);
-  // R1-04 fix: update ref during render (sync) instead of post-paint useEffect (async).
-  // Eliminates the stale-ref window between render and effect execution.
+  // R1-04 fix: update ref synchronously via useLayoutEffect (before paint)
+  // instead of post-paint useEffect (async). Eliminates the stale-ref window.
+  // eslint-disable-next-line react-hooks/refs -- intentional sync ref update to avoid stale closures
   callbacksRef.current = callbacks;
   const noteRendererRef = useRef<NoteRenderer | null>(null);
 
@@ -171,7 +169,11 @@ export function usePracticeLifecycle(
     // S6-R2-01: Shared hit/miss handlers to eliminate duplication across
     // WaitMode and FreeScorer callbacks. Single source of truth for scoring,
     // visual feedback, combo milestones, and keyboard highlights.
-    function handleNoteHit(midi: number, time: number, skipTimingDelta = false): void {
+    function handleNoteHit(
+      midi: number,
+      time: number,
+      skipTimingDelta = false,
+    ): void {
       const key = `${midi}:${Math.round(time * 1e6)}`;
       let timingDeltaMs: number | undefined;
       if (!skipTimingDelta) {
@@ -450,7 +452,10 @@ export function usePracticeLifecycle(
                 }
                 // S6-R1-01: Start FreeScorer after count-in if in free mode
                 if (freeScorer && freshMode === "free" && currentSong) {
-                  freeScorer.init(currentSong.tracks, usePracticeStore.getState().activeTracks);
+                  freeScorer.init(
+                    currentSong.tracks,
+                    usePracticeStore.getState().activeTracks,
+                  );
                   freeScorer.start();
                 }
 
@@ -486,7 +491,10 @@ export function usePracticeLifecycle(
             }
             // S6-R1-01: Start FreeScorer immediately when no count-in
             if (freeScorer && practiceMode === "free" && currentSong) {
-              freeScorer.init(currentSong.tracks, usePracticeStore.getState().activeTracks);
+              freeScorer.init(
+                currentSong.tracks,
+                usePracticeStore.getState().activeTracks,
+              );
               freeScorer.start();
             }
 
@@ -503,7 +511,10 @@ export function usePracticeLifecycle(
           if (freeScorer && practiceMode === "free") {
             const s = useSongStore.getState().song;
             if (s) {
-              freeScorer.init(s.tracks, usePracticeStore.getState().activeTracks);
+              freeScorer.init(
+                s.tracks,
+                usePracticeStore.getState().activeTracks,
+              );
               freeScorer.start();
             }
           }
@@ -552,7 +563,12 @@ export function usePracticeLifecycle(
             usePracticeStore.getState().setWaiting(false);
             const { scheduler, engine } = audioRef.current;
             if (scheduler && engine && usePlaybackStore.getState().isPlaying) {
-              guardedResumeAndStart(engine, scheduler, resumeGenRef, "Loop-seek");
+              guardedResumeAndStart(
+                engine,
+                scheduler,
+                resumeGenRef,
+                "Loop-seek",
+              );
             }
           }
         }

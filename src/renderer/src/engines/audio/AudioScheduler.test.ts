@@ -704,11 +704,11 @@ describe("AudioScheduler", () => {
       // Three overlapping long notes with a gap note
       const s = song([
         track([
-          note(0, 10, 60, 80),  // C4 bass: ends at 10
+          note(0, 10, 60, 80), // C4 bass: ends at 10
           note(0.5, 0.5, 64, 70), // E4 passing: ends at 1
-          note(1, 8, 67, 80),   // G4: ends at 9
+          note(1, 8, 67, 80), // G4: ends at 9
           note(1.5, 0.5, 69, 70), // A4 passing: ends at 2
-          note(3, 4, 72, 90),   // C5: ends at 7
+          note(3, 4, 72, 90), // C5: ends at 7
         ]),
       ]);
       scheduler.setSong(s);

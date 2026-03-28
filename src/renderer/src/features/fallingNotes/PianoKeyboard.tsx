@@ -281,7 +281,8 @@ export function PianoKeyboard({
                 aria-hidden="true"
                 style={{
                   ...KEY_LABEL_STYLE,
-                  color: "color-mix(in srgb, var(--color-key-white) 70%, transparent)",
+                  color:
+                    "color-mix(in srgb, var(--color-key-white) 70%, transparent)",
                 }}
               >
                 {getBlackKeyLabel(key.midi)}

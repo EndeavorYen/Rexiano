@@ -44,8 +44,10 @@ export const en: TranslationMap = {
   "library.gradeDesc.2": "Early Beginner — full octave, light skips",
   "library.gradeDesc.3": "Beginner — first two-hand, simple bass notes",
   "library.gradeDesc.4": "Elementary — both hands, I-V-I chord bass",
-  "library.gradeDesc.5": "Pre-Intermediate — position shifts, light accidentals",
-  "library.gradeDesc.6": "Intermediate — arpeggios, Alberti bass, 2 accidentals",
+  "library.gradeDesc.5":
+    "Pre-Intermediate — position shifts, light accidentals",
+  "library.gradeDesc.6":
+    "Intermediate — arpeggios, Alberti bass, 2 accidentals",
   "library.gradeDesc.7": "Upper-Intermediate — wide range, complex rhythms",
   "library.gradeDesc.8": "Advanced — concert-level technique",
   "library.greeting.morning": "Good morning! Ready to practice?",

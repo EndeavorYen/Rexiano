@@ -1,6 +1,6 @@
 // ─── Phase 4: Audio Playback — Interface Contracts ───
 
-import type { ParsedNote, ParsedSong } from "../midi/types";
+import type { ParsedSong } from "../midi/types";
 
 // ─── AudioEngine ────────────────────────────────────
 

@@ -1,4 +1,10 @@
-import React, { useRef, useEffect, useMemo, useState, useCallback } from "react";
+import React, {
+  useRef,
+  useEffect,
+  useMemo,
+  useState,
+  useCallback,
+} from "react";
 import type { ParsedSong } from "@renderer/engines/midi/types";
 import type { DisplayMode } from "./types";
 import { convertToMusicXML } from "@renderer/engines/notation/MidiToMusicXML";
@@ -113,8 +119,7 @@ export function SheetMusicPanelOSMD({
         return osmdRef.current.load(musicXml).then(() => {
           if (cancelled) return;
           loadedRef.current = true;
-          const total =
-            osmdRef.current?.sheet?.SourceMeasures?.length ?? 0;
+          const total = osmdRef.current?.sheet?.SourceMeasures?.length ?? 0;
           setTotalMeasures(total);
           // Effect 2 will handle the actual render with measure range
         });
