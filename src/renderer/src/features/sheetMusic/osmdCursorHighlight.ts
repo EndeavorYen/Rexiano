@@ -1,21 +1,13 @@
 /**
- * OSMD Cursor-based note highlighting — time-driven via playback store.
+ * OSMD note highlighting — time-driven, synced to the playback store.
  *
- * Architecture:
- *   1. After OSMD renders, buildCursorSteps() iterates the cursor and
- *      matches each step to ParsedNote.time via ordered merge. This gives
- *      each step an accurate song-time that matches AudioScheduler's clock.
- *   2. During playback, a setInterval reads usePlaybackStore.currentTime
- *      (written every frame by tickerLoop) and binary-searches the step
- *      list to find which step to highlight.
- *   3. SVG element refs are cached at build time — highlighting is just
- *      classList.add/remove, no DOM traversal per tick.
+ * Uses the same time source as falling notes and the piano keyboard:
+ * usePlaybackStore.currentTime (written every frame by tickerLoop).
  *
- * Why time-based instead of event-driven:
- *   OSMD cursor steps and NoteRenderer activeNote events are NOT 1:1.
- *   The keyboard works with activeNotes because MIDI→key is 1:1, but
- *   MIDI→score-position is 1:N (same pitch in different measures).
- *   Time is the only unambiguous coordinate shared by all systems.
+ * After OSMD renders, buildCursorSteps() iterates the cursor and
+ * merge-matches each step to ParsedNote.time for accurate timestamps.
+ * During playback, findStepAtTime() binary-searches the step list.
+ * SVG element refs are cached at build time — no DOM traversal per tick.
  */
 import type { ParsedSong } from "@renderer/engines/midi/types";
 
@@ -155,19 +147,12 @@ export function findStepAtTime(
   return null;
 }
 
-/**
- * Clear all osmd-note-active highlights from the container.
- */
 export function clearHighlights(container: HTMLElement): void {
   const active = container.querySelectorAll(`.${ACTIVE_CLASS}`);
   active.forEach((el) => el.classList.remove(ACTIVE_CLASS));
 }
 
-/**
- * Highlight a cursor step's cached SVG elements.
- * Clears the previous step's elements directly (O(n) on step size)
- * instead of querySelectorAll on the entire container (O(DOM)).
- */
+/** Clears prevStep's elements directly (O(step-size)) instead of querySelectorAll (O(DOM)). */
 export function highlightStep(
   step: CursorStep,
   prevStep: CursorStep | null,
