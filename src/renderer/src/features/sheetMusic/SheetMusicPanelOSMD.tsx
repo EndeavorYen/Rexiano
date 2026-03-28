@@ -144,6 +144,7 @@ export function SheetMusicPanelOSMD({
     const bpm = song.tempos[0]?.bpm ?? 120;
 
     let lastCursorTime = -1;
+    let lastHighlightTime = -1;
 
     const intervalId = setInterval(() => {
       const osmd = osmdRef.current;
@@ -164,6 +165,7 @@ export function SheetMusicPanelOSMD({
       if (!wasPlaying) {
         cursor.reset();
         lastCursorTime = 0;
+        lastHighlightTime = -1;
         wasPlaying = true;
       }
 
@@ -173,24 +175,31 @@ export function SheetMusicPanelOSMD({
       if (currentTime < lastCursorTime - 0.1) {
         cursor.reset();
         lastCursorTime = 0;
+        lastHighlightTime = -1;
       }
 
-      // Advance cursor until it reaches or passes currentTime.
-      // Uses a while-loop so seeks forward instantly (not one step per 50ms).
-      // Cap iterations to avoid infinite loops on edge cases.
-      let advanced = false;
+      // Advance cursor: peek at the NEXT step's time. If currentTime
+      // has passed it, move forward. This keeps the cursor ON the step
+      // whose notes are currently sounding (not one step ahead).
       for (let i = 0; i < 200; i++) {
         if (cursor.Iterator?.EndReached) break;
-        const stepTime = cursorTimeToSeconds(osmd, bpm);
-        if (stepTime > currentTime) break;
+        // Peek: what time is the next step?
         cursor.next();
-        lastCursorTime = stepTime;
-        advanced = true;
+        const nextStepTime = cursorTimeToSeconds(osmd, bpm);
+        if (nextStepTime > currentTime) {
+          // Went too far — step back to the current position
+          cursor.previous();
+          break;
+        }
+        lastCursorTime = nextStepTime;
       }
 
-      if (advanced) {
+      // Always highlight the current cursor position (handles first note too)
+      const curTime = cursorTimeToSeconds(osmd, bpm);
+      if (currentTime >= curTime && curTime !== lastHighlightTime) {
         clearHighlights(container);
         highlightNotesUnderCursor(osmd);
+        lastHighlightTime = curTime;
       }
     }, 50);
 
