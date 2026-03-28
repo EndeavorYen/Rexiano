@@ -565,6 +565,11 @@ function buildMusicXML(
     // Write bass voice
     xml += serializeVoiceNotes(bassFilled, ticksPerQuarter, 2, 2);
 
+    // Final barline on the last measure (thin-thick / light-heavy)
+    if (m === boundaries.length - 1) {
+      xml += '<barline location="right"><bar-style>light-heavy</bar-style></barline>';
+    }
+
     xml += "</measure>\n";
   }
 

@@ -355,6 +355,33 @@ describe("convertToMusicXML", () => {
     );
   });
 
+  it("adds a light-heavy barline on the last measure", () => {
+    const notes: ParsedNote[] = [makeNote(60, 0.0, 0.5)]; // C4 quarter
+    const xml = convertToMusicXML(notes, BPM, TPQ, 4, 4, 0, 0, 1);
+
+    expect(xml).toContain(
+      '<barline location="right"><bar-style>light-heavy</bar-style></barline>',
+    );
+  });
+
+  it("has the light-heavy barline exactly once (only on last measure)", () => {
+    // Two measures worth of notes
+    const notes: ParsedNote[] = [
+      makeNote(60, 0.0, 0.5), // measure 1
+      makeNote(62, 0.5, 0.5),
+      makeNote(64, 1.0, 0.5),
+      makeNote(65, 1.5, 0.5),
+      makeNote(67, 2.0, 0.5), // measure 2
+      makeNote(69, 2.5, 0.5),
+      makeNote(71, 3.0, 0.5),
+      makeNote(72, 3.5, 0.5),
+    ];
+    const xml = convertToMusicXML(notes, BPM, TPQ, 4, 4, 0, 0, 1);
+
+    const matches = xml.match(/light-heavy/g) || [];
+    expect(matches.length).toBe(1);
+  });
+
   it("handles multi-track (2 tracks) with track-based staff assignment", () => {
     // Track 0 = treble, Track 1 = bass (for 2-track piano)
     const notes: ParsedNote[] = [
