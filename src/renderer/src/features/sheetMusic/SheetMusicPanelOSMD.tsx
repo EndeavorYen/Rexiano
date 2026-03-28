@@ -3,99 +3,32 @@ import type { ParsedSong } from "@renderer/engines/midi/types";
 import type { DisplayMode } from "./types";
 import { convertToMusicXML } from "@renderer/engines/notation/MidiToMusicXML";
 import { usePlaybackStore } from "../../stores/usePlaybackStore";
-import { HighlightManager } from "./osmdCursorHighlight";
+import { HighlightManager, buildCursorMaps } from "./osmdCursorHighlight";
 
 interface SheetMusicPanelOSMDProps {
   song: ParsedSong | null;
   mode: DisplayMode;
+  /** Active noteKeys from tickerLoop — "trackIdx:midi:time" format */
+  activeNoteKeys?: Set<string>;
 }
 
 export interface StepTiming {
   time: number;
 }
 
-/**
- * Build timing info for each OSMD cursor step from ParsedNote.time.
- * Respects tempo changes. Must be called after osmd.render().
- */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function buildStepTimes(osmd: any, song: ParsedSong): StepTiming[] {
-  const cursor = osmd?.cursor;
-  if (!cursor) return [];
-
-  const notesByMidi = new Map<number, number[]>();
-  for (const track of song.tracks) {
-    for (const note of track.notes) {
-      let list = notesByMidi.get(note.midi);
-      if (!list) {
-        list = [];
-        notesByMidi.set(note.midi, list);
-      }
-      list.push(note.time);
-    }
-  }
-  for (const list of notesByMidi.values()) {
-    list.sort((a, b) => a - b);
-  }
-
-  cursor.reset();
-  const it = cursor.Iterator;
-  if (!it) return [];
-
-  const steps: StepTiming[] = [];
-  let lastTime = -1;
-
-  while (!it.EndReached) {
-    const voices = it.CurrentVoiceEntries || [];
-    let bestTime = Infinity;
-
-    for (const ve of voices) {
-      for (const note of ve.Notes) {
-        if (note.isRest()) continue;
-        const midi = note.halfTone + 12;
-        const list = notesByMidi.get(midi);
-        if (!list) continue;
-        let lo = 0;
-        let hi = list.length - 1;
-        let found = -1;
-        while (lo <= hi) {
-          const mid = (lo + hi) >>> 1;
-          if (list[mid] > lastTime + 0.001) {
-            found = mid;
-            hi = mid - 1;
-          } else {
-            lo = mid + 1;
-          }
-        }
-        if (found >= 0 && list[found] < bestTime) {
-          bestTime = list[found];
-        }
-      }
-    }
-
-    if (bestTime < Infinity) {
-      steps.push({ time: bestTime });
-      lastTime = bestTime;
-    } else {
-      steps.push({ time: lastTime + 0.01 });
-    }
-
-    cursor.next();
-  }
-
-  cursor.reset();
-  return steps;
-}
+const EMPTY_KEY_SET = new Set<string>();
 
 export function SheetMusicPanelOSMD({
   song,
   mode,
+  activeNoteKeys = EMPTY_KEY_SET,
 }: SheetMusicPanelOSMDProps): React.ReactElement {
   const containerRef = useRef<HTMLDivElement>(null);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const osmdRef = useRef<any>(null);
   const loadedRef = useRef(false);
   const stepTimesRef = useRef<StepTiming[]>([]);
+  const noteKeyMapRef = useRef<Map<string, Element[]>>(new Map());
   const hlRef = useRef(new HighlightManager());
 
   const musicXml = useMemo(() => {
@@ -118,7 +51,15 @@ export function SheetMusicPanelOSMD({
     );
   }, [song]);
 
-  // Effect 1: Load MusicXML + render full score + enable cursor
+  /** Build both stepTimes and noteKeyMap in a single cursor pass. */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const rebuildMaps = (osmd: any, s: ParsedSong): void => {
+    const { stepTimes, noteKeyMap } = buildCursorMaps(osmd, s);
+    stepTimesRef.current = stepTimes;
+    noteKeyMapRef.current = noteKeyMap;
+  };
+
+  // Effect 1: Load MusicXML + render full score + enable cursor + build maps
   useEffect(() => {
     if (mode === "falling") return;
     if (!containerRef.current || !musicXml) return;
@@ -137,21 +78,21 @@ export function SheetMusicPanelOSMD({
             drawTitle: false,
             drawComposer: false,
             drawPartNames: false,
+            drawMetronomeMarks: false,
             autoBeam: true,
             followCursor: true,
           });
           osmdRef.current.EngravingRules.StretchLastSystemLine = false;
         }
 
-        // No drawFromMeasureNumber / drawUpToMeasureNumber — render full score
         return osmdRef.current.load(musicXml).then(() => {
           if (cancelled) return;
           osmdRef.current.render();
           loadedRef.current = true;
 
-          // Build step times and show cursor
+          // Single cursor pass builds both stepTimes and noteKeyMap
           if (song) {
-            stepTimesRef.current = buildStepTimes(osmdRef.current, song);
+            rebuildMaps(osmdRef.current, song);
           }
           const cursor = osmdRef.current.cursor;
           if (cursor) {
@@ -171,6 +112,7 @@ export function SheetMusicPanelOSMD({
       }
       container.textContent = "";
       loadedRef.current = false;
+      noteKeyMapRef.current = new Map();
     };
   }, [musicXml, mode]);
 
@@ -181,10 +123,9 @@ export function SheetMusicPanelOSMD({
     const ro = new ResizeObserver(() => {
       if (osmdRef.current && loadedRef.current) {
         osmdRef.current.render();
-        // Clear stale SVG refs before OSMD rebuilds the DOM
         hlRef.current.clear();
         if (song) {
-          stepTimesRef.current = buildStepTimes(osmdRef.current, song);
+          rebuildMaps(osmdRef.current, song);
         }
         const cursor = osmdRef.current.cursor;
         if (cursor) {
@@ -197,14 +138,11 @@ export function SheetMusicPanelOSMD({
     return () => ro.disconnect();
   }, [mode]);
 
-  // Effect 2: Drive cursor forward during playback.
-  // Each step's highlights replace the previous step's (no duration tracking).
+  // Effect 2: Drive cursor forward during playback (green bar position only).
   useEffect(() => {
     if (mode === "falling" || !containerRef.current || !song) return;
-    const hl = hlRef.current;
     let wasPlaying = false;
     let cursorPos = 0;
-    let lastHighlightedPos = -1;
 
     const intervalId = setInterval(() => {
       const osmd = osmdRef.current;
@@ -223,18 +161,14 @@ export function SheetMusicPanelOSMD({
 
       if (!wasPlaying) {
         cursor.reset();
-        hl.clear();
         cursorPos = 0;
-        lastHighlightedPos = -1;
         wasPlaying = true;
       }
 
       // Seek backward
       if (cursorPos > 0 && currentTime < steps[cursorPos].time - 0.1) {
         cursor.reset();
-        hl.clear();
         cursorPos = 0;
-        lastHighlightedPos = -1;
       }
 
       // Advance cursor while the NEXT step's time has been reached
@@ -245,22 +179,30 @@ export function SheetMusicPanelOSMD({
         cursor.next();
         cursorPos++;
       }
-
-      // Highlight the current step (replaces previous)
-      if (
-        currentTime >= steps[cursorPos].time &&
-        cursorPos !== lastHighlightedPos
-      ) {
-        hl.highlight(osmd);
-        lastHighlightedPos = cursorPos;
-      }
     }, 50);
 
     return () => {
       clearInterval(intervalId);
-      hl.clear();
     };
   }, [song, mode]);
+
+  // Effect 3: Highlight notes from activeNoteKeys via noteKey→SVG map.
+  useEffect(() => {
+    if (mode === "falling" || !loadedRef.current) return;
+    const hl = hlRef.current;
+    const map = noteKeyMapRef.current;
+
+    if (activeNoteKeys.size === 0) {
+      hl.clear();
+      return;
+    }
+
+    hl.highlightByNoteKeys(activeNoteKeys, map);
+
+    if (containerRef.current) {
+      hl.scrollToActive(containerRef.current);
+    }
+  }, [activeNoteKeys, mode]);
 
   return (
     <div

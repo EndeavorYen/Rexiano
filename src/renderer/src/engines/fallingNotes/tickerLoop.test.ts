@@ -94,6 +94,7 @@ function makeMockRenderer(): NoteRenderer {
   return {
     update: vi.fn(),
     activeNotes: new Set<number>(),
+    activeNoteKeys: new Set<string>(),
   } as unknown as NoteRenderer;
 }
 
@@ -103,7 +104,9 @@ const getScreenSize = (): { width: number; height: number } => screenSize;
 describe("tickerLoop — createTickerUpdate", () => {
   let renderer: NoteRenderer;
   let onActiveNotesChangeRef: {
-    current: ((notes: Set<number>) => void) | undefined;
+    current:
+      | ((notes: Set<number>, noteKeys: Set<string>) => void)
+      | undefined;
   };
 
   beforeEach(() => {

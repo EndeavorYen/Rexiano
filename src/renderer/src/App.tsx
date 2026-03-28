@@ -56,6 +56,7 @@ const MIDI_EXTENSIONS = [".mid", ".midi"];
 
 /** R3-03 fix: stable empty Set reference for initial state — avoids reference instability on mount */
 const EMPTY_NOTE_SET = new Set<number>();
+const EMPTY_KEY_SET = new Set<string>();
 
 function App(): React.JSX.Element {
   const { t } = useTranslation();
@@ -181,6 +182,8 @@ function App(): React.JSX.Element {
   const isPlaying = usePlaybackStore((s) => s.isPlaying);
 
   const [activeNotes, setActiveNotes] = useState<Set<number>>(EMPTY_NOTE_SET);
+  const [activeNoteKeys, setActiveNoteKeys] =
+    useState<Set<string>>(EMPTY_KEY_SET);
   const midiActiveNotes = useMidiDeviceStore((s) => s.activeNotes);
 
   // ── Practice mode: transient hit/miss sets for PianoKeyboard CSS animations ──
@@ -240,9 +243,13 @@ function App(): React.JSX.Element {
     [addTransientNote],
   );
 
-  const handleActiveNotesChange = useCallback((notes: Set<number>) => {
-    setActiveNotes(notes);
-  }, []);
+  const handleActiveNotesChange = useCallback(
+    (notes: Set<number>, noteKeys: Set<string>) => {
+      setActiveNotes(notes);
+      setActiveNoteKeys(noteKeys);
+    },
+    [],
+  );
 
   // ── Song completion detection ──
   const [showSongComplete, setShowSongComplete] = useState(false);
@@ -1261,7 +1268,11 @@ function App(): React.JSX.Element {
                     : {}),
                 }}
               >
-                <SheetMusicPanelOSMD song={song} mode={displayMode} />
+                <SheetMusicPanelOSMD
+                  song={song}
+                  mode={displayMode}
+                  activeNoteKeys={activeNoteKeys}
+                />
               </div>
 
               {/* Falling notes canvas — always mounted so PixiJS ticker keeps

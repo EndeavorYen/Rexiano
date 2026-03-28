@@ -7,8 +7,8 @@ import { createTickerUpdate } from "@renderer/engines/fallingNotes/tickerLoop";
 import { useThemeStore } from "@renderer/stores/useThemeStore";
 
 interface FallingNotesCanvasProps {
-  /** Callback to send active MIDI notes to PianoKeyboard */
-  onActiveNotesChange?: (notes: Set<number>) => void;
+  /** Callback to send active MIDI notes (and noteKeys for OSMD) to parent */
+  onActiveNotesChange?: (notes: Set<number>, noteKeys: Set<string>) => void;
   /** Phase 4: Get current playback time from AudioScheduler */
   getAudioCurrentTime?: () => number | null;
   /** Expose the NoteRenderer instance for external use (e.g. practice visual feedback) */

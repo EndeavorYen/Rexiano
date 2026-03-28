@@ -10,7 +10,7 @@ import { getMetronome } from "@renderer/engines/metronome/metronomeManager";
 /** Cap frame delta to prevent large time jumps (e.g. after tab backgrounding) */
 const MAX_DELTA_SECONDS = 0.1;
 
-function setsEqual(a: Set<number>, b: Set<number>): boolean {
+function setsEqual<T>(a: Set<T>, b: Set<T>): boolean {
   if (a.size !== b.size) return false;
   for (const v of a) if (!b.has(v)) return false;
   return true;
@@ -27,11 +27,14 @@ export function createTickerUpdate(
   noteRenderer: NoteRenderer,
   getScreenSize: () => { width: number; height: number },
   onActiveNotesChangeRef: {
-    current: ((notes: Set<number>) => void) | undefined;
+    current:
+      | ((notes: Set<number>, noteKeys: Set<string>) => void)
+      | undefined;
   },
   getAudioCurrentTime?: () => number | null,
 ) {
   let prevActiveNotes = new Set<number>();
+  let prevActiveNoteKeys = new Set<string>();
 
   return (time: { deltaMS: number }) => {
     const songState = useSongStore.getState();
@@ -145,11 +148,17 @@ export function createTickerUpdate(
 
     // Only notify React when active notes actually change
     if (onActiveNotesChangeRef.current) {
-      const next = noteRenderer.activeNotes;
-      if (!setsEqual(prevActiveNotes, next)) {
-        const snapshot = new Set(next);
-        prevActiveNotes = snapshot;
-        onActiveNotesChangeRef.current(snapshot);
+      const nextMidi = noteRenderer.activeNotes;
+      const nextKeys = noteRenderer.activeNoteKeys;
+      if (
+        !setsEqual(prevActiveNotes, nextMidi) ||
+        !setsEqual(prevActiveNoteKeys, nextKeys)
+      ) {
+        const midiSnapshot = new Set(nextMidi);
+        const keysSnapshot = new Set(nextKeys);
+        prevActiveNotes = midiSnapshot;
+        prevActiveNoteKeys = keysSnapshot;
+        onActiveNotesChangeRef.current(midiSnapshot, keysSnapshot);
       }
     }
   };

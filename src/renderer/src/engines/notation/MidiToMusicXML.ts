@@ -480,6 +480,26 @@ export function convertToMusicXML(
     }
   }
 
+  // --- Step 6: Trim empty measures ---
+  // Remove leading empty measures (keep the first one for key/time signature).
+  // Find the first measure with actual notes and remove empties between
+  // measure 1 and that measure (index 0 is kept for attributes).
+  const firstNonEmpty = measureNotes.findIndex((m) => m.length > 0);
+  if (firstNonEmpty > 1) {
+    measureNotes.splice(1, firstNonEmpty - 1);
+    measureBoundaries.splice(1, firstNonEmpty - 1);
+  }
+
+  // Remove trailing empty measures — keep at most 1 for a clean final barline.
+  while (
+    measureNotes.length > 1 &&
+    measureNotes[measureNotes.length - 1].length === 0 &&
+    measureNotes[measureNotes.length - 2].length === 0
+  ) {
+    measureNotes.pop();
+    measureBoundaries.pop();
+  }
+
   return buildMusicXML(
     measureBoundaries,
     measureNotes,
@@ -557,11 +577,7 @@ function buildMusicXML(
         t.tick < boundary.endTick &&
         Math.abs(t.bpm - lastEmittedBpm) > 0.1
       ) {
-        xml += `<direction placement="above"><direction-type><words>`;
-        xml += `${Math.round(t.bpm)} BPM`;
-        xml += `</words></direction-type>`;
-        xml += `<sound tempo="${t.bpm}"/>`;
-        xml += `</direction>`;
+        xml += `<direction placement="above"><direction-type><words/></direction-type><sound tempo="${t.bpm}"/></direction>`;
         lastEmittedBpm = t.bpm;
       }
     }

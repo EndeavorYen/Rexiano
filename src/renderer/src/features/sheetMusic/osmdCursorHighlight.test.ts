@@ -2,58 +2,72 @@
  * @vitest-environment jsdom
  */
 import { describe, it, expect, vi } from "vitest";
-import { HighlightManager } from "./osmdCursorHighlight";
-import { buildStepTimes } from "./SheetMusicPanelOSMD";
-
-/** Create a mock SVG gNote structure matching OSMD's API. */
-function mockGNote(el: Element) {
-  const g = document.createElementNS("http://www.w3.org/2000/svg", "g");
-  const nh = document.createElementNS("http://www.w3.org/2000/svg", "g");
-  nh.setAttribute("class", "vf-notehead");
-  nh.appendChild(el);
-  g.appendChild(nh);
-  return { getSVGGElement: () => g };
-}
+import { HighlightManager, buildCursorMaps } from "./osmdCursorHighlight";
 
 describe("HighlightManager", () => {
-  it("adds highlights and clears them on next highlight call", () => {
+  it("highlights elements by noteKey and clears on next call", () => {
     const hl = new HighlightManager();
     const el1 = document.createElementNS("http://www.w3.org/2000/svg", "path");
     const el2 = document.createElementNS("http://www.w3.org/2000/svg", "path");
 
-    const osmd1 = { cursor: { GNotesUnderCursor: () => [mockGNote(el1)] } };
-    const osmd2 = { cursor: { GNotesUnderCursor: () => [mockGNote(el2)] } };
+    const map = new Map<string, Element[]>();
+    map.set("0:60:500000", [el1]);
+    map.set("0:62:1000000", [el2]);
 
-    hl.highlight(osmd1);
+    hl.highlightByNoteKeys(new Set(["0:60:500000"]), map);
     expect(el1.classList.contains("osmd-note-active")).toBe(true);
+    expect(el2.classList.contains("osmd-note-active")).toBe(false);
 
     // Next highlight replaces previous
-    hl.highlight(osmd2);
+    hl.highlightByNoteKeys(new Set(["0:62:1000000"]), map);
     expect(el1.classList.contains("osmd-note-active")).toBe(false);
+    expect(el2.classList.contains("osmd-note-active")).toBe(true);
+  });
+
+  it("highlights multiple noteKeys simultaneously", () => {
+    const hl = new HighlightManager();
+    const el1 = document.createElementNS("http://www.w3.org/2000/svg", "path");
+    const el2 = document.createElementNS("http://www.w3.org/2000/svg", "path");
+
+    const map = new Map<string, Element[]>();
+    map.set("0:60:500000", [el1]);
+    map.set("1:48:500000", [el2]);
+
+    hl.highlightByNoteKeys(new Set(["0:60:500000", "1:48:500000"]), map);
+    expect(el1.classList.contains("osmd-note-active")).toBe(true);
     expect(el2.classList.contains("osmd-note-active")).toBe(true);
   });
 
   it("clear removes all highlights", () => {
     const hl = new HighlightManager();
     const el = document.createElementNS("http://www.w3.org/2000/svg", "path");
-    hl.highlight({ cursor: { GNotesUnderCursor: () => [mockGNote(el)] } });
+
+    const map = new Map<string, Element[]>();
+    map.set("0:60:500000", [el]);
+
+    hl.highlightByNoteKeys(new Set(["0:60:500000"]), map);
     expect(el.classList.contains("osmd-note-active")).toBe(true);
 
     hl.clear();
     expect(el.classList.contains("osmd-note-active")).toBe(false);
   });
 
-  it("does not throw when osmd is null", () => {
+  it("does not throw when noteKey is not in map", () => {
     const hl = new HighlightManager();
-    expect(() => hl.highlight(null)).not.toThrow();
+    const map = new Map<string, Element[]>();
+    expect(() =>
+      hl.highlightByNoteKeys(new Set(["0:99:0"]), map),
+    ).not.toThrow();
   });
 });
 
-describe("buildStepTimes", () => {
-  it("returns empty array when osmd is null", () => {
+describe("buildCursorMaps", () => {
+  it("returns empty results when osmd is null", () => {
     const song = { tracks: [], tempos: [], timeSignatures: [] };
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    expect(buildStepTimes(null, song as any)).toEqual([]);
+    const result = buildCursorMaps(null, song as any);
+    expect(result.stepTimes).toEqual([]);
+    expect(result.noteKeyMap.size).toBe(0);
   });
 
   it("matches cursor steps to ParsedNote times", () => {
@@ -61,6 +75,7 @@ describe("buildStepTimes", () => {
     const mockCursor = {
       reset: vi.fn(),
       next: vi.fn(() => { step++; }),
+      GNotesUnderCursor: () => [],
       Iterator: {
         get EndReached() { return step >= 2; },
         get CurrentVoiceEntries() {
@@ -81,9 +96,9 @@ describe("buildStepTimes", () => {
     };
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const times = buildStepTimes({ cursor: mockCursor }, song as any);
-    expect(times[0].time).toBe(0.5);
-    expect(times[1].time).toBe(1.0);
+    const result = buildCursorMaps({ cursor: mockCursor }, song as any);
+    expect(result.stepTimes[0].time).toBe(0.5);
+    expect(result.stepTimes[1].time).toBe(1.0);
   });
 
   it("handles tempo changes — uses ParsedNote.time not BPM", () => {
@@ -91,6 +106,7 @@ describe("buildStepTimes", () => {
     const mockCursor = {
       reset: vi.fn(),
       next: vi.fn(() => { step++; }),
+      GNotesUnderCursor: () => [],
       Iterator: {
         get EndReached() { return step >= 2; },
         get CurrentVoiceEntries() {
@@ -112,8 +128,8 @@ describe("buildStepTimes", () => {
     };
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const times = buildStepTimes({ cursor: mockCursor }, song as any);
-    expect(times[0].time).toBe(0.5);
-    expect(times[1].time).toBe(5.0);
+    const result = buildCursorMaps({ cursor: mockCursor }, song as any);
+    expect(result.stepTimes[0].time).toBe(0.5);
+    expect(result.stepTimes[1].time).toBe(5.0);
   });
 });

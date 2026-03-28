@@ -169,6 +169,7 @@ export class NoteRenderer {
   private _cachedTrackPalette: number[] = [];
 
   public activeNotes = new Set<number>();
+  public activeNoteKeys = new Set<string>();
 
   /** Key signature (number of sharps/flats) used for note label display.
    *  Positive = sharps, negative = flats. Set from App.tsx. */
@@ -311,6 +312,7 @@ export class NoteRenderer {
     const nextActive = this.nextActive;
     nextActive.clear();
     this.activeNotes.clear();
+    this.activeNoteKeys.clear();
 
     const hitWindow = 0.05;
     // S9-R3-03: Use cached value instead of per-frame store access
@@ -402,6 +404,7 @@ export class NoteRenderer {
           note.time + note.duration >= vp.currentTime - hitWindow
         ) {
           this.activeNotes.add(note.midi);
+          this.activeNoteKeys.add(key);
         }
 
         // ── Fingering label overlay ──────────────────────────────
@@ -488,6 +491,7 @@ export class NoteRenderer {
     this.active.clear();
     this.nextActive.clear();
     this.activeNotes.clear();
+    this.activeNoteKeys.clear();
     this.keyPositions.clear();
     // R1-02/R1-05: Clear base value maps
     this._baseTint.clear();
