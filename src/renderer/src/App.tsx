@@ -1264,7 +1264,7 @@ function App(): React.JSX.Element {
                 <SheetMusicPanelOSMD
                   song={song}
                   mode={displayMode}
-                  getAudioCurrentTime={getAudioCurrentTime}
+                  activeNotes={activeNotes}
                 />
               </div>
 

@@ -11,11 +11,9 @@ import { convertToMusicXML } from "@renderer/engines/notation/MidiToMusicXML";
 import { usePlaybackStore } from "../../stores/usePlaybackStore";
 import { getMeasureWindow } from "./CursorSync";
 import {
-  buildTimeMap,
-  findActiveEntry,
-  highlightAtStep,
+  advanceAndHighlight,
   clearHighlights,
-  type CursorTimeEntry,
+  resetCursor,
 } from "./osmdCursorHighlight";
 
 /** Default number of measures to display per page (one system line). */
@@ -24,8 +22,8 @@ const MEASURES_PER_PAGE = 4;
 interface SheetMusicPanelOSMDProps {
   song: ParsedSong | null;
   mode: DisplayMode;
-  /** Returns the current audio time in seconds, or null if unavailable. */
-  getAudioCurrentTime?: () => number | null;
+  /** Active MIDI notes at the hit line — driven by tickerLoop via NoteRenderer. */
+  activeNotes?: Set<number>;
 }
 
 /**
@@ -45,7 +43,7 @@ function estimateMeasureIndex(song: ParsedSong, time: number): number {
 export function SheetMusicPanelOSMD({
   song,
   mode,
-  getAudioCurrentTime,
+  activeNotes,
 }: SheetMusicPanelOSMDProps): React.ReactElement {
   const containerRef = useRef<HTMLDivElement>(null);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -53,9 +51,8 @@ export function SheetMusicPanelOSMD({
   const loadedRef = useRef(false);
   const [totalMeasures, setTotalMeasures] = useState(0);
 
-  // Time map and cursor step tracking for highlight engine
-  const timeMapRef = useRef<CursorTimeEntry[]>([]);
-  const cursorStepRef = useRef(0);
+  // Track whether cursor has been initialized after render
+  const cursorReadyRef = useRef(false);
 
   // Subscribe to playback, but only re-render when the measure index changes
   const currentMeasure = usePlaybackStore(
@@ -135,7 +132,6 @@ export function SheetMusicPanelOSMD({
           loadedRef.current = true;
           const total = osmdRef.current?.sheet?.SourceMeasures?.length ?? 0;
           setTotalMeasures(total);
-          // Effect 2 will handle the actual render with measure range
         });
       })
       .catch((err: unknown) => {
@@ -150,13 +146,13 @@ export function SheetMusicPanelOSMD({
       }
       container.textContent = "";
       loadedRef.current = false;
+      cursorReadyRef.current = false;
       setTotalMeasures(0);
-      timeMapRef.current = [];
     };
   }, [musicXml, mode]);
 
-  // Effect 2: Render with the current measure range (page flips only)
-  // After render, rebuild the time map from the cursor iterator.
+  // Effect 2: Render with the current measure range (page flips only).
+  // After render, reset the cursor to the start of the visible range.
   useEffect(() => {
     if (!loadedRef.current || !osmdRef.current || mode === "falling") return;
 
@@ -168,97 +164,74 @@ export function SheetMusicPanelOSMD({
     }
     osmdRef.current.render();
 
-    // Rebuild time map after every render (SVG elements change on re-render)
-    timeMapRef.current = buildTimeMap(osmdRef.current, song);
-    cursorStepRef.current = 0;
-
-    // Hide the built-in cursor element (we use CSS highlights instead)
+    // Reset cursor to start of rendered range
     const cursor = osmdRef.current.cursor;
-    if (cursor?.cursorElement) {
-      cursor.cursorElement.style.display = "none";
+    if (cursor) {
+      cursor.reset();
+      cursorReadyRef.current = true;
+      // Hide the built-in cursor element (we use CSS highlights instead)
+      if (cursor.cursorElement) {
+        cursor.cursorElement.style.display = "none";
+      }
     }
   }, [windowKey, totalMeasures, mode]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Re-render OSMD on container resize (since autoResize is disabled to
-  // avoid leaking internal resize observers across OSMD instance lifecycles).
+  // Re-render OSMD on container resize
   useEffect(() => {
     if (mode === "falling" || !containerRef.current) return;
     const el = containerRef.current;
     const ro = new ResizeObserver(() => {
       if (osmdRef.current && loadedRef.current) {
         osmdRef.current.render();
-        // Rebuild time map after resize re-render
-        timeMapRef.current = buildTimeMap(osmdRef.current, song);
-        cursorStepRef.current = 0;
+        // Reset cursor after resize re-render
+        const cursor = osmdRef.current.cursor;
+        if (cursor) {
+          cursor.reset();
+          if (cursor.cursorElement) {
+            cursor.cursorElement.style.display = "none";
+          }
+        }
       }
     });
     ro.observe(el);
     return () => ro.disconnect();
   }, [mode]);
 
-  // Effect 3: Highlight active notes during playback using the cursor engine.
-  // Uses setInterval because Electron throttles rAF when PixiJS is primary renderer.
-  // Reads audio time from AudioScheduler for accurate sync in sheet-only mode.
+  // Effect 3: Event-driven note highlighting.
+  // When activeNotes changes (driven by tickerLoop → NoteRenderer),
+  // advance the OSMD cursor and highlight the notes under it.
+  // This is perfectly synced because the same effectiveTime that
+  // drives falling notes and the keyboard also drives this.
   useEffect(() => {
-    if (mode === "falling" || !containerRef.current || !song) return;
+    if (mode === "falling") return;
+    if (!osmdRef.current || !loadedRef.current || !cursorReadyRef.current)
+      return;
+    if (!containerRef.current) return;
+
     const container = containerRef.current;
-    let prevStepIndex = -1;
+    const isPlaying = usePlaybackStore.getState().isPlaying;
 
-    const intervalId = setInterval(() => {
-      const { isPlaying, currentTime: storeTime } =
-        usePlaybackStore.getState();
-      if (!osmdRef.current || !loadedRef.current) return;
-
+    if (!activeNotes || activeNotes.size === 0) {
+      // No active notes — clear highlights but don't reset cursor
+      // (could be a rest between notes)
       if (!isPlaying) {
-        if (prevStepIndex !== -1) {
-          clearHighlights(container);
-          prevStepIndex = -1;
-        }
-        return;
+        clearHighlights(container);
+        resetCursor(osmdRef.current, container);
+        cursorReadyRef.current = true;
       }
+      return;
+    }
 
-      // Prefer audio scheduler time (accurate) over store time
-      const audioTime = getAudioCurrentTime?.() ?? null;
-      const currentTime = audioTime ?? storeTime;
+    // Advance cursor and highlight
+    advanceAndHighlight(osmdRef.current, container);
+  }, [activeNotes, mode]);
 
-      const entry = findActiveEntry(timeMapRef.current, currentTime);
-      if (!entry) {
-        if (prevStepIndex !== -1) {
-          clearHighlights(container);
-          prevStepIndex = -1;
-        }
-        return;
-      }
-
-      // Only update DOM when the active step changes
-      if (entry.stepIndex === prevStepIndex) return;
-      prevStepIndex = entry.stepIndex;
-
-      cursorStepRef.current = highlightAtStep(
-        osmdRef.current,
-        entry,
-        container,
-        cursorStepRef.current,
-      );
-    }, 80);
-
-    return () => {
-      clearInterval(intervalId);
-      clearHighlights(container);
-    };
-  }, [song, mode, getAudioCurrentTime]);
-
-  // Always render the container div so containerRef stays attached across
-  // mode transitions. Returning null would detach the ref, causing the
-  // useEffect to silently skip OSMD init when switching back from "falling".
   return (
     <div
       ref={containerRef}
       data-testid="sheet-music-panel"
       className="sheet-music-osmd w-full"
       style={{
-        // In split mode, fill the flex-constrained parent exactly.
-        // In sheet mode (full height), use 200px minimum.
         ...(mode === "split"
           ? { height: "100%", minHeight: 0 }
           : { minHeight: mode === "sheet" ? 200 : 0 }),
