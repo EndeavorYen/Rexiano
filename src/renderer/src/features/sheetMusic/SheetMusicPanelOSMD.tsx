@@ -1,25 +1,12 @@
-import React, {
-  useRef,
-  useEffect,
-  useMemo,
-  useState,
-  useCallback,
-} from "react";
+import React, { useRef, useEffect, useMemo } from "react";
 import type { ParsedSong } from "@renderer/engines/midi/types";
 import type { DisplayMode } from "./types";
 import { convertToMusicXML } from "@renderer/engines/notation/MidiToMusicXML";
 import { usePlaybackStore } from "../../stores/usePlaybackStore";
-import { getMeasureWindow } from "./CursorSync";
 import {
-  buildCursorSteps,
-  findStepAtTime,
-  highlightStep,
+  highlightNotesUnderCursor,
   clearHighlights,
-  type CursorStep,
 } from "./osmdCursorHighlight";
-
-/** Default number of measures to display per page (one system line). */
-const MEASURES_PER_PAGE = 4;
 
 interface SheetMusicPanelOSMDProps {
   song: ParsedSong | null;
@@ -27,16 +14,20 @@ interface SheetMusicPanelOSMDProps {
 }
 
 /**
- * Estimate the current 0-based measure index from playback time.
+ * Convert OSMD cursor iterator's beat-fraction timestamp to seconds.
+ * `RealValue` is relative to a whole note (1.0 = whole note = 4 quarter beats).
+ * Formula: realValue * 4 = quarter-note beats, * (60 / bpm) = seconds.
  */
-function estimateMeasureIndex(song: ParsedSong, time: number): number {
-  const bpm = song.tempos[0]?.bpm ?? 120;
-  const ts = song.timeSignatures[0];
-  const num = ts?.numerator ?? 4;
-  const den = ts?.denominator ?? 4;
-  const secPerMeasure = (60 / bpm) * num * (4 / den);
-  if (secPerMeasure <= 0) return 0;
-  return Math.floor(Math.max(0, time) / secPerMeasure);
+function cursorTimeToSeconds(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  osmd: any,
+): number {
+  const it = osmd?.cursor?.Iterator;
+  if (!it) return 0;
+  const realValue = it.currentTimeStamp?.RealValue ?? 0;
+  const bpm =
+    osmd.Sheet?.SourceMeasures?.[it.CurrentMeasureIndex]?.TempoInBPM ?? 120;
+  return realValue * 4 * (60 / bpm);
 }
 
 export function SheetMusicPanelOSMD({
@@ -47,60 +38,28 @@ export function SheetMusicPanelOSMD({
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const osmdRef = useRef<any>(null);
   const loadedRef = useRef(false);
-  const [totalMeasures, setTotalMeasures] = useState(0);
-
-  // Cursor step list for highlight engine
-  const cursorStepsRef = useRef<CursorStep[]>([]);
-  const pageStartTimeRef = useRef(0);
-
-  const currentMeasure = usePlaybackStore(
-    useCallback(
-      (s: { currentTime: number }) =>
-        song ? estimateMeasureIndex(song, s.currentTime) : 0,
-      [song],
-    ),
-  );
-
-  const measureWindow = useMemo(
-    () =>
-      totalMeasures > 0
-        ? getMeasureWindow(currentMeasure, totalMeasures, MEASURES_PER_PAGE)
-        : [],
-    [currentMeasure, totalMeasures],
-  );
-  const windowKey = measureWindow.join(",");
 
   const musicXml = useMemo(() => {
     if (!song) return null;
-
     const flattened = song.tracks.flatMap((track, idx) =>
       track.notes.map((note) => ({ note, trackIndex: idx })),
     );
-    const allNotes = flattened.map((x) => x.note);
-    const noteTrackIndices = flattened.map((x) => x.trackIndex);
-    const tempos =
-      song.tempos.length > 0 ? song.tempos : [{ time: 0, bpm: 120 }];
-    const primaryTs = song.timeSignatures[0];
-    const timeSigTop = primaryTs?.numerator ?? 4;
-    const timeSigBottom = primaryTs?.denominator ?? 4;
-    const keySig = song.keySignatures?.[0]?.key ?? 0;
-
     return convertToMusicXML(
-      allNotes,
-      tempos,
+      flattened.map((x) => x.note),
+      song.tempos.length > 0 ? song.tempos : [{ time: 0, bpm: 120 }],
       480,
-      timeSigTop,
-      timeSigBottom,
-      keySig,
+      song.timeSignatures[0]?.numerator ?? 4,
+      song.timeSignatures[0]?.denominator ?? 4,
+      song.keySignatures?.[0]?.key ?? 0,
       0,
       song.tracks.length,
       song.expressions,
       song.timeSignatures,
-      noteTrackIndices,
+      flattened.map((x) => x.trackIndex),
     );
   }, [song]);
 
-  // Effect 1: Load MusicXML into OSMD
+  // Effect 1: Load MusicXML + render full score + enable cursor
   useEffect(() => {
     if (mode === "falling") return;
     if (!containerRef.current || !musicXml) return;
@@ -120,15 +79,23 @@ export function SheetMusicPanelOSMD({
             drawComposer: false,
             drawPartNames: false,
             autoBeam: true,
+            followCursor: true,
           });
           osmdRef.current.EngravingRules.StretchLastSystemLine = false;
         }
 
+        // No drawFromMeasureNumber / drawUpToMeasureNumber — render full score
         return osmdRef.current.load(musicXml).then(() => {
           if (cancelled) return;
+          osmdRef.current.render();
           loadedRef.current = true;
-          const total = osmdRef.current?.sheet?.SourceMeasures?.length ?? 0;
-          setTotalMeasures(total);
+
+          // Show and reset cursor
+          const cursor = osmdRef.current.cursor;
+          if (cursor) {
+            cursor.reset();
+            cursor.show();
+          }
         });
       })
       .catch((err: unknown) => {
@@ -143,42 +110,8 @@ export function SheetMusicPanelOSMD({
       }
       container.textContent = "";
       loadedRef.current = false;
-      cursorStepsRef.current = [];
-      setTotalMeasures(0);
     };
   }, [musicXml, mode]);
-
-  // Effect 2: Render with measure range, then build cursor steps.
-  useEffect(() => {
-    if (!loadedRef.current || !osmdRef.current || mode === "falling") return;
-
-    if (measureWindow.length > 0) {
-      osmdRef.current.setOptions({
-        drawFromMeasureNumber: measureWindow[0] + 1,
-        drawUpToMeasureNumber: measureWindow[measureWindow.length - 1] + 1,
-      });
-    }
-    osmdRef.current.render();
-
-    // Build cursor steps. Pass the current playback time as pageStartTime
-    // so note matching skips earlier pages (avoids same-pitch ambiguity).
-    const pageStartTime =
-      measureWindow[0] > 0
-        ? usePlaybackStore.getState().currentTime
-        : 0;
-    pageStartTimeRef.current = pageStartTime;
-    cursorStepsRef.current = buildCursorSteps(
-      osmdRef.current,
-      song,
-      pageStartTime,
-    );
-
-    // Hide built-in cursor element (we use CSS highlights)
-    const cursor = osmdRef.current.cursor;
-    if (cursor?.cursorElement) {
-      cursor.cursorElement.style.display = "none";
-    }
-  }, [windowKey, totalMeasures, mode, song]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Re-render on container resize
   useEffect(() => {
@@ -187,67 +120,56 @@ export function SheetMusicPanelOSMD({
     const ro = new ResizeObserver(() => {
       if (osmdRef.current && loadedRef.current) {
         osmdRef.current.render();
-        const resizePageStart = measureWindow[0] > 0
-          ? usePlaybackStore.getState().currentTime : 0;
-        cursorStepsRef.current = buildCursorSteps(
-          osmdRef.current, song, resizePageStart,
-        );
-        if (osmdRef.current.cursor?.cursorElement) {
-          osmdRef.current.cursor.cursorElement.style.display = "none";
+        const cursor = osmdRef.current.cursor;
+        if (cursor) {
+          cursor.reset();
+          cursor.show();
         }
       }
     });
     ro.observe(el);
     return () => ro.disconnect();
-  }, [mode, song]);
+  }, [mode]);
 
-  // Effect 3: Time-driven note highlighting.
-  //
-  // Reads currentTime from the playback store (written every frame by
-  // tickerLoop — same effectiveTime that drives falling notes + keyboard).
-  // Binary-searches cursorSteps to find the right step, then highlights
-  // its cached SVG elements.
-  //
-  // Uses setInterval because Electron throttles rAF when PixiJS is the
-  // primary renderer.
+  // Effect 2: Drive cursor forward during playback.
+  // Reads currentTime from the store (written every frame by tickerLoop).
+  // Compares against the cursor's next step time — if currentTime has
+  // passed it, advance cursor.next() and add CSS glow.
+  // followCursor: true handles scrolling automatically.
   useEffect(() => {
     if (mode === "falling" || !containerRef.current || !song) return;
     const container = containerRef.current;
-    let prevStepIdx = -1;
+    let wasPlaying = false;
 
     const intervalId = setInterval(() => {
+      const osmd = osmdRef.current;
+      if (!osmd || !loadedRef.current) return;
+
       const { isPlaying, currentTime } = usePlaybackStore.getState();
-      const steps = cursorStepsRef.current;
-      if (steps.length === 0) return;
 
       if (!isPlaying) {
-        if (prevStepIdx !== -1) {
+        if (wasPlaying) {
           clearHighlights(container);
-          prevStepIdx = -1;
+          wasPlaying = false;
         }
         return;
       }
 
-      const found = findStepAtTime(steps, currentTime);
-      if (!found) {
-        if (prevStepIdx !== -1) {
-          clearHighlights(container);
-          prevStepIdx = -1;
-        }
-        return;
+      if (!wasPlaying) {
+        // Playback just started — reset cursor to beginning
+        osmd.cursor?.reset();
+        wasPlaying = true;
       }
 
-      const { step, index: idx } = found;
-      if (idx === prevStepIdx) return;
-      const prevStep = prevStepIdx >= 0 ? steps[prevStepIdx] : null;
-      prevStepIdx = idx;
+      const cursor = osmd.cursor;
+      if (!cursor || cursor.Iterator?.EndReached) return;
 
-      highlightStep(step, prevStep);
-      if (debugRef.current && song) {
-        const mIdx = estimateMeasureIndex(song, currentTime);
-        const matched = `#${idx} t=${step.time.toFixed(2)}→${step.endTime.toFixed(2)}`;
-        debugRef.current.textContent =
-          `time=${currentTime.toFixed(2)} | measure=${mIdx} | steps=${steps.length} | match=${matched} | pageStart=${pageStartTimeRef.current.toFixed(2)}`;
+      // Advance cursor while its timestamp is behind currentTime
+      const nextTime = cursorTimeToSeconds(osmd);
+      if (currentTime >= nextTime) {
+        clearHighlights(container);
+        cursor.next();
+        highlightNotesUnderCursor(osmd);
       }
     }, 50);
 
@@ -257,69 +179,22 @@ export function SheetMusicPanelOSMD({
     };
   }, [song, mode]);
 
-  const debugRef = useRef<HTMLDivElement>(null);
-  const isDev = import.meta.env.DEV;
-
   return (
-    <div style={{ position: "relative" }}>
-      {isDev && (
-        <div
-          ref={debugRef}
-          style={{
-            position: "absolute",
-            top: 0,
-            left: 0,
-            right: 0,
-            zIndex: 100,
-            background: "rgba(0,0,0,0.75)",
-            color: "#0f0",
-            fontFamily: "JetBrains Mono, monospace",
-            fontSize: 11,
-            padding: "2px 6px",
-            pointerEvents: "none",
-            whiteSpace: "nowrap",
-            overflow: "hidden",
-          }}
-        >
-          loading...
-        </div>
-      )}
-      <div
-        ref={containerRef}
-        data-testid="sheet-music-panel"
-        className="sheet-music-osmd w-full"
-        style={{
-          ...(mode === "split"
-            ? { height: "100%", minHeight: 0 }
-            : { minHeight: mode === "sheet" ? 200 : 0 }),
-          padding: mode === "falling" ? 0 : "8px 0",
-          display: mode === "falling" ? "none" : undefined,
-        }}
-      />
-      {isDev && (
-        <details
-          style={{
-            fontSize: 10,
-            fontFamily: "JetBrains Mono, monospace",
-            padding: "2px 6px",
-            background: "rgba(0,0,0,0.05)",
-            maxHeight: 120,
-            overflow: "auto",
-          }}
-        >
-          <summary style={{ cursor: "pointer", userSelect: "none" }}>
-            Cursor Steps ({cursorStepsRef.current.length})
-          </summary>
-          <pre style={{ margin: 0, whiteSpace: "pre-wrap", fontSize: 9 }}>
-            {cursorStepsRef.current
-              .map(
-                (s, i) =>
-                  `${String(i).padStart(3)} | t=${s.time.toFixed(3).padStart(8)} → ${s.endTime.toFixed(3).padStart(8)} | svg=${s.svgElements.length}`,
-              )
-              .join("\n")}
-          </pre>
-        </details>
-      )}
-    </div>
+    <div
+      ref={containerRef}
+      data-testid="sheet-music-panel"
+      className="sheet-music-osmd w-full"
+      style={{
+        ...(mode === "split"
+          ? { height: "100%", minHeight: 0, overflowY: "auto" }
+          : {
+              minHeight: mode === "sheet" ? 200 : 0,
+              maxHeight: mode === "sheet" ? "calc(100vh - 320px)" : undefined,
+              overflowY: mode === "sheet" ? "auto" : undefined,
+            }),
+        padding: mode === "falling" ? 0 : "8px 0",
+        display: mode === "falling" ? "none" : undefined,
+      }}
+    />
   );
 }
