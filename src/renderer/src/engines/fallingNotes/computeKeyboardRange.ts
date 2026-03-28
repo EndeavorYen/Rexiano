@@ -2,7 +2,10 @@ import type { ParsedSong } from "../midi/types";
 
 const PIANO_FIRST = 21; // A0
 const PIANO_LAST = 108; // C8
-const MIN_OCTAVES = 2;
+// Minimum 4 octaves to maintain proportional key widths.
+// At 88 keys the proportions are standard; 4 octaves (~28 white keys)
+// is the narrowest range that still looks natural on a wide screen.
+const MIN_OCTAVES = 4;
 
 export interface KeyboardRange {
   firstNote: number;

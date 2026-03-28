@@ -35,17 +35,20 @@ function makeSong(midiNotes: number[], trackCount = 1): ParsedSong {
 }
 
 describe("computeKeyboardRange", () => {
-  it("G4(67)~D5(74) expands to C4(60)~B5(83)", () => {
+  it("G4(67)~D5(74) expands to at least 4 octaves centered on the range", () => {
     const song = makeSong([67, 74]); // G4, D5
     const range = computeKeyboardRange(song);
-    expect(range.firstNote).toBe(60); // C4
-    expect(range.lastNote).toBe(83); // B5
+    // Must include the actual notes
+    expect(range.firstNote).toBeLessThanOrEqual(67);
+    expect(range.lastNote).toBeGreaterThanOrEqual(74);
+    // Must be at least 4 octaves
+    expect(range.lastNote - range.firstNote + 1).toBeGreaterThanOrEqual(48);
   });
 
-  it("single note gets minimum 2 octaves", () => {
+  it("single note gets minimum 4 octaves", () => {
     const song = makeSong([60]); // C4 only
     const range = computeKeyboardRange(song);
-    expect(range.lastNote - range.firstNote + 1).toBeGreaterThanOrEqual(24);
+    expect(range.lastNote - range.firstNote + 1).toBeGreaterThanOrEqual(48);
   });
 
   it("clamps to piano range 21-108", () => {

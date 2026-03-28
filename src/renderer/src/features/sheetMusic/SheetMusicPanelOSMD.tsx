@@ -172,29 +172,47 @@ export function SheetMusicPanelOSMD({
     return () => ro.disconnect();
   }, [mode]);
 
-  // Effect 3: Highlight active notes during playback
+  // Effect 3: Highlight active notes during playback.
+  // Uses requestAnimationFrame instead of store subscription because
+  // currentTime is read via getState() by the PixiJS ticker — the store
+  // does not fire subscription callbacks on every frame update.
   useEffect(() => {
     if (mode === "falling" || !containerRef.current || !song) return;
 
     const container = containerRef.current;
+    let rafId = 0;
+    let prevBeatKey = "";
 
-    const unsubscribe = usePlaybackStore.subscribe((state) => {
+    const bpm = song.tempos[0]?.bpm ?? 120;
+    const ts = song.timeSignatures[0];
+    const num = ts?.numerator ?? 4;
+    const den = ts?.denominator ?? 4;
+
+    function tick(): void {
+      rafId = requestAnimationFrame(tick);
+
+      const { isPlaying, currentTime } = usePlaybackStore.getState();
       if (!osmdRef.current || !loadedRef.current) return;
-      if (!state.isPlaying) {
-        clearHighlights(container);
+
+      if (!isPlaying) {
+        if (prevBeatKey !== "") {
+          clearHighlights(container);
+          prevBeatKey = "";
+        }
         return;
       }
 
-      const bpm = song.tempos[0]?.bpm ?? 120;
-      const ts = song.timeSignatures[0];
-      const num = ts?.numerator ?? 4;
-      const den = ts?.denominator ?? 4;
       const { measureIndex, beat } = estimateBeatPosition(
-        state.currentTime,
+        currentTime,
         bpm,
         num,
         den,
       );
+
+      // Only update DOM when the beat position actually changes (throttle)
+      const beatKey = `${measureIndex}:${Math.floor(beat * 2)}`;
+      if (beatKey === prevBeatKey) return;
+      prevBeatKey = beatKey;
 
       if (measureWindow.length > 0) {
         const localIndex = measureIndex - measureWindow[0];
@@ -204,10 +222,12 @@ export function SheetMusicPanelOSMD({
           clearHighlights(container);
         }
       }
-    });
+    }
+
+    rafId = requestAnimationFrame(tick);
 
     return () => {
-      unsubscribe();
+      cancelAnimationFrame(rafId);
       clearHighlights(container);
     };
   }, [song, mode, measureWindow]);
