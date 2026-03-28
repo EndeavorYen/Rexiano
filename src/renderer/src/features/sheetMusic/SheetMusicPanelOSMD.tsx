@@ -12,7 +12,10 @@ interface SheetMusicPanelOSMDProps {
 
 export interface StepTiming {
   time: number;
-  endTime: number;
+  /** Per-MIDI endTime map: each note at this step has its own duration */
+  endTimeByMidi: Map<number, number>;
+  /** Fallback endTime (max across all notes at this step) */
+  maxEndTime: number;
 }
 
 /**
@@ -24,10 +27,9 @@ export function buildStepTimes(osmd: any, song: ParsedSong): StepTiming[] {
   const cursor = osmd?.cursor;
   if (!cursor) return [];
 
-  // Build per-MIDI sorted note lists {time, endTime} for matching
   const notesByMidi = new Map<
     number,
-    { time: number; endTime: number }[]
+    { time: number; duration: number }[]
   >();
   for (const track of song.tracks) {
     for (const note of track.notes) {
@@ -36,7 +38,7 @@ export function buildStepTimes(osmd: any, song: ParsedSong): StepTiming[] {
         list = [];
         notesByMidi.set(note.midi, list);
       }
-      list.push({ time: note.time, endTime: note.time + note.duration });
+      list.push({ time: note.time, duration: note.duration });
     }
   }
   for (const list of notesByMidi.values()) {
@@ -53,7 +55,8 @@ export function buildStepTimes(osmd: any, song: ParsedSong): StepTiming[] {
   while (!it.EndReached) {
     const voices = it.CurrentVoiceEntries || [];
     let bestTime = Infinity;
-    let bestEndTime = 0;
+    let maxEndTime = 0;
+    const endTimeByMidi = new Map<number, number>();
 
     for (const ve of voices) {
       for (const note of ve.Notes) {
@@ -73,21 +76,25 @@ export function buildStepTimes(osmd: any, song: ParsedSong): StepTiming[] {
             lo = mid + 1;
           }
         }
-        if (found >= 0 && list[found].time < bestTime) {
-          bestTime = list[found].time;
-        }
-        // Track the longest endTime across all voices at this step
-        if (found >= 0 && list[found].endTime > bestEndTime) {
-          bestEndTime = list[found].endTime;
+        if (found >= 0) {
+          const noteTime = list[found].time;
+          const noteEndTime = noteTime + list[found].duration;
+          if (noteTime < bestTime) bestTime = noteTime;
+          if (noteEndTime > maxEndTime) maxEndTime = noteEndTime;
+          endTimeByMidi.set(midi, noteEndTime);
         }
       }
     }
 
     if (bestTime < Infinity) {
-      steps.push({ time: bestTime, endTime: bestEndTime });
+      steps.push({ time: bestTime, endTimeByMidi, maxEndTime });
       lastTime = bestTime;
     } else {
-      steps.push({ time: lastTime + 0.01, endTime: lastTime + 0.02 });
+      steps.push({
+        time: lastTime + 0.01,
+        endTimeByMidi: new Map(),
+        maxEndTime: lastTime + 0.02,
+      });
     }
 
     cursor.next();
@@ -261,7 +268,8 @@ export function SheetMusicPanelOSMD({
         currentTime >= steps[cursorPos].time &&
         cursorPos !== lastHighlightedPos
       ) {
-        hl.addFromCursor(osmd, steps[cursorPos].endTime);
+        const step = steps[cursorPos];
+        hl.addFromCursor(osmd, step.endTimeByMidi, step.maxEndTime);
         lastHighlightedPos = cursorPos;
       }
     }, 50);
