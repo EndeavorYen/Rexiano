@@ -46,6 +46,36 @@ describe("findActiveEntry", () => {
   it("returns null for empty time map", () => {
     expect(findActiveEntry([], 1.0)).toBeNull();
   });
+
+  it("handles rest steps with proper duration", () => {
+    // Step 0: quarter note, step 1: half rest, step 2: quarter note
+    const mapWithRest: CursorTimeEntry[] = [
+      { time: 0, endTime: 0.5, stepIndex: 0, measureIndex: 0 },
+      { time: 0.5, endTime: 1.5, stepIndex: 1, measureIndex: 0 }, // half rest (1s)
+      { time: 1.5, endTime: 2.0, stepIndex: 2, measureIndex: 0 },
+    ];
+    // During the rest, the rest step should be active
+    expect(findActiveEntry(mapWithRest, 0.7)?.stepIndex).toBe(1);
+    expect(findActiveEntry(mapWithRest, 1.4)?.stepIndex).toBe(1);
+  });
+
+  it("handles overlapping entries from polyphonic music", () => {
+    // Treble whole note (2s) overlaps with bass note starting at 1s
+    const polyphonic: CursorTimeEntry[] = [
+      { time: 0, endTime: 2.0, stepIndex: 0, measureIndex: 0 }, // whole note
+      { time: 1.0, endTime: 1.5, stepIndex: 1, measureIndex: 0 }, // bass note
+    ];
+    // At t=0.5, only step 0 has started → step 0
+    expect(findActiveEntry(polyphonic, 0.5)?.stepIndex).toBe(0);
+    // At t=1.2, step 1 is most recent and still active → step 1
+    expect(findActiveEntry(polyphonic, 1.2)?.stepIndex).toBe(1);
+    // At t=1.6, step 1 ended but step 0 still active → falls back to step 0
+    expect(findActiveEntry(polyphonic, 1.6)?.stepIndex).toBe(0);
+    // At t=1.9, step 0 still active
+    expect(findActiveEntry(polyphonic, 1.9)?.stepIndex).toBe(0);
+    // At t=2.0, step 0 ended → null
+    expect(findActiveEntry(polyphonic, 2.0)).toBeNull();
+  });
 });
 
 describe("clearHighlights", () => {

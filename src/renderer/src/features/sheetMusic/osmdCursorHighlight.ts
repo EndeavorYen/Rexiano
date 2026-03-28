@@ -56,21 +56,21 @@ export function buildTimeMap(osmd: any): CursorTimeEntry[] {
     // Convert: realValue * 4 = beats, * 60/bpm = seconds
     const time = ts.RealValue * 4 * 60 / bpm;
 
-    // Find the longest note duration at this step
+    // Find the longest note/rest duration at this step.
+    // Include rests so that rest steps have their proper time span
+    // (otherwise rests get endTime = time, making them invisible).
     let maxDuration = 0;
     const voices = it.CurrentVoiceEntries || [];
     for (const ve of voices) {
       for (const note of ve.Notes) {
-        if (!note.isRest()) {
-          const dur = note.Length.RealValue * 4 * 60 / bpm;
-          if (dur > maxDuration) maxDuration = dur;
-        }
+        const dur = note.Length.RealValue * 4 * 60 / bpm;
+        if (dur > maxDuration) maxDuration = dur;
       }
     }
 
     entries.push({
       time,
-      endTime: time + maxDuration, // Will be refined below
+      endTime: time + maxDuration,
       stepIndex,
       measureIndex: it.CurrentMeasureIndex,
     });
@@ -79,14 +79,11 @@ export function buildTimeMap(osmd: any): CursorTimeEntry[] {
     it.moveToNext();
   }
 
-  // Refine endTime: for each entry, endTime = min(time + duration, nextEntry.time)
-  // This prevents overlapping highlights while respecting note duration
-  for (let i = 0; i < entries.length; i++) {
-    if (i < entries.length - 1) {
-      // Don't extend past the next step's start time
-      entries[i].endTime = Math.min(entries[i].endTime, entries[i + 1].time);
-    }
-  }
+  // Do NOT cap endTime to the next step's start time.
+  // In polyphonic music, a whole note in treble may sustain while bass
+  // has new notes — capping would truncate the treble highlight prematurely.
+  // findActiveEntry uses the last entry with time ≤ audioTime, so overlapping
+  // entries naturally resolve to the most recent onset.
 
   // Reset cursor to start for later use
   cursor.reset();
@@ -131,10 +128,13 @@ export function findActiveEntry(
 
   if (result < 0) return null;
 
-  const entry = timeMap[result];
-  // Check if audioTime is within the entry's active duration
-  if (audioTime < entry.endTime) {
-    return entry;
+  // Walk backwards from the most recent onset to find an entry that's
+  // still active. This handles polyphonic music where a long note in one
+  // voice may sustain past shorter notes in another voice.
+  for (let i = result; i >= 0; i--) {
+    if (timeMap[i].time <= audioTime && audioTime < timeMap[i].endTime) {
+      return timeMap[i];
+    }
   }
 
   return null;
