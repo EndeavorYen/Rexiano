@@ -130,12 +130,12 @@ export function getScrollTarget(
 }
 
 /**
- * Compute a stable 8-measure display window with boundary preloading.
+ * Compute a stable display window with clean page flips.
  *
- * Example (1-based for readability, DISPLAY_MEASURE_COUNT = 8):
- * - current 1~7: 1,2,3,4,5,6,7,8
- * - current 8:   9,10,11,12,13,14,15,8
- * - current 9+:  9,10,11,12,13,14,15,16
+ * Example (1-based for readability, displayCount = 4):
+ * - current 1~4:  1,2,3,4
+ * - current 5~8:  5,6,7,8
+ * - current 9~12: 9,10,11,12
  */
 export function getMeasureWindow(
   currentMeasureIndex: number,
@@ -150,19 +150,6 @@ export function getMeasureWindow(
     Math.min(Math.floor(currentMeasureIndex), totalMeasures - 1),
   );
   const groupStart = Math.floor(current / count) * count;
-  const positionInGroup = current - groupStart;
-
-  if (positionInGroup === count - 1 && groupStart + count < totalMeasures) {
-    // Show current measure first, then upcoming measures from the next group
-    const nextGroupStart = groupStart + count;
-    const window = [current];
-    for (let offset = 0; offset < count - 1; offset++) {
-      const index = nextGroupStart + offset;
-      if (index >= totalMeasures) break;
-      window.push(index);
-    }
-    return window.slice(0, count);
-  }
 
   const window: number[] = [];
   for (let i = groupStart; i < groupStart + count && i < totalMeasures; i++) {

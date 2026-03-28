@@ -402,8 +402,28 @@ export function convertToMusicXML(
     reassignClefsForSingleTrack(quantizedRaw);
   }
 
+  // --- Step 2b: Deduplicate notes with same pitch, start tick, and clef ---
+  // Multi-track MIDI files may contain the same note in both tracks (e.g.
+  // the opening note of Moonlight Sonata appearing in both RH and LH tracks).
+  // Keep the longest duration when duplicates are found.
+  const deduped: QuantizedNote[] = [];
+  const seen = new Map<string, number>(); // key → index in deduped[]
+  for (const note of quantizedRaw) {
+    const key = `${note.midi}:${note.startTick}:${note.clef}`;
+    const existing = seen.get(key);
+    if (existing !== undefined) {
+      // Keep the longer duration
+      if (note.endTick > deduped[existing].endTick) {
+        deduped[existing] = note;
+      }
+    } else {
+      seen.set(key, deduped.length);
+      deduped.push(note);
+    }
+  }
+
   // --- Step 3: Clamp overlapping durations ---
-  const quantized = clampOverlappingDurations(quantizedRaw, minTick);
+  const quantized = clampOverlappingDurations(deduped, minTick);
 
   // --- Step 4: Build measure boundaries ---
   const maxTick = quantized.reduce((m, n) => Math.max(m, n.endTick), 0);

@@ -41,7 +41,7 @@ export function SongLibrary({
   onOpenFile,
   onBack,
 }: SongLibraryProps): React.JSX.Element {
-  const { t } = useTranslation();
+  const { t, lang } = useTranslation();
 
   // R3-02 fix: removed useMemo — cheap computation, and stale greeting across
   // time-of-day boundaries was a UX issue for long sessions. Re-evaluates every render.
@@ -139,6 +139,8 @@ export function SongLibrary({
       loadingKey: string;
       timerRef: React.MutableRefObject<ReturnType<typeof setTimeout> | null>;
       label: string;
+      /** Human-readable title to display instead of the raw filename */
+      displayName?: string;
     }) => {
       if (loadingRef.current) return;
       loadingRef.current = true;
@@ -165,11 +167,12 @@ export function SongLibrary({
           }, ERROR_AUTO_DISMISS_MS);
           return;
         }
-        loadFromMidiData(result.fileName, result.data);
+        const parsed = loadFromMidiData(result.fileName, result.data);
+        if (opts.displayName) parsed.displayName = opts.displayName;
         reset();
         void window.api?.saveRecentFile({
           path: opts.recentEntry.path,
-          name: opts.recentEntry.name ?? result.fileName,
+          name: opts.displayName ?? opts.recentEntry.name ?? result.fileName,
           timestamp: Date.now(),
         });
         refreshRecents();
@@ -192,6 +195,14 @@ export function SongLibrary({
   const handleSelectSong = useCallback(
     (songId: string) => {
       if (!window.api?.loadBuiltinSong) return;
+      const meta = useSongLibraryStore
+        .getState()
+        .songs.find((s) => s.id === songId);
+      const displayName = meta
+        ? lang === "zh-TW"
+          ? (meta.titleZh ?? meta.title)
+          : meta.title
+        : undefined;
       void loadSongViaIpc({
         ipcCall: () => window.api!.loadBuiltinSong(songId),
         recentEntry: { path: `builtin:${songId}` },
@@ -200,9 +211,10 @@ export function SongLibrary({
         loadingKey: songId,
         timerRef: builtinErrorTimer,
         label: "loadBuiltinSong",
+        displayName,
       });
     },
-    [loadSongViaIpc],
+    [loadSongViaIpc, lang],
   );
 
   const visibleRecents = recentFiles.slice(0, 5);
@@ -210,6 +222,18 @@ export function SongLibrary({
   const handleSelectRecent = useCallback(
     (file: RecentFile) => {
       if (!window.api) return;
+      let displayName: string | undefined;
+      if (file.path.startsWith("builtin:")) {
+        const songId = file.path.slice("builtin:".length);
+        const meta = useSongLibraryStore
+          .getState()
+          .songs.find((s) => s.id === songId);
+        displayName = meta
+          ? lang === "zh-TW"
+            ? (meta.titleZh ?? meta.title)
+            : meta.title
+          : file.name;
+      }
       void loadSongViaIpc({
         ipcCall: () =>
           file.path.startsWith("builtin:")
@@ -223,14 +247,15 @@ export function SongLibrary({
         label: file.path.startsWith("builtin:")
           ? "loadBuiltinSong"
           : "loadMidiPath",
+        displayName,
       });
     },
-    [loadSongViaIpc],
+    [loadSongViaIpc, lang],
   );
 
   return (
     <div
-      className="flex-1 min-h-0 app-shell overflow-y-auto overflow-x-hidden"
+      className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden"
       data-testid="song-library-view"
     >
       <div className="mx-auto w-full max-w-6xl px-3 py-4 sm:px-6 sm:py-6 pb-24">

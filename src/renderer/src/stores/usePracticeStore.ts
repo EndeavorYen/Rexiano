@@ -56,7 +56,7 @@ export const usePracticeStore = create<PracticeState>()((set) => ({
   activeTracks: new Set<number>(),
   score: { ...initialScore },
   noteResults: new Map<string, NoteResult>(),
-  displayMode: "falling",
+  displayMode: "sheet",
   isWaiting: false,
   _timingDeltaCount: 0,
 

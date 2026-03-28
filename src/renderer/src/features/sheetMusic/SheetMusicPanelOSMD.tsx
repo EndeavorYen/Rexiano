@@ -1,11 +1,30 @@
-import React, { useRef, useEffect, useMemo } from "react";
+import React, { useRef, useEffect, useMemo, useState, useCallback } from "react";
 import type { ParsedSong } from "@renderer/engines/midi/types";
 import type { DisplayMode } from "./types";
 import { convertToMusicXML } from "@renderer/engines/notation/MidiToMusicXML";
+import { usePlaybackStore } from "../../stores/usePlaybackStore";
+import { getMeasureWindow } from "./CursorSync";
+
+/** Default number of measures to display per page (one system line). */
+const MEASURES_PER_PAGE = 4;
 
 interface SheetMusicPanelOSMDProps {
   song: ParsedSong | null;
   mode: DisplayMode;
+}
+
+/**
+ * Estimate the current 0-based measure index from playback time.
+ * Uses the first tempo and time signature — sufficient for page-flip accuracy.
+ */
+function estimateMeasureIndex(song: ParsedSong, time: number): number {
+  const bpm = song.tempos[0]?.bpm ?? 120;
+  const ts = song.timeSignatures[0];
+  const num = ts?.numerator ?? 4;
+  const den = ts?.denominator ?? 4;
+  const secPerMeasure = (60 / bpm) * num * (4 / den);
+  if (secPerMeasure <= 0) return 0;
+  return Math.floor(Math.max(0, time) / secPerMeasure);
 }
 
 export function SheetMusicPanelOSMD({
@@ -15,6 +34,26 @@ export function SheetMusicPanelOSMD({
   const containerRef = useRef<HTMLDivElement>(null);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const osmdRef = useRef<any>(null);
+  const loadedRef = useRef(false);
+  const [totalMeasures, setTotalMeasures] = useState(0);
+
+  // Subscribe to playback, but only re-render when the measure index changes
+  const currentMeasure = usePlaybackStore(
+    useCallback(
+      (s: { currentTime: number }) =>
+        song ? estimateMeasureIndex(song, s.currentTime) : 0,
+      [song],
+    ),
+  );
+
+  const measureWindow = useMemo(
+    () =>
+      totalMeasures > 0
+        ? getMeasureWindow(currentMeasure, totalMeasures, MEASURES_PER_PAGE)
+        : [],
+    [currentMeasure, totalMeasures],
+  );
+  const windowKey = measureWindow.join(",");
 
   const musicXml = useMemo(() => {
     if (!song) return null;
@@ -46,14 +85,14 @@ export function SheetMusicPanelOSMD({
     );
   }, [song]);
 
-  // Re-run when musicXml changes OR when mode transitions away from "falling"
-  // (since the container div is conditionally rendered based on mode).
+  // Effect 1: Load MusicXML into OSMD (no render — handled by Effect 2)
   useEffect(() => {
     if (mode === "falling") return;
     if (!containerRef.current || !musicXml) return;
 
     const container = containerRef.current;
     let cancelled = false;
+    loadedRef.current = false;
 
     import("opensheetmusicdisplay")
       .then(({ OpenSheetMusicDisplay }) => {
@@ -65,13 +104,19 @@ export function SheetMusicPanelOSMD({
             drawTitle: false,
             drawComposer: false,
             drawPartNames: false,
+            autoBeam: true,
           });
+          // Don't stretch partial lines — prevents over-wide measure spacing
+          osmdRef.current.EngravingRules.StretchLastSystemLine = false;
         }
 
         return osmdRef.current.load(musicXml).then(() => {
-          if (!cancelled) {
-            osmdRef.current?.render();
-          }
+          if (cancelled) return;
+          loadedRef.current = true;
+          const total =
+            osmdRef.current?.sheet?.SourceMeasures?.length ?? 0;
+          setTotalMeasures(total);
+          // Effect 2 will handle the actual render with measure range
         });
       })
       .catch((err: unknown) => {
@@ -80,18 +125,28 @@ export function SheetMusicPanelOSMD({
 
     return () => {
       cancelled = true;
-      // Clear the OSMD instance so that if the container div is recreated
-      // (e.g. mode toggles away and back), we construct a fresh instance
-      // bound to the new DOM node instead of rendering into a detached one.
       if (osmdRef.current) {
         osmdRef.current.clear();
         osmdRef.current = null;
       }
-      // Remove any residual SVG content synchronously so stale sheet music
-      // is not visible while the next async import resolves.
       container.textContent = "";
+      loadedRef.current = false;
+      setTotalMeasures(0);
     };
   }, [musicXml, mode]);
+
+  // Effect 2: Render with the current measure range (page flips only)
+  useEffect(() => {
+    if (!loadedRef.current || !osmdRef.current || mode === "falling") return;
+
+    if (measureWindow.length > 0) {
+      osmdRef.current.setOptions({
+        drawFromMeasureNumber: measureWindow[0] + 1,
+        drawUpToMeasureNumber: measureWindow[measureWindow.length - 1] + 1,
+      });
+    }
+    osmdRef.current.render();
+  }, [windowKey, totalMeasures, mode]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Re-render OSMD on container resize (since autoResize is disabled to
   // avoid leaking internal resize observers across OSMD instance lifecycles).
@@ -99,7 +154,7 @@ export function SheetMusicPanelOSMD({
     if (mode === "falling" || !containerRef.current) return;
     const el = containerRef.current;
     const ro = new ResizeObserver(() => {
-      if (osmdRef.current) {
+      if (osmdRef.current && loadedRef.current) {
         osmdRef.current.render();
       }
     });
@@ -114,10 +169,10 @@ export function SheetMusicPanelOSMD({
     <div
       ref={containerRef}
       data-testid="sheet-music-panel"
-      className="sheet-music-osmd w-full overflow-y-auto"
+      className="sheet-music-osmd w-full"
       style={{
-        // In split mode, fill the flex-constrained parent exactly and scroll
-        // internally. In sheet mode (full height), use 200px minimum.
+        // In split mode, fill the flex-constrained parent exactly.
+        // In sheet mode (full height), use 200px minimum.
         ...(mode === "split"
           ? { height: "100%", minHeight: 0 }
           : { minHeight: mode === "sheet" ? 200 : 0 }),

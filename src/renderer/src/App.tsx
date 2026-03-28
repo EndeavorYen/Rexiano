@@ -125,6 +125,23 @@ function App(): React.JSX.Element {
     void loadProgressSessions();
   }, [isProgressLoaded, loadProgressSessions]);
 
+  // Guard against unintended scroll on .app-shell — ambient pseudo-elements
+  // extend past the viewport (right: -12vw), inflating scrollWidth. Browser
+  // auto-scroll (focus-into-view) can set scrollLeft, shifting the entire UI.
+  // overflow:hidden doesn't prevent this; we reset on any scroll event.
+  useEffect(() => {
+    const shell = document.querySelector(".app-shell");
+    if (!shell) return;
+    const resetScroll = (): void => {
+      if (shell.scrollLeft !== 0 || shell.scrollTop !== 0) {
+        shell.scrollLeft = 0;
+        shell.scrollTop = 0;
+      }
+    };
+    shell.addEventListener("scroll", resetScroll, { passive: true });
+    return () => shell.removeEventListener("scroll", resetScroll);
+  }, []);
+
   // Sync persisted volume from settings (0-100) → playback store (0-1) on mount.
   // If the user was muted when the app last closed, honour that on startup.
   useEffect(() => {
@@ -700,6 +717,7 @@ function App(): React.JSX.Element {
   useEffect(() => {
     const unsub = usePlaybackStore.subscribe((state, prev) => {
       if (!state.isPlaying && prev.isPlaying && state.songEndedNaturally) {
+        setShowPlaybackDrawer(false);
         setShowSongComplete(true);
       }
     });
@@ -853,7 +871,7 @@ function App(): React.JSX.Element {
 
   // Load a MIDI file directly by path (used by recent files in MainMenu)
   const handleLoadMidiPath = useCallback(
-    async (filePath: string): Promise<void> => {
+    async (filePath: string, displayName?: string): Promise<void> => {
       if (!window.api) return;
       try {
         // R1-01 fix: wrap IPC calls with timeout to prevent indefinite hangs
@@ -870,6 +888,7 @@ function App(): React.JSX.Element {
             );
         if (result) {
           const parsed = parseMidiFile(result.fileName, result.data);
+          if (displayName) parsed.displayName = displayName;
           loadSong(parsed);
           reset();
         }
@@ -1087,7 +1106,7 @@ function App(): React.JSX.Element {
             <MainMenu
               onStartPractice={() => applyRoute("library")}
               onOpenSettings={() => setShowMenuSettings(true)}
-              onSelectRecent={(file) => void handleLoadMidiPath(file.path)}
+              onSelectRecent={(file) => void handleLoadMidiPath(file.path, file.name)}
             />
             {showMenuSettings && (
               <SettingsPanel inline onClose={() => setShowMenuSettings(false)} />
@@ -1097,7 +1116,7 @@ function App(): React.JSX.Element {
 
         {/* View: Song Library */}
         {!song && view === "library" && (
-          <div key="library" className="flex-1 flex flex-col animate-page-enter">
+          <div key="library" className="flex-1 min-h-0 flex flex-col animate-page-enter">
             <SongLibrary
               onOpenFile={handleOpenFile}
               onBack={() => applyRoute("menu")}
@@ -1109,7 +1128,7 @@ function App(): React.JSX.Element {
       {song && (
         <div
           key="playback"
-          className="flex-1 min-h-0 flex flex-col animate-page-enter overflow-y-auto overflow-x-hidden px-3 pb-3 pt-3"
+          className="flex-1 min-h-0 flex flex-col animate-page-enter overflow-hidden px-3 pb-3 pt-3"
           data-testid="playback-view"
         >
           <div
@@ -1137,7 +1156,7 @@ function App(): React.JSX.Element {
                   className="min-w-0 max-w-[min(46vw,420px)] truncate text-[1.02rem] leading-tight font-semibold font-body sm:max-w-[min(40vw,420px)]"
                   data-testid="playback-song-title"
                 >
-                  {song.fileName}
+                  {song.displayName ?? song.fileName}
                 </h2>
 
                 <div
