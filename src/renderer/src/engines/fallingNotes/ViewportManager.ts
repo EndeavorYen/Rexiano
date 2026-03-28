@@ -17,7 +17,10 @@ export function durationToHeight(duration: number, pps: number): number {
 }
 
 export function getVisibleTimeRange(vp: Viewport): [number, number] {
-  const windowSeconds = vp.height / vp.pps;
+  // Minimum 1s window so activeNotes still works when the canvas is
+  // hidden (height=0 in sheet-only mode). Without this, NoteRenderer
+  // produces no active notes → keyboard + OSMD highlights go dark.
+  const windowSeconds = Math.max(vp.height / vp.pps, 1);
   const startTime = vp.currentTime;
   const endTime = vp.currentTime + windowSeconds;
   return [startTime, endTime];
