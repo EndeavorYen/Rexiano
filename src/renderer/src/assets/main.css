@@ -1351,3 +1351,11 @@ input[type="range"]::-webkit-slider-runnable-track {
   border-radius: 999px;
   background: color-mix(in srgb, var(--color-surface-alt) 80%, var(--color-border));
 }
+
+/* ── OSMD note highlighting during playback ── */
+.osmd-note-active {
+  fill: var(--color-accent) !important;
+  filter: drop-shadow(0 0 3px var(--color-accent))
+          drop-shadow(0 0 6px var(--color-accent));
+  transition: fill 80ms ease-out, filter 80ms ease-out;
+}

@@ -10,6 +10,11 @@ import type { DisplayMode } from "./types";
 import { convertToMusicXML } from "@renderer/engines/notation/MidiToMusicXML";
 import { usePlaybackStore } from "../../stores/usePlaybackStore";
 import { getMeasureWindow } from "./CursorSync";
+import {
+  highlightActiveNotes,
+  clearHighlights,
+  estimateBeatPosition,
+} from "./osmdNoteHighlight";
 
 /** Default number of measures to display per page (one system line). */
 const MEASURES_PER_PAGE = 4;
@@ -166,6 +171,46 @@ export function SheetMusicPanelOSMD({
     ro.observe(el);
     return () => ro.disconnect();
   }, [mode]);
+
+  // Effect 3: Highlight active notes during playback
+  useEffect(() => {
+    if (mode === "falling" || !containerRef.current || !song) return;
+
+    const container = containerRef.current;
+
+    const unsubscribe = usePlaybackStore.subscribe((state) => {
+      if (!osmdRef.current || !loadedRef.current) return;
+      if (!state.isPlaying) {
+        clearHighlights(container);
+        return;
+      }
+
+      const bpm = song.tempos[0]?.bpm ?? 120;
+      const ts = song.timeSignatures[0];
+      const num = ts?.numerator ?? 4;
+      const den = ts?.denominator ?? 4;
+      const { measureIndex, beat } = estimateBeatPosition(
+        state.currentTime,
+        bpm,
+        num,
+        den,
+      );
+
+      if (measureWindow.length > 0) {
+        const localIndex = measureIndex - measureWindow[0];
+        if (localIndex >= 0 && localIndex < measureWindow.length) {
+          highlightActiveNotes(osmdRef.current, localIndex, beat, container);
+        } else {
+          clearHighlights(container);
+        }
+      }
+    });
+
+    return () => {
+      unsubscribe();
+      clearHighlights(container);
+    };
+  }, [song, mode, measureWindow]);
 
   // Always render the container div so containerRef stays attached across
   // mode transitions. Returning null would detach the ref, causing the
