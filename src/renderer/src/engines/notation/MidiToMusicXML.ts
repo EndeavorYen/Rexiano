@@ -485,6 +485,7 @@ export function convertToMusicXML(
     measureNotes,
     ticksPerQuarter,
     keySig,
+    tempos,
   );
 }
 
@@ -497,6 +498,7 @@ function buildMusicXML(
   measureNotes: MeasureNote[][],
   ticksPerQuarter: number,
   keySig: number,
+  tempos: TempoEvent[] = [],
 ): string {
   let xml = '<?xml version="1.0" encoding="UTF-8"?>\n';
   xml +=
@@ -507,8 +509,15 @@ function buildMusicXML(
   xml += "</part-list>\n";
   xml += '<part id="P1">\n';
 
+  // Convert tempo events to ticks and find which measure each belongs to
+  const tempoTicks = tempos.map((t) => ({
+    tick: secondsToAbsoluteTicks(t.time, tempos, ticksPerQuarter),
+    bpm: t.bpm,
+  }));
+
   let prevNumerator = -1;
   let prevDenominator = -1;
+  let lastEmittedBpm = -1;
 
   for (let m = 0; m < boundaries.length; m++) {
     const boundary = boundaries[m];
@@ -539,6 +548,23 @@ function buildMusicXML(
 
     prevNumerator = boundary.numerator;
     prevDenominator = boundary.denominator;
+
+    // Emit <sound tempo> for tempo changes in this measure.
+    // OSMD reads this to set SourceMeasures[].TempoInBPM correctly.
+    for (const t of tempoTicks) {
+      if (
+        t.tick >= boundary.startTick &&
+        t.tick < boundary.endTick &&
+        Math.abs(t.bpm - lastEmittedBpm) > 0.1
+      ) {
+        xml += `<direction placement="above"><direction-type><words>`;
+        xml += `${Math.round(t.bpm)} BPM`;
+        xml += `</words></direction-type>`;
+        xml += `<sound tempo="${t.bpm}"/>`;
+        xml += `</direction>`;
+        lastEmittedBpm = t.bpm;
+      }
+    }
 
     // Split notes by clef
     const trebleNotes = notes.filter((n) => n.clef === "treble");
