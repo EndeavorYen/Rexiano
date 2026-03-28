@@ -2,25 +2,29 @@
  * OSMD Cursor-based note highlighting engine.
  *
  * Architecture:
- *   1. After OSMD renders, `buildTimeMap()` iterates the cursor to build
- *      a sorted array of { time, endTime, stepIndex } entries.
- *   2. During playback, `tick(audioTime)` binary-searches the time map,
- *      steps the cursor to the correct position, and applies CSS highlights
- *      to all GraphicalNotes under the cursor.
- *   3. Notes stay highlighted for their full duration (time → endTime).
- *   4. Page flips are handled by OSMD's `followCursor` or the existing
- *      measureWindow logic in SheetMusicPanelOSMD.
+ *   1. After OSMD renders, `buildTimeMap()` iterates the cursor and matches
+ *      each step to the closest ParsedNote by MIDI number + time proximity.
+ *      This gives us song-time (seconds) that is on the same clock as
+ *      AudioScheduler.getCurrentTime().
+ *   2. During playback, `findActiveEntry(audioTime)` binary-searches the
+ *      time map to find the current highlight target.
+ *   3. `highlightAtStep()` navigates the cursor and applies CSS classes
+ *      to GNotesUnderCursor() SVG elements.
+ *   4. Notes stay highlighted for their full duration (time → endTime).
  *
- * This replaces the old osmdNoteHighlight.ts which manually walked
- * GraphicSheet.MeasureList and couldn't handle page flips or note durations.
+ * Why not use OSMD's own RealValue→seconds formula?
+ *   `timestamp.RealValue * 4 * 60 / bpm` assumes fixed BPM and introduces
+ *   drift vs AudioScheduler's actual song time. Matching to ParsedNote.time
+ *   guarantees the highlight clock matches the audio clock exactly.
  */
+import type { ParsedSong, ParsedNote } from "@renderer/engines/midi/types";
 
 const ACTIVE_CLASS = "osmd-note-active";
 
 export interface CursorTimeEntry {
   /** Playback time in seconds when this cursor step starts */
   time: number;
-  /** Playback time in seconds when this cursor step ends (= next step's time, or time + duration) */
+  /** Playback time in seconds when this cursor step ends */
   endTime: number;
   /** The cursor step index (0-based) — used to navigate cursor.next() */
   stepIndex: number;
@@ -29,19 +33,79 @@ export interface CursorTimeEntry {
 }
 
 /**
- * Build a time map by iterating through the entire OSMD cursor.
- * Must be called after osmd.render().
+ * Build a sorted list of song notes for time matching.
+ * Notes are sorted by time, then midi.
+ */
+function buildNoteIndex(song: ParsedSong): ParsedNote[] {
+  const all: ParsedNote[] = [];
+  for (const track of song.tracks) {
+    for (const note of track.notes) {
+      all.push(note);
+    }
+  }
+  all.sort((a, b) => a.time - b.time || a.midi - b.midi);
+  return all;
+}
+
+/**
+ * Find the closest ParsedNote matching a given MIDI number near a beat-estimated time.
+ * Returns the note's time and duration, or null if no match.
+ */
+function matchNote(
+  noteIndex: ParsedNote[],
+  midi: number,
+  estimatedTime: number,
+  tolerance: number,
+): { time: number; duration: number } | null {
+  // Binary search for approximate position
+  let lo = 0;
+  let hi = noteIndex.length - 1;
+  while (lo <= hi) {
+    const mid = (lo + hi) >>> 1;
+    if (noteIndex[mid].time < estimatedTime - tolerance) {
+      lo = mid + 1;
+    } else {
+      hi = mid - 1;
+    }
+  }
+
+  // Scan forward from lo to find best match
+  let bestDist = Infinity;
+  let bestNote: ParsedNote | null = null;
+  for (let i = lo; i < noteIndex.length; i++) {
+    const n = noteIndex[i];
+    if (n.time > estimatedTime + tolerance) break;
+    if (n.midi === midi) {
+      const dist = Math.abs(n.time - estimatedTime);
+      if (dist < bestDist) {
+        bestDist = dist;
+        bestNote = n;
+      }
+    }
+  }
+
+  return bestNote ? { time: bestNote.time, duration: bestNote.duration } : null;
+}
+
+/**
+ * Build a time map by iterating through the OSMD cursor and matching
+ * each step to ParsedNote times for accurate audio synchronization.
  *
+ * @param osmd The OSMD instance (after render)
+ * @param song The parsed song (source of truth for note times)
  * @returns Sorted array of cursor step entries with timing info.
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function buildTimeMap(osmd: any): CursorTimeEntry[] {
+export function buildTimeMap(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  osmd: any,
+  song: ParsedSong | null,
+): CursorTimeEntry[] {
   const cursor = osmd?.cursor;
-  if (!cursor) return [];
+  if (!cursor || !song) return [];
 
-  // Get BPM from first source measure
+  const noteIndex = buildNoteIndex(song);
   const sourceMeasures = osmd.Sheet?.SourceMeasures;
-  const bpm = sourceMeasures?.[0]?.TempoInBPM || 120;
+  const fallbackBpm = sourceMeasures?.[0]?.TempoInBPM || 120;
 
   cursor.reset();
   const it = cursor.Iterator;
@@ -52,25 +116,42 @@ export function buildTimeMap(osmd: any): CursorTimeEntry[] {
 
   while (!it.EndReached) {
     const ts = it.currentTimeStamp;
-    // RealValue is relative to a whole note (1.0 = whole note)
-    // Convert: realValue * 4 = beats, * 60/bpm = seconds
-    const time = ts.RealValue * 4 * 60 / bpm;
+    // Estimated time using fixed BPM (fallback if no note match)
+    const estimatedTime = ts.RealValue * 4 * 60 / fallbackBpm;
 
-    // Find the longest note/rest duration at this step.
-    // Include rests so that rest steps have their proper time span
-    // (otherwise rests get endTime = time, making them invisible).
-    let maxDuration = 0;
+    // Collect all notes at this cursor step
     const voices = it.CurrentVoiceEntries || [];
+    let bestTime = estimatedTime;
+    let maxDuration = 0;
+    let matched = false;
+
     for (const ve of voices) {
       for (const note of ve.Notes) {
-        const dur = note.Length.RealValue * 4 * 60 / bpm;
+        const dur = note.Length.RealValue * 4 * 60 / fallbackBpm;
         if (dur > maxDuration) maxDuration = dur;
+
+        if (!note.isRest()) {
+          // halfTone is MIDI-relative (middle C = 60 in OSMD when +12 offset)
+          const midi = note.halfTone + 12;
+          const match = matchNote(noteIndex, midi, estimatedTime, 0.5);
+          if (match) {
+            bestTime = match.time;
+            if (match.duration > maxDuration) maxDuration = match.duration;
+            matched = true;
+          }
+        }
       }
     }
 
+    // For rest-only steps without a note match, use estimated time
+    // but ensure duration is at least the rest's rhythmic value
+    if (!matched && maxDuration === 0) {
+      maxDuration = 0.25; // minimum quarter-beat fallback
+    }
+
     entries.push({
-      time,
-      endTime: time + maxDuration,
+      time: bestTime,
+      endTime: bestTime + maxDuration,
       stepIndex,
       measureIndex: it.CurrentMeasureIndex,
     });
@@ -79,15 +160,7 @@ export function buildTimeMap(osmd: any): CursorTimeEntry[] {
     it.moveToNext();
   }
 
-  // Do NOT cap endTime to the next step's start time.
-  // In polyphonic music, a whole note in treble may sustain while bass
-  // has new notes — capping would truncate the treble highlight prematurely.
-  // findActiveEntry uses the last entry with time ≤ audioTime, so overlapping
-  // entries naturally resolve to the most recent onset.
-
-  // Reset cursor to start for later use
   cursor.reset();
-
   return entries;
 }
 
@@ -101,9 +174,7 @@ export function clearHighlights(container: HTMLElement): void {
 
 /**
  * Find the time map entry that should be highlighted at the given audio time.
- * Uses binary search for O(log n) performance.
- *
- * Returns the entry where time ≤ audioTime < endTime, or null.
+ * Uses binary search + backward walk for polyphonic overlap handling.
  */
 export function findActiveEntry(
   timeMap: CursorTimeEntry[],
@@ -111,7 +182,6 @@ export function findActiveEntry(
 ): CursorTimeEntry | null {
   if (timeMap.length === 0) return null;
 
-  // Binary search for the last entry with time ≤ audioTime
   let lo = 0;
   let hi = timeMap.length - 1;
   let result = -1;
@@ -128,9 +198,7 @@ export function findActiveEntry(
 
   if (result < 0) return null;
 
-  // Walk backwards from the most recent onset to find an entry that's
-  // still active. This handles polyphonic music where a long note in one
-  // voice may sustain past shorter notes in another voice.
+  // Walk backwards to find a still-active entry (handles polyphonic overlap)
   for (let i = result; i >= 0; i--) {
     if (timeMap[i].time <= audioTime && audioTime < timeMap[i].endTime) {
       return timeMap[i];
@@ -141,14 +209,7 @@ export function findActiveEntry(
 }
 
 /**
- * Navigate the OSMD cursor to a specific step index and highlight
- * all notes under the cursor using CSS classes.
- *
- * @param osmd       The OSMD instance
- * @param entry      The time map entry to highlight
- * @param container  The DOM container for clearing old highlights
- * @param currentStep  Ref to the current cursor step (for efficient navigation)
- * @returns The new current step index
+ * Navigate the OSMD cursor to a specific step and highlight notes via CSS.
  */
 export function highlightAtStep(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -162,8 +223,6 @@ export function highlightAtStep(
   const cursor = osmd?.cursor;
   if (!cursor) return currentStep;
 
-  // Navigate cursor to the target step
-  // If we need to go forward, step forward; if backward, reset and step
   const target = entry.stepIndex;
   if (target < currentStep) {
     cursor.reset();
@@ -176,7 +235,6 @@ export function highlightAtStep(
     }
   }
 
-  // Get all graphical notes at this cursor position
   const gNotes = cursor.GNotesUnderCursor() || [];
   for (const gNote of gNotes) {
     const svgEl = gNote.getSVGGElement?.();
@@ -185,7 +243,6 @@ export function highlightAtStep(
       if (heads.length > 0) {
         heads.forEach((h: Element) => h.classList.add(ACTIVE_CLASS));
       } else {
-        // Fallback: highlight paths/ellipses in the note group
         const paths = svgEl.querySelectorAll("path, ellipse");
         paths.forEach((h: Element) => h.classList.add(ACTIVE_CLASS));
       }

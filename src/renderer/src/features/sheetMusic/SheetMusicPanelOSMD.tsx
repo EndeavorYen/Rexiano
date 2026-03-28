@@ -169,7 +169,7 @@ export function SheetMusicPanelOSMD({
     osmdRef.current.render();
 
     // Rebuild time map after every render (SVG elements change on re-render)
-    timeMapRef.current = buildTimeMap(osmdRef.current);
+    timeMapRef.current = buildTimeMap(osmdRef.current, song);
     cursorStepRef.current = 0;
 
     // Hide the built-in cursor element (we use CSS highlights instead)
@@ -188,7 +188,7 @@ export function SheetMusicPanelOSMD({
       if (osmdRef.current && loadedRef.current) {
         osmdRef.current.render();
         // Rebuild time map after resize re-render
-        timeMapRef.current = buildTimeMap(osmdRef.current);
+        timeMapRef.current = buildTimeMap(osmdRef.current, song);
         cursorStepRef.current = 0;
       }
     });
