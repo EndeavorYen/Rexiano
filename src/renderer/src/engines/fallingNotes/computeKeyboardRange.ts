@@ -32,7 +32,6 @@ export function computeKeyboardRange(song: ParsedSong | null): KeyboardRange {
   let firstNote = Math.floor(minMidi / 12) * 12;
   let lastNote = Math.ceil((maxMidi + 1) / 12) * 12 - 1;
 
-  // Ensure minimum 2 octaves
   if (lastNote - firstNote + 1 < MIN_OCTAVES * 12) {
     const center = Math.floor((minMidi + maxMidi) / 2);
     firstNote = Math.floor((center - 12) / 12) * 12;

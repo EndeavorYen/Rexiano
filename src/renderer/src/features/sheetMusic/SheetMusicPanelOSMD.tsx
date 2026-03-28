@@ -245,12 +245,13 @@ export function SheetMusicPanelOSMD({
 
       highlightStep(step, prevStep);
       // Update debug overlay
-      if (debugRef.current) {
+      if (debugRef.current && song) {
+        const mIdx = estimateMeasureIndex(song, currentTime);
         const matched = step
           ? `#${idx} t=${step.time.toFixed(2)}→${step.endTime.toFixed(2)}`
           : "none";
         debugRef.current.textContent =
-          `time=${currentTime.toFixed(2)} | measure=${currentMeasure} | window=[${measureWindow}] | steps=${steps.length} | match=${matched} | pageStart=${pageStartTimeRef.current.toFixed(2)}`;
+          `time=${currentTime.toFixed(2)} | measure=${mIdx} | steps=${steps.length} | match=${matched} | pageStart=${pageStartTimeRef.current.toFixed(2)}`;
       }
     }, 50);
 
@@ -258,7 +259,7 @@ export function SheetMusicPanelOSMD({
       clearInterval(intervalId);
       if (containerRef.current) clearHighlights(containerRef.current);
     };
-  }, [song, mode, currentMeasure, measureWindow]);
+  }, [song, mode]);
 
   const debugRef = useRef<HTMLDivElement>(null);
   const isDev = import.meta.env.DEV;

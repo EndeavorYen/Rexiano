@@ -23,21 +23,10 @@ export interface CursorStep {
 }
 
 /**
- * Build an ordered list of cursor steps with time + SVG element refs.
- *
- * Uses merge-style matching: iterates OSMD cursor steps and the song's
- * notes in parallel (both chronological). For each cursor step, finds
- * the next unmatched ParsedNote with matching MIDI to get its time.
- *
- * @param osmd The OSMD instance (after render)
- * @param song The parsed song (source of truth for note times)
- */
-/**
  * @param osmd  The OSMD instance (after render)
- * @param song  The parsed song
- * @param pageStartTime  Approximate time (seconds) when the rendered page begins.
- *   Notes before this time are skipped during matching to avoid cross-page
- *   ambiguity when the same pitch appears in multiple measures.
+ * @param song  The parsed song (source of truth for note times)
+ * @param pageStartTime  Notes before this time are skipped to avoid
+ *   cross-page ambiguity when the same pitch appears in multiple measures.
  */
 export function buildCursorSteps(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -61,7 +50,6 @@ export function buildCursorSteps(
       list.push({ time: note.time, duration: note.duration });
     }
   }
-  // Sort each list by time
   for (const list of notesByMidi.values()) {
     list.sort((a, b) => a.time - b.time);
   }
@@ -78,7 +66,6 @@ export function buildCursorSteps(
   const steps: CursorStep[] = [];
 
   while (!it.EndReached) {
-    // Collect MIDI numbers at this cursor step
     const voices = it.CurrentVoiceEntries || [];
     const stepMidis: number[] = [];
     for (const ve of voices) {
