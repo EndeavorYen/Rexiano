@@ -40,68 +40,71 @@ export function buildCursorSteps(
   const cursor = osmd?.cursor;
   if (!cursor || !song) return [];
 
-  // Flatten and sort all song notes by time for merge matching
-  const songNotes = song.tracks
-    .flatMap((t) => t.notes)
-    .sort((a, b) => a.time - b.time || a.midi - b.midi);
+  // Build a lookup: for each MIDI number, a sorted list of {time, duration}
+  // This allows per-step matching without sequential notePtr coupling.
+  const notesByMidi = new Map<number, { time: number; duration: number }[]>();
+  for (const track of song.tracks) {
+    for (const note of track.notes) {
+      let list = notesByMidi.get(note.midi);
+      if (!list) {
+        list = [];
+        notesByMidi.set(note.midi, list);
+      }
+      list.push({ time: note.time, duration: note.duration });
+    }
+  }
+  // Sort each list by time
+  for (const list of notesByMidi.values()) {
+    list.sort((a, b) => a.time - b.time);
+  }
+
+  // Track the last matched time so we always move forward (avoid re-matching
+  // notes from earlier in the song). Start before 0 to match the very first note.
+  let lastMatchedTime = -1;
 
   cursor.reset();
   const it = cursor.Iterator;
   if (!it) return [];
-
-  // Estimate the time of the first rendered cursor step to position
-  // notePtr near the right region of songNotes (avoids false matches
-  // with earlier measures that have the same MIDI pitches).
-  const firstBpm = song.tempos[0]?.bpm ?? 120;
-  const firstTs = song.timeSignatures[0];
-  const firstMeasureIdx = it.CurrentMeasureIndex;
-  const secPerMeasure =
-    (60 / firstBpm) * (firstTs?.numerator ?? 4) * (4 / (firstTs?.denominator ?? 4));
-  const estimatedStartTime = firstMeasureIdx * secPerMeasure;
-
-  // Binary search songNotes for the estimated start time
-  let notePtr = 0;
-  {
-    let lo = 0;
-    let hi = songNotes.length - 1;
-    while (lo <= hi) {
-      const mid = (lo + hi) >>> 1;
-      if (songNotes[mid].time < estimatedStartTime - 0.5) {
-        lo = mid + 1;
-      } else {
-        hi = mid - 1;
-      }
-    }
-    notePtr = lo;
-  }
 
   const steps: CursorStep[] = [];
 
   while (!it.EndReached) {
     // Collect MIDI numbers at this cursor step
     const voices = it.CurrentVoiceEntries || [];
-    const stepMidis = new Set<number>();
+    const stepMidis: number[] = [];
     for (const ve of voices) {
       for (const note of ve.Notes) {
         if (!note.isRest()) {
-          stepMidis.add(note.halfTone + 12);
+          stepMidis.push(note.halfTone + 12);
         }
       }
     }
 
-    // Merge-match: advance notePtr to find a song note matching any of
-    // this step's MIDI values. Both sequences are chronological.
+    // Find the earliest note time after lastMatchedTime for any MIDI in this step
     let matchedTime = -1;
     let matchedEndTime = -1;
-    for (let i = notePtr; i < songNotes.length; i++) {
-      if (stepMidis.has(songNotes[i].midi)) {
-        matchedTime = songNotes[i].time;
-        matchedEndTime = songNotes[i].time + songNotes[i].duration;
-        // Advance past all notes at this same time (chord)
-        while (notePtr < songNotes.length && songNotes[notePtr].time <= matchedTime + 0.01) {
-          notePtr++;
+    for (const midi of stepMidis) {
+      const list = notesByMidi.get(midi);
+      if (!list) continue;
+      // Binary search for the first note with time > lastMatchedTime
+      let lo = 0;
+      let hi = list.length - 1;
+      let found = -1;
+      while (lo <= hi) {
+        const mid = (lo + hi) >>> 1;
+        if (list[mid].time > lastMatchedTime + 0.001) {
+          found = mid;
+          hi = mid - 1;
+        } else {
+          lo = mid + 1;
         }
-        break;
+      }
+      if (found >= 0) {
+        const candidate = list[found];
+        if (matchedTime < 0 || candidate.time < matchedTime) {
+          matchedTime = candidate.time;
+          matchedEndTime = candidate.time + candidate.duration;
+        }
       }
     }
 
@@ -124,6 +127,7 @@ export function buildCursorSteps(
     // Only include steps with a valid time match and SVG elements
     if (matchedTime >= 0 && svgElements.length > 0) {
       steps.push({ time: matchedTime, endTime: matchedEndTime, svgElements });
+      lastMatchedTime = matchedTime;
     }
 
     cursor.next();
