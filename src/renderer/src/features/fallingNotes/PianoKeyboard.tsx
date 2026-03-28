@@ -206,6 +206,8 @@ export function PianoKeyboard({
     <div
       className="relative w-full select-none overflow-hidden"
       style={{ height, background: "var(--color-surface)" }}
+      role="img"
+      aria-label="Piano keyboard"
       data-testid="piano-keyboard"
     >
       {/* White keys */}
@@ -234,6 +236,7 @@ export function PianoKeyboard({
           >
             {showLabels && (
               <span
+                aria-hidden="true"
                 style={{
                   ...KEY_LABEL_STYLE,
                   color: "var(--color-text-muted)",
@@ -275,6 +278,7 @@ export function PianoKeyboard({
           >
             {showLabels && !compactLabels && (
               <span
+                aria-hidden="true"
                 style={{
                   ...KEY_LABEL_STYLE,
                   color: "color-mix(in srgb, var(--color-key-white) 70%, transparent)",

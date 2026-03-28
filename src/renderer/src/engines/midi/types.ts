@@ -72,6 +72,8 @@ export interface ExpressionMarking {
 export interface ParsedSong {
   /** Original file name */
   fileName: string;
+  /** Human-readable title (from song library metadata); falls back to fileName */
+  displayName?: string;
   /** Total duration in seconds */
   duration: number;
   /** All tracks */

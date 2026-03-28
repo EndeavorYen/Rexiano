@@ -291,7 +291,7 @@ export function SettingsPanel({
               ))}
             </div>
 
-            <div className="flex-1 overflow-y-auto px-5 py-4">
+            <div className="flex-1 overflow-y-auto px-5 py-4" style={{ minHeight: 340 }}>
               {activeTab === "appearance" && (
                 <TabContent>
                   <SectionTitle>{t("settings.chooseTheme")}</SectionTitle>

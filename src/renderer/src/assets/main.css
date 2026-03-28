@@ -115,8 +115,11 @@ textarea:focus-visible {
 .app-shell {
   position: relative;
   isolation: isolate;
-  overflow-x: hidden;
-  overflow-x: clip;
+  /* Use hidden (not clip) — Chromium treats overflow:clip as a containing block
+     for position:fixed descendants, breaking fixed-position elements like the
+     MIDI FAB button and SongCompleteOverlay. overflow:hidden still allows
+     programmatic scrolling, so we pair it with a scroll-reset in App.tsx. */
+  overflow: hidden;
 }
 
 .app-shell-clipped {
@@ -768,7 +771,10 @@ input[type="range"]:disabled::-moz-range-thumb {
   }
   to {
     opacity: 1;
-    transform: translateY(0) scale(1);
+    /* Must be 'none', not 'translateY(0) scale(1)' — an identity transform
+       still creates a containing block for position:fixed descendants,
+       breaking fixed-position elements like the MIDI FAB button. */
+    transform: none;
   }
 }
 
