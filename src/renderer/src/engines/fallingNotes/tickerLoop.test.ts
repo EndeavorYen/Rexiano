@@ -94,6 +94,7 @@ function makeMockRenderer(): NoteRenderer {
   return {
     update: vi.fn(),
     activeNotes: new Set<number>(),
+    activeNoteGeneration: 0,
   } as unknown as NoteRenderer;
 }
 
