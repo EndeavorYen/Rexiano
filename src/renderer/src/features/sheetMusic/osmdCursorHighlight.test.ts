@@ -71,30 +71,25 @@ describe("clearHighlights", () => {
 
 describe("highlightStep", () => {
   it("adds osmd-note-active to step SVG elements", () => {
-    const container = document.createElement("div");
     const el1 = document.createElement("path");
     const el2 = document.createElement("path");
-    container.appendChild(el1);
-    container.appendChild(el2);
 
-    highlightStep({ time: 0, endTime: 1, svgElements: [el1, el2] }, container);
+    highlightStep({ time: 0, endTime: 1, svgElements: [el1, el2] }, null);
 
     expect(el1.classList.contains("osmd-note-active")).toBe(true);
     expect(el2.classList.contains("osmd-note-active")).toBe(true);
   });
 
-  it("clears previous highlights before applying new", () => {
-    const container = document.createElement("div");
-    const old = document.createElement("path");
-    old.classList.add("osmd-note-active");
-    container.appendChild(old);
+  it("clears previous step elements directly", () => {
+    const oldEl = document.createElement("path");
+    oldEl.classList.add("osmd-note-active");
 
     const newEl = document.createElement("path");
-    container.appendChild(newEl);
 
-    highlightStep({ time: 0, endTime: 1, svgElements: [newEl] }, container);
+    const prevStep: CursorStep = { time: 0, endTime: 0.5, svgElements: [oldEl] };
+    highlightStep({ time: 0.5, endTime: 1, svgElements: [newEl] }, prevStep);
 
-    expect(old.classList.contains("osmd-note-active")).toBe(false);
+    expect(oldEl.classList.contains("osmd-note-active")).toBe(false);
     expect(newEl.classList.contains("osmd-note-active")).toBe(true);
   });
 });

@@ -164,13 +164,19 @@ export function clearHighlights(container: HTMLElement): void {
 }
 
 /**
- * Highlight a specific cursor step's cached SVG elements.
+ * Highlight a cursor step's cached SVG elements.
+ * Clears the previous step's elements directly (O(n) on step size)
+ * instead of querySelectorAll on the entire container (O(DOM)).
  */
 export function highlightStep(
   step: CursorStep,
-  container: HTMLElement,
+  prevStep: CursorStep | null,
 ): void {
-  clearHighlights(container);
+  if (prevStep) {
+    for (const el of prevStep.svgElements) {
+      el.classList.remove(ACTIVE_CLASS);
+    }
+  }
   for (const el of step.svgElements) {
     el.classList.add(ACTIVE_CLASS);
   }

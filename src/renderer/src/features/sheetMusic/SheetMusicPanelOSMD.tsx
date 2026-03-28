@@ -225,9 +225,10 @@ export function SheetMusicPanelOSMD({
       // Only update DOM when the highlighted step changes
       const idx = steps.indexOf(step);
       if (idx === prevStepIdx) return;
+      const prevStep = prevStepIdx >= 0 ? steps[prevStepIdx] : null;
       prevStepIdx = idx;
 
-      highlightStep(step, container);
+      highlightStep(step, prevStep);
     }, 50);
 
     return () => {
