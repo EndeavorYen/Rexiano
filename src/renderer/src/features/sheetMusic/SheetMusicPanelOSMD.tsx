@@ -14,20 +14,82 @@ interface SheetMusicPanelOSMDProps {
 }
 
 /**
- * Convert OSMD cursor iterator's beat-fraction timestamp to seconds.
- * Uses song.tempos BPM (from MIDI) — NOT OSMD's SourceMeasures.TempoInBPM
- * which always defaults to 120 regardless of actual tempo.
+ * Build an array of song-times (seconds) for each OSMD cursor step.
+ * Matches each step's MIDI notes to ParsedNote.time for accurate timing
+ * that respects tempo changes throughout the piece.
+ *
+ * Must be called after osmd.render() + cursor.reset().
  */
-export function cursorTimeToSeconds(
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  osmd: any,
-  bpm: number,
-): number {
-  const it = osmd?.cursor?.Iterator;
-  if (!it) return 0;
-  const realValue = it.currentTimeStamp?.RealValue ?? 0;
-  // RealValue is relative to a whole note (1.0 = 4 quarter beats)
-  return realValue * 4 * (60 / bpm);
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function buildStepTimes(osmd: any, song: ParsedSong): number[] {
+  const cursor = osmd?.cursor;
+  if (!cursor) return [];
+
+  // Build per-MIDI sorted note lists for matching
+  const notesByMidi = new Map<number, number[]>();
+  for (const track of song.tracks) {
+    for (const note of track.notes) {
+      let list = notesByMidi.get(note.midi);
+      if (!list) {
+        list = [];
+        notesByMidi.set(note.midi, list);
+      }
+      list.push(note.time);
+    }
+  }
+  for (const list of notesByMidi.values()) {
+    list.sort((a, b) => a - b);
+  }
+
+  cursor.reset();
+  const it = cursor.Iterator;
+  if (!it) return [];
+
+  const times: number[] = [];
+  let lastTime = -1;
+
+  while (!it.EndReached) {
+    const voices = it.CurrentVoiceEntries || [];
+    let bestTime = Infinity;
+
+    for (const ve of voices) {
+      for (const note of ve.Notes) {
+        if (note.isRest()) continue;
+        const midi = note.halfTone + 12;
+        const list = notesByMidi.get(midi);
+        if (!list) continue;
+        // Binary search: first time > lastTime
+        let lo = 0;
+        let hi = list.length - 1;
+        let found = -1;
+        while (lo <= hi) {
+          const mid = (lo + hi) >>> 1;
+          if (list[mid] > lastTime + 0.001) {
+            found = mid;
+            hi = mid - 1;
+          } else {
+            lo = mid + 1;
+          }
+        }
+        if (found >= 0 && list[found] < bestTime) {
+          bestTime = list[found];
+        }
+      }
+    }
+
+    if (bestTime < Infinity) {
+      times.push(bestTime);
+      lastTime = bestTime;
+    } else {
+      // Rest or unmatched step — use last time + small offset
+      times.push(lastTime + 0.01);
+    }
+
+    cursor.next();
+  }
+
+  cursor.reset();
+  return times;
 }
 
 export function SheetMusicPanelOSMD({
@@ -38,6 +100,7 @@ export function SheetMusicPanelOSMD({
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const osmdRef = useRef<any>(null);
   const loadedRef = useRef(false);
+  const stepTimesRef = useRef<number[]>([]);
 
   const musicXml = useMemo(() => {
     if (!song) return null;
@@ -90,10 +153,12 @@ export function SheetMusicPanelOSMD({
           osmdRef.current.render();
           loadedRef.current = true;
 
-          // Show and reset cursor
+          // Build step times and show cursor
+          if (song) {
+            stepTimesRef.current = buildStepTimes(osmdRef.current, song);
+          }
           const cursor = osmdRef.current.cursor;
           if (cursor) {
-            cursor.reset();
             cursor.show();
           }
         });
@@ -132,23 +197,19 @@ export function SheetMusicPanelOSMD({
   }, [mode]);
 
   // Effect 2: Drive cursor forward during playback.
-  // Reads currentTime from the store (written every frame by tickerLoop).
-  // Compares against the cursor's next step time — if currentTime has
-  // passed it, advance cursor.next() and add CSS glow.
-  // followCursor: true handles scrolling automatically.
+  // Uses pre-built stepTimes[] (from ParsedNote.time, respects tempo changes)
+  // instead of computing beat-fraction→seconds per tick.
   useEffect(() => {
     if (mode === "falling" || !containerRef.current || !song) return;
     const container = containerRef.current;
     let wasPlaying = false;
-
-    const bpm = song.tempos[0]?.bpm ?? 120;
-
-    let lastCursorTime = -1;
-    let lastHighlightTime = -1;
+    let cursorPos = 0;
 
     const intervalId = setInterval(() => {
       const osmd = osmdRef.current;
       if (!osmd || !loadedRef.current) return;
+      const stepTimes = stepTimesRef.current;
+      if (stepTimes.length === 0) return;
 
       const { isPlaying, currentTime } = usePlaybackStore.getState();
       const cursor = osmd.cursor;
@@ -164,42 +225,30 @@ export function SheetMusicPanelOSMD({
 
       if (!wasPlaying) {
         cursor.reset();
-        lastCursorTime = 0;
-        lastHighlightTime = -1;
+        cursorPos = 0;
         wasPlaying = true;
       }
 
-      if (cursor.Iterator?.EndReached) return;
-
-      // Detect seek backward: currentTime jumped behind cursor position
-      if (currentTime < lastCursorTime - 0.1) {
+      // Seek backward: currentTime jumped before cursor position
+      if (cursorPos > 0 && currentTime < stepTimes[cursorPos] - 0.1) {
         cursor.reset();
-        lastCursorTime = 0;
-        lastHighlightTime = -1;
+        cursorPos = 0;
       }
 
-      // Advance cursor: peek at the NEXT step's time. If currentTime
-      // has passed it, move forward. This keeps the cursor ON the step
-      // whose notes are currently sounding (not one step ahead).
-      for (let i = 0; i < 200; i++) {
-        if (cursor.Iterator?.EndReached) break;
-        // Peek: what time is the next step?
+      // Advance cursor while the NEXT step's time has been reached
+      let advanced = false;
+      while (cursorPos + 1 < stepTimes.length && stepTimes[cursorPos + 1] <= currentTime) {
         cursor.next();
-        const nextStepTime = cursorTimeToSeconds(osmd, bpm);
-        if (nextStepTime > currentTime) {
-          // Went too far — step back to the current position
-          cursor.previous();
-          break;
-        }
-        lastCursorTime = nextStepTime;
+        cursorPos++;
+        advanced = true;
       }
 
-      // Always highlight the current cursor position (handles first note too)
-      const curTime = cursorTimeToSeconds(osmd, bpm);
-      if (currentTime >= curTime && curTime !== lastHighlightTime) {
-        clearHighlights(container);
-        highlightNotesUnderCursor(osmd);
-        lastHighlightTime = curTime;
+      // Highlight when we're at or past the current step's time
+      if (currentTime >= stepTimes[cursorPos]) {
+        if (advanced || !wasPlaying) {
+          clearHighlights(container);
+          highlightNotesUnderCursor(osmd);
+        }
       }
     }, 50);
 
