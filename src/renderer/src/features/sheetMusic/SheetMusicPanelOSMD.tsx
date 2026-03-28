@@ -18,7 +18,7 @@ interface SheetMusicPanelOSMDProps {
  * Uses song.tempos BPM (from MIDI) — NOT OSMD's SourceMeasures.TempoInBPM
  * which always defaults to 120 regardless of actual tempo.
  */
-function cursorTimeToSeconds(
+export function cursorTimeToSeconds(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   osmd: any,
   bpm: number,
