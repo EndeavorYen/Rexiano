@@ -181,6 +181,11 @@ export function SheetMusicPanelOSMD({
     const ro = new ResizeObserver(() => {
       if (osmdRef.current && loadedRef.current) {
         osmdRef.current.render();
+        // Clear stale SVG refs before OSMD rebuilds the DOM
+        hlRef.current.clear();
+        if (song) {
+          stepTimesRef.current = buildStepTimes(osmdRef.current, song);
+        }
         const cursor = osmdRef.current.cursor;
         if (cursor) {
           cursor.reset();
