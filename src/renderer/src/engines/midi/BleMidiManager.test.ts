@@ -2,6 +2,18 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { BleMidiManager } from "./BleMidiManager";
 
+function getNavigatorForTest(): Record<string, unknown> {
+  const globalObj = globalThis as Record<string, unknown>;
+  if (!("navigator" in globalObj) || !globalObj.navigator) {
+    Object.defineProperty(globalObj, "navigator", {
+      value: {},
+      configurable: true,
+      writable: true,
+    });
+  }
+  return globalObj.navigator as Record<string, unknown>;
+}
+
 describe("BleMidiManager", () => {
   let manager: BleMidiManager;
 
@@ -431,9 +443,12 @@ describe("BleMidiManager", () => {
   describe("connect", () => {
     afterEach(() => {
       // Clean up bluetooth mock if present
-      if ("bluetooth" in navigator) {
+      const nav = (globalThis as Record<string, unknown>).navigator as
+        | Record<string, unknown>
+        | undefined;
+      if (nav && "bluetooth" in nav) {
         // @ts-expect-error — deleting test-injected bluetooth mock
-        delete navigator.bluetooth;
+        delete nav.bluetooth;
       }
     });
 
@@ -470,7 +485,7 @@ describe("BleMidiManager", () => {
         removeEventListener: vi.fn(),
       };
 
-      Object.defineProperty(navigator, "bluetooth", {
+      Object.defineProperty(getNavigatorForTest(), "bluetooth", {
         value: {
           requestDevice: vi.fn().mockImplementation(async () => {
             // At this point status should be "scanning"
@@ -502,7 +517,7 @@ describe("BleMidiManager", () => {
     });
 
     it("handles user cancellation (cancelled → idle status)", async () => {
-      Object.defineProperty(navigator, "bluetooth", {
+      Object.defineProperty(getNavigatorForTest(), "bluetooth", {
         value: {
           requestDevice: vi
             .fn()
@@ -520,7 +535,7 @@ describe("BleMidiManager", () => {
     });
 
     it("handles user cancellation with 'canceled' spelling", async () => {
-      Object.defineProperty(navigator, "bluetooth", {
+      Object.defineProperty(getNavigatorForTest(), "bluetooth", {
         value: {
           requestDevice: vi
             .fn()
@@ -536,7 +551,7 @@ describe("BleMidiManager", () => {
     });
 
     it("handles connection failure (non-cancel error → error status)", async () => {
-      Object.defineProperty(navigator, "bluetooth", {
+      Object.defineProperty(getNavigatorForTest(), "bluetooth", {
         value: {
           requestDevice: vi
             .fn()
@@ -552,7 +567,7 @@ describe("BleMidiManager", () => {
     });
 
     it("handles non-Error thrown object", async () => {
-      Object.defineProperty(navigator, "bluetooth", {
+      Object.defineProperty(getNavigatorForTest(), "bluetooth", {
         value: {
           requestDevice: vi.fn().mockRejectedValue("some string error"),
         },
@@ -588,7 +603,7 @@ describe("BleMidiManager", () => {
         removeEventListener: vi.fn(),
       };
 
-      Object.defineProperty(navigator, "bluetooth", {
+      Object.defineProperty(getNavigatorForTest(), "bluetooth", {
         value: {
           requestDevice: vi.fn().mockResolvedValue(mockDevice),
         },
@@ -654,7 +669,7 @@ describe("BleMidiManager", () => {
         removeEventListener: vi.fn(),
       };
 
-      Object.defineProperty(navigator, "bluetooth", {
+      Object.defineProperty(getNavigatorForTest(), "bluetooth", {
         value: {
           requestDevice: vi.fn().mockResolvedValue(mockDevice),
         },
