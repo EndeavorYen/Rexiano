@@ -79,7 +79,7 @@ test: add coverage for AB loop selector
 
 ## Project Architecture
 
-See [docs/DESIGN.md](docs/DESIGN.md) for the full system design. The codebase follows a strict three-layer architecture:
+See [docs/design/system-design.zh-TW.md](docs/design/system-design.zh-TW.md) for the full system design. The codebase follows a strict three-layer architecture:
 
 | Layer        | Location                     | Rules                                             |
 | ------------ | ---------------------------- | ------------------------------------------------- |
@@ -98,7 +98,7 @@ See [docs/DESIGN.md](docs/DESIGN.md) for the full system design. The codebase fo
 
 ## Areas Where Help Is Appreciated
 
-Check [docs/ROADMAP.md](docs/ROADMAP.md) for the full task list. Items marked `[ ]` are available to work on. Some areas where contributions are especially welcome:
+Check [docs/project/roadmap.md](docs/project/roadmap.md) for the full task list. Items marked `[ ]` are available to work on. Some areas where contributions are especially welcome:
 
 - **Built-in songs** -- Curating beginner-friendly MIDI files for the song library
 - **Translations** -- Adding i18n support (English + Chinese initially)
@@ -117,7 +117,7 @@ Use [GitHub Issues](https://github.com/nickhsu-endea/Rexiano/issues) with the pr
 
 ## Suggesting Features
 
-Use the [feature request template](https://github.com/nickhsu-endea/Rexiano/issues/new?template=feature_request.md). Check `docs/ROADMAP.md` first to see if the feature is already planned.
+Use the [feature request template](https://github.com/nickhsu-endea/Rexiano/issues/new?template=feature_request.md). Check `docs/project/roadmap.md` first to see if the feature is already planned.
 
 ## Code of Conduct
 
@@ -126,3 +126,4 @@ Be kind. This is a project built for a child learning piano. Keep discussions co
 ## License
 
 By contributing, you agree that your contributions will be licensed under the [GPL-3.0 License](LICENSE).
+

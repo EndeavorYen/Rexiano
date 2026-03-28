@@ -1,16 +1,32 @@
+# Dependency directories
 node_modules/
+
+# Build and packaging outputs
 out/
 dist/
-.eslintcache
-*.log
-.DS_Store
-Thumbs.db
-*.tsbuildinfo
-.claude/
+coverage/
 playwright-report/
 test-results/
 e2e/screenshots/
-coverage/
-.worktrees/
-nul
+
+# Caches and logs
+.eslintcache
+*.log
+*.tsbuildinfo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Local AI/dev tooling
+.claude/
+.codex/
+.playwright-mcp/
 .serena/
+.worktrees/
+
+# Local battle/debug artifacts
+.battle_archive.md
+.battle_memory.yaml
+.battle_state.yaml
+nul

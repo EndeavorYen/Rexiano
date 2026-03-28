@@ -484,7 +484,7 @@ pnpm dev          # starts Electron in development mode with HMR
 2. Implement your changes following the layer architecture (engines → stores → features)
 3. Add or update tests for your changes
 4. Run `pnpm lint && pnpm typecheck && pnpm test` — all must pass
-5. Update `docs/ROADMAP.md` checkboxes if completing a tracked task
+5. Update `docs/project/roadmap.md` checkboxes if completing a tracked task
 6. Open a PR against `dev` with a clear description of what and why
 7. Request a code review
 
@@ -510,8 +510,8 @@ pnpm dev          # starts Electron in development mode with HMR
 
 ### Reference Documentation
 
-- **`docs/DESIGN.md`** — authoritative architecture reference with detailed phase designs
-- **`docs/ROADMAP.md`** — task checklist (the single source of truth for project progress)
+- **`docs/design/system-design.en.md`** — authoritative architecture reference with detailed phase designs
+- **`docs/project/roadmap.md`** — task checklist (the single source of truth for project progress)
 - **`CLAUDE.md`** — development conventions and quick reference (for AI-assisted development)
 
 ---

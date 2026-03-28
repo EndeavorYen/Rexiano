@@ -486,7 +486,7 @@ pnpm dev          # 以開發模式啟動 Electron，含 HMR
 2. 按照分層架構實作（engines → stores → features）
 3. 新增或更新對應的測試
 4. 執行 `pnpm lint && pnpm typecheck && pnpm test`——全部必須通過
-5. 若完成追蹤任務，更新 `docs/ROADMAP.md` 的 checkbox
+5. 若完成追蹤任務，更新 `docs/project/roadmap.md` 的 checkbox
 6. 對 `dev` 開 PR，清楚描述改了什麼以及原因
 7. 請求 code review
 
@@ -512,8 +512,8 @@ pnpm dev          # 以開發模式啟動 Electron，含 HMR
 
 ### 參考文件
 
-- **`docs/DESIGN.md`** / **`docs/DESIGN-en.md`** — 含詳細 Phase 設計的架構參考
-- **`docs/ROADMAP.md`** — 任務 checklist（專案進度的單一真實來源）
+- **`docs/design/system-design.zh-TW.md`** / **`docs/design/system-design.en.md`** — 含詳細 Phase 設計的架構參考
+- **`docs/project/roadmap.md`** — 任務 checklist（專案進度的單一真實來源）
 - **`CLAUDE.md`** — 開發慣例與快速參考（用於 AI 輔助開發）
 
 ---

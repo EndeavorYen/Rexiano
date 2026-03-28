@@ -4,9 +4,9 @@
 
 開發前請先閱讀以下文件，了解專案全貌與當前進度：
 
-- **[docs/DESIGN.md](docs/DESIGN.md)** — 系統設計文件（Phase 1~9 完整架構、資料模型、技術決策）
-- **[docs/ROADMAP.md](docs/ROADMAP.md)** — 開發路線圖與任務追蹤（checkbox 清單，標示已完成 / 未完成）
-- **[docs/init.md](docs/init.md)** — 原始需求文件（六大核心功能）
+- **[docs/design/system-design.zh-TW.md](docs/design/system-design.zh-TW.md)** — 系統設計文件（Phase 1~9 完整架構、資料模型、技術決策）
+- **[docs/project/roadmap.md](docs/project/roadmap.md)** — 開發路線圖與任務追蹤（checkbox 清單，標示已完成 / 未完成）
+- **[docs/project/requirements.md](docs/project/requirements.md)** — 原始需求文件（六大核心功能）
 
 ## 開發工作流程（必遵守）
 
@@ -111,3 +111,4 @@ See **[docs/conventions.md](docs/conventions.md)** for detailed architecture, de
 3. **主題一致性（Theme Coherence）**：所有 UI 元素通過 `var(--color-*)` tokens 著色，永不硬編碼顏色值
 4. **動效有目的（Motion With Purpose）**：每個動畫都服務於 UX 目標（引導注意力、確認操作、建立節奏感），不是裝飾
 5. **漸進式複雜度（Progressive Complexity）**：預設介面簡單直覺，進階功能（速度控制、段落循環、評分）在需要時才展開
+

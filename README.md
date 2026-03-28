@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="docs/figure/Rexiano_icon.png" alt="Rexiano icon" width="120" />
+  <img src="docs/assets/rexiano-icon.png" alt="Rexiano icon" width="120" />
 </p>
 
 <h1 align="center">Rexiano</h1>
@@ -82,7 +82,7 @@ Debian/Ubuntu:
 1. Download `Rexiano-x.x.x-amd64.deb`.
 2. Install with `sudo dpkg -i Rexiano-*.deb`.
 
-For Bluetooth setup details, see [docs/installation-en.md](docs/installation-en.md).
+For Bluetooth setup details, see [docs/guides/installation.en.md](docs/guides/installation.en.md).
 
 ---
 
@@ -153,17 +153,17 @@ Electron 33, React 19, TypeScript 5.9, Tailwind CSS 4, Zustand 5, PixiJS 8, Web 
 | Document | English | 繁體中文 |
 | --- | --- | --- |
 | README | You are here | [README-zh.md](README-zh.md) |
-| User Guide | [docs/user-guide-en.md](docs/user-guide-en.md) | [docs/user-guide.md](docs/user-guide.md) |
-| Installation | [docs/installation-en.md](docs/installation-en.md) | [docs/installation.md](docs/installation.md) |
-| Architecture | [docs/architecture.md](docs/architecture.md) | [docs/architecture-zh.md](docs/architecture-zh.md) |
-| System Design | [docs/DESIGN-en.md](docs/DESIGN-en.md) | [docs/DESIGN.md](docs/DESIGN.md) |
-| Roadmap | [docs/ROADMAP.md](docs/ROADMAP.md) | [docs/ROADMAP.md](docs/ROADMAP.md) |
+| User Guide | [docs/guides/user-guide.en.md](docs/guides/user-guide.en.md) | [docs/guides/user-guide.zh-TW.md](docs/guides/user-guide.zh-TW.md) |
+| Installation | [docs/guides/installation.en.md](docs/guides/installation.en.md) | [docs/guides/installation.zh-TW.md](docs/guides/installation.zh-TW.md) |
+| Architecture | [docs/architecture/architecture.en.md](docs/architecture/architecture.en.md) | [docs/architecture/architecture.zh-TW.md](docs/architecture/architecture.zh-TW.md) |
+| System Design | [docs/design/system-design.en.md](docs/design/system-design.en.md) | [docs/design/system-design.zh-TW.md](docs/design/system-design.zh-TW.md) |
+| Roadmap | [docs/project/roadmap.md](docs/project/roadmap.md) | [docs/project/roadmap.md](docs/project/roadmap.md) |
 
 ---
 
 ## Contributing
 
-Contributions are welcome. Please read [docs/architecture.md](docs/architecture.md) and [docs/DESIGN-en.md](docs/DESIGN-en.md) before implementing major changes.
+Contributions are welcome. Please read [docs/architecture/architecture.en.md](docs/architecture/architecture.en.md) and [docs/design/system-design.en.md](docs/design/system-design.en.md) before implementing major changes.
 
 ```bash
 pnpm lint && pnpm typecheck && pnpm test
@@ -174,3 +174,4 @@ pnpm lint && pnpm typecheck && pnpm test
 ## License
 
 Licensed under [GNU GPL-3.0](LICENSE).
+
