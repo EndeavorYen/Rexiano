@@ -15,18 +15,18 @@ interface SheetMusicPanelOSMDProps {
 
 /**
  * Convert OSMD cursor iterator's beat-fraction timestamp to seconds.
- * `RealValue` is relative to a whole note (1.0 = whole note = 4 quarter beats).
- * Formula: realValue * 4 = quarter-note beats, * (60 / bpm) = seconds.
+ * Uses song.tempos BPM (from MIDI) — NOT OSMD's SourceMeasures.TempoInBPM
+ * which always defaults to 120 regardless of actual tempo.
  */
 function cursorTimeToSeconds(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   osmd: any,
+  bpm: number,
 ): number {
   const it = osmd?.cursor?.Iterator;
   if (!it) return 0;
   const realValue = it.currentTimeStamp?.RealValue ?? 0;
-  const bpm =
-    osmd.Sheet?.SourceMeasures?.[it.CurrentMeasureIndex]?.TempoInBPM ?? 120;
+  // RealValue is relative to a whole note (1.0 = 4 quarter beats)
   return realValue * 4 * (60 / bpm);
 }
 
@@ -141,6 +141,8 @@ export function SheetMusicPanelOSMD({
     const container = containerRef.current;
     let wasPlaying = false;
 
+    const bpm = song.tempos[0]?.bpm ?? 120;
+
     const intervalId = setInterval(() => {
       const osmd = osmdRef.current;
       if (!osmd || !loadedRef.current) return;
@@ -156,7 +158,6 @@ export function SheetMusicPanelOSMD({
       }
 
       if (!wasPlaying) {
-        // Playback just started — reset cursor to beginning
         osmd.cursor?.reset();
         wasPlaying = true;
       }
@@ -165,7 +166,7 @@ export function SheetMusicPanelOSMD({
       if (!cursor || cursor.Iterator?.EndReached) return;
 
       // Advance cursor while its timestamp is behind currentTime
-      const nextTime = cursorTimeToSeconds(osmd);
+      const nextTime = cursorTimeToSeconds(osmd, bpm);
       if (currentTime >= nextTime) {
         clearHighlights(container);
         cursor.next();
