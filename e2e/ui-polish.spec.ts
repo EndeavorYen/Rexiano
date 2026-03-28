@@ -187,9 +187,8 @@ test.describe("Playback UI polish guardrails", () => {
     }
   });
 
-  // OSMD uses a different DOM structure than VexFlow — the highlight layer
-  // and g.vf-notehead selectors are VexFlow-specific. This test needs to be
-  // rewritten when the OSMD cursor/highlight feature is implemented.
+  // OSMD note highlighting is being implemented — this test needs to be
+  // rewritten to use the OSMD-specific DOM structure and CSS classes.
   test.skip("sheet beat highlight stays on noteheads (not left gutter)", async ({
     appPage,
   }) => {

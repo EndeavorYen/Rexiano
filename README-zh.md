@@ -144,7 +144,7 @@ build/             打包資源
 
 ## 技術堆疊
 
-Electron 33、React 19、TypeScript 5.9、Tailwind CSS 4、Zustand 5、PixiJS 8、Web MIDI API、Web Audio API、SoundFont2、OpenSheetMusicDisplay、VexFlow、Vitest 4、Playwright、electron-builder。
+Electron 33、React 19、TypeScript 5.9、Tailwind CSS 4、Zustand 5、PixiJS 8、Web MIDI API、Web Audio API、SoundFont2、OpenSheetMusicDisplay、Vitest 4、Playwright、electron-builder。
 
 ---
 

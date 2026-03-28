@@ -30,7 +30,7 @@ const MIDDLE_C = 60;
 /** Supported quantization grid sizes in ticks per quarter note */
 export const QUANTIZE_GRID = 4; // 16th note = ticksPerQuarter / 4
 
-/** Note name lookup for VexFlow key conversion */
+/** Note name lookup for notation key conversion */
 const NOTE_NAMES = [
   "c",
   "c#",
@@ -46,7 +46,7 @@ const NOTE_NAMES = [
   "b",
 ];
 
-/** Map MIDI key signature value (-7..+7) to VexFlow key name */
+/** Map MIDI key signature value (-7..+7) to notation key name */
 const KEY_SIG_TO_VEX: Record<number, string> = {
   [-7]: "Cb",
   [-6]: "Gb",
@@ -90,16 +90,16 @@ export interface QuantizedNote {
 }
 
 /**
- * Convert a MIDI key signature value to a VexFlow key name string.
+ * Convert a MIDI key signature value to a notation key name string.
  * @param keySig - Number of sharps (+) or flats (-), e.g. -1 = F major
- * @returns VexFlow key name like "C", "F", "Bb", "D"
+ * @returns notation key name like "C", "F", "Bb", "D"
  */
 export function keySigToVexKey(keySig: number): string {
   return KEY_SIG_TO_VEX[keySig] ?? "C";
 }
 
 /**
- * Convert a MIDI note number to a VexFlow key string.
+ * Convert a MIDI note number to a notation key string.
  * @example midiToVexKey(60) -> "c/4"
  * @example midiToVexKey(61) -> "c#/4"
  * @deprecated Use enharmonicMidiToVexKey from utils/enharmonicSpelling for key-aware spelling
@@ -129,11 +129,11 @@ export function quantizeToGrid(
 }
 
 /**
- * Convert a duration in ticks to a VexFlow duration string.
+ * Convert a duration in ticks to a notation duration string.
  * Supports dotted durations (wd, hd, qd, 8d) in addition to standard values.
  * @param durationTicks - Duration in ticks
  * @param ticksPerQuarter - Resolution
- * @returns VexFlow duration like "wd", "w", "hd", "h", "qd", "q", "8d", "8", "16"
+ * @returns notation duration like "wd", "w", "hd", "h", "qd", "q", "8d", "8", "16"
  */
 export function ticksToVexDuration(
   durationTicks: number,
@@ -334,7 +334,7 @@ export function fillRestsInMeasure(
  * @param expressions - Optional expression markings from ExpressionAnalyzer
  * @param timeSignatures - Optional full time-signature map from MIDI parser
  * @param noteTrackIndices - Optional per-note track index for mixed-track conversion
- * @returns NotationData with measures ready for VexFlow rendering
+ * @returns NotationData with measures ready for notation rendering
  */
 export function convertToNotation(
   notes: ParsedNote[],

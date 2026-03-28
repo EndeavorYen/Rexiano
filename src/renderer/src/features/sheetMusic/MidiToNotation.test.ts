@@ -119,7 +119,7 @@ describe("MidiToNotation", () => {
       expect(bass[0].midi).toBe(48);
     });
 
-    it("generates valid VexFlow keys", () => {
+    it("generates valid notation keys", () => {
       const notes = [
         { midi: 60, name: "C4", time: 0, duration: 0.5, velocity: 80 },
       ];
@@ -166,7 +166,7 @@ describe("MidiToNotation", () => {
   });
 
   describe("key signature support", () => {
-    it("passes key signature to VexFlow measure data", () => {
+    it("passes key signature to notation measure data", () => {
       const notes = [
         { midi: 60, name: "C4", time: 0, duration: 0.5, velocity: 80 },
       ];

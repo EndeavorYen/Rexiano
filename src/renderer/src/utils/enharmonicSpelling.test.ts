@@ -41,12 +41,12 @@ describe("enharmonicSpelling", () => {
   });
 
   describe("midiToVexKey", () => {
-    it("returns VexFlow format with sharps", () => {
+    it("returns notation format with sharps", () => {
       expect(midiToVexKey(60, 0)).toBe("c/4");
       expect(midiToVexKey(61, 1)).toBe("c#/4");
     });
 
-    it("returns VexFlow format with flats", () => {
+    it("returns notation format with flats", () => {
       expect(midiToVexKey(61, -1)).toBe("db/4");
       expect(midiToVexKey(70, -2)).toBe("bb/4");
     });

@@ -21,9 +21,9 @@ export interface NotationNote {
   startTick: number;
   /** Quantized duration in ticks */
   durationTicks: number;
-  /** VexFlow key string (e.g. "c/4", "f#/5") */
+  /** Notation key string (e.g. "c/4", "f#/5") */
   vexKey: string;
-  /** VexFlow duration string (e.g. "q", "8", "16", "h", "w") */
+  /** Notation duration string (e.g. "q", "8", "16", "h", "w") */
   vexDuration: string;
   /** Whether this note is tied to the next */
   tied: boolean;
@@ -39,7 +39,7 @@ export interface NotationMeasure {
   timeSignatureTop: number;
   /** Time signature denominator */
   timeSignatureBottom: number;
-  /** Key signature as VexFlow key name (e.g. "C", "F", "Bb", "D") */
+  /** Key signature as Notation key name (e.g. "C", "F", "Bb", "D") */
   keySignature: string;
   /** Notes in the treble clef (MIDI >= 60) */
   trebleNotes: NotationNote[];
