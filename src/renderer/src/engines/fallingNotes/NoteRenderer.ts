@@ -225,6 +225,7 @@ export class NoteRenderer {
 
   /** Update the keyboard range used for key position computation. */
   setKeyboardRange(firstNote: number, lastNote: number): void {
+    if (firstNote === this._firstNote && lastNote === this._lastNote) return;
     this._firstNote = firstNote;
     this._lastNote = lastNote;
     this.keyPositions = buildKeyPositions(this._canvasWidth, firstNote, lastNote);

@@ -140,10 +140,9 @@ export function buildCursorSteps(
 export function findStepAtTime(
   steps: CursorStep[],
   songTime: number,
-): CursorStep | null {
+): { step: CursorStep; index: number } | null {
   if (steps.length === 0 || songTime < 0) return null;
 
-  // Binary search: last step with time ≤ songTime
   let lo = 0;
   let hi = steps.length - 1;
   let result = -1;
@@ -159,13 +158,13 @@ export function findStepAtTime(
 
   if (result < 0) return null;
 
-  // Check if the step is still sounding
-  if (songTime < steps[result].endTime) return steps[result];
+  if (songTime < steps[result].endTime)
+    return { step: steps[result], index: result };
 
-  // Walk backward for polyphonic overlap (long note sustaining past shorter ones)
+  // Walk backward for polyphonic overlap
   for (let i = result - 1; i >= 0; i--) {
     if (steps[i].time <= songTime && songTime < steps[i].endTime) {
-      return steps[i];
+      return { step: steps[i], index: i };
     }
   }
 

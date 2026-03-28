@@ -18,20 +18,22 @@ describe("findStepAtTime", () => {
   ];
 
   it("returns first step at time 0", () => {
-    expect(findStepAtTime(steps, 0)).toBe(steps[0]);
+    const r = findStepAtTime(steps, 0);
+    expect(r?.step).toBe(steps[0]);
+    expect(r?.index).toBe(0);
   });
 
   it("returns correct step mid-duration", () => {
-    expect(findStepAtTime(steps, 0.3)).toBe(steps[0]);
+    expect(findStepAtTime(steps, 0.3)?.step).toBe(steps[0]);
   });
 
   it("returns next step at boundary", () => {
-    expect(findStepAtTime(steps, 0.5)).toBe(steps[1]);
+    expect(findStepAtTime(steps, 0.5)?.step).toBe(steps[1]);
   });
 
   it("returns long note throughout its duration", () => {
-    expect(findStepAtTime(steps, 2.5)).toBe(steps[3]);
-    expect(findStepAtTime(steps, 3.9)).toBe(steps[3]);
+    expect(findStepAtTime(steps, 2.5)?.step).toBe(steps[3]);
+    expect(findStepAtTime(steps, 3.9)?.step).toBe(steps[3]);
   });
 
   it("returns null after all notes end", () => {

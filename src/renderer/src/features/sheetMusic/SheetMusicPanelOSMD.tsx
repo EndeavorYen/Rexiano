@@ -228,8 +228,8 @@ export function SheetMusicPanelOSMD({
         return;
       }
 
-      const step = findStepAtTime(steps, currentTime);
-      if (!step) {
+      const found = findStepAtTime(steps, currentTime);
+      if (!found) {
         if (prevStepIdx !== -1) {
           clearHighlights(container);
           prevStepIdx = -1;
@@ -237,19 +237,15 @@ export function SheetMusicPanelOSMD({
         return;
       }
 
-      // Only update DOM when the highlighted step changes
-      const idx = steps.indexOf(step);
+      const { step, index: idx } = found;
       if (idx === prevStepIdx) return;
       const prevStep = prevStepIdx >= 0 ? steps[prevStepIdx] : null;
       prevStepIdx = idx;
 
       highlightStep(step, prevStep);
-      // Update debug overlay
       if (debugRef.current && song) {
         const mIdx = estimateMeasureIndex(song, currentTime);
-        const matched = step
-          ? `#${idx} t=${step.time.toFixed(2)}→${step.endTime.toFixed(2)}`
-          : "none";
+        const matched = `#${idx} t=${step.time.toFixed(2)}→${step.endTime.toFixed(2)}`;
         debugRef.current.textContent =
           `time=${currentTime.toFixed(2)} | measure=${mIdx} | steps=${steps.length} | match=${matched} | pageStart=${pageStartTimeRef.current.toFixed(2)}`;
       }
