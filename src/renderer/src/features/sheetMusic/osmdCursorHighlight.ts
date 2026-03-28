@@ -44,11 +44,36 @@ export function buildCursorSteps(
   const songNotes = song.tracks
     .flatMap((t) => t.notes)
     .sort((a, b) => a.time - b.time || a.midi - b.midi);
-  let notePtr = 0; // pointer into songNotes for merge matching
 
   cursor.reset();
   const it = cursor.Iterator;
   if (!it) return [];
+
+  // Estimate the time of the first rendered cursor step to position
+  // notePtr near the right region of songNotes (avoids false matches
+  // with earlier measures that have the same MIDI pitches).
+  const firstBpm = song.tempos[0]?.bpm ?? 120;
+  const firstTs = song.timeSignatures[0];
+  const firstMeasureIdx = it.CurrentMeasureIndex;
+  const secPerMeasure =
+    (60 / firstBpm) * (firstTs?.numerator ?? 4) * (4 / (firstTs?.denominator ?? 4));
+  const estimatedStartTime = firstMeasureIdx * secPerMeasure;
+
+  // Binary search songNotes for the estimated start time
+  let notePtr = 0;
+  {
+    let lo = 0;
+    let hi = songNotes.length - 1;
+    while (lo <= hi) {
+      const mid = (lo + hi) >>> 1;
+      if (songNotes[mid].time < estimatedStartTime - 0.5) {
+        lo = mid + 1;
+      } else {
+        hi = mid - 1;
+      }
+    }
+    notePtr = lo;
+  }
 
   const steps: CursorStep[] = [];
 
