@@ -216,10 +216,9 @@ export function SheetMusicPanelOSMD({
       if (!cursor) return;
 
       if (!isPlaying) {
-        if (wasPlaying) {
-          clearHighlights(container);
-          wasPlaying = false;
-        }
+        // Keep highlights visible on pause so users can verify
+        // which note the cursor is on vs the keyboard
+        wasPlaying = false;
         return;
       }
 
