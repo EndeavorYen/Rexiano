@@ -22,6 +22,8 @@ const MEASURES_PER_PAGE = 4;
 interface SheetMusicPanelOSMDProps {
   song: ParsedSong | null;
   mode: DisplayMode;
+  /** Returns the current audio time in seconds, or null if unavailable. */
+  getAudioCurrentTime?: () => number | null;
 }
 
 /**
@@ -41,6 +43,7 @@ function estimateMeasureIndex(song: ParsedSong, time: number): number {
 export function SheetMusicPanelOSMD({
   song,
   mode,
+  getAudioCurrentTime,
 }: SheetMusicPanelOSMDProps): React.ReactElement {
   const containerRef = useRef<HTMLDivElement>(null);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -190,7 +193,7 @@ export function SheetMusicPanelOSMD({
     // when the PixiJS canvas is the primary renderer. 100ms (~10 fps)
     // is sufficient for beat-level highlight updates.
     const intervalId = setInterval(() => {
-      const { isPlaying, currentTime } = usePlaybackStore.getState();
+      const { isPlaying, currentTime: storeTime } = usePlaybackStore.getState();
       if (!osmdRef.current || !loadedRef.current) return;
 
       if (!isPlaying) {
@@ -200,6 +203,11 @@ export function SheetMusicPanelOSMD({
         }
         return;
       }
+
+      // Prefer audio scheduler time (accurate during playback) over store
+      // time (only updated by PixiJS ticker, which may not run in sheet mode)
+      const audioTime = getAudioCurrentTime?.() ?? null;
+      const currentTime = audioTime ?? storeTime;
 
       const { measureIndex, beat } = estimateBeatPosition(
         currentTime,
