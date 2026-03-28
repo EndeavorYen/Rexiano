@@ -15,6 +15,8 @@ export class HighlightManager {
 
     const gNotes = osmd?.cursor?.GNotesUnderCursor?.() ?? [];
     for (const gNote of gNotes) {
+      // Skip rest notes — they have SVG elements but shouldn't glow
+      if (gNote.sourceNote?.isRestFlag) continue;
       const svgEl = gNote.getSVGGElement?.();
       if (svgEl instanceof SVGElement) {
         const heads = svgEl.querySelectorAll(".vf-notehead path");
