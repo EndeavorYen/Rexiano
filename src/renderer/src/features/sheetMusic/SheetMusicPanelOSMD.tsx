@@ -143,11 +143,15 @@ export function SheetMusicPanelOSMD({
 
     const bpm = song.tempos[0]?.bpm ?? 120;
 
+    let lastCursorTime = -1;
+
     const intervalId = setInterval(() => {
       const osmd = osmdRef.current;
       if (!osmd || !loadedRef.current) return;
 
       const { isPlaying, currentTime } = usePlaybackStore.getState();
+      const cursor = osmd.cursor;
+      if (!cursor) return;
 
       if (!isPlaying) {
         if (wasPlaying) {
@@ -158,18 +162,34 @@ export function SheetMusicPanelOSMD({
       }
 
       if (!wasPlaying) {
-        osmd.cursor?.reset();
+        cursor.reset();
+        lastCursorTime = 0;
         wasPlaying = true;
       }
 
-      const cursor = osmd.cursor;
-      if (!cursor || cursor.Iterator?.EndReached) return;
+      if (cursor.Iterator?.EndReached) return;
 
-      // Advance cursor while its timestamp is behind currentTime
-      const nextTime = cursorTimeToSeconds(osmd, bpm);
-      if (currentTime >= nextTime) {
-        clearHighlights(container);
+      // Detect seek backward: currentTime jumped behind cursor position
+      if (currentTime < lastCursorTime - 0.1) {
+        cursor.reset();
+        lastCursorTime = 0;
+      }
+
+      // Advance cursor until it reaches or passes currentTime.
+      // Uses a while-loop so seeks forward instantly (not one step per 50ms).
+      // Cap iterations to avoid infinite loops on edge cases.
+      let advanced = false;
+      for (let i = 0; i < 200; i++) {
+        if (cursor.Iterator?.EndReached) break;
+        const stepTime = cursorTimeToSeconds(osmd, bpm);
+        if (stepTime > currentTime) break;
         cursor.next();
+        lastCursorTime = stepTime;
+        advanced = true;
+      }
+
+      if (advanced) {
+        clearHighlights(container);
         highlightNotesUnderCursor(osmd);
       }
     }, 50);
