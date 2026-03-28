@@ -1,6 +1,6 @@
 import { useState, useCallback, useRef, useEffect, useMemo } from "react";
 import { ArrowLeft, PanelRightOpen, X } from "lucide-react";
-import appIcon from "../../../docs/figure/Rexiano_icon.png";
+import appIcon from "../../../docs/assets/rexiano-icon.png";
 import { parseMidiFile } from "./engines/midi/MidiFileParser";
 import { getTempoAtTime } from "./engines/midi/types";
 import { useSongStore } from "./stores/useSongStore";
@@ -41,6 +41,7 @@ import { useTranslation } from "./i18n/useTranslation";
 import { SheetMusicPanelOSMD } from "./features/sheetMusic/SheetMusicPanelOSMD";
 import { DisplayModeToggle } from "./features/sheetMusic/DisplayModeToggle";
 import { usePracticeStore } from "./stores/usePracticeStore";
+import { computeKeyboardRange } from "./engines/fallingNotes/computeKeyboardRange";
 import { SongCompleteOverlay } from "./features/practice/SongCompleteOverlay";
 import { MainMenu } from "./features/mainMenu/MainMenu";
 import {
@@ -61,6 +62,12 @@ function App(): React.JSX.Element {
   const song = useSongStore((s) => s.song);
   const loadSong = useSongStore((s) => s.loadSong);
   const reset = usePlaybackStore((s) => s.reset);
+  const keyboardRangePref = usePracticeStore((s) => s.keyboardRange);
+  const { firstNote, lastNote } = useMemo(() => {
+    if (keyboardRangePref === "full" || !song)
+      return { firstNote: 21, lastNote: 108 };
+    return computeKeyboardRange(song);
+  }, [song, keyboardRangePref]);
   const [routeIntent, setRouteIntent] = useState<AppRoute>(() => {
     if (typeof window === "undefined") return "menu";
     return parseRouteHash(window.location.hash);
@@ -1281,6 +1288,8 @@ function App(): React.JSX.Element {
                   getAudioCurrentTime={getAudioCurrentTime}
                   onNoteRendererReady={handleNoteRendererReadyWithSync}
                   minHeight={fallingCanvasMinHeight}
+                  firstNote={firstNote}
+                  lastNote={lastNote}
                 />
               </div>
               <ScoreOverlay />
@@ -1301,6 +1310,8 @@ function App(): React.JSX.Element {
               height={keyboardHeight}
               showLabels={showNoteLabels}
               compactLabels={compactKeyLabels}
+              firstNote={firstNote}
+              lastNote={lastNote}
             />
           </div>
         )}
@@ -1310,3 +1321,4 @@ function App(): React.JSX.Element {
 }
 
 export default App;
+

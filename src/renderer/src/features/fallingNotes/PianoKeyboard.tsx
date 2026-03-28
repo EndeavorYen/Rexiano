@@ -80,12 +80,15 @@ interface Layout {
   whiteKeyCount: number;
 }
 
-function buildLayout(): Layout {
+function buildLayout(
+  rangeFirst: number = FIRST_NOTE,
+  rangeLast: number = LAST_NOTE,
+): Layout {
   const whiteKeys: WhiteKeyInfo[] = [];
   const blackKeys: BlackKeyInfo[] = [];
   let whiteIndex = 0;
 
-  for (let midi = FIRST_NOTE; midi <= LAST_NOTE; midi++) {
+  for (let midi = rangeFirst; midi <= rangeLast; midi++) {
     const noteInOctave = midi % 12;
     if (IS_BLACK_NOTE[noteInOctave]) {
       blackKeys.push({ midi, leftWhiteIndex: whiteIndex - 1 });
@@ -112,6 +115,10 @@ interface PianoKeyboardProps {
   showLabels?: boolean;
   /** Show simplified key names to reduce crowding on narrow layouts */
   compactLabels?: boolean;
+  /** First MIDI note to display (default: 21 = A0) */
+  firstNote?: number;
+  /** Last MIDI note to display (default: 108 = C8) */
+  lastNote?: number;
 }
 
 /** Returns the CSS animation class for practice mode hit/miss feedback. */
@@ -198,8 +205,13 @@ export function PianoKeyboard({
   height = 120,
   showLabels = true,
   compactLabels = false,
+  firstNote = FIRST_NOTE,
+  lastNote = LAST_NOTE,
 }: PianoKeyboardProps): React.JSX.Element {
-  const layout = useMemo(() => buildLayout(), []);
+  const layout = useMemo(
+    () => buildLayout(firstNote, lastNote),
+    [firstNote, lastNote],
+  );
   const wPct = 100 / layout.whiteKeyCount;
 
   return (

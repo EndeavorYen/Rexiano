@@ -223,6 +223,10 @@ export const zhTW: TranslationMap = {
   "settings.kidMode": "兒童模式",
   "settings.kidModeDesc": "簡化操作介面，適合小朋友使用",
 
+  // ── Keyboard Range ──────────────────────────────────────────────
+  "toolbar.showAllKeys": "全部琴鍵",
+  "toolbar.showSongKeys": "曲子範圍",
+
   // ── Fingering ──────────────────────────────────────────────────
   "fingering.label": "指法",
 

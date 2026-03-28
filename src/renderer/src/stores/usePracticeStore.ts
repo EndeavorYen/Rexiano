@@ -38,6 +38,10 @@ interface PracticeState {
   setLoopRange: (range: [number, number] | null) => void;
   setActiveTracks: (tracks: Set<number>) => void;
   setDisplayMode: (mode: DisplayMode) => void;
+  /** Keyboard range preference: "song" = dynamic, "full" = all 88 keys */
+  keyboardRange: "song" | "full";
+  setKeyboardRange: (range: "song" | "full") => void;
+
   setWaiting: (waiting: boolean) => void;
   recordHit: (noteKey: string, timingDeltaMs?: number) => void;
   recordMiss: (noteKey: string) => void;
@@ -58,6 +62,7 @@ export const usePracticeStore = create<PracticeState>()((set) => ({
   noteResults: new Map<string, NoteResult>(),
   displayMode: "sheet",
   isWaiting: false,
+  keyboardRange: "song",
   _timingDeltaCount: 0,
 
   setMode: (mode) =>
@@ -74,6 +79,8 @@ export const usePracticeStore = create<PracticeState>()((set) => ({
   setLoopRange: (range) => set({ loopRange: range }),
 
   setDisplayMode: (displayMode) => set({ displayMode }),
+
+  setKeyboardRange: (range) => set({ keyboardRange: range }),
 
   setWaiting: (waiting) => set({ isWaiting: waiting }),
 

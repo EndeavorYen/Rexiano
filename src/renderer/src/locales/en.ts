@@ -229,6 +229,10 @@ export const en: TranslationMap = {
   "settings.kidMode": "Kid Mode",
   "settings.kidModeDesc": "Simplify controls for younger players",
 
+  // ── Keyboard Range ──────────────────────────────────────────────
+  "toolbar.showAllKeys": "All Keys",
+  "toolbar.showSongKeys": "Song Keys",
+
   // ── Fingering ──────────────────────────────────────────────────
   "fingering.label": "Fingering",
 

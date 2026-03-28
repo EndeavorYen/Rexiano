@@ -219,9 +219,22 @@ export class NoteRenderer {
    * Must be called once before any `update()` or `resize()` calls.
    * @param canvasWidth Canvas pixel width, used to compute key positions
    */
-  init(canvasWidth: number): void {
+  /** Dynamic keyboard range — stored for resize reuse */
+  private _firstNote = 21;
+  private _lastNote = 108;
+
+  /** Update the keyboard range used for key position computation. */
+  setKeyboardRange(firstNote: number, lastNote: number): void {
+    this._firstNote = firstNote;
+    this._lastNote = lastNote;
+    this.keyPositions = buildKeyPositions(this._canvasWidth, firstNote, lastNote);
+  }
+
+  init(canvasWidth: number, firstNote = 21, lastNote = 108): void {
     this._canvasWidth = canvasWidth;
-    this.keyPositions = buildKeyPositions(canvasWidth);
+    this._firstNote = firstNote;
+    this._lastNote = lastNote;
+    this.keyPositions = buildKeyPositions(canvasWidth, firstNote, lastNote);
     this.noteTexture = Texture.WHITE;
 
     for (let i = 0; i < INITIAL_POOL_SIZE; i++) {
@@ -282,7 +295,7 @@ export class NoteRenderer {
    */
   resize(canvasWidth: number): void {
     this._canvasWidth = canvasWidth;
-    this.keyPositions = buildKeyPositions(canvasWidth);
+    this.keyPositions = buildKeyPositions(canvasWidth, this._firstNote, this._lastNote);
   }
 
   /**

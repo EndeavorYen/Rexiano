@@ -6,12 +6,35 @@
  * into a single toolbar embedded below the TransportBar.
  */
 import { useState } from "react";
-import { ChevronDown, ChevronUp } from "lucide-react";
+import { ChevronDown, ChevronUp, Piano } from "lucide-react";
 import { useTranslation } from "@renderer/i18n/useTranslation";
 import { useSettingsStore } from "@renderer/stores/useSettingsStore";
+import { usePracticeStore } from "@renderer/stores/usePracticeStore";
 import { PracticeModeSelector } from "./PracticeModeSelector";
 import { SpeedSlider } from "./SpeedSlider";
 import { ABLoopSelector } from "./ABLoopSelector";
+
+function KeyboardRangeToggle(): React.JSX.Element {
+  const { t } = useTranslation();
+  const keyboardRange = usePracticeStore((s) => s.keyboardRange);
+  const setKeyboardRange = usePracticeStore((s) => s.setKeyboardRange);
+
+  const isSong = keyboardRange === "song";
+  const label = isSong ? t("toolbar.showSongKeys") : t("toolbar.showAllKeys");
+
+  return (
+    <button
+      type="button"
+      onClick={() => setKeyboardRange(isSong ? "full" : "song")}
+      className="btn-surface-themed inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[11px] font-body font-semibold cursor-pointer"
+      aria-label={label}
+      data-testid="keyboard-range-toggle"
+    >
+      <Piano size={13} />
+      <span>{label}</span>
+    </button>
+  );
+}
 
 interface PracticeToolbarProps {
   compact?: boolean;
@@ -71,6 +94,13 @@ export function PracticeToolbar({
           />
 
           <ABLoopSelector />
+
+          <div
+            className="hidden sm:block h-5 w-px shrink-0"
+            style={{ background: "var(--color-border)" }}
+          />
+
+          <KeyboardRangeToggle />
         </div>
       </div>
     );

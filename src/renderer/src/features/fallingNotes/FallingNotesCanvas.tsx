@@ -15,6 +15,10 @@ interface FallingNotesCanvasProps {
   onNoteRendererReady?: (renderer: NoteRenderer) => void;
   /** Optional minimum render height in px */
   minHeight?: number;
+  /** First MIDI note to display (default: 21 = A0) */
+  firstNote?: number;
+  /** Last MIDI note to display (default: 108 = C8) */
+  lastNote?: number;
 }
 
 export function FallingNotesCanvas({
@@ -22,6 +26,8 @@ export function FallingNotesCanvas({
   getAudioCurrentTime,
   onNoteRendererReady,
   minHeight = 200,
+  firstNote = 21,
+  lastNote = 108,
 }: FallingNotesCanvasProps): React.JSX.Element {
   const containerRef = useRef<HTMLDivElement>(null);
   const appRef = useRef<Application | null>(null);
@@ -45,6 +51,18 @@ export function FallingNotesCanvas({
   useEffect(() => {
     onNoteRendererReadyRef.current = onNoteRendererReady;
   }, [onNoteRendererReady]);
+
+  // Stable refs for keyboard range so the init closure captures them
+  const firstNoteRef = useRef(firstNote);
+  const lastNoteRef = useRef(lastNote);
+  useEffect(() => {
+    firstNoteRef.current = firstNote;
+    lastNoteRef.current = lastNote;
+    // Update existing renderer if range changes after init
+    if (rendererRef.current && appRef.current) {
+      rendererRef.current.setKeyboardRange(firstNote, lastNote);
+    }
+  }, [firstNote, lastNote]);
 
   // One-time PixiJS setup + teardown
   useEffect(() => {
@@ -78,7 +96,7 @@ export function FallingNotesCanvas({
 
       // Create the note renderer
       const noteRenderer = new NoteRenderer(app.stage);
-      noteRenderer.init(app.screen.width);
+      noteRenderer.init(app.screen.width, firstNoteRef.current, lastNoteRef.current);
       rendererRef.current = noteRenderer;
       onNoteRendererReadyRef.current?.(noteRenderer);
 

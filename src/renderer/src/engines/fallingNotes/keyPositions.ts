@@ -1,5 +1,5 @@
-const FIRST_NOTE = 21;
-const LAST_NOTE = 108;
+const DEFAULT_FIRST_NOTE = 21;
+const DEFAULT_LAST_NOTE = 108;
 
 const IS_BLACK: boolean[] = [
   false,
@@ -25,12 +25,14 @@ export interface KeyPosition {
 
 export function buildKeyPositions(
   canvasWidth: number,
+  firstNote: number = DEFAULT_FIRST_NOTE,
+  lastNote: number = DEFAULT_LAST_NOTE,
 ): Map<number, KeyPosition> {
   const map = new Map<number, KeyPosition>();
 
   const whiteKeyIndices = new Map<number, number>();
   let whiteCount = 0;
-  for (let midi = FIRST_NOTE; midi <= LAST_NOTE; midi++) {
+  for (let midi = firstNote; midi <= lastNote; midi++) {
     if (!IS_BLACK[midi % 12]) {
       whiteKeyIndices.set(midi, whiteCount);
       whiteCount++;
@@ -40,7 +42,7 @@ export function buildKeyPositions(
   const whiteKeyWidth = canvasWidth / whiteCount;
 
   let lastWhiteIndex = -1;
-  for (let midi = FIRST_NOTE; midi <= LAST_NOTE; midi++) {
+  for (let midi = firstNote; midi <= lastNote; midi++) {
     const isBlack = IS_BLACK[midi % 12];
     if (!isBlack) {
       const idx = whiteKeyIndices.get(midi)!;

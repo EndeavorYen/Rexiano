@@ -223,6 +223,10 @@ export interface TranslationMap {
   "settings.kidMode": string;
   "settings.kidModeDesc": string;
 
+  // ── Keyboard Range ──────────────────────────────────────────────
+  "toolbar.showAllKeys": string;
+  "toolbar.showSongKeys": string;
+
   // ── Fingering ──────────────────────────────────────────────────
   "fingering.label": string;
 
