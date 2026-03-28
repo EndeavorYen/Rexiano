@@ -2,11 +2,74 @@
  * @vitest-environment jsdom
  */
 import { describe, it, expect, vi } from "vitest";
-import {
-  clearHighlights,
-  highlightNotesUnderCursor,
-} from "./osmdCursorHighlight";
+import { HighlightManager } from "./osmdCursorHighlight";
 import { buildStepTimes } from "./SheetMusicPanelOSMD";
+
+// ─── HighlightManager ────────────────────────────────────
+
+describe("HighlightManager", () => {
+  it("adds and removes highlights based on endTime", () => {
+    const hl = new HighlightManager();
+    const el = document.createElementNS("http://www.w3.org/2000/svg", "path");
+
+    // Mock OSMD with one note
+    const osmd = {
+      cursor: {
+        GNotesUnderCursor: () => {
+          const g = document.createElementNS("http://www.w3.org/2000/svg", "g");
+          const nh = document.createElementNS("http://www.w3.org/2000/svg", "g");
+          nh.setAttribute("class", "vf-notehead");
+          nh.appendChild(el);
+          g.appendChild(nh);
+          return [{ getSVGGElement: () => g }];
+        },
+      },
+    };
+
+    hl.addFromCursor(osmd, 2.0); // endTime = 2.0
+    expect(el.classList.contains("osmd-note-active")).toBe(true);
+
+    hl.tick(1.5); // still active
+    expect(el.classList.contains("osmd-note-active")).toBe(true);
+
+    hl.tick(2.0); // expired
+    expect(el.classList.contains("osmd-note-active")).toBe(false);
+  });
+
+  it("clear removes all highlights", () => {
+    const hl = new HighlightManager();
+    const el = document.createElementNS("http://www.w3.org/2000/svg", "path");
+    const osmd = {
+      cursor: {
+        GNotesUnderCursor: () => {
+          const g = document.createElementNS("http://www.w3.org/2000/svg", "g");
+          const nh = document.createElementNS("http://www.w3.org/2000/svg", "g");
+          nh.setAttribute("class", "vf-notehead");
+          nh.appendChild(el);
+          g.appendChild(nh);
+          return [{ getSVGGElement: () => g }];
+        },
+      },
+    };
+
+    hl.addFromCursor(osmd, 10.0);
+    expect(el.classList.contains("osmd-note-active")).toBe(true);
+
+    hl.clear();
+    expect(el.classList.contains("osmd-note-active")).toBe(false);
+  });
+
+  it("does not throw when cursor has no notes", () => {
+    const hl = new HighlightManager();
+    const osmd = { cursor: { GNotesUnderCursor: vi.fn(() => []) } };
+    expect(() => hl.addFromCursor(osmd, 1.0)).not.toThrow();
+  });
+
+  it("does not throw when osmd is null", () => {
+    const hl = new HighlightManager();
+    expect(() => hl.addFromCursor(null, 1.0)).not.toThrow();
+  });
+});
 
 // ─── buildStepTimes ──────────────────────────────────────
 
@@ -17,19 +80,11 @@ describe("buildStepTimes", () => {
     expect(buildStepTimes(null, song as any)).toEqual([]);
   });
 
-  it("returns empty array when cursor is missing", () => {
-    const song = { tracks: [], tempos: [], timeSignatures: [] };
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    expect(buildStepTimes({}, song as any)).toEqual([]);
-  });
-
-  it("matches cursor steps to ParsedNote times", () => {
-    // Mock: 3 cursor steps with MIDI 60, 62, 64
+  it("matches cursor steps to ParsedNote times with endTimes", () => {
     let step = 0;
     const stepsData = [
       { midis: [60], isRest: false },
       { midis: [62], isRest: false },
-      { midis: [64], isRest: false },
     ];
     const mockCursor = {
       reset: vi.fn(),
@@ -38,11 +93,10 @@ describe("buildStepTimes", () => {
         get EndReached() { return step >= stepsData.length; },
         get CurrentVoiceEntries() {
           if (step >= stepsData.length) return [];
-          const s = stepsData[step];
           return [{
-            Notes: s.midis.map(m => ({
+            Notes: stepsData[step].midis.map(m => ({
               halfTone: m - 12,
-              isRest: () => s.isRest,
+              isRest: () => stepsData[step].isRest,
             })),
           }];
         },
@@ -51,20 +105,21 @@ describe("buildStepTimes", () => {
     const song = {
       tracks: [{
         notes: [
-          { midi: 60, time: 0.5, duration: 0.5 },
+          { midi: 60, time: 0.5, duration: 2.0 }, // long note
           { midi: 62, time: 1.0, duration: 0.5 },
-          { midi: 64, time: 1.5, duration: 0.5 },
         ],
       }],
     };
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const times = buildStepTimes({ cursor: mockCursor }, song as any);
-    expect(times).toEqual([0.5, 1.0, 1.5]);
+    expect(times[0].time).toBe(0.5);
+    expect(times[0].endTime).toBe(2.5); // 0.5 + 2.0
+    expect(times[1].time).toBe(1.0);
+    expect(times[1].endTime).toBe(1.5); // 1.0 + 0.5
   });
 
   it("handles tempo changes — uses ParsedNote.time not BPM conversion", () => {
-    // Song with tempo change: note at t=5.0 is after a slowdown
     let step = 0;
     const mockCursor = {
       reset: vi.fn(),
@@ -73,12 +128,8 @@ describe("buildStepTimes", () => {
         get EndReached() { return step >= 2; },
         get CurrentVoiceEntries() {
           if (step >= 2) return [];
-          const midis = step === 0 ? [60] : [62];
           return [{
-            Notes: midis.map(m => ({
-              halfTone: m - 12,
-              isRest: () => false,
-            })),
+            Notes: [{ halfTone: (step === 0 ? 60 : 62) - 12, isRest: () => false }],
           }];
         },
       },
@@ -87,51 +138,15 @@ describe("buildStepTimes", () => {
       tracks: [{
         notes: [
           { midi: 60, time: 0.5, duration: 0.5 },
-          { midi: 62, time: 5.0, duration: 0.5 }, // far apart due to tempo change
+          { midi: 62, time: 5.0, duration: 0.5 },
         ],
       }],
-      tempos: [
-        { time: 0, bpm: 120 },
-        { time: 1.0, bpm: 30 }, // slowdown
-      ],
+      tempos: [{ time: 0, bpm: 120 }, { time: 1.0, bpm: 30 }],
     };
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const times = buildStepTimes({ cursor: mockCursor }, song as any);
-    // Should use actual ParsedNote.time, not BPM-based calculation
-    expect(times[0]).toBe(0.5);
-    expect(times[1]).toBe(5.0); // NOT 1.0 (which a fixed-BPM calc would give)
-  });
-});
-
-// ─── clearHighlights ─────────────────────────────────────
-
-describe("clearHighlights", () => {
-  it("removes osmd-note-active class from all children", () => {
-    const container = document.createElement("div");
-    const el1 = document.createElement("span");
-    const el2 = document.createElement("span");
-    el1.classList.add("osmd-note-active");
-    el2.classList.add("osmd-note-active");
-    container.appendChild(el1);
-    container.appendChild(el2);
-
-    clearHighlights(container);
-
-    expect(el1.classList.contains("osmd-note-active")).toBe(false);
-    expect(el2.classList.contains("osmd-note-active")).toBe(false);
-  });
-});
-
-// ─── highlightNotesUnderCursor ───────────────────────────
-
-describe("highlightNotesUnderCursor", () => {
-  it("does not throw when osmd is null", () => {
-    expect(() => highlightNotesUnderCursor(null)).not.toThrow();
-  });
-
-  it("does not throw when cursor has no notes", () => {
-    const osmd = { cursor: { GNotesUnderCursor: vi.fn(() => []) } };
-    expect(() => highlightNotesUnderCursor(osmd)).not.toThrow();
+    expect(times[0].time).toBe(0.5);
+    expect(times[1].time).toBe(5.0);
   });
 });

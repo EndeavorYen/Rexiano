@@ -3,30 +3,32 @@ import type { ParsedSong } from "@renderer/engines/midi/types";
 import type { DisplayMode } from "./types";
 import { convertToMusicXML } from "@renderer/engines/notation/MidiToMusicXML";
 import { usePlaybackStore } from "../../stores/usePlaybackStore";
-import {
-  highlightNotesUnderCursor,
-  clearHighlights,
-} from "./osmdCursorHighlight";
+import { HighlightManager } from "./osmdCursorHighlight";
 
 interface SheetMusicPanelOSMDProps {
   song: ParsedSong | null;
   mode: DisplayMode;
 }
 
+export interface StepTiming {
+  time: number;
+  endTime: number;
+}
+
 /**
- * Build an array of song-times (seconds) for each OSMD cursor step.
- * Matches each step's MIDI notes to ParsedNote.time for accurate timing
- * that respects tempo changes throughout the piece.
- *
- * Must be called after osmd.render() + cursor.reset().
+ * Build timing info for each OSMD cursor step from ParsedNote.time.
+ * Respects tempo changes. Must be called after osmd.render().
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function buildStepTimes(osmd: any, song: ParsedSong): number[] {
+export function buildStepTimes(osmd: any, song: ParsedSong): StepTiming[] {
   const cursor = osmd?.cursor;
   if (!cursor) return [];
 
-  // Build per-MIDI sorted note lists for matching
-  const notesByMidi = new Map<number, number[]>();
+  // Build per-MIDI sorted note lists {time, endTime} for matching
+  const notesByMidi = new Map<
+    number,
+    { time: number; endTime: number }[]
+  >();
   for (const track of song.tracks) {
     for (const note of track.notes) {
       let list = notesByMidi.get(note.midi);
@@ -34,23 +36,24 @@ export function buildStepTimes(osmd: any, song: ParsedSong): number[] {
         list = [];
         notesByMidi.set(note.midi, list);
       }
-      list.push(note.time);
+      list.push({ time: note.time, endTime: note.time + note.duration });
     }
   }
   for (const list of notesByMidi.values()) {
-    list.sort((a, b) => a - b);
+    list.sort((a, b) => a.time - b.time);
   }
 
   cursor.reset();
   const it = cursor.Iterator;
   if (!it) return [];
 
-  const times: number[] = [];
+  const steps: StepTiming[] = [];
   let lastTime = -1;
 
   while (!it.EndReached) {
     const voices = it.CurrentVoiceEntries || [];
     let bestTime = Infinity;
+    let bestEndTime = 0;
 
     for (const ve of voices) {
       for (const note of ve.Notes) {
@@ -58,38 +61,40 @@ export function buildStepTimes(osmd: any, song: ParsedSong): number[] {
         const midi = note.halfTone + 12;
         const list = notesByMidi.get(midi);
         if (!list) continue;
-        // Binary search: first time > lastTime
         let lo = 0;
         let hi = list.length - 1;
         let found = -1;
         while (lo <= hi) {
           const mid = (lo + hi) >>> 1;
-          if (list[mid] > lastTime + 0.001) {
+          if (list[mid].time > lastTime + 0.001) {
             found = mid;
             hi = mid - 1;
           } else {
             lo = mid + 1;
           }
         }
-        if (found >= 0 && list[found] < bestTime) {
-          bestTime = list[found];
+        if (found >= 0 && list[found].time < bestTime) {
+          bestTime = list[found].time;
+        }
+        // Track the longest endTime across all voices at this step
+        if (found >= 0 && list[found].endTime > bestEndTime) {
+          bestEndTime = list[found].endTime;
         }
       }
     }
 
     if (bestTime < Infinity) {
-      times.push(bestTime);
+      steps.push({ time: bestTime, endTime: bestEndTime });
       lastTime = bestTime;
     } else {
-      // Rest or unmatched step — use last time + small offset
-      times.push(lastTime + 0.01);
+      steps.push({ time: lastTime + 0.01, endTime: lastTime + 0.02 });
     }
 
     cursor.next();
   }
 
   cursor.reset();
-  return times;
+  return steps;
 }
 
 export function SheetMusicPanelOSMD({
@@ -100,7 +105,8 @@ export function SheetMusicPanelOSMD({
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const osmdRef = useRef<any>(null);
   const loadedRef = useRef(false);
-  const stepTimesRef = useRef<number[]>([]);
+  const stepTimesRef = useRef<StepTiming[]>([]);
+  const highlighterRef = useRef(new HighlightManager());
 
   const musicXml = useMemo(() => {
     if (!song) return null;
@@ -197,63 +203,72 @@ export function SheetMusicPanelOSMD({
   }, [mode]);
 
   // Effect 2: Drive cursor forward during playback.
-  // Uses pre-built stepTimes[] (from ParsedNote.time, respects tempo changes)
-  // instead of computing beat-fraction→seconds per tick.
+  // Uses pre-built stepTimes[] (from ParsedNote.time, respects tempo changes).
+  // HighlightManager tracks per-note endTimes so long notes (whole/half)
+  // stay highlighted even when the cursor advances to shorter notes.
   useEffect(() => {
     if (mode === "falling" || !containerRef.current || !song) return;
-    const container = containerRef.current;
+    const hl = highlighterRef.current;
     let wasPlaying = false;
     let cursorPos = 0;
+    let lastHighlightedPos = -1;
 
     const intervalId = setInterval(() => {
       const osmd = osmdRef.current;
       if (!osmd || !loadedRef.current) return;
-      const stepTimes = stepTimesRef.current;
-      if (stepTimes.length === 0) return;
+      const steps = stepTimesRef.current;
+      if (steps.length === 0) return;
 
       const { isPlaying, currentTime } = usePlaybackStore.getState();
       const cursor = osmd.cursor;
       if (!cursor) return;
 
+      // Always expire old highlights based on time
+      hl.tick(currentTime);
+
       if (!isPlaying) {
-        // Keep highlights visible on pause so users can verify
-        // which note the cursor is on vs the keyboard
         wasPlaying = false;
         return;
       }
 
       if (!wasPlaying) {
         cursor.reset();
+        hl.reset();
         cursorPos = 0;
+        lastHighlightedPos = -1;
         wasPlaying = true;
       }
 
-      // Seek backward: currentTime jumped before cursor position
-      if (cursorPos > 0 && currentTime < stepTimes[cursorPos] - 0.1) {
+      // Seek backward
+      if (cursorPos > 0 && currentTime < steps[cursorPos].time - 0.1) {
         cursor.reset();
+        hl.reset();
         cursorPos = 0;
+        lastHighlightedPos = -1;
       }
 
       // Advance cursor while the NEXT step's time has been reached
-      let advanced = false;
-      while (cursorPos + 1 < stepTimes.length && stepTimes[cursorPos + 1] <= currentTime) {
+      while (
+        cursorPos + 1 < steps.length &&
+        steps[cursorPos + 1].time <= currentTime
+      ) {
         cursor.next();
         cursorPos++;
-        advanced = true;
       }
 
-      // Highlight when we're at or past the current step's time
-      if (currentTime >= stepTimes[cursorPos]) {
-        if (advanced || !wasPlaying) {
-          clearHighlights(container);
-          highlightNotesUnderCursor(osmd);
-        }
+      // Add highlight for the current step (only once per step)
+      if (
+        currentTime >= steps[cursorPos].time &&
+        cursorPos !== lastHighlightedPos
+      ) {
+        hl.addFromCursor(osmd, steps[cursorPos].endTime);
+        lastHighlightedPos = cursorPos;
       }
     }, 50);
 
     return () => {
       clearInterval(intervalId);
-      if (containerRef.current) clearHighlights(containerRef.current);
+      hl.clear();
     };
   }, [song, mode]);
 
