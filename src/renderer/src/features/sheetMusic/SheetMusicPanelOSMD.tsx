@@ -11,10 +11,12 @@ import { convertToMusicXML } from "@renderer/engines/notation/MidiToMusicXML";
 import { usePlaybackStore } from "../../stores/usePlaybackStore";
 import { getMeasureWindow } from "./CursorSync";
 import {
-  highlightActiveNotes,
+  buildTimeMap,
+  findActiveEntry,
+  highlightAtStep,
   clearHighlights,
-  estimateBeatPosition,
-} from "./osmdNoteHighlight";
+  type CursorTimeEntry,
+} from "./osmdCursorHighlight";
 
 /** Default number of measures to display per page (one system line). */
 const MEASURES_PER_PAGE = 4;
@@ -50,6 +52,10 @@ export function SheetMusicPanelOSMD({
   const osmdRef = useRef<any>(null);
   const loadedRef = useRef(false);
   const [totalMeasures, setTotalMeasures] = useState(0);
+
+  // Time map and cursor step tracking for highlight engine
+  const timeMapRef = useRef<CursorTimeEntry[]>([]);
+  const cursorStepRef = useRef(0);
 
   // Subscribe to playback, but only re-render when the measure index changes
   const currentMeasure = usePlaybackStore(
@@ -145,10 +151,12 @@ export function SheetMusicPanelOSMD({
       container.textContent = "";
       loadedRef.current = false;
       setTotalMeasures(0);
+      timeMapRef.current = [];
     };
   }, [musicXml, mode]);
 
   // Effect 2: Render with the current measure range (page flips only)
+  // After render, rebuild the time map from the cursor iterator.
   useEffect(() => {
     if (!loadedRef.current || !osmdRef.current || mode === "falling") return;
 
@@ -159,6 +167,16 @@ export function SheetMusicPanelOSMD({
       });
     }
     osmdRef.current.render();
+
+    // Rebuild time map after every render (SVG elements change on re-render)
+    timeMapRef.current = buildTimeMap(osmdRef.current);
+    cursorStepRef.current = 0;
+
+    // Hide the built-in cursor element (we use CSS highlights instead)
+    const cursor = osmdRef.current.cursor;
+    if (cursor?.cursorElement) {
+      cursor.cursorElement.style.display = "none";
+    }
   }, [windowKey, totalMeasures, mode]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Re-render OSMD on container resize (since autoResize is disabled to
@@ -169,73 +187,66 @@ export function SheetMusicPanelOSMD({
     const ro = new ResizeObserver(() => {
       if (osmdRef.current && loadedRef.current) {
         osmdRef.current.render();
+        // Rebuild time map after resize re-render
+        timeMapRef.current = buildTimeMap(osmdRef.current);
+        cursorStepRef.current = 0;
       }
     });
     ro.observe(el);
     return () => ro.disconnect();
   }, [mode]);
 
-  // Effect 3: Highlight active notes during playback.
-  // Uses requestAnimationFrame instead of store subscription because
-  // currentTime is read via getState() by the PixiJS ticker — the store
-  // does not fire subscription callbacks on every frame update.
+  // Effect 3: Highlight active notes during playback using the cursor engine.
+  // Uses setInterval because Electron throttles rAF when PixiJS is primary renderer.
+  // Reads audio time from AudioScheduler for accurate sync in sheet-only mode.
   useEffect(() => {
     if (mode === "falling" || !containerRef.current || !song) return;
     const container = containerRef.current;
-    let prevBeatKey = "";
+    let prevStepIndex = -1;
 
-    const bpm = song.tempos[0]?.bpm ?? 120;
-    const ts = song.timeSignatures[0];
-    const num = ts?.numerator ?? 4;
-    const den = ts?.denominator ?? 4;
-
-    // Use setInterval (not rAF) because Electron may throttle rAF
-    // when the PixiJS canvas is the primary renderer. 100ms (~10 fps)
-    // is sufficient for beat-level highlight updates.
     const intervalId = setInterval(() => {
-      const { isPlaying, currentTime: storeTime } = usePlaybackStore.getState();
+      const { isPlaying, currentTime: storeTime } =
+        usePlaybackStore.getState();
       if (!osmdRef.current || !loadedRef.current) return;
 
       if (!isPlaying) {
-        if (prevBeatKey !== "") {
+        if (prevStepIndex !== -1) {
           clearHighlights(container);
-          prevBeatKey = "";
+          prevStepIndex = -1;
         }
         return;
       }
 
-      // Prefer audio scheduler time (accurate during playback) over store
-      // time (only updated by PixiJS ticker, which may not run in sheet mode)
+      // Prefer audio scheduler time (accurate) over store time
       const audioTime = getAudioCurrentTime?.() ?? null;
       const currentTime = audioTime ?? storeTime;
 
-      const { measureIndex, beat } = estimateBeatPosition(
-        currentTime,
-        bpm,
-        num,
-        den,
-      );
-
-      // Only update DOM when the beat position actually changes (throttle)
-      const beatKey = `${measureIndex}:${Math.floor(beat * 2)}`;
-      if (beatKey === prevBeatKey) return;
-      prevBeatKey = beatKey;
-
-      if (measureWindow.length > 0) {
-        const localIndex = measureIndex - measureWindow[0];
-        if (localIndex >= 0 && localIndex < measureWindow.length) {
-          highlightActiveNotes(osmdRef.current, localIndex, beat, container);
-        } else {
+      const entry = findActiveEntry(timeMapRef.current, currentTime);
+      if (!entry) {
+        if (prevStepIndex !== -1) {
           clearHighlights(container);
+          prevStepIndex = -1;
         }
+        return;
       }
-    }, 100);
+
+      // Only update DOM when the active step changes
+      if (entry.stepIndex === prevStepIndex) return;
+      prevStepIndex = entry.stepIndex;
+
+      cursorStepRef.current = highlightAtStep(
+        osmdRef.current,
+        entry,
+        container,
+        cursorStepRef.current,
+      );
+    }, 80);
 
     return () => {
       clearInterval(intervalId);
       clearHighlights(container);
     };
-  }, [song, mode, measureWindow]);
+  }, [song, mode, getAudioCurrentTime]);
 
   // Always render the container div so containerRef stays attached across
   // mode transitions. Returning null would detach the ref, causing the

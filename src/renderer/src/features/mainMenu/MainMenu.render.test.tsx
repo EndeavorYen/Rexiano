@@ -18,7 +18,7 @@ vi.mock("lucide-react", () => ({
 }));
 
 // Mock app icon import
-vi.mock("../../../../../docs/figure/Rexiano_icon.png", () => ({
+vi.mock("../../../../../docs/assets/rexiano-icon.png", () => ({
   default: "mock-icon.png",
 }));
 
@@ -94,3 +94,4 @@ describe("MainMenu render", () => {
     expect(screen.getByText("library.noSongsHint")).toBeDefined();
   });
 });
+
