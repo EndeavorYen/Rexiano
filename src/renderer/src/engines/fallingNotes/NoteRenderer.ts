@@ -169,12 +169,6 @@ export class NoteRenderer {
   private _cachedTrackPalette: number[] = [];
 
   public activeNotes = new Set<number>();
-  /** Increments each time the set of active note *objects* changes
-   *  (even if the MIDI pitch set stays the same, e.g. consecutive C4→C4). */
-  public activeNoteGeneration = 0;
-  /** Track which note keys were active last frame to detect note-object changes */
-  private _prevActiveNoteKeys = new Set<string>();
-  private _activeNoteKeys = new Set<string>();
 
   /** Key signature (number of sharps/flats) used for note label display.
    *  Positive = sharps, negative = flats. Set from App.tsx. */
@@ -316,7 +310,6 @@ export class NoteRenderer {
     const nextActive = this.nextActive;
     nextActive.clear();
     this.activeNotes.clear();
-    this._activeNoteKeys.clear();
 
     const hitWindow = 0.05;
     // S9-R3-03: Use cached value instead of per-frame store access
@@ -408,7 +401,6 @@ export class NoteRenderer {
           note.time + note.duration >= vp.currentTime - hitWindow
         ) {
           this.activeNotes.add(note.midi);
-          this._activeNoteKeys.add(key);
         }
 
         // ── Fingering label overlay ──────────────────────────────
@@ -452,20 +444,6 @@ export class NoteRenderer {
 
     // NOTE: When showFingering is false, nextFLabels is empty, so the loop
     // above already releases all labels. No second release needed.
-
-    // Bump generation when the set of active note *objects* changes.
-    // This detects consecutive identical pitches (e.g. C4→C4) where
-    // the MIDI Set stays {60} but the note key changes (different time).
-    const keysChanged =
-      this._activeNoteKeys.size !== this._prevActiveNoteKeys.size ||
-      [...this._activeNoteKeys].some((k) => !this._prevActiveNoteKeys.has(k));
-    if (keysChanged) {
-      this.activeNoteGeneration++;
-      // Swap key sets
-      const tmp = this._prevActiveNoteKeys;
-      this._prevActiveNoteKeys = this._activeNoteKeys;
-      this._activeNoteKeys = tmp;
-    }
 
     // Swap buffers: active ↔ nextActive
     this.nextActive = this.active;

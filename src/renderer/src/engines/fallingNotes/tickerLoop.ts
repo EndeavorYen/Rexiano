@@ -32,7 +32,6 @@ export function createTickerUpdate(
   getAudioCurrentTime?: () => number | null,
 ) {
   let prevActiveNotes = new Set<number>();
-  let prevGeneration = 0;
 
   return (time: { deltaMS: number }) => {
     const songState = useSongStore.getState();
@@ -144,16 +143,12 @@ export function createTickerUpdate(
 
     noteRenderer.update(songState.song, vp);
 
-    // Notify React when active notes change (MIDI set) OR when the
-    // note generation bumps (same MIDI but different note objects,
-    // e.g. consecutive C4→C4).
+    // Only notify React when active notes actually change
     if (onActiveNotesChangeRef.current) {
       const next = noteRenderer.activeNotes;
-      const gen = noteRenderer.activeNoteGeneration;
-      if (!setsEqual(prevActiveNotes, next) || gen !== prevGeneration) {
+      if (!setsEqual(prevActiveNotes, next)) {
         const snapshot = new Set(next);
         prevActiveNotes = snapshot;
-        prevGeneration = gen;
         onActiveNotesChangeRef.current(snapshot);
       }
     }

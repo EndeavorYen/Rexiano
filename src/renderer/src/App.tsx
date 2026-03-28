@@ -1261,11 +1261,7 @@ function App(): React.JSX.Element {
                     : {}),
                 }}
               >
-                <SheetMusicPanelOSMD
-                  song={song}
-                  mode={displayMode}
-                  activeNotes={activeNotes}
-                />
+                <SheetMusicPanelOSMD song={song} mode={displayMode} />
               </div>
 
               {/* Falling notes canvas — always mounted so PixiJS ticker keeps

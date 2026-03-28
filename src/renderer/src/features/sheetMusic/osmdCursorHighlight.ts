@@ -1,30 +1,58 @@
 /**
- * OSMD Cursor-based note highlighting — event-driven architecture.
+ * OSMD Cursor-based note highlighting — time-driven via playback store.
  *
- * After OSMD renders, buildCursorSteps() iterates the cursor to build
- * a list of { midis, svgElements } for each step. During playback,
- * activeNotes (from tickerLoop) are matched against the next expected
- * step's MIDI set. When matched, highlights move forward.
+ * Architecture:
+ *   1. After OSMD renders, buildCursorSteps() iterates the cursor and
+ *      matches each step to ParsedNote.time via ordered merge. This gives
+ *      each step an accurate song-time that matches AudioScheduler's clock.
+ *   2. During playback, a setInterval reads usePlaybackStore.currentTime
+ *      (written every frame by tickerLoop) and binary-searches the step
+ *      list to find which step to highlight.
+ *   3. SVG element refs are cached at build time — highlighting is just
+ *      classList.add/remove, no DOM traversal per tick.
  *
- * This guarantees zero drift because activeNotes comes from the same
- * effectiveTime that drives falling notes and the piano keyboard.
+ * Why time-based instead of event-driven:
+ *   OSMD cursor steps and NoteRenderer activeNote events are NOT 1:1.
+ *   The keyboard works with activeNotes because MIDI→key is 1:1, but
+ *   MIDI→score-position is 1:N (same pitch in different measures).
+ *   Time is the only unambiguous coordinate shared by all systems.
  */
+import type { ParsedSong } from "@renderer/engines/midi/types";
 
 const ACTIVE_CLASS = "osmd-note-active";
 
 export interface CursorStep {
-  /** SVG elements to highlight (collected during cursor traversal) */
+  /** Song time in seconds (from ParsedNote.time) */
+  time: number;
+  /** End time: when this step's notes finish sounding */
+  endTime: number;
+  /** SVG elements to highlight (cached from cursor traversal) */
   svgElements: Element[];
 }
 
 /**
- * Build an ordered list of cursor steps with their MIDI content and SVG elements.
- * Must be called after osmd.render().
+ * Build an ordered list of cursor steps with time + SVG element refs.
+ *
+ * Uses merge-style matching: iterates OSMD cursor steps and the song's
+ * notes in parallel (both chronological). For each cursor step, finds
+ * the next unmatched ParsedNote with matching MIDI to get its time.
+ *
+ * @param osmd The OSMD instance (after render)
+ * @param song The parsed song (source of truth for note times)
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function buildCursorSteps(osmd: any): CursorStep[] {
+export function buildCursorSteps(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  osmd: any,
+  song: ParsedSong | null,
+): CursorStep[] {
   const cursor = osmd?.cursor;
-  if (!cursor) return [];
+  if (!cursor || !song) return [];
+
+  // Flatten and sort all song notes by time for merge matching
+  const songNotes = song.tracks
+    .flatMap((t) => t.notes)
+    .sort((a, b) => a.time - b.time || a.midi - b.midi);
+  let notePtr = 0; // pointer into songNotes for merge matching
 
   cursor.reset();
   const it = cursor.Iterator;
@@ -33,6 +61,33 @@ export function buildCursorSteps(osmd: any): CursorStep[] {
   const steps: CursorStep[] = [];
 
   while (!it.EndReached) {
+    // Collect MIDI numbers at this cursor step
+    const voices = it.CurrentVoiceEntries || [];
+    const stepMidis = new Set<number>();
+    for (const ve of voices) {
+      for (const note of ve.Notes) {
+        if (!note.isRest()) {
+          stepMidis.add(note.halfTone + 12);
+        }
+      }
+    }
+
+    // Merge-match: advance notePtr to find a song note matching any of
+    // this step's MIDI values. Both sequences are chronological.
+    let matchedTime = -1;
+    let matchedEndTime = -1;
+    for (let i = notePtr; i < songNotes.length; i++) {
+      if (stepMidis.has(songNotes[i].midi)) {
+        matchedTime = songNotes[i].time;
+        matchedEndTime = songNotes[i].time + songNotes[i].duration;
+        // Advance past all notes at this same time (chord)
+        while (notePtr < songNotes.length && songNotes[notePtr].time <= matchedTime + 0.01) {
+          notePtr++;
+        }
+        break;
+      }
+    }
+
     // Collect SVG elements at this cursor position
     const gNotes = cursor.GNotesUnderCursor() || [];
     const svgElements: Element[] = [];
@@ -49,15 +104,55 @@ export function buildCursorSteps(osmd: any): CursorStep[] {
       }
     }
 
-    steps.push({
-      svgElements,
-    });
+    // Only include steps with a valid time match and SVG elements
+    if (matchedTime >= 0 && svgElements.length > 0) {
+      steps.push({ time: matchedTime, endTime: matchedEndTime, svgElements });
+    }
 
     cursor.next();
   }
 
   cursor.reset();
   return steps;
+}
+
+/**
+ * Find the step to highlight at a given song time.
+ * Binary search for the last step with time ≤ songTime that hasn't ended.
+ */
+export function findStepAtTime(
+  steps: CursorStep[],
+  songTime: number,
+): CursorStep | null {
+  if (steps.length === 0 || songTime < 0) return null;
+
+  // Binary search: last step with time ≤ songTime
+  let lo = 0;
+  let hi = steps.length - 1;
+  let result = -1;
+  while (lo <= hi) {
+    const mid = (lo + hi) >>> 1;
+    if (steps[mid].time <= songTime) {
+      result = mid;
+      lo = mid + 1;
+    } else {
+      hi = mid - 1;
+    }
+  }
+
+  if (result < 0) return null;
+
+  // Check if the step is still sounding
+  if (songTime < steps[result].endTime) return steps[result];
+
+  // Walk backward for polyphonic overlap (long note sustaining past shorter ones)
+  for (let i = result - 1; i >= 0; i--) {
+    if (steps[i].time <= songTime && songTime < steps[i].endTime) {
+      return steps[i];
+    }
+  }
+
+  return null;
 }
 
 /**
@@ -69,7 +164,7 @@ export function clearHighlights(container: HTMLElement): void {
 }
 
 /**
- * Highlight a specific cursor step's SVG elements.
+ * Highlight a specific cursor step's cached SVG elements.
  */
 export function highlightStep(
   step: CursorStep,

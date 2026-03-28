@@ -12,6 +12,7 @@ import { usePlaybackStore } from "../../stores/usePlaybackStore";
 import { getMeasureWindow } from "./CursorSync";
 import {
   buildCursorSteps,
+  findStepAtTime,
   highlightStep,
   clearHighlights,
   type CursorStep,
@@ -23,8 +24,6 @@ const MEASURES_PER_PAGE = 4;
 interface SheetMusicPanelOSMDProps {
   song: ParsedSong | null;
   mode: DisplayMode;
-  /** Active MIDI notes at the hit line — driven by tickerLoop via NoteRenderer. */
-  activeNotes?: Set<number>;
 }
 
 /**
@@ -43,7 +42,6 @@ function estimateMeasureIndex(song: ParsedSong, time: number): number {
 export function SheetMusicPanelOSMD({
   song,
   mode,
-  activeNotes,
 }: SheetMusicPanelOSMDProps): React.ReactElement {
   const containerRef = useRef<HTMLDivElement>(null);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -51,9 +49,8 @@ export function SheetMusicPanelOSMD({
   const loadedRef = useRef(false);
   const [totalMeasures, setTotalMeasures] = useState(0);
 
-  // Cursor step list and current position
+  // Cursor step list for highlight engine
   const cursorStepsRef = useRef<CursorStep[]>([]);
-  const cursorPosRef = useRef(0);
 
   const currentMeasure = usePlaybackStore(
     useCallback(
@@ -146,7 +143,6 @@ export function SheetMusicPanelOSMD({
       container.textContent = "";
       loadedRef.current = false;
       cursorStepsRef.current = [];
-      cursorPosRef.current = 0;
       setTotalMeasures(0);
     };
   }, [musicXml, mode]);
@@ -163,16 +159,15 @@ export function SheetMusicPanelOSMD({
     }
     osmdRef.current.render();
 
-    // Build cursor steps: iterate cursor once, collect MIDI + SVG refs
-    cursorStepsRef.current = buildCursorSteps(osmdRef.current);
-    cursorPosRef.current = 0;
+    // Build cursor steps with time mapping from ParsedNote.time
+    cursorStepsRef.current = buildCursorSteps(osmdRef.current, song);
 
-    // Hide built-in cursor element
+    // Hide built-in cursor element (we use CSS highlights)
     const cursor = osmdRef.current.cursor;
     if (cursor?.cursorElement) {
       cursor.cursorElement.style.display = "none";
     }
-  }, [windowKey, totalMeasures, mode]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [windowKey, totalMeasures, mode, song]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Re-render on container resize
   useEffect(() => {
@@ -181,8 +176,7 @@ export function SheetMusicPanelOSMD({
     const ro = new ResizeObserver(() => {
       if (osmdRef.current && loadedRef.current) {
         osmdRef.current.render();
-        cursorStepsRef.current = buildCursorSteps(osmdRef.current);
-        cursorPosRef.current = 0;
+        cursorStepsRef.current = buildCursorSteps(osmdRef.current, song);
         if (osmdRef.current.cursor?.cursorElement) {
           osmdRef.current.cursor.cursorElement.style.display = "none";
         }
@@ -190,41 +184,57 @@ export function SheetMusicPanelOSMD({
     });
     ro.observe(el);
     return () => ro.disconnect();
-  }, [mode]);
+  }, [mode, song]);
 
-  // Effect 3: Event-driven note highlighting.
+  // Effect 3: Time-driven note highlighting.
   //
-  // Each callback from tickerLoop represents a real note-object change
-  // at the hit line (guarded by activeNoteGeneration in NoteRenderer).
-  // We simply step to the next cursor position when notes are present,
-  // and keep the current highlight during rests (empty set).
+  // Reads currentTime from the playback store (written every frame by
+  // tickerLoop — same effectiveTime that drives falling notes + keyboard).
+  // Binary-searches cursorSteps to find the right step, then highlights
+  // its cached SVG elements.
   //
-  // No MIDI matching, no time calculation — just step forward.
+  // Uses setInterval because Electron throttles rAF when PixiJS is the
+  // primary renderer.
   useEffect(() => {
-    if (mode === "falling" || !containerRef.current) return;
+    if (mode === "falling" || !containerRef.current || !song) return;
     const container = containerRef.current;
-    const steps = cursorStepsRef.current;
-    if (steps.length === 0) return;
+    let prevStepIdx = -1;
 
-    const isPlaying = usePlaybackStore.getState().isPlaying;
+    const intervalId = setInterval(() => {
+      const { isPlaying, currentTime } = usePlaybackStore.getState();
+      const steps = cursorStepsRef.current;
+      if (steps.length === 0) return;
 
-    // Empty activeNotes = rest or playback stopped
-    if (!activeNotes || activeNotes.size === 0) {
       if (!isPlaying) {
-        clearHighlights(container);
-        cursorPosRef.current = 0;
+        if (prevStepIdx !== -1) {
+          clearHighlights(container);
+          prevStepIdx = -1;
+        }
+        return;
       }
-      // During playback, keep current highlight during rests
-      return;
-    }
 
-    // Step forward and highlight
-    const pos = cursorPosRef.current;
-    if (pos < steps.length) {
-      highlightStep(steps[pos], container);
-      cursorPosRef.current = pos + 1;
-    }
-  }, [activeNotes, mode]);
+      const step = findStepAtTime(steps, currentTime);
+      if (!step) {
+        if (prevStepIdx !== -1) {
+          clearHighlights(container);
+          prevStepIdx = -1;
+        }
+        return;
+      }
+
+      // Only update DOM when the highlighted step changes
+      const idx = steps.indexOf(step);
+      if (idx === prevStepIdx) return;
+      prevStepIdx = idx;
+
+      highlightStep(step, container);
+    }, 50);
+
+    return () => {
+      clearInterval(intervalId);
+      if (containerRef.current) clearHighlights(containerRef.current);
+    };
+  }, [song, mode]);
 
   return (
     <div
