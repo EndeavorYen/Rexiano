@@ -11,9 +11,10 @@ import { convertToMusicXML } from "@renderer/engines/notation/MidiToMusicXML";
 import { usePlaybackStore } from "../../stores/usePlaybackStore";
 import { getMeasureWindow } from "./CursorSync";
 import {
-  advanceAndHighlight,
+  buildCursorSteps,
+  highlightStep,
   clearHighlights,
-  resetCursor,
+  type CursorStep,
 } from "./osmdCursorHighlight";
 
 /** Default number of measures to display per page (one system line). */
@@ -28,7 +29,6 @@ interface SheetMusicPanelOSMDProps {
 
 /**
  * Estimate the current 0-based measure index from playback time.
- * Uses the first tempo and time signature — sufficient for page-flip accuracy.
  */
 function estimateMeasureIndex(song: ParsedSong, time: number): number {
   const bpm = song.tempos[0]?.bpm ?? 120;
@@ -38,6 +38,13 @@ function estimateMeasureIndex(song: ParsedSong, time: number): number {
   const secPerMeasure = (60 / bpm) * num * (4 / den);
   if (secPerMeasure <= 0) return 0;
   return Math.floor(Math.max(0, time) / secPerMeasure);
+}
+
+/**
+ * Convert a Set<number> to a sorted comma-joined key for fast comparison.
+ */
+function midiSetToKey(notes: Set<number>): string {
+  return [...notes].sort((a, b) => a - b).join(",");
 }
 
 export function SheetMusicPanelOSMD({
@@ -51,10 +58,10 @@ export function SheetMusicPanelOSMD({
   const loadedRef = useRef(false);
   const [totalMeasures, setTotalMeasures] = useState(0);
 
-  // Track whether cursor has been initialized after render
-  const cursorReadyRef = useRef(false);
+  // Cursor step list and current position
+  const cursorStepsRef = useRef<CursorStep[]>([]);
+  const cursorPosRef = useRef(0);
 
-  // Subscribe to playback, but only re-render when the measure index changes
   const currentMeasure = usePlaybackStore(
     useCallback(
       (s: { currentTime: number }) =>
@@ -102,7 +109,7 @@ export function SheetMusicPanelOSMD({
     );
   }, [song]);
 
-  // Effect 1: Load MusicXML into OSMD (no render — handled by Effect 2)
+  // Effect 1: Load MusicXML into OSMD
   useEffect(() => {
     if (mode === "falling") return;
     if (!containerRef.current || !musicXml) return;
@@ -123,7 +130,6 @@ export function SheetMusicPanelOSMD({
             drawPartNames: false,
             autoBeam: true,
           });
-          // Don't stretch partial lines — prevents over-wide measure spacing
           osmdRef.current.EngravingRules.StretchLastSystemLine = false;
         }
 
@@ -146,13 +152,13 @@ export function SheetMusicPanelOSMD({
       }
       container.textContent = "";
       loadedRef.current = false;
-      cursorReadyRef.current = false;
+      cursorStepsRef.current = [];
+      cursorPosRef.current = 0;
       setTotalMeasures(0);
     };
   }, [musicXml, mode]);
 
-  // Effect 2: Render with the current measure range (page flips only).
-  // After render, reset the cursor to the start of the visible range.
+  // Effect 2: Render with measure range, then build cursor steps.
   useEffect(() => {
     if (!loadedRef.current || !osmdRef.current || mode === "falling") return;
 
@@ -164,32 +170,28 @@ export function SheetMusicPanelOSMD({
     }
     osmdRef.current.render();
 
-    // Reset cursor to start of rendered range
+    // Build cursor steps: iterate cursor once, collect MIDI + SVG refs
+    cursorStepsRef.current = buildCursorSteps(osmdRef.current);
+    cursorPosRef.current = 0;
+
+    // Hide built-in cursor element
     const cursor = osmdRef.current.cursor;
-    if (cursor) {
-      cursor.reset();
-      cursorReadyRef.current = true;
-      // Hide the built-in cursor element (we use CSS highlights instead)
-      if (cursor.cursorElement) {
-        cursor.cursorElement.style.display = "none";
-      }
+    if (cursor?.cursorElement) {
+      cursor.cursorElement.style.display = "none";
     }
   }, [windowKey, totalMeasures, mode]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Re-render OSMD on container resize
+  // Re-render on container resize
   useEffect(() => {
     if (mode === "falling" || !containerRef.current) return;
     const el = containerRef.current;
     const ro = new ResizeObserver(() => {
       if (osmdRef.current && loadedRef.current) {
         osmdRef.current.render();
-        // Reset cursor after resize re-render
-        const cursor = osmdRef.current.cursor;
-        if (cursor) {
-          cursor.reset();
-          if (cursor.cursorElement) {
-            cursor.cursorElement.style.display = "none";
-          }
+        cursorStepsRef.current = buildCursorSteps(osmdRef.current);
+        cursorPosRef.current = 0;
+        if (osmdRef.current.cursor?.cursorElement) {
+          osmdRef.current.cursor.cursorElement.style.display = "none";
         }
       }
     });
@@ -198,32 +200,55 @@ export function SheetMusicPanelOSMD({
   }, [mode]);
 
   // Effect 3: Event-driven note highlighting.
-  // When activeNotes changes (driven by tickerLoop → NoteRenderer),
-  // advance the OSMD cursor and highlight the notes under it.
-  // This is perfectly synced because the same effectiveTime that
-  // drives falling notes and the keyboard also drives this.
+  //
+  // On each activeNotes change, match the MIDI content against the
+  // cursor step list. Search forward from current position (normal
+  // playback), or reset to start if no forward match (seek backward).
+  //
+  // This is NOT based on counting events — it matches MIDI content,
+  // so rests (empty activeNotes) and sustained notes (unchanging
+  // activeNotes) don't cause cursor to advance incorrectly.
   useEffect(() => {
-    if (mode === "falling") return;
-    if (!osmdRef.current || !loadedRef.current || !cursorReadyRef.current)
-      return;
-    if (!containerRef.current) return;
-
+    if (mode === "falling" || !containerRef.current) return;
     const container = containerRef.current;
+    const steps = cursorStepsRef.current;
+    if (steps.length === 0) return;
+
     const isPlaying = usePlaybackStore.getState().isPlaying;
 
+    // Empty activeNotes = rest or playback stopped
     if (!activeNotes || activeNotes.size === 0) {
-      // No active notes — clear highlights but don't reset cursor
-      // (could be a rest between notes)
       if (!isPlaying) {
         clearHighlights(container);
-        resetCursor(osmdRef.current, container);
-        cursorReadyRef.current = true;
+        cursorPosRef.current = 0;
       }
+      // During playback, keep current highlight (sustained note / rest)
       return;
     }
 
-    // Advance cursor and highlight
-    advanceAndHighlight(osmdRef.current, container);
+    const key = midiSetToKey(activeNotes);
+
+    // Search forward from current position (most common case)
+    const pos = cursorPosRef.current;
+    for (let i = pos; i < steps.length; i++) {
+      if (steps[i].midiKey === key) {
+        cursorPosRef.current = i + 1; // next search starts after this
+        highlightStep(steps[i], container);
+        return;
+      }
+    }
+
+    // Not found forward — search from beginning (seek / loop)
+    for (let i = 0; i < pos; i++) {
+      if (steps[i].midiKey === key) {
+        cursorPosRef.current = i + 1;
+        highlightStep(steps[i], container);
+        return;
+      }
+    }
+
+    // No match at all — MIDI notes don't correspond to any cursor step
+    // (could be a note from a muted track, or quantization mismatch)
   }, [activeNotes, mode]);
 
   return (

@@ -1,11 +1,11 @@
 /**
  * @vitest-environment jsdom
  */
-import { describe, it, expect, vi } from "vitest";
+import { describe, it, expect } from "vitest";
 import {
   clearHighlights,
-  advanceAndHighlight,
-  resetCursor,
+  highlightStep,
+  type CursorStep,
 } from "./osmdCursorHighlight";
 
 describe("clearHighlights", () => {
@@ -31,56 +31,44 @@ describe("clearHighlights", () => {
   });
 });
 
-describe("advanceAndHighlight", () => {
-  it("calls cursor.next() and does not throw when no gNotes", () => {
-    const mockCursor = {
-      next: vi.fn(),
-      Iterator: { EndReached: false },
-      GNotesUnderCursor: vi.fn(() => []),
+describe("highlightStep", () => {
+  it("adds osmd-note-active to step SVG elements", () => {
+    const container = document.createElement("div");
+    const el1 = document.createElement("path");
+    const el2 = document.createElement("path");
+    container.appendChild(el1);
+    container.appendChild(el2);
+
+    const step: CursorStep = {
+      midis: [60, 64],
+      midiKey: "60,64",
+      svgElements: [el1, el2],
     };
-    const osmd = { cursor: mockCursor };
-    const container = document.createElement("div");
 
-    advanceAndHighlight(osmd, container);
+    highlightStep(step, container);
 
-    expect(mockCursor.next).toHaveBeenCalledOnce();
-    expect(mockCursor.GNotesUnderCursor).toHaveBeenCalledOnce();
+    expect(el1.classList.contains("osmd-note-active")).toBe(true);
+    expect(el2.classList.contains("osmd-note-active")).toBe(true);
   });
 
-  it("does nothing when cursor is null", () => {
+  it("clears previous highlights before applying new", () => {
     const container = document.createElement("div");
-    expect(() => advanceAndHighlight({}, container)).not.toThrow();
-    expect(() => advanceAndHighlight(null, container)).not.toThrow();
-  });
+    const old = document.createElement("path");
+    old.classList.add("osmd-note-active");
+    container.appendChild(old);
 
-  it("does not highlight when iterator reached end", () => {
-    const mockCursor = {
-      next: vi.fn(),
-      Iterator: { EndReached: true },
-      GNotesUnderCursor: vi.fn(() => []),
+    const newEl = document.createElement("path");
+    container.appendChild(newEl);
+
+    const step: CursorStep = {
+      midis: [72],
+      midiKey: "72",
+      svgElements: [newEl],
     };
-    const osmd = { cursor: mockCursor };
-    const container = document.createElement("div");
 
-    advanceAndHighlight(osmd, container);
+    highlightStep(step, container);
 
-    expect(mockCursor.next).toHaveBeenCalledOnce();
-    expect(mockCursor.GNotesUnderCursor).not.toHaveBeenCalled();
-  });
-});
-
-describe("resetCursor", () => {
-  it("calls cursor.reset() and clears highlights", () => {
-    const mockCursor = { reset: vi.fn() };
-    const osmd = { cursor: mockCursor };
-    const container = document.createElement("div");
-    const el = document.createElement("span");
-    el.classList.add("osmd-note-active");
-    container.appendChild(el);
-
-    resetCursor(osmd, container);
-
-    expect(mockCursor.reset).toHaveBeenCalledOnce();
-    expect(el.classList.contains("osmd-note-active")).toBe(false);
+    expect(old.classList.contains("osmd-note-active")).toBe(false);
+    expect(newEl.classList.contains("osmd-note-active")).toBe(true);
   });
 });

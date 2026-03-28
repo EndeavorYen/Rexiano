@@ -1,19 +1,81 @@
 /**
  * OSMD Cursor-based note highlighting — event-driven architecture.
  *
- * Instead of calculating time independently, this module receives
- * activeNotes (Set<number> of MIDI numbers) from the same tickerLoop
- * that drives falling notes and the piano keyboard.
+ * After OSMD renders, buildCursorSteps() iterates the cursor to build
+ * a list of { midis, svgElements } for each step. During playback,
+ * activeNotes (from tickerLoop) are matched against the next expected
+ * step's MIDI set. When matched, highlights move forward.
  *
- * The OSMD cursor steps forward on each note change, and CSS classes
- * are applied to the SVG note-heads under the cursor.
- *
- * This guarantees zero drift: audio, falling notes, keyboard, and
- * sheet music highlights all derive from the same effectiveTime
- * computed once per frame in tickerLoop.
+ * This guarantees zero drift because activeNotes comes from the same
+ * effectiveTime that drives falling notes and the piano keyboard.
  */
 
 const ACTIVE_CLASS = "osmd-note-active";
+
+export interface CursorStep {
+  /** MIDI note numbers at this cursor position (sorted for comparison) */
+  midis: number[];
+  /** Key string for fast comparison (e.g. "60,64,67") */
+  midiKey: string;
+  /** SVG elements to highlight (collected during cursor traversal) */
+  svgElements: Element[];
+}
+
+/**
+ * Build an ordered list of cursor steps with their MIDI content and SVG elements.
+ * Must be called after osmd.render().
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function buildCursorSteps(osmd: any): CursorStep[] {
+  const cursor = osmd?.cursor;
+  if (!cursor) return [];
+
+  cursor.reset();
+  const it = cursor.Iterator;
+  if (!it) return [];
+
+  const steps: CursorStep[] = [];
+
+  while (!it.EndReached) {
+    const voices = it.CurrentVoiceEntries || [];
+    const midis: number[] = [];
+    for (const ve of voices) {
+      for (const note of ve.Notes) {
+        if (!note.isRest()) {
+          midis.push(note.halfTone + 12);
+        }
+      }
+    }
+    midis.sort((a, b) => a - b);
+
+    // Collect SVG elements at this cursor position
+    const gNotes = cursor.GNotesUnderCursor() || [];
+    const svgElements: Element[] = [];
+    for (const gNote of gNotes) {
+      const svgEl = gNote.getSVGGElement?.();
+      if (svgEl instanceof SVGElement) {
+        const heads = svgEl.querySelectorAll(".vf-notehead path");
+        if (heads.length > 0) {
+          heads.forEach((h: Element) => svgElements.push(h));
+        } else {
+          const paths = svgEl.querySelectorAll("path, ellipse");
+          paths.forEach((h: Element) => svgElements.push(h));
+        }
+      }
+    }
+
+    steps.push({
+      midis,
+      midiKey: midis.join(","),
+      svgElements,
+    });
+
+    cursor.next();
+  }
+
+  cursor.reset();
+  return steps;
+}
 
 /**
  * Clear all osmd-note-active highlights from the container.
@@ -24,43 +86,14 @@ export function clearHighlights(container: HTMLElement): void {
 }
 
 /**
- * Advance the OSMD cursor by one step and highlight all notes under it.
- *
- * @param osmd       The OSMD instance
- * @param container  DOM container for clearing old highlights
+ * Highlight a specific cursor step's SVG elements.
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function advanceAndHighlight(osmd: any, container: HTMLElement): void {
+export function highlightStep(
+  step: CursorStep,
+  container: HTMLElement,
+): void {
   clearHighlights(container);
-
-  const cursor = osmd?.cursor;
-  if (!cursor) return;
-
-  cursor.next();
-
-  // If cursor reached the end, nothing to highlight
-  if (cursor.Iterator?.EndReached) return;
-
-  const gNotes = cursor.GNotesUnderCursor() || [];
-  for (const gNote of gNotes) {
-    const svgEl = gNote.getSVGGElement?.();
-    if (svgEl instanceof SVGElement) {
-      const heads = svgEl.querySelectorAll(".vf-notehead path");
-      if (heads.length > 0) {
-        heads.forEach((h: Element) => h.classList.add(ACTIVE_CLASS));
-      } else {
-        const paths = svgEl.querySelectorAll("path, ellipse");
-        paths.forEach((h: Element) => h.classList.add(ACTIVE_CLASS));
-      }
-    }
+  for (const el of step.svgElements) {
+    el.classList.add(ACTIVE_CLASS);
   }
-}
-
-/**
- * Reset the OSMD cursor to the beginning and clear highlights.
- */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function resetCursor(osmd: any, container: HTMLElement): void {
-  clearHighlights(container);
-  osmd?.cursor?.reset();
 }
