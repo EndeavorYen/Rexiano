@@ -14,6 +14,8 @@
 
 ## TDD Workflow
 
+Rexiano 預設使用 TDD 開發模式。除非使用者明確要求不要改程式、只做調查、或變更屬於文件/註解/格式/純設定調整，功能、bug fix、行為變更與重構都先走 Red → Green → Refactor。
+
 每次實作功能或修復 bug，依序完成：
 
 1. **Context**：先閱讀 `CLAUDE.md` 指定的 `docs/DESIGN.md`、`docs/ROADMAP.md` 與相關既有程式碼，確認架構分層與測試慣例。
@@ -22,6 +24,13 @@
 4. **Refactor**：在測試維持通過時整理命名、重複邏輯與邊界條件，不擴張到未要求的功能。
 5. **Verify**：先跑聚焦測試，再視變更範圍跑 `pnpm lint && pnpm typecheck && pnpm test`；觸及 UI、視覺回歸或主要流程時，加跑對應的 Playwright / visual script。
 6. **Track**：若完成 `docs/ROADMAP.md` 中的任務，更新對應 checkbox，讓 ROADMAP 持續作為進度單一真實來源。
+
+## Issue Workflow
+
+- 大型 GitHub issue 或 epic 不直接一次吞下；先拆成可驗證、可回復、可在單輪內完成的小 issue / 子 issue，再逐個處理。
+- 拆 issue 時，每個小 issue 都要有清楚 goal、scope、acceptance，並在內容中標明 parent issue（例如 `Part of #20`）。
+- 實作時優先挑可用 TDD 完成的最小高價值切片；完成後 commit message 要 mention parent / child issue，完全解決的小 issue 要 close，parent issue 只有在全部 acceptance 完成後才 close。
+- 若某個 issue 太大或 acceptance 混雜，先拆分與記錄，再開始寫測試；不要用單一龐大 commit 混合多個無法獨立驗證的行為。
 
 ## Test Rules
 
