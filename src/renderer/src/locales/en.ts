@@ -95,6 +95,27 @@ export const en: TranslationMap = {
   "midi.connected": "Connected",
   "midi.disconnected": "Disconnected",
   "midi.error": "Connection error",
+  "midi.errorUnsupported": "MIDI is not supported here",
+  "midi.errorUnsupportedGuidance":
+    "Use the desktop app or a browser with Web MIDI support.",
+  "midi.errorDenied": "MIDI permission was denied",
+  "midi.errorDeniedGuidance":
+    "Allow MIDI access in system or browser settings, then retry.",
+  "midi.errorUnavailable": "MIDI is not available",
+  "midi.errorUnavailableGuidance":
+    "Reconnect the device or reopen the app, then retry.",
+  "midi.errorInput": "Input device could not connect",
+  "midi.errorInputGuidance":
+    "Reconnect the keyboard, select it again, or try Bluetooth MIDI.",
+  "midi.errorOutput": "Output device could not connect",
+  "midi.errorOutputGuidance":
+    "Reconnect the output device, select it again, or try Bluetooth MIDI.",
+  "midi.errorBluetoothUnsupported": "Bluetooth MIDI is unavailable",
+  "midi.errorBluetoothUnsupportedGuidance":
+    "Use a USB MIDI connection on this device.",
+  "midi.errorGeneric": "MIDI connection failed",
+  "midi.errorGenericGuidance":
+    "Reconnect the device, check permissions, then retry.",
   "midi.testTitle": "Send a test note (C4) to the selected MIDI output",
   "midi.testLabel": "Test",
   "midi.testPlaying": "Playing...",

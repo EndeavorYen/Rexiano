@@ -6,6 +6,7 @@ import { MidiOutputSender } from "@renderer/engines/midi/MidiOutputSender";
 import { ConnectionStatus } from "./ConnectionStatus";
 import { sendTestNote, type TestButtonState } from "./midiTestUtils";
 import { useTranslation } from "@renderer/i18n/useTranslation";
+import { getMidiErrorGuidance } from "./midiErrorGuidance";
 
 export function DeviceSelector(): React.JSX.Element {
   const { t } = useTranslation();
@@ -81,6 +82,9 @@ export function DeviceSelector(): React.JSX.Element {
   const connectedOutputs = outputs.filter((d) => d.state === "connected");
   const noDevices =
     connectedInputs.length === 0 && connectedOutputs.length === 0;
+  const errorGuidance = connectionError
+    ? getMidiErrorGuidance(connectionError, t)
+    : null;
 
   return (
     <div
@@ -232,9 +236,9 @@ export function DeviceSelector(): React.JSX.Element {
       )}
 
       {/* Error message */}
-      {connectionError && (
+      {errorGuidance && (
         <div
-          className="flex items-center gap-2 rounded-lg px-2 py-1.5 max-w-[360px]"
+          className="flex items-center gap-2 rounded-lg px-2 py-1.5 max-w-[420px]"
           style={{
             color: "#f87171",
             background: "color-mix(in srgb, #ef4444 8%, var(--color-surface))",
@@ -243,26 +247,36 @@ export function DeviceSelector(): React.JSX.Element {
           }}
           data-testid="midi-error-guidance"
         >
-          <span className="text-xs truncate" title={connectionError}>
-            {connectionError}
+          <span className="min-w-0" title={errorGuidance.diagnostic}>
+            <span className="block text-xs font-semibold truncate">
+              {errorGuidance.title}
+            </span>
+            <span
+              className="block text-[10px] leading-snug"
+              style={{ color: "var(--color-text-muted)" }}
+            >
+              {errorGuidance.guidance}
+            </span>
           </span>
-          <button
-            onClick={() => connect()}
-            className="px-1.5 py-0.5 rounded text-[10px] font-body font-medium cursor-pointer"
-            style={{
-              color: "var(--color-text)",
-              background:
-                "color-mix(in srgb, var(--color-surface-alt) 75%, var(--color-surface))",
-              border: "1px solid var(--color-border)",
-            }}
-          >
-            {t("audio.retry")}
-          </button>
-          {bleStatus !== "connected" && (
+          {errorGuidance.canRetry && (
+            <button
+              onClick={() => connect()}
+              className="px-1.5 py-0.5 rounded text-[10px] font-body font-medium cursor-pointer shrink-0"
+              style={{
+                color: "var(--color-text)",
+                background:
+                  "color-mix(in srgb, var(--color-surface-alt) 75%, var(--color-surface))",
+                border: "1px solid var(--color-border)",
+              }}
+            >
+              {t("audio.retry")}
+            </button>
+          )}
+          {errorGuidance.canUseBluetooth && bleStatus !== "connected" && (
             <button
               onClick={() => connectBluetooth()}
               disabled={bleStatus === "scanning" || bleStatus === "connecting"}
-              className="px-1.5 py-0.5 rounded text-[10px] font-body font-medium cursor-pointer disabled:opacity-55"
+              className="px-1.5 py-0.5 rounded text-[10px] font-body font-medium cursor-pointer disabled:opacity-55 shrink-0"
               style={{
                 color: "var(--color-text)",
                 background:
