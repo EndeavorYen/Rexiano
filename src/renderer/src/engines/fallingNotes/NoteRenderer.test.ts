@@ -95,6 +95,7 @@ import { NoteRenderer } from "./NoteRenderer";
 import { Container } from "pixi.js";
 import type { ParsedSong } from "@renderer/engines/midi/types";
 import type { Viewport } from "./ViewportManager";
+import { createDenseRenderStressSong } from "./renderStressFixtures";
 
 function makeSong(
   tracks: { notes: { midi: number; time: number; duration: number }[] }[],
@@ -138,6 +139,24 @@ describe("NoteRenderer", () => {
     // After init, the renderer should be ready (no errors)
     expect(renderer).toBeDefined();
     expect(renderer.activeNotes.size).toBe(0);
+  });
+
+  test("keeps coherent diagnostics while rendering dense passages", () => {
+    const song = createDenseRenderStressSong({
+      durationSeconds: 4,
+      tracks: 4,
+      eventsPerSecond: 18,
+      chordSize: 12,
+    });
+
+    renderer.update(song, makeViewport({ currentTime: 0, height: 600 }));
+
+    const diagnostics = renderer.getDiagnostics();
+    expect(diagnostics.visibleNoteCount).toBeGreaterThan(512);
+    expect(diagnostics.activeSpriteCount).toBe(diagnostics.visibleNoteCount);
+    expect(diagnostics.totalSpriteCount).toBeGreaterThan(512);
+    expect(diagnostics.poolGrowthCount).toBeGreaterThan(0);
+    expect(diagnostics.activeLabelCount).toBeLessThanOrEqual(42);
   });
 
   test("detects active notes at the hit line", () => {
