@@ -21,6 +21,8 @@ const api = {
   loadRecentFiles: () => ipcRenderer.invoke(IpcChannels.LOAD_RECENT_FILES),
   saveRecentFile: (file: RecentFile) =>
     ipcRenderer.invoke(IpcChannels.SAVE_RECENT_FILE, file),
+  removeRecentFile: (filePath: string) =>
+    ipcRenderer.invoke(IpcChannels.REMOVE_RECENT_FILE, filePath),
 
   // Phase 6.5: Load MIDI file by path (for recent files direct loading)
   loadMidiPath: (filePath: string) =>

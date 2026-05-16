@@ -29,6 +29,8 @@ export const IpcChannels = {
   SAVE_RECENT_FILE: "recents:saveRecentFile",
   /** Phase 6.5: Load list of recently opened MIDI files */
   LOAD_RECENT_FILES: "recents:loadRecentFiles",
+  /** Phase 6.5: Remove one recently opened MIDI file */
+  REMOVE_RECENT_FILE: "recents:removeRecentFile",
   /** Phase 6.5: Load a MIDI file by absolute path (for recent files) */
   LOAD_MIDI_PATH: "dialog:loadMidiPath",
 } as const;

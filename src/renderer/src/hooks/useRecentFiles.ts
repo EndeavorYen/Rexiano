@@ -8,6 +8,8 @@ interface UseRecentFilesResult {
   loading: boolean;
   /** Re-fetch the recent files list (call after loading a new song) */
   refresh: () => void;
+  /** Remove a stale recent file by path, then refresh the list */
+  remove: (filePath: string) => Promise<void>;
 }
 
 /**
@@ -49,5 +51,13 @@ export function useRecentFiles(): UseRecentFilesResult {
     fetchRecents();
   }, [fetchRecents]);
 
-  return { recentFiles, loading, refresh };
+  const remove = useCallback(
+    async (filePath: string) => {
+      await window.api.removeRecentFile(filePath);
+      fetchRecents();
+    },
+    [fetchRecents],
+  );
+
+  return { recentFiles, loading, refresh, remove };
 }

@@ -31,6 +31,7 @@ vi.stubGlobal("window", {
   api: {
     loadRecentFiles: vi.fn(async () => [...mockRecentFiles]),
     saveRecentFile: vi.fn(async () => {}),
+    removeRecentFile: vi.fn(async () => {}),
     loadMidiPath: vi.fn(async () => null),
     loadBuiltinSong: vi.fn(async () => null),
   },
@@ -87,6 +88,7 @@ describe("useRecentFiles", () => {
     expect(result.loading).toBe(true);
     expect(result.recentFiles).toEqual([]);
     expect(typeof result.refresh).toBe("function");
+    expect(typeof result.remove).toBe("function");
   });
 
   test("registers an effect that calls loadRecentFiles", () => {
@@ -151,5 +153,16 @@ describe("useRecentFiles", () => {
           .mock.results[0]?.value?.catch?.(() => {});
       })(),
     ).resolves.toBeUndefined();
+  });
+
+  test("remove function calls window.api.removeRecentFile then refreshes recents", async () => {
+    const result = useRecentFiles();
+
+    await result.remove("/songs/song1.mid");
+
+    expect(window.api.removeRecentFile).toHaveBeenCalledWith(
+      "/songs/song1.mid",
+    );
+    expect(window.api.loadRecentFiles).toHaveBeenCalledTimes(1);
   });
 });

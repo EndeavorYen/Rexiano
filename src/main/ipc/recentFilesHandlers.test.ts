@@ -69,6 +69,7 @@ describe("recentFilesHandlers", () => {
   test("registers LOAD_RECENT_FILES and SAVE_RECENT_FILE handlers", () => {
     expect(handlers["recents:loadRecentFiles"]).toBeDefined();
     expect(handlers["recents:saveRecentFile"]).toBeDefined();
+    expect(handlers["recents:removeRecentFile"]).toBeDefined();
   });
 
   // ─── LOAD_RECENT_FILES ────────────────────────────────
@@ -154,5 +155,31 @@ describe("recentFilesHandlers", () => {
     expect(
       written.find((f: RecentFile) => f.path === "/file9.mid"),
     ).toBeUndefined();
+  });
+
+  // ─── REMOVE_RECENT_FILE ───────────────────────────────
+  test("REMOVE_RECENT_FILE removes an existing recent by path", async () => {
+    const existing = [
+      makeRecentFile({ path: "/stale.mid", name: "stale.mid", timestamp: 1 }),
+      makeRecentFile({ path: "/keep.mid", name: "keep.mid", timestamp: 2 }),
+    ];
+    const filePath = `${mockUserDataPath}/recents.json`;
+    mockFileContents[filePath] = JSON.stringify(existing);
+
+    await handlers["recents:removeRecentFile"](null, "/stale.mid");
+
+    const written = JSON.parse(vi.mocked(writeFile).mock.calls[0][1] as string);
+    expect(written).toEqual([expect.objectContaining({ path: "/keep.mid" })]);
+  });
+
+  test("REMOVE_RECENT_FILE is a no-op for an unknown path", async () => {
+    const existing = [makeRecentFile({ path: "/keep.mid", name: "keep.mid" })];
+    const filePath = `${mockUserDataPath}/recents.json`;
+    mockFileContents[filePath] = JSON.stringify(existing);
+
+    await handlers["recents:removeRecentFile"](null, "/missing.mid");
+
+    const written = JSON.parse(vi.mocked(writeFile).mock.calls[0][1] as string);
+    expect(written).toEqual(existing);
   });
 });
