@@ -308,9 +308,16 @@ export interface TranslationMap {
   // ── Audio ──────────────────────────────────────────────────────
   "audio.mute": string;
   "audio.unmute": string;
+  "audio.loadingTitle": string;
+  "audio.loadingGuidance": string;
   "audio.recovering": string;
+  "audio.recoveringGuidance": string;
   "audio.restored": string;
+  "audio.restoredGuidance": string;
   "audio.recoveryFailed": string;
+  "audio.recoveryFailedGuidance": string;
+  "audio.errorTitle": string;
+  "audio.errorGuidance": string;
   "audio.retry": string;
 
   // ── General ────────────────────────────────────────────────────

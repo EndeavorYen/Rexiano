@@ -326,9 +326,19 @@ export const en: TranslationMap = {
   // ── Audio ──────────────────────────────────────────────────────
   "audio.mute": "Mute",
   "audio.unmute": "Unmute",
+  "audio.loadingTitle": "Audio is loading",
+  "audio.loadingGuidance":
+    "Preparing piano sound. Playback will start shortly.",
   "audio.recovering": "Recovering audio ({attempt}/{max})...",
+  "audio.recoveringGuidance": "Rexiano is reconnecting the audio output.",
   "audio.restored": "Audio Restored",
+  "audio.restoredGuidance": "Playback output is ready again.",
   "audio.recoveryFailed": "Audio recovery failed",
+  "audio.recoveryFailedGuidance":
+    "Reconnect your speakers or headphones, then retry. Rexiano tried {max} times.",
+  "audio.errorTitle": "Audio is unavailable",
+  "audio.errorGuidance":
+    "Check your audio device, system permissions, or restart the app.",
   "audio.retry": "Retry",
 
   // ── General ────────────────────────────────────────────────────

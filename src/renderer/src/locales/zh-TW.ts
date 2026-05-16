@@ -311,9 +311,17 @@ export const zhTW: TranslationMap = {
   // ── Audio ──────────────────────────────────────────────────────
   "audio.mute": "靜音",
   "audio.unmute": "取消靜音",
+  "audio.loadingTitle": "音訊載入中",
+  "audio.loadingGuidance": "正在準備鋼琴音色，稍後即可播放。",
   "audio.recovering": "音訊修復中（{attempt}/{max}）…",
+  "audio.recoveringGuidance": "Rexiano 正在重新連接音訊輸出。",
   "audio.restored": "音訊已恢復",
+  "audio.restoredGuidance": "播放輸出已可再次使用。",
   "audio.recoveryFailed": "音訊自動修復失敗",
+  "audio.recoveryFailedGuidance":
+    "請重新連接喇叭或耳機後再重試；Rexiano 已嘗試 {max} 次。",
+  "audio.errorTitle": "目前無法使用音訊",
+  "audio.errorGuidance": "請檢查音訊裝置、系統權限，或重新啟動應用程式。",
   "audio.retry": "重試",
 
   // ── General ────────────────────────────────────────────────────

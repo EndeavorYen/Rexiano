@@ -13,6 +13,7 @@ import { useSongStore } from "@renderer/stores/useSongStore";
 import { usePracticeStore } from "@renderer/stores/usePracticeStore";
 import { useSettingsStore } from "@renderer/stores/useSettingsStore";
 import { VolumeControl } from "@renderer/features/audio/VolumeControl";
+import { getAudioStatusGuidance } from "@renderer/features/audio/audioStatusGuidance";
 import { MetronomePulse } from "@renderer/features/metronome/MetronomePulse";
 import { useMetronomeBeat } from "@renderer/hooks/useMetronomeBeat";
 import { useTranslation } from "@renderer/i18n/useTranslation";
@@ -79,6 +80,16 @@ export function TransportBar({
   const duration = song?.duration ?? 0;
   const loopHighlight = computeLoopHighlight(loopRange, duration);
   const volumePercent = Math.round(volume * 100);
+  const audioGuidance = getAudioStatusGuidance(
+    {
+      audioStatus,
+      recoveryState: audioRecoveryState,
+      attempt: audioRecoveryAttempt,
+      maxAttempts: audioRecoveryMaxAttempts,
+      successVisible: audioRecoverySuccessVisible,
+    },
+    t,
+  );
 
   const [playPulse, setPlayPulse] = useState(false);
 
@@ -203,39 +214,39 @@ export function TransportBar({
             <span
               className="control-chip text-xs font-body"
               style={{ color: "var(--color-text-muted)" }}
-              aria-label="Audio loading"
+              title={audioGuidance?.guidance}
+              aria-label={audioGuidance?.title}
               data-testid="audio-status-loading"
             >
               <span className="status-dot status-dot-live" />
               <Loader2 size={13} className="animate-spin" />
-              {t("general.loading")}
+              {audioGuidance?.title ?? t("general.loading")}
             </span>
           )}
           {audioRecoveryState === "recovering" && (
             <span
               className="control-chip text-xs font-body"
               style={{ color: "var(--color-text-muted)" }}
-              aria-label="Audio recovering"
+              title={audioGuidance?.guidance}
+              aria-label={audioGuidance?.title}
               data-testid="audio-status-recovering"
             >
               <span className="status-dot status-dot-live" />
               <Loader2 size={13} className="animate-spin" />
-              {t("audio.recovering", {
-                attempt: audioRecoveryAttempt,
-                max: audioRecoveryMaxAttempts,
-              })}
+              {audioGuidance?.title}
             </span>
           )}
           {audioRecoveryState === "failed" && (
             <span
               className="control-chip text-xs font-body gap-1.5"
               style={{ color: "var(--color-error, #e53e3e)" }}
-              aria-label="Audio recovery failed"
+              title={audioGuidance?.guidance}
+              aria-label={audioGuidance?.title}
               data-testid="audio-status-recovery-failed"
             >
               <span className="status-dot status-dot-idle" />
               <AlertCircle size={13} />
-              {t("audio.recoveryFailed")}
+              {audioGuidance?.title ?? t("audio.recoveryFailed")}
               <button
                 onClick={() => requestAudioRecovery()}
                 className="btn-surface-themed rounded-md px-2 py-0.5 text-[10px] font-body cursor-pointer"
@@ -253,22 +264,25 @@ export function TransportBar({
             <span
               className="control-chip text-xs font-body"
               style={{ color: "var(--color-error, #e53e3e)" }}
-              aria-label="Audio error"
+              title={audioGuidance?.guidance}
+              aria-label={audioGuidance?.title}
               data-testid="audio-status-error"
             >
               <span className="status-dot status-dot-idle" />
               <AlertCircle size={13} />
-              {t("general.error")}
+              {audioGuidance?.title ?? t("general.error")}
             </span>
           )}
           {audioRecoverySuccessVisible && (
             <span
               className="control-chip text-xs font-body"
               style={{ color: "var(--color-accent)" }}
+              title={audioGuidance?.guidance}
+              aria-label={audioGuidance?.title}
               data-testid="audio-status-recovered"
             >
               <span className="status-dot status-dot-live" />
-              {t("audio.restored")}
+              {audioGuidance?.title ?? t("audio.restored")}
             </span>
           )}
         </div>
