@@ -1,5 +1,14 @@
+import type { NotationMeasure } from "./types";
+
 /** Minimum px width for any measure slot, even an empty one */
 export const MIN_MEASURE_WIDTH = 120;
+
+export interface MeasureSlotLayout {
+  measureIndex: number | undefined;
+  x: number;
+  width: number;
+  noteCount: number;
+}
 
 /**
  * Allocate horizontal widths to measure slots proportionally by note density.
@@ -46,4 +55,47 @@ export function calcMeasureWidths(
   // slightly above totalWidth when container is narrower than min-width * n
   result[0] = Math.max(1, result[0] + (totalWidth - used));
   return result;
+}
+
+export function countRenderableNotes(
+  measure: NotationMeasure | undefined,
+): number {
+  if (!measure) return 0;
+  return [...measure.trebleNotes, ...measure.bassNotes].filter(
+    (note) => !note.isRest,
+  ).length;
+}
+
+export function calcMeasureSlotLayout(
+  measures: NotationMeasure[],
+  visibleMeasureIndices: number[],
+  totalWidth: number,
+  leftMargin: number,
+  displayMeasureCount: number,
+): MeasureSlotLayout[] {
+  if (displayMeasureCount <= 0) return [];
+
+  const slotMeasureIndices = Array.from(
+    { length: displayMeasureCount },
+    (_, slot) => visibleMeasureIndices[slot],
+  );
+  const noteCounts = slotMeasureIndices.map((measureIndex) =>
+    countRenderableNotes(
+      measureIndex === undefined ? undefined : measures[measureIndex],
+    ),
+  );
+  const usableWidth = Math.max(1, totalWidth - leftMargin * 2);
+  const widths = calcMeasureWidths(noteCounts, usableWidth);
+
+  let x = leftMargin;
+  return widths.map((width, slot) => {
+    const layout = {
+      measureIndex: slotMeasureIndices[slot],
+      x,
+      width,
+      noteCount: noteCounts[slot],
+    };
+    x += width;
+    return layout;
+  });
 }
