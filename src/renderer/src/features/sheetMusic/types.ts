@@ -12,6 +12,23 @@ export type DisplayMode =
   | "sheet" // Mode B: sheet music only
   | "falling"; // Mode C: falling notes only (current default)
 
+/** Metadata for rhythm values approximated because the renderer lacks tuplets */
+export interface NotationRhythmApproximation {
+  kind: "unsupported-tuplet-approximation";
+  /** Duration inferred from MIDI timing before standard-duration fallback */
+  originalDurationTicks: number;
+  /** Duration actually rendered by the current standard notation fallback */
+  approximatedDurationTicks: number;
+}
+
+/** A conversion warning that callers can surface or inspect */
+export interface NotationWarning extends NotationRhythmApproximation {
+  /** MIDI note number associated with the approximation */
+  midi: number;
+  /** Quantized note start from song start */
+  startTick: number;
+}
+
 /** A quantized note ready for notation rendering */
 export interface NotationNote {
   /** MIDI note number (0-127) */
@@ -36,6 +53,8 @@ export interface NotationNote {
   tiedFromPrevious: boolean;
   /** Whether this event continues into the next event/measure */
   tiedToNext: boolean;
+  /** Explicit marker for unsupported tuplets rendered with fallback durations */
+  rhythmApproximation?: NotationRhythmApproximation;
 }
 
 /** A measure (bar) of quantized notes */
@@ -62,4 +81,6 @@ export interface NotationData {
   bpm: number;
   /** Ticks per quarter note (for quantization) */
   ticksPerQuarter: number;
+  /** Pure conversion warnings, such as unsupported tuplets rendered via fallback */
+  warnings?: NotationWarning[];
 }

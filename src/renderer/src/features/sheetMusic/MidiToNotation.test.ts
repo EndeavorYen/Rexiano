@@ -288,5 +288,40 @@ describe("MidiToNotation", () => {
         tiedToNext: false,
       });
     });
+
+    it("marks triplet-like durations as deterministic unsupported rhythm approximations", () => {
+      const notes = [
+        // At 120 BPM, 1/3 of a quarter note is 160 ticks, which the
+        // current standard-duration renderer approximates to a 16th note.
+        {
+          midi: 60,
+          name: "C4",
+          time: 0,
+          duration: 60 / 120 / 3,
+          velocity: 80,
+        },
+      ];
+      const result = convertToNotation(notes, 120, 480, 4, 4);
+
+      const note = result.measures[0].trebleNotes.find((n) => !n.isRest);
+
+      expect(note).toMatchObject({
+        midi: 60,
+        durationTicks: 120,
+        vexDuration: "16",
+        rhythmApproximation: {
+          kind: "unsupported-tuplet-approximation",
+          originalDurationTicks: 160,
+          approximatedDurationTicks: 120,
+        },
+      });
+      expect(result.warnings).toContainEqual({
+        kind: "unsupported-tuplet-approximation",
+        midi: 60,
+        startTick: 0,
+        originalDurationTicks: 160,
+        approximatedDurationTicks: 120,
+      });
+    });
   });
 });

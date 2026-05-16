@@ -12,13 +12,20 @@
  */
 
 import type { ParsedNote } from "@renderer/engines/midi/types";
-import type { NotationData, NotationMeasure, NotationNote } from "./types";
+import type {
+  NotationData,
+  NotationMeasure,
+  NotationNote,
+  NotationRhythmApproximation,
+  NotationWarning,
+} from "./types";
 
 /** Middle C boundary for clef assignment */
 const MIDDLE_C = 60;
 
 /** Supported quantization grid sizes in ticks per quarter note */
 const QUANTIZE_GRID = 4; // 16th note = ticksPerQuarter / 4
+const UNSUPPORTED_RHYTHM_TOLERANCE_DIVISOR = 16;
 
 /** Note name lookup for VexFlow key conversion */
 const NOTE_NAMES = [
@@ -62,6 +69,7 @@ interface QuantizedNote {
   endTick: number;
   vexKey: string;
   accidental: string | null;
+  rhythmApproximation?: NotationRhythmApproximation;
 }
 
 interface NoteSegment {
@@ -70,6 +78,7 @@ interface NoteSegment {
   durationTicks: number;
   vexKey: string;
   accidental: string | null;
+  rhythmApproximation?: NotationRhythmApproximation;
   tiedFromPrevious: boolean;
   tiedToNext: boolean;
 }
@@ -136,6 +145,15 @@ function midiToNotationKey(midi: number, keySignature: number): string {
   const noteIndex = midi % 12;
   const noteNames = keySignature < 0 ? FLAT_NOTE_NAMES : NOTE_NAMES;
   return `${noteNames[noteIndex]}/${octave}`;
+}
+
+function secondsToTicks(
+  timeSeconds: number,
+  bpm: number,
+  ticksPerQuarter: number,
+): number {
+  const secondsPerTick = 60 / (bpm * ticksPerQuarter);
+  return timeSeconds / secondsPerTick;
 }
 
 /**
@@ -207,6 +225,31 @@ function splitTicksIntoDurations(
   return pieces;
 }
 
+function getRhythmApproximation(
+  originalDurationTicks: number,
+  approximatedDurationTicks: number,
+  ticksPerQuarter: number,
+): NotationRhythmApproximation | undefined {
+  const roundedOriginalDurationTicks = Math.round(originalDurationTicks);
+  const toleranceTicks = Math.max(
+    1,
+    ticksPerQuarter / UNSUPPORTED_RHYTHM_TOLERANCE_DIVISOR,
+  );
+
+  if (
+    Math.abs(roundedOriginalDurationTicks - approximatedDurationTicks) <=
+    toleranceTicks
+  ) {
+    return undefined;
+  }
+
+  return {
+    kind: "unsupported-tuplet-approximation",
+    originalDurationTicks: roundedOriginalDurationTicks,
+    approximatedDurationTicks,
+  };
+}
+
 function makeRestKey(clef: Clef): string {
   return clef === "treble" ? "b/4" : "d/3";
 }
@@ -265,6 +308,7 @@ function createNoteEvents(
       tied: tiedToNext,
       tiedFromPrevious,
       tiedToNext,
+      rhythmApproximation: segment.rhythmApproximation,
     });
     cursor += piece.ticks;
   });
@@ -371,7 +415,7 @@ export function convertToNotation(
   keySignature = 0,
 ): NotationData {
   if (notes.length === 0) {
-    return { measures: [], bpm, ticksPerQuarter };
+    return { measures: [], bpm, ticksPerQuarter, warnings: [] };
   }
 
   const ticksPerMeasure =
@@ -389,6 +433,11 @@ export function convertToNotation(
       endTick - startTick,
       ticksPerQuarter / QUANTIZE_GRID,
     );
+    const rawDurationTicks = secondsToTicks(
+      note.duration,
+      bpm,
+      ticksPerQuarter,
+    );
 
     return {
       midi: note.midi,
@@ -399,8 +448,24 @@ export function convertToNotation(
         midiToNotationKey(note.midi, keySignature),
         keySignature,
       ),
+      rhythmApproximation: getRhythmApproximation(
+        rawDurationTicks,
+        durationTicks,
+        ticksPerQuarter,
+      ),
     };
   });
+  const warnings: NotationWarning[] = quantized.flatMap((note) =>
+    note.rhythmApproximation
+      ? [
+          {
+            ...note.rhythmApproximation,
+            midi: note.midi,
+            startTick: note.startTick,
+          },
+        ]
+      : [],
+  );
 
   // Group into measures
   const maxTick = Math.max(...quantized.map((n) => n.endTick));
@@ -422,6 +487,7 @@ export function convertToNotation(
           durationTicks: segmentEnd - segmentStart,
           vexKey: n.vexKey,
           accidental: n.accidental,
+          rhythmApproximation: n.rhythmApproximation,
           tiedFromPrevious: segmentStart > n.startTick,
           tiedToNext: segmentEnd < n.endTick,
         };
@@ -450,5 +516,5 @@ export function convertToNotation(
     });
   }
 
-  return { measures, bpm, ticksPerQuarter };
+  return { measures, bpm, ticksPerQuarter, warnings };
 }
