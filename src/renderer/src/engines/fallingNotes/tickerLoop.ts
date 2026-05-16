@@ -4,6 +4,7 @@ import { useSongStore } from "@renderer/stores/useSongStore";
 import { usePlaybackStore } from "@renderer/stores/usePlaybackStore";
 import { usePracticeStore } from "@renderer/stores/usePracticeStore";
 import { getPracticeEngines } from "@renderer/engines/practice/practiceManager";
+import type { RenderDiagnosticsFrame } from "./renderDiagnostics";
 
 /** Cap frame delta to prevent large time jumps (e.g. after tab backgrounding) */
 const MAX_DELTA_SECONDS = 0.1;
@@ -12,6 +13,10 @@ function setsEqual(a: Set<number>, b: Set<number>): boolean {
   if (a.size !== b.size) return false;
   for (const v of a) if (!b.has(v)) return false;
   return true;
+}
+
+function nowMs(): number {
+  return globalThis.performance?.now?.() ?? Date.now();
 }
 
 /**
@@ -28,13 +33,28 @@ export function createTickerUpdate(
     current: ((notes: Set<number>) => void) | undefined;
   },
   getAudioCurrentTime?: () => number | null,
+  onDiagnostics?: (frame: RenderDiagnosticsFrame) => void,
 ) {
   let prevActiveNotes = new Set<number>();
 
   return (time: { deltaMS: number }) => {
+    const frameStart = onDiagnostics ? nowMs() : 0;
     const songState = useSongStore.getState();
     const playState = usePlaybackStore.getState();
     if (!songState.song) return;
+
+    const emitDiagnostics = (vp: Viewport, currentTime: number): void => {
+      if (!onDiagnostics || !songState.song) return;
+      onDiagnostics({
+        ...noteRenderer.getDiagnostics(),
+        frameDurationMs: nowMs() - frameStart,
+        tickerDeltaMs: time.deltaMS,
+        viewportWidth: vp.width,
+        viewportHeight: vp.height,
+        currentTime,
+        songNoteCount: songState.song.noteCount,
+      });
+    };
 
     // Read practice state only when playing (avoids getState + destructure at idle)
     const engines = getPracticeEngines();
@@ -62,6 +82,7 @@ export function createTickerUpdate(
             currentTime: effectiveTime,
           };
           noteRenderer.update(songState.song, vp);
+          emitDiagnostics(vp, effectiveTime);
           return;
         }
       }
@@ -113,5 +134,7 @@ export function createTickerUpdate(
         onActiveNotesChangeRef.current(snapshot);
       }
     }
+
+    emitDiagnostics(vp, effectiveTime);
   };
 }

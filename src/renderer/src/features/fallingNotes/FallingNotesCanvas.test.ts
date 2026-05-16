@@ -394,4 +394,40 @@ describe("FallingNotesCanvas ticker logic (via createTickerUpdate)", () => {
 
     expect(() => tick({ deltaMS: 16.67 })).not.toThrow();
   });
+
+  test("emits render diagnostics when a listener is provided", () => {
+    songStoreState = { song: makeSong() };
+    playbackStoreState.currentTime = 1;
+    const onDiagnostics = vi.fn();
+    const nowSpy = vi
+      .spyOn(performance, "now")
+      .mockReturnValueOnce(100)
+      .mockReturnValueOnce(103.25);
+
+    try {
+      const tick = createTickerUpdate(
+        noteRenderer,
+        () => SCREEN,
+        { current: undefined },
+        undefined,
+        onDiagnostics,
+      );
+
+      tick({ deltaMS: 16.67 });
+    } finally {
+      nowSpy.mockRestore();
+    }
+
+    expect(onDiagnostics).toHaveBeenCalledWith(
+      expect.objectContaining({
+        frameDurationMs: 3.25,
+        tickerDeltaMs: 16.67,
+        viewportWidth: SCREEN.width,
+        viewportHeight: SCREEN.height,
+        currentTime: 1,
+        songNoteCount: 4,
+        totalSpriteCount: 512,
+      }),
+    );
+  });
 });

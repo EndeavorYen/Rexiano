@@ -32,6 +32,19 @@ const MIN_HEIGHT_FOR_LABEL = 16;
 /** Minimum note height (px) at which we show the fingering label */
 const MIN_HEIGHT_FOR_FINGERING = 14;
 
+export interface NoteRendererDiagnostics {
+  visibleNoteCount: number;
+  activeSpriteCount: number;
+  pooledSpriteCount: number;
+  totalSpriteCount: number;
+  poolGrowthCount: number;
+  activeNoteCount: number;
+  activeLabelCount: number;
+  pooledLabelCount: number;
+  activeFingeringLabelCount: number;
+  pooledFingeringLabelCount: number;
+}
+
 /** Circled digit characters for finger numbers 1-5 */
 const CIRCLED_DIGITS: Record<Finger, string> = {
   1: "\u2460",
@@ -98,6 +111,8 @@ export class NoteRenderer {
   private active = new Map<string, Sprite>();
   private nextActive = new Map<string, Sprite>();
   private visibleBuf: ParsedNote[] = [];
+  private lastVisibleNoteCount = 0;
+  private poolGrowthCount = 0;
   private keyPositions = new Map<number, KeyPosition>();
   private noteTexture: Texture = Texture.EMPTY;
 
@@ -173,6 +188,7 @@ export class NoteRenderer {
     const nextActive = this.nextActive;
     nextActive.clear();
     this.activeNotes.clear();
+    this.lastVisibleNoteCount = 0;
 
     const hitWindow = 0.05;
     const showFingering = useSettingsStore.getState().showFingering;
@@ -199,6 +215,7 @@ export class NoteRenderer {
         hitWindow,
         this.visibleBuf,
       );
+      this.lastVisibleNoteCount += visibleNotes.length;
 
       for (const note of visibleNotes) {
         const key = noteKey(trackIdx, note.midi, note.time);
@@ -335,6 +352,23 @@ export class NoteRenderer {
     this.nextFingeringLabels.clear();
     this.fingeringCache.clear();
     this.lastSongFileName = "";
+    this.lastVisibleNoteCount = 0;
+    this.poolGrowthCount = 0;
+  }
+
+  getDiagnostics(): NoteRendererDiagnostics {
+    return {
+      visibleNoteCount: this.lastVisibleNoteCount,
+      activeSpriteCount: this.active.size,
+      pooledSpriteCount: this.pool.length,
+      totalSpriteCount: this.active.size + this.pool.length,
+      poolGrowthCount: this.poolGrowthCount,
+      activeNoteCount: this.activeNotes.size,
+      activeLabelCount: this._spriteLabels.size,
+      pooledLabelCount: this._labelPool.length,
+      activeFingeringLabelCount: this.activeFingeringLabels.size,
+      pooledFingeringLabelCount: this.fingeringLabelPool.length,
+    };
   }
 
   private createSprite(): Sprite {
@@ -356,6 +390,7 @@ export class NoteRenderer {
   private allocate(): Sprite {
     if (this.pool.length === 0) {
       const grow = Math.max(64, Math.floor(this.active.size * 0.5));
+      this.poolGrowthCount += grow;
       for (let i = 0; i < grow; i++) {
         this.pool.push(this.createSprite());
       }

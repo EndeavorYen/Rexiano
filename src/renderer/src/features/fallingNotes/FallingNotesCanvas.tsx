@@ -1,9 +1,14 @@
-import { useRef, useEffect } from "react";
+import { useRef, useEffect, useState } from "react";
 import "pixi.js/unsafe-eval";
 import { Application } from "pixi.js";
 import { NoteRenderer } from "@renderer/engines/fallingNotes/NoteRenderer";
 import { getCanvasBgColor } from "@renderer/engines/fallingNotes/noteColors";
 import { createTickerUpdate } from "@renderer/engines/fallingNotes/tickerLoop";
+import {
+  formatRenderDiagnosticsSummary,
+  readRenderDiagnosticsFlag,
+  type RenderDiagnosticsFrame,
+} from "@renderer/engines/fallingNotes/renderDiagnostics";
 import { useThemeStore } from "@renderer/stores/useThemeStore";
 
 interface FallingNotesCanvasProps {
@@ -26,6 +31,10 @@ export function FallingNotesCanvas({
   const containerRef = useRef<HTMLDivElement>(null);
   const appRef = useRef<Application | null>(null);
   const rendererRef = useRef<NoteRenderer | null>(null);
+  const [diagnosticsEnabled] = useState(readRenderDiagnosticsFlag);
+  const [renderDiagnostics, setRenderDiagnostics] =
+    useState<RenderDiagnosticsFrame | null>(null);
+  const diagnosticsThrottleRef = useRef(0);
 
   // Stable ref so the ticker closure always sees the latest callback
   // without re-running the effect (fix: avoid destroying PixiJS on parent re-render)
@@ -45,6 +54,23 @@ export function FallingNotesCanvas({
   useEffect(() => {
     onNoteRendererReadyRef.current = onNoteRendererReady;
   }, [onNoteRendererReady]);
+
+  const onRenderDiagnosticsRef = useRef<
+    ((frame: RenderDiagnosticsFrame) => void) | undefined
+  >(undefined);
+  useEffect(() => {
+    if (!diagnosticsEnabled) {
+      onRenderDiagnosticsRef.current = undefined;
+      return;
+    }
+
+    onRenderDiagnosticsRef.current = (frame) => {
+      const now = performance.now();
+      if (now - diagnosticsThrottleRef.current < 250) return;
+      diagnosticsThrottleRef.current = now;
+      setRenderDiagnostics(frame);
+    };
+  }, [diagnosticsEnabled]);
 
   // One-time PixiJS setup + teardown
   useEffect(() => {
@@ -86,6 +112,9 @@ export function FallingNotesCanvas({
           () => ({ width: app.screen.width, height: app.screen.height }),
           onActiveNotesChangeRef,
           () => getAudioCurrentTimeRef.current?.() ?? null,
+          diagnosticsEnabled
+            ? (frame) => onRenderDiagnosticsRef.current?.(frame)
+            : undefined,
         ),
       );
 
@@ -119,13 +148,29 @@ export function FallingNotesCanvas({
         appRef.current = null;
       }
     };
-  }, []);
+  }, [diagnosticsEnabled]);
 
   return (
     <div
       ref={containerRef}
-      className="flex-1 w-full overflow-hidden"
+      className="relative flex-1 w-full overflow-hidden"
       style={{ minHeight }}
-    />
+    >
+      {diagnosticsEnabled && renderDiagnostics ? (
+        <div
+          data-testid="render-diagnostics-overlay"
+          className="pointer-events-none absolute right-2 top-2 z-10 rounded px-2 py-1 font-mono text-[10px] leading-tight"
+          style={{
+            color: "#d1fae5",
+            background: "rgba(6, 78, 59, 0.82)",
+            border: "1px solid rgba(167, 243, 208, 0.42)",
+          }}
+        >
+          {formatRenderDiagnosticsSummary(renderDiagnostics).map((line) => (
+            <div key={line}>{line}</div>
+          ))}
+        </div>
+      ) : null}
+    </div>
   );
 }
