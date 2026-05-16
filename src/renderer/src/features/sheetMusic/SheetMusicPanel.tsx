@@ -34,19 +34,26 @@ interface SheetMusicPanelProps {
   height?: number;
 }
 
-/**
- * Build a VexFlow rest note at the appropriate position for the clef.
- * Uses b/4 for treble, d/3 for bass as conventional rest placement.
- */
-function makeRestKey(clef: "treble" | "bass"): string {
-  return clef === "treble" ? "b/4" : "d/3";
-}
-
 interface ChordGroup {
   keys: string[];
   duration: string;
   startTick: number;
   durationTicks: number;
+  isRest: boolean;
+  tiedFromPrevious: boolean;
+  tiedToNext: boolean;
+}
+
+interface RenderedVoice {
+  groups: ChordGroup[];
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  vexNotes: any[];
+}
+
+interface RenderedMeasure {
+  measureIndex: number;
+  treble: RenderedVoice;
+  bass: RenderedVoice;
 }
 
 /**
@@ -55,25 +62,220 @@ interface ChordGroup {
 function groupNotesIntoChords(notes: NotationNote[]): ChordGroup[] {
   if (notes.length === 0) return [];
 
-  const sorted = [...notes].sort((a, b) => a.startTick - b.startTick);
+  const sorted = [...notes].sort(
+    (a, b) =>
+      a.startTick - b.startTick ||
+      Number(a.isRest) - Number(b.isRest) ||
+      (a.midi ?? -1) - (b.midi ?? -1),
+  );
   const groups: ChordGroup[] = [];
 
   for (const note of sorted) {
     const last = groups[groups.length - 1];
-    if (last && last.startTick === note.startTick) {
+    if (
+      last &&
+      !last.isRest &&
+      !note.isRest &&
+      last.startTick === note.startTick &&
+      last.duration === note.vexDuration
+    ) {
       last.keys.push(note.vexKey);
       last.durationTicks = Math.max(last.durationTicks, note.durationTicks);
+      last.tiedFromPrevious ||= note.tiedFromPrevious;
+      last.tiedToNext ||= note.tiedToNext;
     } else {
       groups.push({
         keys: [note.vexKey],
         duration: note.vexDuration,
         startTick: note.startTick,
         durationTicks: note.durationTicks,
+        isRest: note.isRest,
+        tiedFromPrevious: note.tiedFromPrevious,
+        tiedToNext: note.tiedToNext,
       });
     }
   }
 
   return groups;
+}
+
+function getAccidental(key: string): string | null {
+  const match = /^[a-g]([#b]+)?\/-?\d+$/.exec(key);
+  return match?.[1] ?? null;
+}
+
+function makeStaveNote(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  VF: any,
+  group: ChordGroup,
+  clef: "treble" | "bass",
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+): any {
+  const { StaveNote, Accidental } = VF;
+  const keys = [...group.keys];
+  const note = new StaveNote({
+    keys,
+    duration: `${group.duration}${group.isRest ? "r" : ""}`,
+    clef,
+  });
+
+  if (!group.isRest) {
+    keys.forEach((key, index) => {
+      const accidental = getAccidental(key);
+      if (accidental) {
+        note.addModifier(new Accidental(accidental), index);
+      }
+    });
+  }
+
+  return note;
+}
+
+function drawBeams(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  VF: any,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  context: any,
+  groups: ChordGroup[],
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  vexNotes: any[],
+): void {
+  const { Beam } = VF;
+  let run: unknown[] = [];
+
+  const flush = (): void => {
+    if (run.length > 1) {
+      for (const beam of Beam.generateBeams(run)) {
+        beam.setContext(context).draw();
+      }
+    }
+    run = [];
+  };
+
+  groups.forEach((group, index) => {
+    if (!group.isRest && (group.duration === "8" || group.duration === "16")) {
+      run.push(vexNotes[index]);
+    } else {
+      flush();
+    }
+  });
+  flush();
+}
+
+function drawTies(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  VF: any,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  context: any,
+  groups: ChordGroup[],
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  vexNotes: any[],
+): void {
+  for (let i = 0; i < groups.length - 1; i++) {
+    drawTieBetweenGroups(
+      VF,
+      context,
+      groups[i],
+      vexNotes[i],
+      groups[i + 1],
+      vexNotes[i + 1],
+    );
+  }
+}
+
+function drawTieBetweenGroups(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  VF: any,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  context: any,
+  current: ChordGroup,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  currentNote: any,
+  next: ChordGroup,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  nextNote: any,
+): void {
+  if (
+    current.isRest ||
+    next.isRest ||
+    !current.tiedToNext ||
+    !next.tiedFromPrevious
+  ) {
+    return;
+  }
+
+  const firstIndices: number[] = [];
+  const lastIndices: number[] = [];
+  current.keys.forEach((key, firstIndex) => {
+    const lastIndex = next.keys.indexOf(key);
+    if (lastIndex >= 0) {
+      firstIndices.push(firstIndex);
+      lastIndices.push(lastIndex);
+    }
+  });
+  if (firstIndices.length === 0) return;
+
+  new VF.StaveTie({
+    first_note: currentNote,
+    last_note: nextNote,
+    first_indices: firstIndices,
+    last_indices: lastIndices,
+  })
+    .setContext(context)
+    .draw();
+}
+
+function drawCrossMeasureTies(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  VF: any,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  context: any,
+  renderedMeasures: RenderedMeasure[],
+): void {
+  for (let i = 0; i < renderedMeasures.length - 1; i++) {
+    const current = renderedMeasures[i];
+    const next = renderedMeasures[i + 1];
+    if (next.measureIndex !== current.measureIndex + 1) continue;
+
+    drawCrossVoiceTie(VF, context, current.treble, next.treble);
+    drawCrossVoiceTie(VF, context, current.bass, next.bass);
+  }
+}
+
+function drawCrossVoiceTie(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  VF: any,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  context: any,
+  current: RenderedVoice,
+  next: RenderedVoice,
+): void {
+  const currentIndex = findLastTieIndex(current.groups);
+  const nextIndex = findFirstTieIndex(next.groups);
+  if (currentIndex < 0 || nextIndex < 0) return;
+
+  drawTieBetweenGroups(
+    VF,
+    context,
+    current.groups[currentIndex],
+    current.vexNotes[currentIndex],
+    next.groups[nextIndex],
+    next.vexNotes[nextIndex],
+  );
+}
+
+function findLastTieIndex(groups: ChordGroup[]): number {
+  for (let i = groups.length - 1; i >= 0; i--) {
+    if (!groups[i].isRest && groups[i].tiedToNext) return i;
+  }
+  return -1;
+}
+
+function findFirstTieIndex(groups: ChordGroup[]): number {
+  for (let i = 0; i < groups.length; i++) {
+    if (!groups[i].isRest && groups[i].tiedFromPrevious) return i;
+  }
+  return -1;
 }
 
 function renderMeasure(
@@ -86,8 +288,8 @@ function renderMeasure(
   y: number,
   width: number,
   isFirst: boolean,
-): void {
-  const { Stave, StaveNote, Voice, Formatter, StaveConnector } = VF;
+): RenderedMeasure {
+  const { Stave, Voice, Formatter, StaveConnector } = VF;
 
   const treble = new Stave(x, y, width);
   if (isFirst) {
@@ -122,52 +324,26 @@ function renderMeasure(
 
   const trebleChords = groupNotesIntoChords(measure.trebleNotes);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const trebleVexNotes: any[] =
-    trebleChords.length > 0
-      ? trebleChords.map((chord) => {
-          const note = new StaveNote({
-            keys: chord.keys,
-            duration: chord.duration,
-          });
-          return note;
-        })
-      : [
-          new StaveNote({
-            keys: [makeRestKey("treble")],
-            duration: "wr",
-          }),
-        ];
+  const trebleVexNotes: any[] = trebleChords.map((chord) =>
+    makeStaveNote(VF, chord, "treble"),
+  );
 
   const bassChords = groupNotesIntoChords(measure.bassNotes);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const bassVexNotes: any[] =
-    bassChords.length > 0
-      ? bassChords.map((chord) => {
-          const note = new StaveNote({
-            keys: chord.keys,
-            duration: chord.duration,
-            clef: "bass",
-          });
-          return note;
-        })
-      : [
-          new StaveNote({
-            keys: [makeRestKey("bass")],
-            duration: "wr",
-            clef: "bass",
-          }),
-        ];
+  const bassVexNotes: any[] = bassChords.map((chord) =>
+    makeStaveNote(VF, chord, "bass"),
+  );
 
   const trebleVoice = new Voice({
     num_beats: measure.timeSignatureTop,
     beat_value: measure.timeSignatureBottom,
-  }).setStrict(false);
+  });
   trebleVoice.addTickables(trebleVexNotes);
 
   const bassVoice = new Voice({
     num_beats: measure.timeSignatureTop,
     beat_value: measure.timeSignatureBottom,
-  }).setStrict(false);
+  });
   bassVoice.addTickables(bassVexNotes);
 
   const staveWidth = width - (isFirst ? 80 : 20);
@@ -178,6 +354,16 @@ function renderMeasure(
 
   trebleVoice.draw(context, treble);
   bassVoice.draw(context, bass);
+  drawBeams(VF, context, trebleChords, trebleVexNotes);
+  drawBeams(VF, context, bassChords, bassVexNotes);
+  drawTies(VF, context, trebleChords, trebleVexNotes);
+  drawTies(VF, context, bassChords, bassVexNotes);
+
+  return {
+    measureIndex: measure.index,
+    treble: { groups: trebleChords, vexNotes: trebleVexNotes },
+    bass: { groups: bassChords, vexNotes: bassVexNotes },
+  };
 }
 
 /**
@@ -298,6 +484,7 @@ export function SheetMusicPanel({
         const renderer = new Renderer(stage, Renderer.Backends.SVG);
         renderer.resize(containerWidth, Math.max(totalHeight, height));
         const context = renderer.getContext();
+        const renderedMeasures: RenderedMeasure[] = [];
 
         for (let slot = 0; slot < DISPLAY_MEASURE_COUNT; slot++) {
           const measureIndex = visibleMeasures[slot];
@@ -313,7 +500,9 @@ export function SheetMusicPanel({
           const measure = notationData.measures[measureIndex];
 
           try {
-            renderMeasure(VF, context, measure, x, y, slotWidth, isFirst);
+            renderedMeasures.push(
+              renderMeasure(VF, context, measure, x, y, slotWidth, isFirst),
+            );
           } catch (e) {
             console.warn(
               `SheetMusic: failed to render measure ${measureIndex}:`,
@@ -321,6 +510,7 @@ export function SheetMusicPanel({
             );
           }
         }
+        drawCrossMeasureTies(VF, context, renderedMeasures);
 
         if (cancelled || !svgHostRef.current) return;
         const nextSvg = stage.querySelector("svg");

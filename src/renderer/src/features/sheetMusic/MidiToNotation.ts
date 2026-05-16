@@ -36,6 +36,29 @@ const NOTE_NAMES = [
   "b",
 ];
 
+type Clef = "treble" | "bass";
+
+interface QuantizedNote {
+  midi: number;
+  startTick: number;
+  endTick: number;
+  vexKey: string;
+}
+
+interface NoteSegment {
+  midi: number;
+  startTick: number;
+  durationTicks: number;
+  vexKey: string;
+  tiedFromPrevious: boolean;
+  tiedToNext: boolean;
+}
+
+interface DurationPiece {
+  vexDuration: string;
+  ticks: number;
+}
+
 /**
  * Convert a MIDI note number to a VexFlow key string.
  * @example midiToVexKey(60) → "c/4"
@@ -84,6 +107,169 @@ export function ticksToVexDuration(
   return "16"; // sixteenth
 }
 
+function getDurationPieces(ticksPerQuarter: number): DurationPiece[] {
+  return [
+    { vexDuration: "w", ticks: ticksPerQuarter * 4 },
+    { vexDuration: "h", ticks: ticksPerQuarter * 2 },
+    { vexDuration: "q", ticks: ticksPerQuarter },
+    { vexDuration: "8", ticks: ticksPerQuarter / 2 },
+    { vexDuration: "16", ticks: ticksPerQuarter / 4 },
+  ];
+}
+
+function splitTicksIntoDurations(
+  durationTicks: number,
+  ticksPerQuarter: number,
+): DurationPiece[] {
+  let remaining = Math.round(durationTicks);
+  const pieces: DurationPiece[] = [];
+
+  for (const piece of getDurationPieces(ticksPerQuarter)) {
+    while (remaining >= piece.ticks) {
+      pieces.push(piece);
+      remaining -= piece.ticks;
+    }
+  }
+
+  if (remaining > 0) {
+    pieces.push({
+      vexDuration: "16",
+      ticks: ticksPerQuarter / QUANTIZE_GRID,
+    });
+  }
+
+  return pieces;
+}
+
+function makeRestKey(clef: Clef): string {
+  return clef === "treble" ? "b/4" : "d/3";
+}
+
+function createRestEvents(
+  startTick: number,
+  durationTicks: number,
+  clef: Clef,
+  ticksPerQuarter: number,
+): NotationNote[] {
+  const events: NotationNote[] = [];
+  let cursor = startTick;
+
+  for (const piece of splitTicksIntoDurations(durationTicks, ticksPerQuarter)) {
+    events.push({
+      midi: null,
+      isRest: true,
+      startTick: cursor,
+      durationTicks: piece.ticks,
+      vexKey: makeRestKey(clef),
+      vexDuration: piece.vexDuration,
+      tied: false,
+      tiedFromPrevious: false,
+      tiedToNext: false,
+    });
+    cursor += piece.ticks;
+  }
+
+  return events;
+}
+
+function createNoteEvents(
+  segment: NoteSegment,
+  durationTicks: number,
+  ticksPerQuarter: number,
+): NotationNote[] {
+  const pieces = splitTicksIntoDurations(durationTicks, ticksPerQuarter);
+  const events: NotationNote[] = [];
+  let cursor = segment.startTick;
+
+  pieces.forEach((piece, index) => {
+    const tiedFromPrevious = segment.tiedFromPrevious || index > 0;
+    const tiedToNext = segment.tiedToNext || index < pieces.length - 1;
+
+    events.push({
+      midi: segment.midi,
+      isRest: false,
+      startTick: cursor,
+      durationTicks: piece.ticks,
+      vexKey: segment.vexKey,
+      vexDuration: piece.vexDuration,
+      tied: tiedToNext,
+      tiedFromPrevious,
+      tiedToNext,
+    });
+    cursor += piece.ticks;
+  });
+
+  return events;
+}
+
+function buildVoiceEvents(
+  segments: NoteSegment[],
+  clef: Clef,
+  measureTicks: number,
+  ticksPerQuarter: number,
+): NotationNote[] {
+  if (segments.length === 0) {
+    return createRestEvents(0, measureTicks, clef, ticksPerQuarter);
+  }
+
+  const byStart = new Map<number, NoteSegment[]>();
+  for (const segment of segments) {
+    const group = byStart.get(segment.startTick) ?? [];
+    group.push(segment);
+    byStart.set(segment.startTick, group);
+  }
+
+  const groups = [...byStart.entries()]
+    .map(([startTick, notes]) => ({
+      startTick,
+      notes: notes.sort((a, b) => a.midi - b.midi),
+    }))
+    .sort((a, b) => a.startTick - b.startTick);
+
+  const events: NotationNote[] = [];
+  let cursor = 0;
+
+  groups.forEach((group, index) => {
+    const groupStart = Math.max(0, Math.min(group.startTick, measureTicks));
+    if (groupStart > cursor) {
+      events.push(
+        ...createRestEvents(cursor, groupStart - cursor, clef, ticksPerQuarter),
+      );
+      cursor = groupStart;
+    }
+
+    const nextStart = groups[index + 1]?.startTick ?? measureTicks;
+    const naturalDuration = Math.max(
+      ...group.notes.map((note) => note.durationTicks),
+    );
+    const availableDuration = Math.max(
+      0,
+      Math.min(nextStart, measureTicks) - groupStart,
+    );
+    const durationTicks = Math.min(naturalDuration, availableDuration);
+
+    if (durationTicks <= 0) return;
+
+    for (const note of group.notes) {
+      events.push(...createNoteEvents(note, durationTicks, ticksPerQuarter));
+    }
+    cursor = groupStart + durationTicks;
+  });
+
+  if (cursor < measureTicks) {
+    events.push(
+      ...createRestEvents(cursor, measureTicks - cursor, clef, ticksPerQuarter),
+    );
+  }
+
+  return events.sort(
+    (a, b) =>
+      a.startTick - b.startTick ||
+      Number(a.isRest) - Number(b.isRest) ||
+      (a.midi ?? -1) - (b.midi ?? -1),
+  );
+}
+
 /**
  * Convert an array of ParsedNotes into notation-ready data.
  *
@@ -108,8 +294,8 @@ export function convertToNotation(
   const ticksPerMeasure =
     ticksPerQuarter * timeSignatureTop * (4 / timeSignatureBottom);
 
-  // Quantize all notes
-  const quantized: NotationNote[] = notes.map((note) => {
+  // Quantize all notes.
+  const quantized: QuantizedNote[] = notes.map((note) => {
     const startTick = quantizeToGrid(note.time, bpm, ticksPerQuarter);
     const endTick = quantizeToGrid(
       note.time + note.duration,
@@ -124,17 +310,13 @@ export function convertToNotation(
     return {
       midi: note.midi,
       startTick,
-      durationTicks,
+      endTick: startTick + durationTicks,
       vexKey: midiToVexKey(note.midi),
-      vexDuration: ticksToVexDuration(durationTicks, ticksPerQuarter),
-      tied: false, // TODO: detect cross-measure ties
     };
   });
 
   // Group into measures
-  const maxTick = Math.max(
-    ...quantized.map((n) => n.startTick + n.durationTicks),
-  );
+  const maxTick = Math.max(...quantized.map((n) => n.endTick));
   const measureCount = Math.ceil(maxTick / ticksPerMeasure) || 1;
   const measures: NotationMeasure[] = [];
 
@@ -142,23 +324,41 @@ export function convertToNotation(
     const measureStart = i * ticksPerMeasure;
     const measureEnd = measureStart + ticksPerMeasure;
 
-    const measureNotes = quantized.filter(
-      (n) => n.startTick >= measureStart && n.startTick < measureEnd,
-    );
+    const measureSegments: NoteSegment[] = quantized
+      .filter((n) => n.startTick < measureEnd && n.endTick > measureStart)
+      .map((n) => {
+        const segmentStart = Math.max(n.startTick, measureStart);
+        const segmentEnd = Math.min(n.endTick, measureEnd);
+        return {
+          midi: n.midi,
+          startTick: segmentStart - measureStart,
+          durationTicks: segmentEnd - segmentStart,
+          vexKey: n.vexKey,
+          tiedFromPrevious: segmentStart > n.startTick,
+          tiedToNext: segmentEnd < n.endTick,
+        };
+      });
 
-    // Adjust startTick to be relative to measure start
-    const relativeNotes = measureNotes.map((n) => ({
-      ...n,
-      startTick: n.startTick - measureStart,
-    }));
+    const trebleSegments = measureSegments.filter((n) => n.midi >= MIDDLE_C);
+    const bassSegments = measureSegments.filter((n) => n.midi < MIDDLE_C);
 
     measures.push({
       index: i,
       timeSignatureTop,
       timeSignatureBottom,
       keySignature: 0, // C major for now
-      trebleNotes: relativeNotes.filter((n) => n.midi >= MIDDLE_C),
-      bassNotes: relativeNotes.filter((n) => n.midi < MIDDLE_C),
+      trebleNotes: buildVoiceEvents(
+        trebleSegments,
+        "treble",
+        ticksPerMeasure,
+        ticksPerQuarter,
+      ),
+      bassNotes: buildVoiceEvents(
+        bassSegments,
+        "bass",
+        ticksPerMeasure,
+        ticksPerQuarter,
+      ),
     });
   }
 

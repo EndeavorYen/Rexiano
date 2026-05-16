@@ -180,6 +180,54 @@ test.describe("Playback UI polish guardrails", () => {
     }
   });
 
+  test("sheet music renders notation glyphs without VexFlow warnings", async ({
+    appPage,
+  }) => {
+    const sheetWarnings: string[] = [];
+    appPage.on("console", (msg) => {
+      const text = msg.text();
+      if (text.includes("SheetMusic:")) {
+        sheetWarnings.push(`${msg.type()}: ${text}`);
+      }
+    });
+
+    await appPage.setViewportSize({ width: 1600, height: 900 });
+    await gotoLibrary(appPage);
+    await loadFirstBuiltInSong(appPage);
+    await waitForUiSettled(appPage);
+
+    await appPage.getByTestId("playback-drawer-trigger").click();
+    await appPage.getByTestId("display-mode-split").click();
+    await waitForUiSettled(appPage);
+
+    const host = appPage.getByTestId("sheet-music-svg-host");
+    await expect(host.locator("svg")).toBeVisible();
+
+    const glyphStats = await appPage.evaluate(() => {
+      const host = document.querySelector(
+        "[data-testid='sheet-music-svg-host']",
+      );
+      const svg = host?.querySelector("svg");
+      if (!svg) return null;
+
+      const glyphs = svg.querySelectorAll(
+        "path,rect,ellipse,circle,line,polygon,polyline,text",
+      );
+
+      return {
+        glyphCount: glyphs.length,
+        width: svg.getAttribute("width"),
+        height: svg.getAttribute("height"),
+      };
+    });
+
+    expect(glyphStats).not.toBeNull();
+    expect(glyphStats?.glyphCount).toBeGreaterThan(120);
+    expect(glyphStats?.width).toBeTruthy();
+    expect(glyphStats?.height).toBeTruthy();
+    expect(sheetWarnings).toEqual([]);
+  });
+
   test("split-layout-guard keeps keyboard + transport + toolbar visible on short viewports", async ({
     appPage,
   }) => {

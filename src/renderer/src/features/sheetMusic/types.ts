@@ -15,7 +15,9 @@ export type DisplayMode =
 /** A quantized note ready for notation rendering */
 export interface NotationNote {
   /** MIDI note number (0-127) */
-  midi: number;
+  midi: number | null;
+  /** True when this event is a rest inserted to preserve rhythmic spacing */
+  isRest: boolean;
   /** Quantized start time in ticks from measure start */
   startTick: number;
   /** Quantized duration in ticks */
@@ -24,8 +26,12 @@ export interface NotationNote {
   vexKey: string;
   /** VexFlow duration string (e.g. "q", "8", "16", "h", "w") */
   vexDuration: string;
-  /** Whether this note is tied to the next */
+  /** Whether this note is tied to the next; kept for existing callers */
   tied: boolean;
+  /** Whether this event continues a note from the previous event/measure */
+  tiedFromPrevious: boolean;
+  /** Whether this event continues into the next event/measure */
+  tiedToNext: boolean;
 }
 
 /** A measure (bar) of quantized notes */

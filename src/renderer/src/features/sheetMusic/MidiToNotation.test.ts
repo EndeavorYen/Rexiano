@@ -92,8 +92,12 @@ describe("MidiToNotation", () => {
 
       expect(result.measures.length).toBeGreaterThanOrEqual(2);
       // First two notes in measure 0, third in measure 1
-      expect(result.measures[0].trebleNotes.length).toBe(2);
-      expect(result.measures[1].trebleNotes.length).toBe(1);
+      expect(
+        result.measures[0].trebleNotes.filter((n) => !n.isRest),
+      ).toHaveLength(2);
+      expect(
+        result.measures[1].trebleNotes.filter((n) => !n.isRest),
+      ).toHaveLength(1);
     });
 
     it("splits notes into treble and bass clefs at MIDI 60", () => {
@@ -103,10 +107,15 @@ describe("MidiToNotation", () => {
       ];
       const result = convertToNotation(notes, 120, 480);
 
-      expect(result.measures[0].trebleNotes.length).toBe(1);
-      expect(result.measures[0].bassNotes.length).toBe(1);
-      expect(result.measures[0].trebleNotes[0].midi).toBe(72);
-      expect(result.measures[0].bassNotes[0].midi).toBe(48);
+      const trebleNotes = result.measures[0].trebleNotes.filter(
+        (n) => !n.isRest,
+      );
+      const bassNotes = result.measures[0].bassNotes.filter((n) => !n.isRest);
+
+      expect(trebleNotes).toHaveLength(1);
+      expect(bassNotes).toHaveLength(1);
+      expect(trebleNotes[0].midi).toBe(72);
+      expect(bassNotes[0].midi).toBe(48);
     });
 
     it("generates valid VexFlow keys", () => {
@@ -116,6 +125,65 @@ describe("MidiToNotation", () => {
       const result = convertToNotation(notes, 120, 480);
 
       expect(result.measures[0].trebleNotes[0].vexKey).toBe("c/4");
+    });
+
+    it("inserts rests so off-beat notes keep their rhythmic position", () => {
+      const notes = [
+        // At 120 BPM, 1.0s is beat 3 in a 4/4 measure.
+        { midi: 64, name: "E4", time: 1.0, duration: 0.5, velocity: 80 },
+      ];
+      const result = convertToNotation(notes, 120, 480, 4, 4);
+      const measure = result.measures[0];
+
+      expect(measure.trebleNotes.map((n) => n.isRest)).toEqual([
+        true,
+        false,
+        true,
+      ]);
+      expect(measure.trebleNotes.map((n) => n.startTick)).toEqual([
+        0, 960, 1440,
+      ]);
+      expect(measure.trebleNotes.map((n) => n.durationTicks)).toEqual([
+        960, 480, 480,
+      ]);
+      expect(
+        measure.trebleNotes.reduce((sum, n) => sum + n.durationTicks, 0),
+      ).toBe(1920);
+      expect(
+        measure.bassNotes.reduce((sum, n) => sum + n.durationTicks, 0),
+      ).toBe(1920);
+    });
+
+    it("splits cross-measure notes and marks the continuation as tied", () => {
+      const notes = [
+        // Starts on beat 4 and lasts for two beats.
+        { midi: 67, name: "G4", time: 1.5, duration: 1.0, velocity: 80 },
+      ];
+      const result = convertToNotation(notes, 120, 480, 4, 4);
+
+      expect(result.measures).toHaveLength(2);
+
+      const firstMeasureNote = result.measures[0].trebleNotes.find(
+        (n) => !n.isRest,
+      );
+      const secondMeasureNote = result.measures[1].trebleNotes.find(
+        (n) => !n.isRest,
+      );
+
+      expect(firstMeasureNote).toMatchObject({
+        midi: 67,
+        startTick: 1440,
+        durationTicks: 480,
+        tiedToNext: true,
+        tiedFromPrevious: false,
+      });
+      expect(secondMeasureNote).toMatchObject({
+        midi: 67,
+        startTick: 0,
+        durationTicks: 480,
+        tiedToNext: false,
+        tiedFromPrevious: true,
+      });
     });
   });
 });

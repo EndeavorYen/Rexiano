@@ -16,6 +16,7 @@
 | **v0.4.0** | 練習模式         | + Phase 6 ✅                |
 | **v0.4.1** | 🎯 兒童可用版    | + Phase 6.5（可用性增強）   |
 | **v0.5.0** | 五線譜顯示       | + Phase 7                   |
+| **v0.5.1** | 練習入口優化     | + Phase 7.5                 |
 | **v1.0.0** | 正式發佈         | + Phase 8 + 9，全功能穩定版 |
 
 ---
@@ -344,8 +345,44 @@
   - [x] 拍號
   - [ ] 調號
   - [ ] 符桿方向（VexFlow 預設處理）
-  - [ ] 連結線（跨小節音符）
+  - [x] 連結線（跨小節音符）
 - [x] 測試：量化精度、游標同步（25 tests: MidiToNotation 17 + CursorSync 8）
+
+---
+
+## Phase 7.5 — Synthesia 借鏡優化：曲庫與練習流 🔲
+
+> 目標版本：v0.5.1
+>
+> 前置：Phase 6.5 ✅、Phase 7 基礎樂譜顯示 ✅
+>
+> 分析紀錄：[2026-05-16-synthesia-inspired-optimization-plan.md](./plans/2026-05-16-synthesia-inspired-optimization-plan.md)
+
+- [ ] 練習入口首頁
+  - [x] 最近有效曲目顯示「Continue Practice」
+  - [ ] 推薦下一首：依等級、最近成績、未完成曲目排序
+  - [x] 匯入 MIDI 與內建曲庫保持同等可見性
+- [x] Compact all-songs list
+  - [x] 預設提供密集清單 / 表格檢視
+  - [x] 排序：最近、曲名、等級、難度、最高分、練習次數、長度
+  - [x] 搜尋 title / composer / tags / category metadata
+  - [x] 收藏 / pin 常練曲目
+- [ ] 選曲預覽
+  - [ ] 選取曲目後顯示曲名、作曲者、長度、等級、最佳成績、可用 tracks
+  - [ ] 可行時提供短音訊 preview
+  - [ ] 單一主要 CTA：Practice
+- [ ] 使用者曲庫與 metadata
+  - [ ] 監看使用者 MIDI 資料夾
+  - [ ] 為匯入曲目建立穩定 ID
+  - [ ] 支援 Rexiano sidecar metadata（title, composer, tags, grade, grouping）
+- [ ] 曲目設定
+  - [ ] 每首曲記住 active tracks、hand assignment、colors、mute/background、default speed/mode
+  - [ ] 自動推測簡單左右手配置，並允許修正
+  - [ ] 對 track/metadata 問題提供「fix this song」入口
+- [ ] 練習閉環
+  - [ ] 每日 5-10 分鐘練習目標
+  - [ ] Session 結束後提供 repeat loop / slow down / other hand / next song
+  - [ ] 弱點小節與弱點音符轉成下一步建議
 
 ---
 

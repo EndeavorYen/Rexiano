@@ -32,7 +32,12 @@ export async function closeTopDrawer(page: Page): Promise<void> {
 }
 
 export async function loadFirstBuiltInSong(page: Page): Promise<void> {
-  const firstSongCard = page.locator("button:has(h3)").first();
+  const listToggle = page.getByTestId("song-library-view-list");
+  if ((await listToggle.count()) > 0) {
+    await listToggle.click();
+  }
+
+  const firstSongCard = page.getByTestId("song-select-hot-cross-buns");
   await expect(firstSongCard).toBeVisible({ timeout: 20_000 });
   await firstSongCard.click();
 

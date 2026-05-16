@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useCallback, useState } from "react";
 import {
   Upload,
-  Clock,
   AlertCircle,
   Music,
   Trophy,
@@ -9,6 +8,8 @@ import {
   ArrowLeft,
   PanelRightOpen,
   X,
+  PlayCircle,
+  Star,
 } from "lucide-react";
 import { parseMidiFile } from "../../engines/midi/MidiFileParser";
 import { useSongStore } from "../../stores/useSongStore";
@@ -20,16 +21,34 @@ import { formatRelativeTime } from "../../utils/relativeTime";
 import { SongCard } from "./SongCard";
 import { SongLibraryFilters } from "./SongLibraryFilters";
 import { ThemePicker } from "../settings/ThemePicker";
-import { groupSongsByCategory } from "./songCardUtils";
+import {
+  categoryLabels,
+  getGradeColor,
+  gradeLabelShort,
+  groupSongsByCategory,
+} from "./songCardUtils";
+import {
+  buildSongActivity,
+  filterSongsForLibrary,
+  sortSongsForLibrary,
+  type SongActivity,
+} from "./songLibrarySelectors";
 import { DeviceSelector } from "../midiDevice/DeviceSelector";
 import { useTranslation } from "../../i18n/useTranslation";
 import appIcon from "../../../../../docs/figure/Rexiano_icon.png";
-import type { RecentFile } from "../../../../shared/types";
+import type { BuiltinSongMeta, RecentFile } from "../../../../shared/types";
 
 interface SongLibraryProps {
   onOpenFile: () => Promise<void>;
   onBack?: () => void;
 }
+
+const emptyActivity: SongActivity = {
+  isFavorite: false,
+  lastPlayedAt: null,
+  playCount: 0,
+  bestAccuracy: null,
+};
 
 export function SongLibrary({
   onOpenFile,
@@ -49,7 +68,11 @@ export function SongLibrary({
   const searchQuery = useSongLibraryStore((s) => s.searchQuery);
   const difficultyFilter = useSongLibraryStore((s) => s.difficultyFilter);
   const gradeFilter = useSongLibraryStore((s) => s.gradeFilter);
+  const sortMode = useSongLibraryStore((s) => s.sortMode);
+  const viewMode = useSongLibraryStore((s) => s.viewMode);
+  const favoriteSongIds = useSongLibraryStore((s) => s.favoriteSongIds);
   const fetchSongs = useSongLibraryStore((s) => s.fetchSongs);
+  const toggleFavoriteSong = useSongLibraryStore((s) => s.toggleFavoriteSong);
 
   const loadSong = useSongStore((s) => s.loadSong);
   const reset = usePlaybackStore((s) => s.reset);
@@ -79,28 +102,27 @@ export function SongLibrary({
   }, [isProgressLoaded, loadSessions]);
 
   const filteredSongs = useMemo(() => {
-    let result = songs;
-    if (difficultyFilter !== "all") {
-      result = result.filter((s) => s.difficulty === difficultyFilter);
-    }
-    if (gradeFilter !== "all") {
-      result = result.filter((s) => s.grade === gradeFilter);
-    }
-    if (searchQuery.trim()) {
-      const q = searchQuery.toLowerCase();
-      result = result.filter(
-        (s) =>
-          s.title.toLowerCase().includes(q) ||
-          s.composer.toLowerCase().includes(q),
-      );
-    }
-    return result;
+    return filterSongsForLibrary(songs, {
+      difficultyFilter,
+      gradeFilter,
+      searchQuery,
+    });
   }, [songs, difficultyFilter, gradeFilter, searchQuery]);
+
+  const songActivity = useMemo(
+    () => buildSongActivity(songs, sessions, recentFiles, favoriteSongIds),
+    [songs, sessions, recentFiles, favoriteSongIds],
+  );
+
+  const sortedSongs = useMemo(
+    () => sortSongsForLibrary(filteredSongs, songActivity, sortMode),
+    [filteredSongs, songActivity, sortMode],
+  );
 
   /** Songs grouped by category for section display */
   const categoryGroups = useMemo(
-    () => groupSongsByCategory(filteredSongs),
-    [filteredSongs],
+    () => groupSongsByCategory(sortedSongs),
+    [sortedSongs],
   );
 
   /** Progress stats derived from sessions */
@@ -124,8 +146,7 @@ export function SongLibrary({
           const parsed = parseMidiFile(result.fileName, result.data);
           loadSong(parsed);
           reset();
-          // Save to recent files with builtin: prefix
-          void window.api.saveRecentFile({
+          await window.api.saveRecentFile({
             path: `builtin:${songId}`,
             name: result.fileName,
             timestamp: Date.now(),
@@ -146,6 +167,7 @@ export function SongLibrary({
   /** Max recent files shown in the quick-access strip */
   const RECENT_DISPLAY_LIMIT = 5;
   const visibleRecents = recentFiles.slice(0, RECENT_DISPLAY_LIMIT);
+  const continueRecent = recentFiles[0] ?? null;
 
   const handleSelectRecent = useCallback(
     async (file: RecentFile) => {
@@ -170,8 +192,7 @@ export function SongLibrary({
         const parsed = parseMidiFile(result.fileName, result.data);
         loadSong(parsed);
         reset();
-        // Bump timestamp
-        void window.api.saveRecentFile({
+        await window.api.saveRecentFile({
           path: file.path,
           name: file.name,
           timestamp: Date.now(),
@@ -277,63 +298,106 @@ export function SongLibrary({
           )}
         </header>
 
-        {visibleRecents.length > 0 && (
-          <section className="surface-elevated mb-5 p-4 animate-page-enter">
-            <div
-              className="flex items-center gap-1.5 mb-2.5"
-              style={{ color: "var(--color-text-muted)" }}
+        {continueRecent && (
+          <section
+            className="surface-elevated mb-5 p-4 animate-page-enter"
+            data-testid="song-library-continue"
+          >
+            <button
+              onClick={() => handleSelectRecent(continueRecent)}
+              disabled={loadingRecentPath === continueRecent.path}
+              className="group flex w-full items-center justify-between gap-4 rounded-xl px-4 py-3 text-left cursor-pointer transition-all duration-150 disabled:opacity-60 disabled:cursor-wait"
+              style={{
+                background:
+                  "color-mix(in srgb, var(--color-accent) 10%, var(--color-surface))",
+                border:
+                  "1px solid color-mix(in srgb, var(--color-accent) 20%, var(--color-border))",
+              }}
+              title={continueRecent.path}
             >
-              <Clock size={13} />
-              <span className="text-xs font-body font-medium uppercase tracking-wide">
-                {t("library.recentlyPlayed")}
-              </span>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              {visibleRecents.map((file, idx) => (
-                <button
-                  key={file.path}
-                  onClick={() => handleSelectRecent(file)}
-                  disabled={loadingRecentPath === file.path}
-                  className="card-hover animate-page-enter group relative min-w-[190px] max-w-[280px] flex flex-col items-start gap-1 rounded-lg px-3 py-2 text-xs font-body font-medium cursor-pointer transition-all duration-150 disabled:opacity-50 disabled:cursor-wait"
+              <div className="flex min-w-0 items-center gap-3">
+                <span
+                  className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full"
                   style={{
-                    background:
-                      "color-mix(in srgb, var(--color-surface) 82%, transparent)",
-                    color: "var(--color-text)",
-                    border: "1px solid var(--color-border)",
-                    animationDelay: `${idx * 40}ms`,
+                    background: "var(--color-accent)",
+                    color: "#fff",
                   }}
-                  title={file.path}
                 >
-                  {loadingRecentPath === file.path ? (
-                    <div
-                      className="w-3 h-3 border-[1.5px] rounded-full animate-spin shrink-0 absolute top-2.5 right-2.5"
+                  {loadingRecentPath === continueRecent.path ? (
+                    <span
+                      className="h-4 w-4 rounded-full border-2 animate-spin"
                       style={{
-                        borderColor: "var(--color-border)",
-                        borderTopColor: "var(--color-accent)",
+                        borderColor: "rgba(255,255,255,0.45)",
+                        borderTopColor: "#fff",
                       }}
                     />
-                  ) : null}
+                  ) : (
+                    <PlayCircle size={20} />
+                  )}
+                </span>
+                <span className="min-w-0">
                   <span
-                    className="w-full text-left leading-tight"
-                    style={{
-                      color: "var(--color-text)",
-                      display: "-webkit-box",
-                      WebkitLineClamp: 2,
-                      WebkitBoxOrient: "vertical",
-                      overflow: "hidden",
-                    }}
+                    className="block text-xs font-body font-semibold uppercase tracking-wide"
+                    style={{ color: "var(--color-accent)" }}
                   >
-                    {file.name}
+                    {t("library.continuePractice")}
                   </span>
                   <span
-                    className="shrink-0 opacity-70 font-mono tabular-nums text-[11px]"
+                    className="block truncate text-base font-display font-bold"
+                    style={{ color: "var(--color-text)" }}
+                  >
+                    {continueRecent.name}
+                  </span>
+                  <span
+                    className="block text-xs font-body"
                     style={{ color: "var(--color-text-muted)" }}
                   >
-                    {formatRelativeTime(file.timestamp)}
+                    {t("library.continueHint")} ·{" "}
+                    {formatRelativeTime(continueRecent.timestamp)}
                   </span>
-                </button>
-              ))}
-            </div>
+                </span>
+              </div>
+            </button>
+
+            {visibleRecents.length > 1 && (
+              <div className="mt-3 flex flex-wrap gap-2">
+                {visibleRecents.slice(1).map((file, idx) => (
+                  <button
+                    key={file.path}
+                    onClick={() => handleSelectRecent(file)}
+                    disabled={loadingRecentPath === file.path}
+                    className="card-hover animate-page-enter group relative min-w-[170px] max-w-[260px] flex flex-col items-start gap-1 rounded-lg px-3 py-2 text-xs font-body font-medium cursor-pointer transition-all duration-150 disabled:opacity-50 disabled:cursor-wait"
+                    style={{
+                      background:
+                        "color-mix(in srgb, var(--color-surface) 82%, transparent)",
+                      color: "var(--color-text)",
+                      border: "1px solid var(--color-border)",
+                      animationDelay: `${idx * 40}ms`,
+                    }}
+                    title={file.path}
+                  >
+                    <span
+                      className="w-full text-left leading-tight"
+                      style={{
+                        color: "var(--color-text)",
+                        display: "-webkit-box",
+                        WebkitLineClamp: 2,
+                        WebkitBoxOrient: "vertical",
+                        overflow: "hidden",
+                      }}
+                    >
+                      {file.name}
+                    </span>
+                    <span
+                      className="shrink-0 opacity-70 font-mono tabular-nums text-[11px]"
+                      style={{ color: "var(--color-text-muted)" }}
+                    >
+                      {formatRelativeTime(file.timestamp)}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            )}
             {recentError && (
               <div
                 className="flex items-center gap-1.5 mt-2 text-xs font-body"
@@ -370,7 +434,7 @@ export function SongLibrary({
                   </div>
                 ))}
               </div>
-            ) : filteredSongs.length === 0 ? (
+            ) : sortedSongs.length === 0 ? (
               <div
                 className="text-center py-16 px-4"
                 style={{ color: "var(--color-text-muted)" }}
@@ -414,72 +478,95 @@ export function SongLibrary({
                 )}
               </div>
             ) : (
-              <div className="space-y-7">
-                {categoryGroups.map((group, groupIdx) => (
-                  <section
-                    key={group.category}
-                    className="surface-elevated p-3 sm:p-4 animate-page-enter"
-                    style={{ animationDelay: `${groupIdx * 60}ms` }}
-                  >
+              <>
+                {viewMode === "list" ? (
+                  <div className="space-y-2" data-testid="song-library-list">
                     <div
-                      className="flex items-center gap-2 mb-3"
+                      className="mb-2 flex items-center justify-between gap-3"
                       style={{ color: "var(--color-text-muted)" }}
                     >
                       <span className="text-xs font-body font-semibold uppercase tracking-wider">
-                        {group.label}
+                        {t("library.allSongs")}
                       </span>
-                      <span
-                        className="text-[10px] font-mono px-1.5 py-0.5 rounded-full"
-                        style={{
-                          background: "var(--color-surface-alt)",
-                          color: "var(--color-text-muted)",
-                        }}
-                      >
-                        {group.songs.length}
+                      <span className="text-[11px] font-mono tabular-nums">
+                        {sortedSongs.length}
                       </span>
-                      <div
-                        className="flex-1 h-px ml-1"
-                        style={{ background: "var(--color-border)" }}
-                      />
                     </div>
-
-                    <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-3">
-                      {group.songs.map((song, i) => (
+                    {sortedSongs.map((song, i) => (
+                      <SongListRow
+                        key={song.id}
+                        song={song}
+                        activity={songActivity.get(song.id) ?? emptyActivity}
+                        isLoading={loadingId === song.id}
+                        onSelect={handleSelectSong}
+                        onToggleFavorite={toggleFavoriteSong}
+                        animationDelay={i * 24}
+                      />
+                    ))}
+                  </div>
+                ) : (
+                  <div className="space-y-7">
+                    {categoryGroups.map((group, groupIdx) => (
+                      <section
+                        key={group.category}
+                        className="surface-elevated p-3 sm:p-4 animate-page-enter"
+                        style={{ animationDelay: `${groupIdx * 60}ms` }}
+                      >
                         <div
-                          key={song.id}
-                          className="relative animate-stagger-child"
-                          style={{
-                            animationDelay: `${(groupIdx * 4 + i) * 30}ms`,
-                          }}
+                          className="flex items-center gap-2 mb-3"
+                          style={{ color: "var(--color-text-muted)" }}
                         >
-                          <SongCard
-                            song={song}
-                            onSelect={handleSelectSong}
-                            colorIndex={groupIdx * 4 + i}
+                          <span className="text-xs font-body font-semibold uppercase tracking-wider">
+                            {group.label}
+                          </span>
+                          <span
+                            className="text-[10px] font-mono px-1.5 py-0.5 rounded-full"
+                            style={{
+                              background: "var(--color-surface-alt)",
+                              color: "var(--color-text-muted)",
+                            }}
+                          >
+                            {group.songs.length}
+                          </span>
+                          <div
+                            className="flex-1 h-px ml-1"
+                            style={{ background: "var(--color-border)" }}
                           />
-                          {loadingId === song.id && (
+                        </div>
+
+                        <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-3">
+                          {group.songs.map((song, i) => (
                             <div
-                              className="absolute inset-0 flex items-center justify-center rounded-xl"
+                              key={song.id}
+                              className="relative animate-stagger-child"
                               style={{
-                                background:
-                                  "color-mix(in srgb, var(--color-surface) 70%, transparent)",
+                                animationDelay: `${(groupIdx * 4 + i) * 30}ms`,
                               }}
                             >
-                              <div
-                                className="w-5 h-5 border-2 rounded-full animate-spin"
-                                style={{
-                                  borderColor: "var(--color-border)",
-                                  borderTopColor: "var(--color-accent)",
-                                }}
+                              <SongCard
+                                song={song}
+                                onSelect={handleSelectSong}
+                                colorIndex={groupIdx * 4 + i}
                               />
+                              <FavoriteButton
+                                song={song}
+                                activity={
+                                  songActivity.get(song.id) ?? emptyActivity
+                                }
+                                onToggleFavorite={toggleFavoriteSong}
+                                className="absolute right-2 top-2"
+                              />
+                              {loadingId === song.id && (
+                                <LoadingOverlay radiusClass="rounded-xl" />
+                              )}
                             </div>
-                          )}
+                          ))}
                         </div>
-                      ))}
-                    </div>
-                  </section>
-                ))}
-              </div>
+                      </section>
+                    ))}
+                  </div>
+                )}
+              </>
             )}
           </div>
         </section>
@@ -535,6 +622,187 @@ export function SongLibrary({
 }
 
 /* ─── Sub-components ─── */
+
+function formatSongDuration(seconds: number): string {
+  const m = Math.floor(seconds / 60);
+  const s = Math.floor(seconds % 60);
+  return `${m}:${s.toString().padStart(2, "0")}`;
+}
+
+function SongListRow({
+  song,
+  activity,
+  isLoading,
+  onSelect,
+  onToggleFavorite,
+  animationDelay,
+}: {
+  song: BuiltinSongMeta;
+  activity: SongActivity;
+  isLoading: boolean;
+  onSelect: (songId: string) => void;
+  onToggleFavorite: (songId: string) => void;
+  animationDelay: number;
+}): React.JSX.Element {
+  const { t } = useTranslation();
+  const gradeColor =
+    song.grade !== undefined
+      ? getGradeColor(song.grade)
+      : "var(--color-border)";
+  const category = song.category ?? "popular";
+  const practicedLabel =
+    activity.playCount > 0
+      ? t("library.practicedTimes", { count: activity.playCount })
+      : t("library.neverPracticed");
+
+  return (
+    <div
+      className="relative flex items-stretch gap-2 rounded-lg animate-stagger-child"
+      style={{
+        background: "color-mix(in srgb, var(--color-surface) 88%, transparent)",
+        border: "1px solid var(--color-border)",
+        animationDelay: `${animationDelay}ms`,
+      }}
+    >
+      <button
+        data-testid={`song-select-${song.id}`}
+        onClick={() => onSelect(song.id)}
+        disabled={isLoading}
+        className="grid min-w-0 flex-1 grid-cols-1 gap-2 px-3 py-2.5 text-left cursor-pointer disabled:cursor-wait disabled:opacity-60 md:grid-cols-[minmax(0,1.5fr)_auto_auto_auto]"
+      >
+        <span className="min-w-0">
+          <h3
+            className="truncate text-sm font-body font-semibold"
+            data-testid="song-list-row-title"
+            style={{ color: "var(--color-text)" }}
+          >
+            {song.title}
+          </h3>
+          <span
+            className="mt-0.5 block truncate text-xs"
+            style={{ color: "var(--color-text-muted)" }}
+          >
+            {song.composer}
+          </span>
+        </span>
+
+        <span className="flex flex-wrap items-center gap-1.5 md:justify-end">
+          <span
+            className="rounded-md px-1.5 py-0.5 text-[10px] font-mono font-semibold"
+            style={{
+              color: gradeColor,
+              background: `color-mix(in srgb, ${gradeColor} 12%, transparent)`,
+              border: `1px solid color-mix(in srgb, ${gradeColor} 30%, transparent)`,
+            }}
+          >
+            {song.grade !== undefined ? gradeLabelShort[song.grade] : "--"}
+          </span>
+          <span
+            className="rounded-md px-1.5 py-0.5 text-[10px] font-body font-medium"
+            style={{
+              color: "var(--color-text-muted)",
+              background: "var(--color-surface-alt)",
+              border: "1px solid var(--color-border)",
+            }}
+          >
+            {categoryLabels[category]}
+          </span>
+        </span>
+
+        <span
+          className="flex items-center gap-2 text-[11px] font-mono tabular-nums md:justify-end"
+          style={{ color: "var(--color-text-muted)" }}
+        >
+          <span>
+            {activity.bestAccuracy !== null
+              ? `${Math.round(activity.bestAccuracy)}%`
+              : "--"}
+          </span>
+          <span>{practicedLabel}</span>
+        </span>
+
+        <span
+          className="text-[11px] font-mono tabular-nums md:text-right"
+          style={{ color: "var(--color-text-muted)" }}
+        >
+          {formatSongDuration(song.durationSeconds)}
+        </span>
+      </button>
+
+      <FavoriteButton
+        song={song}
+        activity={activity}
+        onToggleFavorite={onToggleFavorite}
+        className="mr-2 self-center"
+      />
+
+      {isLoading && <LoadingOverlay radiusClass="rounded-lg" />}
+    </div>
+  );
+}
+
+function FavoriteButton({
+  song,
+  activity,
+  onToggleFavorite,
+  className = "",
+}: {
+  song: BuiltinSongMeta;
+  activity: SongActivity;
+  onToggleFavorite: (songId: string) => void;
+  className?: string;
+}): React.JSX.Element {
+  const { t } = useTranslation();
+  const label = activity.isFavorite
+    ? t("library.unfavorite")
+    : t("library.favorite");
+
+  return (
+    <button
+      type="button"
+      data-testid="song-favorite-toggle"
+      onClick={() => onToggleFavorite(song.id)}
+      className={`flex h-8 w-8 items-center justify-center rounded-full transition-colors cursor-pointer ${className}`}
+      aria-label={`${label}: ${song.title}`}
+      aria-pressed={activity.isFavorite}
+      title={`${label}: ${song.title}`}
+      style={{
+        background: activity.isFavorite
+          ? "color-mix(in srgb, var(--color-streak-gold) 18%, var(--color-surface))"
+          : "color-mix(in srgb, var(--color-surface) 90%, transparent)",
+        color: activity.isFavorite
+          ? "var(--color-streak-gold)"
+          : "var(--color-text-muted)",
+        border: "1px solid var(--color-border)",
+      }}
+    >
+      <Star size={15} fill={activity.isFavorite ? "currentColor" : "none"} />
+    </button>
+  );
+}
+
+function LoadingOverlay({
+  radiusClass,
+}: {
+  radiusClass: string;
+}): React.JSX.Element {
+  return (
+    <div
+      className={`absolute inset-0 flex items-center justify-center ${radiusClass}`}
+      style={{
+        background: "color-mix(in srgb, var(--color-surface) 70%, transparent)",
+      }}
+    >
+      <div
+        className="w-5 h-5 border-2 rounded-full animate-spin"
+        style={{
+          borderColor: "var(--color-border)",
+          borderTopColor: "var(--color-accent)",
+        }}
+      />
+    </div>
+  );
+}
 
 function StatBadge({
   icon,
