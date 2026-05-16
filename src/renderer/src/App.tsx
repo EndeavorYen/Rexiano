@@ -55,6 +55,11 @@ import {
   routeToHash,
   type AppRoute,
 } from "./features/routing/appRoute";
+import {
+  getFileImportErrorGuidance,
+  type FileImportErrorGuidance,
+  type FileImportErrorInput,
+} from "./features/fileImport/fileImportErrorGuidance";
 
 /** Accepted file extensions for drag-and-drop MIDI import */
 const MIDI_EXTENSIONS = [".mid", ".midi"];
@@ -681,13 +686,52 @@ function App(): React.JSX.Element {
   }, [showFallingNoteLabels, noteRendererRef]);
   // ─── End Phase 6.5 ───────────────────────────────────
 
+  const [importError, setImportError] =
+    useState<FileImportErrorGuidance | null>(null);
+  const importErrorTimerRef = useRef<ReturnType<typeof setTimeout> | null>(
+    null,
+  );
+
+  const showImportError = useCallback(
+    (error: FileImportErrorInput): void => {
+      if (importErrorTimerRef.current) {
+        clearTimeout(importErrorTimerRef.current);
+      }
+      setImportError(getFileImportErrorGuidance(error, t));
+      importErrorTimerRef.current = setTimeout(() => {
+        setImportError(null);
+        importErrorTimerRef.current = null;
+      }, 4000);
+    },
+    [t],
+  );
+
+  useEffect(() => {
+    return () => {
+      if (importErrorTimerRef.current) {
+        clearTimeout(importErrorTimerRef.current);
+      }
+    };
+  }, []);
+
   const handleOpenFile = useCallback(async (): Promise<void> => {
     try {
       const result = await window.api.openMidiFile();
       if (result) {
-        const parsed = parseMidiFile(result.fileName, result.data);
-        loadSong(parsed);
-        reset();
+        try {
+          const parsed = parseMidiFile(result.fileName, result.data);
+          loadSong(parsed);
+          reset();
+        } catch (e) {
+          console.error("Failed to parse MIDI file:", e);
+          showImportError({
+            kind: "parse-failed",
+            fileName: result.fileName,
+            path: result.path,
+            diagnostic: e,
+          });
+          return;
+        }
         // Save to recent files if we have the full path
         if (result.path) {
           void window.api.saveRecentFile({
@@ -698,9 +742,10 @@ function App(): React.JSX.Element {
         }
       }
     } catch (e) {
-      console.error("Failed to parse MIDI file:", e);
+      console.error("Failed to read MIDI file:", e);
+      showImportError({ kind: "read-failed", diagnostic: e });
     }
-  }, [loadSong, reset]);
+  }, [loadSong, reset, showImportError]);
 
   // Load a MIDI file directly by path (used by recent files in MainMenu)
   const handleLoadMidiPath = useCallback(
@@ -708,15 +753,37 @@ function App(): React.JSX.Element {
       try {
         const result = await window.api.loadMidiPath(filePath);
         if (result) {
-          const parsed = parseMidiFile(result.fileName, result.data);
-          loadSong(parsed);
-          reset();
+          try {
+            const parsed = parseMidiFile(result.fileName, result.data);
+            loadSong(parsed);
+            reset();
+          } catch (e) {
+            console.error("Failed to parse MIDI from path:", e);
+            showImportError({
+              kind: "parse-failed",
+              fileName: result.fileName,
+              path: filePath,
+              diagnostic: e,
+            });
+          }
+        } else {
+          showImportError({
+            kind: "missing-recent",
+            fileName: filePath.split(/[\\/]/).pop(),
+            path: filePath,
+          });
         }
       } catch (e) {
         console.error("Failed to load MIDI from path:", e);
+        showImportError({
+          kind: "read-failed",
+          fileName: filePath.split(/[\\/]/).pop(),
+          path: filePath,
+          diagnostic: e,
+        });
       }
     },
-    [loadSong, reset],
+    [loadSong, reset, showImportError],
   );
 
   // ─── Phase 6.5: Mute toggle ────────────────────────────
@@ -739,7 +806,6 @@ function App(): React.JSX.Element {
 
   // ─── Phase 6.5: Drag-and-drop MIDI import ──────────────
   const [isDragging, setIsDragging] = useState(false);
-  const [dragError, setDragError] = useState<string | null>(null);
   const dragCountRef = useRef(0);
 
   const handleDragEnter = useCallback((e: React.DragEvent) => {
@@ -747,7 +813,7 @@ function App(): React.JSX.Element {
     e.stopPropagation();
     dragCountRef.current++;
     setIsDragging(true);
-    setDragError(null);
+    setImportError(null);
   }, []);
 
   const handleDragLeave = useCallback((e: React.DragEvent) => {
@@ -757,7 +823,7 @@ function App(): React.JSX.Element {
     if (dragCountRef.current <= 0) {
       dragCountRef.current = 0;
       setIsDragging(false);
-      setDragError(null);
+      setImportError(null);
     }
   }, []);
 
@@ -779,8 +845,11 @@ function App(): React.JSX.Element {
       const file = files[0];
       const ext = file.name.toLowerCase().slice(file.name.lastIndexOf("."));
       if (!MIDI_EXTENSIONS.includes(ext)) {
-        setDragError(t("app.invalidFileType", { ext }));
-        setTimeout(() => setDragError(null), 3000);
+        showImportError({
+          kind: "unsupported-type",
+          ext,
+          fileName: file.name,
+        });
         return;
       }
 
@@ -794,17 +863,19 @@ function App(): React.JSX.Element {
           reset();
         } catch (err) {
           console.error("Failed to parse dropped MIDI file:", err);
-          setDragError(t("app.failedParse"));
-          setTimeout(() => setDragError(null), 3000);
+          showImportError({
+            kind: "parse-failed",
+            fileName: file.name,
+            diagnostic: err,
+          });
         }
       };
       reader.onerror = () => {
-        setDragError(t("app.failedRead"));
-        setTimeout(() => setDragError(null), 3000);
+        showImportError({ kind: "read-failed", fileName: file.name });
       };
       reader.readAsArrayBuffer(file);
     },
-    [loadSong, reset, t],
+    [loadSong, reset, showImportError],
   );
   // ─── End Phase 6.5 ─────────────────────────────────────
 
@@ -922,15 +993,20 @@ function App(): React.JSX.Element {
       )}
 
       {/* Drag error toast */}
-      {dragError && (
+      {importError && (
         <div
-          className="fixed top-4 left-1/2 -translate-x-1/2 z-50 px-4 py-2 rounded-lg text-sm font-body subtle-shadow"
+          className="fixed top-4 left-1/2 -translate-x-1/2 z-50 max-w-[420px] rounded-lg px-4 py-3 text-sm font-body subtle-shadow"
           style={{
             background: "#dc2626",
             color: "#ffffff",
           }}
+          title={importError.diagnostic || undefined}
+          data-testid="file-import-error-toast"
         >
-          {dragError}
+          <div className="font-semibold">{importError.title}</div>
+          <div className="mt-0.5 text-xs leading-snug">
+            {importError.guidance}
+          </div>
         </div>
       )}
 

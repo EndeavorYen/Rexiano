@@ -11,6 +11,15 @@ export interface TranslationMap {
   "app.invalidFileType": string;
   "app.failedParse": string;
   "app.failedRead": string;
+  "app.importErrorUnsupportedTitle": string;
+  "app.importErrorUnsupportedGuidance": string;
+  "app.importErrorParseTitle": string;
+  "app.importErrorParseGuidance": string;
+  "app.importErrorMissingTitle": string;
+  "app.importErrorMissingGuidance": string;
+  "app.importErrorReadTitle": string;
+  "app.importErrorReadGuidance": string;
+  "app.importErrorUnknownFile": string;
   "app.insightsTitle": string;
   "app.startPractice": string;
   "app.openSettings": string;

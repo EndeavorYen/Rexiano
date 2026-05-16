@@ -10,6 +10,19 @@ export const en: TranslationMap = {
     "Invalid file type: {ext}. Only .mid and .midi files are accepted.",
   "app.failedParse": "Failed to parse MIDI file.",
   "app.failedRead": "Failed to read file.",
+  "app.importErrorUnsupportedTitle": "Unsupported file type",
+  "app.importErrorUnsupportedGuidance":
+    "Only .mid and .midi files can be imported. This file was {ext}.",
+  "app.importErrorParseTitle": "MIDI file could not be parsed",
+  "app.importErrorParseGuidance":
+    "Check that {fileName} is a valid MIDI file, then try importing it again.",
+  "app.importErrorMissingTitle": "Recent file is no longer available",
+  "app.importErrorMissingGuidance":
+    "{fileName} may have moved or become unreadable. Import it again from its current location.",
+  "app.importErrorReadTitle": "File could not be read",
+  "app.importErrorReadGuidance":
+    "Check file permissions for {fileName}, then try again.",
+  "app.importErrorUnknownFile": "this file",
   "app.insightsTitle": "Practice Insights",
   "app.startPractice": "Start Practicing",
   "app.openSettings": "Settings",

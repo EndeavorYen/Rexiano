@@ -9,6 +9,18 @@ export const zhTW: TranslationMap = {
   "app.invalidFileType": "無效的檔案類型：{ext}。僅接受 .mid 及 .midi 檔案。",
   "app.failedParse": "無法解析 MIDI 檔案。",
   "app.failedRead": "無法讀取檔案。",
+  "app.importErrorUnsupportedTitle": "不支援的檔案類型",
+  "app.importErrorUnsupportedGuidance":
+    "只能匯入 .mid 與 .midi 檔案；目前檔案是 {ext}。",
+  "app.importErrorParseTitle": "無法解析 MIDI 檔案",
+  "app.importErrorParseGuidance":
+    "請確認 {fileName} 是有效的 MIDI 檔案，然後重新匯入。",
+  "app.importErrorMissingTitle": "最近檔案已無法使用",
+  "app.importErrorMissingGuidance":
+    "{fileName} 可能已被移動或無法讀取，請從目前位置重新匯入。",
+  "app.importErrorReadTitle": "無法讀取檔案",
+  "app.importErrorReadGuidance": "請確認 {fileName} 的檔案權限，然後再試一次。",
+  "app.importErrorUnknownFile": "此檔案",
   "app.insightsTitle": "練習洞察",
   "app.startPractice": "開始練琴",
   "app.openSettings": "設定",
