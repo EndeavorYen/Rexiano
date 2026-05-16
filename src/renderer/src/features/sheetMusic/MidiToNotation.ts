@@ -18,6 +18,7 @@ import type {
   NotationNote,
   NotationRhythmApproximation,
   NotationWarning,
+  StemDirection,
 } from "./types";
 
 /** Middle C boundary for clef assignment */
@@ -69,6 +70,8 @@ interface QuantizedNote {
   endTick: number;
   vexKey: string;
   accidental: string | null;
+  voiceIndex?: number;
+  stemDirection?: StemDirection;
   rhythmApproximation?: NotationRhythmApproximation;
 }
 
@@ -79,6 +82,8 @@ interface NoteSegment {
   vexKey: string;
   accidental: string | null;
   rhythmApproximation?: NotationRhythmApproximation;
+  voiceIndex?: number;
+  stemDirection?: StemDirection;
   tiedFromPrevious: boolean;
   tiedToNext: boolean;
 }
@@ -91,6 +96,19 @@ interface DurationPiece {
 
 interface VoiceSegment extends NoteSegment {
   endTick: number;
+}
+
+interface VoiceSpan {
+  midi: number;
+  startTick: number;
+  endTick: number;
+}
+
+interface VoiceCluster<T extends VoiceSpan> {
+  startTick: number;
+  endTick: number;
+  segments: T[];
+  assignedVoiceIndex: number;
 }
 
 /**
@@ -259,6 +277,8 @@ function createRestEvents(
   durationTicks: number,
   clef: Clef,
   ticksPerQuarter: number,
+  voiceIndex = 0,
+  stemDirection?: StemDirection,
 ): NotationNote[] {
   const events: NotationNote[] = [];
   let cursor = startTick;
@@ -276,6 +296,8 @@ function createRestEvents(
       tied: false,
       tiedFromPrevious: false,
       tiedToNext: false,
+      voiceIndex,
+      stemDirection,
     });
     cursor += piece.ticks;
   }
@@ -308,6 +330,8 @@ function createNoteEvents(
       tied: tiedToNext,
       tiedFromPrevious,
       tiedToNext,
+      voiceIndex: segment.voiceIndex,
+      stemDirection: segment.stemDirection,
       rhythmApproximation: segment.rhythmApproximation,
     });
     cursor += piece.ticks;
@@ -316,11 +340,131 @@ function createNoteEvents(
   return events;
 }
 
-function buildVoiceEvents(
+function getStemDirectionForVoice(
+  voiceIndex: number,
+  voiceCount: number,
+): StemDirection | undefined {
+  if (voiceCount <= 1) return undefined;
+  return voiceIndex % 2 === 0 ? 1 : -1;
+}
+
+function clusterSegmentsBySpan<T extends VoiceSpan>(
+  segments: T[],
+): VoiceCluster<T>[] {
+  const clusters = new Map<string, VoiceCluster<T>>();
+
+  for (const segment of segments) {
+    const key = `${segment.startTick}:${segment.endTick}`;
+    const cluster = clusters.get(key);
+    if (cluster) {
+      cluster.segments.push(segment);
+    } else {
+      clusters.set(key, {
+        startTick: segment.startTick,
+        endTick: segment.endTick,
+        segments: [segment],
+        assignedVoiceIndex: 0,
+      });
+    }
+  }
+
+  return [...clusters.values()]
+    .map((cluster) => ({
+      ...cluster,
+      segments: cluster.segments.sort((a, b) => a.midi - b.midi),
+    }))
+    .sort((a, b) => {
+      const durationA = a.endTick - a.startTick;
+      const durationB = b.endTick - b.startTick;
+      return (
+        a.startTick - b.startTick ||
+        durationA - durationB ||
+        Math.min(...a.segments.map((segment) => segment.midi)) -
+          Math.min(...b.segments.map((segment) => segment.midi))
+      );
+    });
+}
+
+function getClusterAverageMidi<T extends VoiceSpan>(
+  cluster: VoiceCluster<T>,
+): number {
+  const total = cluster.segments.reduce(
+    (sum, segment) => sum + segment.midi,
+    0,
+  );
+  return total / cluster.segments.length;
+}
+
+function assignSegmentsToVoices<T extends VoiceSpan>(segments: T[]): T[][] {
+  const clusters = clusterSegmentsBySpan(segments);
+  const voiceEndTicks: number[] = [];
+
+  for (const cluster of clusters) {
+    const voiceIndex = voiceEndTicks.findIndex(
+      (endTick) => endTick <= cluster.startTick,
+    );
+    const assignedVoiceIndex =
+      voiceIndex >= 0 ? voiceIndex : voiceEndTicks.length;
+
+    cluster.assignedVoiceIndex = assignedVoiceIndex;
+    voiceEndTicks[assignedVoiceIndex] = cluster.endTick;
+  }
+
+  const voiceStats = voiceEndTicks.map((_, voiceIndex) => {
+    const voiceClusters = clusters.filter(
+      (cluster) => cluster.assignedVoiceIndex === voiceIndex,
+    );
+    return {
+      oldIndex: voiceIndex,
+      averageMidi:
+        voiceClusters.reduce(
+          (sum, cluster) => sum + getClusterAverageMidi(cluster),
+          0,
+        ) / Math.max(voiceClusters.length, 1),
+    };
+  });
+  const voiceIndexMap = new Map<number, number>();
+  voiceStats
+    .sort((a, b) => b.averageMidi - a.averageMidi || a.oldIndex - b.oldIndex)
+    .forEach((stat, newIndex) => voiceIndexMap.set(stat.oldIndex, newIndex));
+
+  const voices: T[][] = Array.from({ length: voiceEndTicks.length }, () => []);
+
+  for (const cluster of clusters) {
+    const voiceIndex = voiceIndexMap.get(cluster.assignedVoiceIndex) ?? 0;
+    voices[voiceIndex].push(...cluster.segments);
+  }
+
+  return voices.map((voice) =>
+    voice.sort((a, b) => a.startTick - b.startTick || a.midi - b.midi),
+  );
+}
+
+function assignQuantizedNotesToVoices(notes: QuantizedNote[]): QuantizedNote[] {
+  const assignStaff = (staffNotes: QuantizedNote[]): void => {
+    const voices = assignSegmentsToVoices(staffNotes);
+    voices.forEach((voice, voiceIndex) => {
+      const stemDirection = getStemDirectionForVoice(voiceIndex, voices.length);
+      voice.forEach((note) => {
+        note.voiceIndex = voiceIndex;
+        note.stemDirection = stemDirection;
+      });
+    });
+  };
+
+  assignStaff(notes.filter((note) => note.midi >= MIDDLE_C));
+  assignStaff(notes.filter((note) => note.midi < MIDDLE_C));
+
+  return notes;
+}
+
+function buildSingleVoiceEvents(
   segments: NoteSegment[],
   clef: Clef,
   measureTicks: number,
   ticksPerQuarter: number,
+  voiceIndex = 0,
+  stemDirection?: StemDirection,
 ): NotationNote[] {
   const voiceSegments: VoiceSegment[] = segments
     .map((segment) => {
@@ -341,7 +485,14 @@ function buildVoiceEvents(
     .sort((a, b) => a.startTick - b.startTick || a.midi - b.midi);
 
   if (voiceSegments.length === 0) {
-    return createRestEvents(0, measureTicks, clef, ticksPerQuarter);
+    return createRestEvents(
+      0,
+      measureTicks,
+      clef,
+      ticksPerQuarter,
+      voiceIndex,
+      stemDirection,
+    );
   }
 
   const boundarySet = new Set<number>([0, measureTicks]);
@@ -365,7 +516,14 @@ function buildVoiceEvents(
 
     if (activeSegments.length === 0) {
       events.push(
-        ...createRestEvents(startTick, durationTicks, clef, ticksPerQuarter),
+        ...createRestEvents(
+          startTick,
+          durationTicks,
+          clef,
+          ticksPerQuarter,
+          voiceIndex,
+          stemDirection,
+        ),
       );
       continue;
     }
@@ -377,6 +535,8 @@ function buildVoiceEvents(
             ...segment,
             startTick,
             durationTicks,
+            voiceIndex,
+            stemDirection,
             tiedFromPrevious:
               segment.tiedFromPrevious || segment.startTick < startTick,
             tiedToNext: segment.tiedToNext || segment.endTick > endTick,
@@ -393,6 +553,67 @@ function buildVoiceEvents(
       a.startTick - b.startTick ||
       Number(a.isRest) - Number(b.isRest) ||
       (a.midi ?? -1) - (b.midi ?? -1),
+  );
+}
+
+function buildVoiceEvents(
+  segments: NoteSegment[],
+  clef: Clef,
+  measureTicks: number,
+  ticksPerQuarter: number,
+): NotationNote[] {
+  const normalizedSegments: VoiceSegment[] = segments
+    .map((segment) => {
+      const startTick = Math.max(0, Math.min(segment.startTick, measureTicks));
+      const endTick = Math.max(
+        startTick,
+        Math.min(segment.startTick + segment.durationTicks, measureTicks),
+      );
+
+      return {
+        ...segment,
+        startTick,
+        durationTicks: endTick - startTick,
+        endTick,
+      };
+    })
+    .filter((segment) => segment.endTick > segment.startTick);
+
+  if (normalizedSegments.length === 0) {
+    return buildSingleVoiceEvents([], clef, measureTicks, ticksPerQuarter);
+  }
+
+  const hasAssignedVoices = normalizedSegments.some(
+    (segment) => segment.voiceIndex !== undefined,
+  );
+  const voices = hasAssignedVoices
+    ? Array.from(
+        {
+          length:
+            Math.max(
+              ...normalizedSegments.map((segment) => segment.voiceIndex ?? 0),
+            ) + 1,
+        },
+        () => [] as VoiceSegment[],
+      )
+    : assignSegmentsToVoices(normalizedSegments);
+
+  if (hasAssignedVoices) {
+    normalizedSegments.forEach((segment) => {
+      voices[segment.voiceIndex ?? 0].push(segment);
+    });
+  }
+
+  return voices.flatMap((voiceSegments, voiceIndex) =>
+    buildSingleVoiceEvents(
+      voiceSegments,
+      clef,
+      measureTicks,
+      ticksPerQuarter,
+      voiceIndex,
+      voiceSegments[0]?.stemDirection ??
+        getStemDirectionForVoice(voiceIndex, voices.length),
+    ),
   );
 }
 
@@ -455,7 +676,8 @@ export function convertToNotation(
       ),
     };
   });
-  const warnings: NotationWarning[] = quantized.flatMap((note) =>
+  const voicedQuantized = assignQuantizedNotesToVoices(quantized);
+  const warnings: NotationWarning[] = voicedQuantized.flatMap((note) =>
     note.rhythmApproximation
       ? [
           {
@@ -468,7 +690,7 @@ export function convertToNotation(
   );
 
   // Group into measures
-  const maxTick = Math.max(...quantized.map((n) => n.endTick));
+  const maxTick = Math.max(...voicedQuantized.map((n) => n.endTick));
   const measureCount = Math.ceil(maxTick / ticksPerMeasure) || 1;
   const measures: NotationMeasure[] = [];
 
@@ -476,7 +698,7 @@ export function convertToNotation(
     const measureStart = i * ticksPerMeasure;
     const measureEnd = measureStart + ticksPerMeasure;
 
-    const measureSegments: NoteSegment[] = quantized
+    const measureSegments: NoteSegment[] = voicedQuantized
       .filter((n) => n.startTick < measureEnd && n.endTick > measureStart)
       .map((n) => {
         const segmentStart = Math.max(n.startTick, measureStart);
@@ -488,6 +710,8 @@ export function convertToNotation(
           vexKey: n.vexKey,
           accidental: n.accidental,
           rhythmApproximation: n.rhythmApproximation,
+          voiceIndex: n.voiceIndex,
+          stemDirection: n.stemDirection,
           tiedFromPrevious: segmentStart > n.startTick,
           tiedToNext: segmentEnd < n.endTick,
         };

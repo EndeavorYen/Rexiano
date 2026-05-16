@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { calcMeasureSlotLayout, calcMeasureWidths } from "./sheetMusicUtils";
+import { groupNotesIntoStaffVoices } from "./sheetMusicRenderUtils";
 import type { NotationMeasure, NotationNote } from "./types";
 
 function makeNote(startTick: number, midi: number): NotationNote {
@@ -96,5 +97,52 @@ describe("calcMeasureSlotLayout", () => {
     expect(layout[2].x).toBe(layout[1].x + layout[1].width);
     expect(layout[3].x).toBe(layout[2].x + layout[2].width);
     expect(layout[3].x + layout[3].width).toBeLessThanOrEqual(800 - 28);
+  });
+});
+
+describe("groupNotesIntoStaffVoices", () => {
+  it("keeps independent same-tick events in separate rendered voices", () => {
+    const voices = groupNotesIntoStaffVoices([
+      {
+        ...makeNote(480, 64),
+        vexKey: "e/4",
+        voiceIndex: 0,
+        stemDirection: 1,
+      },
+      {
+        ...makeNote(480, 60),
+        vexKey: "c/4",
+        voiceIndex: 1,
+        stemDirection: -1,
+      },
+    ]);
+
+    expect(voices).toHaveLength(2);
+    expect(voices[0]).toHaveLength(1);
+    expect(voices[0][0]).toMatchObject({
+      keys: ["e/4"],
+      voiceIndex: 0,
+      stemDirection: 1,
+    });
+    expect(voices[1]).toHaveLength(1);
+    expect(voices[1][0]).toMatchObject({
+      keys: ["c/4"],
+      voiceIndex: 1,
+      stemDirection: -1,
+    });
+  });
+
+  it("keeps same-span notes in the same rendered voice for chord grouping", () => {
+    const voices = groupNotesIntoStaffVoices([
+      { ...makeNote(0, 60), vexKey: "c/4", voiceIndex: 0 },
+      { ...makeNote(0, 64), vexKey: "e/4", voiceIndex: 0 },
+    ]);
+
+    expect(voices).toHaveLength(1);
+    expect(voices[0]).toHaveLength(1);
+    expect(voices[0][0]).toMatchObject({
+      keys: ["c/4", "e/4"],
+      voiceIndex: 0,
+    });
   });
 });

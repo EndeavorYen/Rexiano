@@ -233,7 +233,42 @@ describe("MidiToNotation", () => {
       });
     });
 
-    it("preserves sustained notes when another note starts before they end", () => {
+    it("keeps split-voice identity across measure-clipped ties", () => {
+      const notes = [
+        // C4 crosses the barline while E4 only exists in the first measure.
+        { midi: 60, name: "C4", time: 1.5, duration: 1.0, velocity: 80 },
+        { midi: 64, name: "E4", time: 1.5, duration: 0.5, velocity: 80 },
+      ];
+      const result = convertToNotation(notes, 120, 480, 4, 4);
+
+      const firstMeasureC = result.measures[0].trebleNotes.find(
+        (n) => n.midi === 60,
+      );
+      const firstMeasureE = result.measures[0].trebleNotes.find(
+        (n) => n.midi === 64,
+      );
+      const secondMeasureC = result.measures[1].trebleNotes.find(
+        (n) => n.midi === 60,
+      );
+
+      expect(firstMeasureE).toMatchObject({
+        voiceIndex: 0,
+        stemDirection: 1,
+        tiedToNext: false,
+      });
+      expect(firstMeasureC).toMatchObject({
+        voiceIndex: 1,
+        stemDirection: -1,
+        tiedToNext: true,
+      });
+      expect(secondMeasureC).toMatchObject({
+        voiceIndex: 1,
+        stemDirection: -1,
+        tiedFromPrevious: true,
+      });
+    });
+
+    it("splits overlapping independent rhythms into separate voices with opposite stems", () => {
       const notes = [
         // C4 starts on beat 1 and sustains through beat 2.
         { midi: 60, name: "C4", time: 0, duration: 1.0, velocity: 80 },
@@ -243,29 +278,47 @@ describe("MidiToNotation", () => {
       const result = convertToNotation(notes, 120, 480, 4, 4);
 
       const notesOnly = result.measures[0].trebleNotes.filter((n) => !n.isRest);
+      const lowerVoice = notesOnly.find((n) => n.midi === 60);
+      const upperVoice = notesOnly.find((n) => n.midi === 64);
 
-      expect(notesOnly).toMatchObject([
-        {
-          midi: 60,
-          startTick: 0,
-          durationTicks: 480,
-          tiedFromPrevious: false,
-          tiedToNext: true,
-        },
-        {
-          midi: 60,
-          startTick: 480,
-          durationTicks: 480,
-          tiedFromPrevious: true,
-          tiedToNext: false,
-        },
-        {
-          midi: 64,
-          startTick: 480,
-          durationTicks: 480,
-          tiedFromPrevious: false,
-          tiedToNext: false,
-        },
+      expect(lowerVoice).toMatchObject({
+        midi: 60,
+        startTick: 0,
+        durationTicks: 960,
+        voiceIndex: 1,
+        stemDirection: -1,
+        tiedFromPrevious: false,
+        tiedToNext: false,
+      });
+      expect(upperVoice).toMatchObject({
+        midi: 64,
+        startTick: 480,
+        durationTicks: 480,
+        voiceIndex: 0,
+        stemDirection: 1,
+        tiedFromPrevious: false,
+        tiedToNext: false,
+      });
+    });
+
+    it("keeps same-span simultaneous notes in one voice so they still render as chords", () => {
+      const notes = [
+        { midi: 60, name: "C4", time: 0, duration: 0.5, velocity: 80 },
+        { midi: 64, name: "E4", time: 0, duration: 0.5, velocity: 80 },
+        { midi: 67, name: "G4", time: 0, duration: 0.5, velocity: 80 },
+      ];
+      const result = convertToNotation(notes, 120, 480, 4, 4);
+
+      const notesOnly = result.measures[0].trebleNotes.filter((n) => !n.isRest);
+
+      expect(notesOnly).toHaveLength(3);
+      expect(new Set(notesOnly.map((note) => note.voiceIndex))).toEqual(
+        new Set([0]),
+      );
+      expect(notesOnly.map((note) => note.stemDirection)).toEqual([
+        undefined,
+        undefined,
+        undefined,
       ]);
     });
 

@@ -11,14 +11,13 @@
 import { useRef, useEffect, useState, useMemo } from "react";
 import { useTranslation } from "@renderer/i18n/useTranslation";
 import { usePlaybackStore } from "@renderer/stores/usePlaybackStore";
-import type {
-  NotationData,
-  NotationMeasure,
-  NotationNote,
-  DisplayMode,
-} from "./types";
+import type { NotationData, NotationMeasure, DisplayMode } from "./types";
 import { getCursorPosition, getMeasureWindow } from "./CursorSync";
 import { calcMeasureSlotLayout } from "./sheetMusicUtils";
+import {
+  groupNotesIntoStaffVoices,
+  type ChordGroup,
+} from "./sheetMusicRenderUtils";
 
 /** Layout constants */
 const STAVE_HEIGHT = 80;
@@ -51,80 +50,26 @@ interface SheetMusicPanelProps {
   height?: number;
 }
 
-interface ChordGroup {
-  keys: string[];
-  accidentals: (string | null)[];
-  duration: string;
-  dots: number;
-  startTick: number;
-  durationTicks: number;
-  isRest: boolean;
-  tiedFromPrevious: boolean;
-  tiedToNext: boolean;
-}
-
 interface RenderedVoice {
+  voiceIndex: number;
   groups: ChordGroup[];
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   vexNotes: any[];
 }
 
+interface RenderedStaff {
+  voices: RenderedVoice[];
+}
+
 interface RenderedMeasure {
   measureIndex: number;
-  treble: RenderedVoice;
-  bass: RenderedVoice;
+  treble: RenderedStaff;
+  bass: RenderedStaff;
 }
 
 function keySignatureToVexKey(keySignature: number): string {
   const normalized = Math.max(-7, Math.min(7, Math.trunc(keySignature)));
   return KEY_SIGNATURE_NAMES.get(normalized) ?? "C";
-}
-
-/**
- * Group notes that start at the same tick into chords.
- */
-function groupNotesIntoChords(notes: NotationNote[]): ChordGroup[] {
-  if (notes.length === 0) return [];
-
-  const sorted = [...notes].sort(
-    (a, b) =>
-      a.startTick - b.startTick ||
-      Number(a.isRest) - Number(b.isRest) ||
-      (a.midi ?? -1) - (b.midi ?? -1),
-  );
-  const groups: ChordGroup[] = [];
-
-  for (const note of sorted) {
-    const last = groups[groups.length - 1];
-    if (
-      last &&
-      !last.isRest &&
-      !note.isRest &&
-      last.startTick === note.startTick &&
-      last.duration === note.vexDuration &&
-      last.dots === note.dots
-    ) {
-      last.keys.push(note.vexKey);
-      last.accidentals.push(note.accidental);
-      last.durationTicks = Math.max(last.durationTicks, note.durationTicks);
-      last.tiedFromPrevious ||= note.tiedFromPrevious;
-      last.tiedToNext ||= note.tiedToNext;
-    } else {
-      groups.push({
-        keys: [note.vexKey],
-        accidentals: [note.accidental],
-        duration: note.vexDuration,
-        dots: note.dots,
-        startTick: note.startTick,
-        durationTicks: note.durationTicks,
-        isRest: note.isRest,
-        tiedFromPrevious: note.tiedFromPrevious,
-        tiedToNext: note.tiedToNext,
-      });
-    }
-  }
-
-  return groups;
 }
 
 function makeStaveNote(
@@ -140,6 +85,7 @@ function makeStaveNote(
     keys,
     duration: `${group.duration}${group.isRest ? "r" : ""}`,
     clef,
+    stemDirection: group.stemDirection,
   });
   for (let i = 0; i < group.dots; i++) {
     Dot.buildAndAttach([note], { all: true });
@@ -167,18 +113,27 @@ function drawBeams(
 ): void {
   const { Beam } = VF;
   let run: unknown[] = [];
+  let runStemDirection: 1 | -1 | undefined;
 
   const flush = (): void => {
     if (run.length > 1) {
-      for (const beam of Beam.generateBeams(run)) {
+      const config = runStemDirection
+        ? { stemDirection: runStemDirection }
+        : undefined;
+      for (const beam of Beam.generateBeams(run, config)) {
         beam.setContext(context).draw();
       }
     }
     run = [];
+    runStemDirection = undefined;
   };
 
   groups.forEach((group, index) => {
     if (!group.isRest && (group.duration === "8" || group.duration === "16")) {
+      if (runStemDirection !== group.stemDirection && run.length > 0) {
+        flush();
+      }
+      runStemDirection = group.stemDirection;
       run.push(vexNotes[index]);
     } else {
       flush();
@@ -262,8 +217,25 @@ function drawCrossMeasureTies(
     const next = renderedMeasures[i + 1];
     if (next.measureIndex !== current.measureIndex + 1) continue;
 
-    drawCrossVoiceTie(VF, context, current.treble, next.treble);
-    drawCrossVoiceTie(VF, context, current.bass, next.bass);
+    drawCrossStaffTies(VF, context, current.treble, next.treble);
+    drawCrossStaffTies(VF, context, current.bass, next.bass);
+  }
+}
+
+function drawCrossStaffTies(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  VF: any,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  context: any,
+  current: RenderedStaff,
+  next: RenderedStaff,
+): void {
+  for (const currentVoice of current.voices) {
+    const nextVoice = next.voices.find(
+      (voice) => voice.voiceIndex === currentVoice.voiceIndex,
+    );
+    if (!nextVoice) continue;
+    drawCrossVoiceTie(VF, context, currentVoice, nextVoice);
   }
 }
 
@@ -349,47 +321,68 @@ function renderMeasure(
     .setContext(context)
     .draw();
 
-  const trebleChords = groupNotesIntoChords(measure.trebleNotes);
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const trebleVexNotes: any[] = trebleChords.map((chord) =>
-    makeStaveNote(VF, chord, "treble"),
+  const trebleVoices = groupNotesIntoStaffVoices(measure.trebleNotes).map(
+    (groups): RenderedVoice => ({
+      voiceIndex: groups[0]?.voiceIndex ?? 0,
+      groups,
+      vexNotes: groups.map((chord) => makeStaveNote(VF, chord, "treble")),
+    }),
   );
 
-  const bassChords = groupNotesIntoChords(measure.bassNotes);
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const bassVexNotes: any[] = bassChords.map((chord) =>
-    makeStaveNote(VF, chord, "bass"),
+  const bassVoices = groupNotesIntoStaffVoices(measure.bassNotes).map(
+    (groups): RenderedVoice => ({
+      voiceIndex: groups[0]?.voiceIndex ?? 0,
+      groups,
+      vexNotes: groups.map((chord) => makeStaveNote(VF, chord, "bass")),
+    }),
   );
 
-  const trebleVoice = new Voice({
-    num_beats: measure.timeSignatureTop,
-    beat_value: measure.timeSignatureBottom,
+  const trebleVexVoices = trebleVoices.map((renderedVoice) => {
+    const voice = new Voice({
+      num_beats: measure.timeSignatureTop,
+      beat_value: measure.timeSignatureBottom,
+    });
+    voice.addTickables(renderedVoice.vexNotes);
+    return voice;
   });
-  trebleVoice.addTickables(trebleVexNotes);
 
-  const bassVoice = new Voice({
-    num_beats: measure.timeSignatureTop,
-    beat_value: measure.timeSignatureBottom,
+  const bassVexVoices = bassVoices.map((renderedVoice) => {
+    const voice = new Voice({
+      num_beats: measure.timeSignatureTop,
+      beat_value: measure.timeSignatureBottom,
+    });
+    voice.addTickables(renderedVoice.vexNotes);
+    return voice;
   });
-  bassVoice.addTickables(bassVexNotes);
 
   const staveWidth = width - (isFirst ? 80 : 20);
-  new Formatter()
-    .joinVoices([trebleVoice])
-    .joinVoices([bassVoice])
-    .format([trebleVoice, bassVoice], Math.max(staveWidth, 60));
+  const formatter = new Formatter();
+  if (trebleVexVoices.length > 0) {
+    formatter.joinVoices(trebleVexVoices);
+  }
+  if (bassVexVoices.length > 0) {
+    formatter.joinVoices(bassVexVoices);
+  }
+  formatter.format(
+    [...trebleVexVoices, ...bassVexVoices],
+    Math.max(staveWidth, 60),
+  );
 
-  trebleVoice.draw(context, treble);
-  bassVoice.draw(context, bass);
-  drawBeams(VF, context, trebleChords, trebleVexNotes);
-  drawBeams(VF, context, bassChords, bassVexNotes);
-  drawTies(VF, context, trebleChords, trebleVexNotes);
-  drawTies(VF, context, bassChords, bassVexNotes);
+  trebleVexVoices.forEach((voice) => voice.draw(context, treble));
+  bassVexVoices.forEach((voice) => voice.draw(context, bass));
+  trebleVoices.forEach((voice) => {
+    drawBeams(VF, context, voice.groups, voice.vexNotes);
+    drawTies(VF, context, voice.groups, voice.vexNotes);
+  });
+  bassVoices.forEach((voice) => {
+    drawBeams(VF, context, voice.groups, voice.vexNotes);
+    drawTies(VF, context, voice.groups, voice.vexNotes);
+  });
 
   return {
     measureIndex: measure.index,
-    treble: { groups: trebleChords, vexNotes: trebleVexNotes },
-    bass: { groups: bassChords, vexNotes: bassVexNotes },
+    treble: { voices: trebleVoices },
+    bass: { voices: bassVoices },
   };
 }
 

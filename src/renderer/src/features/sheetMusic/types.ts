@@ -12,6 +12,9 @@ export type DisplayMode =
   | "sheet" // Mode B: sheet music only
   | "falling"; // Mode C: falling notes only (current default)
 
+/** VexFlow-compatible stem direction for explicit multi-voice notation */
+export type StemDirection = 1 | -1;
+
 /** Metadata for rhythm values approximated because the renderer lacks tuplets */
 export interface NotationRhythmApproximation {
   kind: "unsupported-tuplet-approximation";
@@ -53,6 +56,10 @@ export interface NotationNote {
   tiedFromPrevious: boolean;
   /** Whether this event continues into the next event/measure */
   tiedToNext: boolean;
+  /** Staff-local voice index; same index and same span can render as chords */
+  voiceIndex?: number;
+  /** Explicit stem direction used when a staff contains independent voices */
+  stemDirection?: StemDirection;
   /** Explicit marker for unsupported tuplets rendered with fallback durations */
   rhythmApproximation?: NotationRhythmApproximation;
 }
