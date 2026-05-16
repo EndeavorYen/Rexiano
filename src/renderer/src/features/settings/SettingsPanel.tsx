@@ -16,6 +16,7 @@ import type { Language } from "@renderer/stores/useSettingsStore";
 import { themes, type ThemeId } from "@renderer/themes/tokens";
 import { getAvailableLanguages } from "@renderer/i18n";
 import { useTranslation } from "@renderer/i18n/useTranslation";
+import { useDialogFocus } from "@renderer/hooks/useDialogFocus";
 import type { PracticeMode } from "@shared/types";
 
 const themeList: ThemeId[] = ["lavender", "ocean", "peach", "midnight"];
@@ -175,6 +176,16 @@ export function SettingsPanel({
     }
   }, [isFirstVisit]);
 
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const closeButtonRef = useRef<HTMLButtonElement>(null);
+  useDialogFocus({
+    active: open,
+    containerRef: panelRef,
+    initialFocusRef: closeButtonRef,
+    returnFocusRef: inline ? undefined : triggerRef,
+    onDismiss: handleClose,
+  });
+
   // Close on outside click
   useEffect(() => {
     if (!open) return;
@@ -214,12 +225,14 @@ export function SettingsPanel({
       {/* Trigger button — gear icon (hidden in inline mode) */}
       {!inline && (
         <button
+          ref={triggerRef}
           onClick={handleOpen}
           className={`btn-surface-themed w-8 h-8 flex items-center justify-center rounded-full cursor-pointer ${isFirstVisit ? "animate-gentle-pulse" : ""}`}
           style={{
             border: "1px solid var(--color-border)",
           }}
           title={t("settings.title")}
+          aria-label={t("settings.title")}
           data-testid="settings-trigger"
         >
           <Settings size={16} style={{ color: "var(--color-text-muted)" }} />
@@ -238,7 +251,9 @@ export function SettingsPanel({
               border: "1px solid var(--color-border)",
             }}
             role="dialog"
+            aria-modal="true"
             aria-label={t("settings.title")}
+            tabIndex={-1}
             data-testid="settings-panel"
           >
             {/* Header */}
@@ -292,9 +307,11 @@ export function SettingsPanel({
                     : t("settings.advancedMode")}
                 </button>
                 <button
+                  ref={closeButtonRef}
                   onClick={() => handleClose()}
                   className="btn-surface-themed w-7 h-7 flex items-center justify-center rounded-full cursor-pointer transition-colors"
                   title={t("settings.close")}
+                  aria-label={t("settings.close")}
                   data-testid="settings-close"
                 >
                   <X size={14} style={{ color: "var(--color-text-muted)" }} />

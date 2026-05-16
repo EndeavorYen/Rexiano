@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useCallback, useState } from "react";
+import { useEffect, useMemo, useCallback, useState, useRef } from "react";
 import {
   Upload,
   AlertCircle,
@@ -35,6 +35,7 @@ import {
 } from "./songLibrarySelectors";
 import { DeviceSelector } from "../midiDevice/DeviceSelector";
 import { useTranslation } from "../../i18n/useTranslation";
+import { useDialogFocus } from "../../hooks/useDialogFocus";
 import appIcon from "../../../../../docs/figure/Rexiano_icon.png";
 import type { BuiltinSongMeta, RecentFile } from "../../../../shared/types";
 
@@ -90,6 +91,20 @@ export function SongLibrary({
     null,
   );
   const [showDeviceDrawer, setShowDeviceDrawer] = useState(false);
+  const deviceDrawerRef = useRef<HTMLElement>(null);
+  const deviceDrawerTriggerRef = useRef<HTMLButtonElement>(null);
+  const deviceDrawerCloseRef = useRef<HTMLButtonElement>(null);
+  const closeDeviceDrawer = useCallback(() => {
+    setShowDeviceDrawer(false);
+  }, []);
+
+  useDialogFocus({
+    active: showDeviceDrawer,
+    containerRef: deviceDrawerRef,
+    initialFocusRef: deviceDrawerCloseRef,
+    returnFocusRef: deviceDrawerTriggerRef,
+    onDismiss: closeDeviceDrawer,
+  });
 
   useEffect(() => {
     fetchSongs();
@@ -581,6 +596,7 @@ export function SongLibrary({
         )}
 
         <button
+          ref={deviceDrawerTriggerRef}
           onClick={() => setShowDeviceDrawer(true)}
           className="fixed right-5 bottom-5 z-30 btn-surface-themed rounded-full px-3 py-2 flex items-center gap-1.5 text-xs font-body cursor-pointer subtle-shadow"
           data-testid="library-device-drawer-trigger"
@@ -590,18 +606,22 @@ export function SongLibrary({
         </button>
 
         {showDeviceDrawer && (
-          <div
-            className="app-overlay-backdrop"
-            onClick={() => setShowDeviceDrawer(false)}
-          >
+          <div className="app-overlay-backdrop" onClick={closeDeviceDrawer}>
             <aside
+              ref={deviceDrawerRef}
               className="app-side-drawer"
+              role="dialog"
+              aria-modal="true"
+              aria-label="MIDI"
+              tabIndex={-1}
+              data-testid="library-midi-drawer"
               onClick={(e) => e.stopPropagation()}
             >
               <div className="app-side-drawer-header">
                 <span className="kicker-label">MIDI</span>
                 <button
-                  onClick={() => setShowDeviceDrawer(false)}
+                  ref={deviceDrawerCloseRef}
+                  onClick={closeDeviceDrawer}
                   className="btn-surface-themed w-7 h-7 rounded-full flex items-center justify-center cursor-pointer"
                   aria-label={t("settings.close")}
                 >

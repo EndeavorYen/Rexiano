@@ -1,6 +1,8 @@
+import { useRef } from "react";
 import { Hand, Music } from "lucide-react";
 import type { PracticeMode } from "@shared/types";
 import { useTranslation } from "@renderer/i18n/useTranslation";
+import { useDialogFocus } from "@renderer/hooks/useDialogFocus";
 
 interface ModeSelectionModalProps {
   onSelect: (mode: PracticeMode) => void;
@@ -39,16 +41,28 @@ export function ModeSelectionModal({
   onSelect,
 }: ModeSelectionModalProps): React.JSX.Element {
   const { t } = useTranslation();
+  const dialogRef = useRef<HTMLDivElement>(null);
+  const firstOptionRef = useRef<HTMLButtonElement>(null);
+  useDialogFocus({
+    active: true,
+    containerRef: dialogRef,
+    initialFocusRef: firstOptionRef,
+  });
 
   return (
     <div className="fixed inset-0 z-[200] flex items-center justify-center modal-backdrop-cinematic">
       <div
+        ref={dialogRef}
         className="w-[92vw] max-w-[560px] rounded-2xl shadow-2xl modal-card-cinematic p-5 sm:p-6"
         style={{
           background:
             "color-mix(in srgb, var(--color-surface) 90%, transparent)",
           border: "1px solid var(--color-border)",
         }}
+        role="dialog"
+        aria-modal="true"
+        aria-label={t("modeSelect.title")}
+        tabIndex={-1}
       >
         {/* Title */}
         <div className="flex justify-center mb-1">
@@ -72,6 +86,7 @@ export function ModeSelectionModal({
           {MODE_OPTIONS.map((opt, idx) => (
             <button
               key={opt.mode}
+              ref={idx === 0 ? firstOptionRef : undefined}
               onClick={() => onSelect(opt.mode)}
               className="card-hover animate-page-enter flex flex-col items-center gap-3 p-4 rounded-xl cursor-pointer transition-all min-h-[170px]"
               style={{

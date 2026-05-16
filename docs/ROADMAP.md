@@ -461,8 +461,8 @@
 
 - [ ] 效能監控（FPS counter, 記憶體用量）
 - [x] 無障礙：`@media (prefers-reduced-motion: reduce)` 停用所有動畫
-- [ ] 無障礙：ARIA labels, 螢幕閱讀器
-- [ ] E2E 測試（Playwright）
+- [x] 無障礙：ARIA labels, 螢幕閱讀器
+- [x] E2E 測試（Playwright）
 
 > 以下項目已移入 Phase 6.5 的具體 Sprint 中：
 >

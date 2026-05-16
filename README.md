@@ -129,21 +129,27 @@ pnpm dev:sandbox
 
 ### Scripts
 
-| Command                | Description                                        |
-| ---------------------- | -------------------------------------------------- |
-| `pnpm dev`             | Start Electron in development mode with HMR        |
-| `pnpm build`           | Typecheck + production build                       |
-| `pnpm build:win`       | Build Windows installer (.exe)                     |
-| `pnpm build:mac`       | Build macOS disk image (.dmg)                      |
-| `pnpm build:linux`     | Build Linux packages (.AppImage, .deb)             |
-| `pnpm test`            | Run all tests with Vitest                          |
-| `pnpm test:watch`      | Run tests in watch mode                            |
-| `pnpm test:e2e`        | Build app and run Playwright Electron E2E tests    |
-| `pnpm test:e2e:update` | Build app and update Playwright visual snapshots   |
-| `pnpm test:visual`     | Build app and run visual regression snapshot tests |
-| `pnpm lint`            | Run ESLint                                         |
-| `pnpm typecheck`       | Run TypeScript compiler checks                     |
-| `pnpm format`          | Format code with Prettier                          |
+| Command                | Description                                      |
+| ---------------------- | ------------------------------------------------ |
+| `pnpm dev`             | Start Electron in development mode with HMR      |
+| `pnpm build`           | Typecheck + production build                     |
+| `pnpm build:win`       | Build Windows installer (.exe)                   |
+| `pnpm build:mac`       | Build macOS disk image (.dmg)                    |
+| `pnpm build:linux`     | Build Linux packages (.AppImage, .deb)           |
+| `pnpm test`            | Run all tests with Vitest                        |
+| `pnpm test:watch`      | Run tests in watch mode                          |
+| `pnpm test:e2e`        | Build app and run Playwright Electron E2E tests  |
+| `pnpm test:e2e:update` | Build app and update Playwright visual snapshots |
+| `pnpm test:visual`     | Build app and run focused UI visual guard tests  |
+| `pnpm lint`            | Run ESLint                                       |
+| `pnpm typecheck`       | Run TypeScript compiler checks                   |
+| `pnpm format`          | Format code with Prettier                        |
+
+Focused UI suites for local changes:
+
+- Accessibility and keyboard flow: `pnpm build && pnpm exec playwright test e2e/accessibility-core.spec.ts`
+- Playback layout and visual guardrails: `pnpm build && pnpm exec playwright test e2e/ui-polish.spec.ts`
+- Sheet-music dense/key-signature SVG guards: `pnpm build && pnpm exec playwright test e2e/sheet-music-visual-fixtures.spec.ts`
 
 ### Project Structure
 

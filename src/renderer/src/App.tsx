@@ -32,6 +32,7 @@ import { useMidiDeviceStore } from "./stores/useMidiDeviceStore";
 import { usePracticeLifecycle } from "./features/practice/usePracticeLifecycle";
 import { PracticeToolbar } from "./features/practice/PracticeToolbar";
 import { ScoreOverlay } from "./features/practice/ScoreOverlay";
+import { useDialogFocus } from "./hooks/useDialogFocus";
 import { useKeyboardShortcuts } from "./hooks/useKeyboardShortcuts";
 import { useTranslation } from "./i18n/useTranslation";
 import { SheetMusicPanel } from "./features/sheetMusic/SheetMusicPanel";
@@ -89,6 +90,19 @@ function App(): React.JSX.Element {
   // - No song + playback route => menu
   const view: AppRoute = resolveRoute(routeIntent, !!song);
   const [showPlaybackDrawer, setShowPlaybackDrawer] = useState(false);
+  const playbackDrawerRef = useRef<HTMLElement>(null);
+  const playbackDrawerTriggerRef = useRef<HTMLButtonElement>(null);
+  const playbackDrawerCloseRef = useRef<HTMLButtonElement>(null);
+  const closePlaybackDrawer = useCallback(() => {
+    setShowPlaybackDrawer(false);
+  }, []);
+  useDialogFocus({
+    active: showPlaybackDrawer,
+    containerRef: playbackDrawerRef,
+    initialFocusRef: playbackDrawerCloseRef,
+    returnFocusRef: playbackDrawerTriggerRef,
+    onDismiss: closePlaybackDrawer,
+  });
 
   const applyRoute = useCallback((nextRoute: AppRoute): void => {
     if (nextRoute !== "playback") {
@@ -1003,6 +1017,7 @@ function App(): React.JSX.Element {
                 data-testid="playback-header-actions"
               >
                 <button
+                  ref={playbackDrawerTriggerRef}
                   onClick={() => setShowPlaybackDrawer(true)}
                   className="btn-surface-themed flex items-center gap-1 rounded-lg font-body cursor-pointer px-2 py-[3px] text-[10px]"
                   data-testid="playback-drawer-trigger"
@@ -1022,18 +1037,22 @@ function App(): React.JSX.Element {
           </div>
 
           {showPlaybackDrawer && (
-            <div
-              className="app-overlay-backdrop"
-              onClick={() => setShowPlaybackDrawer(false)}
-            >
+            <div className="app-overlay-backdrop" onClick={closePlaybackDrawer}>
               <aside
+                ref={playbackDrawerRef}
                 className="app-side-drawer"
+                role="dialog"
+                aria-modal="true"
+                aria-label={t("settings.title")}
+                tabIndex={-1}
+                data-testid="playback-settings-drawer"
                 onClick={(e) => e.stopPropagation()}
               >
                 <div className="app-side-drawer-header">
                   <span className="kicker-label">{t("settings.title")}</span>
                   <button
-                    onClick={() => setShowPlaybackDrawer(false)}
+                    ref={playbackDrawerCloseRef}
+                    onClick={closePlaybackDrawer}
                     className="btn-surface-themed w-7 h-7 rounded-full flex items-center justify-center cursor-pointer"
                     aria-label={t("settings.close")}
                   >
