@@ -37,6 +37,11 @@ import { useTranslation } from "./i18n/useTranslation";
 import { SheetMusicPanel } from "./features/sheetMusic/SheetMusicPanel";
 import { DisplayModeToggle } from "./features/sheetMusic/DisplayModeToggle";
 import { convertToNotation } from "./features/sheetMusic/MidiToNotation";
+import type { NotationData } from "./features/sheetMusic/types";
+import {
+  getSheetMusicVisualFixture,
+  type SheetMusicVisualFixtureName,
+} from "./features/sheetMusic/sheetMusicVisualFixtures";
 import { usePracticeStore } from "./stores/usePracticeStore";
 import { MainMenu } from "./features/mainMenu/MainMenu";
 import { ModeSelectionModal } from "./features/practice/ModeSelectionModal";
@@ -212,13 +217,49 @@ function App(): React.JSX.Element {
   const displayMode = usePracticeStore((s) => s.displayMode);
   const isPlaying = usePlaybackStore((s) => s.isPlaying);
   const currentTime = usePlaybackStore((s) => s.currentTime);
+  const [sheetFixtureNotationData, setSheetFixtureNotationData] =
+    useState<NotationData | null>(null);
 
   const notationData = useMemo(() => {
+    if (sheetFixtureNotationData) return sheetFixtureNotationData;
     if (!song) return null;
     const allNotes = song.tracks.flatMap((tr) => tr.notes);
     const bpm = song.tempos.length > 0 ? song.tempos[0].bpm : 120;
     return convertToNotation(allNotes, bpm);
-  }, [song]);
+  }, [sheetFixtureNotationData, song]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const fixtureAccessEnabled =
+      navigator.webdriver ||
+      window.localStorage.getItem("rexiano-e2e-fixtures") === "1";
+    if (!fixtureAccessEnabled) return;
+
+    const e2eWindow = window as typeof window & {
+      __rexianoLoadSheetMusicFixture?: (
+        fixtureName: SheetMusicVisualFixtureName,
+      ) => void;
+    };
+
+    e2eWindow.__rexianoLoadSheetMusicFixture = (fixtureName) => {
+      const fixture = getSheetMusicVisualFixture(fixtureName);
+      reset();
+      usePracticeStore.getState().setDisplayMode("sheet");
+      usePracticeStore.getState().setMode("watch");
+      setSheetFixtureNotationData(fixture.notationData);
+      loadSong(fixture.song);
+      setShowModeModal(false);
+      setShowCelebration(false);
+      setShowStats(false);
+      setShowInsights(false);
+      applyRoute("playback");
+    };
+
+    return () => {
+      delete e2eWindow.__rexianoLoadSheetMusicFixture;
+    };
+  }, [applyRoute, loadSong, reset]);
 
   // ─── End Phase 7 ──────────────────────────────────────
 
