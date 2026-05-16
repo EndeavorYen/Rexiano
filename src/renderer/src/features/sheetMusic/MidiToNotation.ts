@@ -36,6 +36,24 @@ const NOTE_NAMES = [
   "b",
 ];
 
+const FLAT_NOTE_NAMES = [
+  "c",
+  "db",
+  "d",
+  "eb",
+  "e",
+  "f",
+  "gb",
+  "g",
+  "ab",
+  "a",
+  "bb",
+  "b",
+];
+
+const SHARP_KEY_ORDER = ["f", "c", "g", "d", "a", "e", "b"];
+const FLAT_KEY_ORDER = ["b", "e", "a", "d", "g", "c", "f"];
+
 type Clef = "treble" | "bass";
 
 interface QuantizedNote {
@@ -43,6 +61,7 @@ interface QuantizedNote {
   startTick: number;
   endTick: number;
   vexKey: string;
+  accidental: string | null;
 }
 
 interface NoteSegment {
@@ -50,6 +69,7 @@ interface NoteSegment {
   startTick: number;
   durationTicks: number;
   vexKey: string;
+  accidental: string | null;
   tiedFromPrevious: boolean;
   tiedToNext: boolean;
 }
@@ -57,6 +77,11 @@ interface NoteSegment {
 interface DurationPiece {
   vexDuration: string;
   ticks: number;
+  dots: number;
+}
+
+interface VoiceSegment extends NoteSegment {
+  endTick: number;
 }
 
 /**
@@ -68,6 +93,49 @@ export function midiToVexKey(midi: number): string {
   const octave = Math.floor(midi / 12) - 1;
   const noteIndex = midi % 12;
   return `${NOTE_NAMES[noteIndex]}/${octave}`;
+}
+
+function getSignatureAccidentals(keySignature: number): Map<string, "#" | "b"> {
+  const accidentals = new Map<string, "#" | "b">();
+  const count = Math.max(-7, Math.min(7, Math.trunc(keySignature)));
+  const order = count >= 0 ? SHARP_KEY_ORDER : FLAT_KEY_ORDER;
+  const accidental = count >= 0 ? "#" : "b";
+
+  for (const letter of order.slice(0, Math.abs(count))) {
+    accidentals.set(letter, accidental);
+  }
+
+  return accidentals;
+}
+
+function getKeyParts(vexKey: string): {
+  letter: string;
+  accidental: "#" | "b" | null;
+} {
+  const match = /^([a-g])([#b])?\//.exec(vexKey);
+  return {
+    letter: match?.[1] ?? "c",
+    accidental: (match?.[2] as "#" | "b" | undefined) ?? null,
+  };
+}
+
+function getDisplayAccidental(
+  vexKey: string,
+  keySignature: number,
+): string | null {
+  const { letter, accidental } = getKeyParts(vexKey);
+  const signatureAccidental = getSignatureAccidentals(keySignature).get(letter);
+
+  if (accidental === signatureAccidental) return null;
+  if (!accidental && signatureAccidental) return "n";
+  return accidental;
+}
+
+function midiToNotationKey(midi: number, keySignature: number): string {
+  const octave = Math.floor(midi / 12) - 1;
+  const noteIndex = midi % 12;
+  const noteNames = keySignature < 0 ? FLAT_NOTE_NAMES : NOTE_NAMES;
+  return `${noteNames[noteIndex]}/${octave}`;
 }
 
 /**
@@ -98,23 +166,20 @@ export function ticksToVexDuration(
   durationTicks: number,
   ticksPerQuarter: number,
 ): string {
-  const ratio = durationTicks / ticksPerQuarter;
-
-  if (ratio >= 3.5) return "w"; // whole
-  if (ratio >= 1.5) return "h"; // half
-  if (ratio >= 0.75) return "q"; // quarter
-  if (ratio >= 0.375) return "8"; // eighth
-  return "16"; // sixteenth
+  return splitTicksIntoDurations(durationTicks, ticksPerQuarter)[0].vexDuration;
 }
 
 function getDurationPieces(ticksPerQuarter: number): DurationPiece[] {
   return [
-    { vexDuration: "w", ticks: ticksPerQuarter * 4 },
-    { vexDuration: "h", ticks: ticksPerQuarter * 2 },
-    { vexDuration: "q", ticks: ticksPerQuarter },
-    { vexDuration: "8", ticks: ticksPerQuarter / 2 },
-    { vexDuration: "16", ticks: ticksPerQuarter / 4 },
-  ];
+    { vexDuration: "w", ticks: ticksPerQuarter * 4, dots: 0 },
+    { vexDuration: "hd", ticks: ticksPerQuarter * 3, dots: 1 },
+    { vexDuration: "h", ticks: ticksPerQuarter * 2, dots: 0 },
+    { vexDuration: "qd", ticks: ticksPerQuarter * 1.5, dots: 1 },
+    { vexDuration: "q", ticks: ticksPerQuarter, dots: 0 },
+    { vexDuration: "8d", ticks: ticksPerQuarter * 0.75, dots: 1 },
+    { vexDuration: "8", ticks: ticksPerQuarter / 2, dots: 0 },
+    { vexDuration: "16", ticks: ticksPerQuarter / 4, dots: 0 },
+  ].sort((a, b) => b.ticks - a.ticks);
 }
 
 function splitTicksIntoDurations(
@@ -135,6 +200,7 @@ function splitTicksIntoDurations(
     pieces.push({
       vexDuration: "16",
       ticks: ticksPerQuarter / QUANTIZE_GRID,
+      dots: 0,
     });
   }
 
@@ -161,7 +227,9 @@ function createRestEvents(
       startTick: cursor,
       durationTicks: piece.ticks,
       vexKey: makeRestKey(clef),
+      accidental: null,
       vexDuration: piece.vexDuration,
+      dots: piece.dots,
       tied: false,
       tiedFromPrevious: false,
       tiedToNext: false,
@@ -191,7 +259,9 @@ function createNoteEvents(
       startTick: cursor,
       durationTicks: piece.ticks,
       vexKey: segment.vexKey,
+      accidental: segment.accidental,
       vexDuration: piece.vexDuration,
+      dots: piece.dots,
       tied: tiedToNext,
       tiedFromPrevious,
       tiedToNext,
@@ -208,58 +278,70 @@ function buildVoiceEvents(
   measureTicks: number,
   ticksPerQuarter: number,
 ): NotationNote[] {
-  if (segments.length === 0) {
+  const voiceSegments: VoiceSegment[] = segments
+    .map((segment) => {
+      const startTick = Math.max(0, Math.min(segment.startTick, measureTicks));
+      const endTick = Math.max(
+        startTick,
+        Math.min(segment.startTick + segment.durationTicks, measureTicks),
+      );
+
+      return {
+        ...segment,
+        startTick,
+        durationTicks: endTick - startTick,
+        endTick,
+      };
+    })
+    .filter((segment) => segment.endTick > segment.startTick)
+    .sort((a, b) => a.startTick - b.startTick || a.midi - b.midi);
+
+  if (voiceSegments.length === 0) {
     return createRestEvents(0, measureTicks, clef, ticksPerQuarter);
   }
 
-  const byStart = new Map<number, NoteSegment[]>();
-  for (const segment of segments) {
-    const group = byStart.get(segment.startTick) ?? [];
-    group.push(segment);
-    byStart.set(segment.startTick, group);
+  const boundarySet = new Set<number>([0, measureTicks]);
+  for (const segment of voiceSegments) {
+    boundarySet.add(segment.startTick);
+    boundarySet.add(segment.endTick);
   }
-
-  const groups = [...byStart.entries()]
-    .map(([startTick, notes]) => ({
-      startTick,
-      notes: notes.sort((a, b) => a.midi - b.midi),
-    }))
-    .sort((a, b) => a.startTick - b.startTick);
+  const boundaries = [...boundarySet].sort((a, b) => a - b);
 
   const events: NotationNote[] = [];
-  let cursor = 0;
 
-  groups.forEach((group, index) => {
-    const groupStart = Math.max(0, Math.min(group.startTick, measureTicks));
-    if (groupStart > cursor) {
+  for (let i = 0; i < boundaries.length - 1; i++) {
+    const startTick = boundaries[i];
+    const endTick = boundaries[i + 1];
+    const durationTicks = endTick - startTick;
+    if (durationTicks <= 0) continue;
+
+    const activeSegments = voiceSegments.filter(
+      (segment) => segment.startTick < endTick && segment.endTick > startTick,
+    );
+
+    if (activeSegments.length === 0) {
       events.push(
-        ...createRestEvents(cursor, groupStart - cursor, clef, ticksPerQuarter),
+        ...createRestEvents(startTick, durationTicks, clef, ticksPerQuarter),
       );
-      cursor = groupStart;
+      continue;
     }
 
-    const nextStart = groups[index + 1]?.startTick ?? measureTicks;
-    const naturalDuration = Math.max(
-      ...group.notes.map((note) => note.durationTicks),
-    );
-    const availableDuration = Math.max(
-      0,
-      Math.min(nextStart, measureTicks) - groupStart,
-    );
-    const durationTicks = Math.min(naturalDuration, availableDuration);
-
-    if (durationTicks <= 0) return;
-
-    for (const note of group.notes) {
-      events.push(...createNoteEvents(note, durationTicks, ticksPerQuarter));
+    for (const segment of activeSegments.sort((a, b) => a.midi - b.midi)) {
+      events.push(
+        ...createNoteEvents(
+          {
+            ...segment,
+            startTick,
+            durationTicks,
+            tiedFromPrevious:
+              segment.tiedFromPrevious || segment.startTick < startTick,
+            tiedToNext: segment.tiedToNext || segment.endTick > endTick,
+          },
+          durationTicks,
+          ticksPerQuarter,
+        ),
+      );
     }
-    cursor = groupStart + durationTicks;
-  });
-
-  if (cursor < measureTicks) {
-    events.push(
-      ...createRestEvents(cursor, measureTicks - cursor, clef, ticksPerQuarter),
-    );
   }
 
   return events.sort(
@@ -286,6 +368,7 @@ export function convertToNotation(
   ticksPerQuarter = 480,
   timeSignatureTop = 4,
   timeSignatureBottom = 4,
+  keySignature = 0,
 ): NotationData {
   if (notes.length === 0) {
     return { measures: [], bpm, ticksPerQuarter };
@@ -311,7 +394,11 @@ export function convertToNotation(
       midi: note.midi,
       startTick,
       endTick: startTick + durationTicks,
-      vexKey: midiToVexKey(note.midi),
+      vexKey: midiToNotationKey(note.midi, keySignature),
+      accidental: getDisplayAccidental(
+        midiToNotationKey(note.midi, keySignature),
+        keySignature,
+      ),
     };
   });
 
@@ -334,6 +421,7 @@ export function convertToNotation(
           startTick: segmentStart - measureStart,
           durationTicks: segmentEnd - segmentStart,
           vexKey: n.vexKey,
+          accidental: n.accidental,
           tiedFromPrevious: segmentStart > n.startTick,
           tiedToNext: segmentEnd < n.endTick,
         };
@@ -346,7 +434,7 @@ export function convertToNotation(
       index: i,
       timeSignatureTop,
       timeSignatureBottom,
-      keySignature: 0, // C major for now
+      keySignature,
       trebleNotes: buildVoiceEvents(
         trebleSegments,
         "treble",

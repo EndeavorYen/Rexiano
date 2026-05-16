@@ -45,13 +45,14 @@ export function getCursorPosition(
     ticksPerQuarter *
     firstMeasure.timeSignatureTop *
     (4 / firstMeasure.timeSignatureBottom);
+  const ticksPerBeat = ticksPerQuarter * (4 / firstMeasure.timeSignatureBottom);
 
   const measureIndex = Math.max(
     0,
     Math.min(Math.floor(totalTick / ticksPerMeasure), measures.length - 1),
   );
   const tickInMeasure = totalTick - measureIndex * ticksPerMeasure;
-  const beat = tickInMeasure / ticksPerQuarter;
+  const beat = tickInMeasure / ticksPerBeat;
 
   return {
     measureIndex,
@@ -90,11 +91,11 @@ export function getScrollTarget(
 }
 
 /**
- * Compute a stable 4-measure display window with boundary preloading.
+ * Compute a stable chronological 4-measure display window.
  *
  * Example (1-based for readability):
  * - current 1~3: 1,2,3,4
- * - current 4:   5,6,7,4
+ * - current 4:   4,5,6,7
  * - current 5+:  5,6,7,8
  */
 export function getMeasureWindow(
@@ -107,26 +108,20 @@ export function getMeasureWindow(
     0,
     Math.min(Math.floor(currentMeasureIndex), totalMeasures - 1),
   );
-  const groupStart = Math.floor(current / DISPLAY_MEASURE_COUNT) * 4;
+  const groupStart =
+    Math.floor(current / DISPLAY_MEASURE_COUNT) * DISPLAY_MEASURE_COUNT;
   const positionInGroup = current - groupStart;
 
-  if (positionInGroup === 3 && groupStart + 4 < totalMeasures) {
-    const nextGroupStart = groupStart + 4;
-    const nextMeasures: number[] = [];
-    for (let offset = 0; offset < 3; offset++) {
-      const index = nextGroupStart + offset;
-      if (index >= totalMeasures) break;
-      nextMeasures.push(index);
-    }
-
-    // Keep the current measure as the trailing anchor.
-    return [...nextMeasures, current].slice(0, DISPLAY_MEASURE_COUNT);
-  }
+  const windowStart =
+    positionInGroup === DISPLAY_MEASURE_COUNT - 1 &&
+    groupStart + DISPLAY_MEASURE_COUNT < totalMeasures
+      ? current
+      : groupStart;
 
   const window: number[] = [];
   for (
-    let i = groupStart;
-    i < groupStart + DISPLAY_MEASURE_COUNT && i < totalMeasures;
+    let i = windowStart;
+    i < windowStart + DISPLAY_MEASURE_COUNT && i < totalMeasures;
     i++
   ) {
     window.push(i);

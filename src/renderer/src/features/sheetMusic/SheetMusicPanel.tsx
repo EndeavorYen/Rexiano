@@ -3,9 +3,8 @@
  *
  * Rendering model:
  * - Always displays 4 measure slots.
- * - On the 4th measure of a group, preload the next 3 measures while
- *   keeping the current one as anchor:
- *   1,2,3,4 -> 5,6,7,4 -> 5,6,7,8
+ * - On the 4th measure of a group, preload future measures chronologically:
+ *   1,2,3,4 -> 4,5,6,7 -> 5,6,7,8
  * - Subtly highlights currently active measure + note/chord.
  */
 
@@ -27,6 +26,23 @@ const SYSTEM_HEIGHT = STAVE_HEIGHT * 2 + SYSTEM_GAP;
 const LEFT_MARGIN = 28;
 const TOP_MARGIN = 10;
 const DISPLAY_MEASURE_COUNT = 4;
+const KEY_SIGNATURE_NAMES = new Map<number, string>([
+  [-7, "Cb"],
+  [-6, "Gb"],
+  [-5, "Db"],
+  [-4, "Ab"],
+  [-3, "Eb"],
+  [-2, "Bb"],
+  [-1, "F"],
+  [0, "C"],
+  [1, "G"],
+  [2, "D"],
+  [3, "A"],
+  [4, "E"],
+  [5, "B"],
+  [6, "F#"],
+  [7, "C#"],
+]);
 
 interface SheetMusicPanelProps {
   notationData: NotationData | null;
@@ -36,7 +52,9 @@ interface SheetMusicPanelProps {
 
 interface ChordGroup {
   keys: string[];
+  accidentals: (string | null)[];
   duration: string;
+  dots: number;
   startTick: number;
   durationTicks: number;
   isRest: boolean;
@@ -54,6 +72,11 @@ interface RenderedMeasure {
   measureIndex: number;
   treble: RenderedVoice;
   bass: RenderedVoice;
+}
+
+function keySignatureToVexKey(keySignature: number): string {
+  const normalized = Math.max(-7, Math.min(7, Math.trunc(keySignature)));
+  return KEY_SIGNATURE_NAMES.get(normalized) ?? "C";
 }
 
 /**
@@ -77,16 +100,20 @@ function groupNotesIntoChords(notes: NotationNote[]): ChordGroup[] {
       !last.isRest &&
       !note.isRest &&
       last.startTick === note.startTick &&
-      last.duration === note.vexDuration
+      last.duration === note.vexDuration &&
+      last.dots === note.dots
     ) {
       last.keys.push(note.vexKey);
+      last.accidentals.push(note.accidental);
       last.durationTicks = Math.max(last.durationTicks, note.durationTicks);
       last.tiedFromPrevious ||= note.tiedFromPrevious;
       last.tiedToNext ||= note.tiedToNext;
     } else {
       groups.push({
         keys: [note.vexKey],
+        accidentals: [note.accidental],
         duration: note.vexDuration,
+        dots: note.dots,
         startTick: note.startTick,
         durationTicks: note.durationTicks,
         isRest: note.isRest,
@@ -99,11 +126,6 @@ function groupNotesIntoChords(notes: NotationNote[]): ChordGroup[] {
   return groups;
 }
 
-function getAccidental(key: string): string | null {
-  const match = /^[a-g]([#b]+)?\/-?\d+$/.exec(key);
-  return match?.[1] ?? null;
-}
-
 function makeStaveNote(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   VF: any,
@@ -111,17 +133,19 @@ function makeStaveNote(
   clef: "treble" | "bass",
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
 ): any {
-  const { StaveNote, Accidental } = VF;
+  const { StaveNote, Accidental, Dot } = VF;
   const keys = [...group.keys];
   const note = new StaveNote({
     keys,
     duration: `${group.duration}${group.isRest ? "r" : ""}`,
     clef,
   });
+  for (let i = 0; i < group.dots; i++) {
+    Dot.buildAndAttach([note], { all: true });
+  }
 
   if (!group.isRest) {
-    keys.forEach((key, index) => {
-      const accidental = getAccidental(key);
+    group.accidentals.forEach((accidental, index) => {
       if (accidental) {
         note.addModifier(new Accidental(accidental), index);
       }
@@ -295,6 +319,7 @@ function renderMeasure(
   if (isFirst) {
     treble
       .addClef("treble")
+      .addKeySignature(keySignatureToVexKey(measure.keySignature))
       .addTimeSignature(
         `${measure.timeSignatureTop}/${measure.timeSignatureBottom}`,
       );
@@ -305,6 +330,7 @@ function renderMeasure(
   if (isFirst) {
     bass
       .addClef("bass")
+      .addKeySignature(keySignatureToVexKey(measure.keySignature))
       .addTimeSignature(
         `${measure.timeSignatureTop}/${measure.timeSignatureBottom}`,
       );

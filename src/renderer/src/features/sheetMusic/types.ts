@@ -24,8 +24,12 @@ export interface NotationNote {
   durationTicks: number;
   /** VexFlow key string (e.g. "c/4", "f#/5") */
   vexKey: string;
+  /** Accidental to render, or null when covered by the key signature */
+  accidental: string | null;
   /** VexFlow duration string (e.g. "q", "8", "16", "h", "w") */
   vexDuration: string;
+  /** Number of augmentation dots to render for dotted durations */
+  dots: number;
   /** Whether this note is tied to the next; kept for existing callers */
   tied: boolean;
   /** Whether this event continues a note from the previous event/measure */

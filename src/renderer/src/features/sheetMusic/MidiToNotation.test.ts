@@ -65,6 +65,10 @@ describe("MidiToNotation", () => {
       expect(ticksToVexDuration(TPQ, TPQ)).toBe("q");
     });
 
+    it('returns "qd" for dotted quarter note', () => {
+      expect(ticksToVexDuration(TPQ * 1.5, TPQ)).toBe("qd");
+    });
+
     it('returns "8" for eighth note', () => {
       expect(ticksToVexDuration(TPQ / 2, TPQ)).toBe("8");
     });
@@ -127,6 +131,49 @@ describe("MidiToNotation", () => {
       expect(result.measures[0].trebleNotes[0].vexKey).toBe("c/4");
     });
 
+    it("uses flat spelling and suppresses signature accidentals in flat keys", () => {
+      const notes = [
+        { midi: 70, name: "Bb4", time: 0, duration: 0.5, velocity: 80 },
+      ];
+      const result = convertToNotation(notes, 120, 480, 4, 4, -1);
+
+      const note = result.measures[0].trebleNotes.find((n) => !n.isRest);
+
+      expect(result.measures[0].keySignature).toBe(-1);
+      expect(note).toMatchObject({
+        vexKey: "bb/4",
+        accidental: null,
+      });
+    });
+
+    it("renders natural signs when a note cancels the key signature", () => {
+      const notes = [
+        { midi: 71, name: "B4", time: 0, duration: 0.5, velocity: 80 },
+      ];
+      const result = convertToNotation(notes, 120, 480, 4, 4, -1);
+
+      const note = result.measures[0].trebleNotes.find((n) => !n.isRest);
+
+      expect(note).toMatchObject({
+        vexKey: "b/4",
+        accidental: "n",
+      });
+    });
+
+    it("suppresses repeated accidentals covered by sharp key signatures", () => {
+      const notes = [
+        { midi: 66, name: "F#4", time: 0, duration: 0.5, velocity: 80 },
+      ];
+      const result = convertToNotation(notes, 120, 480, 4, 4, 1);
+
+      const note = result.measures[0].trebleNotes.find((n) => !n.isRest);
+
+      expect(note).toMatchObject({
+        vexKey: "f#/4",
+        accidental: null,
+      });
+    });
+
     it("inserts rests so off-beat notes keep their rhythmic position", () => {
       const notes = [
         // At 120 BPM, 1.0s is beat 3 in a 4/4 measure.
@@ -183,6 +230,62 @@ describe("MidiToNotation", () => {
         durationTicks: 480,
         tiedToNext: false,
         tiedFromPrevious: true,
+      });
+    });
+
+    it("preserves sustained notes when another note starts before they end", () => {
+      const notes = [
+        // C4 starts on beat 1 and sustains through beat 2.
+        { midi: 60, name: "C4", time: 0, duration: 1.0, velocity: 80 },
+        // E4 enters on beat 2 while C4 is still held.
+        { midi: 64, name: "E4", time: 0.5, duration: 0.5, velocity: 80 },
+      ];
+      const result = convertToNotation(notes, 120, 480, 4, 4);
+
+      const notesOnly = result.measures[0].trebleNotes.filter((n) => !n.isRest);
+
+      expect(notesOnly).toMatchObject([
+        {
+          midi: 60,
+          startTick: 0,
+          durationTicks: 480,
+          tiedFromPrevious: false,
+          tiedToNext: true,
+        },
+        {
+          midi: 60,
+          startTick: 480,
+          durationTicks: 480,
+          tiedFromPrevious: true,
+          tiedToNext: false,
+        },
+        {
+          midi: 64,
+          startTick: 480,
+          durationTicks: 480,
+          tiedFromPrevious: false,
+          tiedToNext: false,
+        },
+      ]);
+    });
+
+    it("keeps dotted quarter notes as one dotted note instead of tied fragments", () => {
+      const notes = [
+        // At 120 BPM, 0.75s is a dotted quarter note.
+        { midi: 60, name: "C4", time: 0, duration: 0.75, velocity: 80 },
+      ];
+      const result = convertToNotation(notes, 120, 480, 4, 4);
+
+      const notesOnly = result.measures[0].trebleNotes.filter((n) => !n.isRest);
+
+      expect(notesOnly).toHaveLength(1);
+      expect(notesOnly[0]).toMatchObject({
+        midi: 60,
+        startTick: 0,
+        durationTicks: 720,
+        vexDuration: "qd",
+        tiedFromPrevious: false,
+        tiedToNext: false,
       });
     });
   });

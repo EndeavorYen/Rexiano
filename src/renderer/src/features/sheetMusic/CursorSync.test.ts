@@ -7,11 +7,15 @@ import {
 import type { NotationData } from "./types";
 
 describe("CursorSync", () => {
-  const makeNotationData = (measureCount: number): NotationData => ({
+  const makeNotationData = (
+    measureCount: number,
+    timeSignatureTop = 4,
+    timeSignatureBottom = 4,
+  ): NotationData => ({
     measures: Array.from({ length: measureCount }, (_, i) => ({
       index: i,
-      timeSignatureTop: 4,
-      timeSignatureBottom: 4,
+      timeSignatureTop,
+      timeSignatureBottom,
       keySignature: 0,
       trebleNotes: [],
       bassNotes: [],
@@ -50,6 +54,15 @@ describe("CursorSync", () => {
       const pos = getCursorPosition(2.0, data)!;
       expect(pos.measureIndex).toBe(1);
       expect(pos.beat).toBeCloseTo(0, 1);
+    });
+
+    it("uses the time signature denominator for non-quarter-note beats", () => {
+      const data = makeNotationData(2, 6, 8);
+      const pos = getCursorPosition(0.75, data)!;
+
+      expect(pos.measureIndex).toBe(0);
+      expect(pos.tick).toBe(720);
+      expect(pos.beat).toBeCloseTo(3, 1);
     });
 
     it("clamps to last measure for very large times", () => {
@@ -94,9 +107,9 @@ describe("CursorSync", () => {
       expect(getMeasureWindow(2, 12)).toEqual([0, 1, 2, 3]);
     });
 
-    it("preloads next 3 measures when cursor reaches the 4th measure", () => {
-      // 1,2,3,4 -> 5,6,7,4 (0-based: 4,5,6,3)
-      expect(getMeasureWindow(3, 12)).toEqual([4, 5, 6, 3]);
+    it("keeps the window chronological when preloading at the 4th measure", () => {
+      // 1,2,3,4 -> 4,5,6,7 (0-based: 3,4,5,6)
+      expect(getMeasureWindow(3, 12)).toEqual([3, 4, 5, 6]);
     });
 
     it("advances to next full 4-measure window on the next measure", () => {
@@ -105,8 +118,8 @@ describe("CursorSync", () => {
     });
 
     it("does not return out-of-range indices near the song end", () => {
-      expect(getMeasureWindow(7, 9)).toEqual([8, 7]);
-      expect(getMeasureWindow(7, 10)).toEqual([8, 9, 7]);
+      expect(getMeasureWindow(7, 9)).toEqual([7, 8]);
+      expect(getMeasureWindow(7, 10)).toEqual([7, 8, 9]);
       for (const index of getMeasureWindow(7, 9)) {
         expect(index).toBeLessThan(9);
       }
