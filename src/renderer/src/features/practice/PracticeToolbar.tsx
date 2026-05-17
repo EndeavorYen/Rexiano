@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { ChevronDown, ChevronUp } from "lucide-react";
 import { useTranslation } from "@renderer/i18n/useTranslation";
+import { useSettingsStore } from "@renderer/stores/useSettingsStore";
 import { PracticeModeSelector } from "./PracticeModeSelector";
 import { SpeedSlider } from "./SpeedSlider";
 import { ABLoopSelector } from "./ABLoopSelector";
@@ -10,11 +11,38 @@ interface PracticeToolbarProps {
   compact?: boolean;
 }
 
+export interface PracticeToolbarControlVisibilityInput {
+  childFocusMode: boolean;
+}
+
+export interface PracticeToolbarControlVisibility {
+  showModeSelector: boolean;
+  showSpeedControl: boolean;
+  showAdvancedDisclosure: boolean;
+  showAdvancedControls: boolean;
+}
+
+// eslint-disable-next-line react-refresh/only-export-components
+export function getPracticeToolbarControlVisibility({
+  childFocusMode,
+}: PracticeToolbarControlVisibilityInput): PracticeToolbarControlVisibility {
+  return {
+    showModeSelector: true,
+    showSpeedControl: true,
+    showAdvancedDisclosure: !childFocusMode,
+    showAdvancedControls: !childFocusMode,
+  };
+}
+
 export function PracticeToolbar({
   compact = false,
 }: PracticeToolbarProps): React.JSX.Element {
   const { t } = useTranslation();
   const [expanded, setExpanded] = useState(false);
+  const childFocusMode = useSettingsStore((s) => s.childFocusMode);
+  const controlVisibility = getPracticeToolbarControlVisibility({
+    childFocusMode,
+  });
 
   return (
     <div
@@ -32,65 +60,76 @@ export function PracticeToolbar({
         }`}
         style={{ minHeight: compact ? 42 : 44 }}
       >
-        <PracticeModeSelector />
+        {controlVisibility.showModeSelector && <PracticeModeSelector />}
 
         <div
           className="hidden sm:block h-5 w-px shrink-0"
           style={{ background: "var(--color-border)" }}
         />
 
-        <SpeedSlider />
+        {controlVisibility.showSpeedControl && <SpeedSlider />}
 
-        <span
-          className="text-[10px] font-body font-medium rounded-full px-2 py-0.5"
-          style={{
-            color: "var(--color-text-muted)",
-            background:
-              "color-mix(in srgb, var(--color-surface-alt) 74%, var(--color-surface))",
-            border: "1px solid var(--color-border)",
-          }}
-          data-testid="practice-toolbar-level"
-        >
-          {expanded ? t("settings.advancedMode") : t("settings.basicMode")}
-        </span>
-
-        <div className="ml-auto shrink-0">
-          <button
-            onClick={() => setExpanded(!expanded)}
-            className={`btn-surface-themed flex items-center gap-1.5 rounded-md font-body cursor-pointer ${
-              compact ? "px-2 py-[3px] text-[10px]" : "px-2.5 py-1 text-[11px]"
-            }`}
+        {controlVisibility.showAdvancedDisclosure && (
+          <span
+            className="text-[10px] font-body font-medium rounded-full px-2 py-0.5"
             style={{
               color: "var(--color-text-muted)",
-              background: expanded
-                ? "color-mix(in srgb, var(--color-accent) 12%, var(--color-surface))"
-                : undefined,
+              background:
+                "color-mix(in srgb, var(--color-surface-alt) 74%, var(--color-surface))",
+              border: "1px solid var(--color-border)",
             }}
-            aria-expanded={expanded}
-            aria-label={
-              expanded ? t("practice.hideAdvanced") : t("practice.showAdvanced")
-            }
+            data-testid="practice-toolbar-level"
           >
-            <span
-              className={`status-dot ${expanded ? "status-dot-live" : "status-dot-idle"}`}
-            />
-            {t("practice.more")}
-            {expanded ? (
-              <ChevronUp
-                size={13}
-                style={{ transform: "translateY(-0.5px)" }}
+            {expanded ? t("settings.advancedMode") : t("settings.basicMode")}
+          </span>
+        )}
+
+        {controlVisibility.showAdvancedDisclosure && (
+          <div className="ml-auto shrink-0">
+            <button
+              onClick={() => setExpanded(!expanded)}
+              className={`btn-surface-themed flex items-center gap-1.5 rounded-md font-body cursor-pointer ${
+                compact
+                  ? "px-2 py-[3px] text-[10px]"
+                  : "px-2.5 py-1 text-[11px]"
+              }`}
+              style={{
+                color: "var(--color-text-muted)",
+                background: expanded
+                  ? "color-mix(in srgb, var(--color-accent) 12%, var(--color-surface))"
+                  : undefined,
+              }}
+              aria-expanded={expanded}
+              aria-label={
+                expanded
+                  ? t("practice.hideAdvanced")
+                  : t("practice.showAdvanced")
+              }
+            >
+              <span
+                className={`status-dot ${expanded ? "status-dot-live" : "status-dot-idle"}`}
               />
-            ) : (
-              <ChevronDown
-                size={13}
-                style={{ transform: "translateY(0.5px)" }}
-              />
-            )}
-          </button>
-        </div>
+              {t("practice.more")}
+              {expanded ? (
+                <ChevronUp
+                  size={13}
+                  style={{ transform: "translateY(-0.5px)" }}
+                />
+              ) : (
+                <ChevronDown
+                  size={13}
+                  style={{ transform: "translateY(0.5px)" }}
+                />
+              )}
+            </button>
+          </div>
+        )}
+        {!controlVisibility.showAdvancedDisclosure && (
+          <div className="ml-auto shrink-0" />
+        )}
       </div>
 
-      {expanded && (
+      {expanded && controlVisibility.showAdvancedControls && (
         <div
           className={`flex items-start px-4 overflow-x-auto animate-page-enter ${
             compact ? "gap-5 pb-2" : "gap-6 pb-2.5"

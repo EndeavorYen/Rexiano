@@ -210,6 +210,8 @@ export interface TranslationMap {
   "settings.muteAudio": string;
   "settings.audioCompatibilityMode": string;
   "settings.audioCompatibilityModeDesc": string;
+  "settings.childFocusMode": string;
+  "settings.childFocusModeDesc": string;
   "settings.practiceDefaults": string;
   "settings.defaultMode": string;
   "settings.defaultSpeed": string;

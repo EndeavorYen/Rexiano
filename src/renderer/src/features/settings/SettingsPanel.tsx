@@ -130,6 +130,7 @@ export function SettingsPanel({
   const audioCompatibilityMode = useSettingsStore(
     (s) => s.audioCompatibilityMode,
   );
+  const childFocusMode = useSettingsStore((s) => s.childFocusMode);
 
   const setShowNoteLabels = useSettingsStore((s) => s.setShowNoteLabels);
   const setShowFallingNoteLabels = useSettingsStore(
@@ -150,6 +151,7 @@ export function SettingsPanel({
   const setAudioCompatibilityMode = useSettingsStore(
     (s) => s.setAudioCompatibilityMode,
   );
+  const setChildFocusMode = useSettingsStore((s) => s.setChildFocusMode);
 
   // First-visit pulse
   const [isFirstVisit] = useState(() => {
@@ -580,6 +582,14 @@ export function SettingsPanel({
                 <TabContent>
                   <SectionTitle>{t("settings.practiceDefaults")}</SectionTitle>
                   <div className="flex flex-col gap-4 mt-3">
+                    <ToggleRow
+                      label={t("settings.childFocusMode")}
+                      description={t("settings.childFocusModeDesc")}
+                      checked={childFocusMode}
+                      onChange={setChildFocusMode}
+                      testId="toggle-child-focus-mode"
+                    />
+
                     {/* Default mode */}
                     <div>
                       <span

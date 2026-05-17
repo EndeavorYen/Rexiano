@@ -213,6 +213,8 @@ export const zhTW: TranslationMap = {
   "settings.audioCompatibilityMode": "音訊相容模式",
   "settings.audioCompatibilityModeDesc":
     "使用較安全的播放延遲，改善部分 Windows 音效驅動穩定性",
+  "settings.childFocusMode": "兒童專注模式",
+  "settings.childFocusModeDesc": "專注練習時隱藏進階練習控制",
   "settings.practiceDefaults": "練習預設值",
   "settings.defaultMode": "預設模式",
   "settings.defaultSpeed": "預設速度",

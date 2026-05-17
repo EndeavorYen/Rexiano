@@ -226,6 +226,9 @@ export const en: TranslationMap = {
   "settings.audioCompatibilityMode": "Audio compatibility mode",
   "settings.audioCompatibilityModeDesc":
     "Use safer playback latency to improve stability on some Windows audio drivers",
+  "settings.childFocusMode": "Child focus mode",
+  "settings.childFocusModeDesc":
+    "Hide advanced practice controls during focused sessions",
   "settings.practiceDefaults": "Practice Defaults",
   "settings.defaultMode": "Default Mode",
   "settings.defaultSpeed": "Default Speed",
