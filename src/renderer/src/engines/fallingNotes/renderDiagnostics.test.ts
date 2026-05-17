@@ -3,6 +3,7 @@ import {
   assessRenderDiagnosticsFrame,
   formatRenderDiagnosticsSummary,
   isRenderDiagnosticsEnabled,
+  summarizeRenderDiagnosticsRun,
   type RenderDiagnosticsFrame,
 } from "./renderDiagnostics";
 
@@ -102,6 +103,54 @@ describe("render diagnostics", () => {
           severity: "critical",
         },
       ],
+    });
+  });
+});
+
+describe("summarizeRenderDiagnosticsRun", () => {
+  test("summarizes healthy diagnostic frames as an ok run", () => {
+    expect(
+      summarizeRenderDiagnosticsRun([frame(), frame({ tickerDeltaMs: 20 })]),
+    ).toEqual({
+      status: "ok",
+      frameCount: 2,
+      averageFps: 55,
+      worstFrameDurationMs: 3.4,
+      maxActiveSpriteCount: 96,
+      totalPoolGrowthCount: 0,
+      breachedMetrics: [],
+    });
+  });
+
+  test("summarizes warning runs with unique breached metrics", () => {
+    expect(
+      summarizeRenderDiagnosticsRun([
+        frame({ activeSpriteCount: 880, poolGrowthCount: 2 }),
+        frame({ activeSpriteCount: 900, poolGrowthCount: 1 }),
+      ]),
+    ).toEqual({
+      status: "warning",
+      frameCount: 2,
+      averageFps: 60,
+      worstFrameDurationMs: 3.4,
+      maxActiveSpriteCount: 900,
+      totalPoolGrowthCount: 3,
+      breachedMetrics: ["activeSpriteCount", "poolGrowthCount"],
+    });
+  });
+
+  test("summarizes critical frame-duration breaches across a run", () => {
+    expect(
+      summarizeRenderDiagnosticsRun([
+        frame({ frameDurationMs: 12 }),
+        frame({ frameDurationMs: 40, tickerDeltaMs: 33.4 }),
+      ]),
+    ).toMatchObject({
+      status: "critical",
+      frameCount: 2,
+      averageFps: 45,
+      worstFrameDurationMs: 40,
+      breachedMetrics: ["frameDurationMs"],
     });
   });
 });

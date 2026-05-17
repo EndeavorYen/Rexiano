@@ -36,6 +36,16 @@ export interface RenderDiagnosticsAssessment {
   exceeded: RenderDiagnosticsBudgetBreach[];
 }
 
+export interface RenderDiagnosticsRunSummary {
+  status: RenderDiagnosticsAssessment["status"];
+  frameCount: number;
+  averageFps: number;
+  worstFrameDurationMs: number;
+  maxActiveSpriteCount: number;
+  totalPoolGrowthCount: number;
+  breachedMetrics: RenderDiagnosticsBudgetMetric[];
+}
+
 export interface RenderDiagnosticsBudget {
   frameDurationWarningMs: number;
   frameDurationCriticalMs: number;
@@ -145,4 +155,53 @@ export function assessRenderDiagnosticsFrame(
       : "ok";
 
   return { status, exceeded };
+}
+
+export function summarizeRenderDiagnosticsRun(
+  frames: RenderDiagnosticsFrame[],
+  budget: RenderDiagnosticsBudget = DEFAULT_BUDGET,
+): RenderDiagnosticsRunSummary {
+  const breachedMetrics = new Set<RenderDiagnosticsBudgetMetric>();
+  let status: RenderDiagnosticsAssessment["status"] = "ok";
+  let totalFps = 0;
+  let worstFrameDurationMs = 0;
+  let maxActiveSpriteCount = 0;
+  let totalPoolGrowthCount = 0;
+
+  for (const frame of frames) {
+    totalFps +=
+      frame.tickerDeltaMs > 0 ? Math.round(1000 / frame.tickerDeltaMs) : 0;
+    worstFrameDurationMs = Math.max(
+      worstFrameDurationMs,
+      frame.frameDurationMs,
+    );
+    maxActiveSpriteCount = Math.max(
+      maxActiveSpriteCount,
+      frame.activeSpriteCount,
+    );
+    totalPoolGrowthCount += frame.poolGrowthCount;
+
+    const assessment = assessRenderDiagnosticsFrame(frame, budget);
+    if (assessment.status === "critical") {
+      status = "critical";
+    } else if (assessment.status === "warning" && status !== "critical") {
+      status = "warning";
+    }
+    for (const breach of assessment.exceeded) {
+      breachedMetrics.add(breach.metric);
+    }
+  }
+
+  const averageFps =
+    frames.length > 0 ? Math.round(totalFps / frames.length) : 0;
+
+  return {
+    status,
+    frameCount: frames.length,
+    averageFps,
+    worstFrameDurationMs,
+    maxActiveSpriteCount,
+    totalPoolGrowthCount,
+    breachedMetrics: Array.from(breachedMetrics),
+  };
 }

@@ -36,6 +36,14 @@ export interface FileImportErrorGuidance {
   actions: FileImportRecoveryAction[];
 }
 
+export interface FileImportRecoveryPlan extends FileImportErrorGuidance {
+  primaryActionId: FileImportRecoveryActionId;
+  secondaryActionIds: FileImportRecoveryActionId[];
+  canRetry: boolean;
+  canRemoveStaleReference: boolean;
+  requiresPermissionHelp: boolean;
+}
+
 function diagnosticToString(error: FileImportErrorInput): string {
   if (error.diagnostic instanceof Error) return error.diagnostic.message;
   if (typeof error.diagnostic === "string") return error.diagnostic;
@@ -138,4 +146,26 @@ export function getFileImportErrorGuidance(
       };
     }
   }
+}
+
+export function buildFileImportRecoveryPlan(
+  error: FileImportErrorInput,
+  t: Translate,
+): FileImportRecoveryPlan {
+  const guidance = getFileImportErrorGuidance(error, t);
+  const primaryAction =
+    guidance.actions.find((action) => action.emphasis === "primary") ??
+    guidance.actions[0];
+  const actionIds = guidance.actions.map((action) => action.id);
+
+  return {
+    ...guidance,
+    primaryActionId: primaryAction.id,
+    secondaryActionIds: guidance.actions
+      .filter((action) => action.id !== primaryAction.id)
+      .map((action) => action.id),
+    canRetry: actionIds.includes("retry-read"),
+    canRemoveStaleReference: actionIds.includes("remove-recent"),
+    requiresPermissionHelp: actionIds.includes("open-file-permissions"),
+  };
 }

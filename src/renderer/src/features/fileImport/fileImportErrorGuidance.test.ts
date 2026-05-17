@@ -1,6 +1,9 @@
 import { describe, expect, test } from "vitest";
 import type { InterpolationParams, TranslationKey } from "@renderer/i18n/types";
-import { getFileImportErrorGuidance } from "./fileImportErrorGuidance";
+import {
+  buildFileImportRecoveryPlan,
+  getFileImportErrorGuidance,
+} from "./fileImportErrorGuidance";
 
 const t = (key: TranslationKey, params?: InterpolationParams): string => {
   const suffix = params
@@ -134,5 +137,74 @@ describe("getFileImportErrorGuidance", () => {
         emphasis: "secondary",
       },
     ]);
+  });
+});
+
+describe("buildFileImportRecoveryPlan", () => {
+  test("plans unsupported-file recovery around choosing a MIDI file", () => {
+    expect(
+      buildFileImportRecoveryPlan(
+        { kind: "unsupported-type", ext: ".pdf", fileName: "score.pdf" },
+        t,
+      ),
+    ).toMatchObject({
+      primaryActionId: "choose-midi-file",
+      secondaryActionIds: [],
+      canRetry: false,
+      canRemoveStaleReference: false,
+      requiresPermissionHelp: false,
+      diagnostic: "score.pdf",
+    });
+  });
+
+  test("plans missing recent recovery with stale-reference cleanup", () => {
+    expect(
+      buildFileImportRecoveryPlan(
+        { kind: "missing-recent", fileName: "old-song.mid", path: "/old.mid" },
+        t,
+      ),
+    ).toMatchObject({
+      primaryActionId: "reimport-file",
+      secondaryActionIds: ["remove-recent"],
+      canRetry: false,
+      canRemoveStaleReference: true,
+      requiresPermissionHelp: false,
+      diagnostic: "/old.mid",
+    });
+  });
+
+  test("plans normal read failures as retryable without permission help", () => {
+    expect(
+      buildFileImportRecoveryPlan(
+        { kind: "read-failed", fileName: "locked.mid", path: "/locked.mid" },
+        t,
+      ),
+    ).toMatchObject({
+      primaryActionId: "retry-read",
+      secondaryActionIds: ["reimport-file"],
+      canRetry: true,
+      canRemoveStaleReference: false,
+      requiresPermissionHelp: false,
+    });
+  });
+
+  test("plans permission-denied reads with permission help", () => {
+    expect(
+      buildFileImportRecoveryPlan(
+        {
+          kind: "read-failed",
+          fileName: "locked.mid",
+          diagnostic: new Error("EPERM: operation not permitted"),
+        },
+        t,
+      ),
+    ).toMatchObject({
+      primaryActionId: "retry-read",
+      secondaryActionIds: ["open-file-permissions", "reimport-file"],
+      canRetry: true,
+      canRemoveStaleReference: false,
+      requiresPermissionHelp: true,
+      diagnostic: "EPERM: operation not permitted",
+    });
   });
 });

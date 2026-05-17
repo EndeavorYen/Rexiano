@@ -35,6 +35,30 @@ export interface MidiDiagnosticOptions {
   chordClusterWindowSeconds?: number;
 }
 
+export type MidiAuthoringChecklistItemId =
+  | "playable-notes"
+  | "tempo"
+  | "time-signature"
+  | "hand-metadata"
+  | "track-count"
+  | "chord-timing";
+
+export type MidiAuthoringChecklistStatus = "pass" | "review" | "fix";
+
+export interface MidiAuthoringChecklistItem {
+  id: MidiAuthoringChecklistItemId;
+  status: MidiAuthoringChecklistStatus;
+  severity: MidiDiagnosticSeverity;
+  message: string;
+}
+
+export interface MidiAuthoringChecklist {
+  isPracticeReady: boolean;
+  blockingCount: number;
+  warningCount: number;
+  items: MidiAuthoringChecklistItem[];
+}
+
 const DEFAULT_OPTIONS: Required<MidiDiagnosticOptions> = {
   maxPracticeTracks: 6,
   maxChordSpreadSeconds: 0.05,
@@ -87,6 +111,29 @@ function maxChordSpread(
       Math.max(max, findMaxChordSpread(track.notes, clusterWindowSeconds)),
     0,
   );
+}
+
+function diagnosticByCode(
+  diagnostics: MidiDiagnostic[],
+): Map<MidiDiagnosticCode, MidiDiagnostic> {
+  return new Map(
+    diagnostics.map((diagnostic) => [diagnostic.code, diagnostic]),
+  );
+}
+
+function checklistItem(
+  diagnosticsByCode: Map<MidiDiagnosticCode, MidiDiagnostic>,
+  code: MidiDiagnosticCode,
+  passItem: MidiAuthoringChecklistItem,
+  failItem: Omit<MidiAuthoringChecklistItem, "severity">,
+): MidiAuthoringChecklistItem {
+  const diagnostic = diagnosticsByCode.get(code);
+  if (!diagnostic) return passItem;
+
+  return {
+    ...failItem,
+    severity: diagnostic.severity,
+  };
 }
 
 export function diagnoseParsedSong(
@@ -177,5 +224,112 @@ export function summarizeMidiDiagnostics(
     warningCount,
     errorCount,
     codes: diagnostics.map((d) => d.code),
+  };
+}
+
+export function buildMidiAuthoringChecklist(
+  song: ParsedSong,
+  options: MidiDiagnosticOptions = {},
+): MidiAuthoringChecklist {
+  const diagnostics = diagnoseParsedSong(song, options);
+  const summary = summarizeMidiDiagnostics(diagnostics);
+  const diagnosticsByCode = diagnosticByCode(diagnostics);
+
+  return {
+    isPracticeReady: summary.isPracticeReady,
+    blockingCount: summary.blockingCount,
+    warningCount: summary.warningCount,
+    items: [
+      checklistItem(
+        diagnosticsByCode,
+        "empty-song",
+        {
+          id: "playable-notes",
+          status: "pass",
+          severity: "info",
+          message: "Playable notes are present.",
+        },
+        {
+          id: "playable-notes",
+          status: "fix",
+          message: "Add playable notes before contributing this song.",
+        },
+      ),
+      checklistItem(
+        diagnosticsByCode,
+        "missing-tempo",
+        {
+          id: "tempo",
+          status: "pass",
+          severity: "info",
+          message: "Tempo metadata is present.",
+        },
+        {
+          id: "tempo",
+          status: "fix",
+          message: "Add tempo metadata before contributing this song.",
+        },
+      ),
+      checklistItem(
+        diagnosticsByCode,
+        "missing-time-signature",
+        {
+          id: "time-signature",
+          status: "pass",
+          severity: "info",
+          message: "Time signature metadata is present.",
+        },
+        {
+          id: "time-signature",
+          status: "fix",
+          message: "Add time signature metadata before contributing this song.",
+        },
+      ),
+      checklistItem(
+        diagnosticsByCode,
+        "missing-hand-metadata",
+        {
+          id: "hand-metadata",
+          status: "pass",
+          severity: "info",
+          message: "Track names identify hand parts where needed.",
+        },
+        {
+          id: "hand-metadata",
+          status: "fix",
+          message: "Name tracks with left/right hand metadata.",
+        },
+      ),
+      checklistItem(
+        diagnosticsByCode,
+        "many-tracks",
+        {
+          id: "track-count",
+          status: "pass",
+          severity: "info",
+          message: "Track count is within the practice-ready range.",
+        },
+        {
+          id: "track-count",
+          status: "review",
+          message: "Reduce or classify extra tracks before practice.",
+        },
+      ),
+      checklistItem(
+        diagnosticsByCode,
+        "wide-chord-spread",
+        {
+          id: "chord-timing",
+          status: "pass",
+          severity: "info",
+          message: "Chord timing is tight enough for wait mode.",
+        },
+        {
+          id: "chord-timing",
+          status: "review",
+          message: "Quantize loose chord timing for wait mode.",
+        },
+      ),
+    ],
   };
 }
