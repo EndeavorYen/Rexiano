@@ -7,6 +7,7 @@ import {
   loadSongPracticeSetupSnapshot,
   resolveSongPracticeSetupForSong,
   saveSongPracticeSetupSnapshot,
+  saveSongPracticeSetupPatchForSong,
   updateSongPracticeSetupSnapshot,
 } from "./songPracticeSetup";
 
@@ -273,6 +274,33 @@ describe("resolveSongPracticeSetupForSong", () => {
       defaultMode: "free",
       defaultSpeed: 0.8,
       updatedAt: "2026-05-17T02:01:00.000Z",
+    });
+  });
+
+  test("saves an active-track patch for later restore while preserving inferred setup", () => {
+    const lesson = song(
+      [track("Right Hand", [72, 76]), track("Left Hand", [36, 43])],
+      "duet.mid",
+    );
+
+    saveSongPracticeSetupPatchForSong(
+      lesson,
+      { defaultMode: "watch", defaultSpeed: 1 },
+      { activeTracks: [1] },
+      "2026-05-17T02:02:00.000Z",
+    );
+
+    expect(
+      resolveSongPracticeSetupForSong(lesson, {
+        defaultMode: "free",
+        defaultSpeed: 0.5,
+      }),
+    ).toEqual({
+      activeTracks: [1],
+      handAssignments: { 0: "right", 1: "left" },
+      defaultMode: "watch",
+      defaultSpeed: 1,
+      updatedAt: "2026-05-17T02:02:00.000Z",
     });
   });
 });

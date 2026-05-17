@@ -1,0 +1,31 @@
+import { test, expect } from "./fixtures/electronApp";
+import { gotoLibrary } from "./helpers/appHarness";
+
+test.describe("Per-song practice setup", () => {
+  test("track selection changes are saved for the loaded song", async ({
+    appPage,
+  }) => {
+    await gotoLibrary(appPage);
+
+    await appPage.getByTestId("song-select-chopsticks").click();
+    await expect(appPage.getByTestId("mode-select-wait")).toBeVisible({
+      timeout: 20_000,
+    });
+    await appPage.getByTestId("mode-select-wait").click();
+
+    await appPage
+      .getByRole("button", { name: /Show advanced controls/i })
+      .click();
+    await appPage.getByRole("button", { name: "Mute All" }).click();
+
+    const savedSetup = await appPage.evaluate(() => {
+      const raw = localStorage.getItem("rexiano-song-practice-setup");
+      return raw ? JSON.parse(raw) : {};
+    });
+
+    expect(savedSetup["name:Chopsticks"]).toMatchObject({
+      activeTracks: [],
+      defaultMode: "wait",
+    });
+  });
+});

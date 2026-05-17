@@ -150,6 +150,16 @@ function writeAllSetups(setups: PersistedSongPracticeSetup): void {
   }
 }
 
+function hasSongPracticeSetupIdentityValue(
+  identity: SongPracticeSetupIdentity,
+): boolean {
+  return (
+    Boolean(identity.builtinSongId?.trim()) ||
+    Boolean(identity.sourcePath?.trim()) ||
+    Boolean(identity.fileName?.trim())
+  );
+}
+
 export function getSongPracticeSetupFixPrompt(
   song: ParsedSong,
   options: SongPracticeSetupFixPromptOptions = {},
@@ -278,20 +288,50 @@ export function updateSongPracticeSetupSnapshot(
   );
 }
 
+export function saveSongPracticeSetupPatchForSong(
+  song: ParsedSong,
+  defaults: SongPracticeSetupDefaults,
+  patch: SongPracticeSetupPatch,
+  updatedAt = new Date().toISOString(),
+  identity: SongPracticeSetupIdentity = {},
+): void {
+  const setupKey = createSongPracticeSetupKey(
+    hasSongPracticeSetupIdentityValue(identity)
+      ? identity
+      : { fileName: song.fileName },
+  );
+  const current = resolveSongPracticeSetupForSong(
+    song,
+    defaults,
+    updatedAt,
+    identity,
+  );
+
+  saveSongPracticeSetupSnapshot(
+    setupKey,
+    {
+      activeTracks: patch.activeTracks ?? current.activeTracks,
+      handAssignments: patch.handAssignments ?? current.handAssignments,
+      trackPreferences: patch.trackPreferences ?? current.trackPreferences,
+      defaultMode: patch.defaultMode ?? current.defaultMode,
+      defaultSpeed: patch.defaultSpeed ?? current.defaultSpeed,
+    },
+    updatedAt,
+  );
+}
+
 export function resolveSongPracticeSetupForSong(
   song: ParsedSong,
   defaults: SongPracticeSetupDefaults,
   updatedAt = new Date().toISOString(),
   identity: SongPracticeSetupIdentity = {},
 ): SongPracticeSetupSnapshot {
-  const identityHasValue =
-    Boolean(identity.builtinSongId?.trim()) ||
-    Boolean(identity.sourcePath?.trim()) ||
-    Boolean(identity.fileName?.trim());
   const setupKeys = Array.from(
     new Set(
       [
-        identityHasValue ? createSongPracticeSetupKey(identity) : null,
+        hasSongPracticeSetupIdentityValue(identity)
+          ? createSongPracticeSetupKey(identity)
+          : null,
         createSongPracticeSetupKey({ fileName: song.fileName }),
       ].filter((songKey): songKey is string => songKey !== null),
     ),

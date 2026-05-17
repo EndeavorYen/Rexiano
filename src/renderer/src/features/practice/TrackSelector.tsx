@@ -2,14 +2,31 @@ import { useCallback } from "react";
 import { useSongStore } from "@renderer/stores/useSongStore";
 import { usePracticeStore } from "@renderer/stores/usePracticeStore";
 import { useTranslation } from "@renderer/i18n/useTranslation";
+import { saveSongPracticeSetupPatchForSong } from "./songPracticeSetup";
 
 export function TrackSelector(): React.JSX.Element {
   const { t } = useTranslation();
   const song = useSongStore((s) => s.song);
+  const mode = usePracticeStore((s) => s.mode);
+  const speed = usePracticeStore((s) => s.speed);
   const activeTracks = usePracticeStore((s) => s.activeTracks);
   const setActiveTracks = usePracticeStore((s) => s.setActiveTracks);
 
   const tracks = song?.tracks ?? [];
+
+  const applyActiveTracks = useCallback(
+    (next: Set<number>) => {
+      setActiveTracks(next);
+      if (song) {
+        saveSongPracticeSetupPatchForSong(
+          song,
+          { defaultMode: mode, defaultSpeed: speed },
+          { activeTracks: [...next], defaultMode: mode, defaultSpeed: speed },
+        );
+      }
+    },
+    [mode, setActiveTracks, song, speed],
+  );
 
   const handleToggle = useCallback(
     (index: number) => {
@@ -19,9 +36,9 @@ export function TrackSelector(): React.JSX.Element {
       } else {
         next.add(index);
       }
-      setActiveTracks(next);
+      applyActiveTracks(next);
     },
-    [activeTracks, setActiveTracks],
+    [activeTracks, applyActiveTracks],
   );
 
   if (tracks.length === 0) return <></>;
@@ -31,15 +48,15 @@ export function TrackSelector(): React.JSX.Element {
     for (let i = 0; i < tracks.length; i++) {
       next.add(i);
     }
-    setActiveTracks(next);
+    applyActiveTracks(next);
   };
 
   const muteAllTracks = (): void => {
-    setActiveTracks(new Set<number>());
+    applyActiveTracks(new Set<number>());
   };
 
   const soloTrack = (index: number): void => {
-    setActiveTracks(new Set<number>([index]));
+    applyActiveTracks(new Set<number>([index]));
   };
 
   return (
