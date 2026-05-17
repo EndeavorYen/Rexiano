@@ -111,6 +111,32 @@ describe("diagnoseParsedSong", () => {
     );
   });
 
+  test("warns when many note starts are off the quantization grid", () => {
+    const diagnostics = diagnoseParsedSong(
+      song({
+        tracks: [
+          track("Right Hand", [
+            note(0, 60),
+            note(0.19, 62),
+            note(0.44, 64),
+            note(0.69, 65),
+            note(0.94, 67),
+          ]),
+        ],
+      }),
+    );
+
+    expect(diagnostics).toContainEqual(
+      expect.objectContaining({
+        code: "loose-quantization",
+        severity: "warning",
+        blocking: false,
+        value: 0.8,
+        threshold: 0.35,
+      }),
+    );
+  });
+
   test("warns when multi-track songs lack hand metadata", () => {
     const diagnostics = diagnoseParsedSong(
       song({
@@ -210,6 +236,12 @@ describe("buildMidiAuthoringChecklist", () => {
           status: "pass",
           severity: "info",
           message: "Track count is within the practice-ready range.",
+        },
+        {
+          id: "quantization",
+          status: "pass",
+          severity: "info",
+          message: "Note starts are aligned to the expected grid.",
         },
         {
           id: "chord-timing",

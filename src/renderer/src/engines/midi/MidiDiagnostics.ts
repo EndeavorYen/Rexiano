@@ -7,6 +7,7 @@ export type MidiDiagnosticCode =
   | "missing-tempo"
   | "missing-time-signature"
   | "many-tracks"
+  | "loose-quantization"
   | "wide-chord-spread"
   | "missing-hand-metadata";
 
@@ -31,6 +32,9 @@ export interface MidiDiagnosticSummary {
 
 export interface MidiDiagnosticOptions {
   maxPracticeTracks?: number;
+  quantizationGridSeconds?: number;
+  maxQuantizationDriftSeconds?: number;
+  maxOffGridNoteRatio?: number;
   maxChordSpreadSeconds?: number;
   chordClusterWindowSeconds?: number;
 }
@@ -41,6 +45,7 @@ export type MidiAuthoringChecklistItemId =
   | "time-signature"
   | "hand-metadata"
   | "track-count"
+  | "quantization"
   | "chord-timing";
 
 export type MidiAuthoringChecklistStatus = "pass" | "review" | "fix";
@@ -61,6 +66,9 @@ export interface MidiAuthoringChecklist {
 
 const DEFAULT_OPTIONS: Required<MidiDiagnosticOptions> = {
   maxPracticeTracks: 6,
+  quantizationGridSeconds: 0.125,
+  maxQuantizationDriftSeconds: 0.015,
+  maxOffGridNoteRatio: 0.35,
   maxChordSpreadSeconds: 0.05,
   chordClusterWindowSeconds: 0.1,
 };
@@ -72,9 +80,39 @@ function roundSeconds(value: number): number {
   return Math.round(value * 1000) / 1000;
 }
 
+function roundRatio(value: number): number {
+  return Math.round(value * 100) / 100;
+}
+
 function hasHandMetadata(song: ParsedSong): boolean {
   if (song.tracks.length <= 1) return true;
   return song.tracks.some((track) => HAND_METADATA_PATTERN.test(track.name));
+}
+
+function distanceToNearestGrid(time: number, gridSeconds: number): number {
+  if (gridSeconds <= 0) return 0;
+
+  return Math.abs(time - Math.round(time / gridSeconds) * gridSeconds);
+}
+
+function offGridNoteRatio(
+  song: ParsedSong,
+  gridSeconds: number,
+  maxDriftSeconds: number,
+): number {
+  let noteCount = 0;
+  let offGridCount = 0;
+
+  for (const track of song.tracks) {
+    for (const note of track.notes) {
+      noteCount += 1;
+      if (distanceToNearestGrid(note.time, gridSeconds) > maxDriftSeconds) {
+        offGridCount += 1;
+      }
+    }
+  }
+
+  return noteCount > 0 ? roundRatio(offGridCount / noteCount) : 0;
 }
 
 function findMaxChordSpread(
@@ -178,6 +216,22 @@ export function diagnoseParsedSong(
       blocking: false,
       value: song.tracks.length,
       threshold: opts.maxPracticeTracks,
+    });
+  }
+
+  const offGridRatio = offGridNoteRatio(
+    song,
+    opts.quantizationGridSeconds,
+    opts.maxQuantizationDriftSeconds,
+  );
+  if (offGridRatio > opts.maxOffGridNoteRatio) {
+    diagnostics.push({
+      code: "loose-quantization",
+      severity: "warning",
+      message: "Many note starts are off the expected quantization grid.",
+      blocking: false,
+      value: offGridRatio,
+      threshold: opts.maxOffGridNoteRatio,
     });
   }
 
@@ -313,6 +367,21 @@ export function buildMidiAuthoringChecklist(
           id: "track-count",
           status: "review",
           message: "Reduce or classify extra tracks before practice.",
+        },
+      ),
+      checklistItem(
+        diagnosticsByCode,
+        "loose-quantization",
+        {
+          id: "quantization",
+          status: "pass",
+          severity: "info",
+          message: "Note starts are aligned to the expected grid.",
+        },
+        {
+          id: "quantization",
+          status: "review",
+          message: "Quantize off-grid note starts before contributing.",
         },
       ),
       checklistItem(

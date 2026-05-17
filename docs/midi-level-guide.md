@@ -217,6 +217,7 @@ Rexiano 採用 **L0–L8** 共 9 個等級，對應 RCM Preparatory A 至 Grade 
 - `grade` 必須是 L0-L8 對應的整數 0-8，讓曲庫篩選、推薦與課程進度能正確排序。
 - `tags` 必須包含與 `grade` 對應的 `level-N` tag，例如 `grade: 4` 需包含 `level-4`。
 - 缺少 `grade` 或 `level-N` tag 會產生 non-blocking warning；播放不會被阻擋，但 contributor 需要在合併前修正。
+- 音符起點應對齊 1/16 拍附近的量化格線；大量 off-grid note starts 會產生 non-blocking warning，避免 wait mode 與五線譜顯示看起來不穩定。
 
 ---
 
