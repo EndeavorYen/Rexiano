@@ -20,7 +20,8 @@ export type FileImportRecoveryActionId =
   | "choose-midi-file"
   | "reimport-file"
   | "remove-recent"
-  | "retry-read";
+  | "retry-read"
+  | "open-file-permissions";
 
 export interface FileImportRecoveryAction {
   id: FileImportRecoveryActionId;
@@ -39,6 +40,16 @@ function diagnosticToString(error: FileImportErrorInput): string {
   if (error.diagnostic instanceof Error) return error.diagnostic.message;
   if (typeof error.diagnostic === "string") return error.diagnostic;
   return error.path ?? error.fileName ?? "";
+}
+
+function isPermissionDeniedRead(error: FileImportErrorInput): boolean {
+  const diagnostic = diagnosticToString(error).toLowerCase();
+  return (
+    diagnostic.includes("eacces") ||
+    diagnostic.includes("eperm") ||
+    diagnostic.includes("permission denied") ||
+    diagnostic.includes("operation not permitted")
+  );
 }
 
 export function getFileImportErrorGuidance(
@@ -96,25 +107,35 @@ export function getFileImportErrorGuidance(
           },
         ],
       };
-    case "read-failed":
+    case "read-failed": {
+      const actions: FileImportRecoveryAction[] = [
+        {
+          id: "retry-read",
+          label: t("app.importActionRetry"),
+          emphasis: "primary",
+        },
+      ];
+      if (isPermissionDeniedRead(error)) {
+        actions.push({
+          id: "open-file-permissions",
+          label: t("app.importActionOpenPermissions"),
+          emphasis: "secondary",
+        });
+      }
+      actions.push({
+        id: "reimport-file",
+        label: t("app.importActionReimport"),
+        emphasis: "secondary",
+      });
+
       return {
         title: t("app.importErrorReadTitle"),
         guidance: t("app.importErrorReadGuidance", {
           fileName: error.fileName ?? t("app.importErrorUnknownFile"),
         }),
         diagnostic: diagnosticToString(error),
-        actions: [
-          {
-            id: "retry-read",
-            label: t("app.importActionRetry"),
-            emphasis: "primary",
-          },
-          {
-            id: "reimport-file",
-            label: t("app.importActionReimport"),
-            emphasis: "secondary",
-          },
-        ],
+        actions,
       };
+    }
   }
 }

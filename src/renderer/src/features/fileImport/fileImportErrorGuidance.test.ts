@@ -105,4 +105,34 @@ describe("getFileImportErrorGuidance", () => {
       ],
     });
   });
+
+  test("adds a file-permission action for permission-denied read failures", () => {
+    expect(
+      getFileImportErrorGuidance(
+        {
+          kind: "read-failed",
+          fileName: "locked.mid",
+          path: "/locked.mid",
+          diagnostic: new Error("EACCES: permission denied, open locked.mid"),
+        },
+        t,
+      ).actions,
+    ).toEqual([
+      {
+        id: "retry-read",
+        label: "app.importActionRetry",
+        emphasis: "primary",
+      },
+      {
+        id: "open-file-permissions",
+        label: "app.importActionOpenPermissions",
+        emphasis: "secondary",
+      },
+      {
+        id: "reimport-file",
+        label: "app.importActionReimport",
+        emphasis: "secondary",
+      },
+    ]);
+  });
 });

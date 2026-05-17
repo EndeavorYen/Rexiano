@@ -26,6 +26,7 @@ export const en: TranslationMap = {
   "app.importActionChooseMidi": "Choose a MIDI file",
   "app.importActionRetry": "Try again",
   "app.importActionReimport": "Import again",
+  "app.importActionOpenPermissions": "Check file permissions",
   "app.insightsTitle": "Practice Insights",
   "app.startPractice": "Start Practicing",
   "app.openSettings": "Settings",

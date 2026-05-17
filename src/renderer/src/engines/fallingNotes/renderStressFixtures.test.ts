@@ -1,5 +1,8 @@
 import { describe, expect, test } from "vitest";
-import { createDenseRenderStressSong } from "./renderStressFixtures";
+import {
+  createDenseRenderStressSong,
+  summarizeRenderStressSong,
+} from "./renderStressFixtures";
 
 describe("createDenseRenderStressSong", () => {
   test("creates deterministic dense passages with the expected note count", () => {
@@ -35,5 +38,38 @@ describe("createDenseRenderStressSong", () => {
       const times = track.notes.map((note) => note.time);
       expect(times).toEqual([...times].sort((a, b) => a - b));
     }
+  });
+
+  test("summarizes dense fixture pressure deterministically", () => {
+    const song = createDenseRenderStressSong({
+      durationSeconds: 4,
+      tracks: 4,
+      eventsPerSecond: 20,
+      chordSize: 10,
+    });
+
+    expect(summarizeRenderStressSong(song)).toEqual({
+      durationSeconds: 4,
+      trackCount: 4,
+      noteCount: 3200,
+      notesPerSecond: 800,
+      maxTrackNoteCount: 800,
+      density: "dense",
+    });
+  });
+
+  test("classifies extreme stress fixtures separately from dense ones", () => {
+    const song = createDenseRenderStressSong({
+      durationSeconds: 2,
+      tracks: 8,
+      eventsPerSecond: 40,
+      chordSize: 12,
+    });
+
+    expect(summarizeRenderStressSong(song)).toMatchObject({
+      notesPerSecond: 3840,
+      maxTrackNoteCount: 960,
+      density: "extreme",
+    });
   });
 });

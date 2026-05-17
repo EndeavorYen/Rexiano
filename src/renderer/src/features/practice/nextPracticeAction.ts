@@ -1,23 +1,27 @@
 import type { PracticeMode, PracticeScore, SessionRecord } from "@shared/types";
 import type { TrackHandAssignment } from "@renderer/engines/midi/TrackHandAssignment";
+import type { WeakSpot } from "@renderer/features/insights/WeakSpotAnalyzer";
 
 export type NextPracticeActionKind =
   | "slow-down"
   | "raise-speed"
   | "repeat-once"
-  | "try-other-hand";
+  | "try-other-hand"
+  | "practice-weak-note";
 
 export interface NextPracticeAction {
   kind: NextPracticeActionKind;
   priority: "high" | "medium" | "low";
   targetSpeed?: number;
   targetTracks?: number[];
+  targetMidi?: number;
   targetMode: PracticeMode;
   reason:
     | "accuracy-low"
     | "strong-pass"
     | "steady-progress"
-    | "other-hand-ready";
+    | "other-hand-ready"
+    | "weak-note-ready";
 }
 
 export interface NextPracticeActionInput {
@@ -26,6 +30,7 @@ export interface NextPracticeActionInput {
   speed: number;
   tracksPlayed?: number[];
   handAssignments?: Record<number, TrackHandAssignment>;
+  weakSpots?: WeakSpot[];
 }
 
 export interface DailyGoalProgress {
@@ -81,6 +86,16 @@ function findOtherHandTracks(input: NextPracticeActionInput): number[] {
     .sort((a, b) => a - b);
 }
 
+function findWeakestNote(input: NextPracticeActionInput): WeakSpot | null {
+  if (!input.weakSpots || input.weakSpots.length === 0) return null;
+  return [...input.weakSpots].sort(
+    (a, b) =>
+      b.missRate - a.missRate ||
+      b.totalAttempts - a.totalAttempts ||
+      a.midi - b.midi,
+  )[0];
+}
+
 export function selectNextPracticeAction(
   input: NextPracticeActionInput,
 ): NextPracticeAction {
@@ -105,6 +120,17 @@ export function selectNextPracticeAction(
   }
 
   if (input.score.accuracy >= 85) {
+    const weakSpot = findWeakestNote(input);
+    if (weakSpot) {
+      return {
+        kind: "practice-weak-note",
+        priority: "medium",
+        targetMidi: weakSpot.midi,
+        targetMode: input.mode,
+        reason: "weak-note-ready",
+      };
+    }
+
     const targetTracks = findOtherHandTracks(input);
     if (targetTracks.length > 0) {
       return {

@@ -7,6 +7,17 @@ interface DenseRenderStressOptions {
   chordSize?: number;
 }
 
+export type RenderStressDensity = "light" | "dense" | "extreme";
+
+export interface RenderStressSummary {
+  durationSeconds: number;
+  trackCount: number;
+  noteCount: number;
+  notesPerSecond: number;
+  maxTrackNoteCount: number;
+  density: RenderStressDensity;
+}
+
 const NOTE_NAMES = [
   "C",
   "C#",
@@ -72,5 +83,34 @@ export function createDenseRenderStressSong({
     tempos: [{ time: 0, bpm: 120 }],
     timeSignatures: [{ time: 0, numerator: 4, denominator: 4 }],
     tracks: parsedTracks,
+  };
+}
+
+function classifyStressDensity(notesPerSecond: number): RenderStressDensity {
+  if (notesPerSecond >= 1200) return "extreme";
+  if (notesPerSecond >= 300) return "dense";
+  return "light";
+}
+
+export function summarizeRenderStressSong(
+  song: ParsedSong,
+): RenderStressSummary {
+  const durationSeconds = Math.max(song.duration, 0);
+  const notesPerSecond =
+    durationSeconds > 0
+      ? Math.round((song.noteCount / durationSeconds) * 100) / 100
+      : 0;
+  const maxTrackNoteCount = Math.max(
+    0,
+    ...song.tracks.map((track) => track.notes.length),
+  );
+
+  return {
+    durationSeconds,
+    trackCount: song.tracks.length,
+    noteCount: song.noteCount,
+    notesPerSecond,
+    maxTrackNoteCount,
+    density: classifyStressDensity(notesPerSecond),
   };
 }

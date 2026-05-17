@@ -112,6 +112,42 @@ describe("selectNextPracticeAction", () => {
       targetSpeed: 0.75,
     });
   });
+
+  test("suggests the weakest note after a solid session with weak-spot data", () => {
+    expect(
+      selectNextPracticeAction({
+        score: score({ accuracy: 86, missedNotes: 5 }),
+        mode: "wait",
+        speed: 1,
+        weakSpots: [
+          { midi: 64, noteName: "E4", missRate: 0.4, totalAttempts: 5 },
+          { midi: 60, noteName: "C4", missRate: 0.75, totalAttempts: 8 },
+        ],
+      }),
+    ).toMatchObject({
+      kind: "practice-weak-note",
+      priority: "medium",
+      targetMidi: 60,
+      targetMode: "wait",
+      reason: "weak-note-ready",
+    });
+  });
+
+  test("keeps slow-down ahead of weak-note suggestions for low accuracy", () => {
+    expect(
+      selectNextPracticeAction({
+        score: score({ accuracy: 62, missedNotes: 15 }),
+        mode: "wait",
+        speed: 1,
+        weakSpots: [
+          { midi: 60, noteName: "C4", missRate: 0.75, totalAttempts: 8 },
+        ],
+      }),
+    ).toMatchObject({
+      kind: "slow-down",
+      reason: "accuracy-low",
+    });
+  });
 });
 
 describe("computeDailyGoalProgress", () => {

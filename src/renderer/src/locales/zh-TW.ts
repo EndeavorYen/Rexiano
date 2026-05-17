@@ -24,6 +24,7 @@ export const zhTW: TranslationMap = {
   "app.importActionChooseMidi": "選擇 MIDI 檔案",
   "app.importActionRetry": "再試一次",
   "app.importActionReimport": "重新匯入",
+  "app.importActionOpenPermissions": "檢查檔案權限",
   "app.insightsTitle": "練習洞察",
   "app.startPractice": "開始練琴",
   "app.openSettings": "設定",

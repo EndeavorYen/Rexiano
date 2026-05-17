@@ -23,6 +23,7 @@ export interface TranslationMap {
   "app.importActionChooseMidi": string;
   "app.importActionRetry": string;
   "app.importActionReimport": string;
+  "app.importActionOpenPermissions": string;
   "app.insightsTitle": string;
   "app.startPractice": string;
   "app.openSettings": string;
