@@ -47,10 +47,11 @@ import { usePracticeStore } from "./stores/usePracticeStore";
 import { MainMenu } from "./features/mainMenu/MainMenu";
 import { ModeSelectionModal } from "./features/practice/ModeSelectionModal";
 import { CelebrationOverlay } from "./features/practice/CelebrationOverlay";
+import { selectNextPracticeAction } from "./features/practice/nextPracticeAction";
 import { getFocusModeExitDecision } from "./features/practice/focusModeExitGuard";
 import { resolveSongPracticeSetupForSong } from "./features/practice/songPracticeSetup";
 import { StatisticsPage } from "./features/statistics/StatisticsPage";
-import type { PracticeMode } from "@shared/types";
+import type { PracticeMode, PracticeScore } from "@shared/types";
 import {
   parseRouteHash,
   resolveRoute,
@@ -147,9 +148,13 @@ function App(): React.JSX.Element {
   const [showModeModal, setShowModeModal] = useState(false);
   const [showCelebration, setShowCelebration] = useState(false);
   const [showStats, setShowStats] = useState(false);
+  const [completedSessionScore, setCompletedSessionScore] =
+    useState<PracticeScore | null>(null);
   const mode = usePracticeStore((s) => s.mode);
   const speed = usePracticeStore((s) => s.speed);
+  const activeTracks = usePracticeStore((s) => s.activeTracks);
   const score = usePracticeStore((s) => s.score);
+  const displayScore = completedSessionScore ?? score;
 
   // Show mode selection when a new song loads (subscribe pattern avoids
   // calling setState directly in an effect body).
@@ -159,6 +164,7 @@ function App(): React.JSX.Element {
         setShowModeModal(true);
         setShowCelebration(false);
         setShowStats(false);
+        setCompletedSessionScore(null);
       }
     });
   }, []);
@@ -174,6 +180,7 @@ function App(): React.JSX.Element {
           currentScore.totalNotes > 0 &&
           state.currentTime >= currentSong.duration - 1
         ) {
+          setCompletedSessionScore(currentScore);
           setShowCelebration(true);
           setShowStats(false);
         }
@@ -202,6 +209,7 @@ function App(): React.JSX.Element {
   const handlePracticeAgain = useCallback(() => {
     setShowCelebration(false);
     setShowStats(false);
+    setCompletedSessionScore(null);
     usePlaybackStore.getState().reset();
     usePracticeStore.getState().resetScore();
   }, []);
@@ -209,6 +217,7 @@ function App(): React.JSX.Element {
   const handleChooseSong = useCallback(() => {
     setShowCelebration(false);
     setShowStats(false);
+    setCompletedSessionScore(null);
     useSongStore.getState().clearSong();
     usePlaybackStore.getState().reset();
     applyRoute("menu");
@@ -233,6 +242,18 @@ function App(): React.JSX.Element {
       }));
     return analyzer.analyze(songId, summaries);
   }, [songId, sessions]);
+
+  const nextPracticeAction = useMemo(
+    () =>
+      selectNextPracticeAction({
+        score: displayScore,
+        mode,
+        speed,
+        tracksPlayed: Array.from(activeTracks),
+        weakSpots: insight?.weakSpots,
+      }),
+    [activeTracks, displayScore, insight?.weakSpots, mode, speed],
+  );
 
   // ─── Phase 7: Sheet Music ──────────────────────────────
   const displayMode = usePracticeStore((s) => s.displayMode);
@@ -261,6 +282,11 @@ function App(): React.JSX.Element {
       __rexianoLoadSheetMusicFixture?: (
         fixtureName: SheetMusicVisualFixtureName,
       ) => void;
+      __rexianoShowCelebrationFixture?: (fixture: {
+        score: PracticeScore;
+        mode?: PracticeMode;
+        speed?: number;
+      }) => void;
     };
 
     e2eWindow.__rexianoLoadSheetMusicFixture = (fixtureName) => {
@@ -277,8 +303,29 @@ function App(): React.JSX.Element {
       applyRoute("playback");
     };
 
+    e2eWindow.__rexianoShowCelebrationFixture = (celebrationFixture) => {
+      const fixture = getSheetMusicVisualFixture("dense-sparse");
+      reset();
+      setSheetFixtureNotationData(fixture.notationData);
+      loadSong(fixture.song);
+      usePracticeStore.getState().setMode(celebrationFixture.mode ?? "wait");
+      usePracticeStore.getState().setSpeed(celebrationFixture.speed ?? 1);
+      usePracticeStore.setState({
+        score: celebrationFixture.score,
+        activeTracks: new Set([0]),
+        noteResults: new Map(),
+      });
+      setCompletedSessionScore(celebrationFixture.score);
+      setShowModeModal(false);
+      setShowCelebration(true);
+      setShowStats(false);
+      setShowInsights(false);
+      applyRoute("playback");
+    };
+
     return () => {
       delete e2eWindow.__rexianoLoadSheetMusicFixture;
+      delete e2eWindow.__rexianoShowCelebrationFixture;
     };
   }, [applyRoute, loadSong, reset]);
 
@@ -1279,7 +1326,7 @@ function App(): React.JSX.Element {
               "Pick Song" leads to StatisticsPage instead of directly back. */}
           {showCelebration && (
             <CelebrationOverlay
-              score={score}
+              score={displayScore}
               visible={showCelebration}
               onPracticeAgain={handlePracticeAgain}
               onChooseSong={() => {
@@ -1287,13 +1334,14 @@ function App(): React.JSX.Element {
                 setShowStats(true);
               }}
               songId={songId}
+              nextAction={nextPracticeAction}
             />
           )}
 
           {/* Statistics page (shown after celebration) */}
           {showStats && (
             <StatisticsPage
-              score={score}
+              score={displayScore}
               songName={song?.fileName ?? ""}
               mode={mode}
               speed={speed}

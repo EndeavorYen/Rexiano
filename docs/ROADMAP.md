@@ -381,7 +381,7 @@
   - [ ] 對 track/metadata 問題提供「fix this song」入口
 - [ ] 練習閉環
   - [x] 每日 5-10 分鐘練習目標
-  - [ ] Session 結束後提供 repeat loop / slow down / other hand / next song
+  - [x] Session 結束後提供 repeat loop / slow down / other hand / next song
   - [ ] 弱點小節與弱點音符轉成下一步建議
 
 ---

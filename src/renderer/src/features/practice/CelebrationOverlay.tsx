@@ -4,6 +4,7 @@ import { useProgressStore } from "../../stores/useProgressStore";
 import { getTier, isNewRecord, type CelebrationTier } from "./celebrationUtils";
 import { useTranslation } from "@renderer/i18n/useTranslation";
 import type { TranslationKey } from "@renderer/i18n/types";
+import type { NextPracticeAction } from "./nextPracticeAction";
 
 interface CelebrationOverlayProps {
   score: PracticeScore;
@@ -12,6 +13,7 @@ interface CelebrationOverlayProps {
   onChooseSong: () => void;
   /** Song identifier used to look up previous best score for "New Record!" detection */
   songId?: string;
+  nextAction?: NextPracticeAction;
 }
 
 /** Emoji animation name per tier — not translated */
@@ -39,6 +41,30 @@ const TIER_PLAY_AGAIN_KEYS: Record<CelebrationTier, TranslationKey> = {
   amazing: "celebration.playAgain",
   great: "celebration.oneMoreTime",
   encourage: "celebration.tryAgain",
+};
+
+const NEXT_ACTION_TITLE_KEYS: Record<
+  NextPracticeAction["kind"],
+  TranslationKey
+> = {
+  "slow-down": "celebration.nextAction.slowDown.title",
+  "raise-speed": "celebration.nextAction.raiseSpeed.title",
+  "repeat-once": "celebration.nextAction.repeatOnce.title",
+  "try-other-hand": "celebration.nextAction.tryOtherHand.title",
+  "practice-weak-note": "celebration.nextAction.practiceWeakNote.title",
+  "next-song": "celebration.nextAction.nextSong.title",
+};
+
+const NEXT_ACTION_BODY_KEYS: Record<
+  NextPracticeAction["kind"],
+  TranslationKey
+> = {
+  "slow-down": "celebration.nextAction.slowDown.body",
+  "raise-speed": "celebration.nextAction.raiseSpeed.body",
+  "repeat-once": "celebration.nextAction.repeatOnce.body",
+  "try-other-hand": "celebration.nextAction.tryOtherHand.body",
+  "practice-weak-note": "celebration.nextAction.practiceWeakNote.body",
+  "next-song": "celebration.nextAction.nextSong.body",
 };
 
 /** Number of CSS particles to render for each tier */
@@ -91,6 +117,11 @@ function getStarCount(accuracy: number): number {
   return 1; // Always at least 1 star — keep it encouraging
 }
 
+function formatSpeed(speed: number | undefined): string {
+  if (speed === undefined) return "";
+  return `${speed.toFixed(2).replace(/\.?0+$/, "")}x`;
+}
+
 /** Render star display */
 function StarDisplay({ accuracy }: { accuracy: number }): React.JSX.Element {
   const filled = getStarCount(accuracy);
@@ -134,6 +165,7 @@ export function CelebrationOverlay({
   onPracticeAgain,
   onChooseSong,
   songId,
+  nextAction,
 }: CelebrationOverlayProps): React.JSX.Element {
   const { t } = useTranslation();
   const tier = getTier(score.accuracy);
@@ -262,6 +294,41 @@ export function CelebrationOverlay({
             value={String(score.bestStreak)}
           />
         </div>
+
+        {nextAction && (
+          <div
+            className="w-full rounded-xl px-4 py-3 text-left"
+            style={{
+              background:
+                "color-mix(in srgb, var(--color-accent) 8%, var(--color-surface-alt))",
+              border:
+                "1px solid color-mix(in srgb, var(--color-accent) 20%, var(--color-border))",
+            }}
+            data-testid="celebration-next-action"
+          >
+            <span
+              className="text-[10px] font-body font-semibold uppercase tracking-wider"
+              style={{ color: "var(--color-text-muted)" }}
+            >
+              {t("celebration.nextAction.label")}
+            </span>
+            <p
+              className="mt-1 text-sm font-display font-bold"
+              style={{ color: "var(--color-text)" }}
+            >
+              {t(NEXT_ACTION_TITLE_KEYS[nextAction.kind])}
+            </p>
+            <p
+              className="mt-0.5 text-xs font-body"
+              style={{ color: "var(--color-text-muted)" }}
+            >
+              {t(NEXT_ACTION_BODY_KEYS[nextAction.kind], {
+                speed: formatSpeed(nextAction.targetSpeed),
+                note: nextAction.targetMidi ?? "",
+              })}
+            </p>
+          </div>
+        )}
 
         {/* Buttons with warmer wording */}
         <div className="flex gap-3 mt-1">

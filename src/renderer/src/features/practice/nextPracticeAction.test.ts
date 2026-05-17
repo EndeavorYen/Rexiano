@@ -149,6 +149,21 @@ describe("selectNextPracticeAction", () => {
       reason: "accuracy-low",
     });
   });
+
+  test("suggests choosing the next song after a mastered full-speed pass", () => {
+    expect(
+      selectNextPracticeAction({
+        score: score({ accuracy: 98, missedNotes: 1, bestStreak: 39 }),
+        mode: "wait",
+        speed: 1,
+      }),
+    ).toEqual({
+      kind: "next-song",
+      priority: "low",
+      targetMode: "wait",
+      reason: "song-mastered",
+    });
+  });
 });
 
 describe("computeDailyGoalProgress", () => {

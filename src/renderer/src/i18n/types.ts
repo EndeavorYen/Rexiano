@@ -272,6 +272,19 @@ export interface TranslationMap {
   "celebration.hits": string;
   "celebration.missed": string;
   "celebration.bestStreak": string;
+  "celebration.nextAction.label": string;
+  "celebration.nextAction.slowDown.title": string;
+  "celebration.nextAction.slowDown.body": string;
+  "celebration.nextAction.raiseSpeed.title": string;
+  "celebration.nextAction.raiseSpeed.body": string;
+  "celebration.nextAction.repeatOnce.title": string;
+  "celebration.nextAction.repeatOnce.body": string;
+  "celebration.nextAction.tryOtherHand.title": string;
+  "celebration.nextAction.tryOtherHand.body": string;
+  "celebration.nextAction.practiceWeakNote.title": string;
+  "celebration.nextAction.practiceWeakNote.body": string;
+  "celebration.nextAction.nextSong.title": string;
+  "celebration.nextAction.nextSong.body": string;
 
   // ── Sheet Music ────────────────────────────────────────────────
   "sheetMusic.loadSong": string;

@@ -288,6 +288,25 @@ export const en: TranslationMap = {
   "celebration.hits": "Hits",
   "celebration.missed": "Missed",
   "celebration.bestStreak": "Best Streak",
+  "celebration.nextAction.label": "Next step",
+  "celebration.nextAction.slowDown.title": "Slow down",
+  "celebration.nextAction.slowDown.body":
+    "Try {speed} in Wait mode and give your fingers more time.",
+  "celebration.nextAction.raiseSpeed.title": "Raise the speed",
+  "celebration.nextAction.raiseSpeed.body":
+    "Move up to {speed} and keep the same calm rhythm.",
+  "celebration.nextAction.repeatOnce.title": "Repeat once",
+  "celebration.nextAction.repeatOnce.body":
+    "Play it once more while the pattern is fresh.",
+  "celebration.nextAction.tryOtherHand.title": "Try the other hand",
+  "celebration.nextAction.tryOtherHand.body":
+    "Switch hands next and keep the same practice mode.",
+  "celebration.nextAction.practiceWeakNote.title": "Focus one note",
+  "celebration.nextAction.practiceWeakNote.body":
+    "Give MIDI note {note} a few slow, careful tries.",
+  "celebration.nextAction.nextSong.title": "Choose the next song",
+  "celebration.nextAction.nextSong.body":
+    "That pass is solid. Pick a new song near this level.",
 
   // ── Sheet Music ────────────────────────────────────────────────
   "sheetMusic.loadSong": "Load a song to see sheet music",

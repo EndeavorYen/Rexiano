@@ -7,7 +7,8 @@ export type NextPracticeActionKind =
   | "raise-speed"
   | "repeat-once"
   | "try-other-hand"
-  | "practice-weak-note";
+  | "practice-weak-note"
+  | "next-song";
 
 export interface NextPracticeAction {
   kind: NextPracticeActionKind;
@@ -21,7 +22,8 @@ export interface NextPracticeAction {
     | "strong-pass"
     | "steady-progress"
     | "other-hand-ready"
-    | "weak-note-ready";
+    | "weak-note-ready"
+    | "song-mastered";
 }
 
 export interface NextPracticeActionInput {
@@ -148,6 +150,19 @@ export function selectNextPracticeAction(
         reason: "other-hand-ready",
       };
     }
+  }
+
+  if (
+    input.score.totalNotes > 0 &&
+    input.score.accuracy >= 95 &&
+    input.speed >= 1
+  ) {
+    return {
+      kind: "next-song",
+      priority: "low",
+      targetMode: input.mode,
+      reason: "song-mastered",
+    };
   }
 
   return {

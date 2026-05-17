@@ -275,6 +275,24 @@ export const zhTW: TranslationMap = {
   "celebration.hits": "命中",
   "celebration.missed": "失誤",
   "celebration.bestStreak": "最佳連擊",
+  "celebration.nextAction.label": "下一步",
+  "celebration.nextAction.slowDown.title": "放慢一點",
+  "celebration.nextAction.slowDown.body":
+    "用 {speed} 的 Wait 模式再練一次，讓手指有更多時間。",
+  "celebration.nextAction.raiseSpeed.title": "提高速度",
+  "celebration.nextAction.raiseSpeed.body":
+    "試著提高到 {speed}，維持一樣穩的節奏。",
+  "celebration.nextAction.repeatOnce.title": "再練一次",
+  "celebration.nextAction.repeatOnce.body": "趁手感還在，再完整彈一次。",
+  "celebration.nextAction.tryOtherHand.title": "換另一隻手",
+  "celebration.nextAction.tryOtherHand.body":
+    "下一輪換另一隻手，維持同一個練習模式。",
+  "celebration.nextAction.practiceWeakNote.title": "專心練一個音",
+  "celebration.nextAction.practiceWeakNote.body":
+    "把 MIDI 音 {note} 慢慢、多試幾次。",
+  "celebration.nextAction.nextSong.title": "選下一首",
+  "celebration.nextAction.nextSong.body":
+    "這次已經很穩了，可以選一首同等級的新曲子。",
 
   // ── Sheet Music ────────────────────────────────────────────────
   "sheetMusic.loadSong": "載入曲子以檢視樂譜",
