@@ -25,6 +25,38 @@ export interface PracticeCalendarRange {
   timezoneOffsetMinutes?: number;
 }
 
+export type ParentPracticeConsistencyLevel =
+  | "empty"
+  | "light"
+  | "steady"
+  | "strong";
+
+export type ParentPracticeAccuracyLevel =
+  | "empty"
+  | "needs-support"
+  | "building"
+  | "confident";
+
+export interface ParentPracticeSongFocus {
+  songId: string;
+  songTitle: string;
+  averageAccuracy: number;
+}
+
+export interface ParentPracticeSongImprovement {
+  songId: string;
+  songTitle: string;
+  accuracyDelta: number;
+}
+
+export interface ParentPracticeReport {
+  summary: PracticeCalendarSummary;
+  consistencyLevel: ParentPracticeConsistencyLevel;
+  accuracyLevel: ParentPracticeAccuracyLevel;
+  nextFocusSong: ParentPracticeSongFocus | null;
+  bestImprovement: ParentPracticeSongImprovement | null;
+}
+
 interface DayAccumulator {
   dayKey: string;
   sessionCount: number;
@@ -65,6 +97,24 @@ function emptySummary(): PracticeCalendarSummary {
     consistencyRate: 0,
     days: [],
   };
+}
+
+function classifyConsistency(
+  summary: PracticeCalendarSummary,
+): ParentPracticeConsistencyLevel {
+  if (summary.sessionCount === 0) return "empty";
+  if (summary.consistencyRate >= 0.5) return "strong";
+  if (summary.consistencyRate >= 0.3) return "steady";
+  return "light";
+}
+
+function classifyAccuracy(
+  averageAccuracy: number | null,
+): ParentPracticeAccuracyLevel {
+  if (averageAccuracy === null) return "empty";
+  if (averageAccuracy >= 85) return "confident";
+  if (averageAccuracy >= 70) return "building";
+  return "needs-support";
 }
 
 export function buildPracticeCalendarSummary(
@@ -134,5 +184,88 @@ export function buildPracticeCalendarSummary(
         bestAccuracy: day.bestAccuracy,
         songsAttempted: day.songIds.size,
       })),
+  };
+}
+
+export function buildParentPracticeReport(
+  sessions: SessionRecord[],
+  range: PracticeCalendarRange,
+): ParentPracticeReport {
+  const summary = buildPracticeCalendarSummary(sessions, range);
+  const inRange = sessions
+    .filter(
+      (session) =>
+        session.timestamp >= range.startTimestamp &&
+        session.timestamp < range.endTimestamp,
+    )
+    .sort((a, b) => a.timestamp - b.timestamp);
+  const bySong = new Map<string, SessionRecord[]>();
+
+  for (const session of inRange) {
+    const songSessions = bySong.get(session.songId) ?? [];
+    songSessions.push(session);
+    bySong.set(session.songId, songSessions);
+  }
+
+  const songAverages = [...bySong.entries()].map(([songId, songSessions]) => ({
+    songId,
+    songTitle: songSessions[0]?.songTitle ?? songId,
+    averageAccuracy: roundTo(
+      songSessions.reduce((sum, session) => sum + session.score.accuracy, 0) /
+        songSessions.length,
+      1,
+    ),
+    sessionCount: songSessions.length,
+  }));
+
+  const nextFocusSong =
+    songAverages.length === 0
+      ? null
+      : [...songAverages]
+          .sort(
+            (a, b) =>
+              a.averageAccuracy - b.averageAccuracy ||
+              b.sessionCount - a.sessionCount ||
+              a.songTitle.localeCompare(b.songTitle),
+          )
+          .map(({ songId, songTitle, averageAccuracy }) => ({
+            songId,
+            songTitle,
+            averageAccuracy,
+          }))[0];
+
+  const bestImprovement =
+    [...bySong.entries()]
+      .map(([songId, songSessions]) => {
+        if (songSessions.length < 2) return null;
+        const first = songSessions[0];
+        const last = songSessions[songSessions.length - 1];
+        const accuracyDelta = roundTo(
+          last.score.accuracy - first.score.accuracy,
+          1,
+        );
+        if (accuracyDelta <= 0) return null;
+        return {
+          songId,
+          songTitle: last.songTitle || first.songTitle || songId,
+          accuracyDelta,
+        } satisfies ParentPracticeSongImprovement;
+      })
+      .filter(
+        (improvement): improvement is ParentPracticeSongImprovement =>
+          improvement !== null,
+      )
+      .sort(
+        (a, b) =>
+          b.accuracyDelta - a.accuracyDelta ||
+          a.songTitle.localeCompare(b.songTitle),
+      )[0] ?? null;
+
+  return {
+    summary,
+    consistencyLevel: classifyConsistency(summary),
+    accuracyLevel: classifyAccuracy(summary.averageAccuracy),
+    nextFocusSong,
+    bestImprovement,
   };
 }

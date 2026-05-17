@@ -70,6 +70,16 @@ export type UserDataBackupValidationResult =
   | { ok: true; manifest: UserDataBackupManifest }
   | { ok: false; errors: string[] };
 
+export type UserDataResetSelection = "all" | readonly string[];
+
+export interface UserDataResetPlan {
+  scopes: UserDataBackupScope[];
+  localStorageKeys: string[];
+  userDataFiles: string[];
+  errors: string[];
+  canReset: boolean;
+}
+
 const knownScopes = new Set<string>(USER_DATA_BACKUP_SCOPES);
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -105,6 +115,41 @@ export function createUserDataBackupManifest(
     exportedAt,
     scopes,
     data: scopedData,
+  };
+}
+
+export function buildUserDataResetPlan(
+  selection: UserDataResetSelection,
+): UserDataResetPlan {
+  const requestedScopes =
+    selection === "all" ? USER_DATA_BACKUP_SCOPES : selection;
+  const requestedScopeSet = new Set<string>();
+  const errors: string[] = [];
+
+  for (const scope of requestedScopes) {
+    if (!isKnownScope(scope)) {
+      errors.push(`Reset scope is not supported: ${String(scope)}.`);
+      continue;
+    }
+    requestedScopeSet.add(scope);
+  }
+
+  const selectedInventory = USER_DATA_BACKUP_SCOPE_INVENTORY.filter((item) =>
+    requestedScopeSet.has(item.scope),
+  );
+
+  return {
+    scopes: selectedInventory.map((item) => item.scope),
+    localStorageKeys: selectedInventory.flatMap((item) =>
+      item.source === "localStorage" && item.storageKey
+        ? [item.storageKey]
+        : [],
+    ),
+    userDataFiles: selectedInventory.flatMap((item) =>
+      item.source === "userDataFile" && item.fileName ? [item.fileName] : [],
+    ),
+    errors,
+    canReset: errors.length === 0 && selectedInventory.length > 0,
   };
 }
 

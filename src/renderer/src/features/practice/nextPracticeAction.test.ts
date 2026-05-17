@@ -1,6 +1,7 @@
 import { describe, expect, test } from "vitest";
 import type { PracticeScore, SessionRecord } from "@shared/types";
 import {
+  buildDailyGoalStatus,
   computeDailyGoalProgress,
   selectNextPracticeAction,
 } from "./nextPracticeAction";
@@ -182,6 +183,55 @@ describe("computeDailyGoalProgress", () => {
       practicedMinutes: 3,
       completionRatio: 0.3,
       isComplete: false,
+    });
+  });
+});
+
+describe("buildDailyGoalStatus", () => {
+  test("returns a not-started status before any practice on the selected day", () => {
+    expect(
+      buildDailyGoalStatus([], {
+        dayTimestamp: Date.UTC(2026, 4, 10, 12),
+        targetMinutes: 10,
+      }),
+    ).toEqual({
+      dayKey: "2026-05-10",
+      practicedMinutes: 0,
+      targetMinutes: 10,
+      completionRatio: 0,
+      isComplete: false,
+      status: "not-started",
+      remainingMinutes: 10,
+    });
+  });
+
+  test("returns in-progress status with rounded remaining minutes", () => {
+    expect(
+      buildDailyGoalStatus([session("a", Date.UTC(2026, 4, 10, 1), 330)], {
+        dayTimestamp: Date.UTC(2026, 4, 10, 12),
+        targetMinutes: 10,
+      }),
+    ).toMatchObject({
+      practicedMinutes: 5.5,
+      completionRatio: 0.55,
+      isComplete: false,
+      status: "in-progress",
+      remainingMinutes: 4.5,
+    });
+  });
+
+  test("returns complete status without remaining minutes after meeting the goal", () => {
+    expect(
+      buildDailyGoalStatus([session("a", Date.UTC(2026, 4, 10, 1), 780)], {
+        dayTimestamp: Date.UTC(2026, 4, 10, 12),
+        targetMinutes: 10,
+      }),
+    ).toMatchObject({
+      practicedMinutes: 13,
+      completionRatio: 1,
+      isComplete: true,
+      status: "complete",
+      remainingMinutes: 0,
     });
   });
 });

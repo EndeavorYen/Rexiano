@@ -3,6 +3,7 @@ import {
   USER_DATA_BACKUP_SCHEMA_VERSION,
   USER_DATA_BACKUP_SCOPE_INVENTORY,
   USER_DATA_BACKUP_SCOPES,
+  buildUserDataResetPlan,
   createUserDataBackupManifest,
   validateUserDataBackupManifest,
 } from "./userDataBackup";
@@ -134,5 +135,43 @@ describe("user data backup manifests", () => {
       },
     });
     expect(validateUserDataBackupManifest(manifest).ok).toBe(true);
+  });
+});
+
+describe("user data reset plans", () => {
+  test("builds an explicit reset-all plan from the backup inventory", () => {
+    expect(buildUserDataResetPlan("all")).toEqual({
+      scopes: USER_DATA_BACKUP_SCOPES,
+      localStorageKeys: [
+        "rexiano-settings",
+        "rexiano-library-metadata",
+        "rexiano-song-practice-setup",
+      ],
+      userDataFiles: ["progress.json", "recents.json"],
+      errors: [],
+      canReset: true,
+    });
+  });
+
+  test("deduplicates selected scopes and preserves inventory order", () => {
+    expect(
+      buildUserDataResetPlan(["progress", "settings", "progress"]),
+    ).toEqual({
+      scopes: ["settings", "progress"],
+      localStorageKeys: ["rexiano-settings"],
+      userDataFiles: ["progress.json"],
+      errors: [],
+      canReset: true,
+    });
+  });
+
+  test("surfaces unsupported selected scopes before reset execution", () => {
+    expect(buildUserDataResetPlan(["settings", "unknown"])).toEqual({
+      scopes: ["settings"],
+      localStorageKeys: ["rexiano-settings"],
+      userDataFiles: [],
+      errors: ["Reset scope is not supported: unknown."],
+      canReset: false,
+    });
   });
 });

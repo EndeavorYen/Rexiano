@@ -41,6 +41,13 @@ export interface DailyGoalProgress {
   isComplete: boolean;
 }
 
+export type DailyGoalStatusKind = "not-started" | "in-progress" | "complete";
+
+export interface DailyGoalStatus extends DailyGoalProgress {
+  status: DailyGoalStatusKind;
+  remainingMinutes: number;
+}
+
 export interface DailyGoalOptions {
   dayTimestamp: number;
   targetMinutes: number;
@@ -182,5 +189,29 @@ export function computeDailyGoalProgress(
     targetMinutes: options.targetMinutes,
     completionRatio,
     isComplete: completionRatio >= 1,
+  };
+}
+
+export function buildDailyGoalStatus(
+  sessions: SessionRecord[],
+  options: DailyGoalOptions,
+): DailyGoalStatus {
+  const progress = computeDailyGoalProgress(sessions, options);
+  const remainingMinutes = progress.isComplete
+    ? 0
+    : roundTo(
+        Math.max(0, progress.targetMinutes - progress.practicedMinutes),
+        1,
+      );
+  const status: DailyGoalStatusKind = progress.isComplete
+    ? "complete"
+    : progress.practicedMinutes > 0
+      ? "in-progress"
+      : "not-started";
+
+  return {
+    ...progress,
+    status,
+    remainingMinutes,
   };
 }

@@ -1,6 +1,9 @@
 import { describe, expect, test } from "vitest";
 import type { SessionRecord } from "@shared/types";
-import { buildPracticeCalendarSummary } from "./practiceCalendar";
+import {
+  buildParentPracticeReport,
+  buildPracticeCalendarSummary,
+} from "./practiceCalendar";
 
 function makeSession(
   id: string,
@@ -130,5 +133,104 @@ describe("buildPracticeCalendarSummary", () => {
         timezoneOffsetMinutes: -480,
       }).days[0].dayKey,
     ).toBe("2026-05-11");
+  });
+});
+
+describe("buildParentPracticeReport", () => {
+  test("returns a quiet empty report with separate consistency and accuracy states", () => {
+    expect(
+      buildParentPracticeReport([], {
+        startTimestamp: Date.UTC(2026, 4, 10),
+        endTimestamp: Date.UTC(2026, 4, 17),
+      }),
+    ).toMatchObject({
+      consistencyLevel: "empty",
+      accuracyLevel: "empty",
+      nextFocusSong: null,
+      bestImprovement: null,
+      summary: {
+        sessionCount: 0,
+        activeDayCount: 0,
+        totalMinutes: 0,
+      },
+    });
+  });
+
+  test("identifies consistency, accuracy, next focus, and best improvement", () => {
+    const sessions = [
+      makeSession("scale-1", Date.UTC(2026, 4, 10, 1), {
+        songId: "scale",
+        songTitle: "C Major Scale",
+        score: {
+          totalNotes: 10,
+          hitNotes: 6,
+          missedNotes: 4,
+          accuracy: 60,
+          currentStreak: 0,
+          bestStreak: 3,
+        },
+      }),
+      makeSession("scale-2", Date.UTC(2026, 4, 12, 1), {
+        songId: "scale",
+        songTitle: "C Major Scale",
+        score: {
+          totalNotes: 10,
+          hitNotes: 9,
+          missedNotes: 1,
+          accuracy: 90,
+          currentStreak: 0,
+          bestStreak: 8,
+        },
+      }),
+      makeSession("minuet-1", Date.UTC(2026, 4, 13, 1), {
+        songId: "minuet",
+        songTitle: "Minuet",
+        score: {
+          totalNotes: 10,
+          hitNotes: 7,
+          missedNotes: 3,
+          accuracy: 70,
+          currentStreak: 0,
+          bestStreak: 4,
+        },
+      }),
+      makeSession("minuet-2", Date.UTC(2026, 4, 14, 1), {
+        songId: "minuet",
+        songTitle: "Minuet",
+        score: {
+          totalNotes: 10,
+          hitNotes: 7,
+          missedNotes: 3,
+          accuracy: 72,
+          currentStreak: 0,
+          bestStreak: 5,
+        },
+      }),
+    ];
+
+    expect(
+      buildParentPracticeReport(sessions, {
+        startTimestamp: Date.UTC(2026, 4, 10),
+        endTimestamp: Date.UTC(2026, 4, 17),
+      }),
+    ).toMatchObject({
+      consistencyLevel: "strong",
+      accuracyLevel: "building",
+      nextFocusSong: {
+        songId: "minuet",
+        songTitle: "Minuet",
+        averageAccuracy: 71,
+      },
+      bestImprovement: {
+        songId: "scale",
+        songTitle: "C Major Scale",
+        accuracyDelta: 30,
+      },
+      summary: {
+        sessionCount: 4,
+        activeDayCount: 4,
+        averageAccuracy: 73,
+      },
+    });
   });
 });
