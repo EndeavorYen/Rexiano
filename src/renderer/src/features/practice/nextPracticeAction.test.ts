@@ -79,6 +79,39 @@ describe("selectNextPracticeAction", () => {
       targetMode: "wait",
     });
   });
+
+  test("suggests trying the left hand after a strong right-hand pass", () => {
+    expect(
+      selectNextPracticeAction({
+        score: score({ accuracy: 90, missedNotes: 4 }),
+        mode: "wait",
+        speed: 1,
+        tracksPlayed: [0],
+        handAssignments: { 0: "right", 1: "left" },
+      }),
+    ).toMatchObject({
+      kind: "try-other-hand",
+      priority: "medium",
+      targetTracks: [1],
+      targetMode: "wait",
+      reason: "other-hand-ready",
+    });
+  });
+
+  test("keeps slow-down as the first action for low-accuracy one-hand practice", () => {
+    expect(
+      selectNextPracticeAction({
+        score: score({ accuracy: 58, missedNotes: 18 }),
+        mode: "wait",
+        speed: 1,
+        tracksPlayed: [0],
+        handAssignments: { 0: "right", 1: "left" },
+      }),
+    ).toMatchObject({
+      kind: "slow-down",
+      targetSpeed: 0.75,
+    });
+  });
 });
 
 describe("computeDailyGoalProgress", () => {

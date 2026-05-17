@@ -3,6 +3,7 @@ import {
   USER_DATA_BACKUP_SCHEMA_VERSION,
   USER_DATA_BACKUP_SCOPE_INVENTORY,
   USER_DATA_BACKUP_SCOPES,
+  createUserDataBackupManifest,
   validateUserDataBackupManifest,
 } from "./userDataBackup";
 
@@ -108,5 +109,30 @@ describe("user data backup manifests", () => {
         resettable: true,
       },
     ]);
+  });
+
+  test("creates a canonical scoped manifest that validates for import", () => {
+    const manifest = createUserDataBackupManifest(
+      {
+        progress: { sessions: [] },
+        settings: { volume: 0.8 },
+        recents: null,
+        libraryMetadata: undefined,
+      },
+      "2026-05-17T03:00:00.000Z",
+    );
+
+    expect(manifest).toEqual({
+      app: "rexiano",
+      schemaVersion: USER_DATA_BACKUP_SCHEMA_VERSION,
+      exportedAt: "2026-05-17T03:00:00.000Z",
+      scopes: ["settings", "progress", "recents"],
+      data: {
+        settings: { volume: 0.8 },
+        progress: { sessions: [] },
+        recents: null,
+      },
+    });
+    expect(validateUserDataBackupManifest(manifest).ok).toBe(true);
   });
 });

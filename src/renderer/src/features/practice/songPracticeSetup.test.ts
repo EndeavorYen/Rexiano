@@ -86,6 +86,11 @@ describe("song practice setup persistence", () => {
       {
         activeTracks: [2, 0, 2],
         handAssignments: { 0: "right", 1: "left", 3: "background" },
+        trackPreferences: {
+          0: { color: "  #ffcc00 ", muted: false },
+          2: { color: "", muted: true, backgroundVisible: false },
+          [-1]: { color: "#000000", muted: true },
+        },
         defaultMode: "wait",
         defaultSpeed: 0.75,
       },
@@ -95,6 +100,10 @@ describe("song practice setup persistence", () => {
     expect(loadSongPracticeSetupSnapshot("builtin:scale-c")).toEqual({
       activeTracks: [0, 2],
       handAssignments: { 0: "right", 1: "left", 3: "background" },
+      trackPreferences: {
+        0: { color: "#ffcc00", muted: false },
+        2: { muted: true, backgroundVisible: false },
+      },
       defaultMode: "wait",
       defaultSpeed: 0.75,
       updatedAt: "2026-05-17T01:00:00.000Z",
@@ -128,13 +137,19 @@ describe("song practice setup persistence", () => {
       { defaultSpeed: 0.8 },
       "2026-05-17T01:02:00.000Z",
     );
+    updateSongPracticeSetupSnapshot(
+      "builtin:scale-c",
+      { trackPreferences: { 0: { muted: true } } },
+      "2026-05-17T01:03:00.000Z",
+    );
 
     expect(loadSongPracticeSetupSnapshot("builtin:scale-c")).toMatchObject({
       activeTracks: [0],
       handAssignments: { 0: "right" },
       defaultMode: "watch",
       defaultSpeed: 0.8,
-      updatedAt: "2026-05-17T01:02:00.000Z",
+      trackPreferences: { 0: { muted: true } },
+      updatedAt: "2026-05-17T01:03:00.000Z",
     });
     expect(loadSongPracticeSetupSnapshot("name:minuet.mid")).toMatchObject({
       activeTracks: [1],

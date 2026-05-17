@@ -1,22 +1,31 @@
 import type { PracticeMode, PracticeScore, SessionRecord } from "@shared/types";
+import type { TrackHandAssignment } from "@renderer/engines/midi/TrackHandAssignment";
 
 export type NextPracticeActionKind =
   | "slow-down"
   | "raise-speed"
-  | "repeat-once";
+  | "repeat-once"
+  | "try-other-hand";
 
 export interface NextPracticeAction {
   kind: NextPracticeActionKind;
   priority: "high" | "medium" | "low";
   targetSpeed?: number;
+  targetTracks?: number[];
   targetMode: PracticeMode;
-  reason: "accuracy-low" | "strong-pass" | "steady-progress";
+  reason:
+    | "accuracy-low"
+    | "strong-pass"
+    | "steady-progress"
+    | "other-hand-ready";
 }
 
 export interface NextPracticeActionInput {
   score: PracticeScore;
   mode: PracticeMode;
   speed: number;
+  tracksPlayed?: number[];
+  handAssignments?: Record<number, TrackHandAssignment>;
 }
 
 export interface DailyGoalProgress {
@@ -50,6 +59,28 @@ function roundTo(value: number, digits: number): number {
   return Math.round(value * factor) / factor;
 }
 
+function findOtherHandTracks(input: NextPracticeActionInput): number[] {
+  if (!input.tracksPlayed || !input.handAssignments) return [];
+
+  const playedHands = new Set<TrackHandAssignment>();
+  for (const trackIndex of input.tracksPlayed) {
+    const hand = input.handAssignments[trackIndex];
+    if (hand === "left" || hand === "right") {
+      playedHands.add(hand);
+    }
+  }
+  if (playedHands.size !== 1) return [];
+
+  const [playedHand] = Array.from(playedHands);
+  const nextHand = playedHand === "right" ? "left" : "right";
+
+  return Object.entries(input.handAssignments)
+    .filter(([, hand]) => hand === nextHand)
+    .map(([trackIndex]) => Number(trackIndex))
+    .filter((trackIndex) => Number.isInteger(trackIndex) && trackIndex >= 0)
+    .sort((a, b) => a - b);
+}
+
 export function selectNextPracticeAction(
   input: NextPracticeActionInput,
 ): NextPracticeAction {
@@ -71,6 +102,19 @@ export function selectNextPracticeAction(
       targetMode: input.mode,
       reason: "strong-pass",
     };
+  }
+
+  if (input.score.accuracy >= 85) {
+    const targetTracks = findOtherHandTracks(input);
+    if (targetTracks.length > 0) {
+      return {
+        kind: "try-other-hand",
+        priority: "medium",
+        targetTracks,
+        targetMode: input.mode,
+        reason: "other-hand-ready",
+      };
+    }
   }
 
   return {

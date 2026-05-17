@@ -88,6 +88,26 @@ function isValidIsoDate(value: unknown): value is string {
   return typeof value === "string" && !Number.isNaN(Date.parse(value));
 }
 
+export function createUserDataBackupManifest(
+  data: Partial<Record<UserDataBackupScope, unknown>>,
+  exportedAt = new Date().toISOString(),
+): UserDataBackupManifest {
+  const scopedData: Partial<Record<UserDataBackupScope, unknown>> = {};
+  const scopes = USER_DATA_BACKUP_SCOPES.filter((scope) => {
+    if (!hasOwn(data, scope) || data[scope] === undefined) return false;
+    scopedData[scope] = data[scope];
+    return true;
+  });
+
+  return {
+    app: "rexiano",
+    schemaVersion: USER_DATA_BACKUP_SCHEMA_VERSION,
+    exportedAt,
+    scopes,
+    data: scopedData,
+  };
+}
+
 export function validateUserDataBackupManifest(
   input: unknown,
 ): UserDataBackupValidationResult {

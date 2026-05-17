@@ -11,9 +11,16 @@ export interface SongPracticeSetupIdentity {
   fileName?: string;
 }
 
+export interface TrackPracticePreferences {
+  color?: string;
+  muted?: boolean;
+  backgroundVisible?: boolean;
+}
+
 export interface SongPracticeSetupInput {
   activeTracks: number[];
   handAssignments: Record<number, TrackHandAssignment>;
+  trackPreferences?: Record<number, TrackPracticePreferences>;
   defaultMode: PracticeMode;
   defaultSpeed: number;
 }
@@ -43,6 +50,35 @@ function normalizeActiveTracks(activeTracks: number[]): number[] {
         .sort((a, b) => a - b),
     ),
   );
+}
+
+function normalizeTrackPreferences(
+  preferences: Record<number, TrackPracticePreferences> | undefined,
+): Record<number, TrackPracticePreferences> | undefined {
+  if (!preferences) return undefined;
+
+  const normalized: Record<number, TrackPracticePreferences> = {};
+
+  for (const [trackIndex, preference] of Object.entries(preferences)) {
+    const index = Number(trackIndex);
+    if (!Number.isInteger(index) || index < 0) continue;
+
+    const color = preference.color?.trim();
+    const cleaned: TrackPracticePreferences = {};
+    if (color) cleaned.color = color;
+    if (typeof preference.muted === "boolean") {
+      cleaned.muted = preference.muted;
+    }
+    if (typeof preference.backgroundVisible === "boolean") {
+      cleaned.backgroundVisible = preference.backgroundVisible;
+    }
+
+    if (Object.keys(cleaned).length > 0) {
+      normalized[index] = cleaned;
+    }
+  }
+
+  return Object.keys(normalized).length > 0 ? normalized : undefined;
 }
 
 function readAllSetups(): PersistedSongPracticeSetup {
@@ -78,13 +114,18 @@ function normalizeSetupInput(
   setup: SongPracticeSetupInput,
   updatedAt: string,
 ): SongPracticeSetupSnapshot {
-  return {
+  const normalized: SongPracticeSetupSnapshot = {
     activeTracks: normalizeActiveTracks(setup.activeTracks),
     handAssignments: { ...setup.handAssignments },
     defaultMode: setup.defaultMode,
     defaultSpeed: setup.defaultSpeed,
     updatedAt,
   };
+  const trackPreferences = normalizeTrackPreferences(setup.trackPreferences);
+  if (trackPreferences) {
+    normalized.trackPreferences = trackPreferences;
+  }
+  return normalized;
 }
 
 export function createSongPracticeSetupKey(
@@ -128,6 +169,7 @@ export function updateSongPracticeSetupSnapshot(
     {
       activeTracks: patch.activeTracks ?? current.activeTracks,
       handAssignments: patch.handAssignments ?? current.handAssignments,
+      trackPreferences: patch.trackPreferences ?? current.trackPreferences,
       defaultMode: patch.defaultMode ?? current.defaultMode,
       defaultSpeed: patch.defaultSpeed ?? current.defaultSpeed,
     },
