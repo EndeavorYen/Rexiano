@@ -27,7 +27,7 @@ import { SongLibrary } from "./features/songLibrary/SongLibrary";
 import { DeviceSelector } from "./features/midiDevice/DeviceSelector";
 import { InsightsPanel } from "./features/insights/InsightsPanel";
 import { WeakSpotAnalyzer } from "./features/insights/WeakSpotAnalyzer";
-import type { SessionSummary } from "./features/insights/WeakSpotAnalyzer";
+import { buildSessionSummariesForSong } from "./features/insights/sessionSummary";
 import { useMidiDeviceStore } from "./stores/useMidiDeviceStore";
 import { usePracticeLifecycle } from "./features/practice/usePracticeLifecycle";
 import { PracticeToolbar } from "./features/practice/PracticeToolbar";
@@ -231,15 +231,7 @@ function App(): React.JSX.Element {
 
   const insight = useMemo(() => {
     if (!songId || sessions.length === 0) return null;
-    const summaries: SessionSummary[] = sessions
-      .filter((s) => s.songId === songId)
-      .map((s) => ({
-        songId: s.songId,
-        accuracy: s.score.accuracy,
-        durationMinutes: s.durationSeconds / 60,
-        timestamp: s.timestamp,
-        noteResults: new Map(),
-      }));
+    const summaries = buildSessionSummariesForSong(songId, sessions);
     return analyzer.analyze(songId, summaries);
   }, [songId, sessions]);
 

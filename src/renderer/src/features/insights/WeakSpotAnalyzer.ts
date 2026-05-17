@@ -84,19 +84,26 @@ export function midiToNoteName(midi: number): string {
 
 /**
  * Extract MIDI note number from a note result key.
- * Keys follow the format "trackIndex:noteIndex" as used by WaitMode,
- * but for analysis we need to parse stored MIDI note data.
- *
- * In practice, noteResults are keyed by "trackIdx:noteIdx" and we need
- * the original MIDI number. This helper parses a richer key format
- * "trackIdx:midi:timeUs" if available, or falls back to the midi portion.
+ * Current scoring callbacks store "midi:timeUs"; older insight fixtures use
+ * "trackIdx:midi:timeUs". Plain "trackIdx:noteIdx" keys cannot be analyzed.
  */
 function parseMidiFromKey(key: string): number | null {
   const parts = key.split(":");
-  if (parts.length >= 2) {
-    const midi = parseInt(parts[1], 10);
+  const parseBoundedMidi = (value: string | undefined): number | null => {
+    if (value === undefined) return null;
+    const midi = parseInt(value, 10);
     if (!isNaN(midi) && midi >= 0 && midi <= 127) return midi;
+    return null;
+  };
+
+  if (parts.length >= 3) {
+    return parseBoundedMidi(parts[1]);
   }
+
+  if (parts.length === 2) {
+    return parseBoundedMidi(parts[0]);
+  }
+
   return null;
 }
 

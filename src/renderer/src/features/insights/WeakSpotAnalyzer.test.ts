@@ -131,6 +131,29 @@ describe("WeakSpotAnalyzer", () => {
       expect(insight.weakSpots[0].totalAttempts).toBe(4);
     });
 
+    it("recognizes current practice lifecycle keys as midi:timeUs", () => {
+      const noteResults: [string, NoteResult][] = [
+        // MIDI 60 (C4): 1 hit, 3 misses → 75% miss rate
+        ["60:1000", "miss"],
+        ["60:2000", "miss"],
+        ["60:3000", "miss"],
+        ["60:4000", "hit"],
+        // MIDI 64 (E4): 2 hits → 0% miss rate
+        ["64:1000", "hit"],
+        ["64:2000", "hit"],
+      ];
+
+      const sessions = [session("song1", 60, noteResults)];
+      const insight = analyzer.analyze("song1", sessions);
+
+      expect(insight.weakSpots[0]).toMatchObject({
+        midi: 60,
+        noteName: "C4",
+        missRate: 0.75,
+        totalAttempts: 4,
+      });
+    });
+
     it("limits weak spots to 5", () => {
       const noteResults: [string, NoteResult][] = [];
       // Create 8 notes each with some misses

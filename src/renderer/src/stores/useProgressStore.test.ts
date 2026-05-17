@@ -255,6 +255,29 @@ describe("initAutoSave()", () => {
     unsub();
   });
 
+  test("saves per-note results for weak-spot analysis", async () => {
+    const unsub = initAutoSave();
+
+    useSongStore.getState().loadSong(fakeSong);
+    usePracticeStore.getState().recordMiss("60:1000");
+    usePracticeStore.getState().recordHit("60:2000");
+
+    usePlaybackStore.getState().setPlaying(true);
+    usePlaybackStore.getState().setPlaying(false);
+
+    await vi.waitFor(() => {
+      expect(window.api.saveSession).toHaveBeenCalledTimes(1);
+    });
+
+    const savedRecord = vi.mocked(window.api.saveSession).mock.calls[0][0];
+    expect(savedRecord.noteResults).toEqual([
+      ["60:1000", "miss"],
+      ["60:2000", "hit"],
+    ]);
+
+    unsub();
+  });
+
   test("does NOT save when score has 0 notes", () => {
     const unsub = initAutoSave();
 

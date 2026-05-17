@@ -108,6 +108,7 @@ export function initAutoSave(): () => void {
           score: { ...practiceState.score },
           durationSeconds: Math.round(durationSeconds),
           tracksPlayed: Array.from(practiceState.activeTracks),
+          noteResults: Array.from(practiceState.noteResults.entries()),
         };
 
         void useProgressStore.getState().addSession(record);

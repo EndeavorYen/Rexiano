@@ -132,6 +132,8 @@ export interface SessionRecord {
   durationSeconds: number;
   /** Track indices that were practiced */
   tracksPlayed: number[];
+  /** Per-note hit/miss results as JSON-safe entries for weak-spot analysis */
+  noteResults?: [string, NoteResult][];
 }
 
 /** App version and changelog, exposed to renderer via IPC. */
