@@ -6,6 +6,9 @@ import type {
   SessionRecord,
   RecentFile,
   AppInfo,
+  UserDataFileBackupPayload,
+  UserDataFileBackupResult,
+  UserDataFileMutationResult,
 } from "../shared/types";
 
 declare global {
@@ -31,6 +34,19 @@ declare global {
       saveRecentFile: (file: RecentFile) => Promise<void>;
       /** Phase 6.5: Remove a stale recently opened MIDI file */
       removeRecentFile: (filePath: string) => Promise<void>;
+      /** User data backup: export file-backed userData scopes */
+      exportUserDataFiles: (
+        scopes?: string[],
+      ) => Promise<UserDataFileBackupResult>;
+      /** User data backup: import file-backed userData scopes */
+      importUserDataFiles: (
+        payload: UserDataFileBackupPayload,
+        scopes?: string[],
+      ) => Promise<UserDataFileMutationResult>;
+      /** User data backup: reset file-backed userData scopes */
+      resetUserDataFiles: (
+        scopes?: string[],
+      ) => Promise<UserDataFileMutationResult>;
       /** Phase 6.5: Load a MIDI file by absolute path (for recent files) */
       loadMidiPath: (filePath: string) => Promise<MidiFileResult | null>;
       /** Release pipeline: get app version and changelog */

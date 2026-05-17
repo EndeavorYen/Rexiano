@@ -1,6 +1,13 @@
 import { contextBridge, ipcRenderer } from "electron";
 import { IpcChannels } from "../shared/types";
-import type { SessionRecord, RecentFile, AppInfo } from "../shared/types";
+import type {
+  SessionRecord,
+  RecentFile,
+  AppInfo,
+  UserDataFileBackupPayload,
+  UserDataFileBackupResult,
+  UserDataFileMutationResult,
+} from "../shared/types";
 
 const api = {
   openMidiFile: () => ipcRenderer.invoke(IpcChannels.OPEN_MIDI_FILE),
@@ -23,6 +30,19 @@ const api = {
     ipcRenderer.invoke(IpcChannels.SAVE_RECENT_FILE, file),
   removeRecentFile: (filePath: string) =>
     ipcRenderer.invoke(IpcChannels.REMOVE_RECENT_FILE, filePath),
+
+  // User data backup: file-backed scopes in Electron userData
+  exportUserDataFiles: (scopes?: string[]): Promise<UserDataFileBackupResult> =>
+    ipcRenderer.invoke(IpcChannels.USER_DATA_EXPORT_FILES, scopes),
+  importUserDataFiles: (
+    payload: UserDataFileBackupPayload,
+    scopes?: string[],
+  ): Promise<UserDataFileMutationResult> =>
+    ipcRenderer.invoke(IpcChannels.USER_DATA_IMPORT_FILES, payload, scopes),
+  resetUserDataFiles: (
+    scopes?: string[],
+  ): Promise<UserDataFileMutationResult> =>
+    ipcRenderer.invoke(IpcChannels.USER_DATA_RESET_FILES, scopes),
 
   // Phase 6.5: Load MIDI file by path (for recent files direct loading)
   loadMidiPath: (filePath: string) =>

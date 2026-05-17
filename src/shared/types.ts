@@ -33,6 +33,12 @@ export const IpcChannels = {
   REMOVE_RECENT_FILE: "recents:removeRecentFile",
   /** Phase 6.5: Load a MIDI file by absolute path (for recent files) */
   LOAD_MIDI_PATH: "dialog:loadMidiPath",
+  /** User data backup: export file-backed scopes from userData */
+  USER_DATA_EXPORT_FILES: "userData:exportFiles",
+  /** User data backup: import file-backed scopes into userData */
+  USER_DATA_IMPORT_FILES: "userData:importFiles",
+  /** User data backup: reset file-backed scopes in userData */
+  USER_DATA_RESET_FILES: "userData:resetFiles",
 } as const;
 
 /** Result of loading a SoundFont file via IPC */
@@ -141,3 +147,32 @@ export interface AppInfo {
   version: string;
   changelog: string;
 }
+
+// ─── User Data Backup ────────────────────────────────────────────────
+
+export type UserDataFileBackupScope = "progress" | "recents";
+
+export type UserDataFileBackupPayload = Partial<
+  Record<UserDataFileBackupScope, unknown>
+>;
+
+export type UserDataFileBackupResult =
+  | {
+      ok: true;
+      scopes: UserDataFileBackupScope[];
+      data: UserDataFileBackupPayload;
+    }
+  | {
+      ok: false;
+      errors: string[];
+    };
+
+export type UserDataFileMutationResult =
+  | {
+      ok: true;
+      scopes: UserDataFileBackupScope[];
+    }
+  | {
+      ok: false;
+      errors: string[];
+    };
