@@ -44,6 +44,29 @@ export function computeLoopHighlight(
   return { left, width };
 }
 
+export interface TransportControlVisibilityInput {
+  childFocusMode: boolean;
+}
+
+export interface TransportControlVisibility {
+  showPrimaryControls: boolean;
+  showTimeline: boolean;
+  showMetronomeControls: boolean;
+  showVolumeControls: boolean;
+}
+
+// eslint-disable-next-line react-refresh/only-export-components
+export function getTransportControlVisibility({
+  childFocusMode,
+}: TransportControlVisibilityInput): TransportControlVisibility {
+  return {
+    showPrimaryControls: true,
+    showTimeline: true,
+    showMetronomeControls: !childFocusMode,
+    showVolumeControls: !childFocusMode,
+  };
+}
+
 interface TransportBarProps {
   compact?: boolean;
 }
@@ -74,6 +97,7 @@ export function TransportBar({
 
   const metronomeEnabled = useSettingsStore((s) => s.metronomeEnabled);
   const setMetronomeEnabled = useSettingsStore((s) => s.setMetronomeEnabled);
+  const childFocusMode = useSettingsStore((s) => s.childFocusMode);
 
   const metronomeBeat = useMetronomeBeat();
 
@@ -101,6 +125,7 @@ export function TransportBar({
   const primaryButtonSize = compact ? 36 : 40;
   const iconSize = compact ? 16 : 18;
   const utilityButtonSize = compact ? 30 : 32;
+  const controlVisibility = getTransportControlVisibility({ childFocusMode });
 
   return (
     <div
@@ -110,9 +135,11 @@ export function TransportBar({
       data-testid="transport-strip"
     >
       <div
-        className={`grid lg:grid-cols-[auto_1fr_auto] lg:items-center ${
-          compact ? "gap-1.5 lg:gap-2.5" : "gap-2 lg:gap-3"
-        }`}
+        className={`grid ${
+          controlVisibility.showVolumeControls
+            ? "lg:grid-cols-[auto_1fr_auto]"
+            : "lg:grid-cols-[auto_1fr]"
+        } lg:items-center ${compact ? "gap-1.5 lg:gap-2.5" : "gap-2 lg:gap-3"}`}
       >
         <div
           className={`flex items-center gap-2 overflow-x-auto lg:overflow-visible rounded-xl ${
@@ -170,45 +197,49 @@ export function TransportBar({
             <SkipBack size={compact ? 13 : 14} fill="currentColor" />
           </button>
 
-          <button
-            onClick={() => setMetronomeEnabled(!metronomeEnabled)}
-            className="flex items-center justify-center rounded-lg cursor-pointer transition-colors"
-            style={{
-              width: utilityButtonSize,
-              height: utilityButtonSize,
-              background: metronomeEnabled
-                ? "color-mix(in srgb, var(--color-accent) 15%, transparent)"
-                : "var(--color-surface-alt)",
-              color: metronomeEnabled
-                ? "var(--color-accent)"
-                : "var(--color-text-muted)",
-              border: metronomeEnabled
-                ? "1px solid color-mix(in srgb, var(--color-accent) 30%, transparent)"
-                : "1px solid transparent",
-              transition: "all 0.15s ease",
-            }}
-            title={
-              metronomeEnabled
-                ? t("transport.disableMetronome")
-                : t("transport.enableMetronome")
-            }
-            aria-label={
-              metronomeEnabled
-                ? t("transport.disableMetronome")
-                : t("transport.enableMetronome")
-            }
-            data-testid="metronome-toggle"
-          >
-            <Timer size={compact ? 13 : 14} />
-          </button>
+          {controlVisibility.showMetronomeControls && (
+            <>
+              <button
+                onClick={() => setMetronomeEnabled(!metronomeEnabled)}
+                className="flex items-center justify-center rounded-lg cursor-pointer transition-colors"
+                style={{
+                  width: utilityButtonSize,
+                  height: utilityButtonSize,
+                  background: metronomeEnabled
+                    ? "color-mix(in srgb, var(--color-accent) 15%, transparent)"
+                    : "var(--color-surface-alt)",
+                  color: metronomeEnabled
+                    ? "var(--color-accent)"
+                    : "var(--color-text-muted)",
+                  border: metronomeEnabled
+                    ? "1px solid color-mix(in srgb, var(--color-accent) 30%, transparent)"
+                    : "1px solid transparent",
+                  transition: "all 0.15s ease",
+                }}
+                title={
+                  metronomeEnabled
+                    ? t("transport.disableMetronome")
+                    : t("transport.enableMetronome")
+                }
+                aria-label={
+                  metronomeEnabled
+                    ? t("transport.disableMetronome")
+                    : t("transport.enableMetronome")
+                }
+                data-testid="metronome-toggle"
+              >
+                <Timer size={compact ? 13 : 14} />
+              </button>
 
-          <div className="hidden md:block">
-            <MetronomePulse
-              isPlaying={metronomeBeat.isRunning}
-              currentBeat={metronomeBeat.currentBeat}
-              beatsPerMeasure={metronomeBeat.beatsPerMeasure}
-            />
-          </div>
+              <div className="hidden md:block">
+                <MetronomePulse
+                  isPlaying={metronomeBeat.isRunning}
+                  currentBeat={metronomeBeat.currentBeat}
+                  beatsPerMeasure={metronomeBeat.beatsPerMeasure}
+                />
+              </div>
+            </>
+          )}
 
           {audioStatus === "loading" && audioRecoveryState !== "recovering" && (
             <span
@@ -353,28 +384,30 @@ export function TransportBar({
           </span>
         </div>
 
-        <div
-          className={`flex items-center justify-end rounded-xl px-1.5 ${
-            compact ? "gap-2 py-1" : "gap-2.5 py-1.5"
-          }`}
-          style={{
-            background:
-              "color-mix(in srgb, var(--color-surface-alt) 46%, var(--color-surface))",
-            border: "1px solid var(--color-border)",
-          }}
-        >
-          <span
-            className="control-chip font-mono tabular-nums"
+        {controlVisibility.showVolumeControls && (
+          <div
+            className={`flex items-center justify-end rounded-xl px-1.5 ${
+              compact ? "gap-2 py-1" : "gap-2.5 py-1.5"
+            }`}
             style={{
-              color: "var(--color-text-muted)",
+              background:
+                "color-mix(in srgb, var(--color-surface-alt) 46%, var(--color-surface))",
+              border: "1px solid var(--color-border)",
             }}
-            data-testid="transport-volume-percent"
           >
-            {volumePercent}%
-          </span>
+            <span
+              className="control-chip font-mono tabular-nums"
+              style={{
+                color: "var(--color-text-muted)",
+              }}
+              data-testid="transport-volume-percent"
+            >
+              {volumePercent}%
+            </span>
 
-          <VolumeControl />
-        </div>
+            <VolumeControl />
+          </div>
+        )}
       </div>
     </div>
   );

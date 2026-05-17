@@ -1,5 +1,9 @@
 import { describe, test, expect, beforeEach } from "vitest";
-import { formatTime, computeLoopHighlight } from "./TransportBar";
+import {
+  computeLoopHighlight,
+  formatTime,
+  getTransportControlVisibility,
+} from "./TransportBar";
 import { usePlaybackStore } from "@renderer/stores/usePlaybackStore";
 import { usePracticeStore } from "@renderer/stores/usePracticeStore";
 import { useSettingsStore } from "@renderer/stores/useSettingsStore";
@@ -105,6 +109,28 @@ describe("computeLoopHighlight", () => {
   test("handles small ranges", () => {
     const result = computeLoopHighlight([49, 51], 100);
     expect(result).toEqual({ left: 49, width: 2 });
+  });
+});
+
+// ─── Child Focus Mode Visibility ───────────────────────
+
+describe("getTransportControlVisibility", () => {
+  test("shows all controls when child focus mode is disabled", () => {
+    expect(getTransportControlVisibility({ childFocusMode: false })).toEqual({
+      showPrimaryControls: true,
+      showTimeline: true,
+      showMetronomeControls: true,
+      showVolumeControls: true,
+    });
+  });
+
+  test("hides secondary controls while preserving essentials in child focus mode", () => {
+    expect(getTransportControlVisibility({ childFocusMode: true })).toEqual({
+      showPrimaryControls: true,
+      showTimeline: true,
+      showMetronomeControls: false,
+      showVolumeControls: false,
+    });
   });
 });
 
