@@ -1,6 +1,9 @@
 import { describe, expect, test } from "vitest";
 import type { ParsedNote, ParsedSong, ParsedTrack } from "./types";
-import { diagnoseParsedSong } from "./MidiDiagnostics";
+import {
+  diagnoseParsedSong,
+  summarizeMidiDiagnostics,
+} from "./MidiDiagnostics";
 
 function note(time: number, midi = 60): ParsedNote {
   return {
@@ -124,5 +127,48 @@ describe("diagnoseParsedSong", () => {
 
   test("returns no diagnostics for a simple practice-ready song", () => {
     expect(diagnoseParsedSong(song())).toEqual([]);
+  });
+});
+
+describe("summarizeMidiDiagnostics", () => {
+  test("marks songs with no diagnostics as practice-ready", () => {
+    expect(summarizeMidiDiagnostics([])).toEqual({
+      isPracticeReady: true,
+      hasWarnings: false,
+      highestSeverity: "none",
+      blockingCount: 0,
+      warningCount: 0,
+      errorCount: 0,
+      codes: [],
+    });
+  });
+
+  test("keeps warning-only diagnostics practice-ready but visible", () => {
+    const diagnostics = diagnoseParsedSong(
+      song({ tempos: [], timeSignatures: [] }),
+    );
+
+    expect(summarizeMidiDiagnostics(diagnostics)).toMatchObject({
+      isPracticeReady: true,
+      hasWarnings: true,
+      highestSeverity: "warning",
+      blockingCount: 0,
+      warningCount: 2,
+      errorCount: 0,
+      codes: ["missing-tempo", "missing-time-signature"],
+    });
+  });
+
+  test("marks blocking diagnostics as not practice-ready", () => {
+    const diagnostics = diagnoseParsedSong(song({ tracks: [], noteCount: 0 }));
+
+    expect(summarizeMidiDiagnostics(diagnostics)).toMatchObject({
+      isPracticeReady: false,
+      highestSeverity: "error",
+      blockingCount: 1,
+      warningCount: 0,
+      errorCount: 1,
+      codes: ["empty-song"],
+    });
   });
 });

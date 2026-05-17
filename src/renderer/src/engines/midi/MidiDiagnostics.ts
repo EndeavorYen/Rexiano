@@ -19,6 +19,16 @@ export interface MidiDiagnostic {
   threshold?: number;
 }
 
+export interface MidiDiagnosticSummary {
+  isPracticeReady: boolean;
+  hasWarnings: boolean;
+  highestSeverity: MidiDiagnosticSeverity | "none";
+  blockingCount: number;
+  warningCount: number;
+  errorCount: number;
+  codes: MidiDiagnosticCode[];
+}
+
 export interface MidiDiagnosticOptions {
   maxPracticeTracks?: number;
   maxChordSpreadSeconds?: number;
@@ -146,4 +156,26 @@ export function diagnoseParsedSong(
   }
 
   return diagnostics;
+}
+
+export function summarizeMidiDiagnostics(
+  diagnostics: MidiDiagnostic[],
+): MidiDiagnosticSummary {
+  const blockingCount = diagnostics.filter((d) => d.blocking).length;
+  const warningCount = diagnostics.filter(
+    (d) => d.severity === "warning",
+  ).length;
+  const errorCount = diagnostics.filter((d) => d.severity === "error").length;
+  const highestSeverity: MidiDiagnosticSummary["highestSeverity"] =
+    errorCount > 0 ? "error" : warningCount > 0 ? "warning" : "none";
+
+  return {
+    isPracticeReady: blockingCount === 0,
+    hasWarnings: warningCount > 0,
+    highestSeverity,
+    blockingCount,
+    warningCount,
+    errorCount,
+    codes: diagnostics.map((d) => d.code),
+  };
 }
