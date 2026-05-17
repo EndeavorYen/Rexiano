@@ -146,6 +146,8 @@ describe("buildParentPracticeReport", () => {
     ).toMatchObject({
       consistencyLevel: "empty",
       accuracyLevel: "empty",
+      currentStreakDays: 0,
+      longestStreakDays: 0,
       nextFocusSong: null,
       bestImprovement: null,
       summary: {
@@ -216,6 +218,8 @@ describe("buildParentPracticeReport", () => {
     ).toMatchObject({
       consistencyLevel: "strong",
       accuracyLevel: "building",
+      currentStreakDays: 3,
+      longestStreakDays: 3,
       nextFocusSong: {
         songId: "minuet",
         songTitle: "Minuet",
@@ -231,6 +235,24 @@ describe("buildParentPracticeReport", () => {
         activeDayCount: 4,
         averageAccuracy: 73,
       },
+    });
+  });
+
+  test("keeps the longest streak when the current streak is shorter", () => {
+    const sessions = [
+      makeSession("day-1", Date.UTC(2026, 4, 10, 1)),
+      makeSession("day-2", Date.UTC(2026, 4, 11, 1)),
+      makeSession("day-4", Date.UTC(2026, 4, 13, 1)),
+    ];
+
+    expect(
+      buildParentPracticeReport(sessions, {
+        startTimestamp: Date.UTC(2026, 4, 10),
+        endTimestamp: Date.UTC(2026, 4, 17),
+      }),
+    ).toMatchObject({
+      currentStreakDays: 1,
+      longestStreakDays: 2,
     });
   });
 });

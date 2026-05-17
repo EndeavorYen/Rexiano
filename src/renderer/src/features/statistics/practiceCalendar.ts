@@ -53,6 +53,8 @@ export interface ParentPracticeReport {
   summary: PracticeCalendarSummary;
   consistencyLevel: ParentPracticeConsistencyLevel;
   accuracyLevel: ParentPracticeAccuracyLevel;
+  currentStreakDays: number;
+  longestStreakDays: number;
   nextFocusSong: ParentPracticeSongFocus | null;
   bestImprovement: ParentPracticeSongImprovement | null;
 }
@@ -115,6 +117,33 @@ function classifyAccuracy(
   if (averageAccuracy >= 85) return "confident";
   if (averageAccuracy >= 70) return "building";
   return "needs-support";
+}
+
+function computeActiveDayStreaks(days: PracticeCalendarDay[]): {
+  currentStreakDays: number;
+  longestStreakDays: number;
+} {
+  if (days.length === 0) {
+    return { currentStreakDays: 0, longestStreakDays: 0 };
+  }
+
+  const sortedDayKeys = days.map((day) => day.dayKey).sort();
+  let currentStreakDays = 0;
+  let longestStreakDays = 0;
+  let previousDayTimestamp: number | null = null;
+
+  for (const dayKey of sortedDayKeys) {
+    const dayTimestamp = Date.parse(`${dayKey}T00:00:00.000Z`);
+    const isConsecutive =
+      previousDayTimestamp !== null &&
+      dayTimestamp - previousDayTimestamp === 86_400_000;
+
+    currentStreakDays = isConsecutive ? currentStreakDays + 1 : 1;
+    longestStreakDays = Math.max(longestStreakDays, currentStreakDays);
+    previousDayTimestamp = dayTimestamp;
+  }
+
+  return { currentStreakDays, longestStreakDays };
 }
 
 export function buildPracticeCalendarSummary(
@@ -192,6 +221,7 @@ export function buildParentPracticeReport(
   range: PracticeCalendarRange,
 ): ParentPracticeReport {
   const summary = buildPracticeCalendarSummary(sessions, range);
+  const streaks = computeActiveDayStreaks(summary.days);
   const inRange = sessions
     .filter(
       (session) =>
@@ -265,6 +295,8 @@ export function buildParentPracticeReport(
     summary,
     consistencyLevel: classifyConsistency(summary),
     accuracyLevel: classifyAccuracy(summary.averageAccuracy),
+    currentStreakDays: streaks.currentStreakDays,
+    longestStreakDays: streaks.longestStreakDays,
     nextFocusSong,
     bestImprovement,
   };
