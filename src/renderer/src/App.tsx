@@ -231,9 +231,9 @@ function App(): React.JSX.Element {
 
   const insight = useMemo(() => {
     if (!songId || sessions.length === 0) return null;
-    const summaries = buildSessionSummariesForSong(songId, sessions);
+    const summaries = buildSessionSummariesForSong(songId, sessions, song);
     return analyzer.analyze(songId, summaries);
-  }, [songId, sessions]);
+  }, [song, songId, sessions]);
 
   const nextPracticeAction = useMemo(
     () =>
@@ -243,8 +243,16 @@ function App(): React.JSX.Element {
         speed,
         tracksPlayed: Array.from(activeTracks),
         weakSpots: insight?.weakSpots,
+        weakSections: insight?.weakSections,
       }),
-    [activeTracks, displayScore, insight?.weakSpots, mode, speed],
+    [
+      activeTracks,
+      displayScore,
+      insight?.weakSections,
+      insight?.weakSpots,
+      mode,
+      speed,
+    ],
   );
 
   // ─── Phase 7: Sheet Music ──────────────────────────────

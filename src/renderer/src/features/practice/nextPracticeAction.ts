@@ -1,6 +1,9 @@
 import type { PracticeMode, PracticeScore, SessionRecord } from "@shared/types";
 import type { TrackHandAssignment } from "@renderer/engines/midi/TrackHandAssignment";
-import type { WeakSpot } from "@renderer/features/insights/WeakSpotAnalyzer";
+import type {
+  WeakSection,
+  WeakSpot,
+} from "@renderer/features/insights/WeakSpotAnalyzer";
 
 export type NextPracticeActionKind =
   | "slow-down"
@@ -8,6 +11,7 @@ export type NextPracticeActionKind =
   | "repeat-once"
   | "try-other-hand"
   | "practice-weak-note"
+  | "practice-weak-section"
   | "next-song";
 
 export interface NextPracticeAction {
@@ -16,6 +20,8 @@ export interface NextPracticeAction {
   targetSpeed?: number;
   targetTracks?: number[];
   targetMidi?: number;
+  targetMeasureIndex?: number;
+  targetMeasureNumber?: number;
   targetMode: PracticeMode;
   reason:
     | "accuracy-low"
@@ -23,6 +29,7 @@ export interface NextPracticeAction {
     | "steady-progress"
     | "other-hand-ready"
     | "weak-note-ready"
+    | "weak-section-ready"
     | "song-mastered";
 }
 
@@ -33,6 +40,7 @@ export interface NextPracticeActionInput {
   tracksPlayed?: number[];
   handAssignments?: Record<number, TrackHandAssignment>;
   weakSpots?: WeakSpot[];
+  weakSections?: WeakSection[];
 }
 
 export interface DailyGoalProgress {
@@ -105,6 +113,18 @@ function findWeakestNote(input: NextPracticeActionInput): WeakSpot | null {
   )[0];
 }
 
+function findWeakestSection(
+  input: NextPracticeActionInput,
+): WeakSection | null {
+  if (!input.weakSections || input.weakSections.length === 0) return null;
+  return [...input.weakSections].sort(
+    (a, b) =>
+      b.missRate - a.missRate ||
+      b.totalAttempts - a.totalAttempts ||
+      a.measureIndex - b.measureIndex,
+  )[0];
+}
+
 export function selectNextPracticeAction(
   input: NextPracticeActionInput,
 ): NextPracticeAction {
@@ -129,6 +149,18 @@ export function selectNextPracticeAction(
   }
 
   if (input.score.accuracy >= 85) {
+    const weakSection = findWeakestSection(input);
+    if (weakSection) {
+      return {
+        kind: "practice-weak-section",
+        priority: "medium",
+        targetMeasureIndex: weakSection.measureIndex,
+        targetMeasureNumber: weakSection.measureNumber,
+        targetMode: input.mode,
+        reason: "weak-section-ready",
+      };
+    }
+
     const weakSpot = findWeakestNote(input);
     if (weakSpot) {
       return {

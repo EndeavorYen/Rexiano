@@ -382,7 +382,7 @@
 - [ ] 練習閉環
   - [x] 每日 5-10 分鐘練習目標
   - [x] Session 結束後提供 repeat loop / slow down / other hand / next song
-  - [ ] 弱點小節與弱點音符轉成下一步建議
+  - [x] 弱點小節與弱點音符轉成下一步建議
 
 ---
 

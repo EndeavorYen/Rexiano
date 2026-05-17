@@ -13,6 +13,17 @@ export interface WeakSpot {
   totalAttempts: number;
 }
 
+export interface WeakSection {
+  /** 0-based measure index */
+  measureIndex: number;
+  /** 1-based measure number for user-facing copy */
+  measureNumber: number;
+  /** Miss rate as a fraction 0-1 */
+  missRate: number;
+  /** Total number of note attempts in this measure */
+  totalAttempts: number;
+}
+
 export interface SessionSummary {
   /** Unique identifier for the song */
   songId: string;
@@ -20,6 +31,8 @@ export interface SessionSummary {
   accuracy: number;
   /** Duration of practice in minutes */
   durationMinutes: number;
+  /** Approximate duration of one measure, used to bucket note timing */
+  measureDurationSeconds?: number;
   /** Timestamp of the session */
   timestamp: number;
   /** Per-note results from the session */
@@ -31,6 +44,8 @@ export interface PracticeInsight {
   songId: string;
   /** Top 5 weakest notes by miss rate */
   weakSpots: WeakSpot[];
+  /** Top weakest measures by miss rate */
+  weakSections: WeakSection[];
   /** Accuracy values over sessions, ordered chronologically */
   accuracyTrend: number[];
   /** Total practice time in minutes */
@@ -66,6 +81,9 @@ const RECENT_WINDOW = 3;
 /** Maximum number of weak spots to report */
 const MAX_WEAK_SPOTS = 5;
 
+/** Maximum number of weak sections to report */
+const MAX_WEAK_SECTIONS = 5;
+
 /** Minimum attempts before a note is considered for weak spot analysis */
 const MIN_ATTEMPTS_FOR_ANALYSIS = 2;
 
@@ -83,11 +101,14 @@ export function midiToNoteName(midi: number): string {
 }
 
 /**
- * Extract MIDI note number from a note result key.
+ * Extract MIDI note number and timing from a note result key.
  * Current scoring callbacks store "midi:timeUs"; older insight fixtures use
  * "trackIdx:midi:timeUs". Plain "trackIdx:noteIdx" keys cannot be analyzed.
  */
-function parseMidiFromKey(key: string): number | null {
+function parseNoteResultKey(key: string): {
+  midi: number | null;
+  timeSeconds: number | null;
+} {
   const parts = key.split(":");
   const parseBoundedMidi = (value: string | undefined): number | null => {
     if (value === undefined) return null;
@@ -95,16 +116,28 @@ function parseMidiFromKey(key: string): number | null {
     if (!isNaN(midi) && midi >= 0 && midi <= 127) return midi;
     return null;
   };
+  const parseTimeSeconds = (value: string | undefined): number | null => {
+    if (value === undefined) return null;
+    const timeUs = Number(value);
+    if (!Number.isFinite(timeUs) || timeUs < 0) return null;
+    return timeUs / 1_000_000;
+  };
 
   if (parts.length >= 3) {
-    return parseBoundedMidi(parts[1]);
+    return {
+      midi: parseBoundedMidi(parts[1]),
+      timeSeconds: parseTimeSeconds(parts[2]),
+    };
   }
 
   if (parts.length === 2) {
-    return parseBoundedMidi(parts[0]);
+    return {
+      midi: parseBoundedMidi(parts[0]),
+      timeSeconds: parseTimeSeconds(parts[1]),
+    };
   }
 
-  return null;
+  return { midi: null, timeSeconds: null };
 }
 
 // ── Main Analyzer ──────────────────────────────────────────────────────
@@ -144,26 +177,52 @@ export class WeakSpotAnalyzer {
 
     // Aggregate note results across all sessions
     const noteStats = new Map<number, { hits: number; misses: number }>();
+    const sectionStats = new Map<number, { hits: number; misses: number }>();
 
     for (const session of sorted) {
       for (const [key, result] of session.noteResults) {
         if (result === "pending") continue;
 
-        const midi = parseMidiFromKey(key);
-        if (midi === null) continue;
+        const parsed = parseNoteResultKey(key);
 
-        const existing = noteStats.get(midi) ?? { hits: 0, misses: 0 };
-        if (result === "hit") {
-          existing.hits++;
-        } else if (result === "miss") {
-          existing.misses++;
+        if (parsed.midi !== null) {
+          const existing = noteStats.get(parsed.midi) ?? {
+            hits: 0,
+            misses: 0,
+          };
+          if (result === "hit") {
+            existing.hits++;
+          } else if (result === "miss") {
+            existing.misses++;
+          }
+          noteStats.set(parsed.midi, existing);
         }
-        noteStats.set(midi, existing);
+
+        if (
+          parsed.timeSeconds !== null &&
+          session.measureDurationSeconds !== undefined &&
+          session.measureDurationSeconds > 0
+        ) {
+          const measureIndex = Math.floor(
+            parsed.timeSeconds / session.measureDurationSeconds,
+          );
+          const existing = sectionStats.get(measureIndex) ?? {
+            hits: 0,
+            misses: 0,
+          };
+          if (result === "hit") {
+            existing.hits++;
+          } else if (result === "miss") {
+            existing.misses++;
+          }
+          sectionStats.set(measureIndex, existing);
+        }
       }
     }
 
     // Compute weak spots
     const weakSpots = this.computeWeakSpots(noteStats);
+    const weakSections = this.computeWeakSections(sectionStats);
 
     // Statistics
     const totalPracticeMinutes = sorted.reduce(
@@ -178,6 +237,7 @@ export class WeakSpotAnalyzer {
     return {
       songId,
       weakSpots,
+      weakSections,
       accuracyTrend,
       totalPracticeMinutes: Math.round(totalPracticeMinutes * 10) / 10,
       sessionsCount: sorted.length,
@@ -217,6 +277,35 @@ export class WeakSpotAnalyzer {
     return candidates.slice(0, MAX_WEAK_SPOTS);
   }
 
+  private computeWeakSections(
+    sectionStats: Map<number, { hits: number; misses: number }>,
+  ): WeakSection[] {
+    const candidates: WeakSection[] = [];
+
+    for (const [measureIndex, stats] of sectionStats) {
+      const total = stats.hits + stats.misses;
+      if (total < MIN_ATTEMPTS_FOR_ANALYSIS) continue;
+
+      const missRate = stats.misses / total;
+      candidates.push({
+        measureIndex,
+        measureNumber: measureIndex + 1,
+        missRate: Math.round(missRate * 1000) / 1000,
+        totalAttempts: total,
+      });
+    }
+
+    candidates.sort((a, b) => {
+      if (Math.abs(a.missRate - b.missRate) > 0.001)
+        return b.missRate - a.missRate;
+      return (
+        b.totalAttempts - a.totalAttempts || a.measureIndex - b.measureIndex
+      );
+    });
+
+    return candidates.slice(0, MAX_WEAK_SECTIONS);
+  }
+
   /**
    * Compute improvement: average of recent sessions minus average of older sessions.
    * A positive value means the player is improving.
@@ -244,6 +333,7 @@ export class WeakSpotAnalyzer {
     return {
       songId,
       weakSpots: [],
+      weakSections: [],
       accuracyTrend: [],
       totalPracticeMinutes: 0,
       sessionsCount: 0,

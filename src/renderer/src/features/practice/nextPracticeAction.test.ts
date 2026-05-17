@@ -134,6 +134,37 @@ describe("selectNextPracticeAction", () => {
     });
   });
 
+  test("suggests looping the weakest measure after a solid session with weak-section data", () => {
+    expect(
+      selectNextPracticeAction({
+        score: score({ accuracy: 88, missedNotes: 4 }),
+        mode: "wait",
+        speed: 1,
+        weakSections: [
+          {
+            measureIndex: 1,
+            measureNumber: 2,
+            missRate: 0.4,
+            totalAttempts: 5,
+          },
+          {
+            measureIndex: 3,
+            measureNumber: 4,
+            missRate: 0.75,
+            totalAttempts: 8,
+          },
+        ],
+      }),
+    ).toMatchObject({
+      kind: "practice-weak-section",
+      priority: "medium",
+      targetMeasureIndex: 3,
+      targetMeasureNumber: 4,
+      targetMode: "wait",
+      reason: "weak-section-ready",
+    });
+  });
+
   test("keeps slow-down ahead of weak-note suggestions for low accuracy", () => {
     expect(
       selectNextPracticeAction({

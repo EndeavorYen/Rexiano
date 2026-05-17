@@ -1,6 +1,36 @@
 import { describe, expect, test } from "vitest";
+import type { ParsedSong, ParsedTrack } from "@renderer/engines/midi/types";
 import type { NoteResult, SessionRecord } from "@shared/types";
 import { buildSessionSummariesForSong } from "./sessionSummary";
+
+function note(midi: number): ParsedTrack["notes"][number] {
+  return {
+    midi,
+    name: `N${midi}`,
+    time: 0,
+    duration: 0.5,
+    velocity: 80,
+  };
+}
+
+function song(overrides: Partial<ParsedSong> = {}): ParsedSong {
+  return {
+    fileName: "song-a.mid",
+    duration: 12,
+    tracks: [
+      {
+        name: "Piano",
+        instrument: "Acoustic Grand Piano",
+        channel: 0,
+        notes: [note(60)],
+      },
+    ],
+    tempos: [{ time: 0, bpm: 120 }],
+    timeSignatures: [{ time: 0, numerator: 3, denominator: 4 }],
+    noteCount: 1,
+    ...overrides,
+  };
+}
 
 function session(overrides: Partial<SessionRecord> = {}): SessionRecord {
   return {
@@ -49,5 +79,15 @@ describe("buildSessionSummariesForSong", () => {
     const summaries = buildSessionSummariesForSong("song-a", [session()]);
 
     expect(summaries[0].noteResults).toEqual(new Map());
+  });
+
+  test("adds first-measure duration from the loaded song", () => {
+    const summaries = buildSessionSummariesForSong(
+      "song-a",
+      [session()],
+      song(),
+    );
+
+    expect(summaries[0].measureDurationSeconds).toBe(1.5);
   });
 });

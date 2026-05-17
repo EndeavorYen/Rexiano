@@ -11,12 +11,17 @@ function session(
   songId: string,
   accuracy: number,
   noteResults: [string, NoteResult][],
-  opts?: { durationMinutes?: number; timestamp?: number },
+  opts?: {
+    durationMinutes?: number;
+    measureDurationSeconds?: number;
+    timestamp?: number;
+  },
 ): SessionSummary {
   return {
     songId,
     accuracy,
     durationMinutes: opts?.durationMinutes ?? 5,
+    measureDurationSeconds: opts?.measureDurationSeconds,
     timestamp: opts?.timestamp ?? Date.now(),
     noteResults: new Map(noteResults),
   };
@@ -210,6 +215,35 @@ describe("WeakSpotAnalyzer", () => {
       expect(c4Spot).toBeDefined();
       expect(c4Spot!.totalAttempts).toBe(4); // 2 + 2
       expect(c4Spot!.missRate).toBe(0.75); // 3 misses / 4 total
+    });
+  });
+
+  // ── Weak sections ──────────────────────────────────────────────
+
+  describe("weak sections", () => {
+    it("identifies weak measures from recorded note timing", () => {
+      const noteResults: [string, NoteResult][] = [
+        // Measure 1: 2 hits → 0% miss rate
+        ["60:500000", "hit"],
+        ["64:1200000", "hit"],
+        // Measure 3: 3 misses, 1 hit → 75% miss rate
+        ["67:4100000", "miss"],
+        ["69:4500000", "miss"],
+        ["71:5000000", "miss"],
+        ["72:5400000", "hit"],
+      ];
+
+      const sessions = [
+        session("song1", 82, noteResults, { measureDurationSeconds: 2 }),
+      ];
+      const insight = analyzer.analyze("song1", sessions);
+
+      expect(insight.weakSections[0]).toMatchObject({
+        measureIndex: 2,
+        measureNumber: 3,
+        missRate: 0.75,
+        totalAttempts: 4,
+      });
     });
   });
 

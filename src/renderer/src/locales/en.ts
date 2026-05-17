@@ -304,6 +304,9 @@ export const en: TranslationMap = {
   "celebration.nextAction.practiceWeakNote.title": "Focus one note",
   "celebration.nextAction.practiceWeakNote.body":
     "Give MIDI note {note} a few slow, careful tries.",
+  "celebration.nextAction.practiceWeakSection.title": "Loop one measure",
+  "celebration.nextAction.practiceWeakSection.body":
+    "Use A-B practice on measure {measure} and play it slowly.",
   "celebration.nextAction.nextSong.title": "Choose the next song",
   "celebration.nextAction.nextSong.body":
     "That pass is solid. Pick a new song near this level.",
