@@ -93,6 +93,7 @@ export function SongLibraryFilters(): React.JSX.Element {
             onChange={handleSearch}
             placeholder={t("library.searchPlaceholder")}
             className="w-full pl-9 pr-3.5 py-2.5 rounded-lg text-sm font-body input-themed"
+            data-testid="song-library-search"
           />
         </div>
 

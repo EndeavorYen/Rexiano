@@ -9,6 +9,8 @@ import type {
   UserDataFileBackupPayload,
   UserDataFileBackupResult,
   UserDataFileMutationResult,
+  WatchedMidiFolder,
+  WatchedMidiFoldersScanResult,
 } from "../shared/types";
 
 declare global {
@@ -47,6 +49,12 @@ declare global {
       resetUserDataFiles: (
         scopes?: string[],
       ) => Promise<UserDataFileMutationResult>;
+      /** Song library: choose a watched MIDI folder and scan it */
+      selectWatchedMidiFolder: () => Promise<WatchedMidiFolder | null>;
+      /** Song library: rescan watched MIDI folders */
+      scanWatchedMidiFolders: (
+        folderPaths: string[],
+      ) => Promise<WatchedMidiFoldersScanResult>;
       /** Phase 6.5: Load a MIDI file by absolute path (for recent files) */
       loadMidiPath: (filePath: string) => Promise<MidiFileResult | null>;
       /** Release pipeline: get app version and changelog */

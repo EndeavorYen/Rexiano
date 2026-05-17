@@ -11,6 +11,8 @@ import {
   PlayCircle,
   Star,
   Target,
+  FolderPlus,
+  FolderOpen,
 } from "lucide-react";
 import { parseMidiFile } from "../../engines/midi/MidiFileParser";
 import { useSongStore } from "../../stores/useSongStore";
@@ -40,6 +42,10 @@ import {
   getRecentFileRecovery,
   type RecentFileRecovery,
 } from "./recentFileRecovery";
+import {
+  importedSongMatchesQuery,
+  type ImportedSongRecord,
+} from "./importedSongMetadata";
 import {
   buildLessonProgression,
   type LessonRecommendationReason,
@@ -96,6 +102,8 @@ export function SongLibrary({
     return t("library.greeting.evening");
   }, [t]);
   const songs = useSongLibraryStore((s) => s.songs);
+  const importedSongs = useSongLibraryStore((s) => s.importedSongs);
+  const watchedFolders = useSongLibraryStore((s) => s.watchedFolders);
   const isLoading = useSongLibraryStore((s) => s.isLoading);
   const searchQuery = useSongLibraryStore((s) => s.searchQuery);
   const difficultyFilter = useSongLibraryStore((s) => s.difficultyFilter);
@@ -104,6 +112,10 @@ export function SongLibrary({
   const viewMode = useSongLibraryStore((s) => s.viewMode);
   const favoriteSongIds = useSongLibraryStore((s) => s.favoriteSongIds);
   const fetchSongs = useSongLibraryStore((s) => s.fetchSongs);
+  const addWatchedFolder = useSongLibraryStore((s) => s.addWatchedFolder);
+  const refreshWatchedFolders = useSongLibraryStore(
+    (s) => s.refreshWatchedFolders,
+  );
   const toggleFavoriteSong = useSongLibraryStore((s) => s.toggleFavoriteSong);
 
   const loadSong = useSongStore((s) => s.loadSong);
@@ -126,6 +138,10 @@ export function SongLibrary({
   const [loadingRecentPath, setLoadingRecentPath] = useState<string | null>(
     null,
   );
+  const [loadingImportedPath, setLoadingImportedPath] = useState<string | null>(
+    null,
+  );
+  const [isAddingWatchedFolder, setIsAddingWatchedFolder] = useState(false);
   const [showDeviceDrawer, setShowDeviceDrawer] = useState(false);
   const deviceDrawerRef = useRef<HTMLElement>(null);
   const deviceDrawerTriggerRef = useRef<HTMLButtonElement>(null);
@@ -147,6 +163,10 @@ export function SongLibrary({
   }, [fetchSongs]);
 
   useEffect(() => {
+    void refreshWatchedFolders();
+  }, [refreshWatchedFolders]);
+
+  useEffect(() => {
     if (!isProgressLoaded) {
       loadSessions();
     }
@@ -159,6 +179,13 @@ export function SongLibrary({
       searchQuery,
     });
   }, [songs, difficultyFilter, gradeFilter, searchQuery]);
+
+  const filteredImportedSongs = useMemo(() => {
+    return importedSongs.filter((song) => {
+      if (gradeFilter !== "all" && song.grade !== gradeFilter) return false;
+      return importedSongMatchesQuery(song, searchQuery);
+    });
+  }, [importedSongs, gradeFilter, searchQuery]);
 
   const songActivity = useMemo(
     () => buildSongActivity(songs, sessions, recentFiles, favoriteSongIds),
@@ -307,6 +334,55 @@ export function SongLibrary({
     [removeRecent],
   );
 
+  const handleAddWatchedFolder = useCallback(async () => {
+    setError(null);
+    setIsAddingWatchedFolder(true);
+    try {
+      await addWatchedFolder();
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : t("general.error");
+      setError(msg);
+      console.error("Failed to add watched MIDI folder:", e);
+    } finally {
+      setIsAddingWatchedFolder(false);
+    }
+  }, [addWatchedFolder, t]);
+
+  const handleSelectImportedSong = useCallback(
+    async (record: ImportedSongRecord) => {
+      if (record.missing) {
+        setError(t("library.importedMissing"));
+        return;
+      }
+
+      setError(null);
+      setLoadingImportedPath(record.sourcePath);
+      try {
+        const result = await window.api.loadMidiPath(record.sourcePath);
+        if (!result) {
+          setError(t("library.importedMissing"));
+          return;
+        }
+        const parsed = parseMidiFile(result.fileName, result.data);
+        loadSong(parsed);
+        reset();
+        await window.api.saveRecentFile({
+          path: record.sourcePath,
+          name: record.title,
+          timestamp: Date.now(),
+        });
+        refreshRecents();
+      } catch (e) {
+        const msg = e instanceof Error ? e.message : t("general.error");
+        setError(msg);
+        console.error("Failed to load imported song:", e);
+      } finally {
+        setLoadingImportedPath(null);
+      }
+    },
+    [loadSong, refreshRecents, reset, t],
+  );
+
   return (
     <div className="flex-1 min-h-0 app-shell overflow-y-auto overflow-x-hidden">
       <div className="mx-auto w-full max-w-6xl px-6 py-6 pb-24">
@@ -353,6 +429,15 @@ export function SongLibrary({
               >
                 <Upload size={15} />
                 {t("library.importMidi")}
+              </button>
+              <button
+                onClick={() => void handleAddWatchedFolder()}
+                disabled={isAddingWatchedFolder}
+                className="btn-surface-themed flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium cursor-pointer disabled:cursor-wait disabled:opacity-60"
+                data-testid="library-add-folder"
+              >
+                <FolderPlus size={15} />
+                {t("library.addFolder")}
               </button>
               <ThemePicker />
             </div>
@@ -797,6 +882,49 @@ export function SongLibrary({
           </section>
         )}
 
+        {filteredImportedSongs.length > 0 && (
+          <section
+            className="surface-elevated mb-5 p-4 animate-page-enter"
+            data-testid="imported-song-library"
+          >
+            <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+              <div className="flex items-center gap-2">
+                <FolderOpen size={14} style={{ color: "var(--color-note3)" }} />
+                <span
+                  className="text-xs font-body font-semibold uppercase tracking-wide"
+                  style={{ color: "var(--color-note3)" }}
+                >
+                  {t("library.importedSongs")}
+                </span>
+              </div>
+              <span
+                className="rounded-full px-2 py-0.5 text-[10px] font-body font-medium"
+                style={{
+                  color: "var(--color-text-muted)",
+                  background:
+                    "color-mix(in srgb, var(--color-surface-alt) 76%, var(--color-surface))",
+                  border: "1px solid var(--color-border)",
+                }}
+              >
+                {t("library.watchedFolderCount", {
+                  count: watchedFolders.length,
+                })}
+              </span>
+            </div>
+            <div className="grid gap-2">
+              {filteredImportedSongs.map((record, index) => (
+                <ImportedSongRow
+                  key={record.id}
+                  record={record}
+                  isLoading={loadingImportedPath === record.sourcePath}
+                  onSelect={handleSelectImportedSong}
+                  animationDelay={index * 24}
+                />
+              ))}
+            </div>
+          </section>
+        )}
+
         <section className="surface-panel p-4 sm:p-5 animate-page-enter">
           <SongLibraryFilters />
 
@@ -1019,6 +1147,103 @@ function formatSongDuration(seconds: number): string {
   const m = Math.floor(seconds / 60);
   const s = Math.floor(seconds % 60);
   return `${m}:${s.toString().padStart(2, "0")}`;
+}
+
+function ImportedSongRow({
+  record,
+  isLoading,
+  onSelect,
+  animationDelay,
+}: {
+  record: ImportedSongRecord;
+  isLoading: boolean;
+  onSelect: (record: ImportedSongRecord) => void;
+  animationDelay: number;
+}): React.JSX.Element {
+  const { t } = useTranslation();
+  const gradeColor =
+    record.grade !== undefined
+      ? getGradeColor(record.grade)
+      : "var(--color-border)";
+
+  return (
+    <div
+      className="relative flex items-stretch gap-2 rounded-lg animate-stagger-child"
+      style={{
+        background: "color-mix(in srgb, var(--color-surface) 88%, transparent)",
+        border: "1px solid var(--color-border)",
+        animationDelay: `${animationDelay}ms`,
+      }}
+      title={record.sourcePath}
+    >
+      <button
+        type="button"
+        onClick={() => onSelect(record)}
+        disabled={record.missing || isLoading}
+        className="grid min-w-0 flex-1 grid-cols-1 gap-2 px-3 py-2.5 text-left cursor-pointer disabled:cursor-not-allowed disabled:opacity-60 md:grid-cols-[minmax(0,1.5fr)_auto_auto]"
+        data-testid={`imported-song-select-${record.id}`}
+      >
+        <span className="min-w-0">
+          <span
+            className="block truncate text-sm font-body font-semibold"
+            style={{ color: "var(--color-text)" }}
+            data-testid="imported-song-title"
+          >
+            {record.title}
+          </span>
+          <span
+            className="mt-0.5 block truncate text-xs"
+            style={{ color: "var(--color-text-muted)" }}
+          >
+            {record.composer ?? t("library.importedUnknownComposer")}
+          </span>
+        </span>
+
+        <span className="flex flex-wrap items-center gap-1.5 md:justify-end">
+          <span
+            className="rounded-md px-1.5 py-0.5 text-[10px] font-mono font-semibold"
+            style={{
+              color: gradeColor,
+              background: `color-mix(in srgb, ${gradeColor} 12%, transparent)`,
+              border: `1px solid color-mix(in srgb, ${gradeColor} 30%, transparent)`,
+            }}
+          >
+            {record.grade !== undefined ? gradeLabelShort[record.grade] : "--"}
+          </span>
+          <span
+            className="rounded-md px-1.5 py-0.5 text-[10px] font-body font-medium"
+            style={{
+              color: "var(--color-text-muted)",
+              background: "var(--color-surface-alt)",
+              border: "1px solid var(--color-border)",
+            }}
+          >
+            {record.category ? categoryLabels[record.category] : "--"}
+          </span>
+        </span>
+
+        <span
+          className="flex items-center gap-2 text-[11px] font-body md:justify-end"
+          style={{
+            color: record.missing
+              ? "var(--color-accent)"
+              : "var(--color-text-muted)",
+          }}
+        >
+          {record.missing ? (
+            <>
+              <AlertCircle size={12} />
+              {t("library.importedMissingBadge")}
+            </>
+          ) : (
+            t("library.importedAvailable")
+          )}
+        </span>
+      </button>
+
+      {isLoading && <LoadingOverlay radiusClass="rounded-lg" />}
+    </div>
+  );
 }
 
 function SongListRow({

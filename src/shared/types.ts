@@ -39,6 +39,10 @@ export const IpcChannels = {
   USER_DATA_IMPORT_FILES: "userData:importFiles",
   /** User data backup: reset file-backed scopes in userData */
   USER_DATA_RESET_FILES: "userData:resetFiles",
+  /** Song library: choose a watched folder and scan MIDI files */
+  SELECT_WATCHED_MIDI_FOLDER: "library:selectWatchedMidiFolder",
+  /** Song library: rescan existing watched MIDI folders */
+  SCAN_WATCHED_MIDI_FOLDERS: "library:scanWatchedMidiFolders",
 } as const;
 
 /** Result of loading a SoundFont file via IPC */
@@ -146,6 +150,18 @@ export interface SessionRecord {
 export interface AppInfo {
   version: string;
   changelog: string;
+}
+
+// ─── Watched MIDI Folders ───────────────────────────────────────────
+
+export interface WatchedMidiFolder {
+  folderPath: string;
+  midiFilePaths: string[];
+}
+
+export interface WatchedMidiFoldersScanResult {
+  folders: WatchedMidiFolder[];
+  errors: { folderPath: string; message: string }[];
 }
 
 // ─── User Data Backup ────────────────────────────────────────────────

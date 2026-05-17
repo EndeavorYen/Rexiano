@@ -7,6 +7,8 @@ import type {
   UserDataFileBackupPayload,
   UserDataFileBackupResult,
   UserDataFileMutationResult,
+  WatchedMidiFolder,
+  WatchedMidiFoldersScanResult,
 } from "../shared/types";
 
 const api = {
@@ -43,6 +45,12 @@ const api = {
     scopes?: string[],
   ): Promise<UserDataFileMutationResult> =>
     ipcRenderer.invoke(IpcChannels.USER_DATA_RESET_FILES, scopes),
+  selectWatchedMidiFolder: (): Promise<WatchedMidiFolder | null> =>
+    ipcRenderer.invoke(IpcChannels.SELECT_WATCHED_MIDI_FOLDER),
+  scanWatchedMidiFolders: (
+    folderPaths: string[],
+  ): Promise<WatchedMidiFoldersScanResult> =>
+    ipcRenderer.invoke(IpcChannels.SCAN_WATCHED_MIDI_FOLDERS, folderPaths),
 
   // Phase 6.5: Load MIDI file by path (for recent files direct loading)
   loadMidiPath: (filePath: string) =>

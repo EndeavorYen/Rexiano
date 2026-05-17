@@ -37,6 +37,13 @@ export interface TranslationMap {
   "library.noSongs": string;
   "library.noMatch": string;
   "library.importHint": string;
+  "library.addFolder": string;
+  "library.importedSongs": string;
+  "library.watchedFolderCount": string;
+  "library.importedMissing": string;
+  "library.importedMissingBadge": string;
+  "library.importedAvailable": string;
+  "library.importedUnknownComposer": string;
   "library.difficulty.all": string;
   "library.difficulty.beginner": string;
   "library.difficulty.intermediate": string;
