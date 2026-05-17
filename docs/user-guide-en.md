@@ -269,12 +269,19 @@ You can also use the "Bluetooth" button inside Rexiano to scan for nearby BLE MI
 
 #### Windows
 
-Rexiano connects to Bluetooth MIDI keyboards directly on Windows — no bridge software required:
+Windows Bluetooth MIDI support depends on the keyboard, driver, and Windows build. Try the direct path first:
 
 1. Turn on your keyboard's Bluetooth
 2. Pair your keyboard in Windows Settings > Bluetooth & devices
 3. Return to Rexiano and click the "Bluetooth" scan button in the device selector
 4. Select your keyboard when it appears in the list
+
+If the keyboard pairs in Windows but does not appear as a MIDI input in Rexiano, use a bridge:
+
+1. Install a bridge such as MIDIberry from the Microsoft Store or the KORG BLE-MIDI Driver
+2. Connect the keyboard in the bridge app or driver panel
+3. Return to Rexiano and select the new bridged MIDI port
+4. Use the Test button to confirm incoming notes light up the on-screen keyboard
 
 #### Linux
 

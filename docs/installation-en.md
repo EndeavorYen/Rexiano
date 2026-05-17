@@ -168,7 +168,7 @@ If SoundFont loading fails, Rexiano automatically falls back to a sine-wave synt
 ### MIDI Keyboard
 
 - **USB connection**: Plug in your keyboard and Rexiano will detect it automatically. If it doesn't appear, click the device selector to refresh.
-- **Bluetooth connection**: Pair your keyboard in your OS first, then select it in Rexiano. See [User Guide — Connecting a MIDI Keyboard](./user-guide-en.md#5-connecting-a-midi-keyboard) for detailed instructions.
+- **Bluetooth connection**: Pair your keyboard in your OS first, then select it in Rexiano. On Windows, install MIDIberry or the KORG BLE-MIDI Driver if the paired keyboard does not appear as a MIDI input. See [User Guide — Connecting a MIDI Keyboard](./user-guide-en.md#5-connecting-a-midi-keyboard) for detailed instructions.
 
 ---
 

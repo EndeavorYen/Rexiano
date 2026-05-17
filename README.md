@@ -92,13 +92,15 @@ Download the latest release for your platform from the [Releases](https://github
 
 ## Bluetooth MIDI Setup
 
-Rexiano supports Bluetooth MIDI keyboards directly on Windows, macOS, and Linux — no bridge software required:
+Bluetooth MIDI support depends on the operating system:
 
-1. Enable Bluetooth on your keyboard
-2. Pair your keyboard in your OS Bluetooth settings
-3. Open Rexiano and select your keyboard in the device selector
+| Platform | Setup |
+| --- | --- |
+| macOS | Pair the keyboard in Bluetooth settings, then select it in Rexiano. |
+| Linux | Pair through BlueZ/ALSA, then select the exposed MIDI port. |
+| Windows | Try Rexiano's Bluetooth scan first. If the keyboard does not appear as a MIDI input, install a bridge such as MIDIberry or the KORG BLE-MIDI Driver, then select the bridged MIDI port. |
 
-For detailed instructions, see the **[Installation Guide — Bluetooth MIDI](docs/installation-en.md)**.
+For detailed steps, see the **[User Guide — Connecting a MIDI Keyboard](docs/user-guide-en.md#5-connecting-a-midi-keyboard)**.
 
 ---
 

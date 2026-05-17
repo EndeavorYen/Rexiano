@@ -449,7 +449,7 @@
   - [x] Linux: desktop entry（自動從 mimeTypes + category 產生）
 - [ ] README / 文件完善
   - [ ] 安裝指南（各平台）
-  - [ ] Windows BLE MIDI 橋接教學
+  - [x] Windows BLE MIDI 橋接教學
   - [ ] 開發者貢獻指南 (CONTRIBUTING.md)
   - [ ] 功能截圖 / GIF
 
