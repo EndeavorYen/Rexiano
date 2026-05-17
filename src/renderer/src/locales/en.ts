@@ -23,6 +23,9 @@ export const en: TranslationMap = {
   "app.importErrorReadGuidance":
     "Check file permissions for {fileName}, then try again.",
   "app.importErrorUnknownFile": "this file",
+  "app.importActionChooseMidi": "Choose a MIDI file",
+  "app.importActionRetry": "Try again",
+  "app.importActionReimport": "Import again",
   "app.insightsTitle": "Practice Insights",
   "app.startPractice": "Start Practicing",
   "app.openSettings": "Settings",

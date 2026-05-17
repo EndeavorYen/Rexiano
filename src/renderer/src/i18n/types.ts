@@ -20,6 +20,9 @@ export interface TranslationMap {
   "app.importErrorReadTitle": string;
   "app.importErrorReadGuidance": string;
   "app.importErrorUnknownFile": string;
+  "app.importActionChooseMidi": string;
+  "app.importActionRetry": string;
+  "app.importActionReimport": string;
   "app.insightsTitle": string;
   "app.startPractice": string;
   "app.openSettings": string;

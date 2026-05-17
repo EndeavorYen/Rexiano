@@ -22,6 +22,13 @@ describe("getFileImportErrorGuidance", () => {
       title: "app.importErrorUnsupportedTitle",
       guidance: "app.importErrorUnsupportedGuidance:ext=.pdf",
       diagnostic: "score.pdf",
+      actions: [
+        {
+          id: "choose-midi-file",
+          label: "app.importActionChooseMidi",
+          emphasis: "primary",
+        },
+      ],
     });
   });
 
@@ -39,10 +46,17 @@ describe("getFileImportErrorGuidance", () => {
       title: "app.importErrorParseTitle",
       guidance: "app.importErrorParseGuidance:fileName=lesson.mid",
       diagnostic: "Track chunk is malformed",
+      actions: [
+        {
+          id: "reimport-file",
+          label: "app.importActionReimport",
+          emphasis: "primary",
+        },
+      ],
     });
   });
 
-  test("maps missing recent files to re-import guidance", () => {
+  test("maps missing recent files to re-import and remove actions", () => {
     expect(
       getFileImportErrorGuidance(
         { kind: "missing-recent", fileName: "old-song.mid", path: "/old.mid" },
@@ -52,6 +66,43 @@ describe("getFileImportErrorGuidance", () => {
       title: "app.importErrorMissingTitle",
       guidance: "app.importErrorMissingGuidance:fileName=old-song.mid",
       diagnostic: "/old.mid",
+      actions: [
+        {
+          id: "reimport-file",
+          label: "app.importActionReimport",
+          emphasis: "primary",
+        },
+        {
+          id: "remove-recent",
+          label: "library.removeRecent",
+          emphasis: "secondary",
+        },
+      ],
+    });
+  });
+
+  test("maps read failures to retry and re-import actions", () => {
+    expect(
+      getFileImportErrorGuidance(
+        { kind: "read-failed", fileName: "locked.mid", path: "/locked.mid" },
+        t,
+      ),
+    ).toEqual({
+      title: "app.importErrorReadTitle",
+      guidance: "app.importErrorReadGuidance:fileName=locked.mid",
+      diagnostic: "/locked.mid",
+      actions: [
+        {
+          id: "retry-read",
+          label: "app.importActionRetry",
+          emphasis: "primary",
+        },
+        {
+          id: "reimport-file",
+          label: "app.importActionReimport",
+          emphasis: "secondary",
+        },
+      ],
     });
   });
 });

@@ -25,6 +25,18 @@ describe("getRecentFileRecovery", () => {
         title: "app.importErrorMissingTitle",
         guidance: "app.importErrorMissingGuidance:fileName=lesson.mid",
         diagnostic: "/missing/lesson.mid",
+        actions: [
+          {
+            id: "reimport-file",
+            label: "app.importActionReimport",
+            emphasis: "primary",
+          },
+          {
+            id: "remove-recent",
+            label: "library.removeRecent",
+            emphasis: "secondary",
+          },
+        ],
       },
       canRemove: true,
       removePath: "/missing/lesson.mid",
