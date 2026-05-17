@@ -66,6 +66,7 @@ import {
 } from "./features/routing/appRoute";
 import {
   getFileImportErrorGuidance,
+  type FileImportRecoveryActionId,
   type FileImportErrorGuidance,
   type FileImportErrorInput,
 } from "./features/fileImport/fileImportErrorGuidance";
@@ -82,6 +83,11 @@ const SPLIT_SHEET_MIN = 168;
 const SPLIT_SHEET_MAX = 272;
 const SPLIT_SHEET_RATIO = 0.31;
 const SPLIT_FALLING_MIN = 72;
+
+interface ImportErrorState {
+  input: FileImportErrorInput;
+  guidance: FileImportErrorGuidance;
+}
 
 function clampNumber(value: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, value));
@@ -747,8 +753,7 @@ function App(): React.JSX.Element {
   }, [showFallingNoteLabels, noteRendererRef]);
   // ─── End Phase 6.5 ───────────────────────────────────
 
-  const [importError, setImportError] =
-    useState<FileImportErrorGuidance | null>(null);
+  const [importError, setImportError] = useState<ImportErrorState | null>(null);
   const importErrorTimerRef = useRef<ReturnType<typeof setTimeout> | null>(
     null,
   );
@@ -758,7 +763,10 @@ function App(): React.JSX.Element {
       if (importErrorTimerRef.current) {
         clearTimeout(importErrorTimerRef.current);
       }
-      setImportError(getFileImportErrorGuidance(error, t));
+      setImportError({
+        input: error,
+        guidance: getFileImportErrorGuidance(error, t),
+      });
       importErrorTimerRef.current = setTimeout(() => {
         setImportError(null);
         importErrorTimerRef.current = null;
@@ -845,6 +853,33 @@ function App(): React.JSX.Element {
       }
     },
     [loadSong, reset, showImportError],
+  );
+
+  const dismissImportError = useCallback((): void => {
+    if (importErrorTimerRef.current) {
+      clearTimeout(importErrorTimerRef.current);
+      importErrorTimerRef.current = null;
+    }
+    setImportError(null);
+  }, []);
+
+  const handleImportRecoveryAction = useCallback(
+    (actionId: FileImportRecoveryActionId, input: FileImportErrorInput) => {
+      dismissImportError();
+
+      if (actionId === "remove-recent") {
+        if (input.path) void window.api.removeRecentFile(input.path);
+        return;
+      }
+
+      if (actionId === "retry-read" && input.path) {
+        void handleLoadMidiPath(input.path);
+        return;
+      }
+
+      void handleOpenFile();
+    },
+    [dismissImportError, handleLoadMidiPath, handleOpenFile],
   );
 
   // ─── Phase 6.5: Mute toggle ────────────────────────────
@@ -1081,13 +1116,39 @@ function App(): React.JSX.Element {
             background: "#dc2626",
             color: "#ffffff",
           }}
-          title={importError.diagnostic || undefined}
+          title={importError.guidance.diagnostic || undefined}
           data-testid="file-import-error-toast"
         >
-          <div className="font-semibold">{importError.title}</div>
+          <div className="font-semibold">{importError.guidance.title}</div>
           <div className="mt-0.5 text-xs leading-snug">
-            {importError.guidance}
+            {importError.guidance.guidance}
           </div>
+          {importError.guidance.actions.length > 0 && (
+            <div className="mt-2 flex flex-wrap gap-1.5">
+              {importError.guidance.actions.map((action) => (
+                <button
+                  key={action.id}
+                  type="button"
+                  onClick={() =>
+                    handleImportRecoveryAction(action.id, importError.input)
+                  }
+                  className="rounded px-2 py-1 text-[11px] font-body font-semibold cursor-pointer"
+                  style={{
+                    color:
+                      action.emphasis === "primary" ? "#991b1b" : "#ffffff",
+                    background:
+                      action.emphasis === "primary"
+                        ? "#ffffff"
+                        : "rgba(255, 255, 255, 0.14)",
+                    border: "1px solid rgba(255, 255, 255, 0.45)",
+                  }}
+                  data-import-recovery-action={action.id}
+                >
+                  {action.label}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
       )}
 
