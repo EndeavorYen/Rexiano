@@ -59,6 +59,7 @@ export const zhTW: TranslationMap = {
   "library.recentlyPlayed": "最近播放",
   "library.continuePractice": "繼續練習",
   "library.continueHint": "從上次的曲子接著開始",
+  "library.removeRecent": "從最近移除",
   "library.allSongs": "全部曲目",
   "library.sort.label": "排序曲目",
   "library.sort.recent": "最近",

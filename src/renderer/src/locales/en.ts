@@ -61,6 +61,7 @@ export const en: TranslationMap = {
   "library.recentlyPlayed": "Recently Played",
   "library.continuePractice": "Continue Practice",
   "library.continueHint": "Pick up where you left off",
+  "library.removeRecent": "Remove from recents",
   "library.allSongs": "All Songs",
   "library.sort.label": "Sort songs",
   "library.sort.recent": "Recent",

@@ -33,6 +33,10 @@ import {
   sortSongsForLibrary,
   type SongActivity,
 } from "./songLibrarySelectors";
+import {
+  getRecentFileRecovery,
+  type RecentFileRecovery,
+} from "./recentFileRecovery";
 import { DeviceSelector } from "../midiDevice/DeviceSelector";
 import { useTranslation } from "../../i18n/useTranslation";
 import { useDialogFocus } from "../../hooks/useDialogFocus";
@@ -82,11 +86,16 @@ export function SongLibrary({
   const isProgressLoaded = useProgressStore((s) => s.isLoaded);
   const loadSessions = useProgressStore((s) => s.loadSessions);
 
-  const { recentFiles, refresh: refreshRecents } = useRecentFiles();
+  const {
+    recentFiles,
+    refresh: refreshRecents,
+    remove: removeRecent,
+  } = useRecentFiles();
 
   const [loadingId, setLoadingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [recentError, setRecentError] = useState<string | null>(null);
+  const [recentRecovery, setRecentRecovery] =
+    useState<RecentFileRecovery | null>(null);
   const [loadingRecentPath, setLoadingRecentPath] = useState<string | null>(
     null,
   );
@@ -186,7 +195,7 @@ export function SongLibrary({
 
   const handleSelectRecent = useCallback(
     async (file: RecentFile) => {
-      setRecentError(null);
+      setRecentRecovery(null);
       setLoadingRecentPath(file.path);
       try {
         let result;
@@ -200,11 +209,25 @@ export function SongLibrary({
         }
 
         if (!result) {
-          setRecentError(t("general.error"));
-          setTimeout(() => setRecentError(null), 3000);
+          setRecentRecovery(
+            getRecentFileRecovery(file, { kind: "missing" }, t),
+          );
           return;
         }
-        const parsed = parseMidiFile(result.fileName, result.data);
+        let parsed;
+        try {
+          parsed = parseMidiFile(result.fileName, result.data);
+        } catch (e) {
+          setRecentRecovery(
+            getRecentFileRecovery(
+              file,
+              { kind: "parse-failed", diagnostic: e },
+              t,
+            ),
+          );
+          console.error("Failed to parse recent file:", e);
+          return;
+        }
         loadSong(parsed);
         reset();
         await window.api.saveRecentFile({
@@ -214,15 +237,27 @@ export function SongLibrary({
         });
         refreshRecents();
       } catch (e) {
-        const msg = e instanceof Error ? e.message : t("general.error");
-        setRecentError(msg);
-        setTimeout(() => setRecentError(null), 3000);
+        setRecentRecovery(
+          getRecentFileRecovery(
+            file,
+            { kind: "read-failed", diagnostic: e },
+            t,
+          ),
+        );
         console.error("Failed to load recent file:", e);
       } finally {
         setLoadingRecentPath(null);
       }
     },
     [loadSong, reset, refreshRecents, t],
+  );
+
+  const handleRemoveRecent = useCallback(
+    async (filePath: string) => {
+      await removeRecent(filePath);
+      setRecentRecovery(null);
+    },
+    [removeRecent],
   );
 
   return (
@@ -413,13 +448,34 @@ export function SongLibrary({
                 ))}
               </div>
             )}
-            {recentError && (
+            {recentRecovery && (
               <div
-                className="flex items-center gap-1.5 mt-2 text-xs font-body"
+                className="flex flex-wrap items-center gap-2 mt-2 text-xs font-body"
                 style={{ color: "#dc2626" }}
+                title={recentRecovery.guidance.diagnostic || undefined}
+                data-testid="recent-file-recovery"
               >
                 <AlertCircle size={12} />
-                {recentError}
+                <span className="min-w-0">
+                  <span className="font-semibold">
+                    {recentRecovery.guidance.title}
+                  </span>
+                  <span className="ml-1">
+                    {recentRecovery.guidance.guidance}
+                  </span>
+                </span>
+                {recentRecovery.canRemove && (
+                  <button
+                    onClick={() =>
+                      void handleRemoveRecent(recentRecovery.removePath)
+                    }
+                    className="btn-surface-themed rounded-md px-2 py-0.5 text-[10px] font-body cursor-pointer"
+                    style={{ color: "var(--color-text)" }}
+                    data-testid="recent-file-remove-stale"
+                  >
+                    {recentRecovery.actionLabel}
+                  </button>
+                )}
               </div>
             )}
           </section>

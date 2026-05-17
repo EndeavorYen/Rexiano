@@ -58,6 +58,7 @@ export interface TranslationMap {
   "library.recentlyPlayed": string;
   "library.continuePractice": string;
   "library.continueHint": string;
+  "library.removeRecent": string;
   "library.allSongs": string;
   "library.sort.label": string;
   "library.sort.recent": string;
