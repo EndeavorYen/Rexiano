@@ -80,6 +80,11 @@ describe("useSettingsStore", () => {
       const store = await getStore();
       expect(store.getState().audioCompatibilityMode).toBe(false);
     });
+
+    test("childFocusMode defaults to false", async () => {
+      const store = await getStore();
+      expect(store.getState().childFocusMode).toBe(false);
+    });
   });
 
   describe("setters update state", () => {
@@ -141,6 +146,12 @@ describe("useSettingsStore", () => {
       const store = await getStore();
       store.getState().setAudioCompatibilityMode(true);
       expect(store.getState().audioCompatibilityMode).toBe(true);
+    });
+
+    test("setChildFocusMode updates child focus mode", async () => {
+      const store = await getStore();
+      store.getState().setChildFocusMode(true);
+      expect(store.getState().childFocusMode).toBe(true);
     });
   });
 
@@ -240,12 +251,21 @@ describe("useSettingsStore", () => {
       expect(parsed.audioCompatibilityMode).toBe(true);
     });
 
+    test("setChildFocusMode persists to localStorage", async () => {
+      const store = await getStore();
+      store.getState().setChildFocusMode(true);
+      const raw = storage.get(STORAGE_KEY);
+      const parsed = JSON.parse(raw!);
+      expect(parsed.childFocusMode).toBe(true);
+    });
+
     test("saved values are restored on store re-creation", async () => {
       // First store instance: change volume
       const store1 = await getStore();
       store1.getState().setVolume(42);
       store1.getState().setDefaultMode("wait");
       store1.getState().setShowNoteLabels(false);
+      store1.getState().setChildFocusMode(true);
 
       // Reset module to simulate app restart
       vi.resetModules();
@@ -255,6 +275,7 @@ describe("useSettingsStore", () => {
       expect(store2.getState().volume).toBe(42);
       expect(store2.getState().defaultMode).toBe("wait");
       expect(store2.getState().showNoteLabels).toBe(false);
+      expect(store2.getState().childFocusMode).toBe(true);
     });
 
     test("clamped values are persisted (not original)", async () => {

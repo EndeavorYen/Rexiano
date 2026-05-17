@@ -28,6 +28,7 @@ interface SettingsState {
   countInBeats: number;
   latencyCompensation: number;
   audioCompatibilityMode: boolean;
+  childFocusMode: boolean;
 
   setShowNoteLabels: (v: boolean) => void;
   setShowFallingNoteLabels: (v: boolean) => void;
@@ -42,6 +43,7 @@ interface SettingsState {
   setCountInBeats: (v: number) => void;
   setLatencyCompensation: (ms: number) => void;
   setAudioCompatibilityMode: (v: boolean) => void;
+  setChildFocusMode: (v: boolean) => void;
 }
 
 interface PersistedSettings {
@@ -58,6 +60,7 @@ interface PersistedSettings {
   countInBeats?: number;
   latencyCompensation?: number;
   audioCompatibilityMode?: boolean;
+  childFocusMode?: boolean;
 }
 
 const defaults: PersistedSettings = {
@@ -74,6 +77,7 @@ const defaults: PersistedSettings = {
   countInBeats: 4,
   latencyCompensation: 0,
   audioCompatibilityMode: false,
+  childFocusMode: false,
 };
 
 function loadSavedSettings(): PersistedSettings {
@@ -116,6 +120,7 @@ export const useSettingsStore = create<SettingsState>()((set) => {
     countInBeats: saved.countInBeats!,
     latencyCompensation: saved.latencyCompensation!,
     audioCompatibilityMode: saved.audioCompatibilityMode!,
+    childFocusMode: saved.childFocusMode!,
 
     setShowNoteLabels: (v) => {
       persist({ showNoteLabels: v });
@@ -172,6 +177,10 @@ export const useSettingsStore = create<SettingsState>()((set) => {
     setAudioCompatibilityMode: (v) => {
       persist({ audioCompatibilityMode: v });
       set({ audioCompatibilityMode: v });
+    },
+    setChildFocusMode: (v) => {
+      persist({ childFocusMode: v });
+      set({ childFocusMode: v });
     },
   };
 });
