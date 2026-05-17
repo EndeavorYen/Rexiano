@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, test, vi } from "vitest";
 import type { ParsedSong, ParsedTrack } from "@renderer/engines/midi/types";
 import {
+  buildSongPracticeSetupSummary,
   createSongPracticeSetupKey,
   getSongPracticeSetupFixPrompt,
   loadSongPracticeSetupSnapshot,
@@ -237,6 +238,65 @@ describe("resolveSongPracticeSetupForSong", () => {
       defaultMode: "free",
       defaultSpeed: 0.8,
       updatedAt: "2026-05-17T02:01:00.000Z",
+    });
+  });
+});
+
+describe("buildSongPracticeSetupSummary", () => {
+  test("summarizes saved active, background, muted, and default setup state", () => {
+    expect(
+      buildSongPracticeSetupSummary({
+        activeTracks: [2, 0, 2],
+        handAssignments: {
+          0: "right",
+          1: "background",
+          2: "left",
+          3: "background",
+        },
+        trackPreferences: {
+          1: { muted: true, backgroundVisible: false },
+          2: { muted: false },
+          3: { backgroundVisible: true },
+        },
+        defaultMode: "wait",
+        defaultSpeed: 0.75,
+      }),
+    ).toEqual({
+      activeTrackCount: 2,
+      backgroundTrackCount: 2,
+      mutedTrackCount: 1,
+      visibleBackgroundTrackCount: 1,
+      defaultMode: "wait",
+      defaultSpeed: 0.75,
+      needsFix: false,
+      fixReasons: [],
+    });
+  });
+
+  test("includes fix prompt reasons when parsed song setup needs attention", () => {
+    expect(
+      buildSongPracticeSetupSummary(
+        {
+          activeTracks: [0, 1, 2],
+          handAssignments: { 0: "right", 1: "left", 2: "both" },
+          defaultMode: "free",
+          defaultSpeed: 1,
+        },
+        song([
+          track("Piano 1", [60, 64]),
+          track("Piano 2", [62, 65]),
+          track("Piano 3", [67, 69]),
+        ]),
+      ),
+    ).toEqual({
+      activeTrackCount: 3,
+      backgroundTrackCount: 0,
+      mutedTrackCount: 0,
+      visibleBackgroundTrackCount: 0,
+      defaultMode: "free",
+      defaultSpeed: 1,
+      needsFix: true,
+      fixReasons: ["low-confidence-hands"],
     });
   });
 });

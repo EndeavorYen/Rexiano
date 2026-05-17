@@ -36,6 +36,22 @@ export interface PracticeRecommendationModel {
   targetGrade?: BuiltinSongMeta["grade"];
 }
 
+export interface SongSelectionPreviewModel {
+  song: BuiltinSongMeta;
+  title: string;
+  composer: string;
+  durationSeconds: number;
+  difficulty: BuiltinSongMeta["difficulty"];
+  category?: NonNullable<BuiltinSongMeta["category"]>;
+  grade?: NonNullable<BuiltinSongMeta["grade"]>;
+  tags: string[];
+  bestAccuracy: number | null;
+  playCount: number;
+  isFavorite: boolean;
+  hasPracticeHistory: boolean;
+  primaryCta: "practice" | "continue-practice";
+}
+
 const difficultyRank: Record<BuiltinSongMeta["difficulty"], number> = {
   beginner: 0,
   intermediate: 1,
@@ -63,6 +79,33 @@ function baseActivity(isFavorite: boolean): SongActivity {
     lastPlayedAt: null,
     playCount: 0,
     bestAccuracy: null,
+  };
+}
+
+export function buildSongSelectionPreviewModel(
+  song: BuiltinSongMeta,
+  songActivity?: SongActivity,
+): SongSelectionPreviewModel {
+  const activity = songActivity ?? baseActivity(false);
+  const hasPracticeHistory =
+    activity.playCount > 0 ||
+    activity.lastPlayedAt !== null ||
+    activity.bestAccuracy !== null;
+
+  return {
+    song,
+    title: song.title,
+    composer: song.composer,
+    durationSeconds: song.durationSeconds,
+    difficulty: song.difficulty,
+    ...(song.category !== undefined ? { category: song.category } : {}),
+    ...(song.grade !== undefined ? { grade: song.grade } : {}),
+    tags: [...song.tags],
+    bestAccuracy: activity.bestAccuracy,
+    playCount: activity.playCount,
+    isFavorite: activity.isFavorite,
+    hasPracticeHistory,
+    primaryCta: hasPracticeHistory ? "continue-practice" : "practice",
   };
 }
 

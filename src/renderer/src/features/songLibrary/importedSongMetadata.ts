@@ -4,6 +4,13 @@ export type ImportedSongCategory =
   | "popular"
   | "holiday";
 
+const importedSongCategories = [
+  "exercise",
+  "classical",
+  "popular",
+  "holiday",
+] as const satisfies readonly ImportedSongCategory[];
+
 export interface ImportedSongRecord {
   id: string;
   sourcePath: string;
@@ -21,6 +28,18 @@ export type ImportedSongMetadataPatch = Partial<
     "title" | "composer" | "tags" | "grade" | "category" | "missing"
   >
 >;
+
+export type ImportedSongSidecarValidationResult =
+  | {
+      ok: true;
+      patch: ImportedSongMetadataPatch;
+      warnings: string[];
+    }
+  | {
+      ok: false;
+      errors: string[];
+      warnings: string[];
+    };
 
 export function normalizeImportedSongPath(sourcePath: string): string {
   return sourcePath.trim().replaceAll("\\", "/");
@@ -62,6 +81,116 @@ function cleanTags(tags: string[]): string[] {
   }
 
   return cleaned;
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function isImportedSongGrade(
+  value: unknown,
+): value is NonNullable<ImportedSongRecord["grade"]> {
+  return Number.isInteger(value) && Number(value) >= 0 && Number(value) <= 8;
+}
+
+function isImportedSongCategory(value: unknown): value is ImportedSongCategory {
+  return (
+    typeof value === "string" &&
+    importedSongCategories.includes(value as ImportedSongCategory)
+  );
+}
+
+export function validateImportedSongSidecarMetadata(
+  input: unknown,
+): ImportedSongSidecarValidationResult {
+  if (!isRecord(input)) {
+    return {
+      ok: false,
+      errors: ["Sidecar metadata must be an object."],
+      warnings: [],
+    };
+  }
+
+  const patch: ImportedSongMetadataPatch = {};
+  const errors: string[] = [];
+  const warnings: string[] = [];
+  const supportedFields = new Set([
+    "title",
+    "composer",
+    "tags",
+    "grade",
+    "category",
+  ]);
+
+  for (const field of ["title", "composer"] as const) {
+    if (!(field in input)) continue;
+
+    const value = input[field];
+    if (typeof value !== "string") {
+      warnings.push(`Ignored invalid sidecar ${field}.`);
+      continue;
+    }
+
+    const trimmed = value.trim();
+    if (!trimmed) {
+      warnings.push(`Ignored blank sidecar ${field}.`);
+      continue;
+    }
+
+    patch[field] = trimmed;
+  }
+
+  if ("tags" in input) {
+    const value = input.tags;
+    if (Array.isArray(value)) {
+      const tags: string[] = [];
+      value.forEach((tag, index) => {
+        if (typeof tag !== "string") {
+          warnings.push(`Ignored invalid sidecar tag at index ${index}.`);
+          return;
+        }
+        tags.push(tag);
+      });
+      patch.tags = cleanTags(tags);
+    } else {
+      warnings.push("Ignored invalid sidecar tags.");
+    }
+  }
+
+  if ("grade" in input) {
+    if (isImportedSongGrade(input.grade)) {
+      patch.grade = input.grade;
+    } else {
+      errors.push("Sidecar grade must be an integer from L0 to L8.");
+    }
+  }
+
+  if ("category" in input) {
+    if (isImportedSongCategory(input.category)) {
+      patch.category = input.category;
+    } else if (typeof input.category === "string") {
+      errors.push(`Sidecar category is not supported: ${input.category}.`);
+    } else {
+      errors.push(
+        `Sidecar category must be one of ${importedSongCategories.join(", ")}.`,
+      );
+    }
+  }
+
+  const unsupportedFields = Object.keys(input)
+    .filter((field) => !supportedFields.has(field))
+    .sort();
+  if (unsupportedFields.length > 0) {
+    warnings.push(
+      `Ignored unsupported sidecar fields: ${unsupportedFields.join(", ")}.`,
+    );
+  }
+
+  if (errors.length > 0) {
+    return { ok: false, errors, warnings };
+  }
+
+  return { ok: true, patch, warnings };
 }
 
 export function createImportedSongId(sourcePath: string): string {

@@ -48,6 +48,17 @@ export interface SongPracticeSetupFixPrompt {
   lowConfidenceTrackIndices: number[];
 }
 
+export interface SongPracticeSetupSummary {
+  activeTrackCount: number;
+  backgroundTrackCount: number;
+  mutedTrackCount: number;
+  visibleBackgroundTrackCount: number;
+  defaultMode: PracticeMode;
+  defaultSpeed: number;
+  needsFix: boolean;
+  fixReasons: SongPracticeSetupFixReason[];
+}
+
 export interface SongPracticeSetupFixPromptOptions {
   maxActiveTracks?: number;
 }
@@ -95,6 +106,19 @@ function normalizeTrackPreferences(
   }
 
   return Object.keys(normalized).length > 0 ? normalized : undefined;
+}
+
+function backgroundTrackIndices(
+  assignments: Record<number, TrackHandAssignment>,
+): number[] {
+  return Object.entries(assignments).flatMap(([trackIndex, assignment]) => {
+    const index = Number(trackIndex);
+    if (!Number.isInteger(index) || index < 0 || assignment !== "background") {
+      return [];
+    }
+
+    return [index];
+  });
 }
 
 function readAllSetups(): PersistedSongPracticeSetup {
@@ -155,6 +179,35 @@ export function getSongPracticeSetupFixPrompt(
     reasons,
     activeTrackCount: activeAssignments.length,
     lowConfidenceTrackIndices,
+  };
+}
+
+export function buildSongPracticeSetupSummary(
+  setup: SongPracticeSetupInput | SongPracticeSetupSnapshot,
+  song?: ParsedSong,
+  options?: SongPracticeSetupFixPromptOptions,
+): SongPracticeSetupSummary {
+  const activeTracks = normalizeActiveTracks(setup.activeTracks);
+  const backgroundTracks = backgroundTrackIndices(setup.handAssignments);
+  const trackPreferences = normalizeTrackPreferences(setup.trackPreferences);
+  const fixPrompt = song
+    ? getSongPracticeSetupFixPrompt(song, options)
+    : undefined;
+
+  return {
+    activeTrackCount: activeTracks.length,
+    backgroundTrackCount: backgroundTracks.length,
+    mutedTrackCount: Object.values(trackPreferences ?? {}).filter(
+      (preference) => preference.muted === true,
+    ).length,
+    visibleBackgroundTrackCount: backgroundTracks.filter(
+      (trackIndex) =>
+        trackPreferences?.[trackIndex]?.backgroundVisible !== false,
+    ).length,
+    defaultMode: setup.defaultMode,
+    defaultSpeed: setup.defaultSpeed,
+    needsFix: fixPrompt?.needed ?? false,
+    fixReasons: fixPrompt ? [...fixPrompt.reasons] : [],
   };
 }
 

@@ -5,6 +5,7 @@ import {
   importedSongMatchesQuery,
   mergeImportedSongMetadata,
   reconcileImportedSongAvailability,
+  validateImportedSongSidecarMetadata,
   type ImportedSongRecord,
 } from "./importedSongMetadata";
 
@@ -169,6 +170,82 @@ describe("buildImportedSongRecordsFromDiscoveredPaths", () => {
     expect(records[0]).toMatchObject({
       sourcePath: "C:/Users/Rex/Music/Lesson.mid",
       title: "Lesson",
+    });
+  });
+});
+
+describe("validateImportedSongSidecarMetadata", () => {
+  test("accepts and cleans valid Rexiano sidecar metadata", () => {
+    expect(
+      validateImportedSongSidecarMetadata({
+        title: "  Rex Lesson  ",
+        composer: "  Teacher  ",
+        tags: ["warmup", "Warmup", " left hand ", ""],
+        grade: 2,
+        category: "exercise",
+      }),
+    ).toEqual({
+      ok: true,
+      patch: {
+        title: "Rex Lesson",
+        composer: "Teacher",
+        tags: ["warmup", "left hand"],
+        grade: 2,
+        category: "exercise",
+      },
+      warnings: [],
+    });
+  });
+
+  test("rejects non-object sidecar metadata", () => {
+    expect(validateImportedSongSidecarMetadata(null)).toEqual({
+      ok: false,
+      errors: ["Sidecar metadata must be an object."],
+      warnings: [],
+    });
+    expect(validateImportedSongSidecarMetadata(["title"])).toEqual({
+      ok: false,
+      errors: ["Sidecar metadata must be an object."],
+      warnings: [],
+    });
+  });
+
+  test("rejects invalid grade and category values", () => {
+    expect(
+      validateImportedSongSidecarMetadata({
+        title: "Broken",
+        grade: 9,
+        category: "video-game",
+      }),
+    ).toEqual({
+      ok: false,
+      errors: [
+        "Sidecar grade must be an integer from L0 to L8.",
+        "Sidecar category is not supported: video-game.",
+      ],
+      warnings: [],
+    });
+  });
+
+  test("warns and omits malformed optional fields and unknown fields", () => {
+    expect(
+      validateImportedSongSidecarMetadata({
+        title: "",
+        composer: 42,
+        tags: ["clean", 3, " CLEAN ", "duet"],
+        arrangement: "teacher",
+      }),
+    ).toEqual({
+      ok: true,
+      patch: {
+        tags: ["clean", "duet"],
+      },
+      warnings: [
+        "Ignored blank sidecar title.",
+        "Ignored invalid sidecar composer.",
+        "Ignored invalid sidecar tag at index 1.",
+        "Ignored unsupported sidecar fields: arrangement.",
+      ],
     });
   });
 });

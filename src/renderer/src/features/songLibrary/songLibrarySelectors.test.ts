@@ -3,6 +3,7 @@ import type { BuiltinSongMeta, RecentFile, SessionRecord } from "@shared/types";
 import {
   buildPracticeRecommendationModel,
   buildSongActivity,
+  buildSongSelectionPreviewModel,
   filterSongsForLibrary,
   selectRecommendedPracticeSong,
   sortSongsForLibrary,
@@ -266,5 +267,69 @@ describe("buildPracticeRecommendationModel", () => {
 
   test("returns null for an empty library", () => {
     expect(buildPracticeRecommendationModel([], new Map())).toBeNull();
+  });
+});
+
+describe("buildSongSelectionPreviewModel", () => {
+  test("builds a fresh practice preview for songs without history", () => {
+    const song = makeSong("scale", {
+      title: "C Major Scale",
+      composer: "Rexiano",
+      grade: 1,
+      durationSeconds: 75,
+      tags: ["warmup"],
+      category: "exercise",
+    });
+
+    expect(buildSongSelectionPreviewModel(song)).toEqual({
+      song,
+      title: "C Major Scale",
+      composer: "Rexiano",
+      durationSeconds: 75,
+      difficulty: "beginner",
+      category: "exercise",
+      grade: 1,
+      tags: ["warmup"],
+      bestAccuracy: null,
+      playCount: 0,
+      isFavorite: false,
+      hasPracticeHistory: false,
+      primaryCta: "practice",
+    });
+  });
+
+  test("builds a continue practice preview when activity exists", () => {
+    const song = makeSong("minuet", {
+      title: "Minuet",
+      composer: "Bach",
+      difficulty: "intermediate",
+      grade: 3,
+      durationSeconds: 120,
+      tags: ["recital"],
+      category: "classical",
+    });
+
+    expect(
+      buildSongSelectionPreviewModel(song, {
+        isFavorite: true,
+        lastPlayedAt: 2000,
+        playCount: 2,
+        bestAccuracy: 86,
+      }),
+    ).toEqual({
+      song,
+      title: "Minuet",
+      composer: "Bach",
+      durationSeconds: 120,
+      difficulty: "intermediate",
+      category: "classical",
+      grade: 3,
+      tags: ["recital"],
+      bestAccuracy: 86,
+      playCount: 2,
+      isFavorite: true,
+      hasPracticeHistory: true,
+      primaryCta: "continue-practice",
+    });
   });
 });
