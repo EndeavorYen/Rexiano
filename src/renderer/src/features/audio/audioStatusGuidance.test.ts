@@ -1,6 +1,9 @@
 import { describe, expect, test } from "vitest";
 import type { InterpolationParams, TranslationKey } from "@renderer/i18n/types";
-import { getAudioStatusGuidance } from "./audioStatusGuidance";
+import {
+  classifyAudioFailureSource,
+  getAudioStatusGuidance,
+} from "./audioStatusGuidance";
 
 const t = (key: TranslationKey, params?: InterpolationParams): string => {
   const suffix = params
@@ -10,6 +13,37 @@ const t = (key: TranslationKey, params?: InterpolationParams): string => {
     : "";
   return `${key}${suffix}`;
 };
+
+describe("classifyAudioFailureSource", () => {
+  test("classifies SoundFont, SF2, and sample failures as soundfont issues", () => {
+    expect(
+      classifyAudioFailureSource(
+        new Error("Failed to decode piano.sf2 sample buffer"),
+      ),
+    ).toBe("soundfont");
+
+    expect(classifyAudioFailureSource("SoundFont file could not load")).toBe(
+      "soundfont",
+    );
+  });
+
+  test("classifies AudioContext and device failures as audio-context issues", () => {
+    const permissionError = new Error("AudioContext start was blocked");
+    permissionError.name = "NotAllowedError";
+
+    expect(classifyAudioFailureSource(permissionError)).toBe("audio-context");
+    expect(
+      classifyAudioFailureSource("WASAPI device invalidated 0x88890004"),
+    ).toBe("audio-context");
+  });
+
+  test("returns unknown for unrelated or missing failure details", () => {
+    expect(classifyAudioFailureSource(new Error("unexpected failure"))).toBe(
+      "unknown",
+    );
+    expect(classifyAudioFailureSource(undefined)).toBe("unknown");
+  });
+});
 
 describe("getAudioStatusGuidance", () => {
   test("returns loading guidance while the audio engine is initializing", () => {

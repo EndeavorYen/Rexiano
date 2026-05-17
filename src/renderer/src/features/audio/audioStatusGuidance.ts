@@ -41,6 +41,60 @@ export interface AudioStatusGuidance {
   actions: AudioRecoveryAction[];
 }
 
+function normalizeFailureDiagnostic(error: unknown): string {
+  if (error instanceof Error) {
+    return `${error.name} ${error.message}`.toLowerCase();
+  }
+
+  if (typeof DOMException !== "undefined" && error instanceof DOMException) {
+    return `${error.name} ${error.message}`.toLowerCase();
+  }
+
+  if (typeof error === "object" && error !== null) {
+    const record = error as Record<string, unknown>;
+    const name = typeof record.name === "string" ? record.name : "";
+    const message = typeof record.message === "string" ? record.message : "";
+
+    if (name || message) {
+      return `${name} ${message}`.toLowerCase();
+    }
+  }
+
+  return String(error ?? "").toLowerCase();
+}
+
+export function classifyAudioFailureSource(
+  error: unknown,
+): AudioFailureSource {
+  const diagnostic = normalizeFailureDiagnostic(error);
+
+  if (
+    diagnostic.includes("soundfont") ||
+    diagnostic.includes(".sf2") ||
+    diagnostic.includes("sf2") ||
+    diagnostic.includes("sample buffer") ||
+    diagnostic.includes("sample data")
+  ) {
+    return "soundfont";
+  }
+
+  if (
+    diagnostic.includes("audiocontext") ||
+    diagnostic.includes("audio context") ||
+    diagnostic.includes("wasapi") ||
+    diagnostic.includes("0x88890004") ||
+    diagnostic.includes("device invalidated") ||
+    diagnostic.includes("invalidstateerror") ||
+    diagnostic.includes("notallowederror") ||
+    diagnostic.includes("notreadableerror") ||
+    diagnostic.includes("aborterror")
+  ) {
+    return "audio-context";
+  }
+
+  return "unknown";
+}
+
 function buildAudioRecoveryActions(
   failureSource: AudioFailureSource | undefined,
   t: Translate,
