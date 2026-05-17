@@ -3,11 +3,29 @@ import {
   USER_DATA_BACKUP_SCHEMA_VERSION,
   USER_DATA_BACKUP_SCOPE_INVENTORY,
   USER_DATA_BACKUP_SCOPES,
+  applyUserDataBackupToLocalStorage,
   buildUserDataResetPlan,
+  createUserDataBackupFromLocalStorage,
   createUserDataBackupManifest,
+  migrateUserDataBackupManifest,
   parseUserDataBackupText,
+  type UserDataLocalStoragePort,
   validateUserDataBackupManifest,
 } from "./userDataBackup";
+
+function createStorage(
+  initial: Record<string, string> = {},
+): UserDataLocalStoragePort & { values: Record<string, string> } {
+  return {
+    values: { ...initial },
+    getItem(key: string): string | null {
+      return this.values[key] ?? null;
+    },
+    setItem(key: string, value: string): void {
+      this.values[key] = value;
+    },
+  };
+}
 
 describe("user data backup manifests", () => {
   test("accepts a valid scoped backup manifest", () => {
@@ -226,6 +244,96 @@ describe("parseUserDataBackupText", () => {
         "Backup exportedAt must be a valid ISO date string.",
         "Backup data is missing selected scope: settings.",
       ],
+    });
+  });
+});
+
+describe("user data backup migrations", () => {
+  test("migrates legacy v0 manifests by inferring scopes from data", () => {
+    const result = migrateUserDataBackupManifest({
+      app: "rexiano",
+      schemaVersion: 0,
+      exportedAt: "2026-05-17T05:00:00.000Z",
+      data: {
+        settings: { volume: 72 },
+        perSongSetup: { "name:Chopsticks": { activeTracks: [0] } },
+        unsupported: true,
+      },
+    });
+
+    expect(result).toEqual({
+      ok: true,
+      manifest: {
+        app: "rexiano",
+        schemaVersion: USER_DATA_BACKUP_SCHEMA_VERSION,
+        exportedAt: "2026-05-17T05:00:00.000Z",
+        scopes: ["settings", "perSongSetup"],
+        data: {
+          settings: { volume: 72 },
+          perSongSetup: { "name:Chopsticks": { activeTracks: [0] } },
+        },
+      },
+    });
+  });
+});
+
+describe("localStorage backup round trip", () => {
+  test("exports and reapplies selected localStorage-backed scopes", () => {
+    const source = createStorage({
+      "rexiano-settings": JSON.stringify({ volume: 72, muted: false }),
+      "rexiano-song-practice-setup": JSON.stringify({
+        "name:Chopsticks": { activeTracks: [] },
+      }),
+    });
+
+    const exported = createUserDataBackupFromLocalStorage(
+      source,
+      ["settings", "perSongSetup"],
+      "2026-05-17T06:00:00.000Z",
+    );
+
+    expect(exported).toEqual({
+      ok: true,
+      manifest: {
+        app: "rexiano",
+        schemaVersion: USER_DATA_BACKUP_SCHEMA_VERSION,
+        exportedAt: "2026-05-17T06:00:00.000Z",
+        scopes: ["settings", "perSongSetup"],
+        data: {
+          settings: { volume: 72, muted: false },
+          perSongSetup: { "name:Chopsticks": { activeTracks: [] } },
+        },
+      },
+    });
+
+    if (!exported.ok) throw new Error("Expected export to succeed");
+    const target = createStorage();
+    const applied = applyUserDataBackupToLocalStorage(
+      exported.manifest,
+      target,
+    );
+
+    expect(applied).toEqual({
+      ok: true,
+      appliedScopes: ["settings", "perSongSetup"],
+    });
+    expect(JSON.parse(target.values["rexiano-settings"])).toEqual({
+      volume: 72,
+      muted: false,
+    });
+    expect(JSON.parse(target.values["rexiano-song-practice-setup"])).toEqual({
+      "name:Chopsticks": { activeTracks: [] },
+    });
+  });
+
+  test("reports corrupt stored JSON before creating an export file", () => {
+    const source = createStorage({
+      "rexiano-settings": "{broken",
+    });
+
+    expect(createUserDataBackupFromLocalStorage(source, ["settings"])).toEqual({
+      ok: false,
+      errors: ["Cannot export settings: stored data is not valid JSON."],
     });
   });
 });

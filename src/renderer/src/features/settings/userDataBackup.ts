@@ -80,6 +80,23 @@ export interface UserDataResetPlan {
   canReset: boolean;
 }
 
+export interface UserDataLocalStoragePort {
+  getItem(key: string): string | null;
+  setItem(key: string, value: string): void;
+}
+
+export type UserDataBackupCreationResult =
+  | { ok: true; manifest: UserDataBackupManifest }
+  | { ok: false; errors: string[] };
+
+export type UserDataBackupApplyResult =
+  | { ok: true; appliedScopes: UserDataBackupScope[] }
+  | {
+      ok: false;
+      appliedScopes: UserDataBackupScope[];
+      errors: string[];
+    };
+
 const knownScopes = new Set<string>(USER_DATA_BACKUP_SCOPES);
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -96,6 +113,31 @@ function isKnownScope(scope: string): scope is UserDataBackupScope {
 
 function isValidIsoDate(value: unknown): value is string {
   return typeof value === "string" && !Number.isNaN(Date.parse(value));
+}
+
+function selectBackupScopes(selection: UserDataResetSelection): {
+  scopes: UserDataBackupScope[];
+  errors: string[];
+} {
+  const requestedScopes =
+    selection === "all" ? USER_DATA_BACKUP_SCOPES : selection;
+  const requestedScopeSet = new Set<string>();
+  const errors: string[] = [];
+
+  for (const scope of requestedScopes) {
+    if (!isKnownScope(scope)) {
+      errors.push(`Backup scope is not supported: ${String(scope)}.`);
+      continue;
+    }
+    requestedScopeSet.add(scope);
+  }
+
+  return {
+    scopes: USER_DATA_BACKUP_SCOPES.filter((scope) =>
+      requestedScopeSet.has(scope),
+    ),
+    errors,
+  };
 }
 
 export function createUserDataBackupManifest(
@@ -116,6 +158,103 @@ export function createUserDataBackupManifest(
     scopes,
     data: scopedData,
   };
+}
+
+export function migrateUserDataBackupManifest(
+  input: unknown,
+): UserDataBackupValidationResult {
+  if (!isRecord(input)) {
+    return { ok: false, errors: ["Backup manifest must be an object."] };
+  }
+
+  if (input.schemaVersion === USER_DATA_BACKUP_SCHEMA_VERSION) {
+    return validateUserDataBackupManifest(input);
+  }
+
+  if (input.schemaVersion !== 0) {
+    return { ok: false, errors: ["Unsupported backup schema version."] };
+  }
+
+  const errors: string[] = [];
+  if (input.app !== "rexiano") {
+    errors.push("Backup app identifier is not supported.");
+  }
+  if (!isValidIsoDate(input.exportedAt)) {
+    errors.push("Backup exportedAt must be a valid ISO date string.");
+  }
+  if (!isRecord(input.data)) {
+    errors.push("Backup data must be an object.");
+  }
+
+  if (errors.length > 0) return { ok: false, errors };
+
+  const migratedData: Partial<Record<UserDataBackupScope, unknown>> = {};
+  for (const scope of USER_DATA_BACKUP_SCOPES) {
+    if (hasOwn(input.data as Record<string, unknown>, scope)) {
+      migratedData[scope] = (input.data as Record<string, unknown>)[scope];
+    }
+  }
+
+  return validateUserDataBackupManifest(
+    createUserDataBackupManifest(migratedData, input.exportedAt as string),
+  );
+}
+
+export function createUserDataBackupFromLocalStorage(
+  storage: UserDataLocalStoragePort,
+  selection: UserDataResetSelection = "all",
+  exportedAt = new Date().toISOString(),
+): UserDataBackupCreationResult {
+  const selected = selectBackupScopes(selection);
+  const errors = [...selected.errors];
+  const data: Partial<Record<UserDataBackupScope, unknown>> = {};
+
+  for (const item of USER_DATA_BACKUP_SCOPE_INVENTORY) {
+    if (!selected.scopes.includes(item.scope)) continue;
+    if (item.source !== "localStorage" || !item.storageKey) continue;
+
+    const raw = storage.getItem(item.storageKey);
+    if (raw === null) continue;
+
+    try {
+      data[item.scope] = JSON.parse(raw) as unknown;
+    } catch {
+      errors.push(
+        `Cannot export ${item.scope}: stored data is not valid JSON.`,
+      );
+    }
+  }
+
+  if (errors.length > 0) return { ok: false, errors };
+
+  return {
+    ok: true,
+    manifest: createUserDataBackupManifest(data, exportedAt),
+  };
+}
+
+export function applyUserDataBackupToLocalStorage(
+  input: unknown,
+  storage: UserDataLocalStoragePort,
+): UserDataBackupApplyResult {
+  const result = migrateUserDataBackupManifest(input);
+  if (!result.ok) {
+    return { ok: false, appliedScopes: [], errors: result.errors };
+  }
+
+  const appliedScopes: UserDataBackupScope[] = [];
+  for (const item of USER_DATA_BACKUP_SCOPE_INVENTORY) {
+    if (!result.manifest.scopes.includes(item.scope)) continue;
+    if (item.source !== "localStorage" || !item.storageKey) continue;
+
+    storage.setItem(
+      item.storageKey,
+      JSON.stringify(result.manifest.data[item.scope]),
+    );
+    appliedScopes.push(item.scope);
+  }
+
+  return { ok: true, appliedScopes };
 }
 
 export function buildUserDataResetPlan(
@@ -233,5 +372,5 @@ export function parseUserDataBackupText(
     return { ok: false, errors: ["Backup file is not valid JSON."] };
   }
 
-  return validateUserDataBackupManifest(parsed);
+  return migrateUserDataBackupManifest(parsed);
 }
