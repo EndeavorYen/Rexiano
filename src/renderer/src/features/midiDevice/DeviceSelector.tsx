@@ -85,6 +85,11 @@ export function DeviceSelector(): React.JSX.Element {
   const errorGuidance = connectionError
     ? getMidiErrorGuidance(connectionError, t)
     : null;
+  const recoveryActions =
+    errorGuidance?.actions.filter(
+      (action) =>
+        action.id !== "connect-bluetooth-midi" || bleStatus !== "connected",
+    ) ?? [];
 
   return (
     <div
@@ -258,24 +263,20 @@ export function DeviceSelector(): React.JSX.Element {
               {errorGuidance.guidance}
             </span>
           </span>
-          {errorGuidance.canRetry && (
+          {recoveryActions.map((action) => (
             <button
-              onClick={() => connect()}
-              className="px-1.5 py-0.5 rounded text-[10px] font-body font-medium cursor-pointer shrink-0"
-              style={{
-                color: "var(--color-text)",
-                background:
-                  "color-mix(in srgb, var(--color-surface-alt) 75%, var(--color-surface))",
-                border: "1px solid var(--color-border)",
+              key={action.id}
+              onClick={() => {
+                if (action.id === "connect-bluetooth-midi") {
+                  connectBluetooth();
+                  return;
+                }
+                connect();
               }}
-            >
-              {t("audio.retry")}
-            </button>
-          )}
-          {errorGuidance.canUseBluetooth && bleStatus !== "connected" && (
-            <button
-              onClick={() => connectBluetooth()}
-              disabled={bleStatus === "scanning" || bleStatus === "connecting"}
+              disabled={
+                action.id === "connect-bluetooth-midi" &&
+                (bleStatus === "scanning" || bleStatus === "connecting")
+              }
               className="px-1.5 py-0.5 rounded text-[10px] font-body font-medium cursor-pointer disabled:opacity-55 shrink-0"
               style={{
                 color: "var(--color-text)",
@@ -283,10 +284,11 @@ export function DeviceSelector(): React.JSX.Element {
                   "color-mix(in srgb, var(--color-surface-alt) 75%, var(--color-surface))",
                 border: "1px solid var(--color-border)",
               }}
+              data-recovery-action={action.id}
             >
-              {t("midi.bluetooth")}
+              {action.label}
             </button>
-          )}
+          ))}
         </div>
       )}
     </div>

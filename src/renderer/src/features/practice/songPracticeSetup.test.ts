@@ -1,7 +1,9 @@
 import { beforeEach, describe, expect, test, vi } from "vitest";
+import type { ParsedSong, ParsedTrack } from "@renderer/engines/midi/types";
 import {
   createSongPracticeSetupKey,
   loadSongPracticeSetupSnapshot,
+  resolveSongPracticeSetupForSong,
   saveSongPracticeSetupSnapshot,
   updateSongPracticeSetupSnapshot,
 } from "./songPracticeSetup";
@@ -20,6 +22,41 @@ const localStorageMock = {
 Object.defineProperty(globalThis, "localStorage", { value: localStorageMock });
 
 const STORAGE_KEY = "rexiano-song-practice-setup";
+
+function note(midi: number): ParsedTrack["notes"][number] {
+  return {
+    midi,
+    name: `N${midi}`,
+    time: 0,
+    duration: 0.5,
+    velocity: 80,
+  };
+}
+
+function track(
+  name: string,
+  midiNotes: number[],
+  overrides: Partial<ParsedTrack> = {},
+): ParsedTrack {
+  return {
+    name,
+    instrument: "Acoustic Grand Piano",
+    channel: 0,
+    notes: midiNotes.map(note),
+    ...overrides,
+  };
+}
+
+function song(tracks: ParsedTrack[], fileName = "lesson.mid"): ParsedSong {
+  return {
+    fileName,
+    duration: 12,
+    tracks,
+    tempos: [{ time: 0, bpm: 100 }],
+    timeSignatures: [{ time: 0, numerator: 4, denominator: 4 }],
+    noteCount: tracks.reduce((sum, item) => sum + item.notes.length, 0),
+  };
+}
 
 describe("createSongPracticeSetupKey", () => {
   test("creates stable keys for built-in and imported songs", () => {
@@ -126,6 +163,64 @@ describe("song practice setup persistence", () => {
       handAssignments: { 0: "both" },
       defaultMode: "free",
       defaultSpeed: 1.25,
+    });
+  });
+});
+
+describe("resolveSongPracticeSetupForSong", () => {
+  beforeEach(() => {
+    storage.clear();
+    vi.clearAllMocks();
+  });
+
+  test("restores a saved setup for a loaded song", () => {
+    saveSongPracticeSetupSnapshot(
+      "name:lesson.mid",
+      {
+        activeTracks: [1],
+        handAssignments: { 0: "right", 1: "left" },
+        defaultMode: "wait",
+        defaultSpeed: 0.6,
+      },
+      "2026-05-17T02:00:00.000Z",
+    );
+
+    expect(
+      resolveSongPracticeSetupForSong(
+        song([track("Right Hand", [72, 76]), track("Left Hand", [36, 43])]),
+        { defaultMode: "watch", defaultSpeed: 1 },
+      ),
+    ).toEqual({
+      activeTracks: [1],
+      handAssignments: { 0: "right", 1: "left" },
+      defaultMode: "wait",
+      defaultSpeed: 0.6,
+      updatedAt: "2026-05-17T02:00:00.000Z",
+    });
+  });
+
+  test("falls back to inferred non-background tracks and app defaults", () => {
+    const resolved = resolveSongPracticeSetupForSong(
+      song(
+        [
+          track("Piano RH", [72, 76]),
+          track("Drums", [36, 38], {
+            instrument: "Standard Drum Kit",
+            channel: 9,
+          }),
+        ],
+        "new-song.mid",
+      ),
+      { defaultMode: "free", defaultSpeed: 0.8 },
+      "2026-05-17T02:01:00.000Z",
+    );
+
+    expect(resolved).toEqual({
+      activeTracks: [0],
+      handAssignments: { 0: "right", 1: "background" },
+      defaultMode: "free",
+      defaultSpeed: 0.8,
+      updatedAt: "2026-05-17T02:01:00.000Z",
     });
   });
 });

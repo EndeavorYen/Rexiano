@@ -13,6 +13,7 @@ describe("getMidiErrorGuidance", () => {
       guidance: "midi.errorUnsupportedGuidance",
       canRetry: false,
       canUseBluetooth: false,
+      actions: [],
       diagnostic: "Web MIDI API is not supported in this browser",
     });
   });
@@ -23,6 +24,18 @@ describe("getMidiErrorGuidance", () => {
       guidance: "midi.errorDeniedGuidance",
       canRetry: true,
       canUseBluetooth: false,
+      actions: [
+        {
+          id: "retry-midi-access",
+          label: "audio.retry",
+          emphasis: "primary",
+        },
+        {
+          id: "open-midi-settings",
+          label: "midi.openSettings",
+          emphasis: "secondary",
+        },
+      ],
     });
   });
 
@@ -34,6 +47,18 @@ describe("getMidiErrorGuidance", () => {
       guidance: "midi.errorOutputGuidance",
       canRetry: true,
       canUseBluetooth: true,
+      actions: [
+        {
+          id: "retry-midi-access",
+          label: "audio.retry",
+          emphasis: "primary",
+        },
+        {
+          id: "connect-bluetooth-midi",
+          label: "midi.bluetooth",
+          emphasis: "secondary",
+        },
+      ],
     });
   });
 
@@ -43,6 +68,18 @@ describe("getMidiErrorGuidance", () => {
       guidance: "midi.errorGenericGuidance",
       canRetry: true,
       canUseBluetooth: true,
+      actions: [
+        {
+          id: "retry-midi-access",
+          label: "audio.retry",
+          emphasis: "primary",
+        },
+        {
+          id: "connect-bluetooth-midi",
+          label: "midi.bluetooth",
+          emphasis: "secondary",
+        },
+      ],
       diagnostic: "Unexpected MIDI transport fault",
     });
   });

@@ -123,6 +123,7 @@ export interface TranslationMap {
   "midi.errorBluetoothUnsupportedGuidance": string;
   "midi.errorGeneric": string;
   "midi.errorGenericGuidance": string;
+  "midi.openSettings": string;
   "midi.testTitle": string;
   "midi.testLabel": string;
   "midi.testPlaying": string;
@@ -146,6 +147,7 @@ export interface TranslationMap {
   "practice.muteAll": string;
   "practice.resetTracks": string;
   "practice.solo": string;
+  "practice.confirmExitPlaying": string;
   "practice.accuracy": string;
   "practice.combo": string;
   "practice.abLoop": string;

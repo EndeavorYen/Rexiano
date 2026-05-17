@@ -133,6 +133,7 @@ export const en: TranslationMap = {
   "midi.errorGeneric": "MIDI connection failed",
   "midi.errorGenericGuidance":
     "Reconnect the device, check permissions, then retry.",
+  "midi.openSettings": "Open settings",
   "midi.testTitle": "Send a test note (C4) to the selected MIDI output",
   "midi.testLabel": "Test",
   "midi.testPlaying": "Playing...",
@@ -156,6 +157,8 @@ export const en: TranslationMap = {
   "practice.muteAll": "Mute All",
   "practice.resetTracks": "Reset",
   "practice.solo": "Solo",
+  "practice.confirmExitPlaying":
+    "Practice is still playing. Pause and go back to the library?",
   "practice.accuracy": "Acc",
   "practice.combo": "combo",
   "practice.abLoop": "A\u2013B Loop",

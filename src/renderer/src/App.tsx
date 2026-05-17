@@ -47,6 +47,8 @@ import { usePracticeStore } from "./stores/usePracticeStore";
 import { MainMenu } from "./features/mainMenu/MainMenu";
 import { ModeSelectionModal } from "./features/practice/ModeSelectionModal";
 import { CelebrationOverlay } from "./features/practice/CelebrationOverlay";
+import { getFocusModeExitDecision } from "./features/practice/focusModeExitGuard";
+import { resolveSongPracticeSetupForSong } from "./features/practice/songPracticeSetup";
 import { StatisticsPage } from "./features/statistics/StatisticsPage";
 import type { PracticeMode } from "@shared/types";
 import {
@@ -549,10 +551,15 @@ function App(): React.JSX.Element {
       }
     };
 
-    // Apply default practice mode/speed from settings whenever a new song loads
+    // Apply saved per-song setup, falling back to app defaults when none exists.
     const { defaultMode, defaultSpeed } = useSettingsStore.getState();
-    usePracticeStore.getState().setMode(defaultMode);
-    usePracticeStore.getState().setSpeed(defaultSpeed);
+    const setup = resolveSongPracticeSetupForSong(song, {
+      defaultMode,
+      defaultSpeed,
+    });
+    usePracticeStore.getState().setMode(setup.defaultMode);
+    usePracticeStore.getState().setSpeed(setup.defaultSpeed);
+    usePracticeStore.getState().setActiveTracks(new Set(setup.activeTracks));
 
     void init();
 
@@ -880,10 +887,26 @@ function App(): React.JSX.Element {
   // ─── End Phase 6.5 ─────────────────────────────────────
 
   const handleExitPlayback = useCallback(() => {
+    const decision = getFocusModeExitDecision({
+      childFocusMode: useSettingsStore.getState().childFocusMode,
+      isPlaying: usePlaybackStore.getState().isPlaying,
+      hasSong: useSongStore.getState().song !== null,
+    });
+
+    if (decision.pauseBeforeConfirm) {
+      usePlaybackStore.getState().setPlaying(false);
+    }
+    if (
+      decision.confirmBeforeExit &&
+      !window.confirm(t("practice.confirmExitPlaying"))
+    ) {
+      return;
+    }
+
     useSongStore.getState().clearSong();
     usePlaybackStore.getState().reset();
     applyRoute("menu");
-  }, [applyRoute]);
+  }, [applyRoute, t]);
 
   const isSplitMode = displayMode === "split";
   const splitFocus = isSplitMode ? splitFocusPanel : "sheet";

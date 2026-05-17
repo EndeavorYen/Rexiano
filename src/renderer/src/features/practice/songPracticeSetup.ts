@@ -1,5 +1,7 @@
 import type { PracticeMode } from "@shared/types";
+import type { ParsedSong } from "@renderer/engines/midi/types";
 import type { TrackHandAssignment } from "@renderer/engines/midi/TrackHandAssignment";
+import { inferTrackHandAssignments } from "@renderer/engines/midi/TrackHandAssignment";
 
 export const SONG_PRACTICE_SETUP_STORAGE_KEY = "rexiano-song-practice-setup";
 
@@ -21,6 +23,11 @@ export interface SongPracticeSetupSnapshot extends SongPracticeSetupInput {
 }
 
 export type SongPracticeSetupPatch = Partial<SongPracticeSetupInput>;
+
+export interface SongPracticeSetupDefaults {
+  defaultMode: PracticeMode;
+  defaultSpeed: number;
+}
 
 type PersistedSongPracticeSetup = Record<string, SongPracticeSetupSnapshot>;
 
@@ -123,6 +130,37 @@ export function updateSongPracticeSetupSnapshot(
       handAssignments: patch.handAssignments ?? current.handAssignments,
       defaultMode: patch.defaultMode ?? current.defaultMode,
       defaultSpeed: patch.defaultSpeed ?? current.defaultSpeed,
+    },
+    updatedAt,
+  );
+}
+
+export function resolveSongPracticeSetupForSong(
+  song: ParsedSong,
+  defaults: SongPracticeSetupDefaults,
+  updatedAt = new Date().toISOString(),
+): SongPracticeSetupSnapshot {
+  const songKey = createSongPracticeSetupKey({ fileName: song.fileName });
+  const saved = loadSongPracticeSetupSnapshot(songKey);
+  if (saved) return saved;
+
+  const inferredAssignments = inferTrackHandAssignments(song.tracks);
+  const handAssignments = Object.fromEntries(
+    inferredAssignments.map((assignment) => [
+      assignment.trackIndex,
+      assignment.hand,
+    ]),
+  ) as Record<number, TrackHandAssignment>;
+  const activeTracks = inferredAssignments
+    .filter((assignment) => assignment.active)
+    .map((assignment) => assignment.trackIndex);
+
+  return normalizeSetupInput(
+    {
+      activeTracks,
+      handAssignments,
+      defaultMode: defaults.defaultMode,
+      defaultSpeed: defaults.defaultSpeed,
     },
     updatedAt,
   );
