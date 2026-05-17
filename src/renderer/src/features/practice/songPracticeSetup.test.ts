@@ -216,6 +216,41 @@ describe("resolveSongPracticeSetupForSong", () => {
     });
   });
 
+  test("restores a saved setup by source path before falling back to filename", () => {
+    saveSongPracticeSetupSnapshot(
+      "file:/Users/rex/Music/lesson.mid",
+      {
+        activeTracks: [0, 2],
+        handAssignments: { 0: "right", 1: "background", 2: "left" },
+        defaultMode: "wait",
+        defaultSpeed: 0.7,
+      },
+      "2026-05-17T02:00:30.000Z",
+    );
+
+    expect(
+      resolveSongPracticeSetupForSong(
+        song(
+          [
+            track("Right Hand", [72, 76]),
+            track("Strings", [55, 59], { instrument: "Strings" }),
+            track("Left Hand", [36, 43]),
+          ],
+          "lesson.mid",
+        ),
+        { defaultMode: "watch", defaultSpeed: 1 },
+        "2026-05-17T02:01:00.000Z",
+        { sourcePath: "/Users/rex/Music/lesson.mid" },
+      ),
+    ).toEqual({
+      activeTracks: [0, 2],
+      handAssignments: { 0: "right", 1: "background", 2: "left" },
+      defaultMode: "wait",
+      defaultSpeed: 0.7,
+      updatedAt: "2026-05-17T02:00:30.000Z",
+    });
+  });
+
   test("falls back to inferred non-background tracks and app defaults", () => {
     const resolved = resolveSongPracticeSetupForSong(
       song(

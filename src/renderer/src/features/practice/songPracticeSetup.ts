@@ -282,10 +282,24 @@ export function resolveSongPracticeSetupForSong(
   song: ParsedSong,
   defaults: SongPracticeSetupDefaults,
   updatedAt = new Date().toISOString(),
+  identity: SongPracticeSetupIdentity = {},
 ): SongPracticeSetupSnapshot {
-  const songKey = createSongPracticeSetupKey({ fileName: song.fileName });
-  const saved = loadSongPracticeSetupSnapshot(songKey);
-  if (saved) return saved;
+  const identityHasValue =
+    Boolean(identity.builtinSongId?.trim()) ||
+    Boolean(identity.sourcePath?.trim()) ||
+    Boolean(identity.fileName?.trim());
+  const setupKeys = Array.from(
+    new Set(
+      [
+        identityHasValue ? createSongPracticeSetupKey(identity) : null,
+        createSongPracticeSetupKey({ fileName: song.fileName }),
+      ].filter((songKey): songKey is string => songKey !== null),
+    ),
+  );
+  for (const songKey of setupKeys) {
+    const saved = loadSongPracticeSetupSnapshot(songKey);
+    if (saved) return saved;
+  }
 
   const inferredAssignments = inferTrackHandAssignments(song.tracks);
   const handAssignments = Object.fromEntries(
