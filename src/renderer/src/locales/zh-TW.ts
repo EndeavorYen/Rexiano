@@ -98,6 +98,28 @@ export const zhTW: TranslationMap = {
   "library.noMatchSearch": "沒有符合搜尋的曲子",
   "library.noMatchHint": "試試其他關鍵字或清除篩選",
 
+  // ── Parent Practice Report ────────────────────────────────────
+  "parentReport.title": "家長報告",
+  "parentReport.week": "7 天",
+  "parentReport.month": "30 天",
+  "parentReport.minutes": "{count} 分鐘",
+  "parentReport.activeDays": "練習日",
+  "parentReport.activeDaysValue": "{count} 天",
+  "parentReport.consistency": "練習穩定度",
+  "parentReport.consistency.empty": "尚無資料",
+  "parentReport.consistency.light": "偏少",
+  "parentReport.consistency.steady": "穩定",
+  "parentReport.consistency.strong": "很穩定",
+  "parentReport.accuracy": "準確率",
+  "parentReport.accuracy.empty": "尚無資料",
+  "parentReport.accuracy.needsSupport": "需要協助",
+  "parentReport.accuracy.building": "正在建立",
+  "parentReport.accuracy.confident": "很有把握",
+  "parentReport.nextFocusValue": "下一步練習 {songTitle}",
+  "parentReport.noFocus": "今天可以從任一首開始",
+  "parentReport.bestImprovementValue": "{songTitle} 進步 +{delta}%",
+  "parentReport.empty": "尚未記錄練習。",
+
   // ── Transport Bar ──────────────────────────────────────────────
   "transport.play": "播放 (Space)",
   "transport.pause": "暫停 (Space)",

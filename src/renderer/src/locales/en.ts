@@ -101,6 +101,28 @@ export const en: TranslationMap = {
   "library.noMatchSearch": "No songs match your search",
   "library.noMatchHint": "Try a different keyword or clear the filter",
 
+  // ── Parent Practice Report ────────────────────────────────────
+  "parentReport.title": "Parent report",
+  "parentReport.week": "7 days",
+  "parentReport.month": "30 days",
+  "parentReport.minutes": "{count} min",
+  "parentReport.activeDays": "Active",
+  "parentReport.activeDaysValue": "{count} days",
+  "parentReport.consistency": "Consistency",
+  "parentReport.consistency.empty": "No data",
+  "parentReport.consistency.light": "Light",
+  "parentReport.consistency.steady": "Steady",
+  "parentReport.consistency.strong": "Strong",
+  "parentReport.accuracy": "Accuracy",
+  "parentReport.accuracy.empty": "No data",
+  "parentReport.accuracy.needsSupport": "Needs support",
+  "parentReport.accuracy.building": "Building",
+  "parentReport.accuracy.confident": "Confident",
+  "parentReport.nextFocusValue": "Practice {songTitle} next",
+  "parentReport.noFocus": "Start with any song today",
+  "parentReport.bestImprovementValue": "+{delta}% on {songTitle}",
+  "parentReport.empty": "No practice logged yet.",
+
   // ── Transport Bar ──────────────────────────────────────────────
   "transport.play": "Play (Space)",
   "transport.pause": "Pause (Space)",

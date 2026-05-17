@@ -97,6 +97,28 @@ export interface TranslationMap {
   "library.noMatchSearch": string;
   "library.noMatchHint": string;
 
+  // ── Parent Practice Report ────────────────────────────────────
+  "parentReport.title": string;
+  "parentReport.week": string;
+  "parentReport.month": string;
+  "parentReport.minutes": string;
+  "parentReport.activeDays": string;
+  "parentReport.activeDaysValue": string;
+  "parentReport.consistency": string;
+  "parentReport.consistency.empty": string;
+  "parentReport.consistency.light": string;
+  "parentReport.consistency.steady": string;
+  "parentReport.consistency.strong": string;
+  "parentReport.accuracy": string;
+  "parentReport.accuracy.empty": string;
+  "parentReport.accuracy.needsSupport": string;
+  "parentReport.accuracy.building": string;
+  "parentReport.accuracy.confident": string;
+  "parentReport.nextFocusValue": string;
+  "parentReport.noFocus": string;
+  "parentReport.bestImprovementValue": string;
+  "parentReport.empty": string;
+
   // ── Transport Bar ──────────────────────────────────────────────
   "transport.play": string;
   "transport.pause": string;
