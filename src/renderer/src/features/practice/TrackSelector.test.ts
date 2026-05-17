@@ -5,6 +5,7 @@ describe("TrackSelector logic", () => {
   beforeEach(() => {
     usePracticeStore.setState({
       activeTracks: new Set(),
+      activeTracksInitialized: false,
     });
   });
 

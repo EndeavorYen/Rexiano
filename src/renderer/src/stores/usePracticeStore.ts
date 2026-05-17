@@ -20,6 +20,8 @@ interface PracticeState {
   loopRange: [number, number] | null;
   /** Set of active track indices to include in practice/scoring */
   activeTracks: Set<number>;
+  /** True once a song/default setup has explicitly chosen active tracks. */
+  activeTracksInitialized: boolean;
   /** Cumulative score for the current session */
   score: PracticeScore;
   /** Per-note results keyed by a unique note identifier */
@@ -47,6 +49,7 @@ export const usePracticeStore = create<PracticeState>()((set) => ({
   speed: 1.0,
   loopRange: null,
   activeTracks: new Set<number>(),
+  activeTracksInitialized: false,
   score: { ...initialScore },
   noteResults: new Map<string, NoteResult>(),
   displayMode: "falling",
@@ -64,7 +67,8 @@ export const usePracticeStore = create<PracticeState>()((set) => ({
 
   setDisplayMode: (displayMode) => set({ displayMode }),
 
-  setActiveTracks: (tracks) => set({ activeTracks: tracks }),
+  setActiveTracks: (tracks) =>
+    set({ activeTracks: tracks, activeTracksInitialized: true }),
 
   recordHit: (noteKey) =>
     set((state) => {

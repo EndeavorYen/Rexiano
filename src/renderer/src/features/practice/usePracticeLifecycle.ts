@@ -37,6 +37,32 @@ interface PracticeLifecycleResult {
   handleNoteRendererReady: (renderer: NoteRenderer) => void;
 }
 
+export interface InitialPracticeActiveTracksInput {
+  trackCount: number;
+  activeTracks: Set<number>;
+  activeTracksInitialized: boolean;
+}
+
+export interface InitialPracticeActiveTracksResult {
+  activeTracks: Set<number>;
+  shouldStoreDefault: boolean;
+}
+
+export function resolveInitialPracticeActiveTracks({
+  trackCount,
+  activeTracks,
+  activeTracksInitialized,
+}: InitialPracticeActiveTracksInput): InitialPracticeActiveTracksResult {
+  if (activeTracksInitialized || activeTracks.size > 0) {
+    return { activeTracks, shouldStoreDefault: false };
+  }
+
+  return {
+    activeTracks: new Set(Array.from({ length: trackCount }, (_, i) => i)),
+    shouldStoreDefault: true,
+  };
+}
+
 /**
  * Manages the full Phase 6 practice engine lifecycle for a loaded song.
  *
@@ -64,11 +90,13 @@ export function usePracticeLifecycle(
     if (!waitMode) return;
 
     const practiceState = usePracticeStore.getState();
-    const activeTracks =
-      practiceState.activeTracks.size > 0
-        ? practiceState.activeTracks
-        : new Set(song.tracks.map((_, i) => i));
-    if (practiceState.activeTracks.size === 0) {
+    const { activeTracks, shouldStoreDefault } =
+      resolveInitialPracticeActiveTracks({
+        trackCount: song.tracks.length,
+        activeTracks: practiceState.activeTracks,
+        activeTracksInitialized: practiceState.activeTracksInitialized,
+      });
+    if (shouldStoreDefault) {
       usePracticeStore.getState().setActiveTracks(activeTracks);
     }
     waitMode.init(song.tracks, activeTracks);

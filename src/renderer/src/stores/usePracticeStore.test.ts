@@ -8,6 +8,7 @@ describe("usePracticeStore", () => {
       speed: 1.0,
       loopRange: null,
       activeTracks: new Set(),
+      activeTracksInitialized: false,
       score: {
         totalNotes: 0,
         hitNotes: 0,
@@ -27,6 +28,7 @@ describe("usePracticeStore", () => {
     expect(s.speed).toBe(1.0);
     expect(s.loopRange).toBeNull();
     expect(s.activeTracks.size).toBe(0);
+    expect(s.activeTracksInitialized).toBe(false);
     expect(s.score.totalNotes).toBe(0);
     expect(s.score.accuracy).toBe(0);
     expect(s.noteResults.size).toBe(0);
@@ -91,6 +93,14 @@ describe("usePracticeStore", () => {
   test("setActiveTracks() updates the active track set", () => {
     usePracticeStore.getState().setActiveTracks(new Set([0, 2]));
     expect(usePracticeStore.getState().activeTracks).toEqual(new Set([0, 2]));
+    expect(usePracticeStore.getState().activeTracksInitialized).toBe(true);
+  });
+
+  test("setActiveTracks() marks an empty track set as intentionally initialized", () => {
+    usePracticeStore.getState().setActiveTracks(new Set());
+
+    expect(usePracticeStore.getState().activeTracks).toEqual(new Set());
+    expect(usePracticeStore.getState().activeTracksInitialized).toBe(true);
   });
 
   // ─── recordHit() ──────────────────────────────────────
