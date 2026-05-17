@@ -71,6 +71,11 @@ export const en: TranslationMap = {
   "library.recommendation.reason.improveScore":
     "Good pick to improve your score",
   "library.recommendation.reason.continueProgress": "Keep building progress",
+  "library.lessonPath.title": "Lesson path",
+  "library.lessonPath.free": "Free song selection stays open",
+  "library.lessonPath.next": "Next lesson",
+  "library.lessonPath.completed": "{completed}/{total} complete",
+  "library.lessonPath.mastery": "Mastery target {accuracy}%",
   "library.dailyGoal.label": "Daily goal",
   "library.dailyGoal.minutes": "{practiced} / {target} min",
   "library.dailyGoal.remaining": "{remaining} min left today",

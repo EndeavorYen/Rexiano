@@ -67,6 +67,11 @@ export interface TranslationMap {
   "library.recommendation.reason.newSong": string;
   "library.recommendation.reason.improveScore": string;
   "library.recommendation.reason.continueProgress": string;
+  "library.lessonPath.title": string;
+  "library.lessonPath.free": string;
+  "library.lessonPath.next": string;
+  "library.lessonPath.completed": string;
+  "library.lessonPath.mastery": string;
   "library.dailyGoal.label": string;
   "library.dailyGoal.minutes": string;
   "library.dailyGoal.remaining": string;

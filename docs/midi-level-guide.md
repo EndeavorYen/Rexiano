@@ -219,9 +219,23 @@ Rexiano 採用 **L0–L8** 共 9 個等級，對應 RCM Preparatory A 至 Grade 
 - 缺少 `grade` 或 `level-N` tag 會產生 non-blocking warning；播放不會被阻擋，但 contributor 需要在合併前修正。
 - 音符起點應對齊 1/16 拍附近的量化格線；大量 off-grid note starts 會產生 non-blocking warning，避免 wait mode 與五線譜顯示看起來不穩定。
 
+## 五、課程路徑分組規則
+
+曲庫頁會用內建曲目的 `grade`、`category` 與 `tags` 產生不阻擋自由選曲的課程路徑。新增曲目時請依下列分組檢查 metadata，讓 Rexiano 能推薦合理的下一課：
+
+| 課程分組              | 建議 metadata                                              | 代表學習目標                         |
+| --------------------- | ---------------------------------------------------------- | ------------------------------------ |
+| First notes           | `grade: 0`，或 `category: "exercise"` 且 `grade <= 1`      | 最短旋律、前三到五個音、第一次練習   |
+| Right-hand melodies   | `grade <= 2` 且未標示 `two-hands`                          | 右手旋律、C 位置、簡單跳進           |
+| First two-hand pieces | `tags` 包含 `two-hands` 且 `grade <= 3`                    | 兩手協調入門                         |
+| Rhythm and expression | `grade <= 4`，或 `tags` 包含 `3-4` / `a-minor`             | 拍號、句法、簡單表情與調性感         |
+| Intermediate classics | `grade >= 5`                                               | 較完整的古典曲目與中級技巧           |
+
+推薦邏輯以 90% accuracy 作為預設精熟門檻；已達門檻的曲目視為完成，下一課會選擇最早分組中尚未完成的曲目。這只影響「下一課」提示，不會隱藏或鎖住其他曲目。
+
 ---
 
-## 五、教師與家長使用指引
+## 六、教師與家長使用指引
 
 ### 如何選擇合適等級
 
@@ -256,7 +270,7 @@ Rexiano 的速度滑桿（0.25x–2.0x）正是為此設計。
 
 ---
 
-## 六、MIDI 技術規格
+## 七、MIDI 技術規格
 
 ### 各等級 MIDI 約束（對應 music-theory skill）
 
