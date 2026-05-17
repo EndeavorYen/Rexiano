@@ -23,6 +23,19 @@ export interface PracticeSongRecommendationOptions {
   masteryAccuracy?: number;
 }
 
+export type PracticeRecommendationReason =
+  | "new-song"
+  | "improve-score"
+  | "continue-progress";
+
+export interface PracticeRecommendationModel {
+  song: BuiltinSongMeta;
+  reason: PracticeRecommendationReason;
+  bestAccuracy: number | null;
+  playCount: number;
+  targetGrade?: BuiltinSongMeta["grade"];
+}
+
 const difficultyRank: Record<BuiltinSongMeta["difficulty"], number> = {
   beginner: 0,
   intermediate: 1,
@@ -51,6 +64,35 @@ function baseActivity(isFavorite: boolean): SongActivity {
     playCount: 0,
     bestAccuracy: null,
   };
+}
+
+function inferTargetGrade(
+  songs: BuiltinSongMeta[],
+  options: PracticeSongRecommendationOptions,
+): BuiltinSongMeta["grade"] | undefined {
+  return (
+    options.targetGrade ??
+    songs
+      .map((song) => song.grade)
+      .filter((grade): grade is NonNullable<BuiltinSongMeta["grade"]> =>
+        Number.isFinite(grade),
+      )
+      .sort((a, b) => a - b)[0]
+  );
+}
+
+function classifyRecommendationReason(
+  activity: SongActivity,
+  masteryAccuracy: number,
+): PracticeRecommendationReason {
+  if (activity.playCount === 0) return "new-song";
+  if (
+    activity.bestAccuracy !== null &&
+    activity.bestAccuracy < masteryAccuracy
+  ) {
+    return "improve-score";
+  }
+  return "continue-progress";
 }
 
 export function filterSongsForLibrary(
@@ -190,14 +232,7 @@ export function selectRecommendedPracticeSong(
   if (songs.length === 0) return null;
 
   const masteryAccuracy = options.masteryAccuracy ?? 90;
-  const targetGrade =
-    options.targetGrade ??
-    songs
-      .map((song) => song.grade)
-      .filter((grade): grade is NonNullable<BuiltinSongMeta["grade"]> =>
-        Number.isFinite(grade),
-      )
-      .sort((a, b) => a - b)[0];
+  const targetGrade = inferTargetGrade(songs, options);
 
   return [...songs].sort((a, b) => {
     const aActivity = activity.get(a.id) ?? baseActivity(false);
@@ -221,4 +256,25 @@ export function selectRecommendedPracticeSong(
       a.title.localeCompare(b.title)
     );
   })[0];
+}
+
+export function buildPracticeRecommendationModel(
+  songs: BuiltinSongMeta[],
+  activity: Map<string, SongActivity>,
+  options: PracticeSongRecommendationOptions = {},
+): PracticeRecommendationModel | null {
+  const song = selectRecommendedPracticeSong(songs, activity, options);
+  if (!song) return null;
+
+  const songActivity = activity.get(song.id) ?? baseActivity(false);
+  const masteryAccuracy = options.masteryAccuracy ?? 90;
+  const targetGrade = inferTargetGrade(songs, options);
+  const baseModel = {
+    song,
+    reason: classifyRecommendationReason(songActivity, masteryAccuracy),
+    bestAccuracy: songActivity.bestAccuracy,
+    playCount: songActivity.playCount,
+  } satisfies PracticeRecommendationModel;
+
+  return targetGrade === undefined ? baseModel : { ...baseModel, targetGrade };
 }

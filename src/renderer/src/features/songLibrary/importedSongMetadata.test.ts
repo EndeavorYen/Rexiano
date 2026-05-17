@@ -1,5 +1,6 @@
 import { describe, expect, test } from "vitest";
 import {
+  buildImportedSongRecordsFromDiscoveredPaths,
   createImportedSongId,
   importedSongMatchesQuery,
   mergeImportedSongMetadata,
@@ -110,6 +111,64 @@ describe("reconcileImportedSongAvailability", () => {
     ).toEqual({
       ...record,
       missing: false,
+    });
+  });
+});
+
+describe("buildImportedSongRecordsFromDiscoveredPaths", () => {
+  test("creates stable records with readable titles for discovered MIDI paths", () => {
+    const records = buildImportedSongRecordsFromDiscoveredPaths([
+      " /Users/rex/Music/New Tune.mid ",
+    ]);
+
+    expect(records).toEqual([
+      {
+        id: createImportedSongId("/Users/rex/Music/New Tune.mid"),
+        sourcePath: "/Users/rex/Music/New Tune.mid",
+        title: "New Tune",
+        tags: [],
+        missing: false,
+      },
+    ]);
+  });
+
+  test("preserves existing metadata when a discovered path has the same stable id", () => {
+    const sourcePath = "C:/Users/Rex/Music/Lesson.mid";
+    const existing = makeRecord({
+      id: createImportedSongId(sourcePath),
+      sourcePath,
+      title: "Rex Lesson",
+      composer: "Teacher",
+      tags: ["recital"],
+      grade: 2,
+      category: "exercise",
+      missing: true,
+    });
+
+    expect(
+      buildImportedSongRecordsFromDiscoveredPaths(
+        ["C:\\Users\\Rex\\Music\\Lesson.mid"],
+        [existing],
+      ),
+    ).toEqual([
+      {
+        ...existing,
+        sourcePath,
+        missing: false,
+      },
+    ]);
+  });
+
+  test("deduplicates normalized discovered paths deterministically", () => {
+    const records = buildImportedSongRecordsFromDiscoveredPaths([
+      "C:\\Users\\Rex\\Music\\Lesson.mid",
+      " C:/Users/Rex/Music/Lesson.mid ",
+    ]);
+
+    expect(records).toHaveLength(1);
+    expect(records[0]).toMatchObject({
+      sourcePath: "C:/Users/Rex/Music/Lesson.mid",
+      title: "Lesson",
     });
   });
 });

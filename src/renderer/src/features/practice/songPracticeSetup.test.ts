@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, test, vi } from "vitest";
 import type { ParsedSong, ParsedTrack } from "@renderer/engines/midi/types";
 import {
   createSongPracticeSetupKey,
+  getSongPracticeSetupFixPrompt,
   loadSongPracticeSetupSnapshot,
   resolveSongPracticeSetupForSong,
   saveSongPracticeSetupSnapshot,
@@ -236,6 +237,76 @@ describe("resolveSongPracticeSetupForSong", () => {
       defaultMode: "free",
       defaultSpeed: 0.8,
       updatedAt: "2026-05-17T02:01:00.000Z",
+    });
+  });
+});
+
+describe("getSongPracticeSetupFixPrompt", () => {
+  test("requests setup when piano tracks have low-confidence hand inference", () => {
+    expect(
+      getSongPracticeSetupFixPrompt(
+        song([
+          track("Piano 1", [60, 64]),
+          track("Piano 2", [62, 65]),
+          track("Piano 3", [67, 69]),
+        ]),
+      ),
+    ).toEqual({
+      needed: true,
+      reasons: ["low-confidence-hands"],
+      activeTrackCount: 3,
+      lowConfidenceTrackIndices: [0, 1, 2],
+    });
+  });
+
+  test("requests setup when every discovered track is background-only", () => {
+    expect(
+      getSongPracticeSetupFixPrompt(
+        song([
+          track("Drums", [36, 38], {
+            instrument: "Standard Drum Kit",
+            channel: 9,
+          }),
+          track("Strings", [60, 64], { instrument: "Violin" }),
+        ]),
+      ),
+    ).toEqual({
+      needed: true,
+      reasons: ["background-only"],
+      activeTrackCount: 0,
+      lowConfidenceTrackIndices: [],
+    });
+  });
+
+  test("requests setup when too many tracks would be active by default", () => {
+    expect(
+      getSongPracticeSetupFixPrompt(
+        song([
+          track("Right Hand 1", [72]),
+          track("Right Hand 2", [74]),
+          track("Right Hand 3", [76]),
+          track("Right Hand 4", [77]),
+          track("Right Hand 5", [79]),
+        ]),
+      ),
+    ).toEqual({
+      needed: true,
+      reasons: ["too-many-active-tracks"],
+      activeTrackCount: 5,
+      lowConfidenceTrackIndices: [],
+    });
+  });
+
+  test("does not request setup for explicit right and left hand tracks", () => {
+    expect(
+      getSongPracticeSetupFixPrompt(
+        song([track("Right Hand", [72, 76]), track("Left Hand", [36, 43])]),
+      ),
+    ).toEqual({
+      needed: false,
+      reasons: [],
+      activeTrackCount: 2,
+      lowConfidenceTrackIndices: [],
     });
   });
 });

@@ -68,6 +68,12 @@ export function createImportedSongId(sourcePath: string): string {
   return `user:${stableHash(normalizeImportedSongPath(sourcePath))}`;
 }
 
+function deriveTitleFromSourcePath(sourcePath: string): string {
+  const fileName = sourcePath.split("/").pop()?.trim() ?? "";
+  const title = fileName.replace(/\.(midi?|kar)$/i, "").trim();
+  return title || "Untitled MIDI";
+}
+
 export function mergeImportedSongMetadata(
   record: ImportedSongRecord,
   patch: ImportedSongMetadataPatch,
@@ -81,6 +87,51 @@ export function mergeImportedSongMetadata(
     category: patch.category ?? record.category,
     missing: patch.missing ?? record.missing,
   };
+}
+
+export function buildImportedSongRecordsFromDiscoveredPaths(
+  sourcePaths: string[],
+  existingRecords: ImportedSongRecord[] = [],
+): ImportedSongRecord[] {
+  const existingById = new Map(
+    existingRecords.map((record) => [record.id, record]),
+  );
+  const existingByPath = new Map(
+    existingRecords.map((record) => [
+      normalizeImportedSongPath(record.sourcePath),
+      record,
+    ]),
+  );
+  const seen = new Set<string>();
+  const records: ImportedSongRecord[] = [];
+
+  for (const sourcePath of sourcePaths) {
+    const normalizedPath = normalizeImportedSongPath(sourcePath);
+    if (!normalizedPath || seen.has(normalizedPath)) continue;
+    seen.add(normalizedPath);
+
+    const id = createImportedSongId(normalizedPath);
+    const existing = existingById.get(id) ?? existingByPath.get(normalizedPath);
+
+    records.push(
+      existing
+        ? {
+            ...existing,
+            id,
+            sourcePath: normalizedPath,
+            missing: false,
+          }
+        : {
+            id,
+            sourcePath: normalizedPath,
+            title: deriveTitleFromSourcePath(normalizedPath),
+            tags: [],
+            missing: false,
+          },
+    );
+  }
+
+  return records;
 }
 
 export function importedSongMatchesQuery(

@@ -1,6 +1,7 @@
 import { describe, expect, test } from "vitest";
 import type { BuiltinSongMeta, RecentFile, SessionRecord } from "@shared/types";
 import {
+  buildPracticeRecommendationModel,
   buildSongActivity,
   filterSongsForLibrary,
   selectRecommendedPracticeSong,
@@ -198,5 +199,72 @@ describe("selectRecommendedPracticeSong", () => {
     expect(
       selectRecommendedPracticeSong(songs, activity, { targetGrade: 2 })?.id,
     ).toBe("unfinished");
+  });
+});
+
+describe("buildPracticeRecommendationModel", () => {
+  test("packages the selected unplayed target-grade song with a new-song reason", () => {
+    const songs = [
+      makeSong("grade-1", { title: "Grade 1", grade: 1 }),
+      makeSong("grade-2", { title: "Grade 2", grade: 2 }),
+    ];
+    const activity = buildSongActivity(
+      songs,
+      [makeSession("Grade 1", 1000, 94)],
+      [],
+      [],
+    );
+
+    expect(
+      buildPracticeRecommendationModel(songs, activity, {
+        targetGrade: 2,
+      }),
+    ).toMatchObject({
+      song: songs[1],
+      reason: "new-song",
+      bestAccuracy: null,
+      playCount: 0,
+      targetGrade: 2,
+    });
+  });
+
+  test("explains a low-score played song as an improvement target", () => {
+    const songs = [makeSong("minuet", { title: "Minuet", grade: 3 })];
+    const activity = buildSongActivity(
+      songs,
+      [makeSession("Minuet", 1000, 72)],
+      [],
+      [],
+    );
+
+    expect(buildPracticeRecommendationModel(songs, activity)).toMatchObject({
+      song: songs[0],
+      reason: "improve-score",
+      bestAccuracy: 72,
+      playCount: 1,
+      targetGrade: 3,
+    });
+  });
+
+  test("keeps mastered songs actionable as continuing progress", () => {
+    const songs = [makeSong("sonatina", { title: "Sonatina", grade: 6 })];
+    const activity = buildSongActivity(
+      songs,
+      [makeSession("Sonatina", 1000, 96)],
+      [],
+      [],
+    );
+
+    expect(buildPracticeRecommendationModel(songs, activity)).toMatchObject({
+      song: songs[0],
+      reason: "continue-progress",
+      bestAccuracy: 96,
+      playCount: 1,
+      targetGrade: 6,
+    });
+  });
+
+  test("returns null for an empty library", () => {
+    expect(buildPracticeRecommendationModel([], new Map())).toBeNull();
   });
 });

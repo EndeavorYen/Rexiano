@@ -36,6 +36,22 @@ export interface SongPracticeSetupDefaults {
   defaultSpeed: number;
 }
 
+export type SongPracticeSetupFixReason =
+  | "low-confidence-hands"
+  | "background-only"
+  | "too-many-active-tracks";
+
+export interface SongPracticeSetupFixPrompt {
+  needed: boolean;
+  reasons: SongPracticeSetupFixReason[];
+  activeTrackCount: number;
+  lowConfidenceTrackIndices: number[];
+}
+
+export interface SongPracticeSetupFixPromptOptions {
+  maxActiveTracks?: number;
+}
+
 type PersistedSongPracticeSetup = Record<string, SongPracticeSetupSnapshot>;
 
 function normalizePath(value: string): string {
@@ -108,6 +124,38 @@ function writeAllSetups(setups: PersistedSongPracticeSetup): void {
   } catch {
     // localStorage may be unavailable in some browser/test contexts.
   }
+}
+
+export function getSongPracticeSetupFixPrompt(
+  song: ParsedSong,
+  options: SongPracticeSetupFixPromptOptions = {},
+): SongPracticeSetupFixPrompt {
+  const maxActiveTracks = options.maxActiveTracks ?? 4;
+  const inferredAssignments = inferTrackHandAssignments(song.tracks);
+  const activeAssignments = inferredAssignments.filter(
+    (assignment) => assignment.active,
+  );
+  const lowConfidenceTrackIndices = activeAssignments
+    .filter((assignment) => assignment.confidence === "low")
+    .map((assignment) => assignment.trackIndex);
+  const reasons: SongPracticeSetupFixReason[] = [];
+
+  if (activeAssignments.length === 0) {
+    reasons.push("background-only");
+  }
+  if (lowConfidenceTrackIndices.length > 0) {
+    reasons.push("low-confidence-hands");
+  }
+  if (activeAssignments.length > maxActiveTracks) {
+    reasons.push("too-many-active-tracks");
+  }
+
+  return {
+    needed: reasons.length > 0,
+    reasons,
+    activeTrackCount: activeAssignments.length,
+    lowConfidenceTrackIndices,
+  };
 }
 
 function normalizeSetupInput(
