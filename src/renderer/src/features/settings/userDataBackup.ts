@@ -218,3 +218,20 @@ export function validateUserDataBackupManifest(
     },
   };
 }
+
+export function parseUserDataBackupText(
+  text: string,
+): UserDataBackupValidationResult {
+  if (!text.trim()) {
+    return { ok: false, errors: ["Backup file is empty."] };
+  }
+
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(text);
+  } catch {
+    return { ok: false, errors: ["Backup file is not valid JSON."] };
+  }
+
+  return validateUserDataBackupManifest(parsed);
+}

@@ -5,6 +5,7 @@ import {
   USER_DATA_BACKUP_SCOPES,
   buildUserDataResetPlan,
   createUserDataBackupManifest,
+  parseUserDataBackupText,
   validateUserDataBackupManifest,
 } from "./userDataBackup";
 
@@ -172,6 +173,59 @@ describe("user data reset plans", () => {
       userDataFiles: [],
       errors: ["Reset scope is not supported: unknown."],
       canReset: false,
+    });
+  });
+});
+
+describe("parseUserDataBackupText", () => {
+  test("parses and validates a backup JSON file", () => {
+    const manifest = createUserDataBackupManifest(
+      {
+        settings: { volume: 80 },
+      },
+      "2026-05-17T04:00:00.000Z",
+    );
+
+    const result = parseUserDataBackupText(JSON.stringify(manifest));
+
+    expect(result).toEqual({
+      ok: true,
+      manifest,
+    });
+  });
+
+  test("rejects empty backup text before JSON parsing", () => {
+    expect(parseUserDataBackupText("   ")).toEqual({
+      ok: false,
+      errors: ["Backup file is empty."],
+    });
+  });
+
+  test("rejects corrupt backup JSON with a clear error", () => {
+    expect(parseUserDataBackupText("{not-json")).toEqual({
+      ok: false,
+      errors: ["Backup file is not valid JSON."],
+    });
+  });
+
+  test("reuses manifest validation errors after JSON parsing", () => {
+    expect(
+      parseUserDataBackupText(
+        JSON.stringify({
+          app: "other",
+          schemaVersion: USER_DATA_BACKUP_SCHEMA_VERSION,
+          exportedAt: "not-a-date",
+          scopes: ["settings"],
+          data: {},
+        }),
+      ),
+    ).toEqual({
+      ok: false,
+      errors: [
+        "Backup app identifier is not supported.",
+        "Backup exportedAt must be a valid ISO date string.",
+        "Backup data is missing selected scope: settings.",
+      ],
     });
   });
 });
