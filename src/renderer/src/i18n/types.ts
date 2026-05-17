@@ -44,6 +44,14 @@ export interface TranslationMap {
   "library.importedMissingBadge": string;
   "library.importedAvailable": string;
   "library.importedUnknownComposer": string;
+  "library.editImportedMetadata": string;
+  "library.importedMetadataTitle": string;
+  "library.importedMetadataComposer": string;
+  "library.importedMetadataTags": string;
+  "library.importedMetadataGrade": string;
+  "library.importedMetadataCategory": string;
+  "library.saveImportedMetadata": string;
+  "library.cancelImportedMetadata": string;
   "library.difficulty.all": string;
   "library.difficulty.beginner": string;
   "library.difficulty.intermediate": string;

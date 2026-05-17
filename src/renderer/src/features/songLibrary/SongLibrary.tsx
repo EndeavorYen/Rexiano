@@ -13,6 +13,8 @@ import {
   Target,
   FolderPlus,
   FolderOpen,
+  Pencil,
+  Check,
 } from "lucide-react";
 import { parseMidiFile } from "../../engines/midi/MidiFileParser";
 import { useSongStore } from "../../stores/useSongStore";
@@ -44,6 +46,8 @@ import {
 } from "./recentFileRecovery";
 import {
   importedSongMatchesQuery,
+  type ImportedSongCategory,
+  type ImportedSongMetadataPatch,
   type ImportedSongRecord,
 } from "./importedSongMetadata";
 import {
@@ -88,6 +92,70 @@ const lessonRecommendationReasonKeys: Record<
   "continue-progress": "library.recommendation.reason.continueProgress",
 };
 
+type ImportedGradeDraft =
+  | ""
+  | "0"
+  | "1"
+  | "2"
+  | "3"
+  | "4"
+  | "5"
+  | "6"
+  | "7"
+  | "8";
+type ImportedCategoryDraft = "" | ImportedSongCategory;
+
+interface ImportedSongMetadataDraft {
+  title: string;
+  composer: string;
+  tags: string;
+  grade: ImportedGradeDraft;
+  category: ImportedCategoryDraft;
+}
+
+const importedGradeOptions = [0, 1, 2, 3, 4, 5, 6, 7, 8] as const;
+const importedCategoryOptions = [
+  "exercise",
+  "popular",
+  "holiday",
+  "classical",
+] as const satisfies readonly ImportedSongCategory[];
+
+function createImportedMetadataDraft(
+  record: ImportedSongRecord,
+): ImportedSongMetadataDraft {
+  return {
+    title: record.title,
+    composer: record.composer ?? "",
+    tags: record.tags.join(", "),
+    grade:
+      record.grade === undefined
+        ? ""
+        : (`${record.grade}` as ImportedGradeDraft),
+    category: record.category ?? "",
+  };
+}
+
+function createImportedMetadataPatch(
+  draft: ImportedSongMetadataDraft,
+): ImportedSongMetadataPatch {
+  const tags = draft.tags
+    .split(",")
+    .map((tag) => tag.trim())
+    .filter(Boolean);
+
+  return {
+    title: draft.title.trim(),
+    composer: draft.composer.trim() || undefined,
+    tags,
+    grade:
+      draft.grade === ""
+        ? undefined
+        : (Number(draft.grade) as NonNullable<ImportedSongRecord["grade"]>),
+    category: draft.category || undefined,
+  };
+}
+
 export function SongLibrary({
   onOpenFile,
   onBack,
@@ -116,6 +184,9 @@ export function SongLibrary({
   const refreshWatchedFolders = useSongLibraryStore(
     (s) => s.refreshWatchedFolders,
   );
+  const updateImportedSongMetadata = useSongLibraryStore(
+    (s) => s.updateImportedSongMetadata,
+  );
   const toggleFavoriteSong = useSongLibraryStore((s) => s.toggleFavoriteSong);
 
   const loadSong = useSongStore((s) => s.loadSong);
@@ -142,6 +213,11 @@ export function SongLibrary({
     null,
   );
   const [isAddingWatchedFolder, setIsAddingWatchedFolder] = useState(false);
+  const [editingImportedSongId, setEditingImportedSongId] = useState<
+    string | null
+  >(null);
+  const [importedMetadataDraft, setImportedMetadataDraft] =
+    useState<ImportedSongMetadataDraft | null>(null);
   const [showDeviceDrawer, setShowDeviceDrawer] = useState(false);
   const deviceDrawerRef = useRef<HTMLElement>(null);
   const deviceDrawerTriggerRef = useRef<HTMLButtonElement>(null);
@@ -382,6 +458,45 @@ export function SongLibrary({
     },
     [loadSong, refreshRecents, reset, t],
   );
+
+  const handleEditImportedMetadata = useCallback(
+    (record: ImportedSongRecord) => {
+      setError(null);
+      setEditingImportedSongId(record.id);
+      setImportedMetadataDraft(createImportedMetadataDraft(record));
+    },
+    [],
+  );
+
+  const handleCancelImportedMetadata = useCallback(() => {
+    setEditingImportedSongId(null);
+    setImportedMetadataDraft(null);
+  }, []);
+
+  const handleUpdateImportedMetadataDraft = useCallback(
+    (patch: Partial<ImportedSongMetadataDraft>) => {
+      setImportedMetadataDraft((current) =>
+        current ? { ...current, ...patch } : current,
+      );
+    },
+    [],
+  );
+
+  const handleSaveImportedMetadata = useCallback(() => {
+    if (!editingImportedSongId || !importedMetadataDraft) return;
+    if (!importedMetadataDraft.title.trim()) return;
+
+    updateImportedSongMetadata(
+      editingImportedSongId,
+      createImportedMetadataPatch(importedMetadataDraft),
+    );
+    setEditingImportedSongId(null);
+    setImportedMetadataDraft(null);
+  }, [
+    editingImportedSongId,
+    importedMetadataDraft,
+    updateImportedSongMetadata,
+  ]);
 
   return (
     <div className="flex-1 min-h-0 app-shell overflow-y-auto overflow-x-hidden">
@@ -913,13 +1028,25 @@ export function SongLibrary({
             </div>
             <div className="grid gap-2">
               {filteredImportedSongs.map((record, index) => (
-                <ImportedSongRow
-                  key={record.id}
-                  record={record}
-                  isLoading={loadingImportedPath === record.sourcePath}
-                  onSelect={handleSelectImportedSong}
-                  animationDelay={index * 24}
-                />
+                <div key={record.id} className="grid gap-2">
+                  <ImportedSongRow
+                    record={record}
+                    isLoading={loadingImportedPath === record.sourcePath}
+                    isEditing={editingImportedSongId === record.id}
+                    onSelect={handleSelectImportedSong}
+                    onEdit={handleEditImportedMetadata}
+                    animationDelay={index * 24}
+                  />
+                  {editingImportedSongId === record.id &&
+                    importedMetadataDraft && (
+                      <ImportedSongMetadataEditor
+                        draft={importedMetadataDraft}
+                        onChange={handleUpdateImportedMetadataDraft}
+                        onSave={handleSaveImportedMetadata}
+                        onCancel={handleCancelImportedMetadata}
+                      />
+                    )}
+                </div>
               ))}
             </div>
           </section>
@@ -1152,12 +1279,16 @@ function formatSongDuration(seconds: number): string {
 function ImportedSongRow({
   record,
   isLoading,
+  isEditing,
   onSelect,
+  onEdit,
   animationDelay,
 }: {
   record: ImportedSongRecord;
   isLoading: boolean;
+  isEditing: boolean;
   onSelect: (record: ImportedSongRecord) => void;
+  onEdit: (record: ImportedSongRecord) => void;
   animationDelay: number;
 }): React.JSX.Element {
   const { t } = useTranslation();
@@ -1241,7 +1372,157 @@ function ImportedSongRow({
         </span>
       </button>
 
+      <button
+        type="button"
+        onClick={() => onEdit(record)}
+        className="mr-2 self-center flex h-8 w-8 items-center justify-center rounded-full transition-colors cursor-pointer"
+        aria-label={`${t("library.editImportedMetadata")}: ${record.title}`}
+        aria-pressed={isEditing}
+        title={`${t("library.editImportedMetadata")}: ${record.title}`}
+        data-testid="imported-song-edit"
+        style={{
+          background: isEditing
+            ? "color-mix(in srgb, var(--color-note3) 18%, var(--color-surface))"
+            : "color-mix(in srgb, var(--color-surface) 90%, transparent)",
+          color: isEditing ? "var(--color-note3)" : "var(--color-text-muted)",
+          border: "1px solid var(--color-border)",
+        }}
+      >
+        <Pencil size={14} />
+      </button>
+
       {isLoading && <LoadingOverlay radiusClass="rounded-lg" />}
+    </div>
+  );
+}
+
+function ImportedSongMetadataEditor({
+  draft,
+  onChange,
+  onSave,
+  onCancel,
+}: {
+  draft: ImportedSongMetadataDraft;
+  onChange: (patch: Partial<ImportedSongMetadataDraft>) => void;
+  onSave: () => void;
+  onCancel: () => void;
+}): React.JSX.Element {
+  const { t } = useTranslation();
+  const canSave = draft.title.trim().length > 0;
+
+  return (
+    <div
+      className="grid gap-2 rounded-lg px-3 py-3 md:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)_minmax(0,1.1fr)_auto_auto_auto]"
+      style={{
+        background: "color-mix(in srgb, var(--color-note3) 7%, transparent)",
+        border:
+          "1px solid color-mix(in srgb, var(--color-note3) 22%, var(--color-border))",
+      }}
+      data-testid="imported-song-metadata-editor"
+    >
+      <input
+        value={draft.title}
+        onChange={(event) => onChange({ title: event.target.value })}
+        className="min-w-0 rounded-md px-2 py-1.5 text-xs font-body"
+        style={{
+          color: "var(--color-text)",
+          background: "var(--color-surface)",
+          border: "1px solid var(--color-border)",
+        }}
+        aria-label={t("library.importedMetadataTitle")}
+        placeholder={t("library.importedMetadataTitle")}
+        data-testid="imported-song-title-input"
+      />
+      <input
+        value={draft.composer}
+        onChange={(event) => onChange({ composer: event.target.value })}
+        className="min-w-0 rounded-md px-2 py-1.5 text-xs font-body"
+        style={{
+          color: "var(--color-text)",
+          background: "var(--color-surface)",
+          border: "1px solid var(--color-border)",
+        }}
+        aria-label={t("library.importedMetadataComposer")}
+        placeholder={t("library.importedMetadataComposer")}
+        data-testid="imported-song-composer-input"
+      />
+      <input
+        value={draft.tags}
+        onChange={(event) => onChange({ tags: event.target.value })}
+        className="min-w-0 rounded-md px-2 py-1.5 text-xs font-body"
+        style={{
+          color: "var(--color-text)",
+          background: "var(--color-surface)",
+          border: "1px solid var(--color-border)",
+        }}
+        aria-label={t("library.importedMetadataTags")}
+        placeholder={t("library.importedMetadataTags")}
+        data-testid="imported-song-tags-input"
+      />
+      <select
+        value={draft.grade}
+        onChange={(event) =>
+          onChange({ grade: event.target.value as ImportedGradeDraft })
+        }
+        className="rounded-md px-2 py-1.5 text-xs font-body"
+        style={{
+          color: "var(--color-text)",
+          background: "var(--color-surface)",
+          border: "1px solid var(--color-border)",
+        }}
+        aria-label={t("library.importedMetadataGrade")}
+        data-testid="imported-song-grade-select"
+      >
+        <option value="">--</option>
+        {importedGradeOptions.map((grade) => (
+          <option key={grade} value={`${grade}`}>
+            {gradeLabelShort[grade]}
+          </option>
+        ))}
+      </select>
+      <select
+        value={draft.category}
+        onChange={(event) =>
+          onChange({ category: event.target.value as ImportedCategoryDraft })
+        }
+        className="rounded-md px-2 py-1.5 text-xs font-body"
+        style={{
+          color: "var(--color-text)",
+          background: "var(--color-surface)",
+          border: "1px solid var(--color-border)",
+        }}
+        aria-label={t("library.importedMetadataCategory")}
+        data-testid="imported-song-category-select"
+      >
+        <option value="">--</option>
+        {importedCategoryOptions.map((category) => (
+          <option key={category} value={category}>
+            {categoryLabels[category]}
+          </option>
+        ))}
+      </select>
+      <span className="flex items-center justify-end gap-1.5">
+        <button
+          type="button"
+          onClick={onSave}
+          disabled={!canSave}
+          className="btn-primary-themed flex h-8 w-8 items-center justify-center rounded-md cursor-pointer disabled:cursor-not-allowed disabled:opacity-50"
+          aria-label={t("library.saveImportedMetadata")}
+          title={t("library.saveImportedMetadata")}
+          data-testid="imported-song-metadata-save"
+        >
+          <Check size={14} />
+        </button>
+        <button
+          type="button"
+          onClick={onCancel}
+          className="btn-surface-themed flex h-8 w-8 items-center justify-center rounded-md cursor-pointer"
+          aria-label={t("library.cancelImportedMetadata")}
+          title={t("library.cancelImportedMetadata")}
+        >
+          <X size={14} />
+        </button>
+      </span>
     </div>
   );
 }

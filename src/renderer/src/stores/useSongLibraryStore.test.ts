@@ -20,6 +20,7 @@ Object.defineProperty(globalThis, "localStorage", {
 
 const apiMock = {
   listBuiltinSongs: vi.fn(async () => []),
+  loadMidiPath: vi.fn(),
   selectWatchedMidiFolder: vi.fn(),
   scanWatchedMidiFolders: vi.fn(),
 };
@@ -35,6 +36,7 @@ describe("useSongLibraryStore library preferences", () => {
     localStorageMock.getItem.mockClear();
     localStorageMock.setItem.mockClear();
     apiMock.listBuiltinSongs.mockClear();
+    apiMock.loadMidiPath.mockReset();
     apiMock.selectWatchedMidiFolder.mockReset();
     apiMock.scanWatchedMidiFolders.mockReset();
     useSongLibraryStore.setState({
@@ -213,5 +215,48 @@ describe("useSongLibraryStore library preferences", () => {
         missing: false,
       },
     ]);
+  });
+
+  test("updates imported song metadata in app data without reading the MIDI file", () => {
+    const sourcePath = "/Users/rex/Music/Scale.mid";
+    const songId = createImportedSongId(sourcePath);
+    useSongLibraryStore.setState({
+      importedSongs: [
+        {
+          id: songId,
+          sourcePath,
+          title: "Scale",
+          tags: [],
+          missing: false,
+        },
+      ],
+    });
+
+    useSongLibraryStore.getState().updateImportedSongMetadata(songId, {
+      title: "Lesson Scale",
+      composer: "Teacher",
+      tags: ["legato", "recital"],
+      grade: 2,
+      category: "classical",
+    });
+
+    expect(apiMock.loadMidiPath).not.toHaveBeenCalled();
+    expect(useSongLibraryStore.getState().importedSongs).toEqual([
+      {
+        id: songId,
+        sourcePath,
+        title: "Lesson Scale",
+        composer: "Teacher",
+        tags: ["legato", "recital"],
+        grade: 2,
+        category: "classical",
+        missing: false,
+      },
+    ]);
+    expect(JSON.parse(localStorageMock.store["rexiano-song-library"])).toEqual(
+      expect.objectContaining({
+        importedSongs: useSongLibraryStore.getState().importedSongs,
+      }),
+    );
   });
 });

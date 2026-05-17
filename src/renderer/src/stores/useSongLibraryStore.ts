@@ -3,8 +3,10 @@ import type { BuiltinSongMeta } from "../../../shared/types";
 import {
   buildImportedSongRecordsFromDiscoveredPaths,
   createImportedSongId,
+  mergeImportedSongMetadata,
   normalizeImportedSongPath,
   reconcileImportedSongAvailability,
+  type ImportedSongMetadataPatch,
   type ImportedSongRecord,
 } from "@renderer/features/songLibrary/importedSongMetadata";
 
@@ -43,6 +45,10 @@ interface SongLibraryState {
   fetchSongs: () => Promise<void>;
   addWatchedFolder: () => Promise<void>;
   refreshWatchedFolders: () => Promise<void>;
+  updateImportedSongMetadata: (
+    songId: string,
+    patch: ImportedSongMetadataPatch,
+  ) => void;
   setSearchQuery: (query: string) => void;
   setDifficultyFilter: (filter: DifficultyFilter) => void;
   setGradeFilter: (filter: GradeFilter) => void;
@@ -265,6 +271,18 @@ export const useSongLibraryStore = create<SongLibraryState>()((set, get) => ({
       const importedSongs = mergeDiscoveredImportedSongs(
         state.importedSongs,
         discoveredPaths,
+      );
+      persistPrefs({ importedSongs });
+      return { importedSongs };
+    });
+  },
+
+  updateImportedSongMetadata: (songId, patch) => {
+    set((state) => {
+      const importedSongs = state.importedSongs.map((record) =>
+        record.id === songId
+          ? mergeImportedSongMetadata(record, patch)
+          : record,
       );
       persistPrefs({ importedSongs });
       return { importedSongs };
