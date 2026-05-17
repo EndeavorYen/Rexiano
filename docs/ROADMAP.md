@@ -371,10 +371,10 @@
   - [ ] 選取曲目後顯示曲名、作曲者、長度、等級、最佳成績、可用 tracks
   - [ ] 可行時提供短音訊 preview
   - [ ] 單一主要 CTA：Practice
-- [ ] 使用者曲庫與 metadata
-  - [ ] 監看使用者 MIDI 資料夾
-  - [ ] 為匯入曲目建立穩定 ID
-  - [ ] 支援 Rexiano sidecar metadata（title, composer, tags, grade, grouping）
+- [x] 使用者曲庫與 metadata
+  - [x] 監看使用者 MIDI 資料夾
+  - [x] 為匯入曲目建立穩定 ID
+  - [x] 支援 Rexiano-owned metadata（title, composer, tags, grade, grouping）
 - [ ] 曲目設定
   - [ ] 每首曲記住 active tracks、hand assignment、colors、mute/background、default speed/mode
   - [ ] 自動推測簡單左右手配置，並允許修正
