@@ -63,9 +63,7 @@ function normalizeFailureDiagnostic(error: unknown): string {
   return String(error ?? "").toLowerCase();
 }
 
-export function classifyAudioFailureSource(
-  error: unknown,
-): AudioFailureSource {
+export function classifyAudioFailureSource(error: unknown): AudioFailureSource {
   const diagnostic = normalizeFailureDiagnostic(error);
 
   if (
