@@ -29,6 +29,7 @@ describe("getAudioStatusGuidance", () => {
       guidance: "audio.loadingGuidance",
       kind: "loading",
       canRetry: false,
+      actions: [],
     });
   });
 
@@ -41,6 +42,7 @@ describe("getAudioStatusGuidance", () => {
           attempt: 4,
           maxAttempts: 4,
           successVisible: false,
+          failureSource: "audio-context",
         },
         t,
       ),
@@ -49,6 +51,43 @@ describe("getAudioStatusGuidance", () => {
       guidance: "audio.recoveryFailedGuidance:max=4",
       kind: "failed",
       canRetry: true,
+      actions: [
+        {
+          id: "retry-audio-context",
+          label: "audio.retry",
+          priority: "primary",
+        },
+      ],
+    });
+  });
+
+  test("returns SoundFont reload and fallback actions for soundfont failures", () => {
+    expect(
+      getAudioStatusGuidance(
+        {
+          audioStatus: "error",
+          recoveryState: "failed",
+          attempt: 4,
+          maxAttempts: 4,
+          successVisible: false,
+          failureSource: "soundfont",
+        },
+        t,
+      ),
+    ).toMatchObject({
+      kind: "failed",
+      actions: [
+        {
+          id: "reload-soundfont",
+          label: "audio.reloadSoundFont",
+          priority: "primary",
+        },
+        {
+          id: "use-synth-fallback",
+          label: "audio.useSynthFallback",
+          priority: "secondary",
+        },
+      ],
     });
   });
 

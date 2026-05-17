@@ -11,12 +11,26 @@ export type AudioStatusGuidanceKind =
   | "error"
   | "restored";
 
+export type AudioFailureSource = "audio-context" | "soundfont" | "unknown";
+
+export type AudioRecoveryActionId =
+  | "retry-audio-context"
+  | "reload-soundfont"
+  | "use-synth-fallback";
+
+export interface AudioRecoveryAction {
+  id: AudioRecoveryActionId;
+  label: string;
+  priority: "primary" | "secondary";
+}
+
 export interface AudioStatusGuidanceInput {
   audioStatus: AudioEngineStatus;
   recoveryState: AudioRecoveryState;
   attempt: number;
   maxAttempts: number;
   successVisible: boolean;
+  failureSource?: AudioFailureSource;
 }
 
 export interface AudioStatusGuidance {
@@ -24,6 +38,35 @@ export interface AudioStatusGuidance {
   guidance: string;
   kind: AudioStatusGuidanceKind;
   canRetry: boolean;
+  actions: AudioRecoveryAction[];
+}
+
+function buildAudioRecoveryActions(
+  failureSource: AudioFailureSource | undefined,
+  t: Translate,
+): AudioRecoveryAction[] {
+  if (failureSource === "soundfont") {
+    return [
+      {
+        id: "reload-soundfont",
+        label: t("audio.reloadSoundFont"),
+        priority: "primary",
+      },
+      {
+        id: "use-synth-fallback",
+        label: t("audio.useSynthFallback"),
+        priority: "secondary",
+      },
+    ];
+  }
+
+  return [
+    {
+      id: "retry-audio-context",
+      label: t("audio.retry"),
+      priority: "primary",
+    },
+  ];
 }
 
 export function getAudioStatusGuidance(
@@ -39,6 +82,7 @@ export function getAudioStatusGuidance(
       guidance: t("audio.recoveringGuidance"),
       kind: "recovering",
       canRetry: false,
+      actions: [],
     };
   }
 
@@ -50,6 +94,7 @@ export function getAudioStatusGuidance(
       }),
       kind: "failed",
       canRetry: true,
+      actions: buildAudioRecoveryActions(input.failureSource, t),
     };
   }
 
@@ -59,6 +104,7 @@ export function getAudioStatusGuidance(
       guidance: t("audio.loadingGuidance"),
       kind: "loading",
       canRetry: false,
+      actions: [],
     };
   }
 
@@ -68,6 +114,7 @@ export function getAudioStatusGuidance(
       guidance: t("audio.errorGuidance"),
       kind: "error",
       canRetry: true,
+      actions: buildAudioRecoveryActions(input.failureSource, t),
     };
   }
 
@@ -77,6 +124,7 @@ export function getAudioStatusGuidance(
       guidance: t("audio.restoredGuidance"),
       kind: "restored",
       canRetry: false,
+      actions: [],
     };
   }
 

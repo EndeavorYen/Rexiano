@@ -329,6 +329,8 @@ export const zhTW: TranslationMap = {
   "audio.errorTitle": "目前無法使用音訊",
   "audio.errorGuidance": "請檢查音訊裝置、系統權限，或重新啟動應用程式。",
   "audio.retry": "重試",
+  "audio.reloadSoundFont": "重新載入鋼琴音色",
+  "audio.useSynthFallback": "使用基本合成器",
 
   // ── General ────────────────────────────────────────────────────
   "general.loading": "載入中…",

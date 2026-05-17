@@ -325,6 +325,8 @@ export interface TranslationMap {
   "audio.errorTitle": string;
   "audio.errorGuidance": string;
   "audio.retry": string;
+  "audio.reloadSoundFont": string;
+  "audio.useSynthFallback": string;
 
   // ── General ────────────────────────────────────────────────────
   "general.loading": string;

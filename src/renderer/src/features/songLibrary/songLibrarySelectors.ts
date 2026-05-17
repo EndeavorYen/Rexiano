@@ -18,6 +18,11 @@ export interface SongActivity {
   bestAccuracy: number | null;
 }
 
+export interface PracticeSongRecommendationOptions {
+  targetGrade?: BuiltinSongMeta["grade"];
+  masteryAccuracy?: number;
+}
+
 const difficultyRank: Record<BuiltinSongMeta["difficulty"], number> = {
   beginner: 0,
   intermediate: 1,
@@ -175,4 +180,45 @@ export function sortSongsForLibrary(
         );
     }
   });
+}
+
+export function selectRecommendedPracticeSong(
+  songs: BuiltinSongMeta[],
+  activity: Map<string, SongActivity>,
+  options: PracticeSongRecommendationOptions = {},
+): BuiltinSongMeta | null {
+  if (songs.length === 0) return null;
+
+  const masteryAccuracy = options.masteryAccuracy ?? 90;
+  const targetGrade =
+    options.targetGrade ??
+    songs
+      .map((song) => song.grade)
+      .filter((grade): grade is NonNullable<BuiltinSongMeta["grade"]> =>
+        Number.isFinite(grade),
+      )
+      .sort((a, b) => a - b)[0];
+
+  return [...songs].sort((a, b) => {
+    const aActivity = activity.get(a.id) ?? baseActivity(false);
+    const bActivity = activity.get(b.id) ?? baseActivity(false);
+    const aMastered = (aActivity.bestAccuracy ?? 0) >= masteryAccuracy;
+    const bMastered = (bActivity.bestAccuracy ?? 0) >= masteryAccuracy;
+    const aGradeDistance =
+      targetGrade === undefined || a.grade === undefined
+        ? 99
+        : Math.abs(a.grade - targetGrade);
+    const bGradeDistance =
+      targetGrade === undefined || b.grade === undefined
+        ? 99
+        : Math.abs(b.grade - targetGrade);
+
+    return (
+      Number(aMastered) - Number(bMastered) ||
+      aGradeDistance - bGradeDistance ||
+      (aActivity.playCount > 0 ? 1 : 0) - (bActivity.playCount > 0 ? 1 : 0) ||
+      (a.grade ?? 99) - (b.grade ?? 99) ||
+      a.title.localeCompare(b.title)
+    );
+  })[0];
 }

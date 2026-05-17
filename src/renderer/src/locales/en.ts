@@ -347,6 +347,8 @@ export const en: TranslationMap = {
   "audio.errorGuidance":
     "Check your audio device, system permissions, or restart the app.",
   "audio.retry": "Retry",
+  "audio.reloadSoundFont": "Reload piano sound",
+  "audio.useSynthFallback": "Use basic synth",
 
   // ── General ────────────────────────────────────────────────────
   "general.loading": "Loading...",

@@ -3,6 +3,7 @@ import type { BuiltinSongMeta, RecentFile, SessionRecord } from "@shared/types";
 import {
   buildSongActivity,
   filterSongsForLibrary,
+  selectRecommendedPracticeSong,
   sortSongsForLibrary,
 } from "./songLibrarySelectors";
 
@@ -160,5 +161,42 @@ describe("sortSongsForLibrary", () => {
     expect(
       sortSongsForLibrary(songs, activity, "duration").map((s) => s.id),
     ).toEqual(["easy", "medium", "long"]);
+  });
+});
+
+describe("selectRecommendedPracticeSong", () => {
+  test("prefers incomplete songs at the learner target grade", () => {
+    const songs = [
+      makeSong("grade-1", { title: "Grade 1", grade: 1 }),
+      makeSong("grade-2", { title: "Grade 2", grade: 2 }),
+      makeSong("grade-3", { title: "Grade 3", grade: 3 }),
+    ];
+    const activity = buildSongActivity(
+      songs,
+      [makeSession("Grade 1", 1000, 96), makeSession("Grade 3", 2000, 60)],
+      [],
+      [],
+    );
+
+    expect(
+      selectRecommendedPracticeSong(songs, activity, { targetGrade: 2 })?.id,
+    ).toBe("grade-2");
+  });
+
+  test("deprioritizes mastered songs when an unfinished nearby song exists", () => {
+    const songs = [
+      makeSong("mastered", { title: "Mastered", grade: 2 }),
+      makeSong("unfinished", { title: "Unfinished", grade: 3 }),
+    ];
+    const activity = buildSongActivity(
+      songs,
+      [makeSession("Mastered", 1000, 98)],
+      [],
+      [],
+    );
+
+    expect(
+      selectRecommendedPracticeSong(songs, activity, { targetGrade: 2 })?.id,
+    ).toBe("unfinished");
   });
 });

@@ -22,7 +22,7 @@ export type ImportedSongMetadataPatch = Partial<
   >
 >;
 
-function normalizePath(sourcePath: string): string {
+export function normalizeImportedSongPath(sourcePath: string): string {
   return sourcePath.trim().replaceAll("\\", "/");
 }
 
@@ -65,7 +65,7 @@ function cleanTags(tags: string[]): string[] {
 }
 
 export function createImportedSongId(sourcePath: string): string {
-  return `user:${stableHash(normalizePath(sourcePath))}`;
+  return `user:${stableHash(normalizeImportedSongPath(sourcePath))}`;
 }
 
 export function mergeImportedSongMetadata(
@@ -102,4 +102,18 @@ export function importedSongMatchesQuery(
     .join(" ");
 
   return searchable.includes(normalizedQuery);
+}
+
+export function reconcileImportedSongAvailability(
+  records: ImportedSongRecord[],
+  availableSourcePaths: string[],
+): ImportedSongRecord[] {
+  const availablePaths = new Set(
+    availableSourcePaths.map(normalizeImportedSongPath),
+  );
+
+  return records.map((record) => ({
+    ...record,
+    missing: !availablePaths.has(normalizeImportedSongPath(record.sourcePath)),
+  }));
 }
