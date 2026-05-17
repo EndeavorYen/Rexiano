@@ -1,5 +1,11 @@
 import { useState, useCallback, useRef, useEffect, useMemo } from "react";
-import { ArrowLeft, BarChart3, PanelRightOpen, X } from "lucide-react";
+import {
+  AlertTriangle,
+  ArrowLeft,
+  BarChart3,
+  PanelRightOpen,
+  X,
+} from "lucide-react";
 import { parseMidiFile } from "./engines/midi/MidiFileParser";
 import { useSongStore } from "./stores/useSongStore";
 import { usePlaybackStore } from "./stores/usePlaybackStore";
@@ -63,6 +69,7 @@ import {
   type FileImportErrorGuidance,
   type FileImportErrorInput,
 } from "./features/fileImport/fileImportErrorGuidance";
+import { buildMidiDiagnosticNotice } from "./features/midiDiagnostics/midiDiagnosticNotice";
 
 /** Accepted file extensions for drag-and-drop MIDI import */
 const MIDI_EXTENSIONS = [".mid", ".midi"];
@@ -1000,6 +1007,10 @@ function App(): React.JSX.Element {
       : null;
   const effectiveBpm =
     baseBpm !== null ? Math.max(1, Math.round(baseBpm * speed)) : null;
+  const midiDiagnosticNotice = useMemo(
+    () => (song ? buildMidiDiagnosticNotice(song) : null),
+    [song],
+  );
 
   useEffect(() => {
     const token = `${view}:${song?.fileName ?? ""}`;
@@ -1180,6 +1191,40 @@ function App(): React.JSX.Element {
                 </button>
               </div>
             </div>
+            {midiDiagnosticNotice && (
+              <div
+                className="mt-1.5 flex items-start gap-1.5 rounded-lg px-2 py-1 text-[11px] leading-snug"
+                style={{
+                  color:
+                    midiDiagnosticNotice.kind === "error"
+                      ? "#991b1b"
+                      : "var(--color-text)",
+                  background:
+                    midiDiagnosticNotice.kind === "error"
+                      ? "color-mix(in srgb, #fee2e2 82%, var(--color-surface))"
+                      : "color-mix(in srgb, var(--color-streak-gold) 18%, var(--color-surface))",
+                  border:
+                    midiDiagnosticNotice.kind === "error"
+                      ? "1px solid color-mix(in srgb, #dc2626 35%, transparent)"
+                      : "1px solid color-mix(in srgb, var(--color-streak-gold) 40%, transparent)",
+                }}
+                title={midiDiagnosticNotice.diagnosticTitle}
+                data-testid="midi-diagnostic-notice"
+              >
+                <AlertTriangle size={13} className="mt-[1px] shrink-0" />
+                <div className="min-w-0">
+                  <span className="font-semibold">
+                    {midiDiagnosticNotice.title}
+                  </span>
+                  <span className="ml-1">{midiDiagnosticNotice.summary}</span>
+                  {midiDiagnosticNotice.details.length > 0 && (
+                    <span className="ml-1 text-[10px] opacity-80">
+                      {midiDiagnosticNotice.details[0]}
+                    </span>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
 
           {showPlaybackDrawer && (
