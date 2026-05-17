@@ -219,6 +219,7 @@ export interface TranslationMap {
   "settings.tab.practice": string;
   "settings.tab.keys": string;
   "settings.tab.lang": string;
+  "settings.tab.backup": string;
   "settings.tab.about": string;
   "about.version": string;
   "about.changelog": string;
@@ -265,6 +266,26 @@ export interface TranslationMap {
   "settings.common": string;
   "settings.compactKeyLabels": string;
   "settings.compactKeyLabelsDesc": string;
+  "settings.backupTitle": string;
+  "settings.backupDesc": string;
+  "settings.backupExport": string;
+  "settings.backupExportDesc": string;
+  "settings.backupImport": string;
+  "settings.backupImportDesc": string;
+  "settings.backupReset": string;
+  "settings.backupResetDesc": string;
+  "settings.backupResetSettings": string;
+  "settings.backupResetSettingsDesc": string;
+  "settings.backupResetProgress": string;
+  "settings.backupResetProgressDesc": string;
+  "settings.backupResetRecents": string;
+  "settings.backupResetRecentsDesc": string;
+  "settings.backupExportSuccess": string;
+  "settings.backupImportSuccess": string;
+  "settings.backupResetSuccess": string;
+  "settings.backupResetConfirm": string;
+  "settings.backupResetConfirmGeneric": string;
+  "settings.backupUnknownError": string;
 
   // ── Fingering ──────────────────────────────────────────────────
   "fingering.label": string;

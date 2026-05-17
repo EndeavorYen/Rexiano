@@ -3,26 +3,38 @@ import {
   USER_DATA_BACKUP_SCHEMA_VERSION,
   USER_DATA_BACKUP_SCOPE_INVENTORY,
   USER_DATA_BACKUP_SCOPES,
+  applyUserDataBackupToRuntime,
   applyUserDataBackupToLocalStorage,
   buildUserDataResetPlan,
+  createUserDataBackupFromRuntime,
   createUserDataBackupFromLocalStorage,
   createUserDataBackupManifest,
   migrateUserDataBackupManifest,
   parseUserDataBackupText,
-  type UserDataLocalStoragePort,
+  resetUserDataBackupRuntime,
+  type UserDataMutableLocalStoragePort,
+  type UserDataFileBackupPort,
   validateUserDataBackupManifest,
 } from "./userDataBackup";
 
 function createStorage(
   initial: Record<string, string> = {},
-): UserDataLocalStoragePort & { values: Record<string, string> } {
+): UserDataMutableLocalStoragePort & {
+  values: Record<string, string>;
+  removedKeys: string[];
+} {
   return {
     values: { ...initial },
+    removedKeys: [],
     getItem(key: string): string | null {
       return this.values[key] ?? null;
     },
     setItem(key: string, value: string): void {
       this.values[key] = value;
+    },
+    removeItem(key: string): void {
+      this.removedKeys.push(key);
+      delete this.values[key];
     },
   };
 }
@@ -335,5 +347,121 @@ describe("localStorage backup round trip", () => {
       ok: false,
       errors: ["Cannot export settings: stored data is not valid JSON."],
     });
+  });
+});
+
+describe("runtime backup round trip", () => {
+  test("exports one portable manifest across localStorage and userData files", async () => {
+    const source = createStorage({
+      "rexiano-settings": JSON.stringify({ volume: 72 }),
+      "rexiano-song-practice-setup": JSON.stringify({
+        "name:Chopsticks": { activeTracks: [] },
+      }),
+    });
+    const filePort: UserDataFileBackupPort = {
+      exportUserDataFiles: async () => ({
+        ok: true,
+        scopes: ["progress", "recents"],
+        data: {
+          progress: [{ id: "session-1" }],
+          recents: [{ path: "/lesson.mid" }],
+        },
+      }),
+      importUserDataFiles: async () => ({ ok: true, scopes: [] }),
+      resetUserDataFiles: async () => ({ ok: true, scopes: [] }),
+    };
+
+    const result = await createUserDataBackupFromRuntime(
+      source,
+      filePort,
+      "all",
+      "2026-05-17T07:00:00.000Z",
+    );
+
+    expect(result).toEqual({
+      ok: true,
+      manifest: {
+        app: "rexiano",
+        schemaVersion: USER_DATA_BACKUP_SCHEMA_VERSION,
+        exportedAt: "2026-05-17T07:00:00.000Z",
+        scopes: ["settings", "progress", "recents", "perSongSetup"],
+        data: {
+          settings: { volume: 72 },
+          progress: [{ id: "session-1" }],
+          recents: [{ path: "/lesson.mid" }],
+          perSongSetup: { "name:Chopsticks": { activeTracks: [] } },
+        },
+      },
+    });
+  });
+
+  test("validates file-backed data before applying localStorage changes", async () => {
+    const target = createStorage();
+    const filePort: UserDataFileBackupPort = {
+      exportUserDataFiles: async () => ({ ok: true, scopes: [], data: {} }),
+      importUserDataFiles: async () => ({
+        ok: false,
+        errors: ["Cannot import progress: backup data must be an array."],
+      }),
+      resetUserDataFiles: async () => ({ ok: true, scopes: [] }),
+    };
+
+    const result = await applyUserDataBackupToRuntime(
+      {
+        app: "rexiano",
+        schemaVersion: USER_DATA_BACKUP_SCHEMA_VERSION,
+        exportedAt: "2026-05-17T08:00:00.000Z",
+        scopes: ["settings", "progress"],
+        data: {
+          settings: { volume: 50 },
+          progress: { sessions: [] },
+        },
+      },
+      target,
+      filePort,
+    );
+
+    expect(result).toEqual({
+      ok: false,
+      appliedScopes: [],
+      errors: ["Cannot import progress: backup data must be an array."],
+    });
+    expect(target.values).toEqual({});
+  });
+
+  test("resets scoped localStorage keys and file-backed userData together", async () => {
+    const target = createStorage({
+      "rexiano-settings": JSON.stringify({ volume: 72 }),
+      "rexiano-song-practice-setup": JSON.stringify({
+        "name:Chopsticks": { activeTracks: [] },
+      }),
+    });
+    const resetCalls: string[][] = [];
+    const filePort: UserDataFileBackupPort = {
+      exportUserDataFiles: async () => ({ ok: true, scopes: [], data: {} }),
+      importUserDataFiles: async () => ({ ok: true, scopes: [] }),
+      resetUserDataFiles: async (scopes = []) => {
+        resetCalls.push([...scopes]);
+        return { ok: true, scopes: scopes as ("progress" | "recents")[] };
+      },
+    };
+
+    const result = await resetUserDataBackupRuntime(target, filePort, [
+      "settings",
+      "progress",
+      "recents",
+      "perSongSetup",
+    ]);
+
+    expect(result).toEqual({
+      ok: true,
+      appliedScopes: ["settings", "progress", "recents", "perSongSetup"],
+    });
+    expect(resetCalls).toEqual([["progress", "recents"]]);
+    expect(target.removedKeys).toEqual([
+      "rexiano-settings",
+      "rexiano-song-practice-setup",
+    ]);
+    expect(target.values).toEqual({});
   });
 });

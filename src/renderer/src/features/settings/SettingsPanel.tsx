@@ -9,6 +9,10 @@ import {
   Keyboard,
   Globe,
   Info,
+  Database,
+  Download,
+  Upload,
+  RotateCcw,
 } from "lucide-react";
 import { useThemeStore } from "@renderer/stores/useThemeStore";
 import { useSettingsStore } from "@renderer/stores/useSettingsStore";
@@ -18,6 +22,13 @@ import { getAvailableLanguages } from "@renderer/i18n";
 import { useTranslation } from "@renderer/i18n/useTranslation";
 import { useDialogFocus } from "@renderer/hooks/useDialogFocus";
 import type { PracticeMode } from "@shared/types";
+import {
+  applyUserDataBackupToRuntime,
+  createUserDataBackupFromRuntime,
+  parseUserDataBackupText,
+  resetUserDataBackupRuntime,
+  type UserDataResetSelection,
+} from "./userDataBackup";
 
 const themeList: ThemeId[] = ["lavender", "ocean", "peach", "midnight"];
 
@@ -30,6 +41,7 @@ type SettingsTab =
   | "practice"
   | "shortcuts"
   | "language"
+  | "backup"
   | "about";
 
 const tabKeys = [
@@ -39,6 +51,7 @@ const tabKeys = [
   "settings.tab.practice",
   "settings.tab.keys",
   "settings.tab.lang",
+  "settings.tab.backup",
   "settings.tab.about",
 ] as const;
 
@@ -49,6 +62,7 @@ const tabIds: SettingsTab[] = [
   "practice",
   "shortcuts",
   "language",
+  "backup",
   "about",
 ];
 
@@ -61,6 +75,7 @@ const tabIcons = [
   <Music size={14} key="practice" />,
   <Keyboard size={14} key="shortcuts" />,
   <Globe size={14} key="lang" />,
+  <Database size={14} key="backup" />,
   <Info size={14} key="about" />,
 ];
 
@@ -107,6 +122,7 @@ export function SettingsPanel({
     return filteredTabIds[0] ?? "theme";
   }, [activeTab, filteredTabIds]);
   const panelRef = useRef<HTMLDivElement>(null);
+  const backupFileInputRef = useRef<HTMLInputElement>(null);
 
   // Theme state
   const currentThemeId = useThemeStore((s) => s.themeId);
@@ -209,6 +225,156 @@ export function SettingsPanel({
     document.addEventListener("keydown", handler);
     return () => document.removeEventListener("keydown", handler);
   }, [open, handleClose]);
+
+  const [backupBusyAction, setBackupBusyAction] = useState<
+    "export" | "import" | "reset" | null
+  >(null);
+  const [backupStatus, setBackupStatus] = useState<{
+    kind: "success" | "error";
+    message: string;
+  } | null>(null);
+
+  const handleExportUserData = useCallback(async () => {
+    setBackupBusyAction("export");
+    setBackupStatus(null);
+
+    try {
+      const result = await createUserDataBackupFromRuntime(
+        localStorage,
+        window.api,
+      );
+      if (!result.ok) {
+        setBackupStatus({ kind: "error", message: result.errors.join("\n") });
+        return;
+      }
+
+      const fileText = JSON.stringify(result.manifest, null, 2);
+      const blob = new Blob([fileText], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `rexiano-backup-${result.manifest.exportedAt.slice(0, 10)}.json`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+
+      setBackupStatus({
+        kind: "success",
+        message: t("settings.backupExportSuccess", {
+          count: result.manifest.scopes.length,
+        }),
+      });
+    } catch (error) {
+      setBackupStatus({
+        kind: "error",
+        message:
+          error instanceof Error
+            ? error.message
+            : t("settings.backupUnknownError"),
+      });
+    } finally {
+      setBackupBusyAction(null);
+    }
+  }, [t]);
+
+  const handleImportUserDataFile = useCallback(
+    async (event: React.ChangeEvent<HTMLInputElement>) => {
+      const file = event.target.files?.[0];
+      event.target.value = "";
+      if (!file) return;
+
+      setBackupBusyAction("import");
+      setBackupStatus(null);
+
+      try {
+        const parsed = parseUserDataBackupText(await file.text());
+        if (!parsed.ok) {
+          setBackupStatus({
+            kind: "error",
+            message: parsed.errors.join("\n"),
+          });
+          return;
+        }
+
+        const result = await applyUserDataBackupToRuntime(
+          parsed.manifest,
+          localStorage,
+          window.api,
+        );
+        if (!result.ok) {
+          setBackupStatus({
+            kind: "error",
+            message: result.errors.join("\n"),
+          });
+          return;
+        }
+
+        setBackupStatus({
+          kind: "success",
+          message: t("settings.backupImportSuccess", {
+            count: result.appliedScopes.length,
+          }),
+        });
+      } catch (error) {
+        setBackupStatus({
+          kind: "error",
+          message:
+            error instanceof Error
+              ? error.message
+              : t("settings.backupUnknownError"),
+        });
+      } finally {
+        setBackupBusyAction(null);
+      }
+    },
+    [t],
+  );
+
+  const handleResetUserData = useCallback(
+    async (
+      selection: UserDataResetSelection,
+      confirmMessage = t("settings.backupResetConfirmGeneric"),
+    ) => {
+      if (!window.confirm(confirmMessage)) return;
+
+      setBackupBusyAction("reset");
+      setBackupStatus(null);
+
+      try {
+        const result = await resetUserDataBackupRuntime(
+          localStorage,
+          window.api,
+          selection,
+        );
+        if (!result.ok) {
+          setBackupStatus({
+            kind: "error",
+            message: result.errors.join("\n"),
+          });
+          return;
+        }
+
+        setBackupStatus({
+          kind: "success",
+          message: t("settings.backupResetSuccess", {
+            count: result.appliedScopes.length,
+          }),
+        });
+      } catch (error) {
+        setBackupStatus({
+          kind: "error",
+          message:
+            error instanceof Error
+              ? error.message
+              : t("settings.backupUnknownError"),
+        });
+      } finally {
+        setBackupBusyAction(null);
+      }
+    },
+    [t],
+  );
 
   // About tab: lazy-load app info
   const [appInfo, setAppInfo] = useState<{
@@ -831,6 +997,110 @@ export function SettingsPanel({
                 </TabContent>
               )}
 
+              {resolvedActiveTab === "backup" && (
+                <TabContent>
+                  <SectionTitle>{t("settings.backupTitle")}</SectionTitle>
+                  <p
+                    className="text-[11px] font-body mt-2"
+                    style={{ color: "var(--color-text-muted)" }}
+                  >
+                    {t("settings.backupDesc")}
+                  </p>
+                  <input
+                    ref={backupFileInputRef}
+                    type="file"
+                    accept="application/json,.json"
+                    className="hidden"
+                    onChange={handleImportUserDataFile}
+                    data-testid="user-data-import-file"
+                  />
+                  <div className="flex flex-col gap-2.5 mt-3">
+                    <BackupActionButton
+                      icon={<Download size={15} />}
+                      label={t("settings.backupExport")}
+                      description={t("settings.backupExportDesc")}
+                      disabled={backupBusyAction !== null}
+                      onClick={handleExportUserData}
+                      testId="user-data-export"
+                    />
+                    <BackupActionButton
+                      icon={<Upload size={15} />}
+                      label={t("settings.backupImport")}
+                      description={t("settings.backupImportDesc")}
+                      disabled={backupBusyAction !== null}
+                      onClick={() => backupFileInputRef.current?.click()}
+                      testId="user-data-import"
+                    />
+                    <div className="grid gap-2 sm:grid-cols-2">
+                      <BackupActionButton
+                        icon={<RotateCcw size={15} />}
+                        label={t("settings.backupResetSettings")}
+                        description={t("settings.backupResetSettingsDesc")}
+                        disabled={backupBusyAction !== null}
+                        onClick={() => handleResetUserData(["settings"])}
+                        danger
+                        testId="user-data-reset-settings"
+                      />
+                      <BackupActionButton
+                        icon={<RotateCcw size={15} />}
+                        label={t("settings.backupResetProgress")}
+                        description={t("settings.backupResetProgressDesc")}
+                        disabled={backupBusyAction !== null}
+                        onClick={() => handleResetUserData(["progress"])}
+                        danger
+                        testId="user-data-reset-progress"
+                      />
+                      <BackupActionButton
+                        icon={<RotateCcw size={15} />}
+                        label={t("settings.backupResetRecents")}
+                        description={t("settings.backupResetRecentsDesc")}
+                        disabled={backupBusyAction !== null}
+                        onClick={() => handleResetUserData(["recents"])}
+                        danger
+                        testId="user-data-reset-recents"
+                      />
+                      <BackupActionButton
+                        icon={<RotateCcw size={15} />}
+                        label={t("settings.backupReset")}
+                        description={t("settings.backupResetDesc")}
+                        disabled={backupBusyAction !== null}
+                        onClick={() =>
+                          handleResetUserData(
+                            "all",
+                            t("settings.backupResetConfirm"),
+                          )
+                        }
+                        danger
+                        testId="user-data-reset"
+                      />
+                    </div>
+                  </div>
+                  {backupStatus && (
+                    <div
+                      className="mt-3 rounded-lg px-3 py-2 text-[11px] font-body whitespace-pre-wrap"
+                      style={{
+                        color:
+                          backupStatus.kind === "success"
+                            ? "var(--color-accent)"
+                            : "#b42318",
+                        background:
+                          backupStatus.kind === "success"
+                            ? "color-mix(in srgb, var(--color-accent) 9%, var(--color-surface))"
+                            : "color-mix(in srgb, #f04438 10%, var(--color-surface))",
+                        border:
+                          backupStatus.kind === "success"
+                            ? "1px solid color-mix(in srgb, var(--color-accent) 28%, transparent)"
+                            : "1px solid color-mix(in srgb, #f04438 28%, transparent)",
+                      }}
+                      role="status"
+                      data-testid="user-data-backup-status"
+                    >
+                      {backupStatus.message}
+                    </div>
+                  )}
+                </TabContent>
+              )}
+
               {resolvedActiveTab === "about" && (
                 <TabContent>
                   <div className="space-y-4">
@@ -974,6 +1244,68 @@ function ToggleRow({
         />
       </button>
     </label>
+  );
+}
+
+function BackupActionButton({
+  icon,
+  label,
+  description,
+  disabled,
+  onClick,
+  danger = false,
+  testId,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  description: string;
+  disabled: boolean;
+  onClick: () => void;
+  danger?: boolean;
+  testId: string;
+}): React.JSX.Element {
+  return (
+    <button
+      type="button"
+      disabled={disabled}
+      onClick={onClick}
+      className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-left transition-colors disabled:cursor-not-allowed disabled:opacity-60"
+      style={{
+        background: danger
+          ? "color-mix(in srgb, #f04438 7%, var(--color-surface))"
+          : "color-mix(in srgb, var(--color-surface-alt) 52%, var(--color-surface))",
+        border: danger
+          ? "1px solid color-mix(in srgb, #f04438 22%, var(--color-border))"
+          : "1px solid var(--color-border)",
+      }}
+      data-testid={testId}
+    >
+      <span
+        className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg"
+        style={{
+          color: danger ? "#b42318" : "var(--color-accent)",
+          background: danger
+            ? "color-mix(in srgb, #f04438 12%, var(--color-surface))"
+            : "color-mix(in srgb, var(--color-accent) 10%, var(--color-surface))",
+        }}
+      >
+        {icon}
+      </span>
+      <span className="min-w-0">
+        <span
+          className="block text-xs font-body font-semibold"
+          style={{ color: danger ? "#b42318" : "var(--color-text)" }}
+        >
+          {label}
+        </span>
+        <span
+          className="block text-[10px] font-body mt-0.5"
+          style={{ color: "var(--color-text-muted)" }}
+        >
+          {description}
+        </span>
+      </span>
+    </button>
   );
 }
 

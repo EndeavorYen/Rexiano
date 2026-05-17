@@ -1,3 +1,9 @@
+import type {
+  UserDataFileBackupPayload,
+  UserDataFileBackupResult,
+  UserDataFileMutationResult,
+} from "@shared/types";
+
 export const USER_DATA_BACKUP_SCHEMA_VERSION = 1;
 
 export const USER_DATA_BACKUP_SCOPES = [
@@ -83,6 +89,20 @@ export interface UserDataResetPlan {
 export interface UserDataLocalStoragePort {
   getItem(key: string): string | null;
   setItem(key: string, value: string): void;
+  removeItem?(key: string): void;
+}
+
+export interface UserDataMutableLocalStoragePort extends UserDataLocalStoragePort {
+  removeItem(key: string): void;
+}
+
+export interface UserDataFileBackupPort {
+  exportUserDataFiles(scopes?: string[]): Promise<UserDataFileBackupResult>;
+  importUserDataFiles(
+    payload: UserDataFileBackupPayload,
+    scopes?: string[],
+  ): Promise<UserDataFileMutationResult>;
+  resetUserDataFiles(scopes?: string[]): Promise<UserDataFileMutationResult>;
 }
 
 export type UserDataBackupCreationResult =
@@ -233,6 +253,56 @@ export function createUserDataBackupFromLocalStorage(
   };
 }
 
+function fileBackedScopes(
+  scopes: readonly UserDataBackupScope[],
+): UserDataBackupScope[] {
+  return USER_DATA_BACKUP_SCOPE_INVENTORY.flatMap((item) =>
+    item.source === "userDataFile" && scopes.includes(item.scope)
+      ? [item.scope]
+      : [],
+  );
+}
+
+export async function createUserDataBackupFromRuntime(
+  storage: UserDataLocalStoragePort,
+  filePort: UserDataFileBackupPort,
+  selection: UserDataResetSelection = "all",
+  exportedAt = new Date().toISOString(),
+): Promise<UserDataBackupCreationResult> {
+  const selected = selectBackupScopes(selection);
+  if (selected.errors.length > 0) {
+    return { ok: false, errors: selected.errors };
+  }
+
+  const localStorageResult = createUserDataBackupFromLocalStorage(
+    storage,
+    selected.scopes,
+    exportedAt,
+  );
+  if (!localStorageResult.ok) return localStorageResult;
+
+  const data: Partial<Record<UserDataBackupScope, unknown>> = {
+    ...localStorageResult.manifest.data,
+  };
+  const userDataFileScopes = fileBackedScopes(selected.scopes);
+
+  if (userDataFileScopes.length > 0) {
+    const fileResult = await filePort.exportUserDataFiles(userDataFileScopes);
+    if (!fileResult.ok) {
+      return { ok: false, errors: fileResult.errors };
+    }
+
+    for (const scope of userDataFileScopes) {
+      data[scope] = fileResult.data[scope];
+    }
+  }
+
+  return {
+    ok: true,
+    manifest: createUserDataBackupManifest(data, exportedAt),
+  };
+}
+
 export function applyUserDataBackupToLocalStorage(
   input: unknown,
   storage: UserDataLocalStoragePort,
@@ -255,6 +325,73 @@ export function applyUserDataBackupToLocalStorage(
   }
 
   return { ok: true, appliedScopes };
+}
+
+export async function applyUserDataBackupToRuntime(
+  input: unknown,
+  storage: UserDataLocalStoragePort,
+  filePort: UserDataFileBackupPort,
+): Promise<UserDataBackupApplyResult> {
+  const result = migrateUserDataBackupManifest(input);
+  if (!result.ok) {
+    return { ok: false, appliedScopes: [], errors: result.errors };
+  }
+
+  const userDataFileScopes = fileBackedScopes(result.manifest.scopes);
+  if (userDataFileScopes.length > 0) {
+    const filePayload: UserDataFileBackupPayload = {};
+    for (const scope of userDataFileScopes) {
+      filePayload[scope] = result.manifest.data[scope];
+    }
+
+    const fileResult = await filePort.importUserDataFiles(
+      filePayload,
+      userDataFileScopes,
+    );
+    if (!fileResult.ok) {
+      return { ok: false, appliedScopes: [], errors: fileResult.errors };
+    }
+  }
+
+  const localStorageResult = applyUserDataBackupToLocalStorage(
+    result.manifest,
+    storage,
+  );
+  if (!localStorageResult.ok) return localStorageResult;
+
+  return { ok: true, appliedScopes: result.manifest.scopes };
+}
+
+export async function resetUserDataBackupRuntime(
+  storage: UserDataMutableLocalStoragePort,
+  filePort: UserDataFileBackupPort,
+  selection: UserDataResetSelection = "all",
+): Promise<UserDataBackupApplyResult> {
+  const plan = buildUserDataResetPlan(selection);
+  if (!plan.canReset) {
+    return {
+      ok: false,
+      appliedScopes: [],
+      errors:
+        plan.errors.length > 0
+          ? plan.errors
+          : ["No user data scopes were selected for reset."],
+    };
+  }
+
+  const userDataFileScopes = fileBackedScopes(plan.scopes);
+  if (userDataFileScopes.length > 0) {
+    const fileResult = await filePort.resetUserDataFiles(userDataFileScopes);
+    if (!fileResult.ok) {
+      return { ok: false, appliedScopes: [], errors: fileResult.errors };
+    }
+  }
+
+  for (const key of plan.localStorageKeys) {
+    storage.removeItem(key);
+  }
+
+  return { ok: true, appliedScopes: plan.scopes };
 }
 
 export function buildUserDataResetPlan(

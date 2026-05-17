@@ -221,6 +221,7 @@ export const zhTW: TranslationMap = {
   "settings.tab.practice": "練習",
   "settings.tab.keys": "快捷鍵",
   "settings.tab.lang": "語言",
+  "settings.tab.backup": "備份",
   "settings.tab.about": "關於",
   "about.version": "版本",
   "about.changelog": "更新紀錄",
@@ -268,6 +269,31 @@ export const zhTW: TranslationMap = {
   "settings.common": "常用",
   "settings.compactKeyLabels": "精簡鍵名標籤",
   "settings.compactKeyLabelsDesc": "在窄鍵盤上顯示較少鍵名",
+  "settings.backupTitle": "使用者資料備份",
+  "settings.backupDesc":
+    "將設定、練習進度、最近檔案與單曲練習設定匯出成一個 JSON 備份。",
+  "settings.backupExport": "匯出備份",
+  "settings.backupExportDesc": "建立可攜式 Rexiano 備份檔。",
+  "settings.backupImport": "匯入備份",
+  "settings.backupImportDesc": "驗證並還原 Rexiano 備份檔。",
+  "settings.backupReset": "全部重置",
+  "settings.backupResetDesc": "清除設定、進度、最近檔案與單曲設定。",
+  "settings.backupResetSettings": "重置設定",
+  "settings.backupResetSettingsDesc": "清除偏好設定與應用程式預設值。",
+  "settings.backupResetProgress": "清除進度",
+  "settings.backupResetProgressDesc": "清除已儲存的練習紀錄。",
+  "settings.backupResetRecents": "清除最近檔案",
+  "settings.backupResetRecentsDesc": "清除最近開啟的檔案。",
+  "settings.backupExportSuccess": "已匯出 {count} 個資料範圍。",
+  "settings.backupImportSuccess":
+    "已匯入 {count} 個資料範圍。重新啟動 Rexiano 後會載入還原的設定。",
+  "settings.backupResetSuccess":
+    "已重置 {count} 個資料範圍。重新啟動 Rexiano 後會載入預設值。",
+  "settings.backupResetConfirm":
+    "要重置設定、練習進度、最近檔案與單曲練習設定嗎？",
+  "settings.backupResetConfirmGeneric":
+    "要重置選取的 Rexiano 資料嗎？此操作無法復原。",
+  "settings.backupUnknownError": "備份操作失敗。",
 
   // ── Fingering ──────────────────────────────────────────────────
   "fingering.label": "指法",

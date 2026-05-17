@@ -231,6 +231,7 @@ export const en: TranslationMap = {
   "settings.tab.practice": "Practice",
   "settings.tab.keys": "Keys",
   "settings.tab.lang": "Lang",
+  "settings.tab.backup": "Backup",
   "settings.tab.about": "About",
   "about.version": "Version",
   "about.changelog": "What's New",
@@ -282,6 +283,31 @@ export const en: TranslationMap = {
   "settings.common": "Common",
   "settings.compactKeyLabels": "Compact key labels",
   "settings.compactKeyLabelsDesc": "Show fewer key names on narrow keyboards",
+  "settings.backupTitle": "User Data Backup",
+  "settings.backupDesc":
+    "Export one JSON backup for settings, practice progress, recents, and per-song setup.",
+  "settings.backupExport": "Export Backup",
+  "settings.backupExportDesc": "Create a portable Rexiano backup file.",
+  "settings.backupImport": "Import Backup",
+  "settings.backupImportDesc": "Validate and restore a Rexiano backup file.",
+  "settings.backupReset": "Reset All",
+  "settings.backupResetDesc": "Clear settings, progress, recents, and setup.",
+  "settings.backupResetSettings": "Reset Settings",
+  "settings.backupResetSettingsDesc": "Clear preferences and app defaults.",
+  "settings.backupResetProgress": "Clear Progress",
+  "settings.backupResetProgressDesc": "Clear saved practice history.",
+  "settings.backupResetRecents": "Clear Recents",
+  "settings.backupResetRecentsDesc": "Clear recently opened files.",
+  "settings.backupExportSuccess": "Exported {count} data scopes.",
+  "settings.backupImportSuccess":
+    "Imported {count} data scopes. Restart Rexiano to reload restored settings.",
+  "settings.backupResetSuccess":
+    "Reset {count} data scopes. Restart Rexiano to reload defaults.",
+  "settings.backupResetConfirm":
+    "Reset settings, practice progress, recents, and per-song setup?",
+  "settings.backupResetConfirmGeneric":
+    "Reset this selected Rexiano data? This cannot be undone.",
+  "settings.backupUnknownError": "The backup action failed.",
 
   // ── Fingering ──────────────────────────────────────────────────
   "fingering.label": "Fingering",
