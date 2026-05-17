@@ -10,6 +10,7 @@ import {
   X,
   PlayCircle,
   Star,
+  Target,
 } from "lucide-react";
 import { parseMidiFile } from "../../engines/midi/MidiFileParser";
 import { useSongStore } from "../../stores/useSongStore";
@@ -28,9 +29,11 @@ import {
   groupSongsByCategory,
 } from "./songCardUtils";
 import {
+  buildPracticeRecommendationModel,
   buildSongActivity,
   filterSongsForLibrary,
   sortSongsForLibrary,
+  type PracticeRecommendationReason,
   type SongActivity,
 } from "./songLibrarySelectors";
 import {
@@ -40,8 +43,10 @@ import {
 import { DeviceSelector } from "../midiDevice/DeviceSelector";
 import { useTranslation } from "../../i18n/useTranslation";
 import { useDialogFocus } from "../../hooks/useDialogFocus";
+import { buildDailyGoalStatus } from "../practice/nextPracticeAction";
 import appIcon from "../../../../../docs/figure/Rexiano_icon.png";
 import type { BuiltinSongMeta, RecentFile } from "../../../../shared/types";
+import type { TranslationKey } from "../../i18n/types";
 
 interface SongLibraryProps {
   onOpenFile: () => Promise<void>;
@@ -53,6 +58,15 @@ const emptyActivity: SongActivity = {
   lastPlayedAt: null,
   playCount: 0,
   bestAccuracy: null,
+};
+
+const recommendationReasonKeys: Record<
+  PracticeRecommendationReason,
+  TranslationKey
+> = {
+  "new-song": "library.recommendation.reason.newSong",
+  "improve-score": "library.recommendation.reason.improveScore",
+  "continue-progress": "library.recommendation.reason.continueProgress",
 };
 
 export function SongLibrary({
@@ -141,6 +155,20 @@ export function SongLibrary({
   const sortedSongs = useMemo(
     () => sortSongsForLibrary(filteredSongs, songActivity, sortMode),
     [filteredSongs, songActivity, sortMode],
+  );
+
+  const practiceRecommendation = useMemo(
+    () => buildPracticeRecommendationModel(filteredSongs, songActivity),
+    [filteredSongs, songActivity],
+  );
+
+  const dailyGoalStatus = useMemo(
+    () =>
+      buildDailyGoalStatus(sessions, {
+        dayTimestamp: Date.now(),
+        targetMinutes: 10,
+      }),
+    [sessions],
   );
 
   /** Songs grouped by category for section display */
@@ -346,7 +374,134 @@ export function SongLibrary({
               />
             </div>
           )}
+
+          <div
+            className="mt-4 rounded-xl px-4 py-3"
+            style={{
+              background:
+                "color-mix(in srgb, var(--color-note2) 8%, var(--color-surface))",
+              border:
+                "1px solid color-mix(in srgb, var(--color-note2) 18%, var(--color-border))",
+            }}
+            data-testid="library-daily-goal"
+          >
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <span
+                className="flex items-center gap-2 text-xs font-body font-semibold uppercase tracking-wide"
+                style={{ color: "var(--color-text-muted)" }}
+              >
+                <Target size={14} style={{ color: "var(--color-note2)" }} />
+                {t("library.dailyGoal.label")}
+              </span>
+              <span
+                className="text-xs font-mono tabular-nums"
+                style={{ color: "var(--color-text)" }}
+              >
+                {t("library.dailyGoal.minutes", {
+                  practiced: dailyGoalStatus.practicedMinutes,
+                  target: dailyGoalStatus.targetMinutes,
+                })}
+              </span>
+            </div>
+            <div
+              className="mt-2 h-1.5 overflow-hidden rounded-full"
+              style={{ background: "var(--color-surface-alt)" }}
+              aria-hidden="true"
+            >
+              <div
+                className="h-full rounded-full"
+                style={{
+                  width: `${Math.round(dailyGoalStatus.completionRatio * 100)}%`,
+                  background: "var(--color-note2)",
+                }}
+              />
+            </div>
+            <p
+              className="mt-1.5 text-[11px] font-body"
+              style={{ color: "var(--color-text-muted)" }}
+            >
+              {dailyGoalStatus.isComplete
+                ? t("library.dailyGoal.complete")
+                : t("library.dailyGoal.remaining", {
+                    remaining: dailyGoalStatus.remainingMinutes,
+                  })}
+            </p>
+          </div>
         </header>
+
+        {practiceRecommendation && (
+          <section className="surface-elevated mb-5 p-4 animate-page-enter">
+            <button
+              type="button"
+              onClick={() => handleSelectSong(practiceRecommendation.song.id)}
+              disabled={loadingId === practiceRecommendation.song.id}
+              className="group flex w-full items-center justify-between gap-4 rounded-xl px-4 py-3 text-left cursor-pointer transition-all duration-150 disabled:opacity-60 disabled:cursor-wait"
+              style={{
+                background:
+                  "color-mix(in srgb, var(--color-note1) 10%, var(--color-surface))",
+                border:
+                  "1px solid color-mix(in srgb, var(--color-note1) 20%, var(--color-border))",
+              }}
+              data-testid="song-library-recommendation"
+            >
+              <span className="flex min-w-0 items-center gap-3">
+                <span
+                  className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full"
+                  style={{
+                    background: "var(--color-note1)",
+                    color: "#fff",
+                  }}
+                >
+                  {loadingId === practiceRecommendation.song.id ? (
+                    <span
+                      className="h-4 w-4 rounded-full border-2 animate-spin"
+                      style={{
+                        borderColor: "rgba(255,255,255,0.45)",
+                        borderTopColor: "#fff",
+                      }}
+                    />
+                  ) : (
+                    <PlayCircle size={20} />
+                  )}
+                </span>
+                <span className="min-w-0">
+                  <span
+                    className="block text-xs font-body font-semibold uppercase tracking-wide"
+                    style={{ color: "var(--color-note1)" }}
+                  >
+                    {t("library.recommendation.title")}
+                  </span>
+                  <span
+                    className="block truncate text-base font-display font-bold"
+                    style={{ color: "var(--color-text)" }}
+                    data-testid="song-library-recommendation-title"
+                  >
+                    {practiceRecommendation.song.title}
+                  </span>
+                  <span
+                    className="block text-xs font-body"
+                    style={{ color: "var(--color-text-muted)" }}
+                  >
+                    {t(recommendationReasonKeys[practiceRecommendation.reason])}
+                    {" · "}
+                    {practiceRecommendation.bestAccuracy !== null
+                      ? `${Math.round(practiceRecommendation.bestAccuracy)}%`
+                      : t("library.neverPracticed")}
+                  </span>
+                </span>
+              </span>
+              <span
+                className="hidden shrink-0 rounded-lg px-3 py-1.5 text-xs font-body font-semibold sm:inline-flex"
+                style={{
+                  color: "#fff",
+                  background: "var(--color-note1)",
+                }}
+              >
+                {t("library.recommendation.cta")}
+              </span>
+            </button>
+          </section>
+        )}
 
         {continueRecent && (
           <section

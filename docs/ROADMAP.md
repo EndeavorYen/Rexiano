@@ -360,7 +360,7 @@
 
 - [ ] 練習入口首頁
   - [x] 最近有效曲目顯示「Continue Practice」
-  - [ ] 推薦下一首：依等級、最近成績、未完成曲目排序
+  - [x] 推薦下一首：依等級、最近成績、未完成曲目排序
   - [x] 匯入 MIDI 與內建曲庫保持同等可見性
 - [x] Compact all-songs list
   - [x] 預設提供密集清單 / 表格檢視
@@ -380,7 +380,7 @@
   - [ ] 自動推測簡單左右手配置，並允許修正
   - [ ] 對 track/metadata 問題提供「fix this song」入口
 - [ ] 練習閉環
-  - [ ] 每日 5-10 分鐘練習目標
+  - [x] 每日 5-10 分鐘練習目標
   - [ ] Session 結束後提供 repeat loop / slow down / other hand / next song
   - [ ] 弱點小節與弱點音符轉成下一步建議
 

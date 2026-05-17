@@ -19,6 +19,36 @@ async function resetLibraryPrefs(appPage: {
 }
 
 test.describe("Song library selection workflow", () => {
+  test("shows a recommended next-song action and opens practice from it", async ({
+    appPage,
+  }) => {
+    await resetLibraryPrefs(appPage);
+    await gotoLibrary(appPage);
+
+    const recommendation = appPage.getByTestId("song-library-recommendation");
+    await expect(recommendation).toBeVisible();
+    await expect(
+      recommendation.getByTestId("song-library-recommendation-title"),
+    ).not.toHaveText("");
+
+    await recommendation.click();
+    await expect(appPage.getByTestId("mode-select-wait")).toBeVisible({
+      timeout: 20_000,
+    });
+  });
+
+  test("shows quiet daily practice goal progress on the launcher", async ({
+    appPage,
+  }) => {
+    await resetLibraryPrefs(appPage);
+    await gotoLibrary(appPage);
+
+    const dailyGoal = appPage.getByTestId("library-daily-goal");
+    await expect(dailyGoal).toBeVisible();
+    await expect(dailyGoal).toContainText("Daily goal");
+    await expect(dailyGoal).toContainText("0 / 10 min");
+  });
+
   test("supports compact list sorting and favorite pinning", async ({
     appPage,
   }) => {

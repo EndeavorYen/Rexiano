@@ -62,6 +62,15 @@ export interface TranslationMap {
   "library.recentlyPlayed": string;
   "library.continuePractice": string;
   "library.continueHint": string;
+  "library.recommendation.title": string;
+  "library.recommendation.cta": string;
+  "library.recommendation.reason.newSong": string;
+  "library.recommendation.reason.improveScore": string;
+  "library.recommendation.reason.continueProgress": string;
+  "library.dailyGoal.label": string;
+  "library.dailyGoal.minutes": string;
+  "library.dailyGoal.remaining": string;
+  "library.dailyGoal.complete": string;
   "library.removeRecent": string;
   "library.allSongs": string;
   "library.sort.label": string;
