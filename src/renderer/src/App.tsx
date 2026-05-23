@@ -53,6 +53,7 @@ import { usePracticeStore } from "./stores/usePracticeStore";
 import { MainMenu } from "./features/mainMenu/MainMenu";
 import { ModeSelectionModal } from "./features/practice/ModeSelectionModal";
 import { CelebrationOverlay } from "./features/practice/CelebrationOverlay";
+import { applyPracticeModeChangeForSong } from "./features/practice/practiceSetupControlActions";
 import { selectNextPracticeAction } from "./features/practice/nextPracticeAction";
 import { getFocusModeExitDecision } from "./features/practice/focusModeExitGuard";
 import { resolveSongPracticeSetupForSong } from "./features/practice/songPracticeSetup";
@@ -211,13 +212,24 @@ function App(): React.JSX.Element {
     return () => clearTimeout(timer);
   }, [showCelebration]);
 
-  const handleModeSelect = useCallback((mode: PracticeMode) => {
-    usePracticeStore.getState().setMode(mode);
-    setShowModeModal(false);
-    setTimeout(() => {
-      usePlaybackStore.getState().setPlaying(true);
-    }, 150);
-  }, []);
+  const handleModeSelect = useCallback(
+    (mode: PracticeMode) => {
+      applyPracticeModeChangeForSong(
+        {
+          song,
+          activeTracks,
+          currentSpeed: speed,
+          setMode: usePracticeStore.getState().setMode,
+        },
+        mode,
+      );
+      setShowModeModal(false);
+      setTimeout(() => {
+        usePlaybackStore.getState().setPlaying(true);
+      }, 150);
+    },
+    [activeTracks, song, speed],
+  );
 
   const handlePracticeAgain = useCallback(() => {
     setShowCelebration(false);

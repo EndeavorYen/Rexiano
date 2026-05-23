@@ -1,7 +1,9 @@
 import { usePracticeStore } from "@renderer/stores/usePracticeStore";
+import { useSongStore } from "@renderer/stores/useSongStore";
 import { useTranslation } from "@renderer/i18n/useTranslation";
 import type { PracticeMode } from "@shared/types";
 import type { TranslationKey } from "@renderer/i18n/types";
+import { applyPracticeModeChangeForSong } from "./practiceSetupControlActions";
 
 const modes: {
   id: PracticeMode;
@@ -106,7 +108,10 @@ const modes: {
 
 export function PracticeModeSelector(): React.JSX.Element {
   const { t } = useTranslation();
+  const song = useSongStore((s) => s.song);
   const currentMode = usePracticeStore((s) => s.mode);
+  const speed = usePracticeStore((s) => s.speed);
+  const activeTracks = usePracticeStore((s) => s.activeTracks);
   const setMode = usePracticeStore((s) => s.setMode);
 
   return (
@@ -124,7 +129,17 @@ export function PracticeModeSelector(): React.JSX.Element {
             key={id}
             role="radio"
             aria-checked={isActive}
-            onClick={() => setMode(id)}
+            onClick={() =>
+              applyPracticeModeChangeForSong(
+                {
+                  song,
+                  activeTracks,
+                  currentSpeed: speed,
+                  setMode,
+                },
+                id,
+              )
+            }
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-body font-medium cursor-pointer"
             style={{
               background: isActive ? "var(--color-accent)" : "transparent",

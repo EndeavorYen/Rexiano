@@ -1,5 +1,7 @@
 import { usePracticeStore } from "@renderer/stores/usePracticeStore";
+import { useSongStore } from "@renderer/stores/useSongStore";
 import { useTranslation } from "@renderer/i18n/useTranslation";
+import { applyPracticeSpeedChangeForSong } from "./practiceSetupControlActions";
 
 /** Primary presets shown as big buttons */
 const mainPresets = [0.5, 0.75, 1.0] as const;
@@ -20,10 +22,24 @@ function presetLabel(v: number): string {
 
 export function SpeedSlider(): React.JSX.Element {
   const { t } = useTranslation();
+  const song = useSongStore((s) => s.song);
+  const mode = usePracticeStore((s) => s.mode);
+  const activeTracks = usePracticeStore((s) => s.activeTracks);
   const speed = usePracticeStore((s) => s.speed);
   const setSpeed = usePracticeStore((s) => s.setSpeed);
 
   const speedPercent = Math.round(speed * 100);
+  const applySpeed = (nextSpeed: number): void => {
+    applyPracticeSpeedChangeForSong(
+      {
+        song,
+        activeTracks,
+        currentMode: mode,
+        setSpeed,
+      },
+      nextSpeed,
+    );
+  };
 
   return (
     <div
@@ -44,7 +60,7 @@ export function SpeedSlider(): React.JSX.Element {
           return (
             <button
               key={v}
-              onClick={() => setSpeed(v)}
+              onClick={() => applySpeed(v)}
               className="px-2.5 py-1 rounded-md text-[11px] font-body font-semibold tabular-nums cursor-pointer"
               style={{
                 background: isActive
@@ -70,7 +86,7 @@ export function SpeedSlider(): React.JSX.Element {
         max={SPEED_MAX}
         step={SPEED_STEP}
         value={speedPercent}
-        onChange={(e) => setSpeed(parseFloat(e.target.value) / 100)}
+        onChange={(e) => applySpeed(parseFloat(e.target.value) / 100)}
         className="speed-slider-input shrink-0"
         style={{ accentColor: "var(--color-accent)", width: 96 }}
         aria-label="Playback speed percentage"
