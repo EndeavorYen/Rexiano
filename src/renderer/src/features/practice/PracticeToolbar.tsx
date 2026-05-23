@@ -122,9 +122,9 @@ export function PracticeToolbar({
           <div className="ml-auto shrink-0">
             <button
               onClick={toggleExpanded}
-              className={`btn-surface-themed flex items-center gap-1.5 rounded-md font-body cursor-pointer ${
+              className={`btn-surface-themed flex min-h-9 items-center gap-1.5 rounded-md font-body cursor-pointer ${
                 compact
-                  ? "px-2 py-[3px] text-[10px]"
+                  ? "px-2.5 py-[3px] text-[10px]"
                   : "px-2.5 py-1 text-[11px]"
               }`}
               style={{
@@ -165,7 +165,7 @@ export function PracticeToolbar({
 
       {expanded && controlVisibility.showAdvancedControls && (
         <div
-          className={`flex items-start px-4 overflow-x-auto animate-page-enter ${
+          className={`flex flex-wrap items-start px-4 overflow-x-hidden animate-page-enter ${
             compact ? "gap-5 pb-2" : "gap-6 pb-2.5"
           }`}
           style={{

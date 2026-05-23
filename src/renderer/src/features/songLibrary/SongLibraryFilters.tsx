@@ -80,7 +80,7 @@ export function SongLibraryFilters(): React.JSX.Element {
   return (
     <div className="flex flex-col gap-3 w-full">
       {/* Search + difficulty row */}
-      <div className="flex flex-col lg:flex-row items-stretch lg:items-center gap-3">
+      <div className="flex min-w-0 flex-col items-stretch gap-3 lg:flex-row lg:items-center">
         <div className="flex-1 relative">
           <Search
             size={15}
@@ -98,7 +98,7 @@ export function SongLibraryFilters(): React.JSX.Element {
         </div>
 
         <div
-          className="flex items-center gap-1.5 rounded-xl p-1"
+          className="flex min-w-0 flex-wrap items-center gap-1.5 rounded-xl p-1"
           style={{
             background:
               "color-mix(in srgb, var(--color-surface) 80%, transparent)",
@@ -109,7 +109,7 @@ export function SongLibraryFilters(): React.JSX.Element {
             <button
               key={d.value}
               onClick={() => setDifficultyFilter(d.value)}
-              className="px-3 py-1.5 rounded-lg text-xs font-body font-medium transition-colors cursor-pointer"
+              className="min-h-9 px-3 py-1.5 rounded-lg text-xs font-body font-medium transition-colors cursor-pointer"
               style={{
                 background:
                   difficultyFilter === d.value
@@ -127,7 +127,7 @@ export function SongLibraryFilters(): React.JSX.Element {
 
       {/* Grade level filter row */}
       <div className="flex flex-col gap-2 xl:flex-row xl:items-center xl:justify-between">
-        <div className="flex flex-wrap items-center gap-1.5">
+        <div className="flex min-w-0 flex-wrap items-center gap-1.5">
           {grades.map((g) => {
             const isActive = gradeFilter === g.value;
             const color =
@@ -138,7 +138,7 @@ export function SongLibraryFilters(): React.JSX.Element {
               <button
                 key={String(g.value)}
                 onClick={() => setGradeFilter(g.value)}
-                className="px-2.5 py-1 rounded-lg text-xs font-body font-medium transition-colors cursor-pointer"
+                className="min-h-9 px-2.5 py-1 rounded-lg text-xs font-body font-medium transition-colors cursor-pointer"
                 style={{
                   background: isActive ? color : "transparent",
                   color: isActive ? "#fff" : "var(--color-text-muted)",
@@ -151,7 +151,7 @@ export function SongLibraryFilters(): React.JSX.Element {
           })}
         </div>
 
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex min-w-0 flex-wrap items-center gap-2">
           <label className="sr-only" htmlFor="song-library-sort">
             {t("library.sort.label")}
           </label>
@@ -160,7 +160,7 @@ export function SongLibraryFilters(): React.JSX.Element {
             data-testid="song-library-sort"
             value={sortMode}
             onChange={handleSort}
-            className="input-themed rounded-lg px-3 py-1.5 text-xs font-body"
+            className="input-themed min-h-9 rounded-lg px-3 py-1.5 text-xs font-body"
             aria-label={t("library.sort.label")}
           >
             {sortModes.map((mode) => (
@@ -187,7 +187,7 @@ export function SongLibraryFilters(): React.JSX.Element {
                   type="button"
                   data-testid={`song-library-view-${mode.value}`}
                   onClick={() => setViewMode(mode.value)}
-                  className="flex h-7 w-7 items-center justify-center rounded-md transition-colors cursor-pointer"
+                  className="flex h-9 w-9 items-center justify-center rounded-md transition-colors cursor-pointer"
                   aria-label={t(mode.key)}
                   aria-pressed={isActive}
                   style={{

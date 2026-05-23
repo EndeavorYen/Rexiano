@@ -1,6 +1,79 @@
 import { test, expect, waitForUiSettled } from "./fixtures/electronApp";
 import { gotoLibrary, loadFirstBuiltInSong } from "./helpers/appHarness";
 
+async function expectNoPageHorizontalOverflow(
+  appPage: Parameters<typeof waitForUiSettled>[0],
+): Promise<void> {
+  const metrics = await appPage.evaluate(() => {
+    const root = document.scrollingElement ?? document.documentElement;
+    return {
+      innerWidth: window.innerWidth,
+      rootScrollWidth: root.scrollWidth,
+      bodyScrollWidth: document.body.scrollWidth,
+    };
+  });
+
+  expect(metrics.rootScrollWidth).toBeLessThanOrEqual(metrics.innerWidth + 1);
+  expect(metrics.bodyScrollWidth).toBeLessThanOrEqual(metrics.innerWidth + 1);
+}
+
+async function expectSelectorsMeetHitTarget(
+  appPage: Parameters<typeof waitForUiSettled>[0],
+  selectors: string[],
+  minSize = 36,
+): Promise<void> {
+  const failures = await appPage.evaluate(
+    ({ selectors, minSize }) => {
+      const isVisible = (element: Element): boolean => {
+        const rect = element.getBoundingClientRect();
+        const style = window.getComputedStyle(element);
+        return (
+          rect.width > 0 &&
+          rect.height > 0 &&
+          style.display !== "none" &&
+          style.visibility !== "hidden"
+        );
+      };
+
+      return selectors.flatMap((selector) => {
+        const elements = Array.from(document.querySelectorAll(selector)).filter(
+          isVisible,
+        );
+        if (elements.length === 0) {
+          return [
+            {
+              selector,
+              label: "missing visible control",
+              width: 0,
+              height: 0,
+            },
+          ];
+        }
+
+        return elements
+          .map((element) => {
+            const rect = element.getBoundingClientRect();
+            const label =
+              element.getAttribute("data-testid") ??
+              element.getAttribute("aria-label") ??
+              element.textContent?.trim() ??
+              selector;
+            return {
+              selector,
+              label,
+              width: Math.round(rect.width),
+              height: Math.round(rect.height),
+            };
+          })
+          .filter(({ width, height }) => width < minSize || height < minSize);
+      });
+    },
+    { selectors, minSize },
+  );
+
+  expect(failures).toEqual([]);
+}
+
 test.describe("Playback UI polish guardrails", () => {
   test("header is compact and keeps title + metrics on the same row", async ({
     appPage,
@@ -333,5 +406,170 @@ test.describe("Playback UI polish guardrails", () => {
     await expect(appPage.getByTestId("practice-toolbar")).not.toContainText(
       "BPM",
     );
+  });
+
+  test("narrow-window guard keeps library and playback inside the viewport", async ({
+    appPage,
+  }) => {
+    await appPage.setViewportSize({ width: 390, height: 844 });
+    await gotoLibrary(appPage);
+    await waitForUiSettled(appPage);
+    await expectNoPageHorizontalOverflow(appPage);
+
+    const advancedFilter = appPage.getByRole("button", {
+      name: "Advanced",
+      exact: true,
+    });
+    await expect(advancedFilter).toBeVisible();
+    const advancedFilterBox = await advancedFilter.boundingBox();
+    expect(advancedFilterBox).not.toBeNull();
+    if (advancedFilterBox) {
+      expect(advancedFilterBox.x + advancedFilterBox.width).toBeLessThanOrEqual(
+        391,
+      );
+    }
+
+    await loadFirstBuiltInSong(appPage);
+    await appPage.getByTestId("playback-drawer-trigger").click();
+    await appPage.getByTestId("display-mode-sheet").click();
+    await waitForUiSettled(appPage);
+    await appPage.keyboard.press("Escape");
+    await waitForUiSettled(appPage);
+    await expectNoPageHorizontalOverflow(appPage);
+
+    const overflowingInteractiveControls = await appPage.evaluate(() =>
+      Array.from(
+        document.querySelectorAll(
+          "button,input,select,[role='button'],[tabindex]:not([tabindex='-1'])",
+        ),
+      )
+        .filter((element) => {
+          const rect = element.getBoundingClientRect();
+          const style = window.getComputedStyle(element);
+          return (
+            rect.width > 0 &&
+            rect.height > 0 &&
+            style.display !== "none" &&
+            style.visibility !== "hidden"
+          );
+        })
+        .map((element) => {
+          const rect = element.getBoundingClientRect();
+          return {
+            label:
+              element.getAttribute("data-testid") ??
+              element.getAttribute("aria-label") ??
+              element.textContent?.trim() ??
+              element.tagName.toLowerCase(),
+            right: Math.round(rect.right),
+            left: Math.round(rect.left),
+          };
+        })
+        .filter(
+          ({ left, right }) => left < -1 || right > window.innerWidth + 1,
+        ),
+    );
+
+    expect(overflowingInteractiveControls).toEqual([]);
+  });
+
+  test("narrow playback setup keeps expanded track controls above the keyboard", async ({
+    appPage,
+  }) => {
+    await appPage.setViewportSize({ width: 390, height: 844 });
+    await gotoLibrary(appPage);
+    await loadFirstBuiltInSong(appPage);
+    await appPage.getByTestId("playback-drawer-trigger").click();
+    await appPage.getByTestId("display-mode-sheet").click();
+    await waitForUiSettled(appPage);
+    await appPage.keyboard.press("Escape");
+    await waitForUiSettled(appPage);
+
+    await appPage
+      .getByTestId("practice-toolbar")
+      .getByRole("button")
+      .filter({ hasText: /More|更多/ })
+      .click();
+    await waitForUiSettled(appPage);
+
+    const keyboard = appPage.getByTestId("piano-keyboard");
+    await expect(keyboard).toBeVisible();
+
+    const controlsCoveredByKeyboard = await appPage.evaluate(() => {
+      const keyboardElement = document.querySelector(
+        "[data-testid='piano-keyboard']",
+      );
+      const keyboardTop = keyboardElement?.getBoundingClientRect().top ?? 0;
+
+      return Array.from(
+        document.querySelectorAll(
+          [
+            "[data-testid='track-active-toggle']",
+            "[data-testid='track-hand-select']",
+            "[data-testid='track-sound-toggle']",
+            "[data-testid='track-color-input']",
+            "[data-testid='track-solo-toggle']",
+          ].join(","),
+        ),
+      )
+        .filter((element) => {
+          const rect = element.getBoundingClientRect();
+          const style = window.getComputedStyle(element);
+          return (
+            rect.width > 0 &&
+            rect.height > 0 &&
+            style.display !== "none" &&
+            style.visibility !== "hidden"
+          );
+        })
+        .map((element) => {
+          const rect = element.getBoundingClientRect();
+          return {
+            label:
+              element.getAttribute("data-testid") ??
+              element.getAttribute("aria-label") ??
+              element.textContent?.trim() ??
+              element.tagName.toLowerCase(),
+            bottom: Math.round(rect.bottom),
+            keyboardTop: Math.round(keyboardTop),
+          };
+        })
+        .filter(({ bottom, keyboardTop }) => bottom > keyboardTop - 1);
+    });
+
+    expect(controlsCoveredByKeyboard).toEqual([]);
+  });
+
+  test("compact controls keep a usable hit target", async ({ appPage }) => {
+    await appPage.setViewportSize({ width: 1600, height: 900 });
+    await gotoLibrary(appPage);
+    await waitForUiSettled(appPage);
+
+    await expectSelectorsMeetHitTarget(appPage, [
+      "[data-testid='song-library-view-list']",
+      "[data-testid='song-library-view-cards']",
+      "[data-testid='song-favorite-toggle']",
+    ]);
+
+    await loadFirstBuiltInSong(appPage);
+    await waitForUiSettled(appPage);
+
+    await expectSelectorsMeetHitTarget(appPage, [
+      "button[aria-label='Mute']",
+      "input[aria-label='Seek position']",
+      "[data-testid='metronome-toggle']",
+      "[data-testid='volume-slider']",
+      "[data-testid='speed-slider']",
+      "[data-testid='track-active-toggle']",
+      "[data-testid='track-hand-select']",
+      "[data-testid='track-sound-toggle']",
+      "[data-testid='track-color-input']",
+      "[data-testid='track-solo-toggle']",
+    ]);
+
+    await appPage.getByTestId("playback-drawer-trigger").click();
+    await expectSelectorsMeetHitTarget(appPage, [
+      "button[aria-label='Bluetooth']",
+    ]);
   });
 });

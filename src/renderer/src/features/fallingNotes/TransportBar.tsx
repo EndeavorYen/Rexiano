@@ -124,7 +124,7 @@ export function TransportBar({
   };
   const primaryButtonSize = compact ? 36 : 40;
   const iconSize = compact ? 16 : 18;
-  const utilityButtonSize = compact ? 30 : 32;
+  const utilityButtonSize = 36;
   const controlVisibility = getTransportControlVisibility({ childFocusMode });
 
   return (
@@ -341,7 +341,7 @@ export function TransportBar({
 
           <div
             className="relative flex-1 flex items-center"
-            style={{ height: compact ? 18 : 20 }}
+            style={{ height: 36 }}
           >
             {loopHighlight && (
               <div
@@ -367,7 +367,7 @@ export function TransportBar({
               value={currentTime}
               onChange={(e) => setCurrentTime(parseFloat(e.target.value))}
               disabled={!song}
-              className="w-full relative z-10"
+              className="seek-slider-input w-full relative z-10"
               style={{ accentColor: "var(--color-accent)" }}
               aria-label={t("transport.seekPosition")}
             />

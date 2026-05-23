@@ -374,8 +374,10 @@ function App(): React.JSX.Element {
 
   const [activeNotes, setActiveNotes] = useState<Set<number>>(new Set());
   const midiActiveNotes = useMidiDeviceStore((s) => s.activeNotes);
-  const [viewportHeight, setViewportHeight] = useState(() =>
-    typeof window !== "undefined" ? window.innerHeight : 900,
+  const [viewportSize, setViewportSize] = useState(() =>
+    typeof window !== "undefined"
+      ? { width: window.innerWidth, height: window.innerHeight }
+      : { width: 1440, height: 900 },
   );
   const [splitFocusPanel, setSplitFocusPanel] = useState<"sheet" | "falling">(
     "sheet",
@@ -388,7 +390,7 @@ function App(): React.JSX.Element {
   useEffect(() => {
     if (typeof window === "undefined") return;
     const onResize = (): void => {
-      setViewportHeight(window.innerHeight);
+      setViewportSize({ width: window.innerWidth, height: window.innerHeight });
     };
     window.addEventListener("resize", onResize);
     return () => window.removeEventListener("resize", onResize);
@@ -1069,8 +1071,11 @@ function App(): React.JSX.Element {
   }, [applyRoute, t]);
 
   const isSplitMode = displayMode === "split";
+  const viewportHeight = viewportSize.height;
+  const isNarrowViewport = viewportSize.width < 640;
+  const compactPlaybackChrome = isSplitMode || isNarrowViewport;
   const splitFocus = isSplitMode ? splitFocusPanel : "sheet";
-  const keyboardHeight = isSplitMode ? 84 : 100;
+  const keyboardHeight = isSplitMode ? 84 : isNarrowViewport ? 72 : 100;
   const reservedChromeHeight =
     HEADER_ESTIMATED_HEIGHT +
     TRANSPORT_ESTIMATED_HEIGHT +
@@ -1308,7 +1313,7 @@ function App(): React.JSX.Element {
                 <button
                   ref={playbackDrawerTriggerRef}
                   onClick={() => setShowPlaybackDrawer(true)}
-                  className="btn-surface-themed flex items-center gap-1 rounded-lg font-body cursor-pointer px-2 py-[3px] text-[10px]"
+                  className="btn-surface-themed flex min-h-9 items-center gap-1 rounded-lg font-body cursor-pointer px-2 py-[3px] text-[10px]"
                   data-testid="playback-drawer-trigger"
                 >
                   <PanelRightOpen size={13} />
@@ -1316,7 +1321,7 @@ function App(): React.JSX.Element {
                 </button>
                 <button
                   onClick={handleExitPlayback}
-                  className="btn-surface-themed flex items-center gap-1 rounded-lg font-body cursor-pointer px-2 py-[3px] text-[10px]"
+                  className="btn-surface-themed flex min-h-9 items-center gap-1 rounded-lg font-body cursor-pointer px-2 py-[3px] text-[10px]"
                 >
                   <ArrowLeft size={13} />
                   {t("song.backToLibrary")}
@@ -1376,7 +1381,7 @@ function App(): React.JSX.Element {
                   <button
                     ref={playbackDrawerCloseRef}
                     onClick={closePlaybackDrawer}
-                    className="btn-surface-themed w-7 h-7 rounded-full flex items-center justify-center cursor-pointer"
+                    className="btn-surface-themed w-9 h-9 rounded-full flex items-center justify-center cursor-pointer"
                     aria-label={t("settings.close")}
                   >
                     <X size={14} />
@@ -1395,7 +1400,7 @@ function App(): React.JSX.Element {
                         setShowPlaybackDrawer(false);
                         setShowInsights(true);
                       }}
-                      className="btn-surface-themed w-8 h-8 flex items-center justify-center rounded-full cursor-pointer"
+                      className="btn-surface-themed w-9 h-9 flex items-center justify-center rounded-full cursor-pointer"
                       title={t("app.insightsTitle")}
                       data-testid="insights-trigger"
                     >
@@ -1483,10 +1488,10 @@ function App(): React.JSX.Element {
           )}
 
           {/* Transport bar */}
-          <TransportBar compact={isSplitMode} />
+          <TransportBar compact={compactPlaybackChrome} />
 
           {/* Practice toolbar */}
-          <PracticeToolbar compact={isSplitMode} />
+          <PracticeToolbar compact={compactPlaybackChrome} />
 
           {/* Piano keyboard */}
           <PianoKeyboard

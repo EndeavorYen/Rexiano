@@ -208,7 +208,7 @@ export function DeviceSelector(): React.JSX.Element {
       {bleStatus === "connected" && bleDeviceName ? (
         <button
           onClick={disconnectBluetooth}
-          className="flex items-center gap-1 px-2.5 py-1 rounded text-xs font-medium transition-colors cursor-pointer btn-primary-themed"
+          className="flex min-h-9 items-center gap-1 px-2.5 py-1 rounded text-xs font-medium transition-colors cursor-pointer btn-primary-themed"
           style={{
             color: "#fff",
           }}
@@ -222,7 +222,7 @@ export function DeviceSelector(): React.JSX.Element {
         <button
           onClick={connectBluetooth}
           disabled={bleStatus === "scanning" || bleStatus === "connecting"}
-          className="btn-surface-themed flex items-center gap-1 px-2.5 py-1 rounded text-xs font-medium transition-colors cursor-pointer"
+          className="btn-surface-themed flex min-h-9 items-center gap-1 px-2.5 py-1 rounded text-xs font-medium transition-colors cursor-pointer"
           style={{
             color: "var(--color-text-muted)",
             opacity:

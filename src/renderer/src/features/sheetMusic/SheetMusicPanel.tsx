@@ -13,7 +13,7 @@ import { useTranslation } from "@renderer/i18n/useTranslation";
 import { usePlaybackStore } from "@renderer/stores/usePlaybackStore";
 import type { NotationData, NotationMeasure, DisplayMode } from "./types";
 import { getCursorPosition, getMeasureWindow } from "./CursorSync";
-import { calcMeasureSlotLayout } from "./sheetMusicUtils";
+import { MIN_MEASURE_WIDTH, calcMeasureSlotLayout } from "./sheetMusicUtils";
 import {
   groupNotesIntoStaffVoices,
   type ChordGroup,
@@ -435,6 +435,10 @@ export function SheetMusicPanel({
   const svgHostRef = useRef<HTMLDivElement>(null);
   const [containerWidth, setContainerWidth] = useState(800);
   const hidden = mode === "falling";
+  const renderWidth = Math.max(
+    containerWidth,
+    LEFT_MARGIN * 2 + MIN_MEASURE_WIDTH * DISPLAY_MEASURE_COUNT,
+  );
   const cursorPosition = useMemo(() => {
     if (!notationData) return null;
     return getCursorPosition(currentTime, notationData);
@@ -451,11 +455,11 @@ export function SheetMusicPanel({
     return calcMeasureSlotLayout(
       notationData.measures,
       visibleMeasures,
-      containerWidth,
+      renderWidth,
       LEFT_MARGIN,
       DISPLAY_MEASURE_COUNT,
     );
-  }, [notationData, visibleMeasures, containerWidth]);
+  }, [notationData, visibleMeasures, renderWidth]);
   const totalHeight = SYSTEM_HEIGHT + TOP_MARGIN * 2 + 16;
   const activeSlotIndex =
     cursorPosition && visibleMeasures.length > 0
@@ -509,7 +513,7 @@ export function SheetMusicPanel({
         const { Renderer } = VF;
         const stage = document.createElement("div");
         const renderer = new Renderer(stage, Renderer.Backends.SVG);
-        renderer.resize(containerWidth, Math.max(totalHeight, height));
+        renderer.resize(renderWidth, Math.max(totalHeight, height));
         const context = renderer.getContext();
         const renderedMeasures: RenderedMeasure[] = [];
 
@@ -563,7 +567,7 @@ export function SheetMusicPanel({
   }, [
     hidden,
     notationData,
-    containerWidth,
+    renderWidth,
     height,
     totalHeight,
     visibleMeasures,
@@ -575,7 +579,7 @@ export function SheetMusicPanel({
   return (
     <div
       ref={containerRef}
-      className="relative w-full overflow-hidden"
+      className="relative w-full min-w-0 overflow-hidden"
       style={{
         flex: mode === "sheet" ? 1 : undefined,
         height: mode === "split" ? height : undefined,
@@ -590,7 +594,7 @@ export function SheetMusicPanel({
     >
       <div
         ref={svgHostRef}
-        className="w-full h-full"
+        className="h-full w-full min-w-0 overflow-x-auto overflow-y-hidden"
         data-testid="sheet-music-svg-host"
       />
 

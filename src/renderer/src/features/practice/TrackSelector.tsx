@@ -142,7 +142,7 @@ export function TrackSelector(): React.JSX.Element {
   };
 
   return (
-    <div className="flex flex-col gap-1.5">
+    <div className="flex max-w-full flex-col gap-1.5">
       <span
         className="text-[10px] font-mono uppercase tracking-wider"
         style={{ color: "var(--color-text-muted)" }}
@@ -150,10 +150,10 @@ export function TrackSelector(): React.JSX.Element {
         {t("practice.tracks")}
       </span>
 
-      <div className="flex items-center gap-1">
+      <div className="flex flex-wrap items-center gap-1">
         <button
           onClick={muteAllTracks}
-          className="px-2 py-0.5 rounded text-[10px] font-body font-medium cursor-pointer"
+          className="min-h-9 px-2 py-0.5 rounded text-[10px] font-body font-medium cursor-pointer"
           style={{
             color: "var(--color-text-muted)",
             background:
@@ -165,7 +165,7 @@ export function TrackSelector(): React.JSX.Element {
         </button>
         <button
           onClick={setAllTracks}
-          className="px-2 py-0.5 rounded text-[10px] font-body font-medium cursor-pointer"
+          className="min-h-9 px-2 py-0.5 rounded text-[10px] font-body font-medium cursor-pointer"
           style={{
             color: "var(--color-text-muted)",
             background:
@@ -177,7 +177,7 @@ export function TrackSelector(): React.JSX.Element {
         </button>
       </div>
 
-      <div className="flex flex-col gap-0.5">
+      <div className="flex max-w-full flex-col gap-0.5">
         {tracks.map((track, i) => {
           const isActive = activeTracks.has(i);
           const assignment =
@@ -187,23 +187,34 @@ export function TrackSelector(): React.JSX.Element {
           return (
             <div
               key={i}
-              className="flex items-center gap-2 px-2 py-1 rounded transition-colors duration-100"
+              className="flex max-w-full flex-wrap items-center gap-2 px-2 py-1 rounded transition-colors duration-100"
               style={{
                 background: isActive
                   ? "color-mix(in srgb, var(--color-accent) 10%, transparent)"
                   : "transparent",
               }}
             >
-              <input
-                type="checkbox"
-                checked={isActive}
-                disabled={isBackground}
-                onChange={() => handleToggle(i)}
-                className="accent-[var(--color-accent)] cursor-pointer"
+              <label
+                className="inline-flex h-9 min-w-9 items-center justify-center rounded-md cursor-pointer"
+                data-testid="track-active-toggle"
                 aria-label={t("practice.trackN", { n: i + 1 })}
-              />
+                style={{
+                  background:
+                    "color-mix(in srgb, var(--color-surface-alt) 58%, transparent)",
+                  opacity: isBackground ? 0.55 : 1,
+                }}
+              >
+                <input
+                  type="checkbox"
+                  checked={isActive}
+                  disabled={isBackground}
+                  onChange={() => handleToggle(i)}
+                  className="h-4 w-4 accent-[var(--color-accent)] cursor-pointer"
+                  aria-label={t("practice.trackN", { n: i + 1 })}
+                />
+              </label>
               <span
-                className="text-xs font-body truncate"
+                className="min-w-0 max-w-[9rem] text-xs font-body truncate"
                 style={{
                   color: isActive
                     ? "var(--color-text)"
@@ -213,7 +224,7 @@ export function TrackSelector(): React.JSX.Element {
                 {track.name || t("practice.trackN", { n: i + 1 })}
               </span>
               <span
-                className="text-[10px] font-mono ml-auto shrink-0"
+                className="text-[10px] font-mono shrink-0 sm:ml-auto"
                 style={{ color: "var(--color-text-muted)" }}
               >
                 {t("practice.notesCount", { count: track.notes.length })}
@@ -226,7 +237,8 @@ export function TrackSelector(): React.JSX.Element {
                     e.target.value as TrackHandAssignment,
                   )
                 }
-                className="rounded px-1 py-0.5 text-[10px] font-body cursor-pointer"
+                className="min-h-9 rounded px-2 py-0.5 text-[10px] font-body cursor-pointer"
+                data-testid="track-hand-select"
                 style={{
                   color: "var(--color-text)",
                   background:
@@ -243,7 +255,8 @@ export function TrackSelector(): React.JSX.Element {
                 </option>
               </select>
               <label
-                className="flex items-center gap-1 text-[10px] font-body"
+                className="flex min-h-9 items-center gap-1 rounded-md px-2 text-[10px] font-body cursor-pointer"
+                data-testid="track-sound-toggle"
                 style={{ color: "var(--color-text-muted)" }}
               >
                 <input
@@ -254,14 +267,14 @@ export function TrackSelector(): React.JSX.Element {
                       muted: !e.target.checked,
                     })
                   }
-                  className="accent-[var(--color-accent)] cursor-pointer"
+                  className="h-4 w-4 accent-[var(--color-accent)] cursor-pointer"
                   aria-label={t("practice.trackSound", { n: i + 1 })}
                 />
                 {t("practice.sound")}
               </label>
               {isBackground && (
                 <label
-                  className="flex items-center gap-1 text-[10px] font-body"
+                  className="flex min-h-9 items-center gap-1 rounded-md px-2 text-[10px] font-body cursor-pointer"
                   style={{ color: "var(--color-text-muted)" }}
                 >
                   <input
@@ -272,7 +285,7 @@ export function TrackSelector(): React.JSX.Element {
                         backgroundVisible: e.target.checked,
                       })
                     }
-                    className="accent-[var(--color-accent)] cursor-pointer"
+                    className="h-4 w-4 accent-[var(--color-accent)] cursor-pointer"
                     aria-label={t("practice.trackVisible", { n: i + 1 })}
                   />
                   {t("practice.visible")}
@@ -284,7 +297,8 @@ export function TrackSelector(): React.JSX.Element {
                 onChange={(e) =>
                   handleTrackPreferenceChange(i, { color: e.target.value })
                 }
-                className="h-5 w-6 cursor-pointer rounded border-0 bg-transparent p-0"
+                className="h-9 w-9 cursor-pointer rounded border-0 bg-transparent p-1"
+                data-testid="track-color-input"
                 aria-label={t("practice.trackColor", { n: i + 1 })}
               />
               <button
@@ -294,7 +308,8 @@ export function TrackSelector(): React.JSX.Element {
                   soloTrack(i);
                 }}
                 disabled={isBackground}
-                className="px-1.5 py-0.5 rounded text-[9px] font-body font-medium cursor-pointer"
+                className="min-h-9 px-2 py-0.5 rounded text-[9px] font-body font-medium cursor-pointer"
+                data-testid="track-solo-toggle"
                 style={{
                   color: isBackground
                     ? "color-mix(in srgb, var(--color-text-muted) 54%, transparent)"

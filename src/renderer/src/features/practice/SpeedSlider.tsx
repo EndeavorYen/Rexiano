@@ -43,7 +43,7 @@ export function SpeedSlider(): React.JSX.Element {
 
   return (
     <div
-      className="flex items-center gap-2.5 min-w-0 py-0.5"
+      className="flex min-w-0 max-w-full flex-wrap items-center gap-2 py-0.5"
       data-testid="speed-slider-control"
     >
       <span
@@ -54,14 +54,14 @@ export function SpeedSlider(): React.JSX.Element {
       </span>
 
       {/* Main preset buttons */}
-      <div className="flex items-center gap-1">
+      <div className="flex flex-wrap items-center gap-1">
         {mainPresets.map((v) => {
           const isActive = Math.abs(speed - v) < 0.001;
           return (
             <button
               key={v}
               onClick={() => applySpeed(v)}
-              className="px-2.5 py-1 rounded-md text-[11px] font-body font-semibold tabular-nums cursor-pointer"
+              className="min-h-9 px-2.5 py-1 rounded-md text-[11px] font-body font-semibold tabular-nums cursor-pointer"
               style={{
                 background: isActive
                   ? "var(--color-accent)"

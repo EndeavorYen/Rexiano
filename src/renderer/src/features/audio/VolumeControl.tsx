@@ -40,7 +40,7 @@ export function VolumeControl(): React.JSX.Element {
 
   return (
     <div
-      className="flex items-center gap-1.5 rounded-lg px-1.5 py-1.5"
+      className="flex min-w-0 items-center gap-1.5 rounded-lg px-1.5 py-1.5"
       style={{
         background:
           "color-mix(in srgb, var(--color-surface-alt) 72%, var(--color-surface))",
@@ -52,8 +52,8 @@ export function VolumeControl(): React.JSX.Element {
         onClick={handleToggleMute}
         className="flex items-center justify-center rounded-md cursor-pointer"
         style={{
-          width: 28,
-          height: 28,
+          width: 36,
+          height: 36,
           color: isMuted ? "var(--color-text-muted)" : "var(--color-text)",
           opacity: isMuted ? 0.5 : 0.92,
           transition: "opacity 0.15s, color 0.15s, background 0.15s",

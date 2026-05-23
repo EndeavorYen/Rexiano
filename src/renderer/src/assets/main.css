@@ -95,6 +95,7 @@ textarea:focus-visible {
 .app-shell {
   position: relative;
   isolation: isolate;
+  overflow-x: clip;
 }
 
 .app-shell-clipped {
@@ -583,14 +584,25 @@ input[type="range"]:disabled::-moz-range-thumb {
   opacity: 0.42;
 }
 
-.speed-slider-input {
-  height: 22px;
+input.speed-slider-input {
+  height: 36px;
   padding: 2px 0;
 }
 
-.volume-slider-input {
-  height: 22px;
+input.volume-slider-input {
+  height: 36px;
   padding: 2px 0;
+}
+
+input.seek-slider-input {
+  height: 36px;
+  padding: 2px 0;
+}
+
+@supports not (overflow: clip) {
+  .app-shell {
+    overflow-x: hidden;
+  }
 }
 
 /* ── Skeleton shimmer animation ── */

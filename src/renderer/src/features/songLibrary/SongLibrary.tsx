@@ -507,7 +507,7 @@ export function SongLibrary({
               {onBack && (
                 <button
                   onClick={onBack}
-                  className="btn-surface-themed flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs cursor-pointer"
+                  className="btn-surface-themed flex min-h-9 min-w-9 items-center justify-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs cursor-pointer"
                   aria-label={t("settings.shortcut.closeBack")}
                 >
                   <ArrowLeft size={13} />
@@ -1249,7 +1249,7 @@ export function SongLibrary({
                 <button
                   ref={deviceDrawerCloseRef}
                   onClick={closeDeviceDrawer}
-                  className="btn-surface-themed w-7 h-7 rounded-full flex items-center justify-center cursor-pointer"
+                  className="btn-surface-themed w-9 h-9 rounded-full flex items-center justify-center cursor-pointer"
                   aria-label={t("settings.close")}
                 >
                   <X size={14} />
@@ -1660,7 +1660,7 @@ function FavoriteButton({
       type="button"
       data-testid="song-favorite-toggle"
       onClick={() => onToggleFavorite(song.id)}
-      className={`flex h-8 w-8 items-center justify-center rounded-full transition-colors cursor-pointer ${className}`}
+      className={`flex h-9 w-9 items-center justify-center rounded-full transition-colors cursor-pointer ${className}`}
       aria-label={`${label}: ${song.title}`}
       aria-pressed={activity.isFavorite}
       title={`${label}: ${song.title}`}
