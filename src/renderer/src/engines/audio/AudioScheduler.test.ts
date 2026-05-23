@@ -447,6 +447,24 @@ describe("AudioScheduler", () => {
       expect(engine.noteOn).toHaveBeenCalledWith(67, 80, expect.any(Number));
     });
 
+    test("skips muted tracks without muting selected practice tracks", () => {
+      const t1 = track([note(0, 0.5, 60)], "Track 1");
+      const t2 = track([note(0, 0.5, 64)], "Track 2");
+      const s = song([t1, t2]);
+      scheduler.setSong(s);
+      scheduler.setMutedTracks(new Set([1]));
+      scheduler.start(0);
+      vi.advanceTimersByTime(25);
+
+      expect(engine.noteOn).toHaveBeenCalledTimes(1);
+      expect(engine.noteOn).toHaveBeenCalledWith(60, 80, expect.any(Number));
+      expect(engine.noteOn).not.toHaveBeenCalledWith(
+        64,
+        80,
+        expect.any(Number),
+      );
+    });
+
     test("track with empty notes array", () => {
       const s = song([track([])]);
       scheduler.setSong(s);

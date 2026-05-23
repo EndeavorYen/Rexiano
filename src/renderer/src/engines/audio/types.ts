@@ -138,6 +138,9 @@ export interface IAudioScheduler {
    */
   setSpeed(speed: number): void;
 
+  /** Set track indices excluded from playback scheduling. */
+  setMutedTracks(trackIndices: Set<number>): void;
+
   /**
    * Start scheduling from a given song time.
    * @param songTime  Current playback position in seconds

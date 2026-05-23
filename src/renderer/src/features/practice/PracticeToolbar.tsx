@@ -1,11 +1,13 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { ChevronDown, ChevronUp } from "lucide-react";
 import { useTranslation } from "@renderer/i18n/useTranslation";
 import { useSettingsStore } from "@renderer/stores/useSettingsStore";
+import { useSongStore } from "@renderer/stores/useSongStore";
 import { PracticeModeSelector } from "./PracticeModeSelector";
 import { SpeedSlider } from "./SpeedSlider";
 import { ABLoopSelector } from "./ABLoopSelector";
 import { TrackSelector } from "./TrackSelector";
+import { getSongPracticeSetupFixPrompt } from "./songPracticeSetup";
 
 interface PracticeToolbarProps {
   compact?: boolean;
@@ -22,6 +24,11 @@ export interface PracticeToolbarControlVisibility {
   showAdvancedControls: boolean;
 }
 
+export interface PracticeToolbarInitialExpandedInput {
+  childFocusMode: boolean;
+  needsSongSetupFix: boolean;
+}
+
 // eslint-disable-next-line react-refresh/only-export-components
 export function getPracticeToolbarControlVisibility({
   childFocusMode,
@@ -34,15 +41,42 @@ export function getPracticeToolbarControlVisibility({
   };
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
+export function getPracticeToolbarInitialExpanded({
+  childFocusMode,
+  needsSongSetupFix,
+}: PracticeToolbarInitialExpandedInput): boolean {
+  return !childFocusMode && needsSongSetupFix;
+}
+
 export function PracticeToolbar({
   compact = false,
 }: PracticeToolbarProps): React.JSX.Element {
   const { t } = useTranslation();
-  const [expanded, setExpanded] = useState(false);
   const childFocusMode = useSettingsStore((s) => s.childFocusMode);
+  const song = useSongStore((s) => s.song);
+  const needsSongSetupFix = useMemo(
+    () => (song ? getSongPracticeSetupFixPrompt(song).needed : false),
+    [song],
+  );
+  const [userExpanded, setUserExpanded] = useState(false);
+  const setupExpanded = getPracticeToolbarInitialExpanded({
+    childFocusMode,
+    needsSongSetupFix,
+  });
+  const expanded = userExpanded || setupExpanded;
   const controlVisibility = getPracticeToolbarControlVisibility({
     childFocusMode,
   });
+  const toolbarLevelLabel = needsSongSetupFix
+    ? t("practice.fixSong")
+    : expanded
+      ? t("settings.advancedMode")
+      : t("settings.basicMode");
+  const toggleExpanded = (): void => {
+    if (setupExpanded) return;
+    setUserExpanded((current) => !current);
+  };
 
   return (
     <div
@@ -80,14 +114,14 @@ export function PracticeToolbar({
             }}
             data-testid="practice-toolbar-level"
           >
-            {expanded ? t("settings.advancedMode") : t("settings.basicMode")}
+            {toolbarLevelLabel}
           </span>
         )}
 
         {controlVisibility.showAdvancedDisclosure && (
           <div className="ml-auto shrink-0">
             <button
-              onClick={() => setExpanded(!expanded)}
+              onClick={toggleExpanded}
               className={`btn-surface-themed flex items-center gap-1.5 rounded-md font-body cursor-pointer ${
                 compact
                   ? "px-2 py-[3px] text-[10px]"

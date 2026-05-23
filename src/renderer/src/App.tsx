@@ -56,7 +56,10 @@ import { CelebrationOverlay } from "./features/practice/CelebrationOverlay";
 import { applyPracticeModeChangeForSong } from "./features/practice/practiceSetupControlActions";
 import { selectNextPracticeAction } from "./features/practice/nextPracticeAction";
 import { getFocusModeExitDecision } from "./features/practice/focusModeExitGuard";
-import { resolveSongPracticeSetupForSong } from "./features/practice/songPracticeSetup";
+import {
+  resolveSongPracticeSetupForSong,
+  type TrackPracticePreferences,
+} from "./features/practice/songPracticeSetup";
 import { StatisticsPage } from "./features/statistics/StatisticsPage";
 import type { PracticeMode, PracticeScore } from "@shared/types";
 import {
@@ -92,6 +95,19 @@ interface ImportErrorState {
 
 function clampNumber(value: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, value));
+}
+
+function getMutedTrackIndices(
+  preferences: Record<number, TrackPracticePreferences> | undefined,
+): Set<number> {
+  const mutedTracks = new Set<number>();
+  for (const [trackIndex, preference] of Object.entries(preferences ?? {})) {
+    const index = Number(trackIndex);
+    if (Number.isInteger(index) && index >= 0 && preference.muted === true) {
+      mutedTracks.add(index);
+    }
+  }
+  return mutedTracks;
 }
 
 const analyzer = new WeakSpotAnalyzer();
@@ -440,6 +456,9 @@ function App(): React.JSX.Element {
 
       scheduler.setSong(targetSong);
       scheduler.setSpeed(usePracticeStore.getState().speed);
+      scheduler.setMutedTracks(
+        getMutedTrackIndices(usePracticeStore.getState().trackPreferences),
+      );
       usePlaybackStore.getState().setAudioStatus("ready");
       usePlaybackStore.getState().clearAudioRecovery();
     },
@@ -610,6 +629,9 @@ function App(): React.JSX.Element {
         // Engine already healthy, just bind the new song
         scheduler.setSong(song);
         scheduler.setSpeed(usePracticeStore.getState().speed);
+        scheduler.setMutedTracks(
+          getMutedTrackIndices(usePracticeStore.getState().trackPreferences),
+        );
         usePlaybackStore.getState().setAudioStatus("ready");
         return;
       }
@@ -632,6 +654,10 @@ function App(): React.JSX.Element {
     usePracticeStore.getState().setMode(setup.defaultMode);
     usePracticeStore.getState().setSpeed(setup.defaultSpeed);
     usePracticeStore.getState().setActiveTracks(new Set(setup.activeTracks));
+    usePracticeStore.getState().setSongPracticeSetup({
+      handAssignments: setup.handAssignments,
+      trackPreferences: setup.trackPreferences,
+    });
 
     void init();
 
@@ -750,6 +776,39 @@ function App(): React.JSX.Element {
     song,
     audioRef,
   );
+
+  const handleFallingNoteRendererReady = useCallback(
+    (renderer: Parameters<typeof handleNoteRendererReady>[0]) => {
+      handleNoteRendererReady(renderer);
+      const { handAssignments, trackPreferences } = usePracticeStore.getState();
+      renderer.setTrackDisplayPreferences({
+        handAssignments,
+        trackPreferences,
+      });
+    },
+    [handleNoteRendererReady],
+  );
+
+  // ─── Phase 7.5: per-song track setup runtime sync ─────
+  useEffect(() => {
+    const unsub = usePracticeStore.subscribe((state, prev) => {
+      if (state.trackPreferences !== prev.trackPreferences) {
+        audioRef.current.scheduler?.setMutedTracks(
+          getMutedTrackIndices(state.trackPreferences),
+        );
+      }
+      if (
+        state.handAssignments !== prev.handAssignments ||
+        state.trackPreferences !== prev.trackPreferences
+      ) {
+        noteRendererRef.current?.setTrackDisplayPreferences({
+          handAssignments: state.handAssignments,
+          trackPreferences: state.trackPreferences,
+        });
+      }
+    });
+    return unsub;
+  }, [noteRendererRef]);
   // ─── End Phase 6 ─────────────────────────────────────
 
   // ─── Phase 6.5: Startup wiring — showFallingNoteLabels ─
@@ -1398,7 +1457,7 @@ function App(): React.JSX.Element {
               <FallingNotesCanvas
                 onActiveNotesChange={handleActiveNotesChange}
                 getAudioCurrentTime={getAudioCurrentTime}
-                onNoteRendererReady={handleNoteRendererReady}
+                onNoteRendererReady={handleFallingNoteRendererReady}
                 minHeight={fallingCanvasMinHeight}
               />
             </div>

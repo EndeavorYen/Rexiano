@@ -1,6 +1,8 @@
 import { create } from "zustand";
 import type { PracticeMode, PracticeScore, NoteResult } from "@shared/types";
 import type { DisplayMode } from "@renderer/features/sheetMusic/types";
+import type { TrackHandAssignment } from "@renderer/engines/midi/TrackHandAssignment";
+import type { TrackPracticePreferences } from "@renderer/features/practice/songPracticeSetup";
 
 const initialScore: PracticeScore = {
   totalNotes: 0,
@@ -22,6 +24,10 @@ interface PracticeState {
   activeTracks: Set<number>;
   /** True once a song/default setup has explicitly chosen active tracks. */
   activeTracksInitialized: boolean;
+  /** Per-track practice role restored from the current song setup. */
+  handAssignments: Record<number, TrackHandAssignment>;
+  /** Per-track render/playback preferences restored from the current song setup. */
+  trackPreferences: Record<number, TrackPracticePreferences>;
   /** Cumulative score for the current session */
   score: PracticeScore;
   /** Per-note results keyed by a unique note identifier */
@@ -33,6 +39,16 @@ interface PracticeState {
   setSpeed: (speed: number) => void;
   setLoopRange: (range: [number, number] | null) => void;
   setActiveTracks: (tracks: Set<number>) => void;
+  setHandAssignments: (
+    assignments: Record<number, TrackHandAssignment>,
+  ) => void;
+  setTrackPreferences: (
+    preferences: Record<number, TrackPracticePreferences>,
+  ) => void;
+  setSongPracticeSetup: (setup: {
+    handAssignments: Record<number, TrackHandAssignment>;
+    trackPreferences?: Record<number, TrackPracticePreferences>;
+  }) => void;
   setDisplayMode: (mode: DisplayMode) => void;
   recordHit: (noteKey: string) => void;
   recordMiss: (noteKey: string) => void;
@@ -50,6 +66,8 @@ export const usePracticeStore = create<PracticeState>()((set) => ({
   loopRange: null,
   activeTracks: new Set<number>(),
   activeTracksInitialized: false,
+  handAssignments: {},
+  trackPreferences: {},
   score: { ...initialScore },
   noteResults: new Map<string, NoteResult>(),
   displayMode: "falling",
@@ -69,6 +87,18 @@ export const usePracticeStore = create<PracticeState>()((set) => ({
 
   setActiveTracks: (tracks) =>
     set({ activeTracks: tracks, activeTracksInitialized: true }),
+
+  setHandAssignments: (handAssignments) =>
+    set({ handAssignments: { ...handAssignments } }),
+
+  setTrackPreferences: (trackPreferences) =>
+    set({ trackPreferences: { ...trackPreferences } }),
+
+  setSongPracticeSetup: (setup) =>
+    set({
+      handAssignments: { ...setup.handAssignments },
+      trackPreferences: { ...(setup.trackPreferences ?? {}) },
+    }),
 
   recordHit: (noteKey) =>
     set((state) => {

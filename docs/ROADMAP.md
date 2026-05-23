@@ -375,10 +375,10 @@
   - [x] 監看使用者 MIDI 資料夾
   - [x] 為匯入曲目建立穩定 ID
   - [x] 支援 Rexiano-owned metadata（title, composer, tags, grade, grouping）
-- [ ] 曲目設定
-  - [ ] 每首曲記住 active tracks、hand assignment、colors、mute/background、default speed/mode
-  - [ ] 自動推測簡單左右手配置，並允許修正
-  - [ ] 對 track/metadata 問題提供「fix this song」入口
+- [x] 曲目設定
+  - [x] 每首曲記住 active tracks、hand assignment、colors、mute/background、default speed/mode
+  - [x] 自動推測簡單左右手配置，並允許修正
+  - [x] 對 track/metadata 問題提供「fix this song」入口
 - [ ] 練習閉環
   - [x] 每日 5-10 分鐘練習目標
   - [x] Session 結束後提供 repeat loop / slow down / other hand / next song

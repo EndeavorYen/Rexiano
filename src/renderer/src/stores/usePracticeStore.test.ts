@@ -9,6 +9,8 @@ describe("usePracticeStore", () => {
       loopRange: null,
       activeTracks: new Set(),
       activeTracksInitialized: false,
+      handAssignments: {},
+      trackPreferences: {},
       score: {
         totalNotes: 0,
         hitNotes: 0,
@@ -29,6 +31,8 @@ describe("usePracticeStore", () => {
     expect(s.loopRange).toBeNull();
     expect(s.activeTracks.size).toBe(0);
     expect(s.activeTracksInitialized).toBe(false);
+    expect(s.handAssignments).toEqual({});
+    expect(s.trackPreferences).toEqual({});
     expect(s.score.totalNotes).toBe(0);
     expect(s.score.accuracy).toBe(0);
     expect(s.noteResults.size).toBe(0);
@@ -101,6 +105,36 @@ describe("usePracticeStore", () => {
 
     expect(usePracticeStore.getState().activeTracks).toEqual(new Set());
     expect(usePracticeStore.getState().activeTracksInitialized).toBe(true);
+  });
+
+  test("setSongPracticeSetup() restores hand assignments and track preferences", () => {
+    usePracticeStore.getState().setSongPracticeSetup({
+      handAssignments: { 0: "right", 1: "background" },
+      trackPreferences: {
+        1: { muted: true, backgroundVisible: false, color: "#44cc88" },
+      },
+    });
+
+    expect(usePracticeStore.getState().handAssignments).toEqual({
+      0: "right",
+      1: "background",
+    });
+    expect(usePracticeStore.getState().trackPreferences).toEqual({
+      1: { muted: true, backgroundVisible: false, color: "#44cc88" },
+    });
+  });
+
+  test("setTrackPreferences() replaces stale per-track preferences", () => {
+    usePracticeStore.getState().setTrackPreferences({
+      1: { muted: true },
+    });
+    usePracticeStore.getState().setTrackPreferences({
+      0: { color: "#ffcc00" },
+    });
+
+    expect(usePracticeStore.getState().trackPreferences).toEqual({
+      0: { color: "#ffcc00" },
+    });
   });
 
   // ─── recordHit() ──────────────────────────────────────

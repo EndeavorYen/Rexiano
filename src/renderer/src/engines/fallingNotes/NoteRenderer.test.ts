@@ -313,6 +313,51 @@ describe("NoteRenderer", () => {
     expect(tints.size).toBe(2);
   });
 
+  test("uses saved custom track colors when rendering notes", () => {
+    const song = makeSong([
+      { notes: [{ midi: 60, time: 0, duration: 1 }] },
+      { notes: [{ midi: 72, time: 0, duration: 1 }] },
+    ]);
+    renderer.setTrackDisplayPreferences({
+      handAssignments: { 0: "right", 1: "left" },
+      trackPreferences: { 1: { color: "#44cc88" } },
+    });
+
+    renderer.update(song, makeViewport({ currentTime: 0 }));
+
+    const sprites = (
+      parent as unknown as { children: { children: unknown[] }[] }
+    ).children[0].children as {
+      visible: boolean;
+      tint: number;
+    }[];
+    const visible = sprites.filter((s) => s.visible && !("text" in s));
+    expect(visible.map((s) => s.tint)).toContain(0x44cc88);
+  });
+
+  test("hides background tracks when saved display preferences disable them", () => {
+    const song = makeSong([
+      { notes: [{ midi: 60, time: 0, duration: 1 }] },
+      { notes: [{ midi: 72, time: 0, duration: 1 }] },
+    ]);
+    renderer.setTrackDisplayPreferences({
+      handAssignments: { 0: "right", 1: "background" },
+      trackPreferences: { 1: { backgroundVisible: false } },
+    });
+
+    renderer.update(song, makeViewport({ currentTime: 0 }));
+
+    const sprites = (
+      parent as unknown as { children: { children: unknown[] }[] }
+    ).children[0].children as {
+      visible: boolean;
+    }[];
+    const visible = sprites.filter((s) => s.visible && !("text" in s));
+    expect(visible.length).toBe(1);
+    expect(renderer.activeNotes.has(60)).toBe(true);
+    expect(renderer.activeNotes.has(72)).toBe(false);
+  });
+
   test("skips notes with MIDI values outside piano range (21-108)", () => {
     // MIDI 20 is below A0, MIDI 109 is above C8 — no keyPositions for these
     const song = makeSong([

@@ -2,6 +2,8 @@ import { beforeEach, describe, expect, test, vi } from "vitest";
 import type { ParsedSong, ParsedTrack } from "@renderer/engines/midi/types";
 import { loadSongPracticeSetupSnapshot } from "./songPracticeSetup";
 import {
+  applyTrackHandAssignmentChangeForSong,
+  applyTrackPreferenceChangeForSong,
   applyPracticeModeChangeForSong,
   applyPracticeSpeedChangeForSong,
 } from "./practiceSetupControlActions";
@@ -96,6 +98,102 @@ describe("practice setup control actions", () => {
       defaultMode: "free",
       defaultSpeed: 0.5,
       handAssignments: { 0: "right", 1: "left" },
+    });
+  });
+
+  test("changing a track to background removes it from active practice tracks", () => {
+    const setActiveTracks = vi.fn();
+    const setHandAssignments = vi.fn();
+
+    applyTrackHandAssignmentChangeForSong(
+      {
+        song: song(),
+        activeTracks: new Set([0, 1]),
+        currentMode: "wait",
+        currentSpeed: 0.75,
+        handAssignments: { 0: "right", 1: "left" },
+        trackPreferences: {},
+        setActiveTracks,
+        setHandAssignments,
+      },
+      1,
+      "background",
+    );
+
+    expect(setActiveTracks).toHaveBeenCalledWith(new Set([0]));
+    expect(setHandAssignments).toHaveBeenCalledWith({
+      0: "right",
+      1: "background",
+    });
+    expect(loadSongPracticeSetupSnapshot("name:duet.mid")).toMatchObject({
+      activeTracks: [0],
+      defaultMode: "wait",
+      defaultSpeed: 0.75,
+      handAssignments: { 0: "right", 1: "background" },
+    });
+  });
+
+  test("changing a background track back to a hand restores it to active practice", () => {
+    const setActiveTracks = vi.fn();
+    const setHandAssignments = vi.fn();
+
+    applyTrackHandAssignmentChangeForSong(
+      {
+        song: song(),
+        activeTracks: new Set([0]),
+        currentMode: "free",
+        currentSpeed: 1,
+        handAssignments: { 0: "right", 1: "background" },
+        trackPreferences: { 1: { muted: false, backgroundVisible: false } },
+        setActiveTracks,
+        setHandAssignments,
+      },
+      1,
+      "left",
+    );
+
+    expect(setActiveTracks).toHaveBeenCalledWith(new Set([0, 1]));
+    expect(setHandAssignments).toHaveBeenCalledWith({
+      0: "right",
+      1: "left",
+    });
+    expect(loadSongPracticeSetupSnapshot("name:duet.mid")).toMatchObject({
+      activeTracks: [0, 1],
+      defaultMode: "free",
+      defaultSpeed: 1,
+      handAssignments: { 0: "right", 1: "left" },
+      trackPreferences: { 1: { muted: false, backgroundVisible: false } },
+    });
+  });
+
+  test("changing a track preference persists mute, visibility, and color without changing active tracks", () => {
+    const setTrackPreferences = vi.fn();
+
+    applyTrackPreferenceChangeForSong(
+      {
+        song: song(),
+        activeTracks: new Set([0]),
+        currentMode: "wait",
+        currentSpeed: 0.5,
+        handAssignments: { 0: "right", 1: "background" },
+        trackPreferences: { 1: { muted: false } },
+        setTrackPreferences,
+      },
+      1,
+      { muted: true, backgroundVisible: false, color: "#44cc88" },
+    );
+
+    expect(setTrackPreferences).toHaveBeenCalledWith({
+      1: { muted: true, backgroundVisible: false, color: "#44cc88" },
+    });
+    expect(loadSongPracticeSetupSnapshot("name:duet.mid")).toMatchObject({
+      activeTracks: [0],
+      defaultMode: "wait",
+      defaultSpeed: 0.5,
+      handAssignments: { 0: "right", 1: "background" },
+      trackPreferences: {
+        1: { muted: true, backgroundVisible: false, color: "#44cc88" },
+      },
     });
   });
 });

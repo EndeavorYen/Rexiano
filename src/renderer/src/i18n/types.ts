@@ -199,6 +199,17 @@ export interface TranslationMap {
   "practice.muteAll": string;
   "practice.resetTracks": string;
   "practice.solo": string;
+  "practice.trackHand": string;
+  "practice.handRight": string;
+  "practice.handLeft": string;
+  "practice.handBoth": string;
+  "practice.handBackground": string;
+  "practice.trackSound": string;
+  "practice.trackVisible": string;
+  "practice.trackColor": string;
+  "practice.sound": string;
+  "practice.visible": string;
+  "practice.fixSong": string;
   "practice.confirmExitPlaying": string;
   "practice.accuracy": string;
   "practice.combo": string;

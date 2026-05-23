@@ -44,6 +44,9 @@ export class AudioScheduler implements IAudioScheduler {
   /** Playback speed multiplier (0.25–2.0). 1.0 = normal speed. */
   private _speed = 1.0;
 
+  /** Track indices excluded from playback scheduling. */
+  private _mutedTracks = new Set<number>();
+
   constructor(engine: IAudioEngine, config?: Partial<AudioSchedulerConfig>) {
     this._engine = engine;
     this._config = { ...DEFAULT_CONFIG, ...config };
@@ -56,6 +59,11 @@ export class AudioScheduler implements IAudioScheduler {
    */
   setSpeed(speed: number): void {
     this._speed = speed;
+  }
+
+  /** Set track indices that should not sound during playback. */
+  setMutedTracks(trackIndices: Set<number>): void {
+    this._mutedTracks = new Set(trackIndices);
   }
 
   /** Bind a song for scheduling. Call before start(). */
@@ -175,6 +183,11 @@ export class AudioScheduler implements IAudioScheduler {
     for (let t = 0; t < this._song.tracks.length; t++) {
       const notes = this._song.tracks[t].notes;
       let cursor = this._trackCursors[t];
+
+      if (this._mutedTracks.has(t)) {
+        this._trackCursors[t] = this._findCursorPosition(notes, horizon);
+        continue;
+      }
 
       while (cursor < notes.length) {
         const note = notes[cursor];

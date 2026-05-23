@@ -5,6 +5,7 @@
  */
 import { Container, Sprite, Text, TextStyle, Texture } from "pixi.js";
 import type { ParsedSong, ParsedNote } from "@renderer/engines/midi/types";
+import type { TrackHandAssignment } from "@renderer/engines/midi/TrackHandAssignment";
 import { buildKeyPositions, type KeyPosition } from "./keyPositions";
 import { getTrackColor } from "./noteColors";
 import {
@@ -43,6 +44,17 @@ export interface NoteRendererDiagnostics {
   pooledLabelCount: number;
   activeFingeringLabelCount: number;
   pooledFingeringLabelCount: number;
+}
+
+export interface TrackRenderPreferences {
+  color?: string;
+  muted?: boolean;
+  backgroundVisible?: boolean;
+}
+
+export interface TrackDisplayPreferences {
+  handAssignments: Record<number, TrackHandAssignment>;
+  trackPreferences?: Record<number, TrackRenderPreferences>;
 }
 
 /** Circled digit characters for finger numbers 1-5 */
@@ -105,6 +117,14 @@ function lerpColor(a: number, b: number, t: number): number {
   return (r << 16) | (g << 8) | blue;
 }
 
+function parseHexColor(value: string | undefined): number | null {
+  if (!value) return null;
+  const trimmed = value.trim();
+  const match = /^#?([0-9a-fA-F]{6})$/.exec(trimmed);
+  if (!match) return null;
+  return Number.parseInt(match[1], 16);
+}
+
 export class NoteRenderer {
   private container: Container;
   private pool: Sprite[] = [];
@@ -130,6 +150,9 @@ export class NoteRenderer {
   public showNoteLabels = true;
 
   public activeNotes = new Set<number>();
+
+  private handAssignments: Record<number, TrackHandAssignment> = {};
+  private trackPreferences: Record<number, TrackRenderPreferences> = {};
 
   // ── Fingering overlay ──────────────────────────────────────────
   private fingeringEngine = new FingeringEngine();
@@ -176,6 +199,11 @@ export class NoteRenderer {
     this.keyPositions = buildKeyPositions(canvasWidth);
   }
 
+  setTrackDisplayPreferences(preferences: TrackDisplayPreferences): void {
+    this.handAssignments = { ...preferences.handAssignments };
+    this.trackPreferences = { ...(preferences.trackPreferences ?? {}) };
+  }
+
   /**
    * Main per-frame update. Positions and shows sprites for all notes
    * visible in the given viewport, and returns stale sprites to the pool.
@@ -207,8 +235,10 @@ export class NoteRenderer {
     nextFLabels.clear();
 
     for (let trackIdx = 0; trackIdx < song.tracks.length; trackIdx++) {
+      if (this.isTrackHidden(trackIdx)) continue;
+
       const track = song.tracks[trackIdx];
-      const color = getTrackColor(trackIdx);
+      const color = this.getTrackColor(trackIdx);
       const visibleNotes = getVisibleNotes(
         track.notes,
         vp,
@@ -369,6 +399,20 @@ export class NoteRenderer {
       activeFingeringLabelCount: this.activeFingeringLabels.size,
       pooledFingeringLabelCount: this.fingeringLabelPool.length,
     };
+  }
+
+  private isTrackHidden(trackIndex: number): boolean {
+    return (
+      this.handAssignments[trackIndex] === "background" &&
+      this.trackPreferences[trackIndex]?.backgroundVisible === false
+    );
+  }
+
+  private getTrackColor(trackIndex: number): number {
+    return (
+      parseHexColor(this.trackPreferences[trackIndex]?.color) ??
+      getTrackColor(trackIndex)
+    );
   }
 
   private createSprite(): Sprite {
