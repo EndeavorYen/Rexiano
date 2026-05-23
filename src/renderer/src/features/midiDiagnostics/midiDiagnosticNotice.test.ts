@@ -4,6 +4,7 @@ import type {
   ParsedSong,
   ParsedTrack,
 } from "@renderer/engines/midi/types";
+import type { NotationData } from "@renderer/features/sheetMusic/types";
 import { buildMidiDiagnosticNotice } from "./midiDiagnosticNotice";
 
 function note(time: number, midi = 60): ParsedNote {
@@ -85,6 +86,62 @@ describe("buildMidiDiagnosticNotice", () => {
       summary: "1 blocking MIDI issue detected.",
       canPractice: false,
       details: ["No playable notes were found."],
+    });
+  });
+
+  test("does not warn about missing MIDI meter when built-in metadata supplies it", () => {
+    expect(
+      buildMidiDiagnosticNotice(
+        song({
+          timeSignatures: [],
+          tracks: [track("Right Hand")],
+        }),
+        { hasTimeSignatureMetadata: true },
+      ),
+    ).toBeNull();
+  });
+
+  test("surfaces notation rhythm approximation warning counts and location", () => {
+    const notationData: NotationData = {
+      bpm: 120,
+      ticksPerQuarter: 480,
+      measures: [
+        {
+          index: 0,
+          timeSignatureTop: 4,
+          timeSignatureBottom: 4,
+          keySignature: 0,
+          trebleNotes: [],
+          bassNotes: [],
+        },
+      ],
+      warnings: [
+        {
+          kind: "unsupported-tuplet-approximation",
+          midi: 60,
+          startTick: 0,
+          originalDurationTicks: 160,
+          approximatedDurationTicks: 120,
+        },
+        {
+          kind: "unsupported-tuplet-approximation",
+          midi: 64,
+          startTick: 480,
+          originalDurationTicks: 160,
+          approximatedDurationTicks: 120,
+        },
+      ],
+    };
+
+    expect(buildMidiDiagnosticNotice(song(), { notationData })).toMatchObject({
+      kind: "warning",
+      title: "Review sheet notation before practice",
+      summary: "2 notation rhythm approximations detected.",
+      canPractice: true,
+      details: [
+        "Sheet notation approximates 2 unsupported rhythms; first at measure 1, beat 1.",
+      ],
+      codes: ["notation-rhythm-approximation"],
     });
   });
 });

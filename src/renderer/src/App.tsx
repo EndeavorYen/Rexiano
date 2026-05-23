@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import { parseMidiFile } from "./engines/midi/MidiFileParser";
 import { useSongStore } from "./stores/useSongStore";
+import { useSongLibraryStore } from "./stores/useSongLibraryStore";
 import { usePlaybackStore } from "./stores/usePlaybackStore";
 import { useProgressStore, initAutoSave } from "./stores/useProgressStore";
 import { useSettingsStore } from "./stores/useSettingsStore";
@@ -49,6 +50,7 @@ import {
   getSheetMusicVisualFixture,
   type SheetMusicVisualFixtureName,
 } from "./features/sheetMusic/sheetMusicVisualFixtures";
+import { resolveBuiltinNotationMetadata } from "./features/sheetMusic/builtinNotationMetadata";
 import { usePracticeStore } from "./stores/usePracticeStore";
 import { MainMenu } from "./features/mainMenu/MainMenu";
 import { ModeSelectionModal } from "./features/practice/ModeSelectionModal";
@@ -300,16 +302,39 @@ function App(): React.JSX.Element {
   const displayMode = usePracticeStore((s) => s.displayMode);
   const isPlaying = usePlaybackStore((s) => s.isPlaying);
   const currentTime = usePlaybackStore((s) => s.currentTime);
+  const builtinSongs = useSongLibraryStore((s) => s.songs);
   const [sheetFixtureNotationData, setSheetFixtureNotationData] =
     useState<NotationData | null>(null);
+  const builtinNotationMetadata = useMemo(() => {
+    if (!song) return null;
+    return resolveBuiltinNotationMetadata(song.fileName, builtinSongs);
+  }, [builtinSongs, song]);
 
   const notationData = useMemo(() => {
     if (sheetFixtureNotationData) return sheetFixtureNotationData;
     if (!song) return null;
     const allNotes = song.tracks.flatMap((tr) => tr.notes);
     const bpm = song.tempos.length > 0 ? song.tempos[0].bpm : 120;
-    return convertToNotation(allNotes, bpm);
-  }, [sheetFixtureNotationData, song]);
+    const midiTimeSignature = song.timeSignatures[0];
+    const timeSignatureTop =
+      builtinNotationMetadata?.timeSignatureTop ??
+      midiTimeSignature?.numerator ??
+      4;
+    const timeSignatureBottom =
+      builtinNotationMetadata?.timeSignatureBottom ??
+      midiTimeSignature?.denominator ??
+      4;
+    const keySignature = builtinNotationMetadata?.keySignature ?? 0;
+
+    return convertToNotation(
+      allNotes,
+      bpm,
+      480,
+      timeSignatureTop,
+      timeSignatureBottom,
+      keySignature,
+    );
+  }, [builtinNotationMetadata, sheetFixtureNotationData, song]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -1119,8 +1144,16 @@ function App(): React.JSX.Element {
   const effectiveBpm =
     baseBpm !== null ? Math.max(1, Math.round(baseBpm * speed)) : null;
   const midiDiagnosticNotice = useMemo(
-    () => (song ? buildMidiDiagnosticNotice(song) : null),
-    [song],
+    () =>
+      song
+        ? buildMidiDiagnosticNotice(song, {
+            hasTimeSignatureMetadata:
+              builtinNotationMetadata?.timeSignatureTop !== undefined &&
+              builtinNotationMetadata?.timeSignatureBottom !== undefined,
+            notationData,
+          })
+        : null,
+    [builtinNotationMetadata, notationData, song],
   );
 
   useEffect(() => {

@@ -1,4 +1,9 @@
 import { test, expect, waitForUiSettled } from "./fixtures/electronApp";
+import {
+  closeTopDrawer,
+  gotoLibrary,
+  openPlaybackDrawer,
+} from "./helpers/appHarness";
 
 type SheetFixtureName = "dense-sparse" | "sharp-key" | "flat-key";
 
@@ -34,6 +39,57 @@ async function loadSheetFixture(
   }, fixtureName);
 
   expect(result).toEqual({ ok: true });
+  await waitForUiSettled(appPage);
+  await expect(appPage.getByTestId("sheet-music-panel")).toBeVisible();
+  await expect(
+    appPage.getByTestId("sheet-music-svg-host").locator("svg"),
+  ).toBeVisible({ timeout: 20_000 });
+}
+
+async function loadBuiltInSongSheet(
+  appPage: Parameters<typeof waitForUiSettled>[0],
+  songId: string,
+): Promise<void> {
+  const playbackLibraryButton = appPage.getByRole("button", {
+    name: /Library|曲庫/i,
+  });
+  if (
+    (await playbackLibraryButton.count()) > 0 &&
+    (await playbackLibraryButton.first().isVisible())
+  ) {
+    await playbackLibraryButton.first().click();
+  }
+  await gotoLibrary(appPage);
+
+  const listToggle = appPage.getByTestId("song-library-view-list");
+  if ((await listToggle.count()) > 0) {
+    await listToggle.click();
+  }
+
+  const songButton = appPage.getByTestId(`song-select-${songId}`);
+  await expect(songButton).toBeVisible({ timeout: 20_000 });
+  await songButton.click();
+
+  const modeSelectWait = appPage.getByTestId("mode-select-wait");
+  await Promise.race([
+    modeSelectWait.waitFor({ state: "visible", timeout: 20_000 }),
+    appPage
+      .getByTestId("playback-drawer-trigger")
+      .waitFor({ state: "visible", timeout: 20_000 }),
+  ]);
+  const shouldPickMode = await modeSelectWait
+    .waitFor({ state: "visible", timeout: 1_000 })
+    .then(() => true)
+    .catch(() => false);
+  if (shouldPickMode) {
+    await expect(modeSelectWait).toBeVisible({ timeout: 20_000 });
+    await modeSelectWait.click();
+  }
+
+  await openPlaybackDrawer(appPage);
+  await appPage.getByTestId("display-mode-sheet").click();
+  await closeTopDrawer(appPage);
+
   await waitForUiSettled(appPage);
   await expect(appPage.getByTestId("sheet-music-panel")).toBeVisible();
   await expect(
@@ -147,5 +203,47 @@ test.describe("Sheet music visual fixtures", () => {
       expect(stats?.minX).toBeGreaterThanOrEqual(-2);
       expect(stats?.maxX).toBeLessThanOrEqual((stats?.width ?? 0) + 2);
     }
+  });
+
+  test("tie-heavy built-in songs render nonblank sheet SVG without sheet errors", async ({
+    appPage,
+  }) => {
+    await appPage.setViewportSize({ width: 1600, height: 900 });
+    const sheetMessages: string[] = [];
+    appPage.on("console", (message) => {
+      if (message.text().includes("SheetMusic:")) {
+        sheetMessages.push(`${message.type()}: ${message.text()}`);
+      }
+    });
+
+    for (const songId of ["amazing-grace", "german-dance"]) {
+      await loadBuiltInSongSheet(appPage, songId);
+
+      const stats = await readSheetSvgStats(appPage);
+
+      expect(stats).not.toBeNull();
+      expect(stats?.glyphCount).toBeGreaterThan(50);
+      expect(stats?.visibleGlyphCount).toBeGreaterThan(25);
+      expect(stats?.invalidBoxCount).toBe(0);
+      expect(stats?.maxX).toBeLessThanOrEqual((stats?.width ?? 0) + 2);
+    }
+
+    expect(sheetMessages).toEqual([]);
+  });
+
+  test("dense built-in sheet glyph bounds stay inside the SVG width", async ({
+    appPage,
+  }) => {
+    await appPage.setViewportSize({ width: 1600, height: 900 });
+    await loadBuiltInSongSheet(appPage, "moonlight-sonata");
+
+    const stats = await readSheetSvgStats(appPage);
+
+    expect(stats).not.toBeNull();
+    expect(stats?.glyphCount).toBeGreaterThan(120);
+    expect(stats?.visibleGlyphCount).toBeGreaterThan(80);
+    expect(stats?.invalidBoxCount).toBe(0);
+    expect(stats?.minX).toBeGreaterThanOrEqual(-2);
+    expect(stats?.maxX).toBeLessThanOrEqual((stats?.width ?? 0) + 2);
   });
 });

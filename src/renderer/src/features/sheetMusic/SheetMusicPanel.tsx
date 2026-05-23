@@ -26,6 +26,7 @@ const SYSTEM_HEIGHT = STAVE_HEIGHT * 2 + SYSTEM_GAP;
 const LEFT_MARGIN = 28;
 const TOP_MARGIN = 10;
 const DISPLAY_MEASURE_COUNT = 4;
+const SVG_BOUNDS_GUARD = 240;
 const KEY_SIGNATURE_NAMES = new Map<number, string>([
   [-7, "Cb"],
   [-6, "Gb"],
@@ -194,15 +195,20 @@ function drawTieBetweenGroups(
     }
   });
   if (firstIndices.length === 0) return;
+  if (!currentNote || !nextNote) return;
 
-  new VF.StaveTie({
-    first_note: currentNote,
-    last_note: nextNote,
-    first_indices: firstIndices,
-    last_indices: lastIndices,
-  })
-    .setContext(context)
-    .draw();
+  try {
+    new VF.StaveTie({
+      first_note: currentNote,
+      last_note: nextNote,
+      first_indices: firstIndices,
+      last_indices: lastIndices,
+    })
+      .setContext(context)
+      .draw();
+  } catch {
+    // VexFlow requires visible endpoints; skipped ties should not blank the sheet.
+  }
 }
 
 function drawCrossMeasureTies(
@@ -342,6 +348,7 @@ function renderMeasure(
       num_beats: measure.timeSignatureTop,
       beat_value: measure.timeSignatureBottom,
     });
+    voice.setStrict(false);
     voice.addTickables(renderedVoice.vexNotes);
     return voice;
   });
@@ -351,6 +358,7 @@ function renderMeasure(
       num_beats: measure.timeSignatureTop,
       beat_value: measure.timeSignatureBottom,
     });
+    voice.setStrict(false);
     voice.addTickables(renderedVoice.vexNotes);
     return voice;
   });
@@ -439,6 +447,7 @@ export function SheetMusicPanel({
     containerWidth,
     LEFT_MARGIN * 2 + MIN_MEASURE_WIDTH * DISPLAY_MEASURE_COUNT,
   );
+  const svgWidth = renderWidth + SVG_BOUNDS_GUARD;
   const cursorPosition = useMemo(() => {
     if (!notationData) return null;
     return getCursorPosition(currentTime, notationData);
@@ -513,7 +522,7 @@ export function SheetMusicPanel({
         const { Renderer } = VF;
         const stage = document.createElement("div");
         const renderer = new Renderer(stage, Renderer.Backends.SVG);
-        renderer.resize(renderWidth, Math.max(totalHeight, height));
+        renderer.resize(svgWidth, Math.max(totalHeight, height));
         const context = renderer.getContext();
         const renderedMeasures: RenderedMeasure[] = [];
 
@@ -568,6 +577,7 @@ export function SheetMusicPanel({
     hidden,
     notationData,
     renderWidth,
+    svgWidth,
     height,
     totalHeight,
     visibleMeasures,
