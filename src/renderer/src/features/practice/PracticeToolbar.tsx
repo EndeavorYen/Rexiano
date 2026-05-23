@@ -166,7 +166,7 @@ export function PracticeToolbar({
       {expanded && controlVisibility.showAdvancedControls && (
         <div
           className={`flex flex-wrap items-start px-4 overflow-x-hidden animate-page-enter ${
-            compact ? "gap-5 pb-2" : "gap-6 pb-2.5"
+            compact ? "gap-5 pb-4" : "gap-6 pb-2.5"
           }`}
           style={{
             borderTop:
@@ -182,7 +182,7 @@ export function PracticeToolbar({
             style={{ background: "var(--color-border)" }}
           />
 
-          <TrackSelector />
+          <TrackSelector compact={compact} />
         </div>
       )}
     </div>

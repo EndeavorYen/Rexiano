@@ -17,6 +17,7 @@ import type {
   NotationMeasure,
   NotationNote,
   NotationRhythmApproximation,
+  NotationTuplet,
   NotationWarning,
   StemDirection,
 } from "./types";
@@ -27,6 +28,9 @@ const MIDDLE_C = 60;
 /** Supported quantization grid sizes in ticks per quarter note */
 const QUANTIZE_GRID = 4; // 16th note = ticksPerQuarter / 4
 const UNSUPPORTED_RHYTHM_TOLERANCE_DIVISOR = 16;
+const TRIPLET_TOLERANCE_DIVISOR = 16;
+const EIGHTH_TRIPLET_TOTAL_NOTES = 3;
+const EIGHTH_TRIPLET_NOTES_OCCUPIED = 2;
 
 /** Note name lookup for VexFlow key conversion */
 const NOTE_NAMES = [
@@ -68,6 +72,13 @@ interface QuantizedNote {
   midi: number;
   startTick: number;
   endTick: number;
+  standardStartTick: number;
+  standardEndTick: number;
+  rawDurationTicks: number;
+  tupletCandidate?: {
+    durationTicks: number;
+  };
+  tuplet?: NotationTuplet;
   vexKey: string;
   accidental: string | null;
   voiceIndex?: number;
@@ -81,6 +92,7 @@ interface NoteSegment {
   durationTicks: number;
   vexKey: string;
   accidental: string | null;
+  tuplet?: NotationTuplet;
   rhythmApproximation?: NotationRhythmApproximation;
   voiceIndex?: number;
   stemDirection?: StemDirection;
@@ -268,6 +280,119 @@ function getRhythmApproximation(
   };
 }
 
+function getTripletCandidate(
+  rawStartTicks: number,
+  rawDurationTicks: number,
+  ticksPerQuarter: number,
+): { startTick: number; endTick: number; durationTicks: number } | undefined {
+  const tripletDurationTicks = ticksPerQuarter / EIGHTH_TRIPLET_TOTAL_NOTES;
+  const toleranceTicks = Math.max(
+    1,
+    ticksPerQuarter / TRIPLET_TOLERANCE_DIVISOR,
+  );
+  const startTick =
+    Math.round(rawStartTicks / tripletDurationTicks) * tripletDurationTicks;
+
+  if (Math.abs(rawStartTicks - startTick) > toleranceTicks) return undefined;
+  if (Math.abs(rawDurationTicks - tripletDurationTicks) > toleranceTicks) {
+    return undefined;
+  }
+
+  return {
+    startTick: Math.round(startTick),
+    endTick: Math.round(startTick + tripletDurationTicks),
+    durationTicks: Math.round(tripletDurationTicks),
+  };
+}
+
+function getTripletPosition(
+  note: QuantizedNote,
+  ticksPerQuarter: number,
+): { anchorTick: number; position: number } | null {
+  if (!note.tupletCandidate) return null;
+
+  const tripletDurationTicks = note.tupletCandidate.durationTicks;
+  const anchorTick =
+    Math.floor(note.startTick / ticksPerQuarter) * ticksPerQuarter;
+  const position = Math.round(
+    (note.startTick - anchorTick) / tripletDurationTicks,
+  );
+
+  if (position < 0 || position >= EIGHTH_TRIPLET_TOTAL_NOTES) return null;
+  if (
+    Math.abs(note.startTick - (anchorTick + position * tripletDurationTicks)) >
+    1
+  ) {
+    return null;
+  }
+
+  return { anchorTick, position };
+}
+
+function assignSupportedTuplets(
+  notes: QuantizedNote[],
+  ticksPerQuarter: number,
+): void {
+  const candidates = new Map<
+    string,
+    { notes: QuantizedNote[]; positions: Set<number> }
+  >();
+
+  for (const note of notes) {
+    const tripletPosition = getTripletPosition(note, ticksPerQuarter);
+    if (!tripletPosition) continue;
+
+    const staff = note.midi >= MIDDLE_C ? "treble" : "bass";
+    const key = [staff, note.voiceIndex ?? 0, tripletPosition.anchorTick].join(
+      ":",
+    );
+    const group = candidates.get(key) ?? { notes: [], positions: new Set() };
+    group.notes.push(note);
+    group.positions.add(tripletPosition.position);
+    candidates.set(key, group);
+  }
+
+  for (const [key, group] of candidates) {
+    if (group.positions.size !== EIGHTH_TRIPLET_TOTAL_NOTES) continue;
+
+    const tuplet: NotationTuplet = {
+      id: `tuplet:${key}`,
+      totalNotes: EIGHTH_TRIPLET_TOTAL_NOTES,
+      notesOccupied: EIGHTH_TRIPLET_NOTES_OCCUPIED,
+    };
+    group.notes.forEach((note) => {
+      note.tuplet = tuplet;
+    });
+  }
+}
+
+function finalizeQuantizedTiming(
+  notes: QuantizedNote[],
+  ticksPerQuarter: number,
+): void {
+  for (const note of notes) {
+    if (!note.tuplet && note.tupletCandidate) {
+      note.startTick = note.standardStartTick;
+      note.endTick = note.standardEndTick;
+    }
+
+    const minimumDurationTicks = ticksPerQuarter / QUANTIZE_GRID;
+    const durationTicks = Math.max(
+      note.endTick - note.startTick,
+      minimumDurationTicks,
+    );
+    note.endTick = note.startTick + durationTicks;
+
+    note.rhythmApproximation = note.tuplet
+      ? undefined
+      : getRhythmApproximation(
+          note.rawDurationTicks,
+          durationTicks,
+          ticksPerQuarter,
+        );
+  }
+}
+
 function makeRestKey(clef: Clef): string {
   return clef === "treble" ? "b/4" : "d/3";
 }
@@ -310,6 +435,27 @@ function createNoteEvents(
   durationTicks: number,
   ticksPerQuarter: number,
 ): NotationNote[] {
+  if (segment.tuplet) {
+    return [
+      {
+        midi: segment.midi,
+        isRest: false,
+        startTick: segment.startTick,
+        durationTicks,
+        vexKey: segment.vexKey,
+        accidental: segment.accidental,
+        vexDuration: "8",
+        dots: 0,
+        tied: segment.tiedToNext,
+        tiedFromPrevious: segment.tiedFromPrevious,
+        tiedToNext: segment.tiedToNext,
+        voiceIndex: segment.voiceIndex,
+        stemDirection: segment.stemDirection,
+        tuplet: segment.tuplet,
+      },
+    ];
+  }
+
   const pieces = splitTicksIntoDurations(durationTicks, ticksPerQuarter);
   const events: NotationNote[] = [];
   let cursor = segment.startTick;
@@ -333,6 +479,7 @@ function createNoteEvents(
       voiceIndex: segment.voiceIndex,
       stemDirection: segment.stemDirection,
       rhythmApproximation: segment.rhythmApproximation,
+      tuplet: segment.tuplet,
     });
     cursor += piece.ticks;
   });
@@ -644,39 +791,48 @@ export function convertToNotation(
 
   // Quantize all notes.
   const quantized: QuantizedNote[] = notes.map((note) => {
-    const startTick = quantizeToGrid(note.time, bpm, ticksPerQuarter);
-    const endTick = quantizeToGrid(
-      note.time + note.duration,
-      bpm,
-      ticksPerQuarter,
-    );
-    const durationTicks = Math.max(
-      endTick - startTick,
-      ticksPerQuarter / QUANTIZE_GRID,
-    );
+    const rawStartTicks = secondsToTicks(note.time, bpm, ticksPerQuarter);
     const rawDurationTicks = secondsToTicks(
       note.duration,
       bpm,
       ticksPerQuarter,
+    );
+    const standardStartTick = quantizeToGrid(note.time, bpm, ticksPerQuarter);
+    const standardEndTick = quantizeToGrid(
+      note.time + note.duration,
+      bpm,
+      ticksPerQuarter,
+    );
+    const tripletCandidate = getTripletCandidate(
+      rawStartTicks,
+      rawDurationTicks,
+      ticksPerQuarter,
+    );
+    const startTick = tripletCandidate?.startTick ?? standardStartTick;
+    const endTick = tripletCandidate?.endTick ?? standardEndTick;
+    const durationTicks = Math.max(
+      endTick - startTick,
+      ticksPerQuarter / QUANTIZE_GRID,
     );
 
     return {
       midi: note.midi,
       startTick,
       endTick: startTick + durationTicks,
+      standardStartTick,
+      standardEndTick,
+      rawDurationTicks,
+      tupletCandidate: tripletCandidate,
       vexKey: midiToNotationKey(note.midi, keySignature),
       accidental: getDisplayAccidental(
         midiToNotationKey(note.midi, keySignature),
         keySignature,
       ),
-      rhythmApproximation: getRhythmApproximation(
-        rawDurationTicks,
-        durationTicks,
-        ticksPerQuarter,
-      ),
     };
   });
   const voicedQuantized = assignQuantizedNotesToVoices(quantized);
+  assignSupportedTuplets(voicedQuantized, ticksPerQuarter);
+  finalizeQuantizedTiming(voicedQuantized, ticksPerQuarter);
   const warnings: NotationWarning[] = voicedQuantized.flatMap((note) =>
     note.rhythmApproximation
       ? [
@@ -709,6 +865,7 @@ export function convertToNotation(
           durationTicks: segmentEnd - segmentStart,
           vexKey: n.vexKey,
           accidental: n.accidental,
+          tuplet: n.tuplet,
           rhythmApproximation: n.rhythmApproximation,
           voiceIndex: n.voiceIndex,
           stemDirection: n.stemDirection,

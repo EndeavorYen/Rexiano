@@ -13,7 +13,11 @@ import { useTranslation } from "@renderer/i18n/useTranslation";
 import { usePlaybackStore } from "@renderer/stores/usePlaybackStore";
 import type { NotationData, NotationMeasure, DisplayMode } from "./types";
 import { getCursorPosition, getMeasureWindow } from "./CursorSync";
-import { MIN_MEASURE_WIDTH, calcMeasureSlotLayout } from "./sheetMusicUtils";
+import {
+  MIN_MEASURE_WIDTH,
+  calcMeasureSlotLayout,
+  calcSheetRenderWidth,
+} from "./sheetMusicUtils";
 import {
   groupNotesIntoStaffVoices,
   type ChordGroup,
@@ -56,6 +60,8 @@ interface RenderedVoice {
   groups: ChordGroup[];
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   vexNotes: any[];
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  tuplets: any[];
 }
 
 interface RenderedStaff {
@@ -162,6 +168,67 @@ function drawTies(
       vexNotes[i + 1],
     );
   }
+}
+
+function makeTuplets(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  VF: any,
+  groups: ChordGroup[],
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  vexNotes: any[],
+  stemDirection?: 1 | -1,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+): any[] {
+  const { Tuplet } = VF;
+  const groupsByTuplet = new Map<
+    string,
+    { groups: ChordGroup[]; vexNotes: unknown[] }
+  >();
+
+  groups.forEach((group, index) => {
+    if (!group.tuplet) return;
+    const entry = groupsByTuplet.get(group.tuplet.id) ?? {
+      groups: [],
+      vexNotes: [],
+    };
+    entry.groups.push(group);
+    entry.vexNotes.push(vexNotes[index]);
+    groupsByTuplet.set(group.tuplet.id, entry);
+  });
+
+  const location =
+    stemDirection === -1 ? Tuplet.LOCATION_BOTTOM : Tuplet.LOCATION_TOP;
+  const tuplets: unknown[] = [];
+  for (const entry of groupsByTuplet.values()) {
+    const tupletMeta = entry.groups[0]?.tuplet;
+    if (!tupletMeta) continue;
+    if (entry.vexNotes.length !== tupletMeta.totalNotes) continue;
+
+    tuplets.push(
+      new Tuplet(entry.vexNotes, {
+        numNotes: tupletMeta.totalNotes,
+        notesOccupied: tupletMeta.notesOccupied,
+        location,
+      }),
+    );
+  }
+
+  return tuplets;
+}
+
+function drawTuplets(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  context: any,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  tuplets: any[],
+): void {
+  tuplets.forEach((tuplet) => {
+    try {
+      tuplet.setContext(context).draw();
+    } catch {
+      // Tuplets should enhance notation, not blank an otherwise readable staff.
+    }
+  });
 }
 
 function drawTieBetweenGroups(
@@ -328,19 +395,29 @@ function renderMeasure(
     .draw();
 
   const trebleVoices = groupNotesIntoStaffVoices(measure.trebleNotes).map(
-    (groups): RenderedVoice => ({
-      voiceIndex: groups[0]?.voiceIndex ?? 0,
-      groups,
-      vexNotes: groups.map((chord) => makeStaveNote(VF, chord, "treble")),
-    }),
+    (groups): RenderedVoice => {
+      const vexNotes = groups.map((chord) =>
+        makeStaveNote(VF, chord, "treble"),
+      );
+      return {
+        voiceIndex: groups[0]?.voiceIndex ?? 0,
+        groups,
+        vexNotes,
+        tuplets: makeTuplets(VF, groups, vexNotes, groups[0]?.stemDirection),
+      };
+    },
   );
 
   const bassVoices = groupNotesIntoStaffVoices(measure.bassNotes).map(
-    (groups): RenderedVoice => ({
-      voiceIndex: groups[0]?.voiceIndex ?? 0,
-      groups,
-      vexNotes: groups.map((chord) => makeStaveNote(VF, chord, "bass")),
-    }),
+    (groups): RenderedVoice => {
+      const vexNotes = groups.map((chord) => makeStaveNote(VF, chord, "bass"));
+      return {
+        voiceIndex: groups[0]?.voiceIndex ?? 0,
+        groups,
+        vexNotes,
+        tuplets: makeTuplets(VF, groups, vexNotes, groups[0]?.stemDirection),
+      };
+    },
   );
 
   const trebleVexVoices = trebleVoices.map((renderedVoice) => {
@@ -381,10 +458,12 @@ function renderMeasure(
   trebleVoices.forEach((voice) => {
     drawBeams(VF, context, voice.groups, voice.vexNotes);
     drawTies(VF, context, voice.groups, voice.vexNotes);
+    drawTuplets(context, voice.tuplets);
   });
   bassVoices.forEach((voice) => {
     drawBeams(VF, context, voice.groups, voice.vexNotes);
     drawTies(VF, context, voice.groups, voice.vexNotes);
+    drawTuplets(context, voice.tuplets);
   });
 
   return {
@@ -443,11 +522,6 @@ export function SheetMusicPanel({
   const svgHostRef = useRef<HTMLDivElement>(null);
   const [containerWidth, setContainerWidth] = useState(800);
   const hidden = mode === "falling";
-  const renderWidth = Math.max(
-    containerWidth,
-    LEFT_MARGIN * 2 + MIN_MEASURE_WIDTH * DISPLAY_MEASURE_COUNT,
-  );
-  const svgWidth = renderWidth + SVG_BOUNDS_GUARD;
   const cursorPosition = useMemo(() => {
     if (!notationData) return null;
     return getCursorPosition(currentTime, notationData);
@@ -458,6 +532,23 @@ export function SheetMusicPanel({
     if (!notationData || notationData.measures.length === 0) return [];
     return getMeasureWindow(activeMeasureIndex, notationData.measures.length);
   }, [notationData, activeMeasureIndex]);
+
+  const renderWidth = useMemo(() => {
+    if (!notationData) {
+      return Math.max(
+        containerWidth,
+        LEFT_MARGIN * 2 + MIN_MEASURE_WIDTH * DISPLAY_MEASURE_COUNT,
+      );
+    }
+    return calcSheetRenderWidth(
+      containerWidth,
+      notationData.measures,
+      visibleMeasures,
+      LEFT_MARGIN,
+      DISPLAY_MEASURE_COUNT,
+    );
+  }, [containerWidth, notationData, visibleMeasures]);
+  const svgWidth = renderWidth + SVG_BOUNDS_GUARD;
 
   const measureSlotLayout = useMemo(() => {
     if (!notationData) return [];

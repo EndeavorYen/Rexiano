@@ -342,6 +342,52 @@ describe("MidiToNotation", () => {
       });
     });
 
+    it("renders complete eighth-note triplets as tuplets without approximation warnings", () => {
+      const tripletDurationSeconds = 60 / 120 / 3;
+      const notes = [
+        {
+          midi: 60,
+          name: "C4",
+          time: 0,
+          duration: tripletDurationSeconds,
+          velocity: 80,
+        },
+        {
+          midi: 62,
+          name: "D4",
+          time: tripletDurationSeconds,
+          duration: tripletDurationSeconds,
+          velocity: 80,
+        },
+        {
+          midi: 64,
+          name: "E4",
+          time: tripletDurationSeconds * 2,
+          duration: tripletDurationSeconds,
+          velocity: 80,
+        },
+      ];
+
+      const result = convertToNotation(notes, 120, 480, 4, 4);
+      const notesOnly = result.measures[0].trebleNotes.filter((n) => !n.isRest);
+
+      expect(notesOnly).toHaveLength(3);
+      expect(notesOnly.map((note) => note.startTick)).toEqual([0, 160, 320]);
+      expect(notesOnly.map((note) => note.durationTicks)).toEqual([
+        160, 160, 160,
+      ]);
+      expect(notesOnly.map((note) => note.vexDuration)).toEqual([
+        "8",
+        "8",
+        "8",
+      ]);
+      expect(notesOnly.map((note) => note.tuplet?.totalNotes)).toEqual([
+        3, 3, 3,
+      ]);
+      expect(new Set(notesOnly.map((note) => note.tuplet?.id)).size).toBe(1);
+      expect(result.warnings).toEqual([]);
+    });
+
     it("marks triplet-like durations as deterministic unsupported rhythm approximations", () => {
       const notes = [
         // At 120 BPM, 1/3 of a quarter note is 160 ticks, which the

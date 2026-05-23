@@ -13,6 +13,7 @@ interface SheetSvgStats {
   invalidBoxCount: number;
   width: number;
   height: number;
+  hostClientWidth: number;
   minX: number;
   maxX: number;
   distinctColumns: number;
@@ -107,6 +108,7 @@ async function readSheetSvgStats(
 
     const width = Number(svg.getAttribute("width") ?? 0);
     const height = Number(svg.getAttribute("height") ?? 0);
+    const hostClientWidth = host?.clientWidth ?? 0;
     const nodes = svg.querySelectorAll(
       "path,rect,ellipse,circle,line,polygon,polyline,text",
     );
@@ -157,12 +159,21 @@ async function readSheetSvgStats(
       invalidBoxCount,
       width,
       height,
+      hostClientWidth,
       minX,
       maxX,
       distinctColumns: columns.size,
       leftSystemGlyphCount,
     };
   });
+}
+
+async function readDiagnosticTitle(
+  appPage: Parameters<typeof waitForUiSettled>[0],
+): Promise<string | null> {
+  const notice = appPage.getByTestId("midi-diagnostic-notice");
+  if ((await notice.count()) === 0) return null;
+  return notice.first().getAttribute("title");
 }
 
 test.describe("Sheet music visual fixtures", () => {
@@ -245,5 +256,55 @@ test.describe("Sheet music visual fixtures", () => {
     expect(stats?.invalidBoxCount).toBe(0);
     expect(stats?.minX).toBeGreaterThanOrEqual(-2);
     expect(stats?.maxX).toBeLessThanOrEqual((stats?.width ?? 0) + 2);
+  });
+
+  test("built-in notation metadata suppresses missing meter diagnostics", async ({
+    appPage,
+  }) => {
+    await appPage.setViewportSize({ width: 1600, height: 900 });
+
+    for (const songId of ["hot-cross-buns", "minuet-in-g", "fur-elise"]) {
+      await loadBuiltInSongSheet(appPage, songId);
+
+      const diagnosticTitle = await readDiagnosticTitle(appPage);
+      expect(diagnosticTitle ?? "").not.toContain(
+        "No time signature metadata was found.",
+      );
+
+      const stats = await readSheetSvgStats(appPage);
+      expect(stats).not.toBeNull();
+      expect(stats?.leftSystemGlyphCount).toBeGreaterThanOrEqual(12);
+    }
+  });
+
+  test("moonlight triplets render without notation approximation warnings and with expanded spacing", async ({
+    appPage,
+  }) => {
+    await appPage.setViewportSize({ width: 1600, height: 900 });
+    await loadBuiltInSongSheet(appPage, "moonlight-sonata");
+
+    const diagnosticTitle = await readDiagnosticTitle(appPage);
+    expect(diagnosticTitle ?? "").not.toContain("Sheet notation approximates");
+
+    const stats = await readSheetSvgStats(appPage);
+    expect(stats).not.toBeNull();
+    expect(stats?.width).toBeGreaterThan((stats?.hostClientWidth ?? 0) + 900);
+    expect(stats?.glyphCount).toBeGreaterThan(120);
+    expect(stats?.visibleGlyphCount).toBeGreaterThan(80);
+    expect(stats?.invalidBoxCount).toBe(0);
+    expect(stats?.maxX).toBeLessThanOrEqual((stats?.width ?? 0) + 2);
+  });
+
+  test("simple built-in sheets stay compact after dense spacing changes", async ({
+    appPage,
+  }) => {
+    await appPage.setViewportSize({ width: 1600, height: 900 });
+    await loadBuiltInSongSheet(appPage, "hot-cross-buns");
+
+    const stats = await readSheetSvgStats(appPage);
+    expect(stats).not.toBeNull();
+    expect(stats?.width).toBeLessThanOrEqual(
+      (stats?.hostClientWidth ?? 0) + 300,
+    );
   });
 });

@@ -36,11 +36,22 @@ describe("builtin notation metadata", () => {
       timeSignatureBottom: 4,
       keySignature: 2,
     });
+
+    expect(parseBuiltinNotationMetadata(["exercise", "4-4"])).toMatchObject({
+      timeSignatureTop: 4,
+      timeSignatureBottom: 4,
+    });
   });
 
   it("maps minor key tags by relative key signature", () => {
     expect(parseBuiltinNotationMetadata(["a-minor", "3-4"])).toMatchObject({
       keySignature: 0,
+    });
+
+    expect(parseBuiltinNotationMetadata(["c#-minor", "2-2"])).toMatchObject({
+      timeSignatureTop: 2,
+      timeSignatureBottom: 2,
+      keySignature: 4,
     });
   });
 
@@ -64,6 +75,58 @@ describe("builtin notation metadata", () => {
       timeSignatureTop: 3,
       timeSignatureBottom: 4,
       keySignature: 2,
+    });
+  });
+
+  it("resolves verified built-in repertoire metadata tags", () => {
+    const songs = [
+      builtinSong({
+        id: "minuet-in-g",
+        file: "minuet-in-g.mid",
+        title: "Minuet in G Major",
+        tags: ["classical", "baroque", "g-major", "3-4", "level-5"],
+      }),
+      builtinSong({
+        id: "canon-in-d",
+        file: "canon-in-d.mid",
+        title: "Canon in D",
+        tags: ["classical", "baroque", "d-major", "4-4", "level-5"],
+      }),
+      builtinSong({
+        id: "fur-elise",
+        file: "fur-elise.mid",
+        title: "Fur Elise",
+        tags: ["classical", "romantic", "a-minor", "3-8", "level-5"],
+      }),
+      builtinSong({
+        id: "moonlight-sonata",
+        file: "moonlight-sonata.mid",
+        title: "Moonlight Sonata (1st mvt)",
+        tags: ["classical", "romantic", "c#-minor", "2-2", "level-7"],
+      }),
+    ];
+
+    expect(resolveBuiltinNotationMetadata("minuet-in-g.mid", songs)).toEqual({
+      timeSignatureTop: 3,
+      timeSignatureBottom: 4,
+      keySignature: 1,
+    });
+    expect(resolveBuiltinNotationMetadata("canon-in-d.mid", songs)).toEqual({
+      timeSignatureTop: 4,
+      timeSignatureBottom: 4,
+      keySignature: 2,
+    });
+    expect(resolveBuiltinNotationMetadata("fur-elise.mid", songs)).toEqual({
+      timeSignatureTop: 3,
+      timeSignatureBottom: 8,
+      keySignature: 0,
+    });
+    expect(
+      resolveBuiltinNotationMetadata("moonlight-sonata.mid", songs),
+    ).toEqual({
+      timeSignatureTop: 2,
+      timeSignatureBottom: 2,
+      keySignature: 4,
     });
   });
 

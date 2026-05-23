@@ -10,6 +10,10 @@ export interface MeasureSlotLayout {
   noteCount: number;
 }
 
+const SIMPLE_MEASURE_TARGET_WIDTH = 220;
+const DENSE_WEIGHT_PIXEL_FACTOR = 36;
+const MAX_DENSE_MEASURE_WIDTH = 1800;
+
 /**
  * Allocate horizontal widths to measure slots proportionally by note density.
  * Each slot gets at least MIN_MEASURE_WIDTH.
@@ -64,6 +68,70 @@ export function countRenderableNotes(
   return [...measure.trebleNotes, ...measure.bassNotes].filter(
     (note) => !note.isRest,
   ).length;
+}
+
+function calcMeasureSpacingWeight(
+  measure: NotationMeasure | undefined,
+): number {
+  if (!measure) return 1;
+
+  const notes = [...measure.trebleNotes, ...measure.bassNotes].filter(
+    (note) => !note.isRest,
+  );
+  if (notes.length === 0) return 1;
+
+  const accidentalCount = notes.filter((note) => note.accidental).length;
+  const tupletCount = new Set(
+    notes.map((note) => note.tuplet?.id).filter(Boolean),
+  ).size;
+  const voiceCount = new Set(
+    notes.map((note) => note.voiceIndex ?? 0).filter(Number.isFinite),
+  ).size;
+
+  return (
+    notes.length +
+    accidentalCount * 0.75 +
+    tupletCount * 2 +
+    Math.max(0, voiceCount - 1) * 6
+  );
+}
+
+function calcMeasureTargetWidth(measure: NotationMeasure | undefined): number {
+  const weight = calcMeasureSpacingWeight(measure);
+  return Math.min(
+    MAX_DENSE_MEASURE_WIDTH,
+    Math.max(
+      MIN_MEASURE_WIDTH,
+      SIMPLE_MEASURE_TARGET_WIDTH + weight * DENSE_WEIGHT_PIXEL_FACTOR,
+    ),
+  );
+}
+
+export function calcSheetRenderWidth(
+  containerWidth: number,
+  measures: NotationMeasure[],
+  visibleMeasureIndices: number[],
+  leftMargin: number,
+  displayMeasureCount: number,
+): number {
+  const minimumWidth =
+    leftMargin * 2 + MIN_MEASURE_WIDTH * Math.max(displayMeasureCount, 0);
+  const baseWidth = Math.max(containerWidth, minimumWidth);
+  if (displayMeasureCount <= 0) return baseWidth;
+
+  const slotMeasureIndices = Array.from(
+    { length: displayMeasureCount },
+    (_, slot) => visibleMeasureIndices[slot],
+  );
+  const denseTargetWidth =
+    leftMargin * 2 +
+    slotMeasureIndices.reduce((sum, measureIndex) => {
+      const measure =
+        measureIndex === undefined ? undefined : measures[measureIndex];
+      return sum + calcMeasureTargetWidth(measure);
+    }, 0);
+
+  return Math.max(baseWidth, Math.ceil(denseTargetWidth));
 }
 
 export function calcMeasureSlotLayout(

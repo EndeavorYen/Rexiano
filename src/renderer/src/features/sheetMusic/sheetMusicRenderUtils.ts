@@ -1,4 +1,4 @@
-import type { NotationNote } from "./types";
+import type { NotationNote, NotationTuplet } from "./types";
 
 export interface ChordGroup {
   keys: string[];
@@ -12,6 +12,14 @@ export interface ChordGroup {
   tiedToNext: boolean;
   voiceIndex: number;
   stemDirection?: 1 | -1;
+  tuplet?: NotationTuplet;
+}
+
+function tupletsMatch(
+  a: NotationTuplet | undefined,
+  b: NotationTuplet | undefined,
+): boolean {
+  return a?.id === b?.id;
 }
 
 /**
@@ -38,7 +46,8 @@ export function groupNotesIntoChords(notes: NotationNote[]): ChordGroup[] {
       last.voiceIndex === (note.voiceIndex ?? 0) &&
       last.startTick === note.startTick &&
       last.duration === note.vexDuration &&
-      last.dots === note.dots
+      last.dots === note.dots &&
+      tupletsMatch(last.tuplet, note.tuplet)
     ) {
       last.keys.push(note.vexKey);
       last.accidentals.push(note.accidental);
@@ -58,6 +67,7 @@ export function groupNotesIntoChords(notes: NotationNote[]): ChordGroup[] {
         tiedToNext: note.tiedToNext,
         voiceIndex: note.voiceIndex ?? 0,
         stemDirection: note.stemDirection,
+        tuplet: note.tuplet,
       });
     }
   }

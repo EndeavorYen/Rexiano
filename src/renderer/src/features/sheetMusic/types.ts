@@ -24,6 +24,16 @@ export interface NotationRhythmApproximation {
   approximatedDurationTicks: number;
 }
 
+/** Supported tuplet metadata consumed by the VexFlow renderer */
+export interface NotationTuplet {
+  /** Stable group id shared by all rendered notes in the tuplet */
+  id: string;
+  /** Number of rendered notes in the tuplet, e.g. 3 for triplets */
+  totalNotes: number;
+  /** Standard notes occupied by the tuplet, e.g. 2 for eighth-note triplets */
+  notesOccupied: number;
+}
+
 /** A conversion warning that callers can surface or inspect */
 export interface NotationWarning extends NotationRhythmApproximation {
   /** MIDI note number associated with the approximation */
@@ -62,6 +72,8 @@ export interface NotationNote {
   stemDirection?: StemDirection;
   /** Explicit marker for unsupported tuplets rendered with fallback durations */
   rhythmApproximation?: NotationRhythmApproximation;
+  /** Supported tuplet group rendered with VexFlow Tuplet */
+  tuplet?: NotationTuplet;
 }
 
 /** A measure (bar) of quantized notes */

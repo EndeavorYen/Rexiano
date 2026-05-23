@@ -11,6 +11,10 @@ import { saveSongPracticeSetupPatchForSong } from "./songPracticeSetup";
 
 const TRACK_COLOR_FALLBACKS = ["#9b7fd4", "#c084cf", "#7ba4d9", "#a8d4a0"];
 
+interface TrackSelectorProps {
+  compact?: boolean;
+}
+
 function colorInputValue(
   color: string | undefined,
   trackIndex: number,
@@ -21,7 +25,9 @@ function colorInputValue(
   return TRACK_COLOR_FALLBACKS[trackIndex % TRACK_COLOR_FALLBACKS.length];
 }
 
-export function TrackSelector(): React.JSX.Element {
+export function TrackSelector({
+  compact = false,
+}: TrackSelectorProps): React.JSX.Element {
   const { t } = useTranslation();
   const song = useSongStore((s) => s.song);
   const mode = usePracticeStore((s) => s.mode);
@@ -297,7 +303,9 @@ export function TrackSelector(): React.JSX.Element {
                 onChange={(e) =>
                   handleTrackPreferenceChange(i, { color: e.target.value })
                 }
-                className="h-9 w-9 cursor-pointer rounded border-0 bg-transparent p-1"
+                className={`h-9 w-9 cursor-pointer rounded border-0 bg-transparent p-1 ${
+                  compact ? "-translate-y-1" : ""
+                }`}
                 data-testid="track-color-input"
                 aria-label={t("practice.trackColor", { n: i + 1 })}
               />
@@ -308,7 +316,9 @@ export function TrackSelector(): React.JSX.Element {
                   soloTrack(i);
                 }}
                 disabled={isBackground}
-                className="min-h-9 px-2 py-0.5 rounded text-[9px] font-body font-medium cursor-pointer"
+                className={`min-h-9 px-2 py-0.5 rounded text-[9px] font-body font-medium cursor-pointer ${
+                  compact ? "-translate-y-1" : ""
+                }`}
                 data-testid="track-solo-toggle"
                 style={{
                   color: isBackground

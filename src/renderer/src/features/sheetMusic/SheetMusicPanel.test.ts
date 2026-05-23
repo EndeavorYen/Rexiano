@@ -1,9 +1,17 @@
 import { describe, it, expect } from "vitest";
-import { calcMeasureSlotLayout, calcMeasureWidths } from "./sheetMusicUtils";
+import {
+  calcMeasureSlotLayout,
+  calcMeasureWidths,
+  calcSheetRenderWidth,
+} from "./sheetMusicUtils";
 import { groupNotesIntoStaffVoices } from "./sheetMusicRenderUtils";
 import type { NotationMeasure, NotationNote } from "./types";
 
-function makeNote(startTick: number, midi: number): NotationNote {
+function makeNote(
+  startTick: number,
+  midi: number,
+  overrides: Partial<NotationNote> = {},
+): NotationNote {
   return {
     midi,
     isRest: false,
@@ -16,6 +24,7 @@ function makeNote(startTick: number, midi: number): NotationNote {
     tied: false,
     tiedFromPrevious: false,
     tiedToNext: false,
+    ...overrides,
   };
 }
 
@@ -100,6 +109,50 @@ describe("calcMeasureSlotLayout", () => {
   });
 });
 
+describe("calcSheetRenderWidth", () => {
+  it("keeps simple four-measure windows at the container width", () => {
+    expect(
+      calcSheetRenderWidth(
+        1600,
+        [makeMeasure(0, 4), makeMeasure(1, 4), makeMeasure(2, 4)],
+        [0, 1, 2],
+        28,
+        4,
+      ),
+    ).toBe(1600);
+  });
+
+  it("expands dense accidental-heavy windows beyond the container width", () => {
+    const denseMeasures = [
+      {
+        ...makeMeasure(0, 24),
+        trebleNotes: Array.from({ length: 24 }, (_, index) =>
+          makeNote(index * 80, 60 + (index % 12), {
+            accidental: index % 2 === 0 ? "#" : "n",
+            voiceIndex: index % 2,
+            stemDirection: index % 2 === 0 ? 1 : -1,
+            tuplet:
+              index < 12
+                ? {
+                    id: `triplet-${Math.floor(index / 3)}`,
+                    totalNotes: 3,
+                    notesOccupied: 2,
+                  }
+                : undefined,
+          }),
+        ),
+      },
+      makeMeasure(1, 4),
+      makeMeasure(2, 4),
+      makeMeasure(3, 4),
+    ];
+
+    expect(
+      calcSheetRenderWidth(1600, denseMeasures, [0, 1, 2, 3], 28, 4),
+    ).toBeGreaterThan(2200);
+  });
+});
+
 describe("groupNotesIntoStaffVoices", () => {
   it("keeps independent same-tick events in separate rendered voices", () => {
     const voices = groupNotesIntoStaffVoices([
@@ -144,5 +197,30 @@ describe("groupNotesIntoStaffVoices", () => {
       keys: ["c/4", "e/4"],
       voiceIndex: 0,
     });
+  });
+
+  it("preserves tuplet metadata while grouping rendered chord voices", () => {
+    const tuplet = { id: "triplet-1", totalNotes: 3, notesOccupied: 2 };
+    const voices = groupNotesIntoStaffVoices([
+      {
+        ...makeNote(0, 60, {
+          vexKey: "c/4",
+          durationTicks: 160,
+          vexDuration: "8",
+          tuplet,
+        }),
+      },
+      {
+        ...makeNote(160, 62, {
+          vexKey: "d/4",
+          durationTicks: 160,
+          vexDuration: "8",
+          tuplet,
+        }),
+      },
+    ]);
+
+    expect(voices[0][0].tuplet).toEqual(tuplet);
+    expect(voices[0][1].tuplet).toEqual(tuplet);
   });
 });

@@ -8,7 +8,7 @@
     "category": "popular",
     "grade": 0,
     "durationSeconds": 14,
-    "tags": ["traditional", "melody", "beginner", "level-0"]
+    "tags": ["traditional", "melody", "beginner", "c-major", "4-4", "level-0"]
   },
   {
     "id": "au-clair-de-la-lune",
@@ -19,7 +19,7 @@
     "category": "popular",
     "grade": 0,
     "durationSeconds": 20,
-    "tags": ["traditional", "melody", "french", "level-0"]
+    "tags": ["traditional", "melody", "french", "c-major", "4-4", "level-0"]
   },
   {
     "id": "c-major-scale",
@@ -30,7 +30,7 @@
     "category": "exercise",
     "grade": 1,
     "durationSeconds": 8,
-    "tags": ["exercise", "scale", "level-1"]
+    "tags": ["exercise", "scale", "c-major", "4-4", "level-1"]
   },
   {
     "id": "mary-had-a-little-lamb",
@@ -41,7 +41,7 @@
     "category": "popular",
     "grade": 1,
     "durationSeconds": 18,
-    "tags": ["traditional", "melody", "beginner", "level-1"]
+    "tags": ["traditional", "melody", "beginner", "c-major", "4-4", "level-1"]
   },
   {
     "id": "london-bridge",
@@ -52,7 +52,7 @@
     "category": "popular",
     "grade": 2,
     "durationSeconds": 16,
-    "tags": ["traditional", "melody", "level-2"]
+    "tags": ["traditional", "melody", "c-major", "4-4", "level-2"]
   },
   {
     "id": "jingle-bells",
@@ -63,7 +63,7 @@
     "category": "holiday",
     "grade": 2,
     "durationSeconds": 16,
-    "tags": ["holiday", "christmas", "melody", "level-2"]
+    "tags": ["holiday", "christmas", "melody", "c-major", "4-4", "level-2"]
   },
   {
     "id": "ode-to-joy",
@@ -74,7 +74,7 @@
     "category": "classical",
     "grade": 2,
     "durationSeconds": 16,
-    "tags": ["classical", "melody", "level-2"]
+    "tags": ["classical", "melody", "c-major", "4-4", "level-2"]
   },
   {
     "id": "happy-birthday",
@@ -85,7 +85,7 @@
     "category": "popular",
     "grade": 2,
     "durationSeconds": 15,
-    "tags": ["popular", "melody", "level-2"]
+    "tags": ["popular", "melody", "f-major", "3-4", "level-2"]
   },
   {
     "id": "row-row-row",
@@ -96,7 +96,7 @@
     "category": "popular",
     "grade": 2,
     "durationSeconds": 15,
-    "tags": ["traditional", "melody", "level-2"]
+    "tags": ["traditional", "melody", "c-major", "6-8", "level-2"]
   },
   {
     "id": "lavender-blue",
@@ -107,7 +107,7 @@
     "category": "popular",
     "grade": 2,
     "durationSeconds": 22,
-    "tags": ["traditional", "melody", "folk", "level-2"]
+    "tags": ["traditional", "melody", "folk", "c-major", "3-4", "level-2"]
   },
   {
     "id": "twinkle-twinkle",
@@ -118,7 +118,7 @@
     "category": "popular",
     "grade": 2,
     "durationSeconds": 29,
-    "tags": ["traditional", "melody", "level-2"]
+    "tags": ["traditional", "melody", "c-major", "4-4", "level-2"]
   },
   {
     "id": "chopsticks",
@@ -129,7 +129,15 @@
     "category": "popular",
     "grade": 3,
     "durationSeconds": 12,
-    "tags": ["popular", "duet", "classic", "two-hands", "level-3"]
+    "tags": [
+      "popular",
+      "duet",
+      "classic",
+      "c-major",
+      "3-4",
+      "two-hands",
+      "level-3"
+    ]
   },
   {
     "id": "frere-jacques",
@@ -140,7 +148,7 @@
     "category": "popular",
     "grade": 3,
     "durationSeconds": 28,
-    "tags": ["traditional", "french", "two-hands", "level-3"]
+    "tags": ["traditional", "french", "c-major", "4-4", "two-hands", "level-3"]
   },
   {
     "id": "brahms-lullaby",
@@ -162,7 +170,14 @@
     "category": "popular",
     "grade": 3,
     "durationSeconds": 30,
-    "tags": ["traditional", "american", "two-hands", "level-3"]
+    "tags": [
+      "traditional",
+      "american",
+      "c-major",
+      "4-4",
+      "two-hands",
+      "level-3"
+    ]
   },
   {
     "id": "amazing-grace",
@@ -195,7 +210,7 @@
     "category": "classical",
     "grade": 4,
     "durationSeconds": 45,
-    "tags": ["classical", "lyrical", "two-hands", "level-4"]
+    "tags": ["classical", "lyrical", "c-major", "4-4", "two-hands", "level-4"]
   },
   {
     "id": "fur-elise",
@@ -206,7 +221,7 @@
     "category": "classical",
     "grade": 5,
     "durationSeconds": 35,
-    "tags": ["classical", "romantic", "level-5"]
+    "tags": ["classical", "romantic", "a-minor", "3-8", "level-5"]
   },
   {
     "id": "minuet-in-g",
@@ -217,7 +232,7 @@
     "category": "classical",
     "grade": 5,
     "durationSeconds": 15,
-    "tags": ["classical", "baroque", "two-hands", "level-5"]
+    "tags": ["classical", "baroque", "g-major", "3-4", "two-hands", "level-5"]
   },
   {
     "id": "canon-in-d",
@@ -228,7 +243,7 @@
     "category": "classical",
     "grade": 5,
     "durationSeconds": 12,
-    "tags": ["classical", "baroque", "two-hands", "level-5"]
+    "tags": ["classical", "baroque", "d-major", "4-4", "two-hands", "level-5"]
   },
   {
     "id": "prelude-in-c",
@@ -239,7 +254,15 @@
     "category": "classical",
     "grade": 6,
     "durationSeconds": 14,
-    "tags": ["classical", "baroque", "arpeggiated", "two-hands", "level-6"]
+    "tags": [
+      "classical",
+      "baroque",
+      "arpeggiated",
+      "c-major",
+      "4-4",
+      "two-hands",
+      "level-6"
+    ]
   },
   {
     "id": "clementi-sonatina",
@@ -250,7 +273,15 @@
     "category": "classical",
     "grade": 6,
     "durationSeconds": 30,
-    "tags": ["classical", "sonatina", "alberti-bass", "two-hands", "level-6"]
+    "tags": [
+      "classical",
+      "sonatina",
+      "alberti-bass",
+      "c-major",
+      "4-4",
+      "two-hands",
+      "level-6"
+    ]
   },
   {
     "id": "german-dance",
@@ -272,7 +303,7 @@
     "category": "classical",
     "grade": 7,
     "durationSeconds": 35,
-    "tags": ["classical", "romantic", "two-hands", "level-7"]
+    "tags": ["classical", "romantic", "c#-minor", "2-2", "two-hands", "level-7"]
   },
   {
     "id": "turkish-march",
@@ -283,6 +314,6 @@
     "category": "classical",
     "grade": 7,
     "durationSeconds": 7,
-    "tags": ["classical", "fast", "level-7"]
+    "tags": ["classical", "fast", "a-minor", "2-4", "level-7"]
   }
 ]
