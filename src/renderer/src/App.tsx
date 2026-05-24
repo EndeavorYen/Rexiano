@@ -7,7 +7,6 @@ import {
   PencilRuler,
   X,
 } from "lucide-react";
-import { parseMidiFile } from "./engines/midi/MidiFileParser";
 import { useSongStore } from "./stores/useSongStore";
 import { useSongLibraryStore } from "./stores/useSongLibraryStore";
 import { usePlaybackStore } from "./stores/usePlaybackStore";
@@ -57,9 +56,9 @@ import { MainMenu } from "./features/mainMenu/MainMenu";
 import { ModeSelectionModal } from "./features/practice/ModeSelectionModal";
 import { CelebrationOverlay } from "./features/practice/CelebrationOverlay";
 import { PianoRollEditor } from "./features/editor/PianoRollEditor";
-import { applyPracticeModeChangeForSong } from "./features/practice/practiceSetupControlActions";
 import { selectNextPracticeAction } from "./features/practice/nextPracticeAction";
 import { getFocusModeExitDecision } from "./features/practice/focusModeExitGuard";
+import { usePostSessionFlow } from "./features/practice/usePostSessionFlow";
 import {
   resolveSongPracticeSetupForSong,
   type TrackPracticePreferences,
@@ -72,17 +71,9 @@ import {
   routeToHash,
   type AppRoute,
 } from "./features/routing/appRoute";
-import {
-  getFileImportErrorGuidance,
-  type FileImportRecoveryActionId,
-  type FileImportErrorGuidance,
-  type FileImportErrorInput,
-} from "./features/fileImport/fileImportErrorGuidance";
+import { useMidiImportActions } from "./features/fileImport/useMidiImportActions";
 import { buildMidiDiagnosticNotice } from "./features/midiDiagnostics/midiDiagnosticNotice";
 
-/** Accepted file extensions for drag-and-drop MIDI import */
-const MIDI_EXTENSIONS = [".mid", ".midi"];
-const CELEBRATION_DURATION_MS = 2200;
 const HEADER_ESTIMATED_HEIGHT = 112;
 const TRANSPORT_ESTIMATED_HEIGHT = 84;
 const TOOLBAR_ESTIMATED_HEIGHT = 72;
@@ -91,11 +82,6 @@ const SPLIT_SHEET_MIN = 168;
 const SPLIT_SHEET_MAX = 272;
 const SPLIT_SHEET_RATIO = 0.31;
 const SPLIT_FALLING_MIN = 72;
-
-interface ImportErrorState {
-  input: FileImportErrorInput;
-  guidance: FileImportErrorGuidance;
-}
 
 function clampNumber(value: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, value));
@@ -188,94 +174,28 @@ function App(): React.JSX.Element {
   }, []);
 
   // ─── Mode selection + celebration + stats flow ────────
-  const [showModeModal, setShowModeModal] = useState(false);
-  const [showCelebration, setShowCelebration] = useState(false);
-  const [showStats, setShowStats] = useState(false);
-  const [completedSessionScore, setCompletedSessionScore] =
-    useState<PracticeScore | null>(null);
   const mode = usePracticeStore((s) => s.mode);
   const speed = usePracticeStore((s) => s.speed);
   const activeTracks = usePracticeStore((s) => s.activeTracks);
   const score = usePracticeStore((s) => s.score);
-  const displayScore = completedSessionScore ?? score;
-
-  // Show mode selection when a new song loads (subscribe pattern avoids
-  // calling setState directly in an effect body).
-  useEffect(() => {
-    return useSongStore.subscribe((state, prev) => {
-      if (state.song !== prev.song && state.song) {
-        setShowModeModal(true);
-        setShowCelebration(false);
-        setShowStats(false);
-        setCompletedSessionScore(null);
-      }
-    });
-  }, []);
-
-  // Detect song end: isPlaying transitions true → false when near end of song.
-  useEffect(() => {
-    return usePlaybackStore.subscribe((state, prev) => {
-      if (prev.isPlaying && !state.isPlaying) {
-        const currentSong = useSongStore.getState().song;
-        const currentScore = usePracticeStore.getState().score;
-        if (
-          currentSong &&
-          currentScore.totalNotes > 0 &&
-          state.currentTime >= currentSong.duration - 1
-        ) {
-          setCompletedSessionScore(currentScore);
-          setShowCelebration(true);
-          setShowStats(false);
-        }
-      }
-    });
-  }, []);
-
-  // End flow: celebration is shown first, then automatically transition to stats.
-  useEffect(() => {
-    if (!showCelebration) return;
-    const timer = setTimeout(() => {
-      setShowCelebration(false);
-      setShowStats(true);
-    }, CELEBRATION_DURATION_MS);
-    return () => clearTimeout(timer);
-  }, [showCelebration]);
-
-  const handleModeSelect = useCallback(
-    (mode: PracticeMode) => {
-      applyPracticeModeChangeForSong(
-        {
-          song,
-          activeTracks,
-          currentSpeed: speed,
-          setMode: usePracticeStore.getState().setMode,
-        },
-        mode,
-      );
-      setShowModeModal(false);
-      setTimeout(() => {
-        usePlaybackStore.getState().setPlaying(true);
-      }, 150);
-    },
-    [activeTracks, song, speed],
-  );
-
-  const handlePracticeAgain = useCallback(() => {
-    setShowCelebration(false);
-    setShowStats(false);
-    setCompletedSessionScore(null);
-    usePlaybackStore.getState().reset();
-    usePracticeStore.getState().resetScore();
-  }, []);
-
-  const handleChooseSong = useCallback(() => {
-    setShowCelebration(false);
-    setShowStats(false);
-    setCompletedSessionScore(null);
-    useSongStore.getState().clearSong();
-    usePlaybackStore.getState().reset();
-    applyRoute("menu");
-  }, [applyRoute]);
+  const {
+    showModeModal,
+    showCelebration,
+    showStats,
+    displayScore,
+    handleModeSelect,
+    handlePracticeAgain,
+    handleChooseSong,
+    handleViewStats,
+    hidePostSessionFlow,
+    showCelebrationForScore,
+  } = usePostSessionFlow({
+    song,
+    activeTracks,
+    speed,
+    score,
+    onChooseSongRoute: () => applyRoute("menu"),
+  });
   // ─── End mode/celebration/stats flow ──────────────────
 
   // ─── Phase 6.5 Sprint 5: Insights Panel ──────────────
@@ -373,9 +293,7 @@ function App(): React.JSX.Element {
       usePracticeStore.getState().setMode("watch");
       setSheetFixtureNotationData(fixture.notationData);
       loadSong(fixture.song);
-      setShowModeModal(false);
-      setShowCelebration(false);
-      setShowStats(false);
+      hidePostSessionFlow();
       setShowInsights(false);
       applyRoute("playback");
     };
@@ -392,10 +310,7 @@ function App(): React.JSX.Element {
         activeTracks: new Set([0]),
         noteResults: new Map(),
       });
-      setCompletedSessionScore(celebrationFixture.score);
-      setShowModeModal(false);
-      setShowCelebration(true);
-      setShowStats(false);
+      showCelebrationForScore(celebrationFixture.score);
       setShowInsights(false);
       applyRoute("playback");
     };
@@ -404,7 +319,13 @@ function App(): React.JSX.Element {
       delete e2eWindow.__rexianoLoadSheetMusicFixture;
       delete e2eWindow.__rexianoShowCelebrationFixture;
     };
-  }, [applyRoute, loadSong, reset]);
+  }, [
+    applyRoute,
+    hidePostSessionFlow,
+    loadSong,
+    reset,
+    showCelebrationForScore,
+  ]);
 
   // ─── End Phase 7 ──────────────────────────────────────
 
@@ -862,134 +783,21 @@ function App(): React.JSX.Element {
   }, [showFallingNoteLabels, noteRendererRef]);
   // ─── End Phase 6.5 ───────────────────────────────────
 
-  const [importError, setImportError] = useState<ImportErrorState | null>(null);
-  const importErrorTimerRef = useRef<ReturnType<typeof setTimeout> | null>(
-    null,
-  );
-
-  const showImportError = useCallback(
-    (error: FileImportErrorInput): void => {
-      if (importErrorTimerRef.current) {
-        clearTimeout(importErrorTimerRef.current);
-      }
-      setImportError({
-        input: error,
-        guidance: getFileImportErrorGuidance(error, t),
-      });
-      importErrorTimerRef.current = setTimeout(() => {
-        setImportError(null);
-        importErrorTimerRef.current = null;
-      }, 4000);
-    },
-    [t],
-  );
-
-  useEffect(() => {
-    return () => {
-      if (importErrorTimerRef.current) {
-        clearTimeout(importErrorTimerRef.current);
-      }
-    };
-  }, []);
-
-  const handleOpenFile = useCallback(async (): Promise<void> => {
-    try {
-      const result = await window.api.openMidiFile();
-      if (result) {
-        try {
-          const parsed = parseMidiFile(result.fileName, result.data);
-          loadSong(parsed);
-          reset();
-        } catch (e) {
-          console.error("Failed to parse MIDI file:", e);
-          showImportError({
-            kind: "parse-failed",
-            fileName: result.fileName,
-            path: result.path,
-            diagnostic: e,
-          });
-          return;
-        }
-        // Save to recent files if we have the full path
-        if (result.path) {
-          void window.api.saveRecentFile({
-            path: result.path,
-            name: result.fileName,
-            timestamp: Date.now(),
-          });
-        }
-      }
-    } catch (e) {
-      console.error("Failed to read MIDI file:", e);
-      showImportError({ kind: "read-failed", diagnostic: e });
-    }
-  }, [loadSong, reset, showImportError]);
-
-  // Load a MIDI file directly by path (used by recent files in MainMenu)
-  const handleLoadMidiPath = useCallback(
-    async (filePath: string): Promise<void> => {
-      try {
-        const result = await window.api.loadMidiPath(filePath);
-        if (result) {
-          try {
-            const parsed = parseMidiFile(result.fileName, result.data);
-            loadSong(parsed);
-            reset();
-          } catch (e) {
-            console.error("Failed to parse MIDI from path:", e);
-            showImportError({
-              kind: "parse-failed",
-              fileName: result.fileName,
-              path: filePath,
-              diagnostic: e,
-            });
-          }
-        } else {
-          showImportError({
-            kind: "missing-recent",
-            fileName: filePath.split(/[\\/]/).pop(),
-            path: filePath,
-          });
-        }
-      } catch (e) {
-        console.error("Failed to load MIDI from path:", e);
-        showImportError({
-          kind: "read-failed",
-          fileName: filePath.split(/[\\/]/).pop(),
-          path: filePath,
-          diagnostic: e,
-        });
-      }
-    },
-    [loadSong, reset, showImportError],
-  );
-
-  const dismissImportError = useCallback((): void => {
-    if (importErrorTimerRef.current) {
-      clearTimeout(importErrorTimerRef.current);
-      importErrorTimerRef.current = null;
-    }
-    setImportError(null);
-  }, []);
-
-  const handleImportRecoveryAction = useCallback(
-    (actionId: FileImportRecoveryActionId, input: FileImportErrorInput) => {
-      dismissImportError();
-
-      if (actionId === "remove-recent") {
-        if (input.path) void window.api.removeRecentFile(input.path);
-        return;
-      }
-
-      if (actionId === "retry-read" && input.path) {
-        void handleLoadMidiPath(input.path);
-        return;
-      }
-
-      void handleOpenFile();
-    },
-    [dismissImportError, handleLoadMidiPath, handleOpenFile],
-  );
+  const {
+    importError,
+    isDragging,
+    handleOpenFile,
+    handleLoadMidiPath,
+    handleImportRecoveryAction,
+    handleDragEnter,
+    handleDragLeave,
+    handleDragOver,
+    handleDrop,
+  } = useMidiImportActions({
+    t,
+    loadSong,
+    resetPlayback: reset,
+  });
 
   // ─── Phase 6.5: Mute toggle ────────────────────────────
   const muteRef = useRef({ prevVolume: 0.8 });
@@ -1008,81 +816,6 @@ function App(): React.JSX.Element {
     onOpenFile: handleOpenFile,
     onToggleMute: handleToggleMute,
   });
-
-  // ─── Phase 6.5: Drag-and-drop MIDI import ──────────────
-  const [isDragging, setIsDragging] = useState(false);
-  const dragCountRef = useRef(0);
-
-  const handleDragEnter = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    dragCountRef.current++;
-    setIsDragging(true);
-    setImportError(null);
-  }, []);
-
-  const handleDragLeave = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    dragCountRef.current--;
-    if (dragCountRef.current <= 0) {
-      dragCountRef.current = 0;
-      setIsDragging(false);
-      setImportError(null);
-    }
-  }, []);
-
-  const handleDragOver = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-  }, []);
-
-  const handleDrop = useCallback(
-    (e: React.DragEvent) => {
-      e.preventDefault();
-      e.stopPropagation();
-      dragCountRef.current = 0;
-      setIsDragging(false);
-
-      const files = e.dataTransfer?.files;
-      if (!files || files.length === 0) return;
-
-      const file = files[0];
-      const ext = file.name.toLowerCase().slice(file.name.lastIndexOf("."));
-      if (!MIDI_EXTENSIONS.includes(ext)) {
-        showImportError({
-          kind: "unsupported-type",
-          ext,
-          fileName: file.name,
-        });
-        return;
-      }
-
-      const reader = new FileReader();
-      reader.onload = () => {
-        try {
-          const arrayBuf = reader.result as ArrayBuffer;
-          const data = Array.from(new Uint8Array(arrayBuf));
-          const parsed = parseMidiFile(file.name, data);
-          loadSong(parsed);
-          reset();
-        } catch (err) {
-          console.error("Failed to parse dropped MIDI file:", err);
-          showImportError({
-            kind: "parse-failed",
-            fileName: file.name,
-            diagnostic: err,
-          });
-        }
-      };
-      reader.onerror = () => {
-        showImportError({ kind: "read-failed", fileName: file.name });
-      };
-      reader.readAsArrayBuffer(file);
-    },
-    [loadSong, reset, showImportError],
-  );
-  // ─── End Phase 6.5 ─────────────────────────────────────
 
   const handleExitPlayback = useCallback(() => {
     const decision = getFocusModeExitDecision({
@@ -1584,10 +1317,7 @@ function App(): React.JSX.Element {
               score={displayScore}
               visible={showCelebration}
               onPracticeAgain={handlePracticeAgain}
-              onChooseSong={() => {
-                setShowCelebration(false);
-                setShowStats(true);
-              }}
+              onChooseSong={handleViewStats}
               songId={songId}
               nextAction={nextPracticeAction}
             />
