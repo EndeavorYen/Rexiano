@@ -82,6 +82,14 @@ export interface TranslationMap {
   "library.recommendation.reason.newSong": string;
   "library.recommendation.reason.improveScore": string;
   "library.recommendation.reason.continueProgress": string;
+  "library.preview.title": string;
+  "library.preview.length": string;
+  "library.preview.grade": string;
+  "library.preview.category": string;
+  "library.preview.bestScore": string;
+  "library.preview.tracks": string;
+  "library.preview.tracksAfterPractice": string;
+  "library.preview.audioUnsupported": string;
   "library.lessonPath.title": string;
   "library.lessonPath.free": string;
   "library.lessonPath.next": string;

@@ -86,6 +86,15 @@ export const en: TranslationMap = {
   "library.recommendation.reason.improveScore":
     "Good pick to improve your score",
   "library.recommendation.reason.continueProgress": "Keep building progress",
+  "library.preview.title": "Song preview",
+  "library.preview.length": "Length",
+  "library.preview.grade": "Level",
+  "library.preview.category": "Category",
+  "library.preview.bestScore": "Best score",
+  "library.preview.tracks": "Tracks",
+  "library.preview.tracksAfterPractice": "Choose before playback",
+  "library.preview.audioUnsupported":
+    "Audio preview is not available yet; practice setup stays available before playback.",
   "library.lessonPath.title": "Lesson path",
   "library.lessonPath.free": "Free song selection stays open",
   "library.lessonPath.next": "Next lesson",

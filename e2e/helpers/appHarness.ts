@@ -31,15 +31,26 @@ export async function closeTopDrawer(page: Page): Promise<void> {
   await expect(page.locator(".app-side-drawer")).toBeHidden();
 }
 
+export async function startBuiltInSongFromLibrary(
+  page: Page,
+  songId: string,
+): Promise<void> {
+  const songButton = page.getByTestId(`song-select-${songId}`);
+  await expect(songButton).toBeVisible({ timeout: 20_000 });
+  await songButton.click();
+
+  const previewPractice = page.getByTestId("song-selection-preview-practice");
+  await expect(previewPractice).toBeVisible({ timeout: 20_000 });
+  await previewPractice.click();
+}
+
 export async function loadFirstBuiltInSong(page: Page): Promise<void> {
   const listToggle = page.getByTestId("song-library-view-list");
   if ((await listToggle.count()) > 0) {
     await listToggle.click();
   }
 
-  const firstSongCard = page.getByTestId("song-select-hot-cross-buns");
-  await expect(firstSongCard).toBeVisible({ timeout: 20_000 });
-  await firstSongCard.click();
+  await startBuiltInSongFromLibrary(page, "hot-cross-buns");
 
   await expect(page.getByTestId("mode-select-wait")).toBeVisible({
     timeout: 20_000,

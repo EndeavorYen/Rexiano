@@ -35,10 +35,12 @@ import {
 import {
   buildPracticeRecommendationModel,
   buildSongActivity,
+  buildSongSelectionPreviewModel,
   filterSongsForLibrary,
   sortSongsForLibrary,
   type PracticeRecommendationReason,
   type SongActivity,
+  type SongSelectionPreviewModel,
 } from "./songLibrarySelectors";
 import {
   getRecentFileRecovery,
@@ -216,6 +218,7 @@ export function SongLibrary({
   const [editingImportedSongId, setEditingImportedSongId] = useState<
     string | null
   >(null);
+  const [selectedSongId, setSelectedSongId] = useState<string | null>(null);
   const [importedMetadataDraft, setImportedMetadataDraft] =
     useState<ImportedSongMetadataDraft | null>(null);
   const [showDeviceDrawer, setShowDeviceDrawer] = useState(false);
@@ -271,6 +274,22 @@ export function SongLibrary({
   const sortedSongs = useMemo(
     () => sortSongsForLibrary(filteredSongs, songActivity, sortMode),
     [filteredSongs, songActivity, sortMode],
+  );
+
+  const selectedSong = useMemo(
+    () => songs.find((song) => song.id === selectedSongId) ?? null,
+    [songs, selectedSongId],
+  );
+
+  const selectedSongPreview = useMemo(
+    () =>
+      selectedSong
+        ? buildSongSelectionPreviewModel(
+            selectedSong,
+            songActivity.get(selectedSong.id),
+          )
+        : null,
+    [selectedSong, songActivity],
   );
 
   const practiceRecommendation = useMemo(
@@ -337,6 +356,11 @@ export function SongLibrary({
     },
     [loadSong, reset, refreshRecents, t],
   );
+
+  const handlePreviewSong = useCallback((songId: string) => {
+    setError(null);
+    setSelectedSongId(songId);
+  }, []);
 
   /** Max recent files shown in the quick-access strip */
   const RECENT_DISPLAY_LIMIT = 5;
@@ -864,6 +888,14 @@ export function SongLibrary({
           </section>
         )}
 
+        {selectedSongPreview && (
+          <SongSelectionPreviewPanel
+            preview={selectedSongPreview}
+            isLoading={loadingId === selectedSongPreview.song.id}
+            onPractice={handleSelectSong}
+          />
+        )}
+
         {continueRecent && (
           <section
             className="surface-elevated mb-5 p-4 animate-page-enter"
@@ -1140,7 +1172,8 @@ export function SongLibrary({
                         song={song}
                         activity={songActivity.get(song.id) ?? emptyActivity}
                         isLoading={loadingId === song.id}
-                        onSelect={handleSelectSong}
+                        isSelected={selectedSongId === song.id}
+                        onSelect={handlePreviewSong}
                         onToggleFavorite={toggleFavoriteSong}
                         animationDelay={i * 24}
                       />
@@ -1187,7 +1220,7 @@ export function SongLibrary({
                             >
                               <SongCard
                                 song={song}
-                                onSelect={handleSelectSong}
+                                onSelect={handlePreviewSong}
                                 colorIndex={groupIdx * 4 + i}
                               />
                               <FavoriteButton
@@ -1274,6 +1307,155 @@ function formatSongDuration(seconds: number): string {
   const m = Math.floor(seconds / 60);
   const s = Math.floor(seconds % 60);
   return `${m}:${s.toString().padStart(2, "0")}`;
+}
+
+function SongSelectionPreviewPanel({
+  preview,
+  isLoading,
+  onPractice,
+}: {
+  preview: SongSelectionPreviewModel;
+  isLoading: boolean;
+  onPractice: (songId: string) => void;
+}): React.JSX.Element {
+  const { t } = useTranslation();
+  const grade =
+    preview.grade !== undefined ? gradeLabelShort[preview.grade] : "--";
+  const category = preview.category ? categoryLabels[preview.category] : "--";
+  const bestScore =
+    preview.bestAccuracy !== null
+      ? `${Math.round(preview.bestAccuracy)}%`
+      : t("library.neverPracticed");
+  const ctaLabel =
+    preview.primaryCta === "continue-practice"
+      ? t("library.continuePractice")
+      : t("library.recommendation.cta");
+
+  return (
+    <section
+      className="surface-elevated mb-5 p-4 animate-page-enter"
+      data-testid="song-selection-preview"
+      aria-label={t("library.preview.title")}
+    >
+      <div className="grid gap-4 lg:grid-cols-[minmax(0,1.7fr)_auto] lg:items-center">
+        <div className="min-w-0">
+          <span
+            className="kicker-label"
+            style={{ color: "var(--color-accent)" }}
+          >
+            {t("library.preview.title")}
+          </span>
+          <h2
+            className="mt-1 truncate text-xl font-display font-bold"
+            style={{ color: "var(--color-text)" }}
+            data-testid="song-selection-preview-title"
+          >
+            {preview.title}
+          </h2>
+          <p
+            className="mt-1 truncate text-sm font-body"
+            style={{ color: "var(--color-text-muted)" }}
+          >
+            {preview.composer}
+          </p>
+        </div>
+
+        <button
+          type="button"
+          onClick={() => onPractice(preview.song.id)}
+          disabled={isLoading}
+          className="btn-primary-themed flex min-h-10 items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-body font-semibold cursor-pointer disabled:cursor-wait disabled:opacity-60"
+          data-testid="song-selection-preview-practice"
+        >
+          {isLoading ? (
+            <span
+              className="h-4 w-4 rounded-full border-2 animate-spin"
+              style={{
+                borderColor: "rgba(255,255,255,0.45)",
+                borderTopColor: "#fff",
+              }}
+            />
+          ) : (
+            <PlayCircle size={16} />
+          )}
+          {ctaLabel}
+        </button>
+      </div>
+
+      <dl className="mt-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-5">
+        <PreviewMetric
+          label={t("library.preview.length")}
+          value={formatSongDuration(preview.durationSeconds)}
+        />
+        <PreviewMetric label={t("library.preview.grade")} value={grade} />
+        <PreviewMetric label={t("library.preview.category")} value={category} />
+        <PreviewMetric
+          label={t("library.preview.bestScore")}
+          value={bestScore}
+        />
+        <PreviewMetric
+          label={t("library.preview.tracks")}
+          value={t("library.preview.tracksAfterPractice")}
+        />
+      </dl>
+
+      {preview.tags.length > 0 && (
+        <div className="mt-3 flex flex-wrap gap-1.5">
+          {preview.tags.slice(0, 6).map((tag) => (
+            <span
+              key={tag}
+              className="rounded-md px-2 py-1 text-[10px] font-body font-medium"
+              style={{
+                color: "var(--color-text-muted)",
+                background: "var(--color-surface-alt)",
+                border: "1px solid var(--color-border)",
+              }}
+            >
+              {tag}
+            </span>
+          ))}
+        </div>
+      )}
+
+      <p
+        className="mt-3 text-xs font-body"
+        style={{ color: "var(--color-text-muted)" }}
+      >
+        {t("library.preview.audioUnsupported")}
+      </p>
+    </section>
+  );
+}
+
+function PreviewMetric({
+  label,
+  value,
+}: {
+  label: string;
+  value: string;
+}): React.JSX.Element {
+  return (
+    <div
+      className="min-w-0 rounded-lg px-3 py-2"
+      style={{
+        background: "color-mix(in srgb, var(--color-surface) 82%, transparent)",
+        border: "1px solid var(--color-border)",
+      }}
+    >
+      <dt
+        className="truncate text-[10px] font-body font-semibold uppercase tracking-wide"
+        style={{ color: "var(--color-text-muted)" }}
+      >
+        {label}
+      </dt>
+      <dd
+        className="mt-1 truncate text-sm font-body font-semibold"
+        style={{ color: "var(--color-text)" }}
+      >
+        {value}
+      </dd>
+    </div>
+  );
 }
 
 function ImportedSongRow({
@@ -1531,6 +1713,7 @@ function SongListRow({
   song,
   activity,
   isLoading,
+  isSelected,
   onSelect,
   onToggleFavorite,
   animationDelay,
@@ -1538,6 +1721,7 @@ function SongListRow({
   song: BuiltinSongMeta;
   activity: SongActivity;
   isLoading: boolean;
+  isSelected: boolean;
   onSelect: (songId: string) => void;
   onToggleFavorite: (songId: string) => void;
   animationDelay: number;
@@ -1557,8 +1741,12 @@ function SongListRow({
     <div
       className="relative flex items-stretch gap-2 rounded-lg animate-stagger-child"
       style={{
-        background: "color-mix(in srgb, var(--color-surface) 88%, transparent)",
-        border: "1px solid var(--color-border)",
+        background: isSelected
+          ? "color-mix(in srgb, var(--color-accent) 10%, var(--color-surface))"
+          : "color-mix(in srgb, var(--color-surface) 88%, transparent)",
+        border: isSelected
+          ? "1px solid color-mix(in srgb, var(--color-accent) 32%, var(--color-border))"
+          : "1px solid var(--color-border)",
         animationDelay: `${animationDelay}ms`,
       }}
     >
