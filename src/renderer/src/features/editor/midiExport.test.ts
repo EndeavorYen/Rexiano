@@ -1,4 +1,5 @@
 import { describe, expect, test } from "vitest";
+import { Midi } from "@tonejs/midi";
 import { parseMidiFile } from "@renderer/engines/midi/MidiFileParser";
 import {
   createAddNoteCommand,
@@ -21,8 +22,8 @@ const editableSong: EditableSong = {
   ppq: 480,
   tempoBpm: 96,
   tracks: [
-    { id: "track-rh", name: "Right Hand", channel: 0 },
-    { id: "track-lh", name: "Left Hand", channel: 1 },
+    { id: "track-rh", name: "Right Hand", channel: 0, instrument: 0 },
+    { id: "track-lh", name: "Left Hand", channel: 1, instrument: 1 },
   ],
   notes: [
     {
@@ -47,8 +48,10 @@ const editableSong: EditableSong = {
 describe("midiExport", () => {
   test("serializes editable songs to MIDI bytes that Rexiano can re-import", () => {
     const midiData = serializeEditableSongToMidiData(editableSong);
+    const midi = new Midi(new Uint8Array(midiData));
 
     expect(midiData.length).toBeGreaterThan(0);
+    expect(midi.tracks[1].instrument.number).toBe(1);
     const parsed = parseMidiFile("roundtrip.mid", midiData);
 
     expect(parsed.tempos[0]).toMatchObject({ bpm: 96 });

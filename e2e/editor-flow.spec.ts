@@ -20,9 +20,18 @@ test.describe("Piano roll editor flow", () => {
     const initialCount = await notes.count();
     expect(initialCount).toBeGreaterThan(0);
 
+    const initialTrackCount = await appPage.getByTestId("track-select").count();
+    await appPage.getByTestId("track-add").click();
+    await expect(appPage.getByTestId("track-select")).toHaveCount(
+      initialTrackCount + 1,
+    );
+    await expect(appPage.getByTestId("track-impact-message")).toContainText(
+      "Track topology changed",
+    );
+
     await appPage.getByTestId("editor-tool-draw").click();
     await appPage.getByTestId("piano-roll-grid").click({
-      position: { x: 140, y: 180 },
+      position: { x: 140, y: 120 },
     });
 
     await expect(notes).toHaveCount(initialCount + 1);
