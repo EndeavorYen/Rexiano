@@ -415,7 +415,7 @@
 - [x] 多軌支援
   - [x] 新增 / 刪除軌道
   - [x] 軌道屬性（樂器、通道）
-- [ ] 測試：新增 / 移動 / 刪除 / Undo 流程
+- [x] 測試：新增 / 移動 / 刪除 / Undo / Redo / 匯出 round-trip 流程（見 `src/renderer/src/features/editor/editorCommands.test.ts`、`src/renderer/src/features/editor/midiExport.test.ts`、`e2e/editor-flow.spec.ts`）
 
 ---
 
