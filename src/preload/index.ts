@@ -13,6 +13,8 @@ import type {
   AppUpdateCheckResult,
   AppUpdateDownloadResult,
   AppUpdateStatus,
+  MidiExportRequest,
+  MidiExportResult,
 } from "../shared/types";
 
 const api = {
@@ -59,6 +61,8 @@ const api = {
   // Phase 6.5: Load MIDI file by path (for recent files direct loading)
   loadMidiPath: (filePath: string) =>
     ipcRenderer.invoke(IpcChannels.LOAD_MIDI_PATH, filePath),
+  exportMidiFile: (request: MidiExportRequest): Promise<MidiExportResult> =>
+    ipcRenderer.invoke(IpcChannels.EXPORT_MIDI_FILE, request),
 
   // Release pipeline: app version + changelog
   getAppInfo: (): Promise<AppInfo> => ipcRenderer.invoke("app:getAppInfo"),

@@ -1,10 +1,12 @@
 import { ipcMain, dialog, BrowserWindow, app } from "electron";
-import { readFile } from "fs/promises";
+import { readFile, writeFile } from "fs/promises";
 import { basename, join, resolve, relative, isAbsolute } from "path";
 import { existsSync } from "fs";
 import {
   IpcChannels,
   type MidiFileResult,
+  type MidiExportRequest,
+  type MidiExportResult,
   type SoundFontResult,
   type BuiltinSongMeta,
 } from "../../shared/types";
@@ -86,6 +88,39 @@ export function registerFileHandlers(): void {
         data: Array.from(buffer),
         path: filePath,
       };
+    },
+  );
+
+  ipcMain.handle(
+    IpcChannels.EXPORT_MIDI_FILE,
+    async (_event, request: MidiExportRequest): Promise<MidiExportResult> => {
+      const window = BrowserWindow.getFocusedWindow();
+      if (!window) return { ok: false, reason: "cancelled" };
+
+      const result = await dialog.showSaveDialog(window, {
+        title: "Export MIDI File",
+        defaultPath: request.suggestedName,
+        filters: [{ name: "MIDI Files", extensions: ["mid", "midi"] }],
+      });
+
+      if (result.canceled || !result.filePath) {
+        return { ok: false, reason: "cancelled" };
+      }
+
+      try {
+        await writeFile(result.filePath, Buffer.from(request.data));
+        approveMidiFilePath(result.filePath);
+        return { ok: true, path: result.filePath };
+      } catch (error) {
+        return {
+          ok: false,
+          reason: "write-failed",
+          message:
+            error instanceof Error
+              ? error.message
+              : "Could not write MIDI file.",
+        };
+      }
     },
   );
 

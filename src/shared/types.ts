@@ -33,6 +33,8 @@ export const IpcChannels = {
   REMOVE_RECENT_FILE: "recents:removeRecentFile",
   /** Phase 6.5: Load a MIDI file by absolute path (for recent files) */
   LOAD_MIDI_PATH: "dialog:loadMidiPath",
+  /** Editor: export generated MIDI bytes via a save dialog */
+  EXPORT_MIDI_FILE: "dialog:exportMidiFile",
   /** User data backup: export file-backed scopes from userData */
   USER_DATA_EXPORT_FILES: "userData:exportFiles",
   /** User data backup: import file-backed scopes into userData */
@@ -62,6 +64,22 @@ export interface SoundFontResult {
   /** File name of the loaded SoundFont */
   fileName: string;
 }
+
+export interface MidiExportRequest {
+  suggestedName: string;
+  data: number[];
+}
+
+export type MidiExportResult =
+  | {
+      ok: true;
+      path: string;
+    }
+  | {
+      ok: false;
+      reason: "cancelled" | "write-failed";
+      message?: string;
+    };
 
 // ─── Song Library ────────────────────────────────────────────────────
 

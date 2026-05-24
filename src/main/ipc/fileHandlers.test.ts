@@ -15,6 +15,7 @@ vi.mock("electron", () => ({
   },
   dialog: {
     showOpenDialog: vi.fn(),
+    showSaveDialog: vi.fn(),
   },
   BrowserWindow: {
     getFocusedWindow: vi.fn(() => ({})),
@@ -33,6 +34,7 @@ vi.mock("fs/promises", () => ({
     if (!contents) throw new Error("ENOENT");
     return contents;
   }),
+  writeFile: vi.fn(async () => {}),
 }));
 
 vi.mock("fs", () => ({
@@ -42,8 +44,8 @@ vi.mock("fs", () => ({
 }));
 
 import { registerFileHandlers } from "./fileHandlers";
-import { ipcMain } from "electron";
-import { readFile } from "fs/promises";
+import { dialog, ipcMain } from "electron";
+import { readFile, writeFile } from "fs/promises";
 
 describe("fileHandlers", () => {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -89,5 +91,43 @@ describe("fileHandlers", () => {
       data: [1, 2, 3],
       path: "/Users/rex/Music/Scale.mid",
     });
+  });
+
+  test("EXPORT_MIDI_FILE writes selected MIDI bytes to a user-selected path", async () => {
+    vi.mocked(dialog.showSaveDialog).mockResolvedValue({
+      canceled: false,
+      filePath: "/Users/rex/Exports/Edited.mid",
+    });
+
+    await expect(
+      handlers[IpcChannels.EXPORT_MIDI_FILE](null, {
+        suggestedName: "Edited.mid",
+        data: [77, 84, 104, 100],
+      }),
+    ).resolves.toEqual({
+      ok: true,
+      path: "/Users/rex/Exports/Edited.mid",
+    });
+
+    expect(writeFile).toHaveBeenCalledWith(
+      "/Users/rex/Exports/Edited.mid",
+      Buffer.from([77, 84, 104, 100]),
+    );
+  });
+
+  test("EXPORT_MIDI_FILE reports cancellation without writing", async () => {
+    vi.mocked(dialog.showSaveDialog).mockResolvedValue({
+      canceled: true,
+      filePath: "",
+    });
+
+    await expect(
+      handlers[IpcChannels.EXPORT_MIDI_FILE](null, {
+        suggestedName: "Edited.mid",
+        data: [1, 2, 3],
+      }),
+    ).resolves.toEqual({ ok: false, reason: "cancelled" });
+
+    expect(writeFile).not.toHaveBeenCalled();
   });
 });

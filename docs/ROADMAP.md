@@ -409,9 +409,9 @@
 - [x] Undo / Redo
   - [x] Command Pattern 實作
   - [x] 鍵盤快捷鍵 Ctrl+Z / Ctrl+Y
-- [ ] 匯出
-  - [ ] 匯出為 .mid 檔案
-  - [ ] （進階）MusicXML 匯入 / 匯出
+- [x] 匯出
+  - [x] 匯出為 .mid 檔案
+  - [x] （進階）MusicXML 匯入 / 匯出邊界評估（見 `docs/editor-export.md`）
 - [ ] 多軌支援
   - [ ] 新增 / 刪除軌道
   - [ ] 軌道屬性（樂器、通道）

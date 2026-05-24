@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useRef, useState } from "react";
-import { X } from "lucide-react";
+import { Download, X } from "lucide-react";
 import type { ParsedSong } from "@renderer/engines/midi/types";
 import {
   createAddNoteCommand,
@@ -24,6 +24,10 @@ import {
 import { EditorToolbar } from "./EditorToolbar";
 import { NoteInspector } from "./NoteInspector";
 import type { EditableSong } from "./editorTypes";
+import {
+  buildMidiExportFileName,
+  serializeEditableSongToMidiData,
+} from "./midiExport";
 import {
   createEditableSongFromParsedSong,
   createNoteFromGridPoint,
@@ -69,6 +73,7 @@ export function PianoRollEditor({
   const [modeState, setModeState] = useState<EditorModeState>(() =>
     createInitialEditorModeState(),
   );
+  const [exportStatus, setExportStatus] = useState<string | null>(null);
   const [dragState, setDragState] = useState<DragState | null>(null);
   const rootRef = useRef<HTMLDivElement>(null);
   const svgRef = useRef<SVGSVGElement>(null);
@@ -259,6 +264,20 @@ export function PianoRollEditor({
     ],
   );
 
+  const handleExportMidi = useCallback(async () => {
+    const result = await window.api.exportMidiFile({
+      suggestedName: buildMidiExportFileName(editableSong.title),
+      data: serializeEditableSongToMidiData(editableSong),
+    });
+    setExportStatus(
+      result.ok
+        ? `Exported ${buildMidiExportFileName(editableSong.title)}`
+        : result.reason === "cancelled"
+          ? null
+          : (result.message ?? "MIDI export failed."),
+    );
+  }, [editableSong]);
+
   const maxNoteEnd = Math.max(
     parsedSong.duration,
     ...editableSong.notes.map((note) => note.start + note.duration),
@@ -296,6 +315,23 @@ export function PianoRollEditor({
           type="button"
           className="flex h-8 w-8 items-center justify-center rounded-md"
           style={{
+            color: "var(--color-accent)",
+            border:
+              "1px solid color-mix(in srgb, var(--color-accent) 26%, var(--color-border))",
+            background:
+              "color-mix(in srgb, var(--color-accent) 10%, var(--color-surface))",
+          }}
+          title="Export MIDI"
+          aria-label="Export MIDI"
+          onClick={handleExportMidi}
+          data-testid="editor-export-midi"
+        >
+          <Download size={15} />
+        </button>
+        <button
+          type="button"
+          className="flex h-8 w-8 items-center justify-center rounded-md"
+          style={{
             color: "var(--color-text-muted)",
             border: "1px solid var(--color-border)",
             background: "var(--color-surface)",
@@ -308,6 +344,21 @@ export function PianoRollEditor({
           <X size={15} />
         </button>
       </div>
+      {exportStatus && (
+        <div
+          className="px-3 py-1.5 text-[11px] font-body"
+          style={{
+            color: "var(--color-accent)",
+            background:
+              "color-mix(in srgb, var(--color-accent) 9%, var(--color-surface))",
+            borderBottom: "1px solid var(--color-border)",
+          }}
+          role="status"
+          data-testid="editor-export-status"
+        >
+          {exportStatus}
+        </div>
+      )}
 
       <div
         className="min-h-0 flex-1 overflow-auto"

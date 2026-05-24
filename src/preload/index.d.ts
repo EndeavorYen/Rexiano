@@ -15,6 +15,8 @@ import type {
   AppUpdateCheckResult,
   AppUpdateDownloadResult,
   AppUpdateStatus,
+  MidiExportRequest,
+  MidiExportResult,
 } from "../shared/types";
 
 declare global {
@@ -61,6 +63,8 @@ declare global {
       ) => Promise<WatchedMidiFoldersScanResult>;
       /** Phase 6.5: Load a MIDI file by absolute path (for recent files) */
       loadMidiPath: (filePath: string) => Promise<MidiFileResult | null>;
+      /** Editor: export generated MIDI bytes with a save dialog */
+      exportMidiFile: (request: MidiExportRequest) => Promise<MidiExportResult>;
       /** Release pipeline: get app version and changelog */
       getAppInfo: () => Promise<AppInfo>;
       /** Release pipeline: check GitHub Releases for packaged updates */
