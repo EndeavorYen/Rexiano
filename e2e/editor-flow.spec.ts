@@ -26,5 +26,13 @@ test.describe("Piano roll editor flow", () => {
     });
 
     await expect(notes).toHaveCount(initialCount + 1);
+    await expect(appPage.getByTestId("note-inspector-selection")).toContainText(
+      "1 selected",
+    );
+    await appPage.getByTestId("note-property-velocity").fill("300");
+    await appPage.getByTestId("note-property-velocity").press("Enter");
+    await expect(appPage.getByTestId("note-inspector-warning")).toContainText(
+      "Velocity was clamped",
+    );
   });
 });

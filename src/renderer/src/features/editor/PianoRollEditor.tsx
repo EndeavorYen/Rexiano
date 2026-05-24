@@ -22,6 +22,7 @@ import {
   type EditorModeState,
 } from "./editorMode";
 import { EditorToolbar } from "./EditorToolbar";
+import { NoteInspector } from "./NoteInspector";
 import type { EditableSong } from "./editorTypes";
 import {
   createEditableSongFromParsedSong,
@@ -312,67 +313,91 @@ export function PianoRollEditor({
         className="min-h-0 flex-1 overflow-auto"
         data-testid="piano-roll-scroll"
       >
-        <svg
-          ref={svgRef}
-          width={canvasWidth}
-          height={canvasHeight}
-          className="block"
-          style={{ background: "var(--color-surface)" }}
-          onPointerUp={handlePointerUp}
-          onPointerCancel={() => setDragState(null)}
-          onPointerLeave={() => setDragState(null)}
-          onPointerDown={handleGridClick}
-          onContextMenu={(event) => event.preventDefault()}
-          data-testid="piano-roll-grid"
-        >
-          {Array.from({ length: grid.maxPitch - grid.minPitch + 2 }).map(
-            (_, index) => (
-              <line
-                key={`row-${index}`}
-                x1={0}
-                x2={canvasWidth}
-                y1={index * grid.rowHeight}
-                y2={index * grid.rowHeight}
-                stroke="var(--color-border)"
-                strokeOpacity={index % 12 === 0 ? 0.55 : 0.24}
-              />
-            ),
-          )}
-          {Array.from({ length: Math.ceil(maxNoteEnd + 2) }).map((_, index) => (
-            <line
-              key={`beat-${index}`}
-              x1={timeToX(index, grid)}
-              x2={timeToX(index, grid)}
-              y1={0}
-              y2={canvasHeight}
-              stroke="var(--color-border)"
-              strokeOpacity={0.5}
-            />
-          ))}
-          {editableSong.notes.map((note) => {
-            const isSelected = selectedIds.has(note.id);
-            return (
-              <rect
-                key={note.id}
-                x={timeToX(note.start, grid)}
-                y={pitchToY(note.pitch, grid) + 1}
-                width={Math.max(8, note.duration * grid.pixelsPerSecond)}
-                height={grid.rowHeight - 2}
-                rx={3}
-                fill={
-                  isSelected ? "var(--color-accent)" : "var(--color-note-blue)"
-                }
-                stroke={
-                  isSelected ? "var(--color-text)" : "var(--color-border)"
-                }
-                strokeWidth={isSelected ? 1.5 : 1}
-                opacity={0.92}
-                onPointerDown={(event) => handleNotePointerDown(event, note.id)}
-                data-testid="piano-roll-note"
-              />
-            );
-          })}
-        </svg>
+        <div className="flex min-h-full">
+          <div className="min-w-0 flex-1 overflow-auto">
+            <svg
+              ref={svgRef}
+              width={canvasWidth}
+              height={canvasHeight}
+              className="block"
+              style={{ background: "var(--color-surface)" }}
+              onPointerUp={handlePointerUp}
+              onPointerCancel={() => setDragState(null)}
+              onPointerLeave={() => setDragState(null)}
+              onPointerDown={handleGridClick}
+              onContextMenu={(event) => event.preventDefault()}
+              data-testid="piano-roll-grid"
+            >
+              {Array.from({ length: grid.maxPitch - grid.minPitch + 2 }).map(
+                (_, index) => (
+                  <line
+                    key={`row-${index}`}
+                    x1={0}
+                    x2={canvasWidth}
+                    y1={index * grid.rowHeight}
+                    y2={index * grid.rowHeight}
+                    stroke="var(--color-border)"
+                    strokeOpacity={index % 12 === 0 ? 0.55 : 0.24}
+                  />
+                ),
+              )}
+              {Array.from({ length: Math.ceil(maxNoteEnd + 2) }).map(
+                (_, index) => (
+                  <line
+                    key={`beat-${index}`}
+                    x1={timeToX(index, grid)}
+                    x2={timeToX(index, grid)}
+                    y1={0}
+                    y2={canvasHeight}
+                    stroke="var(--color-border)"
+                    strokeOpacity={0.5}
+                  />
+                ),
+              )}
+              {editableSong.notes.map((note) => {
+                const isSelected = selectedIds.has(note.id);
+                return (
+                  <rect
+                    key={note.id}
+                    x={timeToX(note.start, grid)}
+                    y={pitchToY(note.pitch, grid) + 1}
+                    width={Math.max(8, note.duration * grid.pixelsPerSecond)}
+                    height={grid.rowHeight - 2}
+                    rx={3}
+                    fill={
+                      isSelected
+                        ? "var(--color-accent)"
+                        : "var(--color-note-blue)"
+                    }
+                    stroke={
+                      isSelected ? "var(--color-text)" : "var(--color-border)"
+                    }
+                    strokeWidth={isSelected ? 1.5 : 1}
+                    opacity={0.92}
+                    onPointerDown={(event) =>
+                      handleNotePointerDown(event, note.id)
+                    }
+                    data-testid="piano-roll-note"
+                  />
+                );
+              })}
+            </svg>
+          </div>
+          <NoteInspector
+            song={editableSong}
+            selectedNoteIds={modeState.selectedNoteIds}
+            onPatch={(patch) => {
+              if (modeState.selectedNoteIds.length === 0) return;
+              runCommand(
+                createUpdateNotesCommand(
+                  editableSong,
+                  modeState.selectedNoteIds,
+                  patch,
+                ),
+              );
+            }}
+          />
+        </div>
       </div>
     </div>
   );
