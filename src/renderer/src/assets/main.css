@@ -33,6 +33,22 @@
   --color-note3: #3d74a6;
   --color-hit-glow: #66c7cb;
   --color-streak-gold: #cfb066;
+  --color-scrollbar-track: color-mix(
+    in srgb,
+    var(--color-surface-alt) 82%,
+    var(--color-bg)
+  );
+  --color-scrollbar-thumb: color-mix(
+    in srgb,
+    var(--color-accent) 65%,
+    var(--color-border)
+  );
+  --color-scrollbar-thumb-hover: color-mix(
+    in srgb,
+    var(--color-accent) 82%,
+    var(--color-border)
+  );
+  --color-scrollbar-corner: var(--color-scrollbar-thumb);
 }
 
 * {
@@ -1120,31 +1136,31 @@ input.seek-slider-input {
 }
 
 ::-webkit-scrollbar-track {
-  background: color-mix(in srgb, var(--color-surface-alt) 94%, var(--color-bg));
-  border: 1px solid color-mix(in srgb, var(--color-border) 72%, transparent);
+  background: var(--color-scrollbar-track);
+  border: 1px solid color-mix(in srgb, var(--color-border) 80%, transparent);
   border-radius: 999px;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: color-mix(in srgb, var(--color-accent) 24%, var(--color-border));
-  border: 1px solid color-mix(in srgb, var(--color-border) 65%, transparent);
+  background: var(--color-scrollbar-thumb);
+  border: 1px solid color-mix(in srgb, var(--color-surface) 62%, transparent);
   border-radius: 999px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: color-mix(in srgb, var(--color-accent) 45%, var(--color-border));
+  background: var(--color-scrollbar-thumb-hover);
 }
 
 ::-webkit-scrollbar-corner {
-  background: color-mix(in srgb, var(--color-surface-alt) 92%, var(--color-bg));
+  background: var(--color-scrollbar-corner);
 }
 
 * {
   scrollbar-width: thin;
   scrollbar-color: color-mix(
       in srgb,
-      var(--color-accent) 24%,
+      var(--color-accent) 65%,
       var(--color-border)
     )
-    color-mix(in srgb, var(--color-surface-alt) 94%, var(--color-bg));
+    var(--color-scrollbar-track);
 }

@@ -74,7 +74,108 @@ async function expectSelectorsMeetHitTarget(
   expect(failures).toEqual([]);
 }
 
+function parseCssRgb(input: string): [number, number, number] | null {
+  const rgbMatch = input.match(
+    /^rgba?\((\d+(?:\.\d+)?),\s*(\d+(?:\.\d+)?),\s*(\d+(?:\.\d+)?)/,
+  );
+  if (rgbMatch) {
+    return [Number(rgbMatch[1]), Number(rgbMatch[2]), Number(rgbMatch[3])];
+  }
+
+  const srgbMatch = input.match(
+    /^color\(srgb\s+(\d+(?:\.\d+)?)\s+(\d+(?:\.\d+)?)\s+(\d+(?:\.\d+)?)/,
+  );
+  if (srgbMatch) {
+    return [
+      Number(srgbMatch[1]) * 255,
+      Number(srgbMatch[2]) * 255,
+      Number(srgbMatch[3]) * 255,
+    ];
+  }
+
+  return null;
+}
+
+function contrastRatio(
+  a: [number, number, number],
+  b: [number, number, number],
+): number {
+  const luminance = (rgb: [number, number, number]): number => {
+    const [r, g, b] = rgb.map((channel) => {
+      const value = channel / 255;
+      return value <= 0.03928
+        ? value / 12.92
+        : Math.pow((value + 0.055) / 1.055, 2.4);
+    });
+    return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+  };
+
+  const [lighter, darker] = [luminance(a), luminance(b)].sort((x, y) => y - x);
+  return (lighter + 0.05) / (darker + 0.05);
+}
+
+async function expectScrollbarContrast(
+  appPage: Parameters<typeof waitForUiSettled>[0],
+  themeId: "lavender" | "midnight",
+): Promise<void> {
+  await appPage.evaluate((id) => {
+    localStorage.setItem("rexiano-theme", id);
+  }, themeId);
+  await appPage.reload();
+  await gotoLibrary(appPage);
+
+  const samples = await appPage.evaluate(() => {
+    const shell = document.querySelector(".app-shell");
+    if (!(shell instanceof HTMLElement)) return [];
+
+    const track = getComputedStyle(
+      shell,
+      "::-webkit-scrollbar-track",
+    ).backgroundColor;
+    const thumb = getComputedStyle(
+      shell,
+      "::-webkit-scrollbar-thumb",
+    ).backgroundColor;
+    const corner = getComputedStyle(
+      shell,
+      "::-webkit-scrollbar-corner",
+    ).backgroundColor;
+
+    return [{ surface: "library-shell", track, thumb, corner }];
+  });
+
+  expect(samples).not.toEqual([]);
+  const failures = samples.flatMap(({ surface, track, thumb, corner }) => {
+    const trackRgb = parseCssRgb(track);
+    const thumbRgb = parseCssRgb(thumb);
+    const cornerRgb = parseCssRgb(corner);
+    if (!trackRgb || !thumbRgb || !cornerRgb) {
+      return [{ surface, reason: "unparseable", track, thumb, corner }];
+    }
+
+    const thumbContrast = contrastRatio(trackRgb, thumbRgb);
+    const cornerContrast = contrastRatio(trackRgb, cornerRgb);
+    return [
+      thumbContrast >= 2.2
+        ? null
+        : { surface, reason: "thumb", ratio: thumbContrast, track, thumb },
+      cornerContrast >= 2.2
+        ? null
+        : { surface, reason: "corner", ratio: cornerContrast, track, corner },
+    ].filter(Boolean);
+  });
+
+  expect(failures).toEqual([]);
+}
+
 test.describe("Playback UI polish guardrails", () => {
+  test("scrollbars keep thumb and corner contrast in light and dark themes", async ({
+    appPage,
+  }) => {
+    await expectScrollbarContrast(appPage, "lavender");
+    await expectScrollbarContrast(appPage, "midnight");
+  });
+
   test("header is compact and keeps title + metrics on the same row", async ({
     appPage,
   }) => {
