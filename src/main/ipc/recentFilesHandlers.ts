@@ -3,6 +3,7 @@ import { readFile, writeFile, mkdir } from "fs/promises";
 import { join, dirname } from "path";
 import { existsSync } from "fs";
 import { IpcChannels, type RecentFile } from "../../shared/types";
+import { normalizeRecentFile } from "./persistenceValidators";
 
 /** Maximum number of recent files to keep */
 const MAX_RECENTS = 10;
@@ -24,7 +25,10 @@ async function readRecents(): Promise<RecentFile[]> {
     const raw = await readFile(filePath, "utf-8");
     const parsed = JSON.parse(raw);
     if (!Array.isArray(parsed)) return [];
-    return parsed as RecentFile[];
+    return parsed.flatMap((file) => {
+      const normalized = normalizeRecentFile(file);
+      return normalized ? [normalized] : [];
+    });
   } catch {
     return [];
   }
@@ -53,11 +57,14 @@ export function registerRecentFilesHandlers(): void {
   ipcMain.handle(
     IpcChannels.SAVE_RECENT_FILE,
     async (_event, file: RecentFile): Promise<void> => {
+      const normalized = normalizeRecentFile(file);
+      if (!normalized) return;
+
       const recents = await readRecents();
 
       // Remove existing entry for this path (if any) so it moves to front
-      const filtered = recents.filter((r) => r.path !== file.path);
-      filtered.unshift(file);
+      const filtered = recents.filter((r) => r.path !== normalized.path);
+      filtered.unshift(normalized);
 
       // Keep only the most recent entries
       const trimmed = filtered.slice(0, MAX_RECENTS);

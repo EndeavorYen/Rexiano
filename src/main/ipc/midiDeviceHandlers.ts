@@ -1,19 +1,26 @@
 import { ipcMain, session } from "electron";
 import { IpcChannels, type MidiDeviceInfo } from "../../shared/types";
+import {
+  isAllowedBluetoothDevicePermission,
+  isAllowedMidiPermissionRequest,
+} from "./midiPermissionPolicy";
 
 export function registerMidiDeviceHandlers(): void {
-  // Auto-approve MIDI permission requests from Chromium.
+  // Auto-approve MIDI permission requests from Rexiano renderer pages.
   // When the renderer calls navigator.requestMIDIAccess(), Chromium fires a
   // permission request through the session — we grant it here so no
   // user-facing prompt appears.
   // Allowed permissions: MIDI (wired) + Bluetooth (BLE MIDI).
   // Chromium sends "bluetooth" at runtime but Electron's TS types don't
   // include it in the permission union, so we cast to string for the check.
-  const allowedPermissions: string[] = ["midi", "midiSysex", "bluetooth"];
-
   session.defaultSession.setPermissionRequestHandler(
-    (_webContents, permission, callback) => {
-      callback(allowedPermissions.includes(permission));
+    (webContents, permission, callback) => {
+      callback(
+        isAllowedMidiPermissionRequest({
+          permission,
+          url: webContents.getURL(),
+        }),
+      );
     },
   );
 
@@ -21,7 +28,10 @@ export function registerMidiDeviceHandlers(): void {
   // Without this, Chromium blocks GATT access even after the user picks a device.
   // Electron's TS types don't include "bluetooth" in deviceType union.
   session.defaultSession.setDevicePermissionHandler((details) => {
-    return (details.deviceType as string) === "bluetooth";
+    return isAllowedBluetoothDevicePermission({
+      deviceType: details.deviceType as string,
+      origin: details.origin,
+    });
   });
 
   // Auto-approve BLE pairing requests.

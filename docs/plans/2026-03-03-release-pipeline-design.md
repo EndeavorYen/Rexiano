@@ -24,15 +24,15 @@ Currently, the `dev → main` merge does not automatically trigger a release. Th
 ## Architecture
 
 ```
-dev branch  ──merge──▶  main  ──push──▶  release-please.yml
-                                              │
+dev branch  --merge--▶  main  --push--▶  release-please.yml
+                                              |
                                  Creates/updates "Release PR"
                                  (bumps package.json + CHANGELOG.md)
-                                              │
+                                              |
                           developer merges Release PR
-                                              │
+                                              |
                                release-please pushes tag v*
-                                              │
+                                              |
                                        release.yml (existing)
                                   build Win/Mac/Linux + publish
 ```

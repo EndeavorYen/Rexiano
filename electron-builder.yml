@@ -57,6 +57,8 @@ mac:
   extendInfo:
     - NSDocumentsFolderUsageDescription: Application requests access to the user's Documents folder.
     - NSDownloadsFolderUsageDescription: Application requests access to the user's Downloads folder.
+  # Official notarization is intentionally disabled until the secrets listed in
+  # docs/release-signing.md are configured for the release workflow.
   notarize: false
   target:
     - target: dmg
@@ -65,12 +67,10 @@ mac:
         - arm64
 dmg:
   artifactName: ${name}-${version}-${arch}.${ext}
-  # To add a custom DMG background, place an image at build/dmg-background.png
-  # and uncomment the following lines:
-  # background: build/dmg-background.png
-  # window:
-  #   width: 540
-  #   height: 380
+  background: build/dmg-background.png
+  window:
+    width: 540
+    height: 380
   contents:
     - x: 130
       y: 220

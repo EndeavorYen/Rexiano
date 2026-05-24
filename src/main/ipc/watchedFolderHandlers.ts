@@ -6,29 +6,69 @@ import {
   type WatchedMidiFolder,
   type WatchedMidiFoldersScanResult,
 } from "../../shared/types";
+import { approveMidiFolderPath } from "./midiPathAccess";
 
 const MIDI_FILE_PATTERN = /\.(mid|midi|kar)$/i;
+const DEFAULT_MAX_DEPTH = 8;
+const DEFAULT_MAX_MIDI_FILES = 500;
+
+interface FolderDiscoveryOptions {
+  maxDepth?: number;
+  maxMidiFiles?: number;
+}
 
 function isMidiFile(fileName: string): boolean {
   return MIDI_FILE_PATTERN.test(fileName);
 }
 
-export async function discoverMidiFilesInFolder(
-  folderPath: string,
-): Promise<string[]> {
-  const entries = await readdir(folderPath, { withFileTypes: true });
-  const discovered: string[] = [];
+function shouldSkipEntry(entryName: string): boolean {
+  return entryName.startsWith(".");
+}
 
-  for (const entry of entries) {
+async function collectMidiFilesInFolder(
+  folderPath: string,
+  options: Required<FolderDiscoveryOptions>,
+  depth: number,
+  discovered: string[],
+): Promise<void> {
+  if (depth > options.maxDepth || discovered.length >= options.maxMidiFiles) {
+    return;
+  }
+
+  const entries = await readdir(folderPath, { withFileTypes: true });
+  const sortedEntries = [...entries].sort((a, b) =>
+    a.name.localeCompare(b.name),
+  );
+
+  for (const entry of sortedEntries) {
+    if (discovered.length >= options.maxMidiFiles) return;
+    if (shouldSkipEntry(entry.name)) continue;
+
     const entryPath = join(folderPath, entry.name);
     if (entry.isDirectory()) {
-      discovered.push(...(await discoverMidiFilesInFolder(entryPath)));
+      await collectMidiFilesInFolder(entryPath, options, depth + 1, discovered);
       continue;
     }
     if (entry.isFile() && isMidiFile(entry.name)) {
       discovered.push(entryPath);
     }
   }
+}
+
+export async function discoverMidiFilesInFolder(
+  folderPath: string,
+  options: FolderDiscoveryOptions = {},
+): Promise<string[]> {
+  const discovered: string[] = [];
+  await collectMidiFilesInFolder(
+    folderPath,
+    {
+      maxDepth: options.maxDepth ?? DEFAULT_MAX_DEPTH,
+      maxMidiFiles: options.maxMidiFiles ?? DEFAULT_MAX_MIDI_FILES,
+    },
+    0,
+    discovered,
+  );
 
   return discovered.sort((a, b) => a.localeCompare(b));
 }
@@ -76,7 +116,9 @@ export function registerWatchedFolderHandlers(): void {
 
       if (result.canceled || result.filePaths.length === 0) return null;
 
-      return scanWatchedFolder(result.filePaths[0]);
+      const folder = await scanWatchedFolder(result.filePaths[0]);
+      approveMidiFolderPath(folder.folderPath);
+      return folder;
     },
   );
 

@@ -150,6 +150,11 @@ export const en: TranslationMap = {
   "transport.enableMetronome": "Enable metronome",
   "transport.disableMetronome": "Disable metronome",
 
+  // ── Falling Notes ──────────────────────────────────────────────
+  "fallingNotes.renderFailureTitle": "Falling notes could not start",
+  "fallingNotes.renderFailureGuidance":
+    "Try Sheet view, update your graphics drivers, or restart Rexiano.",
+
   // ── Song Header ────────────────────────────────────────────────
   "song.tracks": "tracks",
   "song.track": "track",

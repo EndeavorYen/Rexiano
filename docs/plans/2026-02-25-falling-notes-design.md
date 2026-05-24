@@ -11,16 +11,16 @@ Rendering: **PixiJS 8 direct manipulation** (no @pixi/react). PixiJS managed via
 
 ```
 App.tsx
- ├─ useSongStore (Zustand)        ← replaces useState, global
- │    └─ song: ParsedSong | null
- │
- ├─ FallingNotesCanvas             ← new, wraps PixiJS
- │    ├─ PixiJS Application        (useRef, manual lifecycle)
- │    ├─ NoteRenderer              (object pool + draw loop)
- │    └─ ViewportManager           (time↔pixel mapping, scrolling)
- │
- └─ PianoKeyboard                  ← existing, unchanged
-      └─ activeNotes: Set<number>  (driven by NoteRenderer)
+ +- useSongStore (Zustand)        ← replaces useState, global
+ |    +- song: ParsedSong | null
+ |
+ +- FallingNotesCanvas             ← new, wraps PixiJS
+ |    +- PixiJS Application        (useRef, manual lifecycle)
+ |    +- NoteRenderer              (object pool + draw loop)
+ |    +- ViewportManager           (time↔pixel mapping, scrolling)
+ |
+ +- PianoKeyboard                  ← existing, unchanged
+      +- activeNotes: Set<number>  (driven by NoteRenderer)
 ```
 
 PixiJS handles high-frequency rendering (60 FPS ticker). React handles UI controls (file loading, transport). They bridge via Zustand stores—React writes song data, PixiJS reads and renders.
@@ -31,17 +31,17 @@ PixiJS handles high-frequency rendering (60 FPS ticker). React handles UI contro
 X axis = keyboard position (MIDI note → screen x)
 Y axis = time (seconds → screen y, up = future)
 
-┌──────────────────────────────┐ ← y = 0 (future, song end)
-│    ┌──┐                      │
-│    │♪ │  ← note rectangle    │
-│    └──┘    x = key position  │
-│            y = note.time     │
-│            h = note.duration │
-│                              │
-│ ─ ─ ─ ─ ─ hit line ─ ─ ─ ─ │ ← y = viewportBottom (current playback)
-├──────────────────────────────┤
-│  ▓▓  ▓▓    ▓▓ ▓▓ ▓▓         │ ← PianoKeyboard
-└──────────────────────────────┘
++------------------------------+ ← y = 0 (future, song end)
+|    +--+                      |
+|    |♪ |  ← note rectangle    |
+|    +--+    x = key position  |
+|            y = note.time     |
+|            h = note.duration |
+|                              |
+| - - - - - hit line - - - - | ← y = viewportBottom (current playback)
++------------------------------+
+|  ▓▓  ▓▓    ▓▓ ▓▓ ▓▓         | ← PianoKeyboard
++------------------------------+
 ```
 
 - **pixelsPerSecond**: controls note density, default ~200px/s
@@ -125,21 +125,21 @@ unmount:
 
 ```
 src/renderer/src/
-├── stores/
-│   ├── useSongStore.ts
-│   └── usePlaybackStore.ts
-├── engines/
-│   └── fallingNotes/
-│       ├── NoteRenderer.ts
-│       ├── ViewportManager.ts
-│       └── noteColors.ts
-├── features/
-│   └── fallingNotes/
-│       ├── FallingNotesCanvas.tsx
-│       ├── PianoKeyboard.tsx         # existing, unchanged
-│       └── TransportBar.tsx
-└── hooks/
-    └── useAnimationFrame.ts
++-- stores/
+|   +-- useSongStore.ts
+|   +-- usePlaybackStore.ts
++-- engines/
+|   +-- fallingNotes/
+|       +-- NoteRenderer.ts
+|       +-- ViewportManager.ts
+|       +-- noteColors.ts
++-- features/
+|   +-- fallingNotes/
+|       +-- FallingNotesCanvas.tsx
+|       +-- PianoKeyboard.tsx         # existing, unchanged
+|       +-- TransportBar.tsx
++-- hooks/
+    +-- useAnimationFrame.ts
 ```
 
 ## Scope Boundaries

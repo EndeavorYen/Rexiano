@@ -6,14 +6,14 @@ Thanks for your interest in contributing to Rexiano! This is a piano practice ap
 
 ### Prerequisites
 
-- [Node.js](https://nodejs.org/) 20+
-- [pnpm](https://pnpm.io/) 9+
+- [Node.js](https://nodejs.org/) 22+
+- [pnpm](https://pnpm.io/) 10+
 - [Git](https://git-scm.com/)
 
 ### Getting Started
 
 ```bash
-git clone https://github.com/nickhsu-endea/Rexiano.git
+git clone https://github.com/EndeavorYen/Rexiano.git
 cd Rexiano
 pnpm install
 pnpm dev
@@ -108,7 +108,7 @@ Check [docs/ROADMAP.md](docs/ROADMAP.md) for the full task list. Items marked `[
 
 ## Reporting Issues
 
-Use [GitHub Issues](https://github.com/nickhsu-endea/Rexiano/issues) with the provided templates. Include:
+Use [GitHub Issues](https://github.com/EndeavorYen/Rexiano/issues) with the provided templates. Include:
 
 - Your operating system and version
 - Steps to reproduce
@@ -117,7 +117,7 @@ Use [GitHub Issues](https://github.com/nickhsu-endea/Rexiano/issues) with the pr
 
 ## Suggesting Features
 
-Use the [feature request template](https://github.com/nickhsu-endea/Rexiano/issues/new?template=feature_request.md). Check `docs/ROADMAP.md` first to see if the feature is already planned.
+Use the [feature request template](https://github.com/EndeavorYen/Rexiano/issues/new?template=feature_request.md). Check `docs/ROADMAP.md` first to see if the feature is already planned.
 
 ## Code of Conduct
 

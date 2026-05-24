@@ -178,68 +178,68 @@ VexFlow 5 為 ESM + TypeScript 原生，無需額外型別定義。
 
 ```
 ParsedSong (MIDI)
-    │
-    ├─ tempos[]           # BPM 變化時間點
-    ├─ timeSignatures[]   # 拍號變化
-    └─ tracks[].notes[]   # { midi, time(秒), duration(秒), velocity }
-    │
+    |
+    +- tempos[]           # BPM 變化時間點
+    +- timeSignatures[]   # 拍號變化
+    +- tracks[].notes[]   # { midi, time(秒), duration(秒), velocity }
+    |
     ▼
-┌─────────────────────────────────────────────────────────┐
-│  Stage 1: 時間 → 節拍轉換 (secondsToBeats)             │
-│  輸入：time(s), duration(s), tempoMap                   │
-│  輸出：startBeat(全域 beat), durationBeats              │
-└────────────────────────┬────────────────────────────────┘
-                         │
++---------------------------------------------------------+
+|  Stage 1: 時間 → 節拍轉換 (secondsToBeats)             |
+|  輸入：time(s), duration(s), tempoMap                   |
+|  輸出：startBeat(全域 beat), durationBeats              |
++------------------------+--------------------------------+
+                         |
                          ▼
-┌─────────────────────────────────────────────────────────┐
-│  Stage 2: 量化 (quantize)                               │
-│  輸入：startBeat, durationBeats                         │
-│  輸出：量化後的 startBeat, durationBeats                │
-│  子步驟：                                                │
-│    2a. 格線對齊（snap onset to nearest grid point）      │
-│    2b. 時值量化（snap duration to nearest standard）     │
-│    2c. 三連音偵測（detect triplet groupings）            │
-└────────────────────────┬────────────────────────────────┘
-                         │
++---------------------------------------------------------+
+|  Stage 2: 量化 (quantize)                               |
+|  輸入：startBeat, durationBeats                         |
+|  輸出：量化後的 startBeat, durationBeats                |
+|  子步驟：                                                |
+|    2a. 格線對齊（snap onset to nearest grid point）      |
+|    2b. 時值量化（snap duration to nearest standard）     |
+|    2c. 三連音偵測（detect triplet groupings）            |
++------------------------+--------------------------------+
+                         |
                          ▼
-┌─────────────────────────────────────────────────────────┐
-│  Stage 3: 譜號分配 (assignClef)                         │
-│  輸入：midi number, track index                         │
-│  輸出：'treble' | 'bass'                                │
-│  規則：                                                  │
-│    - 若 MIDI 有明確雙軌（R/L hand）→ 按 track           │
-│    - 否則以 MIDI 60 (C4) 為分界                          │
-└────────────────────────┬────────────────────────────────┘
-                         │
++---------------------------------------------------------+
+|  Stage 3: 譜號分配 (assignClef)                         |
+|  輸入：midi number, track index                         |
+|  輸出：'treble' | 'bass'                                |
+|  規則：                                                  |
+|    - 若 MIDI 有明確雙軌（R/L hand）→ 按 track           |
+|    - 否則以 MIDI 60 (C4) 為分界                          |
++------------------------+--------------------------------+
+                         |
                          ▼
-┌─────────────────────────────────────────────────────────┐
-│  Stage 4: 小節線切割 (splitIntoMeasures)                │
-│  輸入：量化音符 + timeSignature map                      │
-│  輸出：NotatedMeasure[]                                 │
-│  子步驟：                                                │
-│    4a. 計算每小節的 beat 範圍                            │
-│    4b. 跨小節音符 → 連結線                               │
-│    4c. 插入休止符填補空白                                 │
-└────────────────────────┬────────────────────────────────┘
-                         │
++---------------------------------------------------------+
+|  Stage 4: 小節線切割 (splitIntoMeasures)                |
+|  輸入：量化音符 + timeSignature map                      |
+|  輸出：NotatedMeasure[]                                 |
+|  子步驟：                                                |
+|    4a. 計算每小節的 beat 範圍                            |
+|    4b. 跨小節音符 → 連結線                               |
+|    4c. 插入休止符填補空白                                 |
++------------------------+--------------------------------+
+                         |
                          ▼
-┌─────────────────────────────────────────────────────────┐
-│  Stage 5: 音符時值推斷 (inferDuration)                  │
-│  輸入：durationBeats（量化後）                           │
-│  輸出：VexFlow duration string + isDotted + isTied       │
-│  子步驟：                                                │
-│    5a. 精確匹配標準時值                                   │
-│    5b. 附點音符偵測                                       │
-│    5c. 需要連結線的複合時值                               │
-└────────────────────────┬────────────────────────────────┘
-                         │
++---------------------------------------------------------+
+|  Stage 5: 音符時值推斷 (inferDuration)                  |
+|  輸入：durationBeats（量化後）                           |
+|  輸出：VexFlow duration string + isDotted + isTied       |
+|  子步驟：                                                |
+|    5a. 精確匹配標準時值                                   |
+|    5b. 附點音符偵測                                       |
+|    5c. 需要連結線的複合時值                               |
++------------------------+--------------------------------+
+                         |
                          ▼
-┌─────────────────────────────────────────────────────────┐
-│  Stage 6: 升降記號推斷 (inferAccidentals)               │
-│  輸入：midi number, keySignature                         │
-│  輸出：accidental? ('#', 'b', 'n', '##', 'bb')         │
-└────────────────────────┬────────────────────────────────┘
-                         │
++---------------------------------------------------------+
+|  Stage 6: 升降記號推斷 (inferAccidentals)               |
+|  輸入：midi number, keySignature                         |
+|  輸出：accidental? ('#', 'b', 'n', '##', 'bb')         |
++------------------------+--------------------------------+
+                         |
                          ▼
   NotatedMeasure[] → 傳給 VexFlow 渲染
 ```
@@ -818,7 +818,7 @@ function insertRests(
 ### 3.1 中間表示型別
 
 ```typescript
-// ─── engines/notation/types.ts ─────────────────────────────────────
+// --- engines/notation/types.ts -------------------------------------
 
 /** 量化後的音符（Stage 2 輸出） */
 interface QuantizedNote {
@@ -947,27 +947,27 @@ interface NotatedScore {
 
 ```
 src/renderer/src/
-├── engines/notation/
-│   ├── types.ts                 ← 上方所有 interface
-│   ├── MidiToNotation.ts        ← 主轉換管線（6 stages）
-│   ├── quantizer.ts             ← Stage 1-2: 時間轉換 + 量化
-│   ├── measureSplitter.ts       ← Stage 4: 小節切割
-│   ├── durationInfer.ts         ← Stage 5: 時值推斷
-│   ├── accidentalInfer.ts       ← Stage 6: 升降記號
-│   └── __tests__/
-│       ├── quantizer.test.ts
-│       ├── measureSplitter.test.ts
-│       ├── durationInfer.test.ts
-│       └── MidiToNotation.test.ts
-├── features/sheetMusic/
-│   ├── SheetMusicPanel.tsx      ← React 元件（VexFlow 容器）
-│   ├── MeasureRenderer.ts       ← 將 NotatedMeasure → VexFlow 渲染
-│   ├── CursorSync.ts            ← 同步播放時間 → 譜面位置
-│   ├── useSheetMusicMode.ts     ← 顯示模式切換 hook
-│   └── __tests__/
-│       └── SheetMusicPanel.test.tsx
-└── stores/
-    └── useSheetMusicStore.ts    ← 五線譜狀態（顯示模式、游標位置等）
++-- engines/notation/
+|   +-- types.ts                 ← 上方所有 interface
+|   +-- MidiToNotation.ts        ← 主轉換管線（6 stages）
+|   +-- quantizer.ts             ← Stage 1-2: 時間轉換 + 量化
+|   +-- measureSplitter.ts       ← Stage 4: 小節切割
+|   +-- durationInfer.ts         ← Stage 5: 時值推斷
+|   +-- accidentalInfer.ts       ← Stage 6: 升降記號
+|   +-- __tests__/
+|       +-- quantizer.test.ts
+|       +-- measureSplitter.test.ts
+|       +-- durationInfer.test.ts
+|       +-- MidiToNotation.test.ts
++-- features/sheetMusic/
+|   +-- SheetMusicPanel.tsx      ← React 元件（VexFlow 容器）
+|   +-- MeasureRenderer.ts       ← 將 NotatedMeasure → VexFlow 渲染
+|   +-- CursorSync.ts            ← 同步播放時間 → 譜面位置
+|   +-- useSheetMusicMode.ts     ← 顯示模式切換 hook
+|   +-- __tests__/
+|       +-- SheetMusicPanel.test.tsx
++-- stores/
+    +-- useSheetMusicStore.ts    ← 五線譜狀態（顯示模式、游標位置等）
 ```
 
 ### 4.2 SheetMusicPanel.tsx 設計
@@ -1068,19 +1068,19 @@ class CursorSync {
 ### 4.4 顯示模式
 
 ```
-┌────────────────────────────────────────────────────────┐
-│  useSheetMusicStore                                    │
-│                                                        │
-│  displayMode: 'split' | 'sheetOnly' | 'fallingOnly'   │
-│  score: NotatedScore | null                            │
-│  cursorMeasure: number                                 │
-│  isAutoScroll: boolean                                 │
-│  measuresPerLine: number (default: 4)                  │
-│                                                        │
-│  setDisplayMode(mode)                                  │
-│  setScore(score)                                       │
-│  updateCursor(currentTime)                             │
-└────────────────────────────────────────────────────────┘
++--------------------------------------------------------+
+|  useSheetMusicStore                                    |
+|                                                        |
+|  displayMode: 'split' | 'sheetOnly' | 'fallingOnly'   |
+|  score: NotatedScore | null                            |
+|  cursorMeasure: number                                 |
+|  isAutoScroll: boolean                                 |
+|  measuresPerLine: number (default: 4)                  |
+|                                                        |
+|  setDisplayMode(mode)                                  |
+|  setScore(score)                                       |
+|  updateCursor(currentTime)                             |
++--------------------------------------------------------+
 ```
 
 **佈局切換**：
@@ -1258,25 +1258,25 @@ class CursorSync {
 
 ```
 Task 2 (型別)
-  │
-  ├── Task 3 (量化引擎) ──┐
-  │     │                  │
-  │     ├── Task 4 (小節切割) ──┐
-  │     └── Task 5 (時值推斷) ──┤
-  │                              │
-  ├── Task 6 (升降記號) ────────┤
-  │                              │
-  │                              ▼
-  │                         Task 7 (管線整合)
-  │                              │
-Task 1 (VexFlow 基礎) ──── Task 8 (小節渲染器)
-                                 │
+  |
+  +-- Task 3 (量化引擎) --+
+  |     |                  |
+  |     +-- Task 4 (小節切割) --+
+  |     +-- Task 5 (時值推斷) --+
+  |                              |
+  +-- Task 6 (升降記號) --------+
+  |                              |
+  |                              ▼
+  |                         Task 7 (管線整合)
+  |                              |
+Task 1 (VexFlow 基礎) ---- Task 8 (小節渲染器)
+                                 |
                             Task 9 (面板完整化)
-                                 │
+                                 |
                            Task 10 (游標同步)
-                                 │
+                                 |
                            Task 11 (模式切換)
-                                 │
+                                 |
                            Task 12 (測試調校)
 ```
 

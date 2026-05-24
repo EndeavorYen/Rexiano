@@ -36,7 +36,7 @@
 
 ### Steps
 
-1. Go to the [GitHub Releases page](https://github.com/nickhsu-endea/Rexiano/releases) and download the latest version
+1. Go to the [GitHub Releases page](https://github.com/EndeavorYen/Rexiano/releases) and download the latest version
 2. Download the `rexiano-x.x.x-setup.exe` file
 3. Double-click the installer to run it
 
@@ -44,7 +44,7 @@
 
 On first install, Windows Defender SmartScreen may show a "Windows protected your PC" warning. **This does not mean Rexiano is malware.**
 
-Why this happens: Rexiano currently does not have an EV Code Signing Certificate for Windows. SmartScreen flags all unsigned applications. Rexiano is fully open-source — you can review every line of source code on [GitHub](https://github.com/nickhsu-endea/Rexiano).
+Why this happens: Rexiano currently does not have an EV Code Signing Certificate for Windows. SmartScreen flags all unsigned applications. Rexiano is fully open-source — you can review every line of source code on [GitHub](https://github.com/EndeavorYen/Rexiano).
 
 How to proceed:
 
@@ -62,7 +62,7 @@ A Rexiano shortcut will appear on your desktop. You can also find Rexiano in the
 
 ### Steps
 
-1. Go to the [GitHub Releases page](https://github.com/nickhsu-endea/Rexiano/releases) and download the latest version
+1. Go to the [GitHub Releases page](https://github.com/EndeavorYen/Rexiano/releases) and download the latest version
 2. Download the `rexiano-x.x.x.dmg` file
 3. Double-click the DMG to open it
 4. Drag the **Rexiano** icon into the **Applications** folder
@@ -95,7 +95,7 @@ AppImage runs on any Linux distribution without installing anything.
 
 ```bash
 # 1. Download the AppImage
-wget https://github.com/nickhsu-endea/Rexiano/releases/latest/download/rexiano-x.x.x.AppImage
+wget https://github.com/EndeavorYen/Rexiano/releases/latest/download/rexiano-x.x.x.AppImage
 
 # 2. Make it executable
 chmod +x rexiano-x.x.x.AppImage
@@ -118,7 +118,7 @@ sudo dnf install fuse fuse-libs
 
 ```bash
 # Download and install
-wget https://github.com/nickhsu-endea/Rexiano/releases/latest/download/rexiano-x.x.x.deb
+wget https://github.com/EndeavorYen/Rexiano/releases/latest/download/rexiano-x.x.x.deb
 sudo dpkg -i rexiano-x.x.x.deb
 
 # Fix missing dependencies if needed
@@ -213,15 +213,15 @@ If you want to build Rexiano from source or contribute to development, follow th
 
 | Tool    | Version | Installation                        |
 | ------- | ------- | ----------------------------------- |
-| Node.js | 20+     | [nodejs.org](https://nodejs.org/)   |
-| pnpm    | 9+      | `npm install -g pnpm`               |
+| Node.js | 22+     | [nodejs.org](https://nodejs.org/)   |
+| pnpm    | 10+     | `npm install -g pnpm`               |
 | Git     | Any     | [git-scm.com](https://git-scm.com/) |
 
 ### Clone and Start
 
 ```bash
 # Clone the repository
-git clone https://github.com/nickhsu-endea/Rexiano.git
+git clone https://github.com/EndeavorYen/Rexiano.git
 cd Rexiano
 
 # Install dependencies
@@ -257,4 +257,4 @@ NO_SANDBOX=1 pnpm dev
 ---
 
 _Rexiano is free, open-source software released under GPL-3.0._
-_Source code: [github.com/nickhsu-endea/Rexiano](https://github.com/nickhsu-endea/Rexiano)_
+_Source code: [github.com/EndeavorYen/Rexiano](https://github.com/EndeavorYen/Rexiano)_

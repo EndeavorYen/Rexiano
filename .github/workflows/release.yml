@@ -17,11 +17,11 @@ jobs:
 
       - uses: pnpm/action-setup@v4
         with:
-          version: 9
+          version: 10
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: pnpm
 
       - name: Install dependencies
@@ -31,6 +31,8 @@ jobs:
         run: pnpm build:win
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Keep CI unsigned until docs/release-signing.md credentials are configured.
+          CSC_IDENTITY_AUTO_DISCOVERY: false
 
       - name: Upload Windows artifacts
         uses: actions/upload-artifact@v4
@@ -49,11 +51,11 @@ jobs:
 
       - uses: pnpm/action-setup@v4
         with:
-          version: 9
+          version: 10
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: pnpm
 
       - name: Install dependencies
@@ -63,7 +65,7 @@ jobs:
         run: pnpm build:mac
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          # Code signing disabled — no Apple Developer certificate
+          # Keep CI unsigned/not-notarized until docs/release-signing.md credentials are configured.
           CSC_IDENTITY_AUTO_DISCOVERY: false
 
       - name: Upload macOS artifacts
@@ -83,11 +85,11 @@ jobs:
 
       - uses: pnpm/action-setup@v4
         with:
-          version: 9
+          version: 10
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: pnpm
 
       - name: Install dependencies

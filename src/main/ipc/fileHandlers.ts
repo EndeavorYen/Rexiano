@@ -8,6 +8,7 @@ import {
   type SoundFontResult,
   type BuiltinSongMeta,
 } from "../../shared/types";
+import { approveMidiFilePath, isApprovedMidiFilePath } from "./midiPathAccess";
 
 export function registerFileHandlers(): void {
   ipcMain.handle(
@@ -26,6 +27,7 @@ export function registerFileHandlers(): void {
 
       const filePath = result.filePaths[0];
       const buffer = await readFile(filePath);
+      approveMidiFilePath(filePath);
 
       return {
         fileName: basename(filePath),
@@ -75,11 +77,8 @@ export function registerFileHandlers(): void {
     IpcChannels.LOAD_MIDI_PATH,
     async (_event, filePath: string): Promise<MidiFileResult | null> => {
       if (typeof filePath !== "string" || filePath.length === 0) return null;
+      if (!isApprovedMidiFilePath(filePath)) return null;
       if (!existsSync(filePath)) return null;
-
-      // Only allow .mid/.midi files
-      const lower = filePath.toLowerCase();
-      if (!lower.endsWith(".mid") && !lower.endsWith(".midi")) return null;
 
       const buffer = await readFile(filePath);
       return {

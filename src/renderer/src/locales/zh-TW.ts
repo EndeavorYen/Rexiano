@@ -147,6 +147,11 @@ export const zhTW: TranslationMap = {
   "transport.enableMetronome": "啟用節拍器",
   "transport.disableMetronome": "停用節拍器",
 
+  // ── Falling Notes ──────────────────────────────────────────────
+  "fallingNotes.renderFailureTitle": "下落音符無法啟動",
+  "fallingNotes.renderFailureGuidance":
+    "可以先切到五線譜模式、更新顯示卡驅動程式，或重新啟動 Rexiano。",
+
   // ── Song Header ────────────────────────────────────────────────
   "song.tracks": "軌道",
   "song.track": "軌道",

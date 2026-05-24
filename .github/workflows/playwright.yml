@@ -1,6 +1,8 @@
 name: Playwright E2E
 
 on:
+  pull_request:
+    branches: [main, dev]
   workflow_dispatch:
 
 concurrency:

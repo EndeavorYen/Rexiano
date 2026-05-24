@@ -8,11 +8,16 @@ import { registerRecentFilesHandlers } from "./ipc/recentFilesHandlers";
 import { registerAppInfoHandlers } from "./ipc/appInfoHandlers";
 import { registerUserDataBackupHandlers } from "./ipc/userDataBackupHandlers";
 import { registerWatchedFolderHandlers } from "./ipc/watchedFolderHandlers";
+import { normalizeExternalUrl } from "./externalUrlPolicy";
 
 // WSL2 doesn't forward Windows display scaling to X11/Wayland,
 // so Electron defaults to devicePixelRatio=1. Force the correct factor.
 if (process.env.WSL_DISTRO_NAME) {
   app.commandLine.appendSwitch("force-device-scale-factor", "1.5");
+}
+
+if (process.env.REXIANO_USER_DATA_DIR) {
+  app.setPath("userData", process.env.REXIANO_USER_DATA_DIR);
 }
 
 function createWindow(): void {
@@ -35,7 +40,10 @@ function createWindow(): void {
   });
 
   mainWindow.webContents.setWindowOpenHandler((details) => {
-    shell.openExternal(details.url);
+    const externalUrl = normalizeExternalUrl(details.url);
+    if (externalUrl) {
+      void shell.openExternal(externalUrl);
+    }
     return { action: "deny" };
   });
 

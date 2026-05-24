@@ -106,18 +106,18 @@ The core of Rexiano is the **Falling Notes** view. It works like a piano roll tu
 
 ```
   Time flows downward
-         │
+         |
          ▼
-  ┌──────────────────────────────┐
-  │                              │  Upcoming notes
-  │    ┌──┐     ┌────┐          │
-  │    │  │     │    │          │  Note rectangles
-  │    └──┘     └────┘          │  (colors indicate tracks)
-  │                              │
-  │ ───── hit line ───────────── │  ← Current playback position
-  ├──────────────────────────────┤
-  │  Piano keyboard (88 keys)    │  ← Keys light up as notes arrive
-  └──────────────────────────────┘
+  +------------------------------+
+  |                              |  Upcoming notes
+  |    +--+     +----+          |
+  |    |  |     |    |          |  Note rectangles
+  |    +--+     +----+          |  (colors indicate tracks)
+  |                              |
+  | ----- hit line ------------- |  ← Current playback position
+  +------------------------------+
+  |  Piano keyboard (88 keys)    |  ← Keys light up as notes arrive
+  +------------------------------+
 ```
 
 - The **horizontal position** of a note rectangle corresponds to the piano key
@@ -470,7 +470,7 @@ Steps:
 2. Click **"Run anyway"**
 3. Continue with installation
 
-Rexiano is fully open-source — you can review all source code on [GitHub](https://github.com/nickhsu-endea/Rexiano).
+Rexiano is fully open-source — you can review all source code on [GitHub](https://github.com/EndeavorYen/Rexiano).
 
 ### Q: Where are my recently opened files?
 
@@ -543,4 +543,4 @@ We hope you and your child find the joy of music in Rexiano!
 ---
 
 _Rexiano is free, open-source software released under GPL-3.0._
-_Source code: [github.com/nickhsu-endea/Rexiano](https://github.com/nickhsu-endea/Rexiano)_
+_Source code: [github.com/EndeavorYen/Rexiano](https://github.com/EndeavorYen/Rexiano)_

@@ -57,7 +57,7 @@ A free, open-source piano practice app with falling notes, MIDI keyboard support
 
 ## Installation
 
-Download the latest release for your platform from the [Releases](https://github.com/nickhsu-endea/Rexiano/releases) page.
+Download the latest release for your platform from the [Releases](https://github.com/EndeavorYen/Rexiano/releases) page.
 
 ### Windows
 
@@ -108,15 +108,15 @@ For detailed steps, see the **[User Guide — Connecting a MIDI Keyboard](docs/u
 
 ### Prerequisites
 
-- [Node.js](https://nodejs.org/) 20 or later
-- [pnpm](https://pnpm.io/) 9 or later
+- [Node.js](https://nodejs.org/) 22 or later
+- [pnpm](https://pnpm.io/) 10 or later
 - Git
 
 ### Quick Start
 
 ```bash
 # Clone the repository
-git clone https://github.com/nickhsu-endea/Rexiano.git
+git clone https://github.com/EndeavorYen/Rexiano.git
 cd Rexiano
 
 # Install dependencies

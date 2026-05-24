@@ -57,7 +57,7 @@
 
 ## 安裝
 
-從 **[Releases 頁面](https://github.com/nickhsu-endea/Rexiano/releases)** 下載對應平台的安裝檔：
+從 **[Releases 頁面](https://github.com/EndeavorYen/Rexiano/releases)** 下載對應平台的安裝檔：
 
 | 作業系統 | 檔案                      | 備注                                                   |
 | -------- | ------------------------- | ------------------------------------------------------ |
@@ -83,15 +83,15 @@ Rexiano 支援在 Windows、macOS 和 Linux 上直接連接藍牙 MIDI 鍵盤，
 
 ### 前置需求
 
-- [Node.js](https://nodejs.org/) 20 或更新版本
-- [pnpm](https://pnpm.io/) 9 或更新版本
+- [Node.js](https://nodejs.org/) 22 或更新版本
+- [pnpm](https://pnpm.io/) 10 或更新版本
 - Git
 
 ### 快速開始
 
 ```bash
 # 複製專案
-git clone https://github.com/nickhsu-endea/Rexiano.git
+git clone https://github.com/EndeavorYen/Rexiano.git
 cd Rexiano
 
 # 安裝相依套件

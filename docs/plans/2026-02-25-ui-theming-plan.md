@@ -307,7 +307,7 @@ Replace the ENTIRE content of `src/renderer/src/assets/main.css` with:
 @import "@fontsource-variable/dm-sans";
 @import "@fontsource-variable/jetbrains-mono";
 
-/* ── Tailwind v4 theme extension ── */
+/* -- Tailwind v4 theme extension -- */
 @theme {
   --font-display: "Nunito Variable", "Nunito", system-ui, sans-serif;
   --font-body: "DM Sans Variable", "DM Sans", system-ui, sans-serif;
@@ -315,7 +315,7 @@ Replace the ENTIRE content of `src/renderer/src/assets/main.css` with:
     "JetBrains Mono Variable", "JetBrains Mono", ui-monospace, monospace;
 }
 
-/* ── Base resets ── */
+/* -- Base resets -- */
 #root {
   height: 100vh;
 }
@@ -326,7 +326,7 @@ body {
   background: var(--color-bg);
 }
 
-/* ── Custom slider styling ── */
+/* -- Custom slider styling -- */
 input[type="range"] {
   -webkit-appearance: none;
   appearance: none;

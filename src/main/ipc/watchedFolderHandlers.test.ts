@@ -86,6 +86,38 @@ describe("watchedFolderHandlers", () => {
     ]);
   });
 
+  test("skips hidden directories during recursive discovery", async () => {
+    mocks.directoryEntries["/Users/rex/Music"] = [
+      dir(".git"),
+      dir("Visible"),
+      file("Root.mid"),
+    ];
+    mocks.directoryEntries["/Users/rex/Music/.git"] = [file("Secret.mid")];
+    mocks.directoryEntries["/Users/rex/Music/Visible"] = [file("Scale.mid")];
+
+    await expect(
+      discoverMidiFilesInFolder("/Users/rex/Music"),
+    ).resolves.toEqual([
+      "/Users/rex/Music/Root.mid",
+      "/Users/rex/Music/Visible/Scale.mid",
+    ]);
+  });
+
+  test("caps discovered MIDI files to avoid unbounded scans", async () => {
+    mocks.directoryEntries["/Users/rex/Music"] = Array.from(
+      { length: 25 },
+      (_, i) => file(`Song-${String(i).padStart(2, "0")}.mid`),
+    );
+
+    const result = await discoverMidiFilesInFolder("/Users/rex/Music", {
+      maxMidiFiles: 10,
+    });
+
+    expect(result).toHaveLength(10);
+    expect(result[0]).toBe("/Users/rex/Music/Song-00.mid");
+    expect(result[9]).toBe("/Users/rex/Music/Song-09.mid");
+  });
+
   test("registers folder selection and refresh IPC handlers", async () => {
     mocks.directoryEntries["/Users/rex/Music"] = [file("Scale.mid")];
     mocks.dialogMock.showOpenDialog.mockResolvedValue({

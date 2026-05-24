@@ -146,6 +146,10 @@ export interface TranslationMap {
   "transport.enableMetronome": string;
   "transport.disableMetronome": string;
 
+  // ── Falling Notes ──────────────────────────────────────────────
+  "fallingNotes.renderFailureTitle": string;
+  "fallingNotes.renderFailureGuidance": string;
+
   // ── Song Header ────────────────────────────────────────────────
   "song.tracks": string;
   "song.track": string;

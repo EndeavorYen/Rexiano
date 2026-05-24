@@ -5,8 +5,9 @@ import {
   type Page,
 } from "@playwright/test";
 import { _electron as electron } from "playwright";
-import { rmSync } from "fs";
+import { mkdirSync, rmSync } from "fs";
 import { join } from "path";
+import { createE2eUserDataPath } from "./e2eUserData";
 
 interface ElectronFixtures {
   electronApp: ElectronApplication;
@@ -18,10 +19,20 @@ const E2E_FIXTURES_KEY = "rexiano-e2e-fixtures";
 
 export const test = base.extend<ElectronFixtures>({
   // eslint-disable-next-line no-empty-pattern
-  electronApp: async ({}, runFixture) => {
+  electronApp: async ({}, runFixture, testInfo) => {
     const electronBinary = (await import("electron")).default as string;
+    const userDataPath = createE2eUserDataPath({
+      outputDir: testInfo.outputDir,
+      projectName: testInfo.project.name,
+      workerIndex: testInfo.workerIndex,
+      testId: testInfo.testId,
+    });
+    rmSync(userDataPath, { recursive: true, force: true });
+    mkdirSync(userDataPath, { recursive: true });
+
     const launchEnv: NodeJS.ProcessEnv = {
       ...process.env,
+      REXIANO_USER_DATA_DIR: userDataPath,
       TZ: "UTC",
     };
     delete launchEnv.ELECTRON_RUN_AS_NODE;
@@ -33,16 +44,17 @@ export const test = base.extend<ElectronFixtures>({
       env: launchEnv,
     });
 
-    const userDataPath = await app.evaluate(({ app }) =>
+    const actualUserDataPath = await app.evaluate(({ app }) =>
       app.getPath("userData"),
     );
-    rmSync(join(userDataPath, "progress.json"), { force: true });
-    rmSync(join(userDataPath, "recents.json"), { force: true });
+    rmSync(join(actualUserDataPath, "progress.json"), { force: true });
+    rmSync(join(actualUserDataPath, "recents.json"), { force: true });
 
     try {
       await runFixture(app);
     } finally {
       await app.close();
+      rmSync(userDataPath, { recursive: true, force: true });
     }
   },
 

@@ -143,19 +143,19 @@ Electron Main ↔ Renderer communication uses `contextBridge`. Binary data (MIDI
 
 ```
 ParsedSong
-├── fileName: string
-├── duration: number          (seconds)
-├── noteCount: number
-├── tempos: TempoEvent[]      { time, bpm }
-├── timeSignatures: TimeSignatureEvent[]  { time, numerator, denominator }
-└── tracks: ParsedTrack[]
-    ├── name: string
-    ├── noteCount: number
-    └── notes: ParsedNote[]
-        ├── midi: number      (0-127, MIDI note number)
-        ├── startTime: number (seconds)
-        ├── duration: number  (seconds)
-        └── velocity: number  (0-127)
++-- fileName: string
++-- duration: number          (seconds)
++-- noteCount: number
++-- tempos: TempoEvent[]      { time, bpm }
++-- timeSignatures: TimeSignatureEvent[]  { time, numerator, denominator }
++-- tracks: ParsedTrack[]
+    +-- name: string
+    +-- noteCount: number
+    +-- notes: ParsedNote[]
+        +-- midi: number      (0-127, MIDI note number)
+        +-- startTime: number (seconds)
+        +-- duration: number  (seconds)
+        +-- velocity: number  (0-127)
 ```
 
 ---

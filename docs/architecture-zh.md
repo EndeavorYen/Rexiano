@@ -68,56 +68,56 @@ graph TB
 
 ```
 rexiano/
-├── docs/                         # 設計文件、路線圖、使用手冊
-├── resources/                    # 應用程式靜態資源
-│   ├── piano.sf2                 # SoundFont 音色（TimGM6mb，約 6 MB）
-│   └── songs/                    # 內建 MIDI 曲目（18 首）
-├── build/                        # electron-builder 資源（圖示等）
-├── src/
-│   ├── main/                     # Electron 主程序
-│   │   ├── index.ts              # 視窗建立、app 生命週期
-│   │   └── ipc/
-│   │       ├── fileHandlers.ts         # 檔案對話框、MIDI 載入
-│   │       ├── midiDeviceHandlers.ts   # MIDI 權限自動核准
-│   │       ├── progressHandlers.ts     # 讀寫 progress.json
-│   │       └── recentFilesHandlers.ts  # 讀寫 recents.json
-│   ├── preload/                  # Electron context bridge
-│   │   ├── index.ts              # 暴露給 renderer 的 API
-│   │   └── index.d.ts            # window.api 的 TypeScript 宣告
-│   ├── shared/
-│   │   └── types.ts              # 跨程序共用型別
-│   └── renderer/src/             # React 前端
-│       ├── App.tsx               # 根元件，生命週期接線
-│       ├── main.tsx              # React 入口
-│       ├── assets/
-│       │   └── main.css          # Tailwind + @theme + 字型匯入
-│       ├── engines/              # 純邏輯層（無 React 依賴）
-│       │   ├── audio/            # Web Audio API + SoundFont
-│       │   ├── fallingNotes/     # PixiJS 渲染管線
-│       │   ├── midi/             # MIDI 解析 + 裝置管理
-│       │   ├── practice/         # 練習模式狀態機
-│       │   └── metronome/        # 節拍器計時 + 音頻
-│       ├── features/             # React UI 元件
-│       │   ├── fallingNotes/     # Canvas、鍵盤、播放控制列
-│       │   ├── midiDevice/       # 裝置選擇器、連線狀態
-│       │   ├── practice/         # 練習工具列、分數、慶祝效果
-│       │   ├── settings/         # 設定面板、主題選擇器
-│       │   ├── songLibrary/      # 曲庫、歌曲卡片、篩選器
-│       │   ├── onboarding/       # 新手引導
-│       │   ├── metronome/        # 節拍視覺效果
-│       │   ├── audio/            # 音量控制
-│       │   └── insights/         # （規劃中）練習統計
-│       ├── stores/               # Zustand 狀態管理
-│       ├── hooks/                # 自訂 React Hooks
-│       ├── themes/
-│       │   └── tokens.ts         # 主題定義（4 套主題，每套 28 個色彩 token）
-│       ├── types/                # 渲染端型別定義
-│       └── utils/                # 工具函式
-├── electron-builder.yml          # 打包設定
-├── electron.vite.config.ts       # Electron 的 Vite 設定
-├── package.json                  # 依賴與指令
-├── tsconfig.*.json               # TypeScript 設定
-└── vitest.config.ts              # 測試設定
++-- docs/                         # 設計文件、路線圖、使用手冊
++-- resources/                    # 應用程式靜態資源
+|   +-- piano.sf2                 # SoundFont 音色（TimGM6mb，約 6 MB）
+|   +-- songs/                    # 內建 MIDI 曲目（18 首）
++-- build/                        # electron-builder 資源（圖示等）
++-- src/
+|   +-- main/                     # Electron 主程序
+|   |   +-- index.ts              # 視窗建立、app 生命週期
+|   |   +-- ipc/
+|   |       +-- fileHandlers.ts         # 檔案對話框、MIDI 載入
+|   |       +-- midiDeviceHandlers.ts   # MIDI 權限自動核准
+|   |       +-- progressHandlers.ts     # 讀寫 progress.json
+|   |       +-- recentFilesHandlers.ts  # 讀寫 recents.json
+|   +-- preload/                  # Electron context bridge
+|   |   +-- index.ts              # 暴露給 renderer 的 API
+|   |   +-- index.d.ts            # window.api 的 TypeScript 宣告
+|   +-- shared/
+|   |   +-- types.ts              # 跨程序共用型別
+|   +-- renderer/src/             # React 前端
+|       +-- App.tsx               # 根元件，生命週期接線
+|       +-- main.tsx              # React 入口
+|       +-- assets/
+|       |   +-- main.css          # Tailwind + @theme + 字型匯入
+|       +-- engines/              # 純邏輯層（無 React 依賴）
+|       |   +-- audio/            # Web Audio API + SoundFont
+|       |   +-- fallingNotes/     # PixiJS 渲染管線
+|       |   +-- midi/             # MIDI 解析 + 裝置管理
+|       |   +-- practice/         # 練習模式狀態機
+|       |   +-- metronome/        # 節拍器計時 + 音頻
+|       +-- features/             # React UI 元件
+|       |   +-- fallingNotes/     # Canvas、鍵盤、播放控制列
+|       |   +-- midiDevice/       # 裝置選擇器、連線狀態
+|       |   +-- practice/         # 練習工具列、分數、慶祝效果
+|       |   +-- settings/         # 設定面板、主題選擇器
+|       |   +-- songLibrary/      # 曲庫、歌曲卡片、篩選器
+|       |   +-- onboarding/       # 新手引導
+|       |   +-- metronome/        # 節拍視覺效果
+|       |   +-- audio/            # 音量控制
+|       |   +-- insights/         # （規劃中）練習統計
+|       +-- stores/               # Zustand 狀態管理
+|       +-- hooks/                # 自訂 React Hooks
+|       +-- themes/
+|       |   +-- tokens.ts         # 主題定義（4 套主題，每套 28 個色彩 token）
+|       +-- types/                # 渲染端型別定義
+|       +-- utils/                # 工具函式
++-- electron-builder.yml          # 打包設定
++-- electron.vite.config.ts       # Electron 的 Vite 設定
++-- package.json                  # 依賴與指令
++-- tsconfig.*.json               # TypeScript 設定
++-- vitest.config.ts              # 測試設定
 ```
 
 ---
@@ -458,14 +458,14 @@ pnpm lint && pnpm typecheck && pnpm test
 
 ### 前置需求
 
-- Node.js 20+
-- pnpm 9+
+- Node.js 22+
+- pnpm 10+
 - 支援 TypeScript 的程式碼編輯器（建議 VS Code）
 
 ### 開始
 
 ```bash
-git clone https://github.com/nickhsu-endea/Rexiano.git
+git clone https://github.com/EndeavorYen/Rexiano.git
 cd Rexiano
 pnpm install
 pnpm dev          # 以開發模式啟動 Electron，含 HMR

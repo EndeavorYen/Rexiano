@@ -5,7 +5,19 @@
   "main": "./out/main/index.js",
   "author": "Rexiano Contributors",
   "license": "GPL-3.0",
-  "homepage": "https://github.com/nickhsu-endea/Rexiano",
+  "homepage": "https://github.com/EndeavorYen/Rexiano",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/EndeavorYen/Rexiano.git"
+  },
+  "bugs": {
+    "url": "https://github.com/EndeavorYen/Rexiano/issues"
+  },
+  "packageManager": "pnpm@10.33.2",
+  "engines": {
+    "node": ">=22 <23",
+    "pnpm": ">=10 <11"
+  },
   "scripts": {
     "format": "prettier --write .",
     "lint": "eslint --cache .",
@@ -17,6 +29,7 @@
     "test:e2e:update": "pnpm build && playwright test --update-snapshots",
     "test:visual": "pnpm build && playwright test e2e/ui-polish.spec.ts e2e/sheet-music-visual-fixtures.spec.ts e2e/accessibility-core.spec.ts",
     "test:visual:update": "pnpm build && playwright test e2e/ui-polish.spec.ts e2e/sheet-music-visual-fixtures.spec.ts e2e/accessibility-core.spec.ts --update-snapshots",
+    "generate:songs": "jiti scripts/generate-songs.ts",
     "typecheck": "pnpm typecheck:node && pnpm typecheck:web",
     "start": "electron-vite preview",
     "dev": "node -e \"delete process.env.ELECTRON_RUN_AS_NODE; process.env.NO_SANDBOX='1'; require('child_process').execSync('electron-vite dev',{stdio:'inherit'})\"",
@@ -31,8 +44,8 @@
   "devDependencies": {
     "@electron-toolkit/eslint-config-prettier": "^3.0.0",
     "@electron-toolkit/eslint-config-ts": "^3.1.0",
-    "@playwright/test": "^1.58.2",
     "@electron-toolkit/tsconfig": "^2.0.0",
+    "@playwright/test": "^1.58.2",
     "@tailwindcss/vite": "^4.2.1",
     "@types/node": "^22.19.1",
     "@types/react": "^19.2.7",
@@ -46,6 +59,7 @@
     "eslint-plugin-react": "^7.37.5",
     "eslint-plugin-react-hooks": "^7.0.1",
     "eslint-plugin-react-refresh": "^0.4.24",
+    "jiti": "^2.6.1",
     "prettier": "^3.7.4",
     "react": "^19.2.1",
     "react-dom": "^19.2.1",
@@ -66,6 +80,7 @@
     "@fontsource-variable/nunito": "^5.2.7",
     "@tonejs/midi": "^2.0.28",
     "lucide-react": "^0.575.0",
+    "midi-file": "^1.2.4",
     "pixi.js": "^8.16.0",
     "soundfont2": "^0.5.0",
     "vexflow": "^5.0.0",
