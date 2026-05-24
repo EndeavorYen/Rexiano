@@ -1,48 +1,29 @@
 /**
  * Generate built-in MIDI files for the Rexiano song library.
  *
- * Run: npx tsx scripts/generate-songs.ts
+ * Run: pnpm exec jiti scripts/generate-songs.ts
  *
- * Produces MIDI files in resources/midi/ and updates songs.json.
+ * Produces generated MIDI files in resources/midi/ and updates songs.json.
+ * Existing curated songs.json fields such as grade and level tags are preserved.
  * Uses @tonejs/midi for MIDI file creation.
  */
 import { Midi } from "@tonejs/midi";
-import { writeFileSync, mkdirSync } from "fs";
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from "fs";
 import { join, dirname } from "path";
 import { fileURLToPath } from "url";
+import {
+  addNotesFromBeats,
+  createSongMetaFromDefinition,
+  encodeMidiWithNotationHeaderMetadata,
+  mergeGeneratedSongMetadata,
+  type Category,
+  type NoteEntry,
+  type SongDef,
+  type SongMeta,
+} from "./generatedSongLibrary";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const outDir = join(__dirname, "..", "resources", "midi");
-mkdirSync(outDir, { recursive: true });
-
-// ─── Types ───────────────────────────────────────────────────────────
-
-type Difficulty = "beginner" | "intermediate" | "advanced";
-type Category = "exercise" | "classical" | "popular" | "holiday";
-
-interface SongDef {
-  id: string;
-  file: string;
-  title: string;
-  composer: string;
-  difficulty: Difficulty;
-  category: Category;
-  tags: string[];
-  bpm: number;
-  /** Build the MIDI object for this song */
-  build: () => Midi;
-}
-
-interface SongMeta {
-  id: string;
-  file: string;
-  title: string;
-  composer: string;
-  difficulty: Difficulty;
-  category: Category;
-  durationSeconds: number;
-  tags: string[];
-}
 
 // ─── MIDI note constants ─────────────────────────────────────────────
 
@@ -81,32 +62,6 @@ const A5 = 81;
 void [C3, D3, E3, F3, G3, A3, B3, Cs4, Ds4, Fs4, Gs4, Cs5, Ds5, Gs5, A5];
 
 // ─── Helper: beat-based note entry ───────────────────────────────────
-
-/**
- * [midiNote, startBeat, durationInBeats]
- * startBeat is 0-indexed. Duration in quarter-note beats.
- */
-type NoteEntry = [midi: number, startBeat: number, durationBeats: number];
-
-/**
- * Convert beat-based note entries to time-based note events using BPM.
- */
-function addNotesFromBeats(
-  track: ReturnType<Midi["addTrack"]>,
-  notes: NoteEntry[],
-  bpm: number,
-  velocity: number = 0.7,
-): void {
-  const secPerBeat = 60 / bpm;
-  for (const [midi, startBeat, durBeats] of notes) {
-    track.addNote({
-      midi,
-      time: startBeat * secPerBeat,
-      duration: durBeats * secPerBeat * 0.95,
-      velocity,
-    });
-  }
-}
 
 /**
  * Helper: given a sequence of [midiNote, durationInBeats] pairs,
@@ -1263,44 +1218,158 @@ const songDefs: SongDef[] = [
 
 // ─── Main: generate all MIDI files + songs.json ──────────────────────
 
-console.log("Generating MIDI files for Rexiano song library...\n");
-
-const songsMeta: SongMeta[] = [];
-
-for (const def of songDefs) {
-  const midiObj = def.build();
-  const buffer = Buffer.from(midiObj.toArray());
-  const filePath = join(outDir, def.file);
-  writeFileSync(filePath, buffer);
-
-  // Compute duration from the generated MIDI data
-  let maxEndTime = 0;
-  for (const track of midiObj.tracks) {
-    for (const note of track.notes) {
-      const end = note.time + note.duration;
-      if (end > maxEndTime) maxEndTime = end;
-    }
-  }
-  const durationSeconds = Math.ceil(maxEndTime);
-
-  songsMeta.push({
-    id: def.id,
-    file: def.file,
-    title: def.title,
-    composer: def.composer,
-    difficulty: def.difficulty,
-    category: def.category,
-    durationSeconds,
-    tags: def.tags,
-  });
-
-  console.log(
-    `  [${def.category.padEnd(9)}] ${def.title.padEnd(32)} → ${def.file} (${buffer.length} bytes, ${durationSeconds}s)`,
-  );
+interface GeneratedMidiFile {
+  id: string;
+  file: string;
+  title: string;
+  category: Category;
+  bytes: Buffer;
+  durationSeconds: number;
 }
 
-// Write songs.json
-const songsJsonPath = join(outDir, "songs.json");
-writeFileSync(songsJsonPath, JSON.stringify(songsMeta, null, 2) + "\n");
-console.log(`\nWrote ${songsJsonPath} with ${songsMeta.length} songs.`);
-console.log("Done!");
+interface GeneratedSongArtifacts {
+  midiFiles: GeneratedMidiFile[];
+  songsMeta: SongMeta[];
+}
+
+function readExistingManifest(): SongMeta[] {
+  const songsJsonPath = join(outDir, "songs.json");
+  if (!existsSync(songsJsonPath)) return [];
+  return JSON.parse(readFileSync(songsJsonPath, "utf8")) as SongMeta[];
+}
+
+export function buildGeneratedSongArtifacts(
+  existingManifest: readonly SongMeta[] = [],
+): GeneratedSongArtifacts {
+  const generatedDrafts = songDefs.map((def) => {
+    const midiObj = def.build();
+    const meta = createSongMetaFromDefinition(def, midiObj);
+    return { def, midiObj, meta };
+  });
+  const generatedMeta = generatedDrafts.map((draft) => draft.meta);
+  const songsMeta = mergeGeneratedSongMetadata(generatedMeta, existingManifest);
+  const mergedMetaById = new Map(songsMeta.map((meta) => [meta.id, meta]));
+  const midiFiles = generatedDrafts.map(({ def, midiObj, meta }) => {
+    const mergedMeta = mergedMetaById.get(def.id) ?? meta;
+    const bytes = Buffer.from(
+      encodeMidiWithNotationHeaderMetadata(midiObj, mergedMeta.tags),
+    );
+    return {
+      id: def.id,
+      file: def.file,
+      title: mergedMeta.title,
+      category: mergedMeta.category,
+      bytes,
+      durationSeconds: mergedMeta.durationSeconds,
+    };
+  });
+
+  return { midiFiles, songsMeta };
+}
+
+function updateExistingOnlyMidiHeaders(
+  songsMeta: readonly SongMeta[],
+  generatedIds: ReadonlySet<string>,
+): void {
+  for (const song of songsMeta) {
+    if (generatedIds.has(song.id)) continue;
+
+    const filePath = join(outDir, song.file);
+    if (!existsSync(filePath)) {
+      console.warn(`  [missing  ] ${song.title} → ${song.file}`);
+      continue;
+    }
+
+    const midiObj = new Midi(readFileSync(filePath));
+    writeFileSync(
+      filePath,
+      Buffer.from(encodeMidiWithNotationHeaderMetadata(midiObj, song.tags)),
+    );
+    console.log(`  [metadata ] ${song.title.padEnd(32)} → ${song.file}`);
+  }
+}
+
+function jsonValue(value: unknown): string {
+  return JSON.stringify(value);
+}
+
+function formatTags(tags: readonly string[]): string[] {
+  const inlineTags = `[${tags.map(jsonValue).join(", ")}]`;
+  if (tags.length <= 6 && inlineTags.length <= 68) {
+    return [`    "tags": ${inlineTags}`];
+  }
+
+  return [
+    `    "tags": [`,
+    ...tags.map(
+      (tag, index) =>
+        `      ${jsonValue(tag)}${index === tags.length - 1 ? "" : ","}`,
+    ),
+    `    ]`,
+  ];
+}
+
+function formatSongMeta(song: SongMeta): string {
+  const lines = [
+    `  {`,
+    `    "id": ${jsonValue(song.id)},`,
+    `    "file": ${jsonValue(song.file)},`,
+    `    "title": ${jsonValue(song.title)},`,
+    `    "composer": ${jsonValue(song.composer)},`,
+    `    "difficulty": ${jsonValue(song.difficulty)},`,
+    `    "category": ${jsonValue(song.category)},`,
+  ];
+
+  if (song.grade !== undefined) {
+    lines.push(`    "grade": ${song.grade},`);
+  }
+
+  lines.push(`    "durationSeconds": ${song.durationSeconds},`);
+  const tagLines = formatTags(song.tags);
+  lines.push(...tagLines);
+  lines.push(`  }`);
+
+  return lines.join("\n");
+}
+
+function formatSongsJson(songsMeta: readonly SongMeta[]): string {
+  return `${["[", songsMeta.map(formatSongMeta).join(",\n"), "]"].join(
+    "\n",
+  )}\n`;
+}
+
+export function runGenerateSongs(): void {
+  mkdirSync(outDir, { recursive: true });
+
+  console.log("Generating MIDI files for Rexiano song library...");
+  console.log(
+    "Merging generated timing with curated songs.json metadata (grade and level tags preserved).\n",
+  );
+
+  const existingManifest = readExistingManifest();
+  const { midiFiles, songsMeta } =
+    buildGeneratedSongArtifacts(existingManifest);
+  const generatedIds = new Set(midiFiles.map((file) => file.id));
+
+  for (const midiFile of midiFiles) {
+    const filePath = join(outDir, midiFile.file);
+    writeFileSync(filePath, midiFile.bytes);
+
+    console.log(
+      `  [${midiFile.category.padEnd(9)}] ${midiFile.title.padEnd(32)} → ${midiFile.file} (${midiFile.bytes.length} bytes, ${midiFile.durationSeconds}s)`,
+    );
+  }
+
+  updateExistingOnlyMidiHeaders(songsMeta, generatedIds);
+
+  const songsJsonPath = join(outDir, "songs.json");
+  writeFileSync(songsJsonPath, formatSongsJson(songsMeta));
+  console.log(
+    `\nWrote ${songsJsonPath} with ${songsMeta.length} songs (${midiFiles.length} generated, ${songsMeta.length - midiFiles.length} metadata-only).`,
+  );
+  console.log("Done!");
+}
+
+if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
+  runGenerateSongs();
+}
