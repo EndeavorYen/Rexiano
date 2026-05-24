@@ -406,9 +406,9 @@
   - [ ] 力度 (velocity) 調整
   - [ ] 音符長度微調
   - [ ] 批次編輯（多選）
-- [ ] Undo / Redo
-  - [ ] Command Pattern 實作
-  - [ ] 鍵盤快捷鍵 Ctrl+Z / Ctrl+Y
+- [x] Undo / Redo
+  - [x] Command Pattern 實作
+  - [x] 鍵盤快捷鍵 Ctrl+Z / Ctrl+Y
 - [ ] 匯出
   - [ ] 匯出為 .mid 檔案
   - [ ] （進階）MusicXML 匯入 / 匯出
