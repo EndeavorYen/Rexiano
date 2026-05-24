@@ -4,6 +4,7 @@ import {
   ArrowLeft,
   BarChart3,
   PanelRightOpen,
+  PencilRuler,
   X,
 } from "lucide-react";
 import { parseMidiFile } from "./engines/midi/MidiFileParser";
@@ -55,6 +56,7 @@ import { usePracticeStore } from "./stores/usePracticeStore";
 import { MainMenu } from "./features/mainMenu/MainMenu";
 import { ModeSelectionModal } from "./features/practice/ModeSelectionModal";
 import { CelebrationOverlay } from "./features/practice/CelebrationOverlay";
+import { PianoRollEditor } from "./features/editor/PianoRollEditor";
 import { applyPracticeModeChangeForSong } from "./features/practice/practiceSetupControlActions";
 import { selectNextPracticeAction } from "./features/practice/nextPracticeAction";
 import { getFocusModeExitDecision } from "./features/practice/focusModeExitGuard";
@@ -130,6 +132,7 @@ function App(): React.JSX.Element {
   // - No song + playback route => menu
   const view: AppRoute = resolveRoute(routeIntent, !!song);
   const [showPlaybackDrawer, setShowPlaybackDrawer] = useState(false);
+  const [showEditor, setShowEditor] = useState(false);
   const playbackDrawerRef = useRef<HTMLElement>(null);
   const playbackDrawerTriggerRef = useRef<HTMLButtonElement>(null);
   const playbackDrawerCloseRef = useRef<HTMLButtonElement>(null);
@@ -175,6 +178,14 @@ function App(): React.JSX.Element {
       window.history.replaceState(null, "", targetHash);
     }
   }, [view]);
+
+  useEffect(() => {
+    return useSongStore.subscribe((state) => {
+      if (!state.song) {
+        setShowEditor(false);
+      }
+    });
+  }, []);
 
   // ─── Mode selection + celebration + stats flow ────────
   const [showModeModal, setShowModeModal] = useState(false);
@@ -1431,6 +1442,21 @@ function App(): React.JSX.Element {
                     <button
                       onClick={() => {
                         setShowPlaybackDrawer(false);
+                        setShowEditor(true);
+                      }}
+                      className="btn-surface-themed w-9 h-9 flex items-center justify-center rounded-full cursor-pointer"
+                      title="Piano roll editor"
+                      aria-label="Piano roll editor"
+                      data-testid="open-editor"
+                    >
+                      <PencilRuler
+                        size={16}
+                        style={{ color: "var(--color-text)" }}
+                      />
+                    </button>
+                    <button
+                      onClick={() => {
+                        setShowPlaybackDrawer(false);
                         setShowInsights(true);
                       }}
                       className="btn-surface-themed w-9 h-9 flex items-center justify-center rounded-full cursor-pointer"
@@ -1449,57 +1475,71 @@ function App(): React.JSX.Element {
             </div>
           )}
 
-          {/* Main display area: sheet music / falling notes / both */}
+          {/* Main display area: editor / sheet music / falling notes / both */}
           <div
             className={`workspace-frame ${isPlaying ? "workspace-frame-live" : ""} flex-1 relative flex flex-col min-h-0 surface-panel overflow-hidden`}
           >
-            {/* Sheet music panel (shown in split & sheet modes) */}
-            <div
-              className="relative"
-              style={
-                isSplitMode
-                  ? {
-                      filter:
-                        splitFocus === "sheet"
-                          ? "saturate(1.03) brightness(1.015)"
-                          : "saturate(0.9) brightness(0.965)",
-                      transition: "filter 160ms ease",
-                    }
-                  : undefined
-              }
-              onMouseEnter={() => isSplitMode && setSplitFocusPanel("sheet")}
-              data-testid="split-sheet-region"
-            >
-              <SheetMusicPanel
-                notationData={notationData}
-                mode={displayMode}
-                height={splitSheetHeight}
+            {showEditor && song ? (
+              <PianoRollEditor
+                key={song.fileName}
+                parsedSong={song}
+                onClose={() => setShowEditor(false)}
               />
-            </div>
+            ) : (
+              <>
+                {/* Sheet music panel (shown in split & sheet modes) */}
+                <div
+                  className="relative"
+                  style={
+                    isSplitMode
+                      ? {
+                          filter:
+                            splitFocus === "sheet"
+                              ? "saturate(1.03) brightness(1.015)"
+                              : "saturate(0.9) brightness(0.965)",
+                          transition: "filter 160ms ease",
+                        }
+                      : undefined
+                  }
+                  onMouseEnter={() =>
+                    isSplitMode && setSplitFocusPanel("sheet")
+                  }
+                  data-testid="split-sheet-region"
+                >
+                  <SheetMusicPanel
+                    notationData={notationData}
+                    mode={displayMode}
+                    height={splitSheetHeight}
+                  />
+                </div>
 
-            {/* Falling notes canvas — always mounted so PixiJS ticker keeps
+                {/* Falling notes canvas — always mounted so PixiJS ticker keeps
                 running (WaitMode relies on it). Hidden via CSS in sheet mode. */}
-            <div
-              data-testid="falling-notes-panel"
-              className="flex-1 min-h-0 relative flex flex-col"
-              style={{
-                display: displayMode === "sheet" ? "none" : "flex",
-                filter:
-                  isSplitMode && splitFocus === "sheet"
-                    ? "saturate(0.9) brightness(0.965)"
-                    : undefined,
-                transition: isSplitMode ? "filter 160ms ease" : undefined,
-              }}
-              onMouseEnter={() => isSplitMode && setSplitFocusPanel("falling")}
-            >
-              <FallingNotesCanvas
-                onActiveNotesChange={handleActiveNotesChange}
-                getAudioCurrentTime={getAudioCurrentTime}
-                onNoteRendererReady={handleFallingNoteRendererReady}
-                minHeight={fallingCanvasMinHeight}
-              />
-            </div>
-            <ScoreOverlay />
+                <div
+                  data-testid="falling-notes-panel"
+                  className="flex-1 min-h-0 relative flex flex-col"
+                  style={{
+                    display: displayMode === "sheet" ? "none" : "flex",
+                    filter:
+                      isSplitMode && splitFocus === "sheet"
+                        ? "saturate(0.9) brightness(0.965)"
+                        : undefined,
+                    transition: isSplitMode ? "filter 160ms ease" : undefined,
+                  }}
+                  onMouseEnter={() =>
+                    isSplitMode && setSplitFocusPanel("falling")
+                  }
+                >
+                  <FallingNotesCanvas
+                    onActiveNotesChange={handleActiveNotesChange}
+                    getAudioCurrentTime={getAudioCurrentTime}
+                    onNoteRendererReady={handleFallingNoteRendererReady}
+                    minHeight={fallingCanvasMinHeight}
+                  />
+                </div>
+                <ScoreOverlay />
+              </>
+            )}
           </div>
 
           {/* Insights modal */}

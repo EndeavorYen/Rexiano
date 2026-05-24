@@ -392,12 +392,12 @@
 >
 > 前置：Phase 7（需要樂譜渲染能力）
 
-- [ ] Piano Roll 編輯器
-  - [ ] 格線 Canvas（可複用 PixiJS 或獨立 Canvas）
-  - [ ] 點擊新增音符
-  - [ ] 拖曳移動 / 調整長度
-  - [ ] 右鍵 / Delete 刪除
-  - [ ] 格線吸附（snap to grid）
+- [x] Piano Roll 編輯器
+  - [x] 格線 Canvas（可複用 PixiJS 或獨立 Canvas）
+  - [x] 點擊新增音符
+  - [x] 拖曳移動 / 調整長度
+  - [x] 右鍵 / Delete 刪除
+  - [x] 格線吸附（snap to grid）
 - [x] 編輯工具列
   - [x] 選取 / 繪製 / 刪除 模式
   - [x] 量化按鈕
