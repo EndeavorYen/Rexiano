@@ -6,8 +6,11 @@
 
 **繁體中文** | [English](README.md)
 
-<!-- TODO: 新增應用程式截圖或 GIF -->
-<!-- ![Rexiano 截圖](docs/screenshot.png) -->
+<p align="center">
+  <img src="docs/assets/screenshots/rexiano-library.png" alt="Rexiano 曲庫" width="32%">
+  <img src="docs/assets/screenshots/rexiano-practice.png" alt="Rexiano 下落音符練習" width="32%">
+  <img src="docs/assets/screenshots/rexiano-split-sheet.png" alt="Rexiano 樂譜與下落音符分割畫面" width="32%">
+</p>
 
 ---
 
@@ -115,6 +118,13 @@ pnpm dev
 | `pnpm lint`        | 執行 ESLint                        |
 | `pnpm typecheck`   | 執行 TypeScript 型別檢查           |
 | `pnpm format`      | 以 Prettier 格式化程式碼           |
+
+更新 README 截圖：
+
+```bash
+pnpm build
+pnpm exec playwright test -c scripts/playwright.readme-screenshots.config.ts
+```
 
 ### 專案結構
 
