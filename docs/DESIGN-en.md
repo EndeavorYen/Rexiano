@@ -411,7 +411,11 @@ GitHub Actions pipeline:
 
 ### Auto-Update
 
-electron-updater integration: checks GitHub Releases for newer versions on launch, downloads and installs silently in the background.
+Rexiano uses a small GitHub Releases IPC helper instead of adding an updater
+runtime dependency. Packaged builds can check the latest release from the About
+panel, download a matching installer artifact, and let the user open it
+manually. Development builds return a disabled state to avoid noisy background
+network errors. See [`docs/update-flow.md`](./update-flow.md) for verification.
 
 ---
 

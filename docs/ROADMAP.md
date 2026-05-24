@@ -433,10 +433,10 @@
   - [x] 自動建立 GitHub Release + 上傳 artifacts
   - [x] Release Please 自動化版本管理與 CHANGELOG（release-please.yml）
   - [x] CHANGELOG.md 打包進發佈包（electron-builder.yml extraResources）
-- [ ] 自動更新
-  - [ ] 整合 electron-updater
-  - [ ] 應用內更新提示
-  - [ ] 發佈到 GitHub Releases
+- [x] 自動更新
+  - [x] GitHub Releases update checker（自管 IPC helper，見 `docs/update-flow.md`）
+  - [x] 應用內更新提示
+  - [x] 發佈到 GitHub Releases
 - [ ] 程式碼簽章（可延後）
   - [ ] Windows: EV Code Signing Certificate
   - [ ] macOS: Apple Developer + notarization

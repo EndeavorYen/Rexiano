@@ -1018,9 +1018,10 @@ jobs:
 
 #### 12.2 自動更新
 
-- 整合 `electron-updater`
-- 發佈到 GitHub Releases
-- 應用內提示更新（非強制）
+- 目前採用自管 GitHub Releases IPC helper，不新增 updater runtime 依賴
+- 只在 packaged build 檢查 GitHub Releases；開發模式回傳 disabled，避免 console/network 噪音
+- 應用內 About 面板提示更新（非強制），下載完成後由使用者自行開啟 installer
+- 實作與乾跑驗證流程見 [`docs/update-flow.md`](./update-flow.md)
 
 #### 12.3 程式碼簽章
 

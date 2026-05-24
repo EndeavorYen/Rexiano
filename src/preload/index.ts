@@ -9,6 +9,10 @@ import type {
   UserDataFileMutationResult,
   WatchedMidiFolder,
   WatchedMidiFoldersScanResult,
+  AppUpdateAvailable,
+  AppUpdateCheckResult,
+  AppUpdateDownloadResult,
+  AppUpdateStatus,
 } from "../shared/types";
 
 const api = {
@@ -58,6 +62,27 @@ const api = {
 
   // Release pipeline: app version + changelog
   getAppInfo: (): Promise<AppInfo> => ipcRenderer.invoke("app:getAppInfo"),
+  checkForUpdates: (): Promise<AppUpdateCheckResult> =>
+    ipcRenderer.invoke(IpcChannels.UPDATE_CHECK),
+  downloadUpdate: (
+    update: AppUpdateAvailable,
+  ): Promise<AppUpdateDownloadResult> =>
+    ipcRenderer.invoke(IpcChannels.UPDATE_DOWNLOAD, update),
+  openUpdateRelease: (releaseUrl: string): Promise<boolean> =>
+    ipcRenderer.invoke(IpcChannels.UPDATE_OPEN_RELEASE, releaseUrl),
+  openDownloadedUpdate: (downloadedPath: string): Promise<boolean> =>
+    ipcRenderer.invoke(IpcChannels.UPDATE_OPEN_DOWNLOADED, downloadedPath),
+  onUpdateProgress: (
+    callback: (status: AppUpdateStatus) => void,
+  ): (() => void) => {
+    const listener = (
+      _event: Electron.IpcRendererEvent,
+      status: AppUpdateStatus,
+    ): void => callback(status);
+    ipcRenderer.on(IpcChannels.UPDATE_PROGRESS, listener);
+    return () =>
+      ipcRenderer.removeListener(IpcChannels.UPDATE_PROGRESS, listener);
+  },
 };
 
 if (process.contextIsolated) {

@@ -11,6 +11,10 @@ import type {
   UserDataFileMutationResult,
   WatchedMidiFolder,
   WatchedMidiFoldersScanResult,
+  AppUpdateAvailable,
+  AppUpdateCheckResult,
+  AppUpdateDownloadResult,
+  AppUpdateStatus,
 } from "../shared/types";
 
 declare global {
@@ -59,6 +63,20 @@ declare global {
       loadMidiPath: (filePath: string) => Promise<MidiFileResult | null>;
       /** Release pipeline: get app version and changelog */
       getAppInfo: () => Promise<AppInfo>;
+      /** Release pipeline: check GitHub Releases for packaged updates */
+      checkForUpdates: () => Promise<AppUpdateCheckResult>;
+      /** Release pipeline: download an available update artifact */
+      downloadUpdate: (
+        update: AppUpdateAvailable,
+      ) => Promise<AppUpdateDownloadResult>;
+      /** Release pipeline: open a GitHub Releases page */
+      openUpdateRelease: (releaseUrl: string) => Promise<boolean>;
+      /** Release pipeline: open the downloaded installer */
+      openDownloadedUpdate: (downloadedPath: string) => Promise<boolean>;
+      /** Release pipeline: subscribe to update download progress */
+      onUpdateProgress: (
+        callback: (status: AppUpdateStatus) => void,
+      ) => () => void;
     };
   }
 }

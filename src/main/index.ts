@@ -8,6 +8,7 @@ import { registerRecentFilesHandlers } from "./ipc/recentFilesHandlers";
 import { registerAppInfoHandlers } from "./ipc/appInfoHandlers";
 import { registerUserDataBackupHandlers } from "./ipc/userDataBackupHandlers";
 import { registerWatchedFolderHandlers } from "./ipc/watchedFolderHandlers";
+import { registerUpdateHandlers } from "./ipc/updateHandlers";
 import { normalizeExternalUrl } from "./externalUrlPolicy";
 
 // WSL2 doesn't forward Windows display scaling to X11/Wayland,
@@ -109,6 +110,7 @@ app.whenReady().then(() => {
   registerUserDataBackupHandlers();
   registerWatchedFolderHandlers();
   registerAppInfoHandlers();
+  registerUpdateHandlers();
 
   createWindow();
 

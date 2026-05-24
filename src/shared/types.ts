@@ -43,6 +43,16 @@ export const IpcChannels = {
   SELECT_WATCHED_MIDI_FOLDER: "library:selectWatchedMidiFolder",
   /** Song library: rescan existing watched MIDI folders */
   SCAN_WATCHED_MIDI_FOLDERS: "library:scanWatchedMidiFolders",
+  /** App update: check GitHub Releases for a newer packaged build */
+  UPDATE_CHECK: "app:updateCheck",
+  /** App update: download a selected release artifact */
+  UPDATE_DOWNLOAD: "app:updateDownload",
+  /** App update: open the release page in the browser */
+  UPDATE_OPEN_RELEASE: "app:updateOpenRelease",
+  /** App update: open the downloaded installer */
+  UPDATE_OPEN_DOWNLOADED: "app:updateOpenDownloaded",
+  /** App update: progress events emitted during artifact download */
+  UPDATE_PROGRESS: "app:updateProgress",
 } as const;
 
 /** Result of loading a SoundFont file via IPC */
@@ -151,6 +161,71 @@ export interface AppInfo {
   version: string;
   changelog: string;
 }
+
+// ─── App Updates ────────────────────────────────────────────────────
+
+export interface AppUpdateProgress {
+  percent: number;
+  transferredBytes: number;
+  totalBytes: number;
+}
+
+export interface AppUpdateDisabled {
+  status: "disabled";
+  currentVersion: string;
+  reason: "development-build";
+}
+
+export interface AppUpdateNotAvailable {
+  status: "not-available";
+  currentVersion: string;
+  latestVersion: string;
+  releaseUrl: string;
+}
+
+export interface AppUpdateAvailable {
+  status: "available";
+  currentVersion: string;
+  latestVersion: string;
+  releaseName: string;
+  releaseUrl: string;
+  artifactName: string;
+  artifactUrl: string;
+  artifactSize: number;
+}
+
+export interface AppUpdateFailed {
+  status: "failed";
+  currentVersion: string;
+  message: string;
+}
+
+export type AppUpdateCheckResult =
+  | AppUpdateDisabled
+  | AppUpdateNotAvailable
+  | AppUpdateAvailable
+  | AppUpdateFailed;
+
+export interface AppUpdateDownloading {
+  status: "downloading";
+  currentVersion: string;
+  latestVersion: string;
+  artifactName: string;
+  progress: AppUpdateProgress;
+}
+
+export type AppUpdateReady = Omit<AppUpdateAvailable, "status"> & {
+  status: "ready";
+  downloadedPath: string;
+  progress: AppUpdateProgress;
+};
+
+export type AppUpdateDownloadResult = AppUpdateReady | AppUpdateFailed;
+
+export type AppUpdateStatus =
+  | AppUpdateCheckResult
+  | AppUpdateDownloading
+  | AppUpdateReady;
 
 // ─── Watched MIDI Folders ───────────────────────────────────────────
 
