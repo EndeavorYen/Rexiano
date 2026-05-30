@@ -1,3 +1,7 @@
+import { writeFileSync } from "fs";
+import { dirname, join, resolve } from "path";
+import type { Locator } from "@playwright/test";
+import { createImportedSongId } from "../src/renderer/src/features/songLibrary/importedSongMetadata";
 import { test, expect } from "./fixtures/electronApp";
 import { gotoLibrary, loadFirstBuiltInSong } from "./helpers/appHarness";
 
@@ -16,6 +20,13 @@ async function resetLibraryPrefs(appPage: {
     );
   });
   await appPage.reload();
+}
+
+function previewMetricValue(preview: Locator, label: string): Locator {
+  return preview
+    .locator("dt")
+    .filter({ hasText: label })
+    .locator("xpath=following-sibling::dd[1]");
 }
 
 test.describe("Song library selection workflow", () => {
@@ -97,6 +108,70 @@ test.describe("Song library selection workflow", () => {
     await expect(preview).toContainText("Hot Cross Buns");
     await expect(preview).toContainText("L0");
     await expect(preview).toContainText("Not practiced");
+    await expect(previewMetricValue(preview, "Tracks")).toHaveText("1");
+    await expect(appPage.getByTestId("mode-select-wait")).toBeHidden();
+
+    await preview.getByTestId("song-selection-preview-practice").click();
+    await expect(appPage.getByTestId("mode-select-wait")).toBeVisible({
+      timeout: 20_000,
+    });
+  });
+
+  test("shows imported-song preview before starting practice", async ({
+    appPage,
+    electronApp,
+  }) => {
+    const sourcePath = resolve("resources/midi/c-major-scale.mid");
+    const watchedFolder = dirname(sourcePath);
+    const importedSongId = createImportedSongId(sourcePath);
+    const userDataPath = await electronApp.evaluate(({ app }) =>
+      app.getPath("userData"),
+    );
+    writeFileSync(
+      join(userDataPath, "midi-path-access.json"),
+      JSON.stringify({ files: [], folders: [watchedFolder] }, null, 2),
+      "utf-8",
+    );
+
+    await appPage.evaluate(
+      ({ importedSongId, sourcePath, watchedFolder }) => {
+        localStorage.setItem(
+          "rexiano-song-library",
+          JSON.stringify({
+            viewMode: "list",
+            sortMode: "recent",
+            favoriteSongIds: [],
+            watchedFolders: [watchedFolder],
+            importedSongs: [
+              {
+                id: importedSongId,
+                sourcePath,
+                title: "Lesson Scale",
+                composer: "Teacher",
+                tags: ["legato", "recital"],
+                category: "exercise",
+                grade: 2,
+                missing: false,
+              },
+            ],
+          }),
+        );
+      },
+      { importedSongId, sourcePath, watchedFolder },
+    );
+    await appPage.reload();
+    await gotoLibrary(appPage);
+
+    await appPage.getByTestId(`imported-song-select-${importedSongId}`).click();
+
+    const preview = appPage.getByTestId("song-selection-preview");
+    await expect(preview).toBeVisible();
+    await expect(preview).toContainText("Lesson Scale");
+    await expect(preview).toContainText("Teacher");
+    await expect(preview).toContainText("L2");
+    await expect(preview).toContainText("Exercises");
+    await expect(preview).toContainText("Not practiced");
+    await expect(previewMetricValue(preview, "Tracks")).toHaveText("1");
     await expect(appPage.getByTestId("mode-select-wait")).toBeHidden();
 
     await preview.getByTestId("song-selection-preview-practice").click();

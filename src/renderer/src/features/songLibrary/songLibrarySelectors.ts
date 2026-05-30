@@ -4,6 +4,10 @@ import type {
   GradeFilter,
   SongLibrarySortMode,
 } from "../../stores/useSongLibraryStore";
+import {
+  normalizeImportedSongPath,
+  type ImportedSongRecord,
+} from "./importedSongMetadata";
 
 export interface SongLibraryFilters {
   difficultyFilter: DifficultyFilter;
@@ -36,12 +40,13 @@ export interface PracticeRecommendationModel {
   targetGrade?: BuiltinSongMeta["grade"];
 }
 
-export interface SongSelectionPreviewModel {
-  song: BuiltinSongMeta;
+interface SongSelectionPreviewBase {
+  kind: "builtin" | "imported";
+  sourceId: string;
   title: string;
   composer: string;
-  durationSeconds: number;
-  difficulty: BuiltinSongMeta["difficulty"];
+  durationSeconds: number | null;
+  difficulty?: BuiltinSongMeta["difficulty"];
   category?: NonNullable<BuiltinSongMeta["category"]>;
   grade?: NonNullable<BuiltinSongMeta["grade"]>;
   tags: string[];
@@ -50,7 +55,24 @@ export interface SongSelectionPreviewModel {
   isFavorite: boolean;
   hasPracticeHistory: boolean;
   primaryCta: "practice" | "continue-practice";
+  trackCount: number | null;
 }
+
+export interface BuiltinSongSelectionPreviewModel extends SongSelectionPreviewBase {
+  kind: "builtin";
+  song: BuiltinSongMeta;
+  durationSeconds: number;
+  difficulty: BuiltinSongMeta["difficulty"];
+}
+
+export interface ImportedSongSelectionPreviewModel extends SongSelectionPreviewBase {
+  kind: "imported";
+  importedSong: ImportedSongRecord;
+}
+
+export type SongSelectionPreviewModel =
+  | BuiltinSongSelectionPreviewModel
+  | ImportedSongSelectionPreviewModel;
 
 const difficultyRank: Record<BuiltinSongMeta["difficulty"], number> = {
   beginner: 0,
@@ -73,6 +95,26 @@ function matchesSongIdentity(
   );
 }
 
+function sourceFileName(sourcePath: string): string {
+  return normalizeImportedSongPath(sourcePath).split("/").pop() ?? sourcePath;
+}
+
+function matchesImportedSongIdentity(
+  session: SessionRecord,
+  song: ImportedSongRecord,
+): boolean {
+  const candidates = [
+    song.id,
+    song.title,
+    song.sourcePath,
+    sourceFileName(song.sourcePath),
+  ].map(normalize);
+  return (
+    candidates.includes(normalize(session.songId)) ||
+    candidates.includes(normalize(session.songTitle))
+  );
+}
+
 function baseActivity(isFavorite: boolean): SongActivity {
   return {
     isFavorite,
@@ -85,7 +127,8 @@ function baseActivity(isFavorite: boolean): SongActivity {
 export function buildSongSelectionPreviewModel(
   song: BuiltinSongMeta,
   songActivity?: SongActivity,
-): SongSelectionPreviewModel {
+  trackCount: number | null = null,
+): BuiltinSongSelectionPreviewModel {
   const activity = songActivity ?? baseActivity(false);
   const hasPracticeHistory =
     activity.playCount > 0 ||
@@ -93,7 +136,9 @@ export function buildSongSelectionPreviewModel(
     activity.bestAccuracy !== null;
 
   return {
+    kind: "builtin",
     song,
+    sourceId: song.id,
     title: song.title,
     composer: song.composer,
     durationSeconds: song.durationSeconds,
@@ -106,6 +151,40 @@ export function buildSongSelectionPreviewModel(
     isFavorite: activity.isFavorite,
     hasPracticeHistory,
     primaryCta: hasPracticeHistory ? "continue-practice" : "practice",
+    trackCount,
+  };
+}
+
+export function buildImportedSongSelectionPreviewModel(
+  importedSong: ImportedSongRecord,
+  songActivity?: SongActivity,
+  trackCount: number | null = null,
+): ImportedSongSelectionPreviewModel {
+  const activity = songActivity ?? baseActivity(false);
+  const hasPracticeHistory =
+    activity.playCount > 0 ||
+    activity.lastPlayedAt !== null ||
+    activity.bestAccuracy !== null;
+
+  return {
+    kind: "imported",
+    importedSong,
+    sourceId: importedSong.id,
+    title: importedSong.title,
+    composer: importedSong.composer ?? "",
+    durationSeconds: null,
+    difficulty: undefined,
+    ...(importedSong.category !== undefined
+      ? { category: importedSong.category }
+      : {}),
+    ...(importedSong.grade !== undefined ? { grade: importedSong.grade } : {}),
+    tags: [...importedSong.tags],
+    bestAccuracy: activity.bestAccuracy,
+    playCount: activity.playCount,
+    isFavorite: activity.isFavorite,
+    hasPracticeHistory,
+    primaryCta: hasPracticeHistory ? "continue-practice" : "practice",
+    trackCount,
   };
 }
 
@@ -195,6 +274,53 @@ export function buildSongActivity(
   for (const session of sessions) {
     for (const song of songs) {
       if (!matchesSongIdentity(session, song)) continue;
+      const current = activity.get(song.id);
+      if (!current) continue;
+      current.lastPlayedAt = Math.max(
+        current.lastPlayedAt ?? 0,
+        session.timestamp,
+      );
+      current.playCount += 1;
+      current.bestAccuracy = Math.max(
+        current.bestAccuracy ?? Number.NEGATIVE_INFINITY,
+        session.score.accuracy,
+      );
+      if (current.bestAccuracy === Number.NEGATIVE_INFINITY) {
+        current.bestAccuracy = null;
+      }
+    }
+  }
+
+  return activity;
+}
+
+export function buildImportedSongActivity(
+  importedSongs: ImportedSongRecord[],
+  sessions: SessionRecord[],
+  recentFiles: RecentFile[],
+): Map<string, SongActivity> {
+  const activity = new Map<string, SongActivity>();
+
+  for (const song of importedSongs) {
+    activity.set(song.id, baseActivity(false));
+  }
+
+  for (const file of recentFiles) {
+    const normalizedPath = normalizeImportedSongPath(file.path);
+    const song = importedSongs.find(
+      (candidate) =>
+        normalizeImportedSongPath(candidate.sourcePath) === normalizedPath,
+    );
+    if (!song) continue;
+    const current = activity.get(song.id);
+    if (!current) continue;
+    current.lastPlayedAt = Math.max(current.lastPlayedAt ?? 0, file.timestamp);
+    current.playCount += 1;
+  }
+
+  for (const session of sessions) {
+    for (const song of importedSongs) {
+      if (!matchesImportedSongIdentity(session, song)) continue;
       const current = activity.get(song.id);
       if (!current) continue;
       current.lastPlayedAt = Math.max(
