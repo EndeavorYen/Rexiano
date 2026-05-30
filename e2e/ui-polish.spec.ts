@@ -1,5 +1,10 @@
+import type { Locator } from "@playwright/test";
 import { test, expect, waitForUiSettled } from "./fixtures/electronApp";
-import { gotoLibrary, loadFirstBuiltInSong } from "./helpers/appHarness";
+import {
+  gotoLibrary,
+  loadFirstBuiltInSong,
+  startBuiltInSongFromLibrary,
+} from "./helpers/appHarness";
 
 async function expectNoPageHorizontalOverflow(
   appPage: Parameters<typeof waitForUiSettled>[0],
@@ -15,6 +20,51 @@ async function expectNoPageHorizontalOverflow(
 
   expect(metrics.rootScrollWidth).toBeLessThanOrEqual(metrics.innerWidth + 1);
   expect(metrics.bodyScrollWidth).toBeLessThanOrEqual(metrics.innerWidth + 1);
+}
+
+async function expectLocatorStartsInsideViewport(
+  appPage: Parameters<typeof waitForUiSettled>[0],
+  locator: Locator,
+): Promise<void> {
+  const [box, viewport] = await Promise.all([
+    locator.boundingBox(),
+    appPage.viewportSize(),
+  ]);
+  const debugMetrics = await locator.evaluate((element) => {
+    const style = window.getComputedStyle(element);
+    const parent = element.parentElement;
+    const parentStyle = parent ? window.getComputedStyle(parent) : null;
+    const parentRect = parent?.getBoundingClientRect();
+    return {
+      innerWidth: window.innerWidth,
+      innerHeight: window.innerHeight,
+      visualViewportWidth: window.visualViewport?.width ?? null,
+      visualViewportHeight: window.visualViewport?.height ?? null,
+      parentAlignItems: parentStyle?.alignItems ?? null,
+      parentScrollTop: parent?.scrollTop ?? null,
+      parentRect: parentRect
+        ? {
+            x: parentRect.x,
+            y: parentRect.y,
+            width: parentRect.width,
+            height: parentRect.height,
+          }
+        : null,
+      parentClassName: parent?.className ?? null,
+      height: style.height,
+      maxHeight: style.maxHeight,
+      overflowY: style.overflowY,
+    };
+  });
+
+  expect(box).not.toBeNull();
+  expect(viewport).not.toBeNull();
+  if (!box || !viewport) return;
+
+  const debug = JSON.stringify({ box, viewport, debugMetrics });
+  expect(box.x, debug).toBeGreaterThanOrEqual(-1);
+  expect(box.y, debug).toBeGreaterThanOrEqual(-1);
+  expect(box.x + box.width, debug).toBeLessThanOrEqual(viewport.width + 1);
 }
 
 async function expectSelectorsMeetHitTarget(
@@ -672,5 +722,27 @@ test.describe("Playback UI polish guardrails", () => {
     await expectSelectorsMeetHitTarget(appPage, [
       "button[aria-label='Bluetooth']",
     ]);
+  });
+
+  test("mode selection dialog stays reachable on short viewports", async ({
+    appPage,
+  }) => {
+    await appPage.setViewportSize({ width: 390, height: 320 });
+    await gotoLibrary(appPage);
+
+    const listToggle = appPage.getByTestId("song-library-view-list");
+    if ((await listToggle.count()) > 0) {
+      await listToggle.click();
+    }
+    await startBuiltInSongFromLibrary(appPage, "hot-cross-buns");
+
+    const dialog = appPage.getByRole("dialog", {
+      name: /How do you want to play\?|你想怎麼練習？/,
+    });
+    await expect(dialog).toBeVisible();
+    await expectLocatorStartsInsideViewport(appPage, dialog);
+
+    await expect(appPage.getByTestId("mode-select-wait")).toBeInViewport();
+    await expect(appPage.getByTestId("mode-select-free")).toBeInViewport();
   });
 });

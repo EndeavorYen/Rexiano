@@ -1317,36 +1317,38 @@ function App(): React.JSX.Element {
             height={keyboardHeight}
             compactLabels={compactKeyLabels}
           />
-
-          {/* Mode selection modal (shown when a song first loads) */}
-          {showModeModal && <ModeSelectionModal onSelect={handleModeSelect} />}
-
-          {/* Celebration overlay (shown when song ends).
-              "Pick Song" leads to StatisticsPage instead of directly back. */}
-          {showCelebration && (
-            <CelebrationOverlay
-              score={displayScore}
-              visible={showCelebration}
-              onPracticeAgain={handlePracticeAgain}
-              onChooseSong={handleViewStats}
-              songId={songId}
-              nextAction={nextPracticeAction}
-            />
-          )}
-
-          {/* Statistics page (shown after celebration) */}
-          {showStats && (
-            <StatisticsPage
-              score={displayScore}
-              songName={song?.fileName ?? ""}
-              mode={mode}
-              speed={speed}
-              durationSeconds={Math.round(currentTime)}
-              onPlayAgain={handlePracticeAgain}
-              onChooseSong={handleChooseSong}
-            />
-          )}
         </div>
+      )}
+
+      {/* Mode selection modal (shown when a song first loads). */}
+      {song && showModeModal && (
+        <ModeSelectionModal onSelect={handleModeSelect} />
+      )}
+
+      {/* Celebration overlay (shown when song ends).
+          "Pick Song" leads to StatisticsPage instead of directly back. */}
+      {song && showCelebration && (
+        <CelebrationOverlay
+          score={displayScore}
+          visible={showCelebration}
+          onPracticeAgain={handlePracticeAgain}
+          onChooseSong={handleViewStats}
+          songId={songId}
+          nextAction={nextPracticeAction}
+        />
+      )}
+
+      {/* Statistics page (shown after celebration). */}
+      {song && showStats && (
+        <StatisticsPage
+          score={displayScore}
+          songName={song.fileName}
+          mode={mode}
+          speed={speed}
+          durationSeconds={Math.round(currentTime)}
+          onPlayAgain={handlePracticeAgain}
+          onChooseSong={handleChooseSong}
+        />
       )}
     </div>
   );
