@@ -9,6 +9,8 @@ test.describe("Piano roll editor flow", () => {
   test("opens an editor for a loaded song and draws a note", async ({
     appPage,
   }) => {
+    await appPage.setViewportSize({ width: 1600, height: 900 });
+
     await gotoLibrary(appPage);
     await loadFirstBuiltInSong(appPage);
     await openPlaybackDrawer(appPage);
