@@ -68,7 +68,7 @@ graph TB
 rexiano/
 +-- docs/                         # Design docs, roadmap, user guide
 +-- resources/                    # Static assets bundled with the app
-|   +-- piano.sf2                 # SoundFont file (TimGM6mb, ~6 MB)
+|   +-- piano.sf2                 # SoundFont file (FreePats Upright Piano KW, ~9 MB)
 |   +-- songs/                    # Built-in MIDI songs (18 files)
 +-- build/                        # electron-builder resources (icons, etc.)
 +-- src/

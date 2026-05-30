@@ -325,7 +325,7 @@ graph TB
 
 ## 6. Phase 4 — 音頻播放
 
-**狀態**: ✅ 已完成（程式碼架構完整，內建 TimGM6mb SoundFont，並保留合成音色 fallback；音色升級路徑見 [soundfont-provenance.md](./soundfont-provenance.md)）
+**狀態**: ✅ 已完成（程式碼架構完整，內建 FreePats Upright Piano KW SoundFont，並保留合成音色 fallback；provenance 見 [soundfont-provenance.md](./soundfont-provenance.md)）
 
 ### 目標
 
@@ -370,8 +370,8 @@ Phase 2 使用 `requestAnimationFrame` 推進時間。Phase 4 需改用 `AudioCo
 
 ### SoundFont 策略
 
-- 預設內建一個輕量鋼琴 SoundFont（TimGM6mb，約 6MB），打包在 app 內
-- SoundFont provenance 與 Salamander 升級條件記錄於 [soundfont-provenance.md](./soundfont-provenance.md)
+- 預設內建一個輕量鋼琴 SoundFont（FreePats Upright Piano KW，約 9MB），打包在 app 內
+- SoundFont provenance 與未來升級條件記錄於 [soundfont-provenance.md](./soundfont-provenance.md)
 - 未來可讓進階使用者透過受信任的檔案選擇器載入自訂 `.sf2` 檔案
 - 資源存放於 Electron 的 `resources/` 目錄，透過 IPC 讀取
 

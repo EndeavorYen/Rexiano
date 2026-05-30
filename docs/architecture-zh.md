@@ -70,7 +70,7 @@ graph TB
 rexiano/
 +-- docs/                         # 設計文件、路線圖、使用手冊
 +-- resources/                    # 應用程式靜態資源
-|   +-- piano.sf2                 # SoundFont 音色（TimGM6mb，約 6 MB）
+|   +-- piano.sf2                 # SoundFont 音色（FreePats Upright Piano KW，約 9 MB）
 |   +-- songs/                    # 內建 MIDI 曲目（18 首）
 +-- build/                        # electron-builder 資源（圖示等）
 +-- src/

@@ -98,7 +98,7 @@
 - [x] TransportBar — Play 觸發 `AudioContext.resume()`
 - [x] 音量控制 UI（VolumeControl.tsx, master volume slider）
 - [x] App.tsx 中完整的 AudioEngine 生命週期管理
-- [x] ⚠️ **鋼琴 SoundFont 檔案**：使用 TimGM6mb SF2（`resources/piano.sf2`, 6MB）
+- [x] ⚠️ **鋼琴 SoundFont 檔案**：使用 FreePats Upright Piano KW SF2（`resources/piano.sf2`, 約 9 MB）
 - [x] 測試：AudioEngine, SoundFontLoader, AudioScheduler 單元測試
 
 ---
@@ -201,9 +201,9 @@
   - [x] 白鍵底部顯示音名（C, D, E...），C 鍵加八度數字（C4）
   - [x] 黑鍵可選顯示升音名（C#, D#...）
   - [x] 可開關設定（`showLabels` prop）
-- [x] 真實鋼琴音色（目前保留 TimGM6mb；provenance 與升級路徑見 `docs/soundfont-provenance.md`）
+- [x] 真實鋼琴音色（已替換為 FreePats Upright Piano KW；provenance 見 `docs/soundfont-provenance.md`）
   - [x] 取得並驗證可再發佈的高品質鋼琴 SoundFont（例如 Salamander Grand Piano）
-  - [ ] 完成授權/檔案大小/loader compatibility 檢查後再替換 `resources/piano.sf2`
+  - [x] 完成授權/檔案大小/loader compatibility 檢查後再替換 `resources/piano.sf2`
   - [x] TransportBar 顯示音訊載入狀態（Loader2 spinner + AlertCircle error indicator）
 - [x] 暗色主題「Midnight」
   - [x] 第四套主題，深色背景 + 紫色重點色 + 青/粉/金音符色
@@ -291,27 +291,27 @@
 
 ### Synthesia 對照表
 
-| 功能             | Synthesia | Rexiano Phase 6.5 後                        | 超越？ |
-| ---------------- | --------- | ------------------------------------------- | ------ |
-| Falling notes    | ✅        | ✅ Phase 2                                  | 平手   |
-| 鋼琴音色         | ✅ 優質   | ⚠️ TimGM6mb bundled；Salamander 升級見 #104 | 待升級 |
-| 琴鍵音名         | ✅ 可開關 | ✅ Sprint 1                                 | 平手   |
-| 音符音名         | ✅ 可開關 | ✅ Sprint 2                                 | 平手   |
-| 指法建議         | ✅        | ✅ Sprint 5                                 | 平手   |
-| 練習模式 (Wait)  | ✅        | ✅ Phase 6                                  | 平手   |
-| 速度控制         | ✅        | ✅ Phase 6                                  | 平手   |
-| A-B 循環         | ✅        | ✅ Phase 6                                  | 平手   |
-| 分手練習         | ✅        | ✅ Phase 6                                  | 平手   |
-| 評分系統         | ✅        | ✅ Phase 6                                  | 平手   |
-| 暗色主題         | ✅        | ✅ Sprint 1                                 | 平手   |
-| 節拍器           | ✅        | ✅ Sprint 4                                 | 平手   |
-| 成績追蹤         | ✅        | ✅ Sprint 3                                 | 平手   |
-| 新手引導         | ✅        | ✅ Sprint 4                                 | 平手   |
-| **五線譜顯示**   | ❌        | ✅ Phase 7                                  | **勝** |
-| **練習洞察分析** | ❌        | ✅ Sprint 5                                 | **勝** |
-| **多主題**       | ❌ 僅一種 | ✅ 4 套                                     | **勝** |
-| **開源免費**     | ❌ $39    | ✅ 永遠免費                                 | **勝** |
-| **中文 UI**      | ❌        | ✅ Sprint 5                                 | **勝** |
+| 功能             | Synthesia | Rexiano Phase 6.5 後                 | 超越？ |
+| ---------------- | --------- | ------------------------------------ | ------ |
+| Falling notes    | ✅        | ✅ Phase 2                           | 平手   |
+| 鋼琴音色         | ✅ 優質   | ✅ FreePats Upright Piano KW bundled | 平手   |
+| 琴鍵音名         | ✅ 可開關 | ✅ Sprint 1                          | 平手   |
+| 音符音名         | ✅ 可開關 | ✅ Sprint 2                          | 平手   |
+| 指法建議         | ✅        | ✅ Sprint 5                          | 平手   |
+| 練習模式 (Wait)  | ✅        | ✅ Phase 6                           | 平手   |
+| 速度控制         | ✅        | ✅ Phase 6                           | 平手   |
+| A-B 循環         | ✅        | ✅ Phase 6                           | 平手   |
+| 分手練習         | ✅        | ✅ Phase 6                           | 平手   |
+| 評分系統         | ✅        | ✅ Phase 6                           | 平手   |
+| 暗色主題         | ✅        | ✅ Sprint 1                          | 平手   |
+| 節拍器           | ✅        | ✅ Sprint 4                          | 平手   |
+| 成績追蹤         | ✅        | ✅ Sprint 3                          | 平手   |
+| 新手引導         | ✅        | ✅ Sprint 4                          | 平手   |
+| **五線譜顯示**   | ❌        | ✅ Phase 7                           | **勝** |
+| **練習洞察分析** | ❌        | ✅ Sprint 5                          | **勝** |
+| **多主題**       | ❌ 僅一種 | ✅ 4 套                              | **勝** |
+| **開源免費**     | ❌ $39    | ✅ 永遠免費                          | **勝** |
+| **中文 UI**      | ❌        | ✅ Sprint 5                          | **勝** |
 
 ---
 

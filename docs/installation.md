@@ -161,7 +161,7 @@ sudo modprobe snd-usb-audio
 
 ### 音頻載入
 
-Rexiano 內建鋼琴音色（SoundFont，約 6 MB），儲存在應用程式內部，**不需要網路連線**。
+Rexiano 內建鋼琴音色（SoundFont，約 9 MB），儲存在應用程式內部，**不需要網路連線**。
 
 首次播放歌曲時，SoundFont 會在背景載入（約需 3-5 秒）。載入期間，TransportBar 上會顯示旋轉圖示。載入完成後，音色會保留在記憶體中，後續播放不再有等待時間。
 
