@@ -50,13 +50,18 @@ test.describe("Lesson path and child focus mode", () => {
       timeout: 20_000,
     });
 
-    const ensurePlaybackIsRunning = async (): Promise<void> => {
-      const pauseButton = appPage.getByRole("button", {
-        name: "Pause (Space)",
+    const forceActivePractice = async (): Promise<void> => {
+      await appPage.evaluate(() => {
+        const e2eWindow = window as typeof window & {
+          __rexianoForcePlaybackState?: (state: {
+            isPlaying?: boolean;
+          }) => void;
+        };
+        if (!e2eWindow.__rexianoForcePlaybackState) {
+          throw new Error("Rexiano E2E playback fixture is unavailable");
+        }
+        e2eWindow.__rexianoForcePlaybackState({ isPlaying: true });
       });
-      if (await pauseButton.isVisible()) return;
-      await appPage.getByRole("button", { name: "Play (Space)" }).click();
-      await expect(pauseButton).toBeVisible();
     };
 
     await expect(
@@ -71,7 +76,7 @@ test.describe("Lesson path and child focus mode", () => {
     );
     await expect(appPage.getByTestId("practice-toolbar-level")).toHaveCount(0);
 
-    await ensurePlaybackIsRunning();
+    await forceActivePractice();
 
     const dismissExitDialog = appPage.waitForEvent("dialog");
     const dismissClick = appPage
@@ -83,7 +88,7 @@ test.describe("Lesson path and child focus mode", () => {
     await dismissClick;
     await expect(appPage.locator(".workspace-frame")).toBeVisible();
 
-    await ensurePlaybackIsRunning();
+    await forceActivePractice();
 
     const acceptExitDialog = appPage.waitForEvent("dialog");
     const acceptClick = appPage

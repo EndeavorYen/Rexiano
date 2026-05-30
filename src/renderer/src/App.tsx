@@ -284,6 +284,7 @@ function App(): React.JSX.Element {
         mode?: PracticeMode;
         speed?: number;
       }) => void;
+      __rexianoForcePlaybackState?: (state: { isPlaying?: boolean }) => void;
     };
 
     e2eWindow.__rexianoLoadSheetMusicFixture = (fixtureName) => {
@@ -314,10 +315,19 @@ function App(): React.JSX.Element {
       setShowInsights(false);
       applyRoute("playback");
     };
+    e2eWindow.__rexianoForcePlaybackState = (state) => {
+      // Intentionally bypass subscriptions so E2E can exercise focus-mode exit
+      // wiring without depending on platform audio startup behavior.
+      const playback = usePlaybackStore.getState();
+      if (typeof state.isPlaying === "boolean") {
+        playback.isPlaying = state.isPlaying;
+      }
+    };
 
     return () => {
       delete e2eWindow.__rexianoLoadSheetMusicFixture;
       delete e2eWindow.__rexianoShowCelebrationFixture;
+      delete e2eWindow.__rexianoForcePlaybackState;
     };
   }, [
     applyRoute,
