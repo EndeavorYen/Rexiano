@@ -1,6 +1,6 @@
 # Rexiano 安裝指南
 
-> **版本**: 0.4.1 | **最後更新**: 2026-03
+> **版本**: 0.4.1 | **最後更新**: 2026-05
 >
 > 其他語言：[English](./installation-en.md)
 
@@ -63,7 +63,7 @@
 ### 步驟
 
 1. 前往 [GitHub Releases 頁面](https://github.com/EndeavorYen/Rexiano/releases) 下載最新版本
-2. 下載 `rexiano-x.x.x.dmg` 檔案
+2. 下載 `rexiano-x.x.x-arm64.dmg`（Apple Silicon）或 `rexiano-x.x.x-x64.dmg`（Intel）
 3. 雙擊打開 DMG 檔案
 4. 將 **Rexiano** 圖示拖放到「**應用程式**」資料夾
 
@@ -87,21 +87,20 @@ Rexiano 原生支援 Apple Silicon，不需要 Rosetta 轉譯層。DMG 內已包
 
 ## 4. Linux 安裝
 
-Rexiano 提供三種 Linux 安裝格式，選擇適合你的發行版的格式即可。
+Rexiano 的 GitHub Release 目前提供 Linux AppImage 與 Debian 套件。
 
 ### 4.1 AppImage（推薦，免安裝）
 
 AppImage 格式無需安裝，可在任何 Linux 發行版上直接執行。
 
 ```bash
-# 1. 下載 AppImage
-wget https://github.com/EndeavorYen/Rexiano/releases/latest/download/rexiano-x.x.x.AppImage
+# 1. 從 GitHub Releases 下載 rexiano-*.AppImage
 
 # 2. 賦予執行權限
-chmod +x rexiano-x.x.x.AppImage
+chmod +x rexiano-*.AppImage
 
 # 3. 執行
-./rexiano-x.x.x.AppImage
+./rexiano-*.AppImage
 ```
 
 若無法執行，可能需要安裝 FUSE：
@@ -117,9 +116,8 @@ sudo dnf install fuse fuse-libs
 ### 4.2 Debian / Ubuntu（.deb）
 
 ```bash
-# 下載並安裝
-wget https://github.com/EndeavorYen/Rexiano/releases/latest/download/rexiano-x.x.x.deb
-sudo dpkg -i rexiano-x.x.x.deb
+# 從 GitHub Releases 下載 rexiano-*.deb 後安裝
+sudo dpkg -i rexiano-*.deb
 
 # 如果有相依套件問題
 sudo apt-get install -f
@@ -127,17 +125,7 @@ sudo apt-get install -f
 
 安裝完成後，可在應用程式選單中找到 Rexiano，或在終端機中執行 `rexiano`。
 
-### 4.3 RPM（Fedora / RHEL / openSUSE）
-
-```bash
-# Fedora / RHEL
-sudo rpm -i rexiano-x.x.x.rpm
-
-# openSUSE
-sudo zypper install rexiano-x.x.x.rpm
-```
-
-### 4.4 Linux 上的 MIDI 支援
+### 4.3 Linux 上的 MIDI 支援
 
 在 Linux 上使用 USB MIDI 鍵盤前，確認已載入 ALSA 驅動：
 
@@ -152,6 +140,10 @@ sudo modprobe snd-usb-audio
 ---
 
 ## 5. 首次啟動注意事項
+
+### Release checksum
+
+每個 GitHub Release 都會附上 `SHA256SUMS.txt`。下載安裝檔後，可用它確認檔案和 release 上傳的 checksum 一致。
 
 ### 新手引導
 

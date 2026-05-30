@@ -1,6 +1,6 @@
 # Rexiano User Guide
 
-> **Version**: 0.4.1 | **Last updated**: 2026-03
+> **Version**: 0.4.1 | **Last updated**: 2026-05
 >
 > Other languages: [繁體中文](./user-guide.md)
 
@@ -32,7 +32,7 @@ This project started as a father's gift to his six-year-old son Rex — to make 
 - **Connect your keyboard** — Supports USB and Bluetooth MIDI keyboards (Roland, Yamaha, and more)
 - **Three practice modes** — Watch, Wait, and Free, for every stage of learning
 - **Real-time scoring** — Hit a note and it glows; chain them for combo effects
-- **18 built-in songs** — From Twinkle Twinkle to Moonlight Sonata, ordered by difficulty
+- **26 built-in songs** — From Twinkle Twinkle to Moonlight Sonata, ordered by grade and difficulty
 - **Import your own MIDI files** — Practice whatever you want
 - **4 beautiful themes** — Lavender, Ocean, Peach, Midnight — find your favorite
 - **Completely free** — No ads, no paywalls, no subscriptions
@@ -62,7 +62,7 @@ Up and running in 5 minutes! Follow these steps to start your first practice ses
 
 ### Step 1: Choose a Song
 
-When Rexiano launches, you'll see the **Song Library** screen. It lists 18 built-in songs organized by difficulty:
+When Rexiano launches, you'll see the **Song Library** screen. It lists 26 built-in songs organized by grade, category, and difficulty:
 
 | Difficulty   | Good for                | Example songs                                           |
 | ------------ | ----------------------- | ------------------------------------------------------- |

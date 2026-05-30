@@ -6,6 +6,8 @@ A free, open-source piano practice app with falling notes, MIDI keyboard support
 
 [繁體中文](README-zh.md) | **English**
 
+> **TL;DR** -- Rexiano runs offline on Windows, macOS, and Linux after install. Load a built-in or imported MIDI song, then practice with falling notes, sheet music, Wait mode, loops, scoring, and USB/Bluetooth MIDI keyboard feedback.
+
 <p align="center">
   <img src="docs/assets/screenshots/rexiano-library.png" alt="Rexiano song library" width="32%">
   <img src="docs/assets/screenshots/rexiano-practice.png" alt="Rexiano falling-notes practice" width="32%">
@@ -19,12 +21,14 @@ A free, open-source piano practice app with falling notes, MIDI keyboard support
 **Visual Learning**
 
 - Falling notes display (rhythm game style) rendered at 60 FPS via WebGL
+- Sheet music view with split, sheet-only, and falling-notes display modes
 - 88-key piano keyboard with real-time highlighting
+- Note-name labels and fingering hints for beginner practice
 - Per-track note coloring for left/right hand distinction
 
 **Audio**
 
-- SoundFont-based piano playback (Web Audio API)
+- Bundled FreePats Upright Piano KW SoundFont playback (Web Audio API)
 - Volume control with master slider
 - Synthesizer fallback when SoundFont is unavailable
 
@@ -44,6 +48,7 @@ A free, open-source piano practice app with falling notes, MIDI keyboard support
 - A-B loop for practicing difficult passages
 - Split-hand practice (select which tracks to practice)
 - Real-time scoring with accuracy and streak tracking
+- Metronome, count-in, post-session next action, and progress history
 
 **Themes**
 
@@ -54,7 +59,13 @@ A free, open-source piano practice app with falling notes, MIDI keyboard support
 
 - Import any `.mid` / `.midi` file
 - Drag-and-drop support
-- Built-in song library with difficulty ratings
+- Built-in song library with grades, categories, sorting, favorites, previews, and recent files
+
+**Release and Updates**
+
+- GitHub Releases provide Windows `.exe`, macOS `.dmg`, Linux `.AppImage`, Linux `.deb`, and `SHA256SUMS.txt`
+- Settings > About can check GitHub Releases for newer matching installers
+- Public builds are currently unsigned/not notarized; see [release-signing.md](docs/release-signing.md)
 
 ---
 
@@ -64,7 +75,7 @@ Download the latest release for your platform from the [Releases](https://github
 
 ### Windows
 
-1. Download `Rexiano-x.x.x-setup.exe`
+1. Download `rexiano-x.x.x-setup.exe`
 2. Run the installer and follow the prompts
 3. Launch Rexiano from the desktop shortcut or Start Menu
 
@@ -72,7 +83,7 @@ Download the latest release for your platform from the [Releases](https://github
 
 ### macOS
 
-1. Download `Rexiano-x.x.x-arm64.dmg` (Apple Silicon) or `Rexiano-x.x.x-x64.dmg` (Intel)
+1. Download `rexiano-x.x.x-arm64.dmg` (Apple Silicon) or `rexiano-x.x.x-x64.dmg` (Intel)
 2. Open the DMG and drag Rexiano to your Applications folder
 3. On first launch, right-click the app and select **Open** (or go to System Settings > Privacy & Security > Open Anyway)
 
@@ -82,14 +93,14 @@ Download the latest release for your platform from the [Releases](https://github
 
 **AppImage** (recommended -- no installation required):
 
-1. Download `Rexiano-x.x.x-x86_64.AppImage`
-2. Make it executable: `chmod +x Rexiano-*.AppImage`
-3. Run it: `./Rexiano-*.AppImage`
+1. Download `rexiano-x.x.x-x86_64.AppImage`
+2. Make it executable: `chmod +x rexiano-*.AppImage`
+3. Run it: `./rexiano-*.AppImage`
 
 **Debian / Ubuntu**:
 
-1. Download `Rexiano-x.x.x-amd64.deb`
-2. Install: `sudo dpkg -i Rexiano-*.deb`
+1. Download `rexiano-x.x.x-amd64.deb`
+2. Install: `sudo dpkg -i rexiano-*.deb`
 
 ---
 
@@ -187,7 +198,7 @@ build/                   # Electron-builder resources (icons, entitlements)
 | Build     | electron-vite 5 + Vite 7                      | Fast HMR, module bundling                     |
 | UI        | React 19 + TypeScript 5.9                     | Component-based interface                     |
 | Styling   | Tailwind CSS 4 + CSS Custom Properties        | Theme system                                  |
-| State     | Zustand 5                                     | Lightweight global state (6 stores)           |
+| State     | Zustand 5                                     | Lightweight global state (8 stores)           |
 | Rendering | PixiJS 8                                      | WebGL canvas for falling notes at 60 FPS      |
 | MIDI      | @tonejs/midi + Web MIDI API                   | File parsing + live device I/O                |
 | Audio     | Web Audio API + SoundFont (soundfont2)        | Piano playback                                |
@@ -207,6 +218,8 @@ build/                   # Electron-builder resources (icons, entitlements)
 | **Architecture**       | [docs/architecture.md](docs/architecture.md)       | [docs/architecture-zh.md](docs/architecture-zh.md) |
 | **System Design**      | [docs/DESIGN-en.md](docs/DESIGN-en.md)             | [docs/DESIGN.md](docs/DESIGN.md)                   |
 | **Roadmap**            | [docs/ROADMAP.md](docs/ROADMAP.md)                 | [docs/ROADMAP.md](docs/ROADMAP.md)                 |
+| **Release Signing**    | [docs/release-signing.md](docs/release-signing.md) | [docs/release-signing.md](docs/release-signing.md) |
+| **Update Flow**        | [docs/update-flow.md](docs/update-flow.md)         | [docs/update-flow.md](docs/update-flow.md)         |
 
 ---
 
@@ -220,7 +233,7 @@ You are free to use, modify, and distribute this software under the terms of the
 
 ## Contributing
 
-Contributions are welcome! Please read the [Architecture doc](docs/architecture.md) and [System Design doc](docs/DESIGN-en.md) before writing code, and follow the three-layer architecture (engines → stores → features).
+Contributions are welcome! Please read [CONTRIBUTING.md](CONTRIBUTING.md), the [Architecture doc](docs/architecture.md), and the [System Design doc](docs/DESIGN-en.md) before writing code.
 
 ```bash
 pnpm lint && pnpm typecheck && pnpm test
