@@ -1,6 +1,8 @@
 import type { Locator, Page } from "@playwright/test";
 import { expect } from "../fixtures/electronApp";
 
+type PracticeModeChoice = "wait" | "free";
+
 export async function gotoLibrary(page: Page): Promise<void> {
   await page.evaluate(() => {
     window.location.hash = "#/library";
@@ -18,6 +20,7 @@ export async function openLibraryDrawer(page: Page): Promise<Locator> {
 }
 
 export async function openPlaybackDrawer(page: Page): Promise<Locator> {
+  await choosePracticeModeIfPrompted(page, "wait", { timeout: 1_000 });
   await page.getByTestId("playback-drawer-trigger").click();
   const drawer = page.locator(".app-side-drawer");
   await expect(drawer).toBeVisible();
@@ -44,6 +47,35 @@ export async function startBuiltInSongFromLibrary(
   await previewPractice.click();
 }
 
+export async function choosePracticeMode(
+  page: Page,
+  mode: PracticeModeChoice,
+): Promise<void> {
+  const option = page.getByTestId(`mode-select-${mode}`);
+  await expect(option).toBeVisible({ timeout: 20_000 });
+  await option.click();
+  await expect(option).toBeHidden({ timeout: 10_000 });
+}
+
+export async function choosePracticeModeIfPrompted(
+  page: Page,
+  mode: PracticeModeChoice,
+  { timeout = 5_000 }: { timeout?: number } = {},
+): Promise<boolean> {
+  const option = page.getByTestId(`mode-select-${mode}`);
+  const isPrompted = await option
+    .waitFor({ state: "visible", timeout })
+    .then(() => true)
+    .catch(() => false);
+  if (!isPrompted) {
+    return false;
+  }
+
+  await option.click();
+  await expect(option).toBeHidden({ timeout: 10_000 });
+  return true;
+}
+
 export async function loadFirstBuiltInSong(page: Page): Promise<void> {
   const listToggle = page.getByTestId("song-library-view-list");
   if ((await listToggle.count()) > 0) {
@@ -51,11 +83,7 @@ export async function loadFirstBuiltInSong(page: Page): Promise<void> {
   }
 
   await startBuiltInSongFromLibrary(page, "hot-cross-buns");
-
-  await expect(page.getByTestId("mode-select-wait")).toBeVisible({
-    timeout: 20_000,
-  });
-  await page.getByTestId("mode-select-wait").click();
+  await choosePracticeMode(page, "wait");
 
   await expect(page.locator(".workspace-frame")).toBeVisible({
     timeout: 20_000,

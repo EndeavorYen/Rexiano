@@ -1,5 +1,6 @@
 import { test, expect, waitForUiSettled } from "./fixtures/electronApp";
 import {
+  choosePracticeModeIfPrompted,
   closeTopDrawer,
   gotoLibrary,
   openPlaybackDrawer,
@@ -70,21 +71,10 @@ async function loadBuiltInSongSheet(
 
   await startBuiltInSongFromLibrary(appPage, songId);
 
-  const modeSelectWait = appPage.getByTestId("mode-select-wait");
-  await Promise.race([
-    modeSelectWait.waitFor({ state: "visible", timeout: 20_000 }),
-    appPage
-      .getByTestId("playback-drawer-trigger")
-      .waitFor({ state: "visible", timeout: 20_000 }),
-  ]);
-  const shouldPickMode = await modeSelectWait
-    .waitFor({ state: "visible", timeout: 1_000 })
-    .then(() => true)
-    .catch(() => false);
-  if (shouldPickMode) {
-    await expect(modeSelectWait).toBeVisible({ timeout: 20_000 });
-    await modeSelectWait.click();
-  }
+  await choosePracticeModeIfPrompted(appPage, "wait", { timeout: 20_000 });
+  await expect(appPage.getByTestId("playback-drawer-trigger")).toBeVisible({
+    timeout: 20_000,
+  });
 
   await openPlaybackDrawer(appPage);
   await appPage.getByTestId("display-mode-sheet").click();

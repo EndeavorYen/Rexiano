@@ -1,5 +1,9 @@
 import { test, expect } from "./fixtures/electronApp";
-import { gotoLibrary, startBuiltInSongFromLibrary } from "./helpers/appHarness";
+import {
+  choosePracticeMode,
+  gotoLibrary,
+  startBuiltInSongFromLibrary,
+} from "./helpers/appHarness";
 
 test.describe("Lesson path and child focus mode", () => {
   test("library shows a guided lesson path without blocking free song selection", async ({
@@ -42,10 +46,7 @@ test.describe("Lesson path and child focus mode", () => {
 
     await gotoLibrary(appPage);
     await startBuiltInSongFromLibrary(appPage, "hot-cross-buns");
-    const freeModeOption = appPage.getByTestId("mode-select-free");
-    if (await freeModeOption.isVisible()) {
-      await freeModeOption.click();
-    }
+    await choosePracticeMode(appPage, "free");
     await expect(appPage.locator(".workspace-frame")).toBeVisible({
       timeout: 20_000,
     });
