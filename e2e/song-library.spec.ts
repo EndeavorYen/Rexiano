@@ -109,6 +109,9 @@ test.describe("Song library selection workflow", () => {
     await expect(preview).toContainText("L0");
     await expect(preview).toContainText("Not practiced");
     await expect(previewMetricValue(preview, "Tracks")).toHaveText("1");
+    await expect(
+      preview.getByTestId("song-selection-preview-audio"),
+    ).toHaveText("Preview");
     await expect(appPage.getByTestId("mode-select-wait")).toBeHidden();
 
     await preview.getByTestId("song-selection-preview-practice").click();
@@ -172,6 +175,9 @@ test.describe("Song library selection workflow", () => {
     await expect(preview).toContainText("Exercises");
     await expect(preview).toContainText("Not practiced");
     await expect(previewMetricValue(preview, "Tracks")).toHaveText("1");
+    await expect(
+      preview.getByTestId("song-selection-preview-audio"),
+    ).toHaveText("Preview");
     await expect(appPage.getByTestId("mode-select-wait")).toBeHidden();
 
     await preview.getByTestId("song-selection-preview-practice").click();
