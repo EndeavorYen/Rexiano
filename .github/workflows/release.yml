@@ -91,7 +91,7 @@ jobs:
 
       # Build AppImage + deb only (snap requires snapcraft login)
       - name: Build Linux packages
-        run: electron-vite build && electron-builder --linux AppImage deb
+        run: pnpm exec electron-vite build && pnpm exec electron-builder --linux AppImage deb
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 

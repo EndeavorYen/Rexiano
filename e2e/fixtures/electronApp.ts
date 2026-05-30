@@ -15,7 +15,6 @@ interface ElectronFixtures {
 }
 
 const SETTINGS_KEY = "rexiano-settings";
-const E2E_FIXTURES_KEY = "rexiano-e2e-fixtures";
 
 export const test = base.extend<ElectronFixtures>({
   // eslint-disable-next-line no-empty-pattern
@@ -32,6 +31,7 @@ export const test = base.extend<ElectronFixtures>({
 
     const launchEnv: NodeJS.ProcessEnv = {
       ...process.env,
+      REXIANO_E2E: "1",
       REXIANO_USER_DATA_DIR: userDataPath,
       TZ: "UTC",
     };
@@ -79,8 +79,7 @@ export async function waitForUiSettled(page: Page): Promise<void> {
 
 async function applyStableSettings(page: Page): Promise<void> {
   await page.evaluate(
-    ({ settingsKey, fixturesKey }) => {
-      localStorage.setItem(fixturesKey, "1");
+    ({ settingsKey }) => {
       localStorage.setItem(
         settingsKey,
         JSON.stringify({
@@ -92,7 +91,7 @@ async function applyStableSettings(page: Page): Promise<void> {
         }),
       );
     },
-    { settingsKey: SETTINGS_KEY, fixturesKey: E2E_FIXTURES_KEY },
+    { settingsKey: SETTINGS_KEY },
   );
 
   await page.reload();

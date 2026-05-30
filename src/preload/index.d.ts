@@ -22,6 +22,7 @@ import type {
 declare global {
   interface Window {
     api: {
+      isE2eTestMode: boolean;
       openMidiFile: () => Promise<MidiFileResult | null>;
       loadSoundFont: (fileName?: string) => Promise<SoundFontResult | null>;
       /** Phase 5: Request MIDI device access permission */

@@ -18,6 +18,7 @@ import type {
 } from "../shared/types";
 
 const api = {
+  isE2eTestMode: process.env.REXIANO_E2E === "1",
   openMidiFile: () => ipcRenderer.invoke(IpcChannels.OPEN_MIDI_FILE),
   loadSoundFont: (fileName?: string) =>
     ipcRenderer.invoke(IpcChannels.LOAD_SOUNDFONT, fileName),

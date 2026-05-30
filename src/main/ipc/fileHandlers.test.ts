@@ -41,6 +41,9 @@ vi.mock("fs", () => ({
   existsSync: vi.fn(
     (path: string) => path.replace(/\\/g, "/") in mockFileContents,
   ),
+  mkdirSync: vi.fn(),
+  readFileSync: vi.fn(() => "{}"),
+  writeFileSync: vi.fn(),
 }));
 
 import { registerFileHandlers } from "./fileHandlers";

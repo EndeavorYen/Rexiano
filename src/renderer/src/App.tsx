@@ -73,6 +73,7 @@ import {
 } from "./features/routing/appRoute";
 import { useMidiImportActions } from "./features/fileImport/useMidiImportActions";
 import { buildMidiDiagnosticNotice } from "./features/midiDiagnostics/midiDiagnosticNotice";
+import { shouldExposeE2eFixtures } from "./e2eFixtureAccess";
 
 const HEADER_ESTIMATED_HEIGHT = 112;
 const TRANSPORT_ESTIMATED_HEIGHT = 84;
@@ -270,9 +271,9 @@ function App(): React.JSX.Element {
   useEffect(() => {
     if (typeof window === "undefined") return;
 
-    const fixtureAccessEnabled =
-      navigator.webdriver ||
-      window.localStorage.getItem("rexiano-e2e-fixtures") === "1";
+    const fixtureAccessEnabled = shouldExposeE2eFixtures({
+      isE2eTestMode: window.api.isE2eTestMode,
+    });
     if (!fixtureAccessEnabled) return;
 
     const e2eWindow = window as typeof window & {
