@@ -2,12 +2,12 @@ import { describe, expect, test } from "vitest";
 import { readFileSync } from "fs";
 import { resolve } from "path";
 
+const readRepoFile = (path: string): string =>
+  readFileSync(resolve(process.cwd(), path), "utf-8");
+
 describe("release workflow", () => {
   test("runs Linux packaging through pnpm so local binaries resolve", () => {
-    const workflow = readFileSync(
-      resolve(process.cwd(), ".github/workflows/release.yml"),
-      "utf-8",
-    );
+    const workflow = readRepoFile(".github/workflows/release.yml");
 
     expect(workflow).toContain(
       "run: pnpm exec electron-vite build && pnpm exec electron-builder --linux AppImage deb",
@@ -15,5 +15,60 @@ describe("release workflow", () => {
     expect(workflow).not.toContain(
       "run: electron-vite build && electron-builder --linux AppImage deb",
     );
+  });
+
+  test("wires optional Windows signing secrets while preserving unsigned fallback", () => {
+    const workflow = readRepoFile(".github/workflows/release.yml");
+    const signingDocs = readRepoFile("docs/release-signing.md");
+
+    expect(workflow).toContain("WIN_CSC_LINK: ${{ secrets.WINDOWS_CSC_LINK }}");
+    expect(workflow).toContain(
+      "WIN_CSC_KEY_PASSWORD: ${{ secrets.WINDOWS_CSC_KEY_PASSWORD }}",
+    );
+    expect(workflow).toContain(
+      "Windows signing secrets are incomplete; building unsigned installer.",
+    );
+    expect(workflow).toContain('$env:CSC_IDENTITY_AUTO_DISCOVERY = "true"');
+    expect(workflow).toContain('$env:CSC_IDENTITY_AUTO_DISCOVERY = "false"');
+    expect(signingDocs).toContain("WINDOWS_CSC_LINK");
+    expect(signingDocs).toContain("WINDOWS_CSC_KEY_PASSWORD");
+  });
+
+  test("wires optional macOS signing and notarization secrets with unsigned fallback", () => {
+    const workflow = readRepoFile(".github/workflows/release.yml");
+    const builderConfig = readRepoFile("electron-builder.yml");
+    const signingDocs = readRepoFile("docs/release-signing.md");
+
+    expect(workflow).toContain("CSC_LINK: ${{ secrets.MACOS_CSC_LINK }}");
+    expect(workflow).toContain(
+      "CSC_KEY_PASSWORD: ${{ secrets.MACOS_CSC_KEY_PASSWORD }}",
+    );
+    expect(workflow).toContain(
+      "APPLE_API_KEY_BASE64: ${{ secrets.APPLE_API_KEY_BASE64 }}",
+    );
+    expect(workflow).toContain(
+      "APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}",
+    );
+    expect(workflow).toContain(
+      "APPLE_API_ISSUER: ${{ secrets.APPLE_API_ISSUER }}",
+    );
+    expect(workflow).toContain("APPLE_ID: ${{ secrets.APPLE_ID }}");
+    expect(workflow).toContain(
+      "APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}",
+    );
+    expect(workflow).toContain("APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}");
+    expect(workflow).toContain("APPLE_API_KEY_PATH:");
+    expect(workflow).toContain("unset APPLE_API_KEY");
+    expect(workflow).toContain("unset CSC_LINK CSC_KEY_PASSWORD");
+    expect(workflow).toContain('export APPLE_API_KEY="$APPLE_API_KEY_PATH"');
+    expect(workflow).toContain(
+      "pnpm exec electron-builder --mac -c.mac.notarize=true",
+    );
+    expect(workflow).toContain(
+      "pnpm exec electron-builder --mac -c.mac.identity=null -c.mac.notarize=false",
+    );
+    expect(builderConfig).toContain("notarize: false");
+    expect(signingDocs).toContain("MACOS_CSC_LINK");
+    expect(signingDocs).toContain("APPLE_API_KEY_BASE64");
   });
 });

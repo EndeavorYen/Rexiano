@@ -26,11 +26,22 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Build Windows installer
-        run: pnpm build:win
+        shell: pwsh
+        run: |
+          if ($env:WIN_CSC_LINK -and $env:WIN_CSC_KEY_PASSWORD) {
+            $env:CSC_IDENTITY_AUTO_DISCOVERY = "true"
+          } else {
+            Write-Host "Windows signing secrets are incomplete; building unsigned installer."
+            Remove-Item Env:\WIN_CSC_LINK -ErrorAction SilentlyContinue
+            Remove-Item Env:\WIN_CSC_KEY_PASSWORD -ErrorAction SilentlyContinue
+            $env:CSC_IDENTITY_AUTO_DISCOVERY = "false"
+          }
+
+          pnpm build:win
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          # Keep CI unsigned until docs/release-signing.md credentials are configured.
-          CSC_IDENTITY_AUTO_DISCOVERY: false
+          WIN_CSC_LINK: ${{ secrets.WINDOWS_CSC_LINK }}
+          WIN_CSC_KEY_PASSWORD: ${{ secrets.WINDOWS_CSC_KEY_PASSWORD }}
 
       - name: Upload Windows artifacts
         uses: actions/upload-artifact@v4
@@ -57,12 +68,60 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Prepare Apple API key
+        shell: bash
+        run: |
+          if [[ -z "$APPLE_API_KEY_BASE64" || -z "$APPLE_API_KEY_ID" ]]; then
+            echo "Apple API key secrets are incomplete; Apple ID notarization credentials may still be used."
+            exit 0
+          fi
+
+          mkdir -p "$RUNNER_TEMP/apple-api-key"
+          api_key_path="$RUNNER_TEMP/apple-api-key/AuthKey_${APPLE_API_KEY_ID}.p8"
+          if ! printf '%s' "$APPLE_API_KEY_BASE64" | base64 --decode > "$api_key_path"; then
+            printf '%s' "$APPLE_API_KEY_BASE64" | base64 -D > "$api_key_path" || {
+              echo "Failed to decode APPLE_API_KEY_BASE64." >&2
+              exit 1
+            }
+          fi
+          chmod 600 "$api_key_path"
+        env:
+          APPLE_API_KEY_BASE64: ${{ secrets.APPLE_API_KEY_BASE64 }}
+          APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
+
       - name: Build macOS DMG
-        run: pnpm build:mac
+        shell: bash
+        run: |
+          pnpm exec electron-vite build
+
+          unset APPLE_API_KEY
+          has_notarization_credentials=false
+          if [[ -f "$APPLE_API_KEY_PATH" && -n "$APPLE_API_KEY_ID" && -n "$APPLE_API_ISSUER" ]]; then
+            export APPLE_API_KEY="$APPLE_API_KEY_PATH"
+            has_notarization_credentials=true
+          elif [[ -n "$APPLE_ID" && -n "$APPLE_APP_SPECIFIC_PASSWORD" && -n "$APPLE_TEAM_ID" ]]; then
+            has_notarization_credentials=true
+          fi
+
+          if [[ -n "$CSC_LINK" && -n "$CSC_KEY_PASSWORD" && "$has_notarization_credentials" == "true" ]]; then
+            export CSC_IDENTITY_AUTO_DISCOVERY=true
+            pnpm exec electron-builder --mac -c.mac.notarize=true
+          else
+            echo "macOS signing/notarization secrets are incomplete; building unsigned DMGs."
+            unset CSC_LINK CSC_KEY_PASSWORD
+            export CSC_IDENTITY_AUTO_DISCOVERY=false
+            pnpm exec electron-builder --mac -c.mac.identity=null -c.mac.notarize=false
+          fi
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          # Keep CI unsigned/not-notarized until docs/release-signing.md credentials are configured.
-          CSC_IDENTITY_AUTO_DISCOVERY: false
+          CSC_LINK: ${{ secrets.MACOS_CSC_LINK }}
+          CSC_KEY_PASSWORD: ${{ secrets.MACOS_CSC_KEY_PASSWORD }}
+          APPLE_API_KEY_PATH: ${{ runner.temp }}/apple-api-key/AuthKey_${{ secrets.APPLE_API_KEY_ID }}.p8
+          APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
+          APPLE_API_ISSUER: ${{ secrets.APPLE_API_ISSUER }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
 
       - name: Upload macOS artifacts
         uses: actions/upload-artifact@v4
