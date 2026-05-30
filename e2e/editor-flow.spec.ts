@@ -31,16 +31,31 @@ test.describe("Piano roll editor flow", () => {
 
     await appPage.getByTestId("editor-tool-draw").click();
 
-    const gridViewport = appPage.getByTestId("piano-roll-scroll");
-    await expect(gridViewport).toBeVisible();
-    const gridViewportBox = await gridViewport.boundingBox();
-    if (!gridViewportBox) {
-      throw new Error("Piano roll viewport is not available for drawing");
-    }
-    await appPage.mouse.click(
-      gridViewportBox.x + Math.min(180, gridViewportBox.width * 0.35),
-      gridViewportBox.y + gridViewportBox.height * 0.58,
-    );
+    const grid = appPage.getByTestId("piano-roll-grid");
+    await expect(grid).toBeVisible();
+    const drawPoint = await grid.evaluate((svg) => {
+      const rect = svg.getBoundingClientRect();
+      const xCandidates = [0.14, 0.28, 0.42, 0.56, 0.7];
+      const yCandidates = [0.2, 0.34, 0.48, 0.62, 0.76, 0.9];
+
+      for (const yRatio of yCandidates) {
+        for (const xRatio of xCandidates) {
+          const x = rect.left + rect.width * xRatio;
+          const y = rect.top + rect.height * yRatio;
+          const hit = document.elementFromPoint(x, y);
+          if (
+            hit &&
+            svg.contains(hit) &&
+            !hit.closest('[data-testid="piano-roll-note"]')
+          ) {
+            return { x, y };
+          }
+        }
+      }
+
+      throw new Error("No visible empty piano-roll grid point found");
+    });
+    await appPage.mouse.click(drawPoint.x, drawPoint.y);
 
     await expect(notes).toHaveCount(initialCount + 1);
     await expect(appPage.getByTestId("note-inspector-selection")).toContainText(
