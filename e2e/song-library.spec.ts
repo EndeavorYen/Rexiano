@@ -117,7 +117,7 @@ test.describe("Song library selection workflow", () => {
     });
   });
 
-  test("shows imported-song preview before loading the MIDI file", async ({
+  test("shows imported-song preview before starting practice", async ({
     appPage,
     electronApp,
   }) => {
