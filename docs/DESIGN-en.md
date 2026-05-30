@@ -214,7 +214,7 @@ Adding a new theme requires only adding a new entry to `tokens.ts` — no compon
 
 ```mermaid
 flowchart TD
-    A["resources/piano.sf2\n(SoundFont, ~6 MB)"]
+    A["resources/piano.sf2\n(SoundFont, ~9 MB)"]
     B["IPC: audio:loadSoundFont\nMain reads file → returns number[]"]
     C["SoundFontLoader.load(data)"]
     D["Success: parse SF2\nextract presets"]
@@ -242,7 +242,7 @@ flowchart TD
 
 **Time source**: `AudioContext.currentTime` (hardware clock), not `requestAnimationFrame`. This ensures audio scheduling is immune to frame drops.
 
-**SoundFont**: TimGM6mb SF2 (`resources/piano.sf2`, ~6 MB). Bundled with the app, no internet required.
+**SoundFont**: FreePats Upright Piano KW SF2 (`resources/piano.sf2`, ~9 MB). Bundled with the app, no internet required.
 
 ---
 

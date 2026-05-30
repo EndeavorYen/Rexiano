@@ -1,18 +1,16 @@
 # Piano SoundFont Provenance
 
 Rexiano currently bundles `resources/piano.sf2` as the default offline piano
-SoundFont. The file is the TimGM6mb SF2 already used by the audio engine and
-packaged through `electron-builder.yml`.
+SoundFont. The file is the FreePats Upright Piano KW small SF2 and is packaged
+through `electron-builder.yml`.
 
 ## Current Decision
 
-- Keep TimGM6mb bundled for now. The current file is 5,969,788 bytes
-  (`sha256:c5378b62028c920cb11e4803327983fee2f2cdff5dc89c708e39da417e51c854`)
-  and is already covered by the existing `SoundFontLoader` fallback path.
-- Use FreePats Upright Piano KW small SF2 as the first replacement candidate for
-  a future `resources/piano.sf2` swap. It is redistributable under CC0, stays
-  close to the current packaging budget, and parses through the current
-  `soundfont2` loader path.
+- Bundle FreePats Upright Piano KW small SF2. The current file is
+  9,456,310 bytes
+  (`sha256:cf2a98eb38a32c4954b4b6e2caae4112d62dd8e892eceefdd7942b0e7d01ac2f`),
+  redistributable under CC0, close to the previous packaging budget, and covered
+  by a real `soundfont2` parse regression test.
 - Do not bundle Salamander Grand Piano yet. Its provenance and CC BY 3.0 license
   are clear, but the redistributable SF2 package is much larger than the current
   release budget and the upstream SFZ version is not directly supported by the
@@ -21,10 +19,10 @@ packaged through `electron-builder.yml`.
 
 ## 2026-05-31 Candidate Validation
 
-### Selected Candidate For Replacement Work
+### Selected Replacement
 
-FreePats Upright Piano KW small SF2 is the selected candidate for issue #132
-compatibility work.
+FreePats Upright Piano KW small SF2 is the bundled replacement selected by
+issues #131 and #132.
 
 - Source page:
   [FreePats Acoustic Grand Piano](https://freepats.zenvoid.org/Piano/acoustic-grand-piano.html#UprightKW)
@@ -45,15 +43,18 @@ compatibility work.
 - Extracted SF2 size: 9,456,310 bytes (9.02 MiB)
 - Extracted SF2 SHA-256:
   `cf2a98eb38a32c4954b4b6e2caae4112d62dd8e892eceefdd7942b0e7d01ac2f`
-- Packaging impact if the extracted SF2 replaces `resources/piano.sf2`:
+- Packaging impact versus the previous TimGM6mb `resources/piano.sf2`:
   +3,486,522 bytes (+3.32 MiB) before installer compression.
 - Loader smoke: `new SoundFont2(new Uint8Array(data))` succeeded locally.
   `getKeyData(midi, 0, 0)` returned usable samples for all 88 piano keys from
   A0 (21) through C8 (108). The first preset reports bank 0, preset 0, name
   `Upright piano KW`.
-- Decision: acceptable as a redistributable, loader-compatible replacement
-  candidate. Do not replace the bundled file until #132 adds the binary swap,
-  focused audio tests, and an offline playback smoke run.
+- Replacement verification: `scripts/bundledSoundFontAsset.test.ts` locks the
+  bundled SF2 size, SHA-256, preset metadata, and `SoundFontLoader` 88-key load
+  path. A focused Playwright playback smoke path also passed after the binary
+  swap.
+- Decision: bundled as `resources/piano.sf2` after adding a focused regression
+  test for size, SHA-256, preset metadata, and 88-key `soundfont2` parsing.
 
 ### Reviewed But Not Selected
 
@@ -87,9 +88,10 @@ SF2 is superseded by this validation record. Use the FreePats or upstream source
 pages above instead of raw GitHub paths unless the exact artifact, license, size,
 and checksum are revalidated.
 
-## Upgrade Path
+## Future Upgrade Path
 
-Before replacing `resources/piano.sf2`, verify and commit all of the following:
+Before replacing `resources/piano.sf2` again, verify and commit all of the
+following:
 
 - Source URL and license for the replacement SF2.
 - Included attribution text if the license requires it.

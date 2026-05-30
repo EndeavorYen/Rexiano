@@ -159,7 +159,7 @@ On first launch, Rexiano shows a 4-step interactive guide that introduces the ba
 
 ### Audio Loading
 
-Rexiano ships with a built-in piano SoundFont (~6 MB) stored inside the application. **No internet connection is required.**
+Rexiano ships with a built-in piano SoundFont (~9 MB) stored inside the application. **No internet connection is required.**
 
 When you play a song for the first time, the SoundFont loads in the background (3–5 seconds). The TransportBar shows a spinning indicator while loading. Once loaded, the audio stays in memory for the duration of the session.
 

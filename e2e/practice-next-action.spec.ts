@@ -5,6 +5,7 @@ test.describe("Post-session next action", () => {
     appPage,
   }) => {
     await appPage.clock.install();
+    await appPage.clock.pauseAt(new Date("2030-01-01T00:00:00Z"));
 
     const result = await appPage.evaluate(() => {
       const e2eWindow = window as typeof window & {
