@@ -55,20 +55,30 @@ test.describe("Lesson path and child focus mode", () => {
     );
     await expect(appPage.getByTestId("practice-toolbar-level")).toHaveCount(0);
 
-    await playButton.click();
+    const pauseButton = appPage.getByRole("button", { name: "Pause (Space)" });
+    if (!(await pauseButton.isVisible())) {
+      await playButton.click();
+    }
+    await expect(pauseButton).toBeVisible();
 
-    appPage.once("dialog", async (dialog) => {
-      expect(dialog.message()).toContain("Practice is still playing");
-      await dialog.dismiss();
-    });
-    await appPage.getByRole("button", { name: "Library" }).click();
+    const dismissExitDialog = appPage.waitForEvent("dialog");
+    const dismissClick = appPage
+      .getByRole("button", { name: "Library" })
+      .click();
+    const dismissDialog = await dismissExitDialog;
+    expect(dismissDialog.message()).toContain("Practice is still playing");
+    await dismissDialog.dismiss();
+    await dismissClick;
     await expect(appPage.locator(".workspace-frame")).toBeVisible();
 
-    appPage.once("dialog", async (dialog) => {
-      expect(dialog.message()).toContain("Practice is still playing");
-      await dialog.accept();
-    });
-    await appPage.getByRole("button", { name: "Library" }).click();
+    const acceptExitDialog = appPage.waitForEvent("dialog");
+    const acceptClick = appPage
+      .getByRole("button", { name: "Library" })
+      .click();
+    const acceptDialog = await acceptExitDialog;
+    expect(acceptDialog.message()).toContain("Practice is still playing");
+    await acceptDialog.accept();
+    await acceptClick;
     await expect(
       appPage.getByRole("button", { name: /Start Practicing/i }),
     ).toBeVisible();
