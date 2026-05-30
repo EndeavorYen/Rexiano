@@ -78,6 +78,13 @@ const emptyActivity: SongActivity = {
   bestAccuracy: null,
 };
 
+function previewTrackCountKey(
+  kind: "builtin" | "imported",
+  sourceId: string,
+): string {
+  return `${kind}:${sourceId}`;
+}
+
 const recommendationReasonKeys: Record<
   PracticeRecommendationReason,
   TranslationKey
@@ -224,6 +231,9 @@ export function SongLibrary({
   const [selectedImportedSongId, setSelectedImportedSongId] = useState<
     string | null
   >(null);
+  const [previewTrackCounts, setPreviewTrackCounts] = useState<
+    Record<string, number>
+  >({});
   const [importedMetadataDraft, setImportedMetadataDraft] =
     useState<ImportedSongMetadataDraft | null>(null);
   const [showDeviceDrawer, setShowDeviceDrawer] = useState(false);
@@ -299,21 +309,79 @@ export function SongLibrary({
 
   const selectedSongPreview = useMemo(() => {
     if (selectedSong) {
+      const key = previewTrackCountKey("builtin", selectedSong.id);
       return buildSongSelectionPreviewModel(
         selectedSong,
         songActivity.get(selectedSong.id),
+        previewTrackCounts[key] ?? null,
       );
     }
 
     if (selectedImportedSong) {
+      const key = previewTrackCountKey("imported", selectedImportedSong.id);
       return buildImportedSongSelectionPreviewModel(
         selectedImportedSong,
         importedSongActivity.get(selectedImportedSong.id),
+        previewTrackCounts[key] ?? null,
       );
     }
 
     return null;
-  }, [importedSongActivity, selectedImportedSong, selectedSong, songActivity]);
+  }, [
+    importedSongActivity,
+    previewTrackCounts,
+    selectedImportedSong,
+    selectedSong,
+    songActivity,
+  ]);
+
+  useEffect(() => {
+    const previewSource =
+      selectedSong !== null
+        ? {
+            kind: "builtin" as const,
+            sourceId: selectedSong.id,
+            load: () => window.api.loadBuiltinSong(selectedSong.id),
+          }
+        : selectedImportedSong !== null
+          ? {
+              kind: "imported" as const,
+              sourceId: selectedImportedSong.id,
+              load: () =>
+                window.api.loadMidiPath(selectedImportedSong.sourcePath),
+            }
+          : null;
+
+    if (!previewSource) return;
+    const source = previewSource;
+
+    const key = previewTrackCountKey(source.kind, source.sourceId);
+    if (previewTrackCounts[key] !== undefined) return;
+
+    let cancelled = false;
+
+    async function loadPreviewTrackCount(): Promise<void> {
+      try {
+        const result = await source.load();
+        if (!result || cancelled) return;
+        const parsed = parseMidiFile(result.fileName, result.data);
+        if (cancelled) return;
+        setPreviewTrackCounts((current) =>
+          current[key] !== undefined
+            ? current
+            : { ...current, [key]: parsed.tracks.length },
+        );
+      } catch (e) {
+        console.error("Failed to load song preview metadata:", e);
+      }
+    }
+
+    void loadPreviewTrackCount();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [previewTrackCounts, selectedImportedSong, selectedSong]);
 
   const practiceRecommendation = useMemo(
     () => buildPracticeRecommendationModel(filteredSongs, songActivity),

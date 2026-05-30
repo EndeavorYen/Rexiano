@@ -127,6 +127,7 @@ function baseActivity(isFavorite: boolean): SongActivity {
 export function buildSongSelectionPreviewModel(
   song: BuiltinSongMeta,
   songActivity?: SongActivity,
+  trackCount: number | null = null,
 ): BuiltinSongSelectionPreviewModel {
   const activity = songActivity ?? baseActivity(false);
   const hasPracticeHistory =
@@ -150,13 +151,14 @@ export function buildSongSelectionPreviewModel(
     isFavorite: activity.isFavorite,
     hasPracticeHistory,
     primaryCta: hasPracticeHistory ? "continue-practice" : "practice",
-    trackCount: null,
+    trackCount,
   };
 }
 
 export function buildImportedSongSelectionPreviewModel(
   importedSong: ImportedSongRecord,
   songActivity?: SongActivity,
+  trackCount: number | null = null,
 ): ImportedSongSelectionPreviewModel {
   const activity = songActivity ?? baseActivity(false);
   const hasPracticeHistory =
@@ -182,7 +184,7 @@ export function buildImportedSongSelectionPreviewModel(
     isFavorite: activity.isFavorite,
     hasPracticeHistory,
     primaryCta: hasPracticeHistory ? "continue-practice" : "practice",
-    trackCount: null,
+    trackCount,
   };
 }
 

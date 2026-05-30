@@ -327,7 +327,7 @@ describe("buildSongSelectionPreviewModel", () => {
       category: "exercise",
     });
 
-    expect(buildSongSelectionPreviewModel(song)).toEqual({
+    expect(buildSongSelectionPreviewModel(song, undefined, 1)).toEqual({
       kind: "builtin",
       song,
       sourceId: "scale",
@@ -343,7 +343,7 @@ describe("buildSongSelectionPreviewModel", () => {
       isFavorite: false,
       hasPracticeHistory: false,
       primaryCta: "practice",
-      trackCount: null,
+      trackCount: 1,
     });
   });
 
@@ -393,12 +393,16 @@ describe("buildSongSelectionPreviewModel", () => {
     });
 
     expect(
-      buildImportedSongSelectionPreviewModel(importedSong, {
-        isFavorite: false,
-        lastPlayedAt: 4000,
-        playCount: 1,
-        bestAccuracy: 91,
-      }),
+      buildImportedSongSelectionPreviewModel(
+        importedSong,
+        {
+          isFavorite: false,
+          lastPlayedAt: 4000,
+          playCount: 1,
+          bestAccuracy: 91,
+        },
+        2,
+      ),
     ).toEqual({
       kind: "imported",
       importedSong,
@@ -415,7 +419,7 @@ describe("buildSongSelectionPreviewModel", () => {
       isFavorite: false,
       hasPracticeHistory: true,
       primaryCta: "continue-practice",
-      trackCount: null,
+      trackCount: 2,
     });
   });
 });
