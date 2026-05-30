@@ -1,8 +1,8 @@
 # Rexiano — System Design Document
 
-> **Version**: 1.1
-> **Date**: 2026-02-27
-> **Status**: Draft (Phase 6.5 added)
+> **Version**: 1.2
+> **Date**: 2026-05-31
+> **Status**: Phase 1–9 implementation status synced
 >
 > Other languages: [繁體中文](./DESIGN.md)
 
@@ -18,10 +18,10 @@
 6. [Phase 4 — Audio Playback ✅](#6-phase-4--audio-playback)
 7. [Phase 5 — MIDI Device Connection ✅](#7-phase-5--midi-device-connection)
 8. [Phase 6 — Practice Mode ✅](#8-phase-6--practice-mode)
-9. [Phase 6.5 — Children's Usability Enhancements](#9-phase-65--childrens-usability-enhancements)
-10. [Phase 7 — Sheet Music Display](#10-phase-7--sheet-music-display)
-11. [Phase 8 — Score Editor (Extra)](#11-phase-8--score-editor-extra)
-12. [Phase 9 — Packaging & Distribution](#12-phase-9--packaging--distribution)
+9. [Phase 6.5 — Children's Usability Enhancements ✅](#9-phase-65--childrens-usability-enhancements)
+10. [Phase 7 — Sheet Music Display ✅](#10-phase-7--sheet-music-display)
+11. [Phase 8 — Score Editor (Extra) ✅](#11-phase-8--score-editor-extra)
+12. [Phase 9 — Packaging & Distribution ✅](#12-phase-9--packaging--distribution)
 13. [Synthesia Feature Comparison](#13-synthesia-feature-comparison)
 14. [Cross-Cutting Concerns](#14-cross-cutting-concerns)
 
@@ -319,7 +319,7 @@ Scores are persisted to `progress.json` (via IPC) and displayed as badges in the
 
 ## 9. Phase 6.5 — Children's Usability Enhancements
 
-**Status**: 🔲 In Progress | **Target**: v0.4.1
+**Status**: ✅ Complete | **Included in**: v0.4.1
 
 ### Design Goals
 
@@ -327,31 +327,32 @@ Phase 6.5 focuses on making Rexiano accessible to children aged 6–10 (Rex's ag
 
 ### Features
 
-| Feature              | Description                                                            |
-| -------------------- | ---------------------------------------------------------------------- |
-| Keyboard shortcuts   | Space=play, R=reset, 1/2/3=mode switch, ↑↓=speed, M=mute               |
-| Note labels          | Display note names (C4, F#5) on falling note rectangles                |
-| Piano key labels     | Display key names on white keys with octave numbers on C keys          |
-| Onboarding guide     | 4-step interactive guide for first-time users                          |
-| Song library         | Browse 18 built-in songs with difficulty ratings and best-score badges |
-| Recent files         | Quick access to the 10 most recently opened MIDI files                 |
-| Celebration overlay  | Full-screen celebration animation at ≥90% accuracy                     |
-| Metronome            | Visual beat pulse + audio click with count-in support                  |
-| MIDI test button     | Test keyboard connection without loading a song                        |
-| Latency compensation | 0–100ms slider to compensate for BLE MIDI latency                      |
-| Settings panel       | Gear icon overlay with display, audio, and practice defaults           |
-| 4 themes             | Lavender / Ocean / Peach / Midnight                                    |
-| Mode selection modal | Synthesia-style modal to select Watch/Wait/Free before playback        |
+| Feature              | Description                                                       |
+| -------------------- | ----------------------------------------------------------------- |
+| Keyboard shortcuts   | Space=play, R=reset, 1/2/3=mode switch, ↑↓=speed, M=mute          |
+| Note labels          | Display note names (C4, F#5) on falling note rectangles           |
+| Piano key labels     | Display key names on white keys with octave numbers on C keys     |
+| Onboarding guide     | 4-step interactive guide for first-time users                     |
+| Song library         | Browse 26 built-in songs with grade filters and best-score badges |
+| Recent files         | Quick access to the 10 most recently opened MIDI files            |
+| Celebration overlay  | Full-screen celebration animation at ≥90% accuracy                |
+| Metronome            | Visual beat pulse + audio click with count-in support             |
+| MIDI test button     | Test keyboard connection without loading a song                   |
+| Latency compensation | 0–100ms slider to compensate for BLE MIDI latency                 |
+| Settings panel       | Gear icon overlay with display, audio, and practice defaults      |
+| 4 themes             | Lavender / Ocean / Peach / Midnight                               |
+| Mode selection modal | Synthesia-style modal to select Watch/Wait/Free before playback   |
 
 ---
 
 ## 10. Phase 7 — Sheet Music Display
 
-**Status**: 🔲 Planned | **Target**: v0.5.0
+**Status**: ✅ Complete | **Included in**: v0.5.0
 
 ### Overview
 
-Add a scrolling sheet music panel (five-line staff) alongside or in place of the falling notes view, using the **OpenSheetMusicDisplay (OSMD)** library.
+Add a scrolling sheet music panel alongside or in place of the falling notes
+view, using **VexFlow** with a custom MIDI-to-notation converter.
 
 ### Display Modes
 
@@ -365,9 +366,10 @@ Add a scrolling sheet music panel (five-line staff) alongside or in place of the
 
 A cursor in the sheet music panel tracks the current playback position in real time, synchronized with `AudioScheduler.getCurrentTime()`.
 
-### MusicXML Generation
+### Notation Generation
 
-To render sheet music from MIDI data, Rexiano will convert `ParsedSong` to a minimal MusicXML document using a custom `MidiToMusicXML` converter that handles:
+To render sheet music from MIDI data, Rexiano converts `ParsedSong` into
+notation measures that feed the VexFlow renderer. The converter handles:
 
 - Time signature and tempo from MIDI meta events
 - Note pitch (MIDI number → note name + octave)
@@ -378,29 +380,33 @@ To render sheet music from MIDI data, Rexiano will convert `ParsedSong` to a min
 
 ## 11. Phase 8 — Score Editor (Extra)
 
-**Status**: 🔲 Planned | **Target**: v1.0.0
+**Status**: ✅ Complete | **Included in**: v1.0.0 feature set
 
-A basic sheet music editor allowing users to:
+A Piano Roll editor allows users to:
 
-- Import MusicXML and render it as an editable score
-- Create new scores from scratch using a note input tool
-- Export edited scores as MIDI or MusicXML
+- Create notes by drawing on a snapped grid
+- Move, resize, delete, copy, paste, and quantize notes
+- Edit note velocity and duration
+- Use undo / redo through the command stack
+- Add and remove tracks
+- Export edited songs as MIDI
 
-This phase is marked "Extra" — it depends on community interest and development resources.
+MusicXML import/export remains a documented boundary evaluation in
+[`docs/editor-export.md`](./editor-export.md).
 
 ---
 
 ## 12. Phase 9 — Packaging & Distribution
 
-**Status**: 🔲 Planned | **Target**: v1.0.0
+**Status**: ✅ Complete | **Included in**: v1.0.0 feature set
 
 ### Targets
 
-| Platform | Format                        | Notes                                 |
-| -------- | ----------------------------- | ------------------------------------- |
-| Windows  | `.exe` (NSIS installer)       | Requires code signing for SmartScreen |
-| macOS    | `.dmg` (Universal Binary)     | Requires notarization for Gatekeeper  |
-| Linux    | `.AppImage` + `.deb` + `.rpm` | AppImage preferred for portability    |
+| Platform | Format                    | Notes                                 |
+| -------- | ------------------------- | ------------------------------------- |
+| Windows  | `.exe` (NSIS installer)   | Requires code signing for SmartScreen |
+| macOS    | `.dmg` (Universal Binary) | Requires notarization for Gatekeeper  |
+| Linux    | `.AppImage` + `.deb`      | AppImage preferred for portability    |
 
 ### CI/CD
 
@@ -408,6 +414,8 @@ GitHub Actions pipeline:
 
 1. Push to `main` → lint + typecheck + test
 2. Tag `v*.*.*` → build all three platform installers → publish to GitHub Releases
+3. Optional signing secrets enable Windows signing, macOS signing, and macOS
+   notarization; incomplete secrets fall back to unsigned artifacts.
 
 ### Auto-Update
 
@@ -431,9 +439,9 @@ network errors. See [`docs/update-flow.md`](./update-flow.md) for verification.
 | Speed control       | ✅        | ✅                    |
 | A-B loop            | ✅        | ✅                    |
 | Split-hand practice | ✅        | ✅                    |
-| Sheet music view    | ✅        | 🔲 Phase 7            |
-| Score editor        | ✅        | 🔲 Phase 8 Extra      |
-| Song library        | Paid      | ✅ Free (18 built-in) |
+| Sheet music view    | ✅        | ✅                    |
+| Score editor        | ✅        | ✅ Piano Roll editor  |
+| Song library        | Paid      | ✅ Free (26 built-in) |
 | Price               | $39/year  | Free & Open Source    |
 | Source available    | ❌        | ✅ GPL-3.0            |
 
