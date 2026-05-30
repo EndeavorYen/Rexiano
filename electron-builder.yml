@@ -57,8 +57,9 @@ mac:
   extendInfo:
     - NSDocumentsFolderUsageDescription: Application requests access to the user's Documents folder.
     - NSDownloadsFolderUsageDescription: Application requests access to the user's Downloads folder.
-  # Official notarization is intentionally disabled until the secrets listed in
-  # docs/release-signing.md are configured for the release workflow.
+  # Default local builds stay unsigned/not-notarized. The release workflow
+  # overrides this with -c.mac.notarize=true only when signing credentials and
+  # Apple notarization credentials are present.
   notarize: false
   target:
     - target: dmg

@@ -996,11 +996,13 @@ stores/useEditorStore.ts
 
 ## 12. Phase 9 — 打包與發佈
 
-**狀態**: 🔲 未開始（部分配置已就緒）
+**狀態**: ✅ 基礎發佈管線完成；簽章/公證在憑證 secrets 存在時自動啟用
 
 ### 目前狀態
 
-`electron-builder.yml` 已配置基本的 Win / Mac / Linux 打包設定。但尚缺：
+`electron-builder.yml` 已配置基本的 Win / Mac / Linux 打包設定；
+`.github/workflows/release.yml` 會在 tag push 時建置多平台 artifacts，並在
+maintainer secrets 存在時進行 Windows/macOS 簽章與 macOS notarization。
 
 ### 待完成項目
 
@@ -1010,9 +1012,9 @@ stores/useEditorStore.ts
 # .github/workflows/release.yml 概念
 trigger: tag push (v*)
 jobs:
-  - build-windows: pnpm build:win   → .exe / .msi
+  - build-windows: pnpm build:win   → .exe
   - build-mac: pnpm build:mac   → .dmg
-  - build-linux: pnpm build:linux  → .AppImage / .deb / .snap
+  - build-linux: electron-builder --linux AppImage deb  → .AppImage / .deb
   - create-release: 上傳 artifacts 到 GitHub Release
 ```
 
@@ -1031,13 +1033,17 @@ jobs:
 | macOS   | Apple Developer 帳號 + notarization                  |
 | Linux   | 無強制要求                                           |
 
-> 初期可暫不簽章，但 README 需提醒使用者 SmartScreen / Gatekeeper 的處理方式。
+> Release workflow 使用 optional secrets：Windows 讀取 `WINDOWS_CSC_LINK` /
+> `WINDOWS_CSC_KEY_PASSWORD`，macOS 讀取 `MACOS_CSC_LINK` /
+> `MACOS_CSC_KEY_PASSWORD` 與 Apple notarization credentials。缺少 secrets 時，
+> workflow 明確走 unsigned fallback；詳細流程見
+> [`docs/release-signing.md`](./release-signing.md)。
 
 #### 12.4 安裝體驗
 
 - Windows：NSIS 安裝程式，桌面捷徑，檔案關聯 `.mid`
 - macOS：DMG 拖放安裝
-- Linux：AppImage（免安裝）+ deb / snap
+- Linux：AppImage（免安裝）+ deb
 
 ---
 

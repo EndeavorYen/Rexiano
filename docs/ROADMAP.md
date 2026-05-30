@@ -437,9 +437,9 @@
   - [x] GitHub Releases update checker（自管 IPC helper，見 `docs/update-flow.md`）
   - [x] 應用內更新提示
   - [x] 發佈到 GitHub Releases
-- [ ] 程式碼簽章（可延後）
-  - [ ] Windows: EV Code Signing Certificate
-  - [ ] macOS: Apple Developer + notarization
+- [x] 程式碼簽章（憑證就緒時自動啟用，無憑證時保留 unsigned fallback）
+  - [x] Windows: EV/OV Code Signing Certificate secrets wiring（`WINDOWS_CSC_LINK` / `WINDOWS_CSC_KEY_PASSWORD`）
+  - [x] macOS: Apple Developer signing + notarization secrets wiring
   - [x] 簽章/公證憑證需求與 unsigned build policy 文件（`docs/release-signing.md`）
 - [x] 檔案關聯
   - [x] `.mid` 檔案雙擊以 Rexiano 開啟（electron-builder.yml fileAssociations）
