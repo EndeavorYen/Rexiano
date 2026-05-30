@@ -11,11 +11,18 @@ import type {
   UserDataFileMutationResult,
   WatchedMidiFolder,
   WatchedMidiFoldersScanResult,
+  AppUpdateAvailable,
+  AppUpdateCheckResult,
+  AppUpdateDownloadResult,
+  AppUpdateStatus,
+  MidiExportRequest,
+  MidiExportResult,
 } from "../shared/types";
 
 declare global {
   interface Window {
     api: {
+      isE2eTestMode: boolean;
       openMidiFile: () => Promise<MidiFileResult | null>;
       loadSoundFont: (fileName?: string) => Promise<SoundFontResult | null>;
       /** Phase 5: Request MIDI device access permission */
@@ -57,8 +64,24 @@ declare global {
       ) => Promise<WatchedMidiFoldersScanResult>;
       /** Phase 6.5: Load a MIDI file by absolute path (for recent files) */
       loadMidiPath: (filePath: string) => Promise<MidiFileResult | null>;
+      /** Editor: export generated MIDI bytes with a save dialog */
+      exportMidiFile: (request: MidiExportRequest) => Promise<MidiExportResult>;
       /** Release pipeline: get app version and changelog */
       getAppInfo: () => Promise<AppInfo>;
+      /** Release pipeline: check GitHub Releases for packaged updates */
+      checkForUpdates: () => Promise<AppUpdateCheckResult>;
+      /** Release pipeline: download an available update artifact */
+      downloadUpdate: (
+        update: AppUpdateAvailable,
+      ) => Promise<AppUpdateDownloadResult>;
+      /** Release pipeline: open a GitHub Releases page */
+      openUpdateRelease: (releaseUrl: string) => Promise<boolean>;
+      /** Release pipeline: open the downloaded installer */
+      openDownloadedUpdate: (downloadedPath: string) => Promise<boolean>;
+      /** Release pipeline: subscribe to update download progress */
+      onUpdateProgress: (
+        callback: (status: AppUpdateStatus) => void,
+      ) => () => void;
     };
   }
 }

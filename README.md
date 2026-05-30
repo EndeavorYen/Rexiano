@@ -6,8 +6,11 @@ A free, open-source piano practice app with falling notes, MIDI keyboard support
 
 [繁體中文](README-zh.md) | **English**
 
-<!-- TODO: Add screenshot or GIF of the app in action -->
-<!-- ![Rexiano Screenshot](docs/screenshot.png) -->
+<p align="center">
+  <img src="docs/assets/screenshots/rexiano-library.png" alt="Rexiano song library" width="32%">
+  <img src="docs/assets/screenshots/rexiano-practice.png" alt="Rexiano falling-notes practice" width="32%">
+  <img src="docs/assets/screenshots/rexiano-split-sheet.png" alt="Rexiano split sheet music and falling notes" width="32%">
+</p>
 
 ---
 
@@ -57,7 +60,7 @@ A free, open-source piano practice app with falling notes, MIDI keyboard support
 
 ## Installation
 
-Download the latest release for your platform from the [Releases](https://github.com/nickhsu-endea/Rexiano/releases) page.
+Download the latest release for your platform from the [Releases](https://github.com/EndeavorYen/Rexiano/releases) page.
 
 ### Windows
 
@@ -94,11 +97,11 @@ Download the latest release for your platform from the [Releases](https://github
 
 Bluetooth MIDI support depends on the operating system:
 
-| Platform | Setup |
-| --- | --- |
-| macOS | Pair the keyboard in Bluetooth settings, then select it in Rexiano. |
-| Linux | Pair through BlueZ/ALSA, then select the exposed MIDI port. |
-| Windows | Try Rexiano's Bluetooth scan first. If the keyboard does not appear as a MIDI input, install a bridge such as MIDIberry or the KORG BLE-MIDI Driver, then select the bridged MIDI port. |
+| Platform | Setup                                                                                                                                                                                   |
+| -------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| macOS    | Pair the keyboard in Bluetooth settings, then select it in Rexiano.                                                                                                                     |
+| Linux    | Pair through BlueZ/ALSA, then select the exposed MIDI port.                                                                                                                             |
+| Windows  | Try Rexiano's Bluetooth scan first. If the keyboard does not appear as a MIDI input, install a bridge such as MIDIberry or the KORG BLE-MIDI Driver, then select the bridged MIDI port. |
 
 For detailed steps, see the **[User Guide — Connecting a MIDI Keyboard](docs/user-guide-en.md#5-connecting-a-midi-keyboard)**.
 
@@ -108,15 +111,15 @@ For detailed steps, see the **[User Guide — Connecting a MIDI Keyboard](docs/u
 
 ### Prerequisites
 
-- [Node.js](https://nodejs.org/) 20 or later
-- [pnpm](https://pnpm.io/) 9 or later
+- [Node.js](https://nodejs.org/) 22 or later
+- [pnpm](https://pnpm.io/) 10 or later
 - Git
 
 ### Quick Start
 
 ```bash
 # Clone the repository
-git clone https://github.com/nickhsu-endea/Rexiano.git
+git clone https://github.com/EndeavorYen/Rexiano.git
 cd Rexiano
 
 # Install dependencies
@@ -152,6 +155,7 @@ Focused UI suites for local changes:
 - Accessibility and keyboard flow: `pnpm build && pnpm exec playwright test e2e/accessibility-core.spec.ts`
 - Playback layout and visual guardrails: `pnpm build && pnpm exec playwright test e2e/ui-polish.spec.ts`
 - Sheet-music dense/key-signature SVG guards: `pnpm build && pnpm exec playwright test e2e/sheet-music-visual-fixtures.spec.ts`
+- README screenshots: `pnpm build && pnpm exec playwright test -c scripts/playwright.readme-screenshots.config.ts`
 
 ### Project Structure
 

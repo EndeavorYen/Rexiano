@@ -83,6 +83,15 @@ export const zhTW: TranslationMap = {
   "library.recommendation.reason.newSong": "適合目前等級的新曲子",
   "library.recommendation.reason.improveScore": "適合拿來提升分數",
   "library.recommendation.reason.continueProgress": "接著累積進度",
+  "library.preview.title": "曲目預覽",
+  "library.preview.length": "長度",
+  "library.preview.grade": "等級",
+  "library.preview.category": "分類",
+  "library.preview.bestScore": "最佳分數",
+  "library.preview.tracks": "軌道",
+  "library.preview.tracksAfterPractice": "播放前選擇",
+  "library.preview.audioUnsupported":
+    "暫不支援音訊預覽；開始練習後仍會先顯示模式與軌道設定。",
   "library.lessonPath.title": "課程路徑",
   "library.lessonPath.free": "仍可自由選曲",
   "library.lessonPath.next": "下一課",
@@ -146,6 +155,11 @@ export const zhTW: TranslationMap = {
   "transport.unmute": "取消靜音",
   "transport.enableMetronome": "啟用節拍器",
   "transport.disableMetronome": "停用節拍器",
+
+  // ── Falling Notes ──────────────────────────────────────────────
+  "fallingNotes.renderFailureTitle": "下落音符無法啟動",
+  "fallingNotes.renderFailureGuidance":
+    "可以先切到五線譜模式、更新顯示卡驅動程式，或重新啟動 Rexiano。",
 
   // ── Song Header ────────────────────────────────────────────────
   "song.tracks": "軌道",
@@ -252,6 +266,24 @@ export const zhTW: TranslationMap = {
   "about.version": "版本",
   "about.changelog": "更新紀錄",
   "about.noChangelog": "尚無更新紀錄。",
+  "about.updateTitle": "更新",
+  "about.updateIntro":
+    "需要時再檢查 GitHub Releases；Rexiano 不會打斷練習流程。",
+  "about.updateFocusModeNote":
+    "兒童專注模式已開啟，更新操作會保留在這個面板內。",
+  "about.updateCheck": "檢查更新",
+  "about.updateChecking": "檢查中…",
+  "about.updateDownload": "下載更新",
+  "about.updateOpenInstaller": "開啟安裝檔",
+  "about.updateReleaseNotes": "版本說明",
+  "about.updateIdle": "尚未檢查更新。",
+  "about.updateDisabledDev": "更新檢查只會在打包版本中啟用。",
+  "about.updateCurrent": "Rexiano 已是最新版本。",
+  "about.updateNotAvailable": "Rexiano 已是最新版本。",
+  "about.updateAvailable": "有新的 Rexiano 版本可用。",
+  "about.updateDownloading": "正在下載更新…",
+  "about.updateReady": "更新已下載，可以安裝。",
+  "about.updateFailed": "更新檢查失敗。",
   "settings.chooseTheme": "選擇主題",
   "settings.themeDesc": "主題會改變整個應用程式的顏色，包括下落音符和鍵盤。",
   "settings.displayOptions": "顯示選項",

@@ -119,6 +119,19 @@ describe("progressHandlers", () => {
     expect(result).toEqual([]);
   });
 
+  test("LOAD_SESSIONS filters invalid persisted entries", async () => {
+    const filePath = `${mockUserDataPath}/progress.json`;
+    mockFileContents[filePath] = JSON.stringify([
+      makeSession({ id: "valid-session" }),
+      makeSession({ id: "", mode: "wait" }),
+      makeSession({ id: "bad-mode", mode: "compose" as never }),
+      { id: "missing-score" },
+    ]);
+
+    const result = await handlers["progress:loadSessions"]();
+    expect(result).toEqual([expect.objectContaining({ id: "valid-session" })]);
+  });
+
   // ─── SAVE_SESSION ─────────────────────────────────────
   test("SAVE_SESSION appends to empty file", async () => {
     const session = makeSession();
@@ -142,5 +155,21 @@ describe("progressHandlers", () => {
     expect(written).toHaveLength(2);
     expect(written[0].id).toBe("existing-1");
     expect(written[1].id).toBe("new-1");
+  });
+
+  test("SAVE_SESSION ignores invalid renderer payloads", async () => {
+    await handlers["progress:saveSession"](null, {
+      id: "bad",
+      songId: "song",
+      songTitle: "Song",
+      timestamp: Date.now(),
+      mode: "compose",
+      speed: 1,
+      score: makeScore(80),
+      durationSeconds: 120,
+      tracksPlayed: [0],
+    });
+
+    expect(writeFile).not.toHaveBeenCalled();
   });
 });

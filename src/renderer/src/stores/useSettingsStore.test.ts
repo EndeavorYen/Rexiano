@@ -300,5 +300,41 @@ describe("useSettingsStore", () => {
       expect(store.getState().defaultSpeed).toBe(1.0); // default
       expect(store.getState().showNoteLabels).toBe(true); // default
     });
+
+    test("malformed saved scalar values are normalized on load", async () => {
+      storage.set(
+        STORAGE_KEY,
+        JSON.stringify({
+          showNoteLabels: "yes",
+          language: "fr",
+          defaultMode: "compose",
+          muted: "false",
+        }),
+      );
+
+      const store = await getStore();
+      expect(store.getState().showNoteLabels).toBe(true);
+      expect(store.getState().language).toBe("en");
+      expect(store.getState().defaultMode).toBe("watch");
+      expect(store.getState().muted).toBe(false);
+    });
+
+    test("out-of-range saved numeric values are clamped on load", async () => {
+      storage.set(
+        STORAGE_KEY,
+        JSON.stringify({
+          volume: 999,
+          defaultSpeed: 0.05,
+          countInBeats: 2.8,
+          latencyCompensation: -25,
+        }),
+      );
+
+      const store = await getStore();
+      expect(store.getState().volume).toBe(100);
+      expect(store.getState().defaultSpeed).toBe(0.25);
+      expect(store.getState().countInBeats).toBe(3);
+      expect(store.getState().latencyCompensation).toBe(0);
+    });
   });
 });

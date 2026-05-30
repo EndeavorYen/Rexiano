@@ -86,6 +86,15 @@ export const en: TranslationMap = {
   "library.recommendation.reason.improveScore":
     "Good pick to improve your score",
   "library.recommendation.reason.continueProgress": "Keep building progress",
+  "library.preview.title": "Song preview",
+  "library.preview.length": "Length",
+  "library.preview.grade": "Level",
+  "library.preview.category": "Category",
+  "library.preview.bestScore": "Best score",
+  "library.preview.tracks": "Tracks",
+  "library.preview.tracksAfterPractice": "Choose before playback",
+  "library.preview.audioUnsupported":
+    "Audio preview is not available yet; practice setup stays available before playback.",
   "library.lessonPath.title": "Lesson path",
   "library.lessonPath.free": "Free song selection stays open",
   "library.lessonPath.next": "Next lesson",
@@ -149,6 +158,11 @@ export const en: TranslationMap = {
   "transport.unmute": "Unmute",
   "transport.enableMetronome": "Enable metronome",
   "transport.disableMetronome": "Disable metronome",
+
+  // ── Falling Notes ──────────────────────────────────────────────
+  "fallingNotes.renderFailureTitle": "Falling notes could not start",
+  "fallingNotes.renderFailureGuidance":
+    "Try Sheet view, update your graphics drivers, or restart Rexiano.",
 
   // ── Song Header ────────────────────────────────────────────────
   "song.tracks": "tracks",
@@ -262,6 +276,24 @@ export const en: TranslationMap = {
   "about.version": "Version",
   "about.changelog": "What's New",
   "about.noChangelog": "No changelog available.",
+  "about.updateTitle": "Updates",
+  "about.updateIntro":
+    "Check GitHub Releases when you are ready. Rexiano will not interrupt practice sessions.",
+  "about.updateFocusModeNote":
+    "Child focus mode is on, so updates stay tucked away in this panel.",
+  "about.updateCheck": "Check for updates",
+  "about.updateChecking": "Checking...",
+  "about.updateDownload": "Download update",
+  "about.updateOpenInstaller": "Open installer",
+  "about.updateReleaseNotes": "Release notes",
+  "about.updateIdle": "No update check has run yet.",
+  "about.updateDisabledDev": "Update checks are available in packaged builds.",
+  "about.updateCurrent": "Rexiano is up to date.",
+  "about.updateNotAvailable": "Rexiano is up to date.",
+  "about.updateAvailable": "A new Rexiano release is available.",
+  "about.updateDownloading": "Downloading update...",
+  "about.updateReady": "Update downloaded and ready to install.",
+  "about.updateFailed": "Update check failed.",
   "settings.chooseTheme": "Choose a Theme",
   "settings.themeDesc":
     "Themes change all colors across the app, including the falling notes and keyboard.",

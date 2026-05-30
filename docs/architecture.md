@@ -66,56 +66,56 @@ graph TB
 
 ```
 rexiano/
-├── docs/                         # Design docs, roadmap, user guide
-├── resources/                    # Static assets bundled with the app
-│   ├── piano.sf2                 # SoundFont file (TimGM6mb, ~6 MB)
-│   └── songs/                    # Built-in MIDI songs (18 files)
-├── build/                        # electron-builder resources (icons, etc.)
-├── src/
-│   ├── main/                     # Electron main process
-│   │   ├── index.ts              # Window creation, app lifecycle
-│   │   └── ipc/
-│   │       ├── fileHandlers.ts         # File dialog, MIDI file loading
-│   │       ├── midiDeviceHandlers.ts   # MIDI permission auto-grant
-│   │       ├── progressHandlers.ts     # Read/write progress.json
-│   │       └── recentFilesHandlers.ts  # Read/write recents.json
-│   ├── preload/                  # Electron context bridge
-│   │   ├── index.ts              # API exposed to renderer
-│   │   └── index.d.ts            # TypeScript declarations for window.api
-│   ├── shared/
-│   │   └── types.ts              # Shared types across processes
-│   └── renderer/src/             # React frontend
-│       ├── App.tsx               # Root component, lifecycle wiring
-│       ├── main.tsx              # React entry point
-│       ├── assets/
-│       │   └── main.css          # Tailwind + @theme + font imports
-│       ├── engines/              # Pure logic layer (no React deps)
-│       │   ├── audio/            # Web Audio API + SoundFont
-│       │   ├── fallingNotes/     # PixiJS rendering pipeline
-│       │   ├── midi/             # MIDI parsing + device management
-│       │   ├── practice/         # Practice mode state machines
-│       │   └── metronome/        # Metronome timing + audio
-│       ├── features/             # React UI components
-│       │   ├── fallingNotes/     # Canvas, keyboard, transport bar
-│       │   ├── midiDevice/       # Device selector, connection status
-│       │   ├── practice/         # Practice toolbar, score, celebration
-│       │   ├── settings/         # Settings panel, theme picker
-│       │   ├── songLibrary/      # Song browser, cards, filters
-│       │   ├── onboarding/       # First-run tutorial guide
-│       │   ├── metronome/        # Beat pulse UI
-│       │   ├── audio/            # Volume control
-│       │   └── insights/         # (planned) Practice analytics
-│       ├── stores/               # Zustand state management
-│       ├── hooks/                # Custom React hooks
-│       ├── themes/
-│       │   └── tokens.ts         # Theme definitions (4 themes, 28 color tokens each)
-│       ├── types/                # Renderer-specific type definitions
-│       └── utils/                # Utility functions
-├── electron-builder.yml          # Packaging configuration
-├── electron.vite.config.ts       # Vite config for Electron
-├── package.json                  # Dependencies and scripts
-├── tsconfig.*.json               # TypeScript configurations
-└── vitest.config.ts              # Test configuration
++-- docs/                         # Design docs, roadmap, user guide
++-- resources/                    # Static assets bundled with the app
+|   +-- piano.sf2                 # SoundFont file (TimGM6mb, ~6 MB)
+|   +-- songs/                    # Built-in MIDI songs (18 files)
++-- build/                        # electron-builder resources (icons, etc.)
++-- src/
+|   +-- main/                     # Electron main process
+|   |   +-- index.ts              # Window creation, app lifecycle
+|   |   +-- ipc/
+|   |       +-- fileHandlers.ts         # File dialog, MIDI file loading
+|   |       +-- midiDeviceHandlers.ts   # MIDI permission auto-grant
+|   |       +-- progressHandlers.ts     # Read/write progress.json
+|   |       +-- recentFilesHandlers.ts  # Read/write recents.json
+|   +-- preload/                  # Electron context bridge
+|   |   +-- index.ts              # API exposed to renderer
+|   |   +-- index.d.ts            # TypeScript declarations for window.api
+|   +-- shared/
+|   |   +-- types.ts              # Shared types across processes
+|   +-- renderer/src/             # React frontend
+|       +-- App.tsx               # Root component, lifecycle wiring
+|       +-- main.tsx              # React entry point
+|       +-- assets/
+|       |   +-- main.css          # Tailwind + @theme + font imports
+|       +-- engines/              # Pure logic layer (no React deps)
+|       |   +-- audio/            # Web Audio API + SoundFont
+|       |   +-- fallingNotes/     # PixiJS rendering pipeline
+|       |   +-- midi/             # MIDI parsing + device management
+|       |   +-- practice/         # Practice mode state machines
+|       |   +-- metronome/        # Metronome timing + audio
+|       +-- features/             # React UI components
+|       |   +-- fallingNotes/     # Canvas, keyboard, transport bar
+|       |   +-- midiDevice/       # Device selector, connection status
+|       |   +-- practice/         # Practice toolbar, score, celebration
+|       |   +-- settings/         # Settings panel, theme picker
+|       |   +-- songLibrary/      # Song browser, cards, filters
+|       |   +-- onboarding/       # First-run tutorial guide
+|       |   +-- metronome/        # Beat pulse UI
+|       |   +-- audio/            # Volume control
+|       |   +-- insights/         # (planned) Practice analytics
+|       +-- stores/               # Zustand state management
+|       +-- hooks/                # Custom React hooks
+|       +-- themes/
+|       |   +-- tokens.ts         # Theme definitions (4 themes, 28 color tokens each)
+|       +-- types/                # Renderer-specific type definitions
+|       +-- utils/                # Utility functions
++-- electron-builder.yml          # Packaging configuration
++-- electron.vite.config.ts       # Vite config for Electron
++-- package.json                  # Dependencies and scripts
++-- tsconfig.*.json               # TypeScript configurations
++-- vitest.config.ts              # Test configuration
 ```
 
 ---
@@ -456,14 +456,14 @@ This is the standard verification command run after every change. It checks:
 
 ### Prerequisites
 
-- Node.js 20+
-- pnpm 9+
+- Node.js 22+
+- pnpm 10+
 - A code editor with TypeScript support (VS Code recommended)
 
 ### Getting Started
 
 ```bash
-git clone https://github.com/nickhsu-endea/Rexiano.git
+git clone https://github.com/EndeavorYen/Rexiano.git
 cd Rexiano
 pnpm install
 pnpm dev          # starts Electron in development mode with HMR

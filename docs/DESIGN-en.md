@@ -143,19 +143,19 @@ Electron Main ↔ Renderer communication uses `contextBridge`. Binary data (MIDI
 
 ```
 ParsedSong
-├── fileName: string
-├── duration: number          (seconds)
-├── noteCount: number
-├── tempos: TempoEvent[]      { time, bpm }
-├── timeSignatures: TimeSignatureEvent[]  { time, numerator, denominator }
-└── tracks: ParsedTrack[]
-    ├── name: string
-    ├── noteCount: number
-    └── notes: ParsedNote[]
-        ├── midi: number      (0-127, MIDI note number)
-        ├── startTime: number (seconds)
-        ├── duration: number  (seconds)
-        └── velocity: number  (0-127)
++-- fileName: string
++-- duration: number          (seconds)
++-- noteCount: number
++-- tempos: TempoEvent[]      { time, bpm }
++-- timeSignatures: TimeSignatureEvent[]  { time, numerator, denominator }
++-- tracks: ParsedTrack[]
+    +-- name: string
+    +-- noteCount: number
+    +-- notes: ParsedNote[]
+        +-- midi: number      (0-127, MIDI note number)
+        +-- startTime: number (seconds)
+        +-- duration: number  (seconds)
+        +-- velocity: number  (0-127)
 ```
 
 ---
@@ -411,7 +411,11 @@ GitHub Actions pipeline:
 
 ### Auto-Update
 
-electron-updater integration: checks GitHub Releases for newer versions on launch, downloads and installs silently in the background.
+Rexiano uses a small GitHub Releases IPC helper instead of adding an updater
+runtime dependency. Packaged builds can check the latest release from the About
+panel, download a matching installer artifact, and let the user open it
+manually. Development builds return a disabled state to avoid noisy background
+network errors. See [`docs/update-flow.md`](./update-flow.md) for verification.
 
 ---
 

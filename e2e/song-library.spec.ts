@@ -83,6 +83,28 @@ test.describe("Song library selection workflow", () => {
     ).toHaveAttribute("aria-pressed", "true");
   });
 
+  test("shows selected-song preview before starting practice", async ({
+    appPage,
+  }) => {
+    await resetLibraryPrefs(appPage);
+    await gotoLibrary(appPage);
+
+    const hotCrossBuns = appPage.getByTestId("song-select-hot-cross-buns");
+    await hotCrossBuns.click();
+
+    const preview = appPage.getByTestId("song-selection-preview");
+    await expect(preview).toBeVisible();
+    await expect(preview).toContainText("Hot Cross Buns");
+    await expect(preview).toContainText("L0");
+    await expect(preview).toContainText("Not practiced");
+    await expect(appPage.getByTestId("mode-select-wait")).toBeHidden();
+
+    await preview.getByTestId("song-selection-preview-practice").click();
+    await expect(appPage.getByTestId("mode-select-wait")).toBeVisible({
+      timeout: 20_000,
+    });
+  });
+
   test("shows a continue practice action after loading a song", async ({
     appPage,
   }) => {

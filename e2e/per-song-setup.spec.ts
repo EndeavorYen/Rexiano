@@ -1,5 +1,5 @@
 import { test, expect } from "./fixtures/electronApp";
-import { gotoLibrary } from "./helpers/appHarness";
+import { gotoLibrary, startBuiltInSongFromLibrary } from "./helpers/appHarness";
 
 test.describe("Per-song practice setup", () => {
   test("mode selection is saved for the loaded song without changing tracks", async ({
@@ -10,7 +10,7 @@ test.describe("Per-song practice setup", () => {
     });
     await gotoLibrary(appPage);
 
-    await appPage.getByTestId("song-select-chopsticks").click();
+    await startBuiltInSongFromLibrary(appPage, "chopsticks");
     await expect(appPage.getByTestId("mode-select-wait")).toBeVisible({
       timeout: 20_000,
     });
@@ -35,7 +35,7 @@ test.describe("Per-song practice setup", () => {
     });
     await gotoLibrary(appPage);
 
-    await appPage.getByTestId("song-select-chopsticks").click();
+    await startBuiltInSongFromLibrary(appPage, "chopsticks");
     await expect(appPage.getByTestId("mode-select-wait")).toBeVisible({
       timeout: 20_000,
     });

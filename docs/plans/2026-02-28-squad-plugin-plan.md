@@ -260,14 +260,14 @@ If `.claude/squad/` does not exist, create the initial structure:
 
 ```
 .claude/squad/
-├── config.yaml        (copy from ${CLAUDE_PLUGIN_ROOT}/config/defaults.yaml)
-├── knowledge/
-│   ├── lessons.md     (empty with header)
-│   ├── role-patterns.md (empty with header)
-│   └── tool-patterns.md (empty with header)
-├── tools/
-├── reports/
-└── metrics.md         (empty with header)
++-- config.yaml        (copy from ${CLAUDE_PLUGIN_ROOT}/config/defaults.yaml)
++-- knowledge/
+|   +-- lessons.md     (empty with header)
+|   +-- role-patterns.md (empty with header)
+|   +-- tool-patterns.md (empty with header)
++-- tools/
++-- reports/
++-- metrics.md         (empty with header)
 ```
 ````
 
@@ -346,7 +346,7 @@ Rules of thumb:
 Present the plan as:
 
 ```
-── 作戰計畫 ──────────────────────────
+-- 作戰計畫 --------------------------
 目標：{objective}
 
 任務分解：
@@ -365,7 +365,7 @@ Wave 2 (等待 Wave 1): #3, #4
 
 驗證標準：
 - {specific verification command and expected result}
-─────────────────────────────────────
+-------------------------------------
 ```
 ````
 
@@ -726,7 +726,7 @@ Write to `.claude/squad/reports/YYYY-MM-DD-{mission-slug}.md`:
 ## --status Format (in-progress mission)
 
 ```
-── Squad Status ─────────────────────
+-- Squad Status ---------------------
 Mission: {objective}
 Stage: {current stage} ({N}/{total} stages)
 Gate: {level}
@@ -739,7 +739,7 @@ Tasks:
 Squad:
   Alpha: idle (completed #1)
   Bravo: working on #2
-─────────────────────────────────────
+-------------------------------------
 ```
 
 ## --history Format
@@ -747,12 +747,12 @@ Squad:
 Read all files in `.claude/squad/reports/` and present:
 
 ```
-── Mission History ──────────────────
+-- Mission History ------------------
 | Date | Mission | Gate | Squad Size | Result |
 |------|---------|------|-----------|--------|
 | 2026-02-28 | Keyboard shortcuts | standard | 3 | ✅ |
 | 2026-03-01 | Dark theme | autonomous | 2 | ✅ |
-─────────────────────────────────────
+-------------------------------------
 ```
 ````
 

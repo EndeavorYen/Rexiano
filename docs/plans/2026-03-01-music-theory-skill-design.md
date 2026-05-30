@@ -20,14 +20,14 @@ Rexiano 是兒童鋼琴練習 app，未來可能需要 Claude 協助：
 
 ```
 .claude/skills/music-theory/
-├── SKILL.md                         ← 主控流程 + 等級參數 + 驗證清單
-└── references/
-    ├── scales-and-keys.md           ← 音階/調性完整參考（含 MIDI 對照）
-    ├── chords-and-progressions.md   ← 和弦/進行（按等級分層）
-    ├── voice-leading.md             ← 聲部進行規則
-    ├── rhythm-and-meter.md          ← 拍號/音符時值/MIDI tick 對照
-    ├── children-pedagogy.md         ← 兒童教學法/難度分級/教材進度
-    └── validation-checklist.md      ← 16 條驗證規則（含 TypeScript 虛擬碼）
++-- SKILL.md                         ← 主控流程 + 等級參數 + 驗證清單
++-- references/
+    +-- scales-and-keys.md           ← 音階/調性完整參考（含 MIDI 對照）
+    +-- chords-and-progressions.md   ← 和弦/進行（按等級分層）
+    +-- voice-leading.md             ← 聲部進行規則
+    +-- rhythm-and-meter.md          ← 拍號/音符時值/MIDI tick 對照
+    +-- children-pedagogy.md         ← 兒童教學法/難度分級/教材進度
+    +-- validation-checklist.md      ← 16 條驗證規則（含 TypeScript 虛擬碼）
 ```
 
 ### 設計決策

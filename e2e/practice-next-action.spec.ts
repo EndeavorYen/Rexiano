@@ -4,6 +4,8 @@ test.describe("Post-session next action", () => {
   test("shows a concrete next action on the celebration overlay", async ({
     appPage,
   }) => {
+    await appPage.clock.install();
+
     const result = await appPage.evaluate(() => {
       const e2eWindow = window as typeof window & {
         __rexianoShowCelebrationFixture?: (fixture: {

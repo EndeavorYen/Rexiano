@@ -103,6 +103,21 @@ describe("recentFilesHandlers", () => {
     expect(result).toEqual([]);
   });
 
+  test("LOAD_RECENT_FILES filters invalid persisted entries", async () => {
+    const filePath = `${mockUserDataPath}/recents.json`;
+    mockFileContents[filePath] = JSON.stringify([
+      makeRecentFile({ path: "/valid.mid", name: "valid.mid" }),
+      { path: "/bad.mid", name: "", timestamp: 1 },
+      { path: 123, name: "bad.mid", timestamp: 1 },
+      { path: "/bad.txt", name: "bad.txt", timestamp: 1 },
+    ]);
+
+    const result = await handlers["recents:loadRecentFiles"]();
+    expect(result).toEqual([
+      expect.objectContaining({ path: "/valid.mid", name: "valid.mid" }),
+    ]);
+  });
+
   // ─── SAVE_RECENT_FILE ─────────────────────────────────
   test("SAVE_RECENT_FILE saves to empty file", async () => {
     const file = makeRecentFile();
@@ -155,6 +170,16 @@ describe("recentFilesHandlers", () => {
     expect(
       written.find((f: RecentFile) => f.path === "/file9.mid"),
     ).toBeUndefined();
+  });
+
+  test("SAVE_RECENT_FILE ignores invalid renderer payloads", async () => {
+    await handlers["recents:saveRecentFile"](null, {
+      path: "/notes.txt",
+      name: "notes.txt",
+      timestamp: Date.now(),
+    });
+
+    expect(writeFile).not.toHaveBeenCalled();
   });
 
   // ─── REMOVE_RECENT_FILE ───────────────────────────────

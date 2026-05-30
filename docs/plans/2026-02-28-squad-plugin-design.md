@@ -13,9 +13,9 @@ Squad 是一個 Claude Code Plugin，在官方 Agent Teams 原語之上疊加自
 ### 比喻
 
 ```
-總統（使用者）── 下達任務目標
-參謀總長（主 Claude session + squad skills）── 領隊，負責全生命週期
-隊員（動態鍛造的 teammates）── 各有量身打造的專業 persona
+總統（使用者）-- 下達任務目標
+參謀總長（主 Claude session + squad skills）-- 領隊，負責全生命週期
+隊員（動態鍛造的 teammates）-- 各有量身打造的專業 persona
 ```
 
 ### 核心哲學
@@ -32,21 +32,21 @@ Squad 是一個 Claude Code Plugin，在官方 Agent Teams 原語之上疊加自
 
 ```
 總統（使用者）
-  │  下達任務目標
+  |  下達任務目標
   ▼
 參謀總長（主 Claude session = Agent Teams lead）
-  │  ── RECON：偵察 codebase
-  │  ── PLAN：擬定作戰計畫 + 鍛造角色
-  │  ── 向總統報批（gate）
-  │  ── EXECUTE：spawn 隊員、分配任務、監控
-  │  ── VERIFY：收攏結果、驗證
-  │  ── DEBRIEF：交付報告
-  │  ── RETRO：反思進化
-  │
-  ├──▶ 隊員 Alpha（動態鍛造的專家 A）
-  ├──▶ 隊員 Bravo（動態鍛造的專家 B）
-  ├──▶ 隊員 Charlie（動態鍛造的專家 C）
-  └──▶ ...
+  |  -- RECON：偵察 codebase
+  |  -- PLAN：擬定作戰計畫 + 鍛造角色
+  |  -- 向總統報批（gate）
+  |  -- EXECUTE：spawn 隊員、分配任務、監控
+  |  -- VERIFY：收攏結果、驗證
+  |  -- DEBRIEF：交付報告
+  |  -- RETRO：反思進化
+  |
+  +--▶ 隊員 Alpha（動態鍛造的專家 A）
+  +--▶ 隊員 Bravo（動態鍛造的專家 B）
+  +--▶ 隊員 Charlie（動態鍛造的專家 C）
+  +--▶ ...
 ```
 
 **為什麼參謀總長 = team lead？**
@@ -62,14 +62,14 @@ Squad 是一個 Claude Code Plugin，在官方 Agent Teams 原語之上疊加自
 ### 六階段流程
 
 ```
- ┌──────────┐    ┌──────────┐    ┌──────────┐    ┌──────────┐    ┌──────────┐    ┌──────────┐
- │  RECON   │───▶│  PLAN    │───▶│ EXECUTE  │───▶│ VERIFY   │───▶│ DEBRIEF  │───▶│  RETRO   │
- │  偵察    │    │  作戰計畫 │    │  執行    │    │  驗收    │    │  總結報告 │    │  反思進化 │
- └──────────┘    └──────────┘    └──────────┘    └──────────┘    └──────────┘    └──────────┘
-       │              │  ▲            │               │                               │
-       │          gate│  │fix         │           gate│                               │
-       │              ▼  │            │               ▼                               ▼
-       │         [確認]   │       [即時回報]      [確認]                         知識庫 + 能力升級
+ +----------+    +----------+    +----------+    +----------+    +----------+    +----------+
+ |  RECON   |---▶|  PLAN    |---▶| EXECUTE  |---▶| VERIFY   |---▶| DEBRIEF  |---▶|  RETRO   |
+ |  偵察    |    |  作戰計畫 |    |  執行    |    |  驗收    |    |  總結報告 |    |  反思進化 |
+ +----------+    +----------+    +----------+    +----------+    +----------+    +----------+
+       |              |  ▲            |               |                               |
+       |          gate|  |fix         |           gate|                               |
+       |              ▼  |            |               ▼                               ▼
+       |         [確認]   |       [即時回報]      [確認]                         知識庫 + 能力升級
 ```
 
 ### 各階段職責
@@ -162,15 +162,15 @@ gates:
 
 ```
 RETRO 階段
-  │
-  ├── 效率反思：哪些任務花了預期以上的時間？
-  ├── 角色反思：哪個 persona 設計特別有效？記錄為 pattern
-  ├── 工具反思：有沒有反覆手動做的事情應該自動化？
-  ├── 流程反思：閘門/粒度/並行策略是否恰當？
-  │
-  ├──▶ 寫入 knowledge/ 對應檔案
-  ├──▶ 建立新 skill/tool（如果需要）
-  └──▶ 更新 metrics.md（自我評估）
+  |
+  +-- 效率反思：哪些任務花了預期以上的時間？
+  +-- 角色反思：哪個 persona 設計特別有效？記錄為 pattern
+  +-- 工具反思：有沒有反覆手動做的事情應該自動化？
+  +-- 流程反思：閘門/粒度/並行策略是否恰當？
+  |
+  +--▶ 寫入 knowledge/ 對應檔案
+  +--▶ 建立新 skill/tool（如果需要）
+  +--▶ 更新 metrics.md（自我評估）
 ```
 
 知識庫在下次 RECON 階段被讀取，形成持續進化的閉環。
@@ -240,46 +240,46 @@ DEBRIEF 階段產出 markdown 報告，固定路徑 `.claude/squad/reports/`：
 
 ```
 squad/
-├── .claude-plugin/
-│   └── plugin.json
-├── commands/
-│   └── squad.md                     ← /squad 入口 command
-├── agents/                          ← 空目錄（角色在任務中動態鍛造）
-├── skills/
-│   ├── mission-planning/            ← 教「如何分析任務 + 分解 + 編組」
-│   │   └── SKILL.md
-│   ├── role-forging/                ← 教「如何鍛造高品質角色 prompt」
-│   │   └── SKILL.md
-│   ├── tool-forging/                ← 教「如何辨識工具缺口 + 自建工具」
-│   │   └── SKILL.md
-│   ├── gate-check/                  ← 閘門判斷邏輯
-│   │   └── SKILL.md
-│   ├── status-report/               ← 報告產出格式
-│   │   └── SKILL.md
-│   └── retrospective/               ← 教「如何反思 + 寫入知識庫」
-│       └── SKILL.md
-├── hooks/
-│   └── hooks.json                   ← TaskCompleted / Stop hooks
-└── config/
-    └── defaults.yaml                ← 預設配置模板
++-- .claude-plugin/
+|   +-- plugin.json
++-- commands/
+|   +-- squad.md                     ← /squad 入口 command
++-- agents/                          ← 空目錄（角色在任務中動態鍛造）
++-- skills/
+|   +-- mission-planning/            ← 教「如何分析任務 + 分解 + 編組」
+|   |   +-- SKILL.md
+|   +-- role-forging/                ← 教「如何鍛造高品質角色 prompt」
+|   |   +-- SKILL.md
+|   +-- tool-forging/                ← 教「如何辨識工具缺口 + 自建工具」
+|   |   +-- SKILL.md
+|   +-- gate-check/                  ← 閘門判斷邏輯
+|   |   +-- SKILL.md
+|   +-- status-report/               ← 報告產出格式
+|   |   +-- SKILL.md
+|   +-- retrospective/               ← 教「如何反思 + 寫入知識庫」
+|       +-- SKILL.md
++-- hooks/
+|   +-- hooks.json                   ← TaskCompleted / Stop hooks
++-- config/
+    +-- defaults.yaml                ← 預設配置模板
 ```
 
 ### 持久化知識庫（隨使用成長）
 
 ```
 .claude/squad/
-├── config.yaml                      ← 使用者配置
-├── knowledge/
-│   ├── lessons.md                   ← 累積的經驗教訓
-│   ├── role-patterns.md             ← 成功的角色設計模式
-│   ├── tool-patterns.md             ← 有效的工具/腳本模式
-│   └── project-insights/            ← 按專案累積的洞察
-│       └── {project-name}.md
-├── tools/                           ← 即時可用的腳本工具
-│   └── *.sh
-├── reports/                         ← 歷次任務報告
-│   └── YYYY-MM-DD-{mission-name}.md
-└── metrics.md                       ← 自我評估指標追蹤
++-- config.yaml                      ← 使用者配置
++-- knowledge/
+|   +-- lessons.md                   ← 累積的經驗教訓
+|   +-- role-patterns.md             ← 成功的角色設計模式
+|   +-- tool-patterns.md             ← 有效的工具/腳本模式
+|   +-- project-insights/            ← 按專案累積的洞察
+|       +-- {project-name}.md
++-- tools/                           ← 即時可用的腳本工具
+|   +-- *.sh
++-- reports/                         ← 歷次任務報告
+|   +-- YYYY-MM-DD-{mission-name}.md
++-- metrics.md                       ← 自我評估指標追蹤
 ```
 
 ---

@@ -10,6 +10,11 @@ import {
   type RenderDiagnosticsFrame,
 } from "@renderer/engines/fallingNotes/renderDiagnostics";
 import { useThemeStore } from "@renderer/stores/useThemeStore";
+import { useTranslation } from "@renderer/i18n/useTranslation";
+import {
+  describeFallingNotesInitFailure,
+  type FallingNotesInitFailure,
+} from "./fallingNotesInitFailure";
 
 interface FallingNotesCanvasProps {
   /** Callback to send active MIDI notes to PianoKeyboard */
@@ -34,7 +39,10 @@ export function FallingNotesCanvas({
   const [diagnosticsEnabled] = useState(readRenderDiagnosticsFlag);
   const [renderDiagnostics, setRenderDiagnostics] =
     useState<RenderDiagnosticsFrame | null>(null);
+  const [initFailure, setInitFailure] =
+    useState<FallingNotesInitFailure | null>(null);
   const diagnosticsThrottleRef = useRef(0);
+  const { t } = useTranslation();
 
   // Stable ref so the ticker closure always sees the latest callback
   // without re-running the effect (fix: avoid destroying PixiJS on parent re-render)
@@ -83,13 +91,25 @@ export function FallingNotesCanvas({
     let unsubTheme: (() => void) | null = null;
 
     const setup = async (): Promise<void> => {
-      await app.init({
-        background: getCanvasBgColor(),
-        resizeTo: container,
-        antialias: true,
-        autoDensity: true,
-        resolution: window.devicePixelRatio || 1,
-      });
+      try {
+        await app.init({
+          background: getCanvasBgColor(),
+          resizeTo: container,
+          antialias: true,
+          autoDensity: true,
+          resolution: window.devicePixelRatio || 1,
+        });
+      } catch (error) {
+        if (!destroyed) {
+          console.error(
+            "FallingNotesCanvas: PixiJS initialization failed",
+            error,
+          );
+          setInitFailure(describeFallingNotesInitFailure(error));
+        }
+        app.destroy();
+        return;
+      }
 
       if (destroyed) {
         app.destroy();
@@ -156,6 +176,30 @@ export function FallingNotesCanvas({
       className="relative flex-1 w-full overflow-hidden"
       style={{ minHeight }}
     >
+      {initFailure ? (
+        <div
+          role="alert"
+          data-testid="falling-notes-render-failure"
+          className="absolute inset-0 z-20 flex items-center justify-center px-6 text-center"
+          style={{
+            color: "var(--color-text)",
+            background:
+              "color-mix(in srgb, var(--color-surface) 92%, transparent)",
+          }}
+        >
+          <div className="max-w-md">
+            <p className="mb-2 font-display text-lg font-bold">
+              {t(initFailure.titleKey)}
+            </p>
+            <p className="font-body text-sm text-[var(--color-text-muted)]">
+              {t(initFailure.guidanceKey)}
+            </p>
+            <p className="mt-3 font-mono text-xs text-[var(--color-text-muted)]">
+              {initFailure.detail}
+            </p>
+          </div>
+        </div>
+      ) : null}
       {diagnosticsEnabled && renderDiagnostics ? (
         <div
           data-testid="render-diagnostics-overlay"

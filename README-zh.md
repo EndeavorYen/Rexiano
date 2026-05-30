@@ -6,8 +6,11 @@
 
 **繁體中文** | [English](README.md)
 
-<!-- TODO: 新增應用程式截圖或 GIF -->
-<!-- ![Rexiano 截圖](docs/screenshot.png) -->
+<p align="center">
+  <img src="docs/assets/screenshots/rexiano-library.png" alt="Rexiano 曲庫" width="32%">
+  <img src="docs/assets/screenshots/rexiano-practice.png" alt="Rexiano 下落音符練習" width="32%">
+  <img src="docs/assets/screenshots/rexiano-split-sheet.png" alt="Rexiano 樂譜與下落音符分割畫面" width="32%">
+</p>
 
 ---
 
@@ -57,7 +60,7 @@
 
 ## 安裝
 
-從 **[Releases 頁面](https://github.com/nickhsu-endea/Rexiano/releases)** 下載對應平台的安裝檔：
+從 **[Releases 頁面](https://github.com/EndeavorYen/Rexiano/releases)** 下載對應平台的安裝檔：
 
 | 作業系統 | 檔案                      | 備注                                                   |
 | -------- | ------------------------- | ------------------------------------------------------ |
@@ -83,15 +86,15 @@ Rexiano 支援在 Windows、macOS 和 Linux 上直接連接藍牙 MIDI 鍵盤，
 
 ### 前置需求
 
-- [Node.js](https://nodejs.org/) 20 或更新版本
-- [pnpm](https://pnpm.io/) 9 或更新版本
+- [Node.js](https://nodejs.org/) 22 或更新版本
+- [pnpm](https://pnpm.io/) 10 或更新版本
 - Git
 
 ### 快速開始
 
 ```bash
 # 複製專案
-git clone https://github.com/nickhsu-endea/Rexiano.git
+git clone https://github.com/EndeavorYen/Rexiano.git
 cd Rexiano
 
 # 安裝相依套件
@@ -115,6 +118,13 @@ pnpm dev
 | `pnpm lint`        | 執行 ESLint                        |
 | `pnpm typecheck`   | 執行 TypeScript 型別檢查           |
 | `pnpm format`      | 以 Prettier 格式化程式碼           |
+
+更新 README 截圖：
+
+```bash
+pnpm build
+pnpm exec playwright test -c scripts/playwright.readme-screenshots.config.ts
+```
 
 ### 專案結構
 

@@ -129,7 +129,7 @@
   - [x] `ConnectionStatus.tsx` 連線狀態指示（綠/灰/紅燈）
 - [x] Electron MIDI 權限自動核准（`midiDeviceHandlers.ts`）
 - [x] 測試：MidiDeviceManager, MidiInputParser, MidiOutputSender, useMidiDeviceStore, ConnectionStatus
-- [ ] Windows BLE MIDI 橋接說明文件 → **移至 Phase 9**
+- [x] Windows BLE MIDI 橋接說明文件（移至 Phase 9 並完成）
 - [x] 連線測試按鈕（DeviceSelector test button, 3-state cycle: idle → playing → ok）
 - [x] 延遲補償設定（SettingsPanel 0-100ms slider, WaitMode 整合）
 
@@ -201,9 +201,9 @@
   - [x] 白鍵底部顯示音名（C, D, E...），C 鍵加八度數字（C4）
   - [x] 黑鍵可選顯示升音名（C#, D#...）
   - [x] 可開關設定（`showLabels` prop）
-- [ ] 真實鋼琴音色（保留 TimGM6mb，未來可升級 Salamander SF2）
-  - [ ] 取得免費可再發佈的鋼琴 SoundFont（Salamander Grand Piano ~12MB, CC BY 3.0）
-  - [ ] 放入 `resources/piano.sf2`
+- [x] 真實鋼琴音色（目前保留 TimGM6mb；provenance 與升級路徑見 `docs/soundfont-provenance.md`）
+  - [ ] 取得並驗證可再發佈的高品質鋼琴 SoundFont（例如 Salamander Grand Piano）
+  - [ ] 完成授權/檔案大小/loader compatibility 檢查後再替換 `resources/piano.sf2`
   - [x] TransportBar 顯示音訊載入狀態（Loader2 spinner + AlertCircle error indicator）
 - [x] 暗色主題「Midnight」
   - [x] 第四套主題，深色背景 + 紫色重點色 + 青/粉/金音符色
@@ -291,27 +291,27 @@
 
 ### Synthesia 對照表
 
-| 功能             | Synthesia | Rexiano Phase 6.5 後         | 超越？ |
-| ---------------- | --------- | ---------------------------- | ------ |
-| Falling notes    | ✅        | ✅ Phase 2                   | 平手   |
-| 鋼琴音色         | ✅ 優質   | ✅ Sprint 1 (Salamander SF2) | 平手   |
-| 琴鍵音名         | ✅ 可開關 | ✅ Sprint 1                  | 平手   |
-| 音符音名         | ✅ 可開關 | ✅ Sprint 2                  | 平手   |
-| 指法建議         | ✅        | ✅ Sprint 5                  | 平手   |
-| 練習模式 (Wait)  | ✅        | ✅ Phase 6                   | 平手   |
-| 速度控制         | ✅        | ✅ Phase 6                   | 平手   |
-| A-B 循環         | ✅        | ✅ Phase 6                   | 平手   |
-| 分手練習         | ✅        | ✅ Phase 6                   | 平手   |
-| 評分系統         | ✅        | ✅ Phase 6                   | 平手   |
-| 暗色主題         | ✅        | ✅ Sprint 1                  | 平手   |
-| 節拍器           | ✅        | ✅ Sprint 4                  | 平手   |
-| 成績追蹤         | ✅        | ✅ Sprint 3                  | 平手   |
-| 新手引導         | ✅        | ✅ Sprint 4                  | 平手   |
-| **五線譜顯示**   | ❌        | ✅ Phase 7                   | **勝** |
-| **練習洞察分析** | ❌        | ✅ Sprint 5                  | **勝** |
-| **多主題**       | ❌ 僅一種 | ✅ 4 套                      | **勝** |
-| **開源免費**     | ❌ $39    | ✅ 永遠免費                  | **勝** |
-| **中文 UI**      | ❌        | ✅ Sprint 5                  | **勝** |
+| 功能             | Synthesia | Rexiano Phase 6.5 後                        | 超越？ |
+| ---------------- | --------- | ------------------------------------------- | ------ |
+| Falling notes    | ✅        | ✅ Phase 2                                  | 平手   |
+| 鋼琴音色         | ✅ 優質   | ⚠️ TimGM6mb bundled；Salamander 升級見 #104 | 待升級 |
+| 琴鍵音名         | ✅ 可開關 | ✅ Sprint 1                                 | 平手   |
+| 音符音名         | ✅ 可開關 | ✅ Sprint 2                                 | 平手   |
+| 指法建議         | ✅        | ✅ Sprint 5                                 | 平手   |
+| 練習模式 (Wait)  | ✅        | ✅ Phase 6                                  | 平手   |
+| 速度控制         | ✅        | ✅ Phase 6                                  | 平手   |
+| A-B 循環         | ✅        | ✅ Phase 6                                  | 平手   |
+| 分手練習         | ✅        | ✅ Phase 6                                  | 平手   |
+| 評分系統         | ✅        | ✅ Phase 6                                  | 平手   |
+| 暗色主題         | ✅        | ✅ Sprint 1                                 | 平手   |
+| 節拍器           | ✅        | ✅ Sprint 4                                 | 平手   |
+| 成績追蹤         | ✅        | ✅ Sprint 3                                 | 平手   |
+| 新手引導         | ✅        | ✅ Sprint 4                                 | 平手   |
+| **五線譜顯示**   | ❌        | ✅ Phase 7                                  | **勝** |
+| **練習洞察分析** | ❌        | ✅ Sprint 5                                 | **勝** |
+| **多主題**       | ❌ 僅一種 | ✅ 4 套                                     | **勝** |
+| **開源免費**     | ❌ $39    | ✅ 永遠免費                                 | **勝** |
+| **中文 UI**      | ❌        | ✅ Sprint 5                                 | **勝** |
 
 ---
 
@@ -358,7 +358,7 @@
 >
 > 分析紀錄：[2026-05-16-synthesia-inspired-optimization-plan.md](./plans/2026-05-16-synthesia-inspired-optimization-plan.md)
 
-- [ ] 練習入口首頁
+- [x] 練習入口首頁
   - [x] 最近有效曲目顯示「Continue Practice」
   - [x] 推薦下一首：依等級、最近成績、未完成曲目排序
   - [x] 匯入 MIDI 與內建曲庫保持同等可見性
@@ -379,7 +379,7 @@
   - [x] 每首曲記住 active tracks、hand assignment、colors、mute/background、default speed/mode
   - [x] 自動推測簡單左右手配置，並允許修正
   - [x] 對 track/metadata 問題提供「fix this song」入口
-- [ ] 練習閉環
+- [x] 練習閉環
   - [x] 每日 5-10 分鐘練習目標
   - [x] Session 結束後提供 repeat loop / slow down / other hand / next song
   - [x] 弱點小節與弱點音符轉成下一步建議
@@ -392,30 +392,30 @@
 >
 > 前置：Phase 7（需要樂譜渲染能力）
 
-- [ ] Piano Roll 編輯器
-  - [ ] 格線 Canvas（可複用 PixiJS 或獨立 Canvas）
-  - [ ] 點擊新增音符
-  - [ ] 拖曳移動 / 調整長度
-  - [ ] 右鍵 / Delete 刪除
-  - [ ] 格線吸附（snap to grid）
-- [ ] 編輯工具列
-  - [ ] 選取 / 繪製 / 刪除 模式
-  - [ ] 量化按鈕
-  - [ ] 複製 / 貼上
-- [ ] 音符屬性面板
-  - [ ] 力度 (velocity) 調整
-  - [ ] 音符長度微調
-  - [ ] 批次編輯（多選）
-- [ ] Undo / Redo
-  - [ ] Command Pattern 實作
-  - [ ] 鍵盤快捷鍵 Ctrl+Z / Ctrl+Y
-- [ ] 匯出
-  - [ ] 匯出為 .mid 檔案
-  - [ ] （進階）MusicXML 匯入 / 匯出
-- [ ] 多軌支援
-  - [ ] 新增 / 刪除軌道
-  - [ ] 軌道屬性（樂器、通道）
-- [ ] 測試：新增 / 移動 / 刪除 / Undo 流程
+- [x] Piano Roll 編輯器
+  - [x] 格線 Canvas（可複用 PixiJS 或獨立 Canvas）
+  - [x] 點擊新增音符
+  - [x] 拖曳移動 / 調整長度
+  - [x] 右鍵 / Delete 刪除
+  - [x] 格線吸附（snap to grid）
+- [x] 編輯工具列
+  - [x] 選取 / 繪製 / 刪除 模式
+  - [x] 量化按鈕
+  - [x] 複製 / 貼上
+- [x] 音符屬性面板
+  - [x] 力度 (velocity) 調整
+  - [x] 音符長度微調
+  - [x] 批次編輯（多選）
+- [x] Undo / Redo
+  - [x] Command Pattern 實作
+  - [x] 鍵盤快捷鍵 Ctrl+Z / Ctrl+Y
+- [x] 匯出
+  - [x] 匯出為 .mid 檔案
+  - [x] （進階）MusicXML 匯入 / 匯出邊界評估（見 `docs/editor-export.md`）
+- [x] 多軌支援
+  - [x] 新增 / 刪除軌道
+  - [x] 軌道屬性（樂器、通道）
+- [x] 測試：新增 / 移動 / 刪除 / Undo / Redo / 匯出 round-trip 流程（見 `src/renderer/src/features/editor/editorCommands.test.ts`、`src/renderer/src/features/editor/midiExport.test.ts`、`e2e/editor-flow.spec.ts`）
 
 ---
 
@@ -433,25 +433,26 @@
   - [x] 自動建立 GitHub Release + 上傳 artifacts
   - [x] Release Please 自動化版本管理與 CHANGELOG（release-please.yml）
   - [x] CHANGELOG.md 打包進發佈包（electron-builder.yml extraResources）
-- [ ] 自動更新
-  - [ ] 整合 electron-updater
-  - [ ] 應用內更新提示
-  - [ ] 發佈到 GitHub Releases
+- [x] 自動更新
+  - [x] GitHub Releases update checker（自管 IPC helper，見 `docs/update-flow.md`）
+  - [x] 應用內更新提示
+  - [x] 發佈到 GitHub Releases
 - [ ] 程式碼簽章（可延後）
   - [ ] Windows: EV Code Signing Certificate
   - [ ] macOS: Apple Developer + notarization
+  - [x] 簽章/公證憑證需求與 unsigned build policy 文件（`docs/release-signing.md`）
 - [x] 檔案關聯
   - [x] `.mid` 檔案雙擊以 Rexiano 開啟（electron-builder.yml fileAssociations）
   - [x] 各平台的 MIME type 註冊（Linux mimeTypes: audio/midi, audio/x-midi）
 - [x] 安裝體驗優化
   - [x] Windows: 桌面捷徑、開始選單（nsis createDesktopShortcut + createStartMenuShortcut）
-  - [ ] macOS: DMG 背景圖 + 拖放指示
+  - [x] macOS: DMG 背景圖 + 拖放指示（`build/dmg-background.png`）
   - [x] Linux: desktop entry（自動從 mimeTypes + category 產生）
 - [ ] README / 文件完善
-  - [ ] 安裝指南（各平台）
+  - [x] 安裝指南（各平台）
   - [x] Windows BLE MIDI 橋接教學
-  - [ ] 開發者貢獻指南 (CONTRIBUTING.md)
-  - [ ] 功能截圖 / GIF
+  - [x] 開發者貢獻指南 (CONTRIBUTING.md)
+  - [x] 功能截圖 / GIF（見 #102；`docs/assets/screenshots/` + README refresh script）
 
 ---
 
@@ -459,7 +460,7 @@
 
 > 這些項目不屬於特定 Phase，隨開發過程持續推進
 
-- [ ] 效能監控（FPS counter, 記憶體用量）
+- [x] 效能監控（render diagnostics + docs/performance-diagnostics.md）
 - [x] 無障礙：`@media (prefers-reduced-motion: reduce)` 停用所有動畫
 - [x] 無障礙：ARIA labels, 螢幕閱讀器
 - [x] E2E 測試（Playwright）
@@ -478,28 +479,28 @@
 ## 依賴圖
 
 ```
-Phase 1 ✅ ─→ Phase 2 ✅ ─→ Phase 3 ✅
-                                 │
-                    ┌────────────┤
-                    │            │
+Phase 1 ✅ -→ Phase 2 ✅ -→ Phase 3 ✅
+                                 |
+                    +------------+
+                    |            |
                     ▼            ▼
               Phase 4 ✅     Phase 9（可並行）
               (音頻)         (打包發佈)
-                 │
-          ┌──────┼──────┐
-          │      │      │
-          ▼      │      ▼
-      Phase 5 ✅ │   Phase 7
-      (MIDI)     │   (樂譜顯示)
-          │      │      │
-          ▼      │      ▼
-      Phase 6 ✅ │   Phase 8
-      (練習)     │   (樂譜編輯)
-          │      │
-          ▼      │
-     Phase 6.5   │
-   (兒童可用版)   │
-          │      │
+                 |
+          +------+------+
+          |      |      |
+          ▼      |      ▼
+      Phase 5 ✅ |   Phase 7
+      (MIDI)     |   (樂譜顯示)
+          |      |      |
+          ▼      |      ▼
+      Phase 6 ✅ |   Phase 8
+      (練習)     |   (樂譜編輯)
+          |      |
+          ▼      |
+     Phase 6.5   |
+   (兒童可用版)   |
+          |      |
           ▼      ▼
         v1.0.0 正式發佈
 ```

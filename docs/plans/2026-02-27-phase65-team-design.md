@@ -40,9 +40,9 @@ DESIGN.md §9 contains the complete spec. AGENT_TEAM_PROMPTS.md §Phase 6.5 has 
 ## Sprint Dependencies
 
 ```
-Sprint 1 (basic usability) ──┐
-Sprint 2 (practice UX) ──────┼── Sprint 3 (persistence/settings)
-Sprint 4 (teaching tools) ───┘        │
+Sprint 1 (basic usability) --+
+Sprint 2 (practice UX) ------+-- Sprint 3 (persistence/settings)
+Sprint 4 (teaching tools) ---+        |
                                        ▼
                               Sprint 5 (long-term features)
 ```

@@ -22,6 +22,9 @@ importers:
       lucide-react:
         specifier: ^0.575.0
         version: 0.575.0(react@19.2.4)
+      midi-file:
+        specifier: ^1.2.4
+        version: 1.2.4
       pixi.js:
         specifier: ^8.16.0
         version: 8.16.0
@@ -86,6 +89,9 @@ importers:
       eslint-plugin-react-refresh:
         specifier: ^0.4.24
         version: 0.4.26(eslint@9.39.3(jiti@2.6.1))
+      jiti:
+        specifier: ^2.6.1
+        version: 2.6.1
       prettier:
         specifier: ^3.7.4
         version: 3.8.1

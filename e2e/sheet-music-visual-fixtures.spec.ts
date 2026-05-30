@@ -3,6 +3,7 @@ import {
   closeTopDrawer,
   gotoLibrary,
   openPlaybackDrawer,
+  startBuiltInSongFromLibrary,
 } from "./helpers/appHarness";
 
 type SheetFixtureName = "dense-sparse" | "sharp-key" | "flat-key";
@@ -67,9 +68,7 @@ async function loadBuiltInSongSheet(
     await listToggle.click();
   }
 
-  const songButton = appPage.getByTestId(`song-select-${songId}`);
-  await expect(songButton).toBeVisible({ timeout: 20_000 });
-  await songButton.click();
+  await startBuiltInSongFromLibrary(appPage, songId);
 
   const modeSelectWait = appPage.getByTestId("mode-select-wait");
   await Promise.race([

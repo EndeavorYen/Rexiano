@@ -851,7 +851,7 @@ function App(): React.JSX.Element {
   return (
     <div className="flex flex-col h-screen bg-stone-50 text-stone-900 font-sans">
       {!song ? (
-        /* ── Welcome screen ── */
+        /* -- Welcome screen -- */
         <div className="flex-1 flex flex-col items-center justify-center p-8">
           <h1 className="text-4xl font-bold mb-2">Rexiano</h1>
           <p className="text-lg text-stone-500 mb-8">
@@ -865,7 +865,7 @@ function App(): React.JSX.Element {
           </button>
         </div>
       ) : (
-        /* ── Song loaded: header + falling notes + transport + keyboard ── */
+        /* -- Song loaded: header + falling notes + transport + keyboard -- */
         <>
           {/* Song info header */}
           <div className="flex items-center justify-between px-4 py-2 border-b border-stone-200 bg-white">

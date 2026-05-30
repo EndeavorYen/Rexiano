@@ -82,6 +82,14 @@ export interface TranslationMap {
   "library.recommendation.reason.newSong": string;
   "library.recommendation.reason.improveScore": string;
   "library.recommendation.reason.continueProgress": string;
+  "library.preview.title": string;
+  "library.preview.length": string;
+  "library.preview.grade": string;
+  "library.preview.category": string;
+  "library.preview.bestScore": string;
+  "library.preview.tracks": string;
+  "library.preview.tracksAfterPractice": string;
+  "library.preview.audioUnsupported": string;
   "library.lessonPath.title": string;
   "library.lessonPath.free": string;
   "library.lessonPath.next": string;
@@ -145,6 +153,10 @@ export interface TranslationMap {
   "transport.unmute": string;
   "transport.enableMetronome": string;
   "transport.disableMetronome": string;
+
+  // ── Falling Notes ──────────────────────────────────────────────
+  "fallingNotes.renderFailureTitle": string;
+  "fallingNotes.renderFailureGuidance": string;
 
   // ── Song Header ────────────────────────────────────────────────
   "song.tracks": string;
@@ -250,6 +262,22 @@ export interface TranslationMap {
   "about.version": string;
   "about.changelog": string;
   "about.noChangelog": string;
+  "about.updateTitle": string;
+  "about.updateIntro": string;
+  "about.updateFocusModeNote": string;
+  "about.updateCheck": string;
+  "about.updateChecking": string;
+  "about.updateDownload": string;
+  "about.updateOpenInstaller": string;
+  "about.updateReleaseNotes": string;
+  "about.updateIdle": string;
+  "about.updateDisabledDev": string;
+  "about.updateCurrent": string;
+  "about.updateNotAvailable": string;
+  "about.updateAvailable": string;
+  "about.updateDownloading": string;
+  "about.updateReady": string;
+  "about.updateFailed": string;
   "settings.chooseTheme": string;
   "settings.themeDesc": string;
   "settings.displayOptions": string;

@@ -36,7 +36,7 @@
 
 ### 步驟
 
-1. 前往 [GitHub Releases 頁面](https://github.com/nickhsu-endea/Rexiano/releases) 下載最新版本
+1. 前往 [GitHub Releases 頁面](https://github.com/EndeavorYen/Rexiano/releases) 下載最新版本
 2. 下載 `rexiano-x.x.x-setup.exe` 檔案
 3. 雙擊執行安裝程式
 
@@ -44,7 +44,7 @@
 
 首次安裝時，Windows Defender SmartScreen 可能會顯示「Windows 已保護您的電腦」的警告畫面。**這不代表 Rexiano 是惡意軟體。**
 
-原因：Rexiano 目前尚未購買 Windows 程式碼簽章憑證（EV Code Signing Certificate），SmartScreen 會對未簽署的應用程式顯示警告。Rexiano 是完全開源的軟體，你可以在 [GitHub](https://github.com/nickhsu-endea/Rexiano) 查看所有原始碼。
+原因：Rexiano 目前尚未購買 Windows 程式碼簽章憑證（EV Code Signing Certificate），SmartScreen 會對未簽署的應用程式顯示警告。Rexiano 是完全開源的軟體，你可以在 [GitHub](https://github.com/EndeavorYen/Rexiano) 查看所有原始碼。
 
 處理方式：
 
@@ -62,7 +62,7 @@
 
 ### 步驟
 
-1. 前往 [GitHub Releases 頁面](https://github.com/nickhsu-endea/Rexiano/releases) 下載最新版本
+1. 前往 [GitHub Releases 頁面](https://github.com/EndeavorYen/Rexiano/releases) 下載最新版本
 2. 下載 `rexiano-x.x.x.dmg` 檔案
 3. 雙擊打開 DMG 檔案
 4. 將 **Rexiano** 圖示拖放到「**應用程式**」資料夾
@@ -95,7 +95,7 @@ AppImage 格式無需安裝，可在任何 Linux 發行版上直接執行。
 
 ```bash
 # 1. 下載 AppImage
-wget https://github.com/nickhsu-endea/Rexiano/releases/latest/download/rexiano-x.x.x.AppImage
+wget https://github.com/EndeavorYen/Rexiano/releases/latest/download/rexiano-x.x.x.AppImage
 
 # 2. 賦予執行權限
 chmod +x rexiano-x.x.x.AppImage
@@ -118,7 +118,7 @@ sudo dnf install fuse fuse-libs
 
 ```bash
 # 下載並安裝
-wget https://github.com/nickhsu-endea/Rexiano/releases/latest/download/rexiano-x.x.x.deb
+wget https://github.com/EndeavorYen/Rexiano/releases/latest/download/rexiano-x.x.x.deb
 sudo dpkg -i rexiano-x.x.x.deb
 
 # 如果有相依套件問題
@@ -215,15 +215,15 @@ sudo dpkg -P rexiano
 
 | 工具    | 版本     | 安裝方式                            |
 | ------- | -------- | ----------------------------------- |
-| Node.js | 20+      | [nodejs.org](https://nodejs.org/)   |
-| pnpm    | 9+       | `npm install -g pnpm`               |
+| Node.js | 22+      | [nodejs.org](https://nodejs.org/)   |
+| pnpm    | 10+      | `npm install -g pnpm`               |
 | Git     | 任意版本 | [git-scm.com](https://git-scm.com/) |
 
 ### 複製並啟動
 
 ```bash
 # 複製專案
-git clone https://github.com/nickhsu-endea/Rexiano.git
+git clone https://github.com/EndeavorYen/Rexiano.git
 cd Rexiano
 
 # 安裝相依套件
@@ -259,4 +259,4 @@ NO_SANDBOX=1 pnpm dev
 ---
 
 _Rexiano 是開源免費軟體，以 GPL-3.0 授權釋出。_
-_原始碼：[github.com/nickhsu-endea/Rexiano](https://github.com/nickhsu-endea/Rexiano)_
+_原始碼：[github.com/EndeavorYen/Rexiano](https://github.com/EndeavorYen/Rexiano)_

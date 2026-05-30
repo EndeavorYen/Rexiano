@@ -260,7 +260,7 @@ export function createTickerUpdate(
     let effectiveTime = playState.currentTime;
 
     if (playState.isPlaying) {
-      // ── WaitMode gate: if waiting, freeze time ──
+      // -- WaitMode gate: if waiting, freeze time --
       if (practiceState.mode === "wait" && waitMode) {
         const shouldContinue = waitMode.tick(effectiveTime);
         if (!shouldContinue) {
@@ -297,7 +297,7 @@ export function createTickerUpdate(
       }
       playState.setCurrentTime(effectiveTime);
 
-      // ── Loop check: auto-seek at B point ──
+      // -- Loop check: auto-seek at B point --
       if (
         loopController?.isActive &&
         loopController.shouldLoop(effectiveTime)
@@ -441,7 +441,7 @@ import type { NoteRenderer } from "./engines/fallingNotes/NoteRenderer";
 Add inside the `App` component function, after the existing audio lifecycle:
 
 ```typescript
-// ─── Phase 6: Practice Engine lifecycle ─────────────────
+// --- Phase 6: Practice Engine lifecycle -----------------
 const noteRendererRef = useRef<NoteRenderer | null>(null);
 
 const handleNoteRendererReady = useCallback((renderer: NoteRenderer) => {
@@ -614,7 +614,7 @@ useEffect(() => {
   });
   return unsub;
 }, []);
-// ─── End Phase 6 ─────────────────────────────────────
+// --- End Phase 6 -------------------------------------
 ```
 
 Update the `FallingNotesCanvas` JSX to pass the new prop:

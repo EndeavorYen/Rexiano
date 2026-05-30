@@ -1,5 +1,5 @@
 import { test, expect } from "./fixtures/electronApp";
-import { gotoLibrary, loadFirstBuiltInSong } from "./helpers/appHarness";
+import { gotoLibrary, startBuiltInSongFromLibrary } from "./helpers/appHarness";
 
 test.describe("Lesson path and child focus mode", () => {
   test("library shows a guided lesson path without blocking free song selection", async ({
@@ -41,11 +41,32 @@ test.describe("Lesson path and child focus mode", () => {
     await appPage.waitForLoadState("domcontentloaded");
 
     await gotoLibrary(appPage);
-    await loadFirstBuiltInSong(appPage);
+    await startBuiltInSongFromLibrary(appPage, "hot-cross-buns");
+    const freeModeOption = appPage.getByTestId("mode-select-free");
+    if (await freeModeOption.isVisible()) {
+      await freeModeOption.click();
+    }
+    await expect(appPage.locator(".workspace-frame")).toBeVisible({
+      timeout: 20_000,
+    });
 
-    const playButton = appPage.getByRole("button", { name: "Play (Space)" });
+    const forceActivePractice = async (): Promise<void> => {
+      await appPage.evaluate(() => {
+        const e2eWindow = window as typeof window & {
+          __rexianoForcePlaybackState?: (state: {
+            isPlaying?: boolean;
+          }) => void;
+        };
+        if (!e2eWindow.__rexianoForcePlaybackState) {
+          throw new Error("Rexiano E2E playback fixture is unavailable");
+        }
+        e2eWindow.__rexianoForcePlaybackState({ isPlaying: true });
+      });
+    };
 
-    await expect(playButton).toBeVisible();
+    await expect(
+      appPage.getByRole("button", { name: "Play (Space)" }),
+    ).toBeVisible();
     await expect(
       appPage.getByRole("button", { name: "Reset to beginning" }),
     ).toBeVisible();
@@ -55,20 +76,28 @@ test.describe("Lesson path and child focus mode", () => {
     );
     await expect(appPage.getByTestId("practice-toolbar-level")).toHaveCount(0);
 
-    await playButton.click();
+    await forceActivePractice();
 
-    appPage.once("dialog", async (dialog) => {
-      expect(dialog.message()).toContain("Practice is still playing");
-      await dialog.dismiss();
-    });
-    await appPage.getByRole("button", { name: "Library" }).click();
+    const dismissExitDialog = appPage.waitForEvent("dialog");
+    const dismissClick = appPage
+      .getByRole("button", { name: "Library" })
+      .click();
+    const dismissDialog = await dismissExitDialog;
+    expect(dismissDialog.message()).toContain("Practice is still playing");
+    await dismissDialog.dismiss();
+    await dismissClick;
     await expect(appPage.locator(".workspace-frame")).toBeVisible();
 
-    appPage.once("dialog", async (dialog) => {
-      expect(dialog.message()).toContain("Practice is still playing");
-      await dialog.accept();
-    });
-    await appPage.getByRole("button", { name: "Library" }).click();
+    await forceActivePractice();
+
+    const acceptExitDialog = appPage.waitForEvent("dialog");
+    const acceptClick = appPage
+      .getByRole("button", { name: "Library" })
+      .click();
+    const acceptDialog = await acceptExitDialog;
+    expect(acceptDialog.message()).toContain("Practice is still playing");
+    await acceptDialog.accept();
+    await acceptClick;
     await expect(
       appPage.getByRole("button", { name: /Start Practicing/i }),
     ).toBeVisible();

@@ -11,6 +11,9 @@ import {
   Info,
   Database,
   Download,
+  ExternalLink,
+  PackageOpen,
+  RefreshCw,
   Upload,
   RotateCcw,
 } from "lucide-react";
@@ -21,7 +24,11 @@ import { themes, type ThemeId } from "@renderer/themes/tokens";
 import { getAvailableLanguages } from "@renderer/i18n";
 import { useTranslation } from "@renderer/i18n/useTranslation";
 import { useDialogFocus } from "@renderer/hooks/useDialogFocus";
-import type { PracticeMode } from "@shared/types";
+import type {
+  AppUpdateAvailable,
+  AppUpdateStatus,
+  PracticeMode,
+} from "@shared/types";
 import {
   applyUserDataBackupToRuntime,
   createUserDataBackupFromRuntime,
@@ -29,6 +36,10 @@ import {
   resetUserDataBackupRuntime,
   type UserDataResetSelection,
 } from "./userDataBackup";
+import {
+  createAppUpdateViewModel,
+  type AppUpdateUiState,
+} from "./appUpdateViewModel";
 
 const themeList: ThemeId[] = ["lavender", "ocean", "peach", "midnight"];
 
@@ -387,6 +398,82 @@ export function SettingsPanel({
       window.api.getAppInfo().then(setAppInfo);
     }
   }, [resolvedActiveTab, appInfo]);
+
+  const [updateStatus, setUpdateStatus] = useState<AppUpdateUiState>({
+    status: "idle",
+  });
+  const updateViewModel = createAppUpdateViewModel(updateStatus);
+  const updateReleaseUrl =
+    "releaseUrl" in updateStatus ? updateStatus.releaseUrl : null;
+  const availableUpdate: AppUpdateAvailable | null =
+    updateStatus.status === "available" ? updateStatus : null;
+  const downloadedPath =
+    updateStatus.status === "ready" ? updateStatus.downloadedPath : null;
+  const updateDetail =
+    updateStatus.status === "available" || updateStatus.status === "ready"
+      ? `v${updateStatus.latestVersion} · ${updateStatus.artifactName}`
+      : updateStatus.status === "not-available"
+        ? `v${updateStatus.latestVersion}`
+        : updateStatus.status === "failed"
+          ? updateStatus.message
+          : updateStatus.status === "downloading"
+            ? `${updateStatus.progress.percent}% · ${updateStatus.artifactName}`
+            : t(updateViewModel.headingKey);
+
+  useEffect(() => {
+    return window.api.onUpdateProgress((status: AppUpdateStatus) => {
+      setUpdateStatus(status);
+    });
+  }, []);
+
+  const handleCheckForUpdates = useCallback(async () => {
+    setUpdateStatus({ status: "checking" });
+
+    try {
+      setUpdateStatus(await window.api.checkForUpdates());
+    } catch (error) {
+      setUpdateStatus({
+        status: "failed",
+        currentVersion: appInfo?.version ?? "unknown",
+        message:
+          error instanceof Error ? error.message : t("about.updateFailed"),
+      });
+    }
+  }, [appInfo?.version, t]);
+
+  const handleDownloadUpdate = useCallback(async () => {
+    if (!availableUpdate) return;
+
+    setUpdateStatus({
+      status: "downloading",
+      currentVersion: availableUpdate.currentVersion,
+      latestVersion: availableUpdate.latestVersion,
+      artifactName: availableUpdate.artifactName,
+      progress: {
+        percent: 0,
+        transferredBytes: 0,
+        totalBytes: availableUpdate.artifactSize,
+      },
+    });
+    try {
+      setUpdateStatus(await window.api.downloadUpdate(availableUpdate));
+    } catch (error) {
+      setUpdateStatus({
+        status: "failed",
+        currentVersion: availableUpdate.currentVersion,
+        message:
+          error instanceof Error ? error.message : t("about.updateFailed"),
+      });
+    }
+  }, [availableUpdate, t]);
+
+  const handleOpenRelease = useCallback(() => {
+    if (updateReleaseUrl) void window.api.openUpdateRelease(updateReleaseUrl);
+  }, [updateReleaseUrl]);
+
+  const handleOpenDownloaded = useCallback(() => {
+    if (downloadedPath) void window.api.openDownloadedUpdate(downloadedPath);
+  }, [downloadedPath]);
 
   return (
     <>
@@ -1121,6 +1208,151 @@ export function SettingsPanel({
                       >
                         {appInfo ? `v${appInfo.version}` : "…"}
                       </span>
+                    </div>
+
+                    <div
+                      className="rounded-xl p-3 space-y-3"
+                      style={{
+                        background:
+                          "color-mix(in srgb, var(--color-surface-alt) 52%, var(--color-surface))",
+                        border: "1px solid var(--color-border)",
+                      }}
+                      data-testid="app-update-panel"
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0">
+                          <p
+                            className="text-xs font-display font-bold"
+                            style={{ color: "var(--color-text)" }}
+                          >
+                            {t("about.updateTitle")}
+                          </p>
+                          <p
+                            className="mt-1 text-[11px] font-body leading-relaxed"
+                            style={{ color: "var(--color-text-muted)" }}
+                          >
+                            {t("about.updateIntro")}
+                          </p>
+                          {childFocusMode && (
+                            <p
+                              className="mt-1 text-[11px] font-body leading-relaxed"
+                              style={{ color: "var(--color-accent)" }}
+                            >
+                              {t("about.updateFocusModeNote")}
+                            </p>
+                          )}
+                        </div>
+                        <button
+                          type="button"
+                          className="inline-flex h-8 shrink-0 items-center gap-1.5 rounded-lg px-2.5 text-[11px] font-body font-semibold disabled:cursor-not-allowed disabled:opacity-60"
+                          style={{
+                            color: "var(--color-accent)",
+                            background:
+                              "color-mix(in srgb, var(--color-accent) 10%, var(--color-surface))",
+                            border:
+                              "1px solid color-mix(in srgb, var(--color-accent) 24%, var(--color-border))",
+                          }}
+                          disabled={!updateViewModel.canCheck}
+                          onClick={handleCheckForUpdates}
+                          data-testid="app-update-check"
+                        >
+                          <RefreshCw size={14} />
+                          {updateStatus.status === "checking"
+                            ? t("about.updateChecking")
+                            : t("about.updateCheck")}
+                        </button>
+                      </div>
+
+                      <div
+                        className="rounded-lg px-3 py-2"
+                        style={{
+                          background: "var(--color-surface)",
+                          border: "1px solid var(--color-border)",
+                        }}
+                      >
+                        <p
+                          className="text-xs font-body font-semibold"
+                          style={{ color: "var(--color-text)" }}
+                          data-testid="app-update-status"
+                        >
+                          {t(updateViewModel.headingKey)}
+                        </p>
+                        <p
+                          className="mt-1 text-[11px] font-body"
+                          style={{ color: "var(--color-text-muted)" }}
+                        >
+                          {updateDetail}
+                        </p>
+                        {updateViewModel.progressPercent !== null && (
+                          <div
+                            className="mt-2 h-1.5 overflow-hidden rounded-full"
+                            style={{ background: "var(--color-surface-alt)" }}
+                          >
+                            <div
+                              className="h-full rounded-full"
+                              style={{
+                                width: `${Math.max(0, Math.min(100, updateViewModel.progressPercent))}%`,
+                                background: "var(--color-accent)",
+                              }}
+                            />
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="flex flex-wrap gap-2">
+                        {updateViewModel.canDownload && (
+                          <button
+                            type="button"
+                            className="inline-flex h-8 items-center gap-1.5 rounded-lg px-2.5 text-[11px] font-body font-semibold"
+                            style={{
+                              color: "var(--color-accent)",
+                              background:
+                                "color-mix(in srgb, var(--color-accent) 10%, var(--color-surface))",
+                              border:
+                                "1px solid color-mix(in srgb, var(--color-accent) 24%, var(--color-border))",
+                            }}
+                            onClick={handleDownloadUpdate}
+                            data-testid="app-update-download"
+                          >
+                            <Download size={14} />
+                            {t("about.updateDownload")}
+                          </button>
+                        )}
+                        {updateViewModel.canOpenDownloaded && (
+                          <button
+                            type="button"
+                            className="inline-flex h-8 items-center gap-1.5 rounded-lg px-2.5 text-[11px] font-body font-semibold"
+                            style={{
+                              color: "var(--color-accent)",
+                              background:
+                                "color-mix(in srgb, var(--color-accent) 10%, var(--color-surface))",
+                              border:
+                                "1px solid color-mix(in srgb, var(--color-accent) 24%, var(--color-border))",
+                            }}
+                            onClick={handleOpenDownloaded}
+                            data-testid="app-update-open-installer"
+                          >
+                            <PackageOpen size={14} />
+                            {t("about.updateOpenInstaller")}
+                          </button>
+                        )}
+                        {updateViewModel.canOpenRelease && updateReleaseUrl && (
+                          <button
+                            type="button"
+                            className="inline-flex h-8 items-center gap-1.5 rounded-lg px-2.5 text-[11px] font-body font-semibold"
+                            style={{
+                              color: "var(--color-text-muted)",
+                              background: "var(--color-surface)",
+                              border: "1px solid var(--color-border)",
+                            }}
+                            onClick={handleOpenRelease}
+                            data-testid="app-update-open-release"
+                          >
+                            <ExternalLink size={14} />
+                            {t("about.updateReleaseNotes")}
+                          </button>
+                        )}
+                      </div>
                     </div>
 
                     <div>

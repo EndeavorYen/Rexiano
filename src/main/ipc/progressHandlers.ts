@@ -3,6 +3,7 @@ import { readFile, writeFile, mkdir } from "fs/promises";
 import { join, dirname } from "path";
 import { existsSync } from "fs";
 import { IpcChannels, type SessionRecord } from "../../shared/types";
+import { normalizeSessionRecord } from "./persistenceValidators";
 
 /** Path to the progress data file inside Electron's userData directory */
 function getProgressPath(): string {
@@ -21,7 +22,10 @@ async function readSessions(): Promise<SessionRecord[]> {
     const raw = await readFile(filePath, "utf-8");
     const parsed = JSON.parse(raw);
     if (!Array.isArray(parsed)) return [];
-    return parsed as SessionRecord[];
+    return parsed.flatMap((record) => {
+      const normalized = normalizeSessionRecord(record);
+      return normalized ? [normalized] : [];
+    });
   } catch {
     // Corrupt or unreadable — start fresh
     return [];
@@ -51,8 +55,11 @@ export function registerProgressHandlers(): void {
   ipcMain.handle(
     IpcChannels.SAVE_SESSION,
     async (_event, record: SessionRecord): Promise<void> => {
+      const normalized = normalizeSessionRecord(record);
+      if (!normalized) return;
+
       const sessions = await readSessions();
-      sessions.push(record);
+      sessions.push(normalized);
       await writeSessions(sessions);
     },
   );
