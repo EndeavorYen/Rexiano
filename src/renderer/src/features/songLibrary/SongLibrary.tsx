@@ -33,6 +33,8 @@ import {
   groupSongsByCategory,
 } from "./songCardUtils";
 import {
+  buildImportedSongActivity,
+  buildImportedSongSelectionPreviewModel,
   buildPracticeRecommendationModel,
   buildSongActivity,
   buildSongSelectionPreviewModel,
@@ -219,6 +221,9 @@ export function SongLibrary({
     string | null
   >(null);
   const [selectedSongId, setSelectedSongId] = useState<string | null>(null);
+  const [selectedImportedSongId, setSelectedImportedSongId] = useState<
+    string | null
+  >(null);
   const [importedMetadataDraft, setImportedMetadataDraft] =
     useState<ImportedSongMetadataDraft | null>(null);
   const [showDeviceDrawer, setShowDeviceDrawer] = useState(false);
@@ -271,6 +276,11 @@ export function SongLibrary({
     [songs, sessions, recentFiles, favoriteSongIds],
   );
 
+  const importedSongActivity = useMemo(
+    () => buildImportedSongActivity(importedSongs, sessions, recentFiles),
+    [importedSongs, sessions, recentFiles],
+  );
+
   const sortedSongs = useMemo(
     () => sortSongsForLibrary(filteredSongs, songActivity, sortMode),
     [filteredSongs, songActivity, sortMode],
@@ -281,16 +291,29 @@ export function SongLibrary({
     [songs, selectedSongId],
   );
 
-  const selectedSongPreview = useMemo(
+  const selectedImportedSong = useMemo(
     () =>
-      selectedSong
-        ? buildSongSelectionPreviewModel(
-            selectedSong,
-            songActivity.get(selectedSong.id),
-          )
-        : null,
-    [selectedSong, songActivity],
+      importedSongs.find((song) => song.id === selectedImportedSongId) ?? null,
+    [importedSongs, selectedImportedSongId],
   );
+
+  const selectedSongPreview = useMemo(() => {
+    if (selectedSong) {
+      return buildSongSelectionPreviewModel(
+        selectedSong,
+        songActivity.get(selectedSong.id),
+      );
+    }
+
+    if (selectedImportedSong) {
+      return buildImportedSongSelectionPreviewModel(
+        selectedImportedSong,
+        importedSongActivity.get(selectedImportedSong.id),
+      );
+    }
+
+    return null;
+  }, [importedSongActivity, selectedImportedSong, selectedSong, songActivity]);
 
   const practiceRecommendation = useMemo(
     () => buildPracticeRecommendationModel(filteredSongs, songActivity),
@@ -360,6 +383,7 @@ export function SongLibrary({
   const handlePreviewSong = useCallback((songId: string) => {
     setError(null);
     setSelectedSongId(songId);
+    setSelectedImportedSongId(null);
   }, []);
 
   /** Max recent files shown in the quick-access strip */
@@ -448,7 +472,21 @@ export function SongLibrary({
     }
   }, [addWatchedFolder, t]);
 
-  const handleSelectImportedSong = useCallback(
+  const handlePreviewImportedSong = useCallback(
+    (record: ImportedSongRecord) => {
+      if (record.missing) {
+        setError(t("library.importedMissing"));
+        return;
+      }
+
+      setError(null);
+      setSelectedSongId(null);
+      setSelectedImportedSongId(record.id);
+    },
+    [t],
+  );
+
+  const handlePracticeImportedSong = useCallback(
     async (record: ImportedSongRecord) => {
       if (record.missing) {
         setError(t("library.importedMissing"));
@@ -482,6 +520,25 @@ export function SongLibrary({
     },
     [loadSong, refreshRecents, reset, t],
   );
+
+  const handlePracticePreview = useCallback(
+    (preview: SongSelectionPreviewModel) => {
+      if (preview.kind === "builtin") {
+        void handleSelectSong(preview.song.id);
+        return;
+      }
+
+      void handlePracticeImportedSong(preview.importedSong);
+    },
+    [handlePracticeImportedSong, handleSelectSong],
+  );
+
+  const selectedPreviewIsLoading =
+    selectedSongPreview?.kind === "builtin"
+      ? loadingId === selectedSongPreview.song.id
+      : selectedSongPreview?.kind === "imported"
+        ? loadingImportedPath === selectedSongPreview.importedSong.sourcePath
+        : false;
 
   const handleEditImportedMetadata = useCallback(
     (record: ImportedSongRecord) => {
@@ -891,8 +948,8 @@ export function SongLibrary({
         {selectedSongPreview && (
           <SongSelectionPreviewPanel
             preview={selectedSongPreview}
-            isLoading={loadingId === selectedSongPreview.song.id}
-            onPractice={handleSelectSong}
+            isLoading={selectedPreviewIsLoading}
+            onPractice={handlePracticePreview}
           />
         )}
 
@@ -1065,7 +1122,7 @@ export function SongLibrary({
                     record={record}
                     isLoading={loadingImportedPath === record.sourcePath}
                     isEditing={editingImportedSongId === record.id}
-                    onSelect={handleSelectImportedSong}
+                    onSelect={handlePreviewImportedSong}
                     onEdit={handleEditImportedMetadata}
                     animationDelay={index * 24}
                   />
@@ -1316,7 +1373,7 @@ function SongSelectionPreviewPanel({
 }: {
   preview: SongSelectionPreviewModel;
   isLoading: boolean;
-  onPractice: (songId: string) => void;
+  onPractice: (preview: SongSelectionPreviewModel) => void;
 }): React.JSX.Element {
   const { t } = useTranslation();
   const grade =
@@ -1362,7 +1419,7 @@ function SongSelectionPreviewPanel({
 
         <button
           type="button"
-          onClick={() => onPractice(preview.song.id)}
+          onClick={() => onPractice(preview)}
           disabled={isLoading}
           className="btn-primary-themed flex min-h-10 items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-body font-semibold cursor-pointer disabled:cursor-wait disabled:opacity-60"
           data-testid="song-selection-preview-practice"
@@ -1385,7 +1442,11 @@ function SongSelectionPreviewPanel({
       <dl className="mt-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-5">
         <PreviewMetric
           label={t("library.preview.length")}
-          value={formatSongDuration(preview.durationSeconds)}
+          value={
+            preview.durationSeconds !== null
+              ? formatSongDuration(preview.durationSeconds)
+              : "--"
+          }
         />
         <PreviewMetric label={t("library.preview.grade")} value={grade} />
         <PreviewMetric label={t("library.preview.category")} value={category} />
@@ -1395,7 +1456,11 @@ function SongSelectionPreviewPanel({
         />
         <PreviewMetric
           label={t("library.preview.tracks")}
-          value={t("library.preview.tracksAfterPractice")}
+          value={
+            preview.trackCount !== null
+              ? String(preview.trackCount)
+              : t("library.preview.tracksAfterPractice")
+          }
         />
       </dl>
 

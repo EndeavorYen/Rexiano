@@ -1,6 +1,8 @@
 import { describe, expect, test } from "vitest";
 import type { BuiltinSongMeta, RecentFile, SessionRecord } from "@shared/types";
 import {
+  buildImportedSongActivity,
+  buildImportedSongSelectionPreviewModel,
   buildPracticeRecommendationModel,
   buildSongActivity,
   buildSongSelectionPreviewModel,
@@ -8,6 +10,7 @@ import {
   selectRecommendedPracticeSong,
   sortSongsForLibrary,
 } from "./songLibrarySelectors";
+import type { ImportedSongRecord } from "./importedSongMetadata";
 
 function makeSong(
   id: string,
@@ -48,6 +51,22 @@ function makeSession(
     },
     durationSeconds: 120,
     tracksPlayed: [0],
+  };
+}
+
+function makeImportedSong(
+  overrides: Partial<ImportedSongRecord> = {},
+): ImportedSongRecord {
+  return {
+    id: "user:scale",
+    sourcePath: "/Users/rex/Music/Morning Scale.mid",
+    title: "Morning Scale",
+    composer: "Teacher",
+    tags: ["legato"],
+    grade: 2,
+    category: "exercise",
+    missing: false,
+    ...overrides,
   };
 }
 
@@ -111,6 +130,33 @@ describe("buildSongActivity", () => {
       bestAccuracy: 92,
       lastPlayedAt: 3000,
       playCount: 2,
+    });
+  });
+});
+
+describe("buildImportedSongActivity", () => {
+  test("matches imported songs from recents and completed sessions", () => {
+    const importedSong = makeImportedSong();
+    const recents: RecentFile[] = [
+      {
+        path: "/Users/rex/Music/Morning Scale.mid",
+        name: "Morning Scale",
+        timestamp: 1000,
+      },
+    ];
+    const sessions = [makeSession("Morning Scale.mid", 3000, 88)];
+
+    const activity = buildImportedSongActivity(
+      [importedSong],
+      sessions,
+      recents,
+    );
+
+    expect(activity.get(importedSong.id)).toMatchObject({
+      isFavorite: false,
+      lastPlayedAt: 3000,
+      playCount: 2,
+      bestAccuracy: 88,
     });
   });
 });
@@ -282,7 +328,9 @@ describe("buildSongSelectionPreviewModel", () => {
     });
 
     expect(buildSongSelectionPreviewModel(song)).toEqual({
+      kind: "builtin",
       song,
+      sourceId: "scale",
       title: "C Major Scale",
       composer: "Rexiano",
       durationSeconds: 75,
@@ -295,6 +343,7 @@ describe("buildSongSelectionPreviewModel", () => {
       isFavorite: false,
       hasPracticeHistory: false,
       primaryCta: "practice",
+      trackCount: null,
     });
   });
 
@@ -317,7 +366,9 @@ describe("buildSongSelectionPreviewModel", () => {
         bestAccuracy: 86,
       }),
     ).toEqual({
+      kind: "builtin",
       song,
+      sourceId: "minuet",
       title: "Minuet",
       composer: "Bach",
       durationSeconds: 120,
@@ -330,6 +381,41 @@ describe("buildSongSelectionPreviewModel", () => {
       isFavorite: true,
       hasPracticeHistory: true,
       primaryCta: "continue-practice",
+      trackCount: null,
+    });
+  });
+
+  test("builds an imported song preview from editable metadata", () => {
+    const importedSong = makeImportedSong({
+      title: "Lesson Scale",
+      composer: "Teacher",
+      tags: ["legato", "recital"],
+    });
+
+    expect(
+      buildImportedSongSelectionPreviewModel(importedSong, {
+        isFavorite: false,
+        lastPlayedAt: 4000,
+        playCount: 1,
+        bestAccuracy: 91,
+      }),
+    ).toEqual({
+      kind: "imported",
+      importedSong,
+      sourceId: "user:scale",
+      title: "Lesson Scale",
+      composer: "Teacher",
+      durationSeconds: null,
+      difficulty: undefined,
+      category: "exercise",
+      grade: 2,
+      tags: ["legato", "recital"],
+      bestAccuracy: 91,
+      playCount: 1,
+      isFavorite: false,
+      hasPracticeHistory: true,
+      primaryCta: "continue-practice",
+      trackCount: null,
     });
   });
 });
