@@ -367,9 +367,9 @@
   - [x] 排序：最近、曲名、等級、難度、最高分、練習次數、長度
   - [x] 搜尋 title / composer / tags / category metadata
   - [x] 收藏 / pin 常練曲目
-- [ ] 選曲預覽
+- [x] 選曲預覽
   - [x] 選取曲目後顯示曲名、作曲者、長度、等級、最佳成績、可用 tracks
-  - [ ] 可行時提供短音訊 preview
+  - [x] 可行時提供短音訊 preview
   - [x] 單一主要 CTA：Practice
 - [x] 使用者曲庫與 metadata
   - [x] 監看使用者 MIDI 資料夾

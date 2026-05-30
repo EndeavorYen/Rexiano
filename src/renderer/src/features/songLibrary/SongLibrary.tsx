@@ -15,10 +15,15 @@ import {
   FolderOpen,
   Pencil,
   Check,
+  Volume2,
+  Square,
+  Loader2,
 } from "lucide-react";
 import { parseMidiFile } from "../../engines/midi/MidiFileParser";
+import { AudioEngine } from "../../engines/audio/AudioEngine";
 import { useSongStore } from "../../stores/useSongStore";
 import { usePlaybackStore } from "../../stores/usePlaybackStore";
+import { useSettingsStore } from "../../stores/useSettingsStore";
 import { useSongLibraryStore } from "../../stores/useSongLibraryStore";
 import { useProgressStore } from "../../stores/useProgressStore";
 import { useRecentFiles } from "../../hooks/useRecentFiles";
@@ -54,6 +59,7 @@ import {
   type ImportedSongMetadataPatch,
   type ImportedSongRecord,
 } from "./importedSongMetadata";
+import { SongAudioPreviewPlayer } from "./songPreviewPlayback";
 import {
   buildLessonProgression,
   type LessonRecommendationReason,
@@ -71,6 +77,13 @@ interface SongLibraryProps {
   onBack?: () => void;
 }
 
+type PreviewAudioStatus = "idle" | "loading" | "playing";
+
+interface PreviewAudioState {
+  status: PreviewAudioStatus;
+  sourceKey: string | null;
+}
+
 const emptyActivity: SongActivity = {
   isFavorite: false,
   lastPlayedAt: null,
@@ -83,6 +96,10 @@ function previewTrackCountKey(
   sourceId: string,
 ): string {
   return `${kind}:${sourceId}`;
+}
+
+function previewAudioSourceKey(preview: SongSelectionPreviewModel): string {
+  return previewTrackCountKey(preview.kind, preview.sourceId);
 }
 
 const recommendationReasonKeys: Record<
@@ -234,14 +251,49 @@ export function SongLibrary({
   const [previewTrackCounts, setPreviewTrackCounts] = useState<
     Record<string, number>
   >({});
+  const [previewAudioState, setPreviewAudioState] = useState<PreviewAudioState>(
+    {
+      status: "idle",
+      sourceKey: null,
+    },
+  );
   const [importedMetadataDraft, setImportedMetadataDraft] =
     useState<ImportedSongMetadataDraft | null>(null);
   const [showDeviceDrawer, setShowDeviceDrawer] = useState(false);
   const deviceDrawerRef = useRef<HTMLElement>(null);
   const deviceDrawerTriggerRef = useRef<HTMLButtonElement>(null);
   const deviceDrawerCloseRef = useRef<HTMLButtonElement>(null);
+  const previewPlayerRef = useRef<SongAudioPreviewPlayer | null>(null);
+  const previewPlaybackTokenRef = useRef(0);
   const closeDeviceDrawer = useCallback(() => {
     setShowDeviceDrawer(false);
+  }, []);
+
+  const getPreviewPlayer = useCallback(() => {
+    if (!previewPlayerRef.current) {
+      previewPlayerRef.current = new SongAudioPreviewPlayer(
+        new AudioEngine({
+          onRuntimeError: (runtimeError) => {
+            console.error("Song preview audio runtime error:", runtimeError);
+          },
+        }),
+      );
+    }
+    return previewPlayerRef.current;
+  }, []);
+
+  const stopAudioPreview = useCallback(() => {
+    previewPlaybackTokenRef.current += 1;
+    previewPlayerRef.current?.stop();
+    setPreviewAudioState({ status: "idle", sourceKey: null });
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      previewPlaybackTokenRef.current += 1;
+      previewPlayerRef.current?.dispose();
+      previewPlayerRef.current = null;
+    };
   }, []);
 
   useDialogFocus({
@@ -333,6 +385,25 @@ export function SongLibrary({
     selectedImportedSong,
     selectedSong,
     songActivity,
+  ]);
+
+  const selectedPreviewSourceKey = selectedSongPreview
+    ? previewAudioSourceKey(selectedSongPreview)
+    : null;
+  const selectedPreviewAudioStatus =
+    previewAudioState.sourceKey === selectedPreviewSourceKey
+      ? previewAudioState.status
+      : "idle";
+
+  useEffect(() => {
+    if (previewAudioState.status === "idle") return;
+    if (previewAudioState.sourceKey === selectedPreviewSourceKey) return;
+    stopAudioPreview();
+  }, [
+    previewAudioState.sourceKey,
+    previewAudioState.status,
+    selectedPreviewSourceKey,
+    stopAudioPreview,
   ]);
 
   useEffect(() => {
@@ -591,6 +662,7 @@ export function SongLibrary({
 
   const handlePracticePreview = useCallback(
     (preview: SongSelectionPreviewModel) => {
+      stopAudioPreview();
       if (preview.kind === "builtin") {
         void handleSelectSong(preview.song.id);
         return;
@@ -598,7 +670,80 @@ export function SongLibrary({
 
       void handlePracticeImportedSong(preview.importedSong);
     },
-    [handlePracticeImportedSong, handleSelectSong],
+    [handlePracticeImportedSong, handleSelectSong, stopAudioPreview],
+  );
+
+  const handleToggleAudioPreview = useCallback(
+    async (preview: SongSelectionPreviewModel) => {
+      const sourceKey = previewAudioSourceKey(preview);
+      if (
+        previewAudioState.sourceKey === sourceKey &&
+        previewAudioState.status !== "idle"
+      ) {
+        stopAudioPreview();
+        return;
+      }
+
+      const token = previewPlaybackTokenRef.current + 1;
+      previewPlaybackTokenRef.current = token;
+      previewPlayerRef.current?.stop();
+      setError(null);
+      setPreviewAudioState({ status: "loading", sourceKey });
+
+      try {
+        if (preview.kind === "imported" && preview.importedSong.missing) {
+          setError(t("library.importedMissing"));
+          setPreviewAudioState({ status: "idle", sourceKey: null });
+          return;
+        }
+
+        const result =
+          preview.kind === "builtin"
+            ? await window.api.loadBuiltinSong(preview.song.id)
+            : await window.api.loadMidiPath(preview.importedSong.sourcePath);
+
+        if (previewPlaybackTokenRef.current !== token) return;
+
+        if (!result) {
+          setError(
+            preview.kind === "imported"
+              ? t("library.importedMissing")
+              : t("library.preview.audioPreviewError"),
+          );
+          setPreviewAudioState({ status: "idle", sourceKey: null });
+          return;
+        }
+
+        const parsed = parseMidiFile(result.fileName, result.data);
+        const { muted } = useSettingsStore.getState();
+        const volume = muted ? 0 : usePlaybackStore.getState().volume;
+
+        await getPreviewPlayer().play(parsed, {
+          volume,
+          onEnded: () => {
+            if (previewPlaybackTokenRef.current === token) {
+              setPreviewAudioState({ status: "idle", sourceKey: null });
+            }
+          },
+        });
+
+        if (previewPlaybackTokenRef.current === token) {
+          setPreviewAudioState({ status: "playing", sourceKey });
+        }
+      } catch (e) {
+        if (previewPlaybackTokenRef.current !== token) return;
+        setError(t("library.preview.audioPreviewError"));
+        setPreviewAudioState({ status: "idle", sourceKey: null });
+        console.error("Failed to play song preview:", e);
+      }
+    },
+    [
+      getPreviewPlayer,
+      previewAudioState.sourceKey,
+      previewAudioState.status,
+      stopAudioPreview,
+      t,
+    ],
   );
 
   const selectedPreviewIsLoading =
@@ -1017,7 +1162,9 @@ export function SongLibrary({
           <SongSelectionPreviewPanel
             preview={selectedSongPreview}
             isLoading={selectedPreviewIsLoading}
+            audioStatus={selectedPreviewAudioStatus}
             onPractice={handlePracticePreview}
+            onToggleAudioPreview={handleToggleAudioPreview}
           />
         )}
 
@@ -1437,11 +1584,15 @@ function formatSongDuration(seconds: number): string {
 function SongSelectionPreviewPanel({
   preview,
   isLoading,
+  audioStatus,
   onPractice,
+  onToggleAudioPreview,
 }: {
   preview: SongSelectionPreviewModel;
   isLoading: boolean;
+  audioStatus: PreviewAudioStatus;
   onPractice: (preview: SongSelectionPreviewModel) => void;
+  onToggleAudioPreview: (preview: SongSelectionPreviewModel) => void;
 }): React.JSX.Element {
   const { t } = useTranslation();
   const grade =
@@ -1455,6 +1606,12 @@ function SongSelectionPreviewPanel({
     preview.primaryCta === "continue-practice"
       ? t("library.continuePractice")
       : t("library.recommendation.cta");
+  const audioPreviewLabel =
+    audioStatus === "loading"
+      ? t("library.preview.audioPreviewLoading")
+      : audioStatus === "playing"
+        ? t("library.preview.audioPreviewStop")
+        : t("library.preview.audioPreview");
 
   return (
     <section
@@ -1485,26 +1642,44 @@ function SongSelectionPreviewPanel({
           </p>
         </div>
 
-        <button
-          type="button"
-          onClick={() => onPractice(preview)}
-          disabled={isLoading}
-          className="btn-primary-themed flex min-h-10 items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-body font-semibold cursor-pointer disabled:cursor-wait disabled:opacity-60"
-          data-testid="song-selection-preview-practice"
-        >
-          {isLoading ? (
-            <span
-              className="h-4 w-4 rounded-full border-2 animate-spin"
-              style={{
-                borderColor: "rgba(255,255,255,0.45)",
-                borderTopColor: "#fff",
-              }}
-            />
-          ) : (
-            <PlayCircle size={16} />
-          )}
-          {ctaLabel}
-        </button>
+        <div className="flex flex-col gap-2 sm:flex-row lg:justify-end">
+          <button
+            type="button"
+            onClick={() => onToggleAudioPreview(preview)}
+            disabled={audioStatus === "loading"}
+            className="btn-surface-themed flex min-h-10 items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-body font-semibold cursor-pointer disabled:cursor-wait disabled:opacity-60"
+            data-testid="song-selection-preview-audio"
+          >
+            {audioStatus === "loading" ? (
+              <Loader2 size={16} className="animate-spin" />
+            ) : audioStatus === "playing" ? (
+              <Square size={15} />
+            ) : (
+              <Volume2 size={16} />
+            )}
+            {audioPreviewLabel}
+          </button>
+          <button
+            type="button"
+            onClick={() => onPractice(preview)}
+            disabled={isLoading}
+            className="btn-primary-themed flex min-h-10 items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-body font-semibold cursor-pointer disabled:cursor-wait disabled:opacity-60"
+            data-testid="song-selection-preview-practice"
+          >
+            {isLoading ? (
+              <span
+                className="h-4 w-4 rounded-full border-2 animate-spin"
+                style={{
+                  borderColor: "rgba(255,255,255,0.45)",
+                  borderTopColor: "#fff",
+                }}
+              />
+            ) : (
+              <PlayCircle size={16} />
+            )}
+            {ctaLabel}
+          </button>
+        </div>
       </div>
 
       <dl className="mt-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-5">
@@ -1549,13 +1724,6 @@ function SongSelectionPreviewPanel({
           ))}
         </div>
       )}
-
-      <p
-        className="mt-3 text-xs font-body"
-        style={{ color: "var(--color-text-muted)" }}
-      >
-        {t("library.preview.audioUnsupported")}
-      </p>
     </section>
   );
 }

@@ -90,8 +90,11 @@ export const zhTW: TranslationMap = {
   "library.preview.bestScore": "最佳分數",
   "library.preview.tracks": "軌道",
   "library.preview.tracksAfterPractice": "播放前選擇",
-  "library.preview.audioUnsupported":
-    "暫不支援音訊預覽；開始練習後仍會先顯示模式與軌道設定。",
+  "library.preview.audioPreview": "試聽",
+  "library.preview.audioPreviewLoading": "載入中",
+  "library.preview.audioPreviewStop": "停止",
+  "library.preview.audioPreviewError":
+    "目前無法播放試聽，請改用開始練習載入曲目。",
   "library.lessonPath.title": "課程路徑",
   "library.lessonPath.free": "仍可自由選曲",
   "library.lessonPath.next": "下一課",

@@ -89,7 +89,10 @@ export interface TranslationMap {
   "library.preview.bestScore": string;
   "library.preview.tracks": string;
   "library.preview.tracksAfterPractice": string;
-  "library.preview.audioUnsupported": string;
+  "library.preview.audioPreview": string;
+  "library.preview.audioPreviewLoading": string;
+  "library.preview.audioPreviewStop": string;
+  "library.preview.audioPreviewError": string;
   "library.lessonPath.title": string;
   "library.lessonPath.free": string;
   "library.lessonPath.next": string;
