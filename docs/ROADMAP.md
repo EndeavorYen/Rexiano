@@ -202,7 +202,7 @@
   - [x] 黑鍵可選顯示升音名（C#, D#...）
   - [x] 可開關設定（`showLabels` prop）
 - [x] 真實鋼琴音色（目前保留 TimGM6mb；provenance 與升級路徑見 `docs/soundfont-provenance.md`）
-  - [ ] 取得並驗證可再發佈的高品質鋼琴 SoundFont（例如 Salamander Grand Piano）
+  - [x] 取得並驗證可再發佈的高品質鋼琴 SoundFont（例如 Salamander Grand Piano）
   - [ ] 完成授權/檔案大小/loader compatibility 檢查後再替換 `resources/piano.sf2`
   - [x] TransportBar 顯示音訊載入狀態（Loader2 spinner + AlertCircle error indicator）
 - [x] 暗色主題「Midnight」
