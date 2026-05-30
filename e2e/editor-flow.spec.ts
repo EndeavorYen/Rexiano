@@ -30,9 +30,17 @@ test.describe("Piano roll editor flow", () => {
     );
 
     await appPage.getByTestId("editor-tool-draw").click();
-    await appPage.getByTestId("piano-roll-grid").click({
-      position: { x: 140, y: 120 },
-    });
+
+    const gridViewport = appPage.getByTestId("piano-roll-scroll");
+    await expect(gridViewport).toBeVisible();
+    const gridViewportBox = await gridViewport.boundingBox();
+    if (!gridViewportBox) {
+      throw new Error("Piano roll viewport is not available for drawing");
+    }
+    await appPage.mouse.click(
+      gridViewportBox.x + Math.min(180, gridViewportBox.width * 0.35),
+      gridViewportBox.y + gridViewportBox.height * 0.58,
+    );
 
     await expect(notes).toHaveCount(initialCount + 1);
     await expect(appPage.getByTestId("note-inspector-selection")).toContainText(
