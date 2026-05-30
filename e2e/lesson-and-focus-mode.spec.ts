@@ -1,5 +1,5 @@
 import { test, expect } from "./fixtures/electronApp";
-import { gotoLibrary, loadFirstBuiltInSong } from "./helpers/appHarness";
+import { gotoLibrary, startBuiltInSongFromLibrary } from "./helpers/appHarness";
 
 test.describe("Lesson path and child focus mode", () => {
   test("library shows a guided lesson path without blocking free song selection", async ({
@@ -41,11 +41,27 @@ test.describe("Lesson path and child focus mode", () => {
     await appPage.waitForLoadState("domcontentloaded");
 
     await gotoLibrary(appPage);
-    await loadFirstBuiltInSong(appPage);
+    await startBuiltInSongFromLibrary(appPage, "hot-cross-buns");
+    const freeModeOption = appPage.getByTestId("mode-select-free");
+    if (await freeModeOption.isVisible()) {
+      await freeModeOption.click();
+    }
+    await expect(appPage.locator(".workspace-frame")).toBeVisible({
+      timeout: 20_000,
+    });
 
-    const playButton = appPage.getByRole("button", { name: "Play (Space)" });
+    const ensurePlaybackIsRunning = async (): Promise<void> => {
+      const pauseButton = appPage.getByRole("button", {
+        name: "Pause (Space)",
+      });
+      if (await pauseButton.isVisible()) return;
+      await appPage.getByRole("button", { name: "Play (Space)" }).click();
+      await expect(pauseButton).toBeVisible();
+    };
 
-    await expect(playButton).toBeVisible();
+    await expect(
+      appPage.getByRole("button", { name: "Play (Space)" }),
+    ).toBeVisible();
     await expect(
       appPage.getByRole("button", { name: "Reset to beginning" }),
     ).toBeVisible();
@@ -55,11 +71,7 @@ test.describe("Lesson path and child focus mode", () => {
     );
     await expect(appPage.getByTestId("practice-toolbar-level")).toHaveCount(0);
 
-    const pauseButton = appPage.getByRole("button", { name: "Pause (Space)" });
-    if (!(await pauseButton.isVisible())) {
-      await playButton.click();
-    }
-    await expect(pauseButton).toBeVisible();
+    await ensurePlaybackIsRunning();
 
     const dismissExitDialog = appPage.waitForEvent("dialog");
     const dismissClick = appPage
@@ -70,6 +82,8 @@ test.describe("Lesson path and child focus mode", () => {
     await dismissDialog.dismiss();
     await dismissClick;
     await expect(appPage.locator(".workspace-frame")).toBeVisible();
+
+    await ensurePlaybackIsRunning();
 
     const acceptExitDialog = appPage.waitForEvent("dialog");
     const acceptClick = appPage
