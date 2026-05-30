@@ -1,6 +1,6 @@
 # Rexiano — 開發路線圖與追蹤清單
 
-> **最後更新**: 2026-03-03
+> **最後更新**: 2026-05-31
 >
 > 詳細設計請參考 [DESIGN.md](./DESIGN.md)
 
@@ -14,9 +14,9 @@
 | **v0.2.0** | 有聲播放器       | + Phase 4 ✅                |
 | **v0.3.0** | MIDI 鍵盤連接    | + Phase 5 ✅                |
 | **v0.4.0** | 練習模式         | + Phase 6 ✅                |
-| **v0.4.1** | 🎯 兒童可用版    | + Phase 6.5（可用性增強）   |
-| **v0.5.0** | 五線譜顯示       | + Phase 7                   |
-| **v0.5.1** | 練習入口優化     | + Phase 7.5                 |
+| **v0.4.1** | 🎯 兒童可用版    | + Phase 6.5（可用性增強）✅ |
+| **v0.5.0** | 五線譜顯示       | + Phase 7 ✅                |
+| **v0.5.1** | 練習入口優化     | + Phase 7.5 ✅              |
 | **v1.0.0** | 正式發佈         | + Phase 8 + 9，全功能穩定版 |
 
 ---
@@ -182,7 +182,7 @@
 
 ---
 
-## Phase 6.5 — 兒童可用性增強 🚧
+## Phase 6.5 — 兒童可用性增強 ✅
 
 > 目標版本：v0.4.1 — **Rex 可以坐下來練琴的最低門檻**
 >
@@ -190,7 +190,7 @@
 >
 > 設計詳見 [DESIGN.md §8.5](./DESIGN.md#85-兒童可用性增強phase-65)
 >
-> Sprint 1~4 完成（除真實鋼琴音色外），Sprint 5 完成
+> Sprint 1~5 完成；真實鋼琴音色已替換並完成 provenance / loader 驗證。
 
 ### Sprint 1 — 基礎可用性（全部無依賴，可平行）
 
@@ -315,7 +315,7 @@
 
 ---
 
-## Phase 7 — 樂譜顯示 🚧
+## Phase 7 — 樂譜顯示 ✅
 
 > 目標版本：v0.5.0
 >
@@ -350,7 +350,7 @@
 
 ---
 
-## Phase 7.5 — Synthesia 借鏡優化：曲庫與練習流 🔲
+## Phase 7.5 — Synthesia 借鏡優化：曲庫與練習流 ✅
 
 > 目標版本：v0.5.1
 >
@@ -427,9 +427,9 @@
 
 - [x] CI/CD 管線（GitHub Actions）
   - [x] tag push 觸發多平台建置（release.yml）
-  - [x] Windows: .exe / .msi
+  - [x] Windows: .exe（NSIS setup）
   - [x] macOS: .dmg
-  - [x] Linux: .AppImage / .deb / .snap
+  - [x] Linux: .AppImage / .deb
   - [x] 自動建立 GitHub Release + 上傳 artifacts
   - [x] Release Please 自動化版本管理與 CHANGELOG（release-please.yml）
   - [x] CHANGELOG.md 打包進發佈包（electron-builder.yml extraResources）
@@ -448,7 +448,7 @@
   - [x] Windows: 桌面捷徑、開始選單（nsis createDesktopShortcut + createStartMenuShortcut）
   - [x] macOS: DMG 背景圖 + 拖放指示（`build/dmg-background.png`）
   - [x] Linux: desktop entry（自動從 mimeTypes + category 產生）
-- [ ] README / 文件完善
+- [x] README / 文件完善
   - [x] 安裝指南（各平台）
   - [x] Windows BLE MIDI 橋接教學
   - [x] 開發者貢獻指南 (CONTRIBUTING.md)

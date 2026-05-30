@@ -1,6 +1,6 @@
 # Rexiano Installation Guide
 
-> **Version**: 0.4.1 | **Last updated**: 2026-03
+> **Version**: 0.4.1 | **Last updated**: 2026-05
 >
 > Other languages: [繁體中文](./installation.md)
 
@@ -63,7 +63,7 @@ A Rexiano shortcut will appear on your desktop. You can also find Rexiano in the
 ### Steps
 
 1. Go to the [GitHub Releases page](https://github.com/EndeavorYen/Rexiano/releases) and download the latest version
-2. Download the `rexiano-x.x.x.dmg` file
+2. Download `rexiano-x.x.x-arm64.dmg` for Apple Silicon or `rexiano-x.x.x-x64.dmg` for Intel
 3. Double-click the DMG to open it
 4. Drag the **Rexiano** icon into the **Applications** folder
 
@@ -87,21 +87,20 @@ Rexiano natively supports Apple Silicon. The DMG contains a Universal Binary —
 
 ## 4. Linux Installation
 
-Rexiano is available in three Linux formats. Choose the one that fits your distribution.
+Rexiano release builds publish AppImage and Debian packages for Linux.
 
 ### 4.1 AppImage (Recommended — No Installation Required)
 
 AppImage runs on any Linux distribution without installing anything.
 
 ```bash
-# 1. Download the AppImage
-wget https://github.com/EndeavorYen/Rexiano/releases/latest/download/rexiano-x.x.x.AppImage
+# 1. Download rexiano-*.AppImage from GitHub Releases
 
 # 2. Make it executable
-chmod +x rexiano-x.x.x.AppImage
+chmod +x rexiano-*.AppImage
 
 # 3. Run it
-./rexiano-x.x.x.AppImage
+./rexiano-*.AppImage
 ```
 
 If it doesn't run, you may need to install FUSE:
@@ -117,9 +116,8 @@ sudo dnf install fuse fuse-libs
 ### 4.2 Debian / Ubuntu (.deb)
 
 ```bash
-# Download and install
-wget https://github.com/EndeavorYen/Rexiano/releases/latest/download/rexiano-x.x.x.deb
-sudo dpkg -i rexiano-x.x.x.deb
+# Download rexiano-*.deb from GitHub Releases, then install
+sudo dpkg -i rexiano-*.deb
 
 # Fix missing dependencies if needed
 sudo apt-get install -f
@@ -127,17 +125,7 @@ sudo apt-get install -f
 
 After installation, Rexiano will appear in your application menu, or you can run it with `rexiano` in the terminal.
 
-### 4.3 RPM (Fedora / RHEL / openSUSE)
-
-```bash
-# Fedora / RHEL
-sudo rpm -i rexiano-x.x.x.rpm
-
-# openSUSE
-sudo zypper install rexiano-x.x.x.rpm
-```
-
-### 4.4 MIDI Support on Linux
+### 4.3 MIDI Support on Linux
 
 Before connecting a USB MIDI keyboard on Linux, verify the ALSA driver is loaded:
 
@@ -152,6 +140,11 @@ sudo modprobe snd-usb-audio
 ---
 
 ## 5. First Launch Notes
+
+### Release Checksums
+
+Each GitHub Release includes `SHA256SUMS.txt` alongside the installers. Use it
+to verify that a downloaded artifact matches the release.
 
 ### Onboarding Guide
 

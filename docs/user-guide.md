@@ -1,6 +1,6 @@
 # Rexiano 使用手冊
 
-> **版本**: 0.4.1 | **最後更新**: 2026-03
+> **版本**: 0.4.1 | **最後更新**: 2026-05
 
 ---
 
@@ -30,7 +30,7 @@
 - **連接你的鍵盤** — 支援 USB 和藍牙 MIDI 鍵盤（如 Roland、Yamaha 等）
 - **三種練習模式** — 觀看、等待、自由，滿足不同階段的練習需求
 - **即時評分** — 彈對了會發光，連續答對會出現連擊特效
-- **18 首內建曲目** — 從〈小星星〉到〈月光奏鳴曲〉，由易到難
+- **26 首內建曲目** — 從〈小星星〉到〈月光奏鳴曲〉，依等級與難度排序
 - **匯入你自己的 MIDI 檔案** — 想練什麼就練什麼
 - **4 套精美主題** — Lavender、Ocean、Peach、Midnight，總有一套合你口味
 - **完全免費** — 沒有廣告、沒有付費牆、沒有訂閱制
@@ -52,13 +52,10 @@
 5. 按照安裝精靈的指引完成安裝
 6. 安裝完成後，桌面會出現 Rexiano 的捷徑
 
-<!-- 截圖預留：Windows SmartScreen 警告畫面 -->
-<!-- 截圖預留：安裝精靈畫面 -->
-
 ### 2.2 macOS 安裝
 
 1. 前往 [Rexiano 的 GitHub Releases 頁面](https://github.com/EndeavorYen/Rexiano/releases) 下載最新版本
-2. 下載 `rexiano-x.x.x.dmg` 檔案
+2. 下載 `rexiano-x.x.x-arm64.dmg`（Apple Silicon）或 `rexiano-x.x.x-x64.dmg`（Intel）
 3. 雙擊打開 DMG 檔案
 4. 將 Rexiano 圖示拖放到「應用程式」資料夾
 5. 首次開啟時，macOS 可能會顯示「無法驗證開發者」的警告
@@ -68,24 +65,19 @@
 
 ### 2.3 Linux 安裝
 
-Rexiano 提供三種 Linux 安裝格式：
+Rexiano 目前提供 AppImage 與 Debian 套件：
 
 **AppImage（推薦，免安裝）：**
 
-1. 下載 `rexiano-x.x.x.AppImage`
-2. 賦予執行權限：`chmod +x rexiano-x.x.x.AppImage`
-3. 雙擊執行，或在終端機中執行 `./rexiano-x.x.x.AppImage`
+1. 下載 `rexiano-x.x.x-x86_64.AppImage`
+2. 賦予執行權限：`chmod +x rexiano-*.AppImage`
+3. 雙擊執行，或在終端機中執行 `./rexiano-*.AppImage`
 
 **Debian / Ubuntu（.deb）：**
 
-1. 下載 `rexiano-x.x.x.deb`
-2. 使用 dpkg 安裝：`sudo dpkg -i rexiano-x.x.x.deb`
+1. 下載 `rexiano-x.x.x-amd64.deb`
+2. 使用 dpkg 安裝：`sudo dpkg -i rexiano-*.deb`
 3. 安裝完成後在應用程式選單中找到 Rexiano
-
-**Snap：**
-
-1. 下載 `rexiano-x.x.x.snap`
-2. 使用 snap 安裝：`sudo snap install rexiano-x.x.x.snap --dangerous`
 
 ### 2.4 首次啟動注意事項
 
@@ -101,7 +93,7 @@ Rexiano 提供三種 Linux 安裝格式：
 
 ### 步驟 1：選擇一首歌
 
-啟動 Rexiano 後，你會看到**曲庫**畫面。這裡列出了 18 首內建曲目，依照難度分為三級：
+啟動 Rexiano 後，你會看到**曲庫**畫面。這裡列出了 26 首內建曲目，依照等級、分類與難度整理：
 
 | 難度         | 適合誰           | 範例曲目                               |
 | ------------ | ---------------- | -------------------------------------- |
