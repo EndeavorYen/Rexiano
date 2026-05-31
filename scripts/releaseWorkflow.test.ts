@@ -16,6 +16,22 @@ describe("release workflow", () => {
     expect(workflow).not.toContain("uses: googleapis/release-please-action@v4");
   });
 
+  test("dispatches installer artifact builds after release-please publishes", () => {
+    const workflow = readRepoFile(".github/workflows/release-please.yml");
+
+    expect(workflow).toContain("actions: write");
+    expect(workflow).toContain("id: release");
+    expect(workflow).toContain(
+      "if: ${{ steps.release.outputs.release_created == 'true' }}",
+    );
+    expect(workflow).toContain(
+      "RELEASE_TAG: ${{ steps.release.outputs.tag_name }}",
+    );
+    expect(workflow).toContain(
+      'gh workflow run release.yml --ref main --field tag="$RELEASE_TAG"',
+    );
+  });
+
   test("documents conventional squash subjects for release notes", () => {
     const agentInstructions = readRepoFile("AGENTS.md");
 
