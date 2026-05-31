@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.1.1](https://github.com/EndeavorYen/Rexiano/compare/v1.1.0...v1.1.1) (2026-05-31)
+
+
+### Bug Fixes
+
+* audit visual scroll traps ([4aa9866](https://github.com/EndeavorYen/Rexiano/commit/4aa98668287169f7ab578bc41c97ec5bdc4386e5)), closes [#144](https://github.com/EndeavorYen/Rexiano/issues/144)
+* gate built-in midi diagnostics ([f6fa4fc](https://github.com/EndeavorYen/Rexiano/commit/f6fa4fc4ccc20ac0a9ce0e161ca6c4913889da59)), closes [#148](https://github.com/EndeavorYen/Rexiano/issues/148)
+* keep release-please notes parseable ([#165](https://github.com/EndeavorYen/Rexiano/issues/165)) ([918d0ae](https://github.com/EndeavorYen/Rexiano/commit/918d0ae07d85227546e8b8e8f3253560fc80f0b0)), closes [#164](https://github.com/EndeavorYen/Rexiano/issues/164)
+
 ## [1.1.0](https://github.com/EndeavorYen/Rexiano/compare/v1.0.0...v1.1.0) (2026-05-30)
 
 ### Features
