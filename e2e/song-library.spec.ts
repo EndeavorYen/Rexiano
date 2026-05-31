@@ -94,6 +94,53 @@ test.describe("Song library selection workflow", () => {
     ).toHaveAttribute("aria-pressed", "true");
   });
 
+  test("keeps the full built-in library reachable inside the viewport", async ({
+    appPage,
+  }) => {
+    await appPage.setViewportSize({ width: 1440, height: 900 });
+    await resetLibraryPrefs(appPage);
+    await gotoLibrary(appPage);
+
+    const finalSongButton = appPage.getByTestId("song-select-yankee-doodle");
+    await finalSongButton.scrollIntoViewIfNeeded();
+
+    await expect(finalSongButton).toBeInViewport();
+    const libraryMidiButton = appPage.getByTestId(
+      "library-device-drawer-trigger",
+    );
+    await expect(libraryMidiButton).toBeInViewport();
+    const scrollMetrics = await finalSongButton.evaluate((element) => {
+      let parent = element.parentElement;
+      while (parent) {
+        const style = window.getComputedStyle(parent);
+        if (
+          (style.overflowY === "auto" || style.overflowY === "scroll") &&
+          parent.scrollHeight > parent.clientHeight
+        ) {
+          return {
+            clientHeight: parent.clientHeight,
+            scrollHeight: parent.scrollHeight,
+            scrollTop: parent.scrollTop,
+            viewportHeight: window.innerHeight,
+          };
+        }
+        parent = parent.parentElement;
+      }
+      return null;
+    });
+
+    if (!scrollMetrics) {
+      throw new Error("Expected the song library to expose a scroll container");
+    }
+    expect(scrollMetrics.clientHeight).toBeLessThanOrEqual(
+      scrollMetrics.viewportHeight,
+    );
+    expect(scrollMetrics.scrollHeight).toBeGreaterThan(
+      scrollMetrics.clientHeight,
+    );
+    expect(scrollMetrics.scrollTop).toBeGreaterThan(0);
+  });
+
   test("shows selected-song preview before starting practice", async ({
     appPage,
   }) => {

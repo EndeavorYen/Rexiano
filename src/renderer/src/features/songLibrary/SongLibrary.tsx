@@ -795,7 +795,7 @@ export function SongLibrary({
   return (
     <div className="flex-1 min-h-0 app-shell overflow-y-auto overflow-x-hidden">
       <div className="mx-auto w-full max-w-6xl px-6 py-6 pb-24">
-        <header className="surface-panel subtle-shadow sticky top-4 z-20 mb-5 p-4 sm:p-5 animate-page-enter">
+        <header className="surface-panel subtle-shadow mb-5 p-4 animate-page-enter sm:sticky sm:top-4 sm:z-20 sm:p-5">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div className="flex items-center gap-3">
               {onBack && (
