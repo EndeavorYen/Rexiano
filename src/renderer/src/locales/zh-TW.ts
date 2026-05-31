@@ -29,6 +29,22 @@ export const zhTW: TranslationMap = {
   "app.startPractice": "開始練琴",
   "app.openSettings": "設定",
   "app.menuGreeting": "今天要彈什麼呢？",
+  "onboarding.dialogLabel": "歡迎導覽",
+  "onboarding.step.start.title": "開始練琴",
+  "onboarding.step.start.description":
+    "使用「開始練琴」開啟曲庫，選一首內建曲目，或匯入自己的 MIDI 檔案。",
+  "onboarding.step.choose.title": "選擇曲目",
+  "onboarding.step.choose.description":
+    "先預覽曲目，準備好時按下「開始練習」。",
+  "onboarding.step.practice.title": "選擇練習方式",
+  "onboarding.step.practice.description":
+    "選「觀看」只聽示範，選「等待」讓曲子等你彈對，或選「自由」自由跟彈。",
+  "onboarding.step.keyboard.title": "連接你的鍵盤",
+  "onboarding.step.keyboard.description":
+    "插上 MIDI 鍵盤就能真的跟彈；也可以先觀看熟悉旋律。",
+  "onboarding.skip": "略過",
+  "onboarding.next": "下一步",
+  "onboarding.getStarted": "開始",
 
   // ── Song Library ───────────────────────────────────────────────
   "library.title": "Rexiano",
