@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { Midi } from "@tonejs/midi";
 import {
   addNotesFromBeats,
+  applyInferredHandTrackNames,
   encodeMidiWithNotationHeaderMetadata,
   mergeGeneratedSongMetadata,
   type SongMeta,
@@ -60,6 +61,20 @@ describe("generated song library helpers", () => {
       key: "D",
       scale: "major",
     });
+  });
+
+  it("infers hand metadata for unnamed two-track built-ins", () => {
+    const midi = new Midi();
+    const high = midi.addTrack();
+    const low = midi.addTrack();
+
+    low.addNote({ midi: 48, time: 0, duration: 1, velocity: 0.7 });
+    high.addNote({ midi: 72, time: 0, duration: 1, velocity: 0.7 });
+
+    applyInferredHandTrackNames(midi);
+
+    expect(high.name).toBe("Right Hand");
+    expect(low.name).toBe("Left Hand");
   });
 
   it("preserves curated manifest grade, level tags, and existing-only songs", () => {

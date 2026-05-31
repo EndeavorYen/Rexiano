@@ -46,6 +46,11 @@ export type NoteEntry = [
   durationBeats: number,
 ];
 
+type GeneratedMidiTrack = Midi["tracks"][number];
+
+const HAND_METADATA_PATTERN =
+  /\b(right|left|r\.?h\.?|l\.?h\.?|treble|bass|右手|左手)\b/i;
+
 const KEY_SIGNATURE_KEYS = [
   "Cb",
   "Gb",
@@ -130,6 +135,43 @@ export function addNotesFromBeats(
       velocity,
     });
   }
+}
+
+function averageMidiPitch(track: GeneratedMidiTrack): number {
+  if (track.notes.length === 0) return 0;
+  const total = track.notes.reduce((sum, note) => sum + note.midi, 0);
+  return total / track.notes.length;
+}
+
+function hasHandMetadata(track: GeneratedMidiTrack): boolean {
+  return HAND_METADATA_PATTERN.test(track.name);
+}
+
+function handTrackName(
+  existingName: string,
+  hand: "Left Hand" | "Right Hand",
+): string {
+  const trimmed = existingName.trim();
+  return trimmed ? `${trimmed} ${hand}` : hand;
+}
+
+export function applyInferredHandTrackNames(midi: Midi): void {
+  const playableTracks = midi.tracks.filter((track) => track.notes.length > 0);
+  if (
+    playableTracks.length !== 2 ||
+    playableTracks.some((track) => hasHandMetadata(track))
+  ) {
+    return;
+  }
+
+  const [first, second] = playableTracks;
+  const firstAverage = averageMidiPitch(first);
+  const secondAverage = averageMidiPitch(second);
+  const leftHand = firstAverage <= secondAverage ? first : second;
+  const rightHand = leftHand === first ? second : first;
+
+  leftHand.name = handTrackName(leftHand.name, "Left Hand");
+  rightHand.name = handTrackName(rightHand.name, "Right Hand");
 }
 
 export function parseNotationTags(tags: readonly string[]): ParsedNotationTags {
