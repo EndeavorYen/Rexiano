@@ -1,5 +1,21 @@
 # Changelog
 
+## [1.1.1](https://github.com/EndeavorYen/Rexiano/compare/v1.1.0...v1.1.1) (2026-05-31)
+
+
+### Bug Fixes
+
+* audit visual scroll traps ([4aa9866](https://github.com/EndeavorYen/Rexiano/commit/4aa98668287169f7ab578bc41c97ec5bdc4386e5)), closes [#144](https://github.com/EndeavorYen/Rexiano/issues/144)
+* classify paid audit viewport overflow ([#156](https://github.com/EndeavorYen/Rexiano/pull/156)) ([d207285](https://github.com/EndeavorYen/Rexiano/commit/d2072852ae2fb12da6b7d49304a52418e1f8b858))
+* fix first-run onboarding flow ([#151](https://github.com/EndeavorYen/Rexiano/pull/151)) ([630164f](https://github.com/EndeavorYen/Rexiano/commit/630164f5db7f9ab6ab1792f384350fd52ede02be))
+* fix library scroll area reachability ([#157](https://github.com/EndeavorYen/Rexiano/pull/157)) ([2a388fd](https://github.com/EndeavorYen/Rexiano/commit/2a388fdabe0888e44dcc6db353054e208b07f25d))
+* fix playback header scroll after mode selection ([#153](https://github.com/EndeavorYen/Rexiano/pull/153)) ([5eb98b5](https://github.com/EndeavorYen/Rexiano/commit/5eb98b5726f2c89fbf08f14775ae2efca28b0cd7))
+* gate built-in midi diagnostics ([f6fa4fc](https://github.com/EndeavorYen/Rexiano/commit/f6fa4fc4ccc20ac0a9ce0e161ca6c4913889da59)), closes [#148](https://github.com/EndeavorYen/Rexiano/issues/148)
+* keep release-please notes parseable ([#165](https://github.com/EndeavorYen/Rexiano/issues/165)) ([918d0ae](https://github.com/EndeavorYen/Rexiano/commit/918d0ae07d85227546e8b8e8f3253560fc80f0b0)), closes [#164](https://github.com/EndeavorYen/Rexiano/issues/164)
+* keep mobile editor controls clear of transport ([#161](https://github.com/EndeavorYen/Rexiano/pull/161)) ([2436436](https://github.com/EndeavorYen/Rexiano/commit/24364362a60902553a9b6c62afa7d10d04bdbe82))
+* pause mobile editor playback before hiding transport ([#163](https://github.com/EndeavorYen/Rexiano/pull/163)) ([ff0387c](https://github.com/EndeavorYen/Rexiano/commit/ff0387c7fa824d2ef1310773e06513d660f60ad8))
+* reveal selected song preview CTA ([#159](https://github.com/EndeavorYen/Rexiano/pull/159)) ([bdabd93](https://github.com/EndeavorYen/Rexiano/commit/bdabd93f6e44a28c2410bee7f1064aefdb837ef0))
+
 ## [1.1.0](https://github.com/EndeavorYen/Rexiano/compare/v1.0.0...v1.1.0) (2026-05-30)
 
 ### Features
