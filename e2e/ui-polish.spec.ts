@@ -1,5 +1,11 @@
+import type { Locator } from "@playwright/test";
 import { test, expect, waitForUiSettled } from "./fixtures/electronApp";
-import { gotoLibrary, loadFirstBuiltInSong } from "./helpers/appHarness";
+import {
+  gotoLibrary,
+  loadFirstBuiltInSong,
+  openPlaybackDrawer,
+  startBuiltInSongFromLibrary,
+} from "./helpers/appHarness";
 
 async function expectNoPageHorizontalOverflow(
   appPage: Parameters<typeof waitForUiSettled>[0],
@@ -15,6 +21,146 @@ async function expectNoPageHorizontalOverflow(
 
   expect(metrics.rootScrollWidth).toBeLessThanOrEqual(metrics.innerWidth + 1);
   expect(metrics.bodyScrollWidth).toBeLessThanOrEqual(metrics.innerWidth + 1);
+}
+
+async function expectLocatorStartsInsideViewport(
+  appPage: Parameters<typeof waitForUiSettled>[0],
+  locator: Locator,
+): Promise<void> {
+  const [box, viewport] = await Promise.all([
+    locator.boundingBox(),
+    appPage.viewportSize(),
+  ]);
+  const debugMetrics = await locator.evaluate((element) => {
+    const style = window.getComputedStyle(element);
+    const parent = element.parentElement;
+    const parentStyle = parent ? window.getComputedStyle(parent) : null;
+    const parentRect = parent?.getBoundingClientRect();
+    return {
+      innerWidth: window.innerWidth,
+      innerHeight: window.innerHeight,
+      visualViewportWidth: window.visualViewport?.width ?? null,
+      visualViewportHeight: window.visualViewport?.height ?? null,
+      parentAlignItems: parentStyle?.alignItems ?? null,
+      parentScrollTop: parent?.scrollTop ?? null,
+      parentRect: parentRect
+        ? {
+            x: parentRect.x,
+            y: parentRect.y,
+            width: parentRect.width,
+            height: parentRect.height,
+          }
+        : null,
+      parentClassName: parent?.className ?? null,
+      height: style.height,
+      maxHeight: style.maxHeight,
+      overflowY: style.overflowY,
+    };
+  });
+
+  expect(box).not.toBeNull();
+  expect(viewport).not.toBeNull();
+  if (!box || !viewport) return;
+
+  const debug = JSON.stringify({ box, viewport, debugMetrics });
+  expect(box.x, debug).toBeGreaterThanOrEqual(-1);
+  expect(box.y, debug).toBeGreaterThanOrEqual(-1);
+  expect(box.x + box.width, debug).toBeLessThanOrEqual(viewport.width + 1);
+}
+
+async function expectLocatorFitsInsideViewport(
+  appPage: Parameters<typeof waitForUiSettled>[0],
+  locator: Locator,
+): Promise<void> {
+  const [box, viewport] = await Promise.all([
+    locator.boundingBox(),
+    appPage.viewportSize(),
+  ]);
+
+  expect(box).not.toBeNull();
+  expect(viewport).not.toBeNull();
+  if (!box || !viewport) return;
+
+  const debug = JSON.stringify({ box, viewport });
+  expect(box.x, debug).toBeGreaterThanOrEqual(-1);
+  expect(box.y, debug).toBeGreaterThanOrEqual(-1);
+  expect(box.x + box.width, debug).toBeLessThanOrEqual(viewport.width + 1);
+  expect(box.y + box.height, debug).toBeLessThanOrEqual(viewport.height + 1);
+}
+
+async function expectLocatorCanScroll(
+  locator: Locator,
+  axis: "x" | "y",
+): Promise<void> {
+  const metrics = await locator.evaluate((element, scrollAxis) => {
+    if (!(element instanceof HTMLElement)) {
+      return null;
+    }
+
+    if (scrollAxis === "x") {
+      const initial = element.scrollLeft;
+      element.scrollLeft = element.scrollWidth;
+      return {
+        clientSize: element.clientWidth,
+        scrollSize: element.scrollWidth,
+        before: initial,
+        after: element.scrollLeft,
+      };
+    }
+
+    const initial = element.scrollTop;
+    element.scrollTop = element.scrollHeight;
+    return {
+      clientSize: element.clientHeight,
+      scrollSize: element.scrollHeight,
+      before: initial,
+      after: element.scrollTop,
+    };
+  }, axis);
+
+  expect(metrics).not.toBeNull();
+  expect(metrics?.scrollSize).toBeGreaterThan(metrics?.clientSize ?? 0);
+  expect(metrics?.after).toBeGreaterThan(metrics?.before ?? 0);
+}
+
+async function scrollLocatorIfOverflowing(
+  locator: Locator,
+  axis: "x" | "y",
+): Promise<void> {
+  const metrics = await locator.evaluate((element, scrollAxis) => {
+    if (!(element instanceof HTMLElement)) {
+      return null;
+    }
+
+    if (scrollAxis === "x") {
+      const canScroll = element.scrollWidth > element.clientWidth;
+      const initial = element.scrollLeft;
+      if (canScroll) {
+        element.scrollLeft = element.scrollWidth;
+      }
+      return {
+        canScroll,
+        before: initial,
+        after: element.scrollLeft,
+      };
+    }
+
+    const canScroll = element.scrollHeight > element.clientHeight;
+    const initial = element.scrollTop;
+    if (canScroll) {
+      element.scrollTop = element.scrollHeight;
+    }
+    return {
+      canScroll,
+      before: initial,
+      after: element.scrollTop,
+    };
+  }, axis);
+
+  expect(metrics).not.toBeNull();
+  if (metrics?.canScroll) {
+    expect(metrics.after).toBeGreaterThan(metrics.before);
+  }
 }
 
 async function expectSelectorsMeetHitTarget(
@@ -672,5 +818,104 @@ test.describe("Playback UI polish guardrails", () => {
     await expectSelectorsMeetHitTarget(appPage, [
       "button[aria-label='Bluetooth']",
     ]);
+  });
+
+  test("mode selection dialog stays reachable on short viewports", async ({
+    appPage,
+  }) => {
+    await appPage.setViewportSize({ width: 390, height: 320 });
+    await gotoLibrary(appPage);
+
+    const listToggle = appPage.getByTestId("song-library-view-list");
+    if ((await listToggle.count()) > 0) {
+      await listToggle.click();
+    }
+    await startBuiltInSongFromLibrary(appPage, "hot-cross-buns");
+
+    const dialog = appPage.getByRole("dialog", {
+      name: /How do you want to play\?|你想怎麼練習？/,
+    });
+    await expect(dialog).toBeVisible();
+    await expectLocatorStartsInsideViewport(appPage, dialog);
+
+    await expect(appPage.getByTestId("mode-select-wait")).toBeInViewport();
+    await expect(appPage.getByTestId("mode-select-free")).toBeInViewport();
+  });
+
+  test("settings dialog keeps header tabs and overflowing content reachable on short viewports", async ({
+    appPage,
+  }) => {
+    await appPage.setViewportSize({ width: 390, height: 320 });
+    await appPage
+      .getByRole("button", { name: /^Settings$/ })
+      .first()
+      .click();
+
+    const panel = appPage.getByTestId("settings-panel");
+    await expect(panel).toBeVisible();
+    await expectLocatorFitsInsideViewport(appPage, panel);
+
+    await expect(appPage.getByTestId("settings-close")).toBeInViewport();
+    await expect(appPage.getByTestId("settings-tab-theme")).toBeInViewport();
+
+    await appPage.getByTestId("settings-mode-toggle").click();
+    await appPage.getByTestId("settings-tab-backup").click();
+
+    const content = panel.locator("> div").nth(2);
+    await expectLocatorCanScroll(content, "y");
+    await appPage.getByTestId("user-data-reset").scrollIntoViewIfNeeded();
+    await expect(appPage.getByTestId("user-data-reset")).toBeInViewport();
+    await expect(appPage.getByTestId("settings-close")).toBeInViewport();
+  });
+
+  test("playback drawer keeps setup controls reachable on short viewports", async ({
+    appPage,
+  }) => {
+    await appPage.setViewportSize({ width: 390, height: 320 });
+    await gotoLibrary(appPage);
+    await loadFirstBuiltInSong(appPage);
+    await openPlaybackDrawer(appPage);
+
+    const drawer = appPage.getByTestId("playback-settings-drawer");
+    await expect(drawer).toBeVisible();
+    await expectLocatorFitsInsideViewport(appPage, drawer);
+
+    const body = drawer.locator(".app-side-drawer-body");
+    await expect(appPage.getByTestId("display-mode-sheet")).toBeInViewport();
+
+    await scrollLocatorIfOverflowing(body, "y");
+    await appPage.getByTestId("open-editor").scrollIntoViewIfNeeded();
+    await expect(appPage.getByTestId("open-editor")).toBeInViewport();
+    await expect(appPage.getByTestId("settings-trigger")).toBeInViewport();
+  });
+
+  test("piano roll editor keeps its canvas scrollable on narrow viewports", async ({
+    appPage,
+  }) => {
+    await appPage.setViewportSize({ width: 390, height: 520 });
+    await gotoLibrary(appPage);
+    await loadFirstBuiltInSong(appPage);
+    await openPlaybackDrawer(appPage);
+    await appPage.getByTestId("open-editor").scrollIntoViewIfNeeded();
+    await appPage.getByTestId("open-editor").click();
+
+    const editor = appPage.getByTestId("piano-roll-editor");
+    const scrollRegion = appPage.getByTestId("piano-roll-scroll");
+    const grid = appPage.getByTestId("piano-roll-grid");
+    await expect(editor).toBeVisible();
+    await expectLocatorFitsInsideViewport(appPage, editor);
+    await expect(scrollRegion).toBeVisible();
+    await expect(grid).toBeVisible();
+
+    const scrollBox = await scrollRegion.boundingBox();
+    expect(scrollBox).not.toBeNull();
+    if (scrollBox) {
+      expect(scrollBox.width).toBeGreaterThan(180);
+      expect(scrollBox.height).toBeGreaterThanOrEqual(160);
+    }
+
+    await expectLocatorCanScroll(scrollRegion, "x");
+    await expectLocatorCanScroll(scrollRegion, "y");
+    await expect(appPage.getByTestId("close-editor")).toBeInViewport();
   });
 });

@@ -42,18 +42,17 @@ export function ModeSelectionModal({
 }: ModeSelectionModalProps): React.JSX.Element {
   const { t } = useTranslation();
   const dialogRef = useRef<HTMLDivElement>(null);
-  const firstOptionRef = useRef<HTMLButtonElement>(null);
   useDialogFocus({
     active: true,
     containerRef: dialogRef,
-    initialFocusRef: firstOptionRef,
+    initialFocusRef: dialogRef,
   });
 
   return (
-    <div className="fixed inset-0 z-[200] flex items-center justify-center modal-backdrop-cinematic">
+    <div className="fixed inset-0 z-[200] flex items-start justify-center overflow-y-auto overscroll-contain p-4 modal-backdrop-cinematic">
       <div
         ref={dialogRef}
-        className="w-[92vw] max-w-[560px] rounded-2xl shadow-2xl modal-card-cinematic p-5 sm:p-6"
+        className="max-h-[calc(100vh-2rem)] w-full max-w-[560px] overflow-y-auto rounded-2xl shadow-2xl modal-card-cinematic p-4 sm:w-[92vw] sm:p-6"
         style={{
           background:
             "color-mix(in srgb, var(--color-surface) 90%, transparent)",
@@ -82,13 +81,12 @@ export function ModeSelectionModal({
         </p>
 
         {/* Mode cards */}
-        <div className="grid gap-3 sm:grid-cols-2">
+        <div className="grid grid-cols-2 gap-3">
           {MODE_OPTIONS.map((opt, idx) => (
             <button
               key={opt.mode}
-              ref={idx === 0 ? firstOptionRef : undefined}
               onClick={() => onSelect(opt.mode)}
-              className="card-hover animate-page-enter flex flex-col items-center gap-3 p-4 rounded-xl cursor-pointer transition-all min-h-[170px]"
+              className="card-hover animate-page-enter flex flex-col items-center gap-2 rounded-xl cursor-pointer transition-all min-h-[132px] p-3 sm:min-h-[170px] sm:gap-3 sm:p-4"
               style={{
                 background:
                   "color-mix(in srgb, var(--color-surface-alt) 80%, var(--color-surface))",
