@@ -137,6 +137,29 @@ describe("diagnoseParsedSong", () => {
     );
   });
 
+  test("uses the song tempo when checking quantized note starts", () => {
+    const diagnostics = diagnoseParsedSong(
+      song({
+        tempos: [{ time: 0, bpm: 100 }],
+        tracks: [
+          track("Right Hand", [
+            note(0, 60),
+            note(0.6, 62),
+            note(1.2, 64),
+            note(1.8, 65),
+            note(2.4, 67),
+          ]),
+        ],
+      }),
+    );
+
+    expect(diagnostics).not.toContainEqual(
+      expect.objectContaining({
+        code: "loose-quantization",
+      }),
+    );
+  });
+
   test("warns when multi-track songs lack hand metadata", () => {
     const diagnostics = diagnoseParsedSong(
       song({

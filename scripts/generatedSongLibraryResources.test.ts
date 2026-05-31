@@ -3,6 +3,9 @@ import { Midi } from "@tonejs/midi";
 import { readFileSync } from "fs";
 import { dirname, join } from "path";
 import { fileURLToPath } from "url";
+import { parseMidiFile } from "@renderer/engines/midi/MidiFileParser";
+import type { ParsedSong } from "@renderer/engines/midi/types";
+import { buildMidiDiagnosticNotice } from "@renderer/features/midiDiagnostics/midiDiagnosticNotice";
 
 type SongMeta = {
   id: string;
@@ -76,6 +79,13 @@ function readMidi(song: SongMeta): Midi {
   return new Midi(readFileSync(join(resourcesDir, song.file)));
 }
 
+function readParsedSong(song: SongMeta): ParsedSong {
+  return parseMidiFile(
+    song.file,
+    Array.from(readFileSync(join(resourcesDir, song.file))),
+  );
+}
+
 function expectedTimeSignature(
   song: SongMeta,
 ): [numerator: number, denominator: number] | undefined {
@@ -103,6 +113,26 @@ function expectedKeySignature(
 }
 
 describe("generated built-in MIDI resources", () => {
+  it("keeps release built-ins free of visible MIDI diagnostic notices", () => {
+    const visibleNotices = manifest.flatMap((song) => {
+      const notice = buildMidiDiagnosticNotice(readParsedSong(song), {
+        hasTimeSignatureMetadata: expectedTimeSignature(song) !== undefined,
+      });
+      return notice
+        ? [
+            {
+              id: song.id,
+              title: notice.title,
+              codes: notice.codes,
+              details: notice.details,
+            },
+          ]
+        : [];
+    });
+
+    expect(visibleNotices).toEqual([]);
+  });
+
   it("carry matching key and time signature headers from songs.json tags", () => {
     const mismatches: string[] = [];
 

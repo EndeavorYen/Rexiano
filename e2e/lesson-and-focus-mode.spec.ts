@@ -25,6 +25,19 @@ test.describe("Lesson path and child focus mode", () => {
     ).toBeVisible();
   });
 
+  test("starter built-in songs open practice without MIDI quality warnings", async ({
+    appPage,
+  }) => {
+    await gotoLibrary(appPage);
+    await startBuiltInSongFromLibrary(appPage, "hot-cross-buns");
+    await choosePracticeMode(appPage, "wait");
+
+    await expect(appPage.getByTestId("playback-drawer-trigger")).toBeVisible({
+      timeout: 20_000,
+    });
+    await expect(appPage.getByTestId("midi-diagnostic-notice")).toHaveCount(0);
+  });
+
   test("child focus mode keeps essentials and guards active practice exits", async ({
     appPage,
   }) => {

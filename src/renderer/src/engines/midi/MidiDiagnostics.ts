@@ -64,14 +64,13 @@ export interface MidiAuthoringChecklist {
   items: MidiAuthoringChecklistItem[];
 }
 
-const DEFAULT_OPTIONS: Required<MidiDiagnosticOptions> = {
+const DEFAULT_OPTIONS = {
   maxPracticeTracks: 6,
-  quantizationGridSeconds: 0.125,
   maxQuantizationDriftSeconds: 0.015,
   maxOffGridNoteRatio: 0.35,
   maxChordSpreadSeconds: 0.05,
   chordClusterWindowSeconds: 0.1,
-};
+} satisfies Required<Omit<MidiDiagnosticOptions, "quantizationGridSeconds">>;
 
 const HAND_METADATA_PATTERN =
   /\b(right|left|r\.?h\.?|l\.?h\.?|treble|bass|右手|左手)\b/i;
@@ -89,15 +88,39 @@ function hasHandMetadata(song: ParsedSong): boolean {
   return song.tracks.some((track) => HAND_METADATA_PATTERN.test(track.name));
 }
 
+function defaultQuantizationGridSeconds(song: ParsedSong): number[] {
+  const firstTempo = song.tempos[0];
+  if (!firstTempo || firstTempo.bpm <= 0) return [0.125];
+
+  const secondsPerQuarter = 60 / firstTempo.bpm;
+  return [
+    secondsPerQuarter / 4,
+    secondsPerQuarter / 3,
+    secondsPerQuarter / 2,
+    secondsPerQuarter,
+  ];
+}
+
 function distanceToNearestGrid(time: number, gridSeconds: number): number {
   if (gridSeconds <= 0) return 0;
 
   return Math.abs(time - Math.round(time / gridSeconds) * gridSeconds);
 }
 
+function distanceToNearestGridCandidate(
+  time: number,
+  gridSecondsCandidates: readonly number[],
+): number {
+  return gridSecondsCandidates.reduce(
+    (minDistance, gridSeconds) =>
+      Math.min(minDistance, distanceToNearestGrid(time, gridSeconds)),
+    Number.POSITIVE_INFINITY,
+  );
+}
+
 function offGridNoteRatio(
   song: ParsedSong,
-  gridSeconds: number,
+  gridSecondsCandidates: readonly number[],
   maxDriftSeconds: number,
 ): number {
   let noteCount = 0;
@@ -106,7 +129,10 @@ function offGridNoteRatio(
   for (const track of song.tracks) {
     for (const note of track.notes) {
       noteCount += 1;
-      if (distanceToNearestGrid(note.time, gridSeconds) > maxDriftSeconds) {
+      if (
+        distanceToNearestGridCandidate(note.time, gridSecondsCandidates) >
+        maxDriftSeconds
+      ) {
         offGridCount += 1;
       }
     }
@@ -219,9 +245,13 @@ export function diagnoseParsedSong(
     });
   }
 
+  const quantizationGridSeconds =
+    options.quantizationGridSeconds !== undefined
+      ? [options.quantizationGridSeconds]
+      : defaultQuantizationGridSeconds(song);
   const offGridRatio = offGridNoteRatio(
     song,
-    opts.quantizationGridSeconds,
+    quantizationGridSeconds,
     opts.maxQuantizationDriftSeconds,
   );
   if (offGridRatio > opts.maxOffGridNoteRatio) {

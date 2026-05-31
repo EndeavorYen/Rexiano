@@ -13,6 +13,7 @@ import { join, dirname } from "path";
 import { fileURLToPath } from "url";
 import {
   addNotesFromBeats,
+  applyInferredHandTrackNames,
   createSongMetaFromDefinition,
   encodeMidiWithNotationHeaderMetadata,
   mergeGeneratedSongMetadata,
@@ -1243,6 +1244,7 @@ export function buildGeneratedSongArtifacts(
 ): GeneratedSongArtifacts {
   const generatedDrafts = songDefs.map((def) => {
     const midiObj = def.build();
+    applyInferredHandTrackNames(midiObj);
     const meta = createSongMetaFromDefinition(def, midiObj);
     return { def, midiObj, meta };
   });
@@ -1281,6 +1283,7 @@ function updateExistingOnlyMidiHeaders(
     }
 
     const midiObj = new Midi(readFileSync(filePath));
+    applyInferredHandTrackNames(midiObj);
     writeFileSync(
       filePath,
       Buffer.from(encodeMidiWithNotationHeaderMetadata(midiObj, song.tags)),
