@@ -361,6 +361,30 @@ test.describe("Playback UI polish guardrails", () => {
     ).toHaveCount(0);
   });
 
+  test("mode selection keeps the playback header in the viewport", async ({
+    appPage,
+  }) => {
+    await appPage.setViewportSize({ width: 1440, height: 900 });
+    await gotoLibrary(appPage);
+    await loadFirstBuiltInSong(appPage);
+    await waitForUiSettled(appPage);
+
+    const headerPanel = appPage.getByTestId("playback-header-panel");
+    const settingsButton = appPage.getByTestId("playback-drawer-trigger");
+
+    await expect(headerPanel).toBeInViewport();
+    await expect(settingsButton).toBeInViewport();
+
+    const viewport = appPage.viewportSize();
+    const headerBox = await headerPanel.boundingBox();
+    expect(viewport).not.toBeNull();
+    expect(headerBox).not.toBeNull();
+    if (!viewport || !headerBox) return;
+
+    expect(headerBox.y).toBeGreaterThanOrEqual(0);
+    expect(headerBox.y + headerBox.height).toBeLessThanOrEqual(viewport.height);
+  });
+
   test("transport uses volume ratio label and keeps volume slider visible", async ({
     appPage,
   }) => {

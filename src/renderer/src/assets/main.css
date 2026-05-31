@@ -60,11 +60,11 @@ body,
 #root {
   height: 100%;
   margin: 0;
+  overflow: hidden;
 }
 
 body {
   position: relative;
-  overflow: hidden;
   font-family: var(--font-body);
   color: var(--color-text);
   background:
@@ -112,6 +112,14 @@ textarea:focus-visible {
   position: relative;
   isolation: isolate;
   overflow-x: clip;
+}
+
+.app-root-shell {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
 }
 
 .app-shell-clipped {
