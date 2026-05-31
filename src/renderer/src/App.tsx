@@ -1215,6 +1215,9 @@ function App(): React.JSX.Element {
                   <section className="app-side-section flex items-center gap-2">
                     <button
                       onClick={() => {
+                        if (isNarrowViewport) {
+                          usePlaybackStore.getState().setPlaying(false);
+                        }
                         setShowPlaybackDrawer(false);
                         setShowEditor(true);
                       }}

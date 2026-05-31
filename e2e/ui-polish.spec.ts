@@ -999,4 +999,28 @@ test.describe("Playback UI polish guardrails", () => {
     );
     await expectLocatorCenterReceivesPointer(appPage.getByTestId("track-name"));
   });
+
+  test("piano roll editor pauses active mobile playback before hiding transport", async ({
+    appPage,
+  }) => {
+    await appPage.setViewportSize({ width: 390, height: 520 });
+    await gotoLibrary(appPage);
+    await loadFirstBuiltInSong(appPage);
+
+    const playButton = appPage.getByRole("button", {
+      name: /Play \(Space\)|播放/,
+    });
+    if ((await playButton.count()) > 0 && (await playButton.isVisible())) {
+      await playButton.click();
+    }
+    await expect(appPage.locator(".workspace-frame-live")).toBeVisible();
+
+    await openPlaybackDrawer(appPage);
+    await appPage.getByTestId("open-editor").scrollIntoViewIfNeeded();
+    await appPage.getByTestId("open-editor").click();
+
+    await expect(appPage.getByTestId("piano-roll-editor")).toBeVisible();
+    await expect(appPage.getByTestId("transport-strip")).toBeHidden();
+    await expect(appPage.locator(".workspace-frame-live")).toBeHidden();
+  });
 });
