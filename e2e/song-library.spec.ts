@@ -167,6 +167,27 @@ test.describe("Song library selection workflow", () => {
     });
   });
 
+  test("brings the selected-song preview CTA into view after selecting from a scrolled list", async ({
+    appPage,
+  }) => {
+    await appPage.setViewportSize({ width: 1440, height: 900 });
+    await resetLibraryPrefs(appPage);
+    await gotoLibrary(appPage);
+
+    const hotCrossBuns = appPage.getByTestId("song-select-hot-cross-buns");
+    await hotCrossBuns.scrollIntoViewIfNeeded();
+    await expect(hotCrossBuns).toBeInViewport();
+
+    await hotCrossBuns.click();
+
+    const previewPractice = appPage.getByTestId(
+      "song-selection-preview-practice",
+    );
+    await expect(previewPractice).toBeVisible();
+    await expect(previewPractice).toBeInViewport();
+    await expect(appPage.getByTestId("mode-select-wait")).toBeHidden();
+  });
+
   test("shows imported-song preview before starting practice", async ({
     appPage,
     electronApp,

@@ -1595,6 +1595,11 @@ function SongSelectionPreviewPanel({
   onToggleAudioPreview: (preview: SongSelectionPreviewModel) => void;
 }): React.JSX.Element {
   const { t } = useTranslation();
+  const sectionRef = useRef<HTMLElement | null>(null);
+  const previewKey =
+    preview.kind === "builtin"
+      ? `builtin:${preview.song.id}`
+      : `imported:${preview.importedSong.id}`;
   const grade =
     preview.grade !== undefined ? gradeLabelShort[preview.grade] : "--";
   const category = preview.category ? categoryLabels[preview.category] : "--";
@@ -1613,8 +1618,17 @@ function SongSelectionPreviewPanel({
         ? t("library.preview.audioPreviewStop")
         : t("library.preview.audioPreview");
 
+  useEffect(() => {
+    sectionRef.current?.scrollIntoView({
+      block: "center",
+      inline: "nearest",
+      behavior: "auto",
+    });
+  }, [previewKey]);
+
   return (
     <section
+      ref={sectionRef}
       className="surface-elevated mb-5 p-4 animate-page-enter"
       data-testid="song-selection-preview"
       aria-label={t("library.preview.title")}
