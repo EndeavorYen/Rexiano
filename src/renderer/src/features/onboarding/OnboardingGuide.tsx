@@ -1,6 +1,7 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef } from "react";
 import { useTranslation } from "@renderer/i18n/useTranslation";
 import type { TranslationKey } from "@renderer/i18n/types";
+import { useDialogFocus } from "@renderer/hooks/useDialogFocus";
 
 const STORAGE_KEY = "rexiano-onboarding-completed";
 
@@ -40,6 +41,8 @@ const steps: OnboardingStep[] = [
  */
 export function OnboardingGuide(): React.JSX.Element {
   const { t } = useTranslation();
+  const dialogRef = useRef<HTMLDivElement>(null);
+  const nextButtonRef = useRef<HTMLButtonElement>(null);
   const [visible, setVisible] = useState(() => {
     try {
       return !localStorage.getItem(STORAGE_KEY);
@@ -71,6 +74,13 @@ export function OnboardingGuide(): React.JSX.Element {
     markComplete();
   }, [markComplete]);
 
+  useDialogFocus({
+    active: visible,
+    containerRef: dialogRef,
+    initialFocusRef: nextButtonRef,
+    onDismiss: handleSkip,
+  });
+
   if (!visible) return <></>;
 
   const step = steps[currentStep];
@@ -82,13 +92,16 @@ export function OnboardingGuide(): React.JSX.Element {
       data-testid="onboarding-overlay"
     >
       <div
+        ref={dialogRef}
         className="w-[min(380px,calc(100vw-32px))] rounded-2xl shadow-2xl onboarding-card"
         style={{
           background: "var(--color-surface)",
           border: "1px solid var(--color-border)",
         }}
         role="dialog"
+        aria-modal="true"
         aria-label={t("onboarding.dialogLabel")}
+        tabIndex={-1}
         data-testid="onboarding-card"
       >
         {/* Step indicator dots */}
@@ -151,6 +164,7 @@ export function OnboardingGuide(): React.JSX.Element {
             {t("onboarding.skip")}
           </button>
           <button
+            ref={nextButtonRef}
             onClick={handleNext}
             className="px-5 py-2 text-sm font-display font-bold rounded-xl cursor-pointer transition-transform hover:scale-105 active:scale-95"
             style={{
