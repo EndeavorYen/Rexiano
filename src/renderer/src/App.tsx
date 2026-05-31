@@ -878,6 +878,7 @@ function App(): React.JSX.Element {
   const viewportHeight = viewportSize.height;
   const isNarrowViewport = viewportSize.width < 640;
   const compactPlaybackChrome = isSplitMode || isNarrowViewport;
+  const showTransportBar = !(showEditor && isNarrowViewport);
   const splitFocus = isSplitMode ? splitFocusPanel : "sheet";
   const keyboardHeight = isSplitMode ? 84 : isNarrowViewport ? 72 : 100;
   const reservedChromeHeight =
@@ -1334,7 +1335,7 @@ function App(): React.JSX.Element {
           )}
 
           {/* Transport bar */}
-          <TransportBar compact={compactPlaybackChrome} />
+          {showTransportBar && <TransportBar compact={compactPlaybackChrome} />}
 
           {/* Practice toolbar */}
           {!showEditor && <PracticeToolbar compact={compactPlaybackChrome} />}

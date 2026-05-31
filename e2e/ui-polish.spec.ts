@@ -88,6 +88,44 @@ async function expectLocatorFitsInsideViewport(
   expect(box.y + box.height, debug).toBeLessThanOrEqual(viewport.height + 1);
 }
 
+async function expectLocatorCenterReceivesPointer(
+  locator: Locator,
+): Promise<void> {
+  const issue = await locator.evaluate((element) => {
+    const rect = element.getBoundingClientRect();
+    const center = {
+      x: rect.left + rect.width / 2,
+      y: rect.top + rect.height / 2,
+    };
+    const top = document.elementFromPoint(center.x, center.y);
+    const hitTarget = top === element || (top ? element.contains(top) : false);
+
+    if (hitTarget) {
+      return null;
+    }
+
+    return {
+      targetTestId: element.getAttribute("data-testid"),
+      targetRect: {
+        x: Math.round(rect.x),
+        y: Math.round(rect.y),
+        width: Math.round(rect.width),
+        height: Math.round(rect.height),
+        bottom: Math.round(rect.bottom),
+      },
+      center: {
+        x: Math.round(center.x),
+        y: Math.round(center.y),
+      },
+      topTestId:
+        top?.closest("[data-testid]")?.getAttribute("data-testid") ?? null,
+      topTag: top?.tagName ?? null,
+    };
+  });
+
+  expect(issue).toBeNull();
+}
+
 async function expectLocatorCanScroll(
   locator: Locator,
   axis: "x" | "y",
@@ -941,5 +979,24 @@ test.describe("Playback UI polish guardrails", () => {
     await expectLocatorCanScroll(scrollRegion, "x");
     await expectLocatorCanScroll(scrollRegion, "y");
     await expect(appPage.getByTestId("close-editor")).toBeInViewport();
+  });
+
+  test("piano roll editor keeps mobile inspector controls clear of transport", async ({
+    appPage,
+  }) => {
+    await appPage.setViewportSize({ width: 390, height: 520 });
+    await gotoLibrary(appPage);
+    await loadFirstBuiltInSong(appPage);
+    await openPlaybackDrawer(appPage);
+    await appPage.getByTestId("open-editor").scrollIntoViewIfNeeded();
+    await appPage.getByTestId("open-editor").click();
+
+    await expect(appPage.getByTestId("piano-roll-editor")).toBeVisible();
+    await expect(appPage.getByTestId("transport-strip")).toBeHidden();
+    await expect(appPage.getByTestId("track-select")).toHaveCount(1);
+    await expectLocatorCenterReceivesPointer(
+      appPage.getByTestId("track-select"),
+    );
+    await expectLocatorCenterReceivesPointer(appPage.getByTestId("track-name"));
   });
 });
