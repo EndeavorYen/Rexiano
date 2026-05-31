@@ -6,14 +6,14 @@ const readRepoFile = (path: string): string =>
   readFileSync(resolve(process.cwd(), path), "utf-8");
 
 describe("release workflow", () => {
-  test("pins release-please to an available action major", () => {
+  test("pins release-please to the Node 24 action major", () => {
     const workflow = readRepoFile(".github/workflows/release-please.yml");
 
-    expect(workflow).toContain("uses: googleapis/release-please-action@v4");
+    expect(workflow).toContain("uses: googleapis/release-please-action@v5");
     expect(workflow).not.toContain(
       "uses: google-github-actions/release-please-action",
     );
-    expect(workflow).not.toContain("uses: googleapis/release-please-action@v5");
+    expect(workflow).not.toContain("uses: googleapis/release-please-action@v4");
   });
 
   test("documents conventional squash subjects for release notes", () => {
