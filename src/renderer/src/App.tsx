@@ -121,6 +121,7 @@ function App(): React.JSX.Element {
   const view: AppRoute = resolveRoute(routeIntent, !!song);
   const [showPlaybackDrawer, setShowPlaybackDrawer] = useState(false);
   const [showEditor, setShowEditor] = useState(false);
+  const appShellRef = useRef<HTMLDivElement>(null);
   const playbackDrawerRef = useRef<HTMLElement>(null);
   const playbackDrawerTriggerRef = useRef<HTMLButtonElement>(null);
   const playbackDrawerCloseRef = useRef<HTMLButtonElement>(null);
@@ -199,6 +200,28 @@ function App(): React.JSX.Element {
     onChooseSongRoute: () => applyRoute("menu"),
   });
   // ─── End mode/celebration/stats flow ──────────────────
+
+  const resetAppViewportScroll = useCallback((): void => {
+    if (typeof window === "undefined" || typeof document === "undefined") {
+      return;
+    }
+    appShellRef.current?.scrollTo({ top: 0, left: 0, behavior: "auto" });
+    document.scrollingElement?.scrollTo({ top: 0, left: 0, behavior: "auto" });
+    document.documentElement.scrollTop = 0;
+    document.body.scrollTop = 0;
+    window.scrollTo(0, 0);
+  }, []);
+
+  useEffect(() => {
+    if (view !== "playback" || !song || showModeModal) return;
+    resetAppViewportScroll();
+    const frameId = window.requestAnimationFrame(resetAppViewportScroll);
+    const timerId = window.setTimeout(resetAppViewportScroll, 180);
+    return () => {
+      window.cancelAnimationFrame(frameId);
+      window.clearTimeout(timerId);
+    };
+  }, [resetAppViewportScroll, showModeModal, song, view]);
 
   // ─── Phase 6.5 Sprint 5: Insights Panel ──────────────
   const [showInsights, setShowInsights] = useState(false);
@@ -931,7 +954,8 @@ function App(): React.JSX.Element {
 
   return (
     <div
-      className="app-shell flex h-screen flex-col"
+      ref={appShellRef}
+      className="app-root-shell app-shell flex h-screen flex-col"
       style={{ color: "var(--color-text)" }}
       onDragEnter={handleDragEnter}
       onDragLeave={handleDragLeave}
