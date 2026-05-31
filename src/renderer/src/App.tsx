@@ -73,6 +73,7 @@ import {
 } from "./features/routing/appRoute";
 import { useMidiImportActions } from "./features/fileImport/useMidiImportActions";
 import { buildMidiDiagnosticNotice } from "./features/midiDiagnostics/midiDiagnosticNotice";
+import { OnboardingGuide } from "./features/onboarding/OnboardingGuide";
 import { shouldExposeE2eFixtures } from "./e2eFixtureAccess";
 
 const HEADER_ESTIMATED_HEIGHT = 112;
@@ -938,6 +939,7 @@ function App(): React.JSX.Element {
       onDrop={handleDrop}
     >
       {showSceneCurtain && <div className="scene-curtain" />}
+      <OnboardingGuide />
 
       {/* Drag-and-drop overlay */}
       {isDragging && (

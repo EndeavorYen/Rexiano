@@ -31,6 +31,22 @@ export const en: TranslationMap = {
   "app.startPractice": "Start Practicing",
   "app.openSettings": "Settings",
   "app.menuGreeting": "What shall we play today?",
+  "onboarding.dialogLabel": "Welcome guide",
+  "onboarding.step.start.title": "Start Practicing",
+  "onboarding.step.start.description":
+    "Use Start Practicing to open the song library and pick a built-in song or import your own MIDI file.",
+  "onboarding.step.choose.title": "Choose a Song",
+  "onboarding.step.choose.description":
+    "Preview a song, then press Practice when you are ready to play.",
+  "onboarding.step.practice.title": "Choose How to Practice",
+  "onboarding.step.practice.description":
+    'Pick "Watch" to just listen, "Wait" so it pauses for you, or "Free" to play along freely.',
+  "onboarding.step.keyboard.title": "Connect Your Keyboard",
+  "onboarding.step.keyboard.description":
+    "Plug in a MIDI keyboard to play along for real. Or just watch and learn first!",
+  "onboarding.skip": "Skip",
+  "onboarding.next": "Next",
+  "onboarding.getStarted": "Get Started",
 
   // ── Song Library ───────────────────────────────────────────────
   "library.title": "Rexiano",

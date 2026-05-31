@@ -28,6 +28,18 @@ export interface TranslationMap {
   "app.startPractice": string;
   "app.openSettings": string;
   "app.menuGreeting": string;
+  "onboarding.dialogLabel": string;
+  "onboarding.step.start.title": string;
+  "onboarding.step.start.description": string;
+  "onboarding.step.choose.title": string;
+  "onboarding.step.choose.description": string;
+  "onboarding.step.practice.title": string;
+  "onboarding.step.practice.description": string;
+  "onboarding.step.keyboard.title": string;
+  "onboarding.step.keyboard.description": string;
+  "onboarding.skip": string;
+  "onboarding.next": string;
+  "onboarding.getStarted": string;
 
   // ── Song Library ───────────────────────────────────────────────
   "library.title": string;

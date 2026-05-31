@@ -1,36 +1,34 @@
 import { useState, useCallback } from "react";
+import { useTranslation } from "@renderer/i18n/useTranslation";
+import type { TranslationKey } from "@renderer/i18n/types";
 
 const STORAGE_KEY = "rexiano-onboarding-completed";
 
 interface OnboardingStep {
-  title: string;
-  description: string;
+  titleKey: TranslationKey;
+  descriptionKey: TranslationKey;
   icon: string;
 }
 
 const steps: OnboardingStep[] = [
   {
-    title: "Open a Song",
-    description:
-      'Click the "Open MIDI File" button to load a song you want to practice.',
+    titleKey: "onboarding.step.start.title",
+    descriptionKey: "onboarding.step.start.description",
     icon: "\uD83C\uDFB5",
   },
   {
-    title: "Play It Back",
-    description:
-      "Press Space to play and watch the notes fall down. Try to follow along!",
+    titleKey: "onboarding.step.choose.title",
+    descriptionKey: "onboarding.step.choose.description",
     icon: "\u25B6\uFE0F",
   },
   {
-    title: "Choose How to Practice",
-    description:
-      'Pick "Watch" to just listen, "Wait" so it pauses for you, or "Free" to play along freely.',
+    titleKey: "onboarding.step.practice.title",
+    descriptionKey: "onboarding.step.practice.description",
     icon: "\uD83C\uDFAF",
   },
   {
-    title: "Connect Your Keyboard",
-    description:
-      "Plug in a MIDI keyboard to play along for real. Or just watch and learn first!",
+    titleKey: "onboarding.step.keyboard.title",
+    descriptionKey: "onboarding.step.keyboard.description",
     icon: "\uD83C\uDFB9",
   },
 ];
@@ -41,6 +39,7 @@ const steps: OnboardingStep[] = [
  * only shows once.
  */
 export function OnboardingGuide(): React.JSX.Element {
+  const { t } = useTranslation();
   const [visible, setVisible] = useState(() => {
     try {
       return !localStorage.getItem(STORAGE_KEY);
@@ -83,13 +82,13 @@ export function OnboardingGuide(): React.JSX.Element {
       data-testid="onboarding-overlay"
     >
       <div
-        className="w-[380px] rounded-2xl shadow-2xl onboarding-card"
+        className="w-[min(380px,calc(100vw-32px))] rounded-2xl shadow-2xl onboarding-card"
         style={{
           background: "var(--color-surface)",
           border: "1px solid var(--color-border)",
         }}
         role="dialog"
-        aria-label="Welcome guide"
+        aria-label={t("onboarding.dialogLabel")}
         data-testid="onboarding-card"
       >
         {/* Step indicator dots */}
@@ -120,13 +119,13 @@ export function OnboardingGuide(): React.JSX.Element {
             className="text-xl font-display font-bold mb-2"
             style={{ color: "var(--color-text)" }}
           >
-            {step.title}
+            {t(step.titleKey)}
           </h2>
           <p
             className="text-sm font-body leading-relaxed"
             style={{ color: "var(--color-text-muted)" }}
           >
-            {step.description}
+            {t(step.descriptionKey)}
           </p>
         </div>
 
@@ -149,7 +148,7 @@ export function OnboardingGuide(): React.JSX.Element {
             }}
             data-testid="onboarding-skip"
           >
-            Skip
+            {t("onboarding.skip")}
           </button>
           <button
             onClick={handleNext}
@@ -160,7 +159,7 @@ export function OnboardingGuide(): React.JSX.Element {
             }}
             data-testid="onboarding-next"
           >
-            {isLast ? "Get Started" : "Next"}
+            {isLast ? t("onboarding.getStarted") : t("onboarding.next")}
           </button>
         </div>
       </div>
