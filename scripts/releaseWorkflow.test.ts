@@ -6,6 +6,17 @@ const readRepoFile = (path: string): string =>
   readFileSync(resolve(process.cwd(), path), "utf-8");
 
 describe("release workflow", () => {
+  test("pins release-please to an available action major", () => {
+    const workflow = readRepoFile(".github/workflows/release-please.yml");
+
+    expect(workflow).toContain(
+      "uses: google-github-actions/release-please-action@v4",
+    );
+    expect(workflow).not.toContain(
+      "uses: google-github-actions/release-please-action@v5",
+    );
+  });
+
   test("runs Linux packaging through pnpm so local binaries resolve", () => {
     const workflow = readRepoFile(".github/workflows/release.yml");
 
