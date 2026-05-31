@@ -9,12 +9,20 @@ describe("release workflow", () => {
   test("pins release-please to an available action major", () => {
     const workflow = readRepoFile(".github/workflows/release-please.yml");
 
-    expect(workflow).toContain(
-      "uses: google-github-actions/release-please-action@v4",
-    );
+    expect(workflow).toContain("uses: googleapis/release-please-action@v4");
     expect(workflow).not.toContain(
-      "uses: google-github-actions/release-please-action@v5",
+      "uses: google-github-actions/release-please-action",
     );
+    expect(workflow).not.toContain("uses: googleapis/release-please-action@v5");
+  });
+
+  test("documents conventional squash subjects for release notes", () => {
+    const agentInstructions = readRepoFile("AGENTS.md");
+
+    expect(agentInstructions).toContain("Conventional Commit");
+    expect(agentInstructions).toContain("fix: ");
+    expect(agentInstructions).toContain("feat: ");
+    expect(agentInstructions).toContain("release-please");
   });
 
   test("runs Linux packaging through pnpm so local binaries resolve", () => {
