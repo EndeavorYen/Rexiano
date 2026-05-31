@@ -1308,15 +1308,17 @@ function App(): React.JSX.Element {
           <TransportBar compact={compactPlaybackChrome} />
 
           {/* Practice toolbar */}
-          <PracticeToolbar compact={compactPlaybackChrome} />
+          {!showEditor && <PracticeToolbar compact={compactPlaybackChrome} />}
 
           {/* Piano keyboard */}
-          <PianoKeyboard
-            activeNotes={activeNotes}
-            midiActiveNotes={midiActiveNotes}
-            height={keyboardHeight}
-            compactLabels={compactKeyLabels}
-          />
+          {!showEditor && (
+            <PianoKeyboard
+              activeNotes={activeNotes}
+              midiActiveNotes={midiActiveNotes}
+              height={keyboardHeight}
+              compactLabels={compactKeyLabels}
+            />
+          )}
         </div>
       )}
 

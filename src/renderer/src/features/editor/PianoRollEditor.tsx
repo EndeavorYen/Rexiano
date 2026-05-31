@@ -414,9 +414,9 @@ export function PianoRollEditor({
         </div>
       )}
 
-      <div className="flex min-h-0 flex-1">
+      <div className="flex min-h-0 flex-1 flex-col md:flex-row">
         <div
-          className="relative z-[1] min-h-0 min-w-0 flex-1 overflow-auto"
+          className="relative z-[1] min-h-[160px] min-w-0 flex-1 overflow-auto md:min-h-0"
           data-testid="piano-roll-scroll"
         >
           <svg
@@ -498,7 +498,7 @@ export function PianoRollEditor({
             })}
           </svg>
         </div>
-        <div className="flex shrink-0">
+        <div className="flex max-h-36 shrink-0 overflow-auto md:max-h-none md:overflow-visible">
           <NoteInspector
             song={editableSong}
             selectedNoteIds={modeState.selectedNoteIds}
