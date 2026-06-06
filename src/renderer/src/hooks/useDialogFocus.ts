@@ -1,4 +1,4 @@
-import { useEffect, type RefObject } from "react";
+import { useEffect, useLayoutEffect, type RefObject } from "react";
 
 const FOCUSABLE_SELECTOR = [
   "a[href]",
@@ -37,7 +37,7 @@ export function useDialogFocus({
   returnFocusRef,
   onDismiss,
 }: UseDialogFocusOptions): void {
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (!active || typeof document === "undefined") return;
 
     const container = containerRef.current;
@@ -55,7 +55,12 @@ export function useDialogFocus({
       (target ?? container).focus({ preventScroll: true });
     };
 
-    const frameId = window.requestAnimationFrame(focusInitial);
+    focusInitial();
+    const frameId = window.requestAnimationFrame(() => {
+      if (!container.contains(document.activeElement)) {
+        focusInitial();
+      }
+    });
 
     const handleKeyDown = (event: KeyboardEvent): void => {
       if (event.key === "Escape" && onDismiss) {
@@ -104,4 +109,21 @@ export function useDialogFocus({
       }, 0);
     };
   }, [active, containerRef, initialFocusRef, onDismiss, returnFocusRef]);
+
+  useEffect(() => {
+    if (!active || typeof document === "undefined") return;
+
+    const container = containerRef.current;
+    if (!container) return;
+
+    const timeoutId = window.setTimeout(() => {
+      if (!container.contains(document.activeElement)) {
+        const target =
+          initialFocusRef?.current ?? getFocusableElements(container)[0];
+        (target ?? container).focus({ preventScroll: true });
+      }
+    }, 0);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [active, containerRef, initialFocusRef]);
 }

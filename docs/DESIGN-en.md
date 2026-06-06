@@ -59,7 +59,7 @@ Electron + React was chosen over Python (PyQt/Pygame) for these reasons:
 
 | Layer            | Technology                                    | Purpose                                       |
 | ---------------- | --------------------------------------------- | --------------------------------------------- |
-| Desktop shell    | Electron 33                                   | Cross-platform window, system APIs, packaging |
+| Desktop shell    | Electron 39                                   | Cross-platform window, system APIs, packaging |
 | Build tooling    | electron-vite 5 + Vite 7                      | Fast HMR, module bundling                     |
 | UI framework     | React 19 + TypeScript 5.9                     | Component-based UI                            |
 | Styling          | Tailwind CSS 4 + CSS Custom Properties        | Theme system                                  |

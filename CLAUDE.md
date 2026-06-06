@@ -31,7 +31,7 @@
 
 ## 技術堆疊速查
 
-- **框架**: Electron 33 + React 19 + TypeScript 5.9
+- **框架**: Electron 39 + React 19 + TypeScript 5.9
 - **建置**: electron-vite 5 + Vite 7 + Tailwind CSS 4
 - **渲染**: PixiJS 8（下落音符）、CSS（鍵盤 / UI）
 - **狀態**: Zustand 5（6 個 store，見下方列表）

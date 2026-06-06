@@ -194,7 +194,7 @@ build/                   # Electron-builder resources (icons, entitlements)
 
 | Layer     | Technology                                    | Purpose                                       |
 | --------- | --------------------------------------------- | --------------------------------------------- |
-| Desktop   | Electron 33                                   | Cross-platform shell, system APIs, packaging  |
+| Desktop   | Electron 39                                   | Cross-platform shell, system APIs, packaging  |
 | Build     | electron-vite 5 + Vite 7                      | Fast HMR, module bundling                     |
 | UI        | React 19 + TypeScript 5.9                     | Component-based interface                     |
 | Styling   | Tailwind CSS 4 + CSS Custom Properties        | Theme system                                  |

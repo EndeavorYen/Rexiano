@@ -57,7 +57,7 @@ Rexiano（Rex + Piano）是一套開源、跨平台的鋼琴練習應用，目�
 
 | 層級      | 技術                                          | 用途                                  |
 | --------- | --------------------------------------------- | ------------------------------------- |
-| 桌面框架  | Electron 33                                   | 跨平台視窗、系統 API、打包            |
+| 桌面框架  | Electron 39                                   | 跨平台視窗、系統 API、打包            |
 | 建置工具  | electron-vite 5 + Vite 7                      | 快速 HMR、模組打包                    |
 | UI 框架   | React 19 + TypeScript 5.9                     | 元件化 UI                             |
 | 樣式      | Tailwind CSS 4 + CSS Custom Properties        | 主題系統                              |
