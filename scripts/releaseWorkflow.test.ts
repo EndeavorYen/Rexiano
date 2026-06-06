@@ -28,7 +28,7 @@ describe("release workflow", () => {
       "RELEASE_TAG: ${{ steps.release.outputs.tag_name }}",
     );
     expect(workflow).toContain(
-      'gh workflow run release.yml --ref main --field tag="$RELEASE_TAG"',
+      'gh workflow run release.yml --repo "$GITHUB_REPOSITORY" --ref main --field tag="$RELEASE_TAG"',
     );
   });
 
