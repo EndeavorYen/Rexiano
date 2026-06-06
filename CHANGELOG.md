@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.2](https://github.com/EndeavorYen/Rexiano/compare/v1.1.1...v1.1.2) (2026-06-06)
+
+
+### Bug Fixes
+
+* clear dependency audit findings ([410ecaf](https://github.com/EndeavorYen/Rexiano/commit/410ecafccd75ada65b1d249b86523dd542422859))
+
 ## [1.1.1](https://github.com/EndeavorYen/Rexiano/compare/v1.1.0...v1.1.1) (2026-05-31)
 
 
