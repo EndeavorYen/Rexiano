@@ -64,6 +64,7 @@ A free, open-source piano practice app with falling notes, MIDI keyboard support
 **Release and Updates**
 
 - GitHub Releases provide Windows `.exe`, macOS `.dmg`, Linux `.AppImage`, Linux `.deb`, and `SHA256SUMS.txt`
+- Latest verified release: `v1.1.2`
 - Settings > About can check GitHub Releases for newer matching installers
 - Public builds are currently unsigned/not notarized; see [release-signing.md](docs/release-signing.md)
 

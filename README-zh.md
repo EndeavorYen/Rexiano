@@ -64,6 +64,7 @@
 **發佈與更新**
 
 - GitHub Releases 提供 Windows `.exe`、macOS `.dmg`、Linux `.AppImage`、Linux `.deb` 與 `SHA256SUMS.txt`
+- 最新已驗證版本：`v1.1.2`
 - 設定 > 關於 可檢查 GitHub Releases 上的新版本
 - 目前公開 build 尚未簽章/公證；細節見 [release-signing.md](docs/release-signing.md)
 
@@ -167,7 +168,7 @@ build/                   # Electron-builder 資源（圖示、權限）
 
 | 層級        | 技術                                          | 用途                          |
 | ----------- | --------------------------------------------- | ----------------------------- |
-| 桌面框架    | Electron 33                                   | 跨平台視窗、系統 API、打包    |
+| 桌面框架    | Electron 39                                   | 跨平台視窗、系統 API、打包    |
 | 建置工具    | electron-vite 5 + Vite 7                      | 快速 HMR、模組打包            |
 | UI 框架     | React 19 + TypeScript 5.9                     | 元件化介面                    |
 | 樣式        | Tailwind CSS 4 + CSS Custom Properties        | 主題系統                      |
@@ -192,7 +193,8 @@ build/                   # Electron-builder 資源（圖示、權限）
 | v0.4.1 | 兒童可用性增強                        | ✅ 完成                   |
 | v0.5.0 | 五線譜顯示                            | ✅ 完成                   |
 | v0.5.1 | 曲庫與練習入口優化                    | ✅ 完成                   |
-| v1.0.0 | 正式版（編輯器 + 發佈簽章）           | ✅ 功能完成（待正式發佈） |
+| v1.0.0 | 正式版（編輯器 + 發佈流程）           | ✅ 已發佈                 |
+| v1.1.2 | 安全預檢 + 發佈檔案                  | ✅ 已發佈                 |
 
 詳細任務清單請見 **[ROADMAP.md](docs/ROADMAP.md)**。
 

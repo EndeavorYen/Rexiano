@@ -1,6 +1,6 @@
 # Rexiano — 開發路線圖與追蹤清單
 
-> **最後更新**: 2026-05-31
+> **最後更新**: 2026-06-07
 >
 > 詳細設計請參考 [DESIGN.md](./DESIGN.md)
 
@@ -17,7 +17,10 @@
 | **v0.4.1** | 🎯 兒童可用版    | + Phase 6.5（可用性增強）✅                |
 | **v0.5.0** | 五線譜顯示       | + Phase 7 ✅                               |
 | **v0.5.1** | 練習入口優化     | + Phase 7.5 ✅                             |
-| **v1.0.0** | 正式發佈         | + Phase 8 ✅ + Phase 9 ✅；待正式 tag 發佈 |
+| **v1.0.0** | 正式發佈         | + Phase 8 ✅ + Phase 9 ✅                  |
+| **v1.1.0** | 發佈品質強化     | 使用者文件、簽章準備、發佈流程整理 ✅      |
+| **v1.1.1** | Release pipeline | 多平台 release assets 修復與驗證 ✅        |
+| **v1.1.2** | 安全預檢         | 依賴 audit 清零、Electron 39、發佈檔案 ✅   |
 
 ---
 
@@ -423,10 +426,10 @@
 
 > 可與 Phase 4~8 並行進行
 >
-> 建議在 Phase 6.5 完成後發佈 v0.4.1（首個可給 Rex 使用的版本）
+> GitHub Releases 已正式發布 v1.1.2，並附 Windows、macOS、Linux 安裝檔與 `SHA256SUMS.txt`。
 
 - [x] CI/CD 管線（GitHub Actions）
-  - [x] tag push 觸發多平台建置（release.yml）
+  - [x] tag / workflow_dispatch 觸發多平台建置（release.yml）
   - [x] Windows: .exe（NSIS setup）
   - [x] macOS: .dmg
   - [x] Linux: .AppImage / .deb
@@ -502,6 +505,6 @@ Phase 1 ✅ -→ Phase 2 ✅ -→ Phase 3 ✅
    (兒童可用版)   |
           |      |
           ▼      ▼
-        v1.0.0 功能完成
-        （待正式發佈）
+        v1.1.2 已正式發布
+        （assets + checksum 完成）
 ```
