@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.3](https://github.com/EndeavorYen/Rexiano/compare/v1.1.2...v1.1.3) (2026-06-13)
+
+
+### Bug Fixes
+
+* clear esbuild audit findings ([9df828c](https://github.com/EndeavorYen/Rexiano/commit/9df828c119ce732b5a2a6db00e3edae86a9c777e))
+
 ## [1.1.2](https://github.com/EndeavorYen/Rexiano/compare/v1.1.1...v1.1.2) (2026-06-06)
 
 
