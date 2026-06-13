@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.2.0](https://github.com/EndeavorYen/Rexiano/compare/v1.1.3...v1.2.0) (2026-06-13)
+
+
+### Features
+
+* add Windows portable release build ([deed8fc](https://github.com/EndeavorYen/Rexiano/commit/deed8fcb498aa4535be1e5663083b608be69bcdc))
+
 ## [1.1.3](https://github.com/EndeavorYen/Rexiano/compare/v1.1.2...v1.1.3) (2026-06-13)
 
 
