@@ -21,6 +21,7 @@
 | **v1.1.0** | 發佈品質強化     | 使用者文件、簽章準備、發佈流程整理 ✅      |
 | **v1.1.1** | Release pipeline | 多平台 release assets 修復與驗證 ✅        |
 | **v1.1.2** | 安全預檢         | 依賴 audit 清零、Electron 39、發佈檔案 ✅   |
+| **v1.1.3** | Audit 修補       | esbuild 0.28.1 override、發佈檔案 ✅       |
 
 ---
 
@@ -426,7 +427,7 @@
 
 > 可與 Phase 4~8 並行進行
 >
-> GitHub Releases 已正式發布 v1.1.2，並附 Windows、macOS、Linux 安裝檔與 `SHA256SUMS.txt`。
+> GitHub Releases 已正式發布 v1.1.3，並附 Windows、macOS、Linux 安裝檔與 `SHA256SUMS.txt`。
 
 - [x] CI/CD 管線（GitHub Actions）
   - [x] tag / workflow_dispatch 觸發多平台建置（release.yml）
@@ -505,6 +506,6 @@ Phase 1 ✅ -→ Phase 2 ✅ -→ Phase 3 ✅
    (兒童可用版)   |
           |      |
           ▼      ▼
-        v1.1.2 已正式發布
+        v1.1.3 已正式發布
         （assets + checksum 完成）
 ```

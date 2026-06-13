@@ -64,7 +64,7 @@
 **發佈與更新**
 
 - GitHub Releases 提供 Windows `.exe`、macOS `.dmg`、Linux `.AppImage`、Linux `.deb` 與 `SHA256SUMS.txt`
-- 最新已驗證版本：`v1.1.2`
+- 最新已驗證版本：`v1.1.3`
 - 設定 > 關於 可檢查 GitHub Releases 上的新版本
 - 目前公開 build 尚未簽章/公證；細節見 [release-signing.md](docs/release-signing.md)
 
@@ -195,6 +195,7 @@ build/                   # Electron-builder 資源（圖示、權限）
 | v0.5.1 | 曲庫與練習入口優化                    | ✅ 完成                   |
 | v1.0.0 | 正式版（編輯器 + 發佈流程）           | ✅ 已發佈                 |
 | v1.1.2 | 安全預檢 + 發佈檔案                  | ✅ 已發佈                 |
+| v1.1.3 | esbuild audit 修補 + 發佈檔案         | ✅ 已發佈                 |
 
 詳細任務清單請見 **[ROADMAP.md](docs/ROADMAP.md)**。
 
