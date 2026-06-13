@@ -37,21 +37,24 @@
 ### Steps
 
 1. Go to the [GitHub Releases page](https://github.com/EndeavorYen/Rexiano/releases) and download the latest version
-2. Download `rexiano-x.x.x-setup.exe` to install, or `rexiano-x.x.x-portable.exe` to run without installation
-3. For setup, double-click the installer. For portable, run the `.exe` directly.
+2. Download `rexiano-x.x.x-setup.exe` to install, or `rexiano-x.x.x-win-x64.zip` to run without installation
+3. For setup, double-click the installer. For portable zip, extract it and run `Rexiano.exe`.
 
 ### Setup vs. Portable
 
-| Build    | Use when                       | Behavior                                 |
-| -------- | ------------------------------ | ---------------------------------------- |
-| setup    | You want Rexiano installed     | Adds desktop and Start Menu shortcuts    |
-| portable | You want to try without setup  | Runs directly without creating shortcuts |
+| Build        | Use when                                  | Behavior                                 |
+| ------------ | ----------------------------------------- | ---------------------------------------- |
+| setup        | You want Rexiano installed                | Adds desktop and Start Menu shortcuts    |
+| portable zip | You want to try without setup             | Runs after extraction                    |
+| portable exe | You need one executable and browser allows it | Runs directly without creating shortcuts |
+
+If your browser marks direct `.exe` downloads as problem files, download `rexiano-x.x.x-win-x64.zip`. This is not a substitute for code signing; it only avoids the extra browser friction around unknown `.exe` downloads.
 
 ### Handling the Windows SmartScreen Warning
 
 On first launch of either Windows build, Windows Defender SmartScreen may show a "Windows protected your PC" warning. **This does not mean Rexiano is malware.**
 
-Why this happens: Rexiano currently does not have an EV Code Signing Certificate for Windows. SmartScreen flags all unsigned applications. Rexiano is fully open-source — you can review every line of source code on [GitHub](https://github.com/EndeavorYen/Rexiano).
+Why this happens: Rexiano currently does not have a Windows code-signing certificate. Browsers and SmartScreen warn on unsigned apps with limited download reputation. Rexiano is fully open-source — you can review every line of source code on [GitHub](https://github.com/EndeavorYen/Rexiano).
 
 How to proceed:
 

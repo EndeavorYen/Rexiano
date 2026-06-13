@@ -22,6 +22,8 @@
 | **v1.1.1** | Release pipeline | 多平台 release assets 修復與驗證 ✅        |
 | **v1.1.2** | 安全預檢         | 依賴 audit 清零、Electron 39、發佈檔案 ✅   |
 | **v1.1.3** | Audit 修補       | esbuild 0.28.1 override、發佈檔案 ✅       |
+| **v1.2.0** | Windows portable | Windows 免安裝 `.exe` 發佈檔 ✅            |
+| **v1.2.1** | 發佈資源修補     | 內建曲庫/SoundFont packaged 路徑、portable `.zip` |
 
 ---
 

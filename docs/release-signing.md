@@ -16,6 +16,9 @@ Apple credential set.
   `WINDOWS_CSC_KEY_PASSWORD` secrets. If either value is missing, the job clears
   signing certificate variables, sets `CSC_IDENTITY_AUTO_DISCOVERY=false`, and
   produces an unsigned installer.
+- Windows releases also publish a portable `.zip` so browsers that block direct
+  unknown `.exe` downloads have a lower-friction path. This is only a download
+  experience mitigation; it does not replace Authenticode signing.
 - macOS release builds read optional certificate and Apple notarization secrets.
   If either the certificate or notarization credentials are incomplete, the job
   clears certificate variables and runs

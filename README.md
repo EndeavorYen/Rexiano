@@ -6,7 +6,7 @@ A free, open-source piano practice app with falling notes, MIDI keyboard support
 
 [繁體中文](README-zh.md) | **English**
 
-> **TL;DR** -- Rexiano runs offline on Windows, macOS, and Linux after install, or from the Windows portable build. Load a built-in or imported MIDI song, then practice with falling notes, sheet music, Wait mode, loops, scoring, and USB/Bluetooth MIDI keyboard feedback.
+> **TL;DR** -- Rexiano runs offline on Windows, macOS, and Linux after install, or from the Windows portable zip. Load a built-in or imported MIDI song, then practice with falling notes, sheet music, Wait mode, loops, scoring, and USB/Bluetooth MIDI keyboard feedback.
 
 <p align="center">
   <img src="docs/assets/screenshots/rexiano-library.png" alt="Rexiano song library" width="32%">
@@ -63,8 +63,8 @@ A free, open-source piano practice app with falling notes, MIDI keyboard support
 
 **Release and Updates**
 
-- GitHub Releases provide Windows setup/portable `.exe`, macOS `.dmg`, Linux `.AppImage`, Linux `.deb`, and `SHA256SUMS.txt`
-- Latest verified release: `v1.1.3`
+- GitHub Releases provide Windows setup `.exe`, Windows portable `.zip`/`.exe`, macOS `.dmg`, Linux `.AppImage`, Linux `.deb`, and `SHA256SUMS.txt`
+- Latest verified release: `v1.2.1`
 - Settings > About can check GitHub Releases for newer matching installers
 - Public builds are currently unsigned/not notarized; see [release-signing.md](docs/release-signing.md)
 
@@ -76,9 +76,9 @@ Download the latest release for your platform from the [Releases](https://github
 
 ### Windows
 
-1. Download `rexiano-x.x.x-setup.exe` to install, or `rexiano-x.x.x-portable.exe` to run without installation.
-2. For the installer, run it and follow the prompts. For the portable build, run the `.exe` directly.
-3. The installer adds desktop/Start Menu shortcuts; the portable build does not.
+1. Download `rexiano-x.x.x-setup.exe` to install, or `rexiano-x.x.x-win-x64.zip` to run without installation.
+2. For the installer, run it and follow the prompts. For the portable zip, extract it and run `Rexiano.exe`.
+3. If your browser blocks direct `.exe` downloads, use the `.zip` portable build. The installer adds shortcuts; portable builds do not.
 
 > **Windows SmartScreen warning**: Because the app is not code-signed, Windows may show a "Windows protected your PC" dialog. Click **More info**, then **Run anyway**. This is safe -- the app is open source and you can audit every line of code in this repository.
 
@@ -150,7 +150,7 @@ pnpm dev:sandbox
 | ---------------------- | ------------------------------------------------ |
 | `pnpm dev`             | Start Electron in development mode with HMR      |
 | `pnpm build`           | Typecheck + production build                     |
-| `pnpm build:win`       | Build Windows installer (.exe)                   |
+| `pnpm build:win`       | Build Windows artifacts (.exe, .zip)             |
 | `pnpm build:mac`       | Build macOS disk image (.dmg)                    |
 | `pnpm build:linux`     | Build Linux packages (.AppImage, .deb)           |
 | `pnpm test`            | Run all tests with Vitest                        |

@@ -60,6 +60,7 @@ jobs:
           name: release-windows
           path: |
             dist/*.exe
+            dist/*.zip
           if-no-files-found: error
           retention-days: 5
 
@@ -197,7 +198,7 @@ jobs:
       - name: Generate checksums
         run: |
           cd artifacts
-          sha256sum *.exe *.dmg *.AppImage *.deb > SHA256SUMS.txt
+          sha256sum *.exe *.zip *.dmg *.AppImage *.deb > SHA256SUMS.txt
           echo "## SHA256 Checksums" > checksums.md
           echo '```' >> checksums.md
           cat SHA256SUMS.txt >> checksums.md

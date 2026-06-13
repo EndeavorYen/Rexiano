@@ -7,6 +7,8 @@ import {
 
 const mockUserDataPath = "/mock/userData";
 const mockAppPath = "/mock/app";
+const mockResourcesPath = "/mock/resources";
+let mockIsPackaged = false;
 let mockFileContents: Record<string, Buffer> = {};
 
 vi.mock("electron", () => ({
@@ -21,7 +23,9 @@ vi.mock("electron", () => ({
     getFocusedWindow: vi.fn(() => ({})),
   },
   app: {
-    isPackaged: false,
+    get isPackaged() {
+      return mockIsPackaged;
+    },
     getAppPath: vi.fn(() => mockAppPath),
     getPath: vi.fn(() => mockUserDataPath),
   },
@@ -55,9 +59,14 @@ describe("fileHandlers", () => {
   let handlers: Record<string, (...args: any[]) => Promise<any>>;
 
   beforeEach(() => {
+    mockIsPackaged = false;
     mockFileContents = {};
     clearApprovedMidiPathAccessForTests();
     vi.clearAllMocks();
+    Object.defineProperty(process, "resourcesPath", {
+      configurable: true,
+      value: mockResourcesPath,
+    });
 
     handlers = {};
     vi.mocked(ipcMain.handle).mockImplementation(
@@ -132,5 +141,56 @@ describe("fileHandlers", () => {
     ).resolves.toEqual({ ok: false, reason: "cancelled" });
 
     expect(writeFile).not.toHaveBeenCalled();
+  });
+
+  test("LIST_BUILTIN_SONGS reads packaged songs from app.asar.unpacked resources", async () => {
+    mockIsPackaged = true;
+    const manifestPath =
+      "/mock/resources/app.asar.unpacked/resources/midi/songs.json";
+    mockFileContents[manifestPath] = Buffer.from(
+      JSON.stringify([
+        {
+          id: "hot-cross-buns",
+          file: "hot-cross-buns.mid",
+          title: "Hot Cross Buns",
+          composer: "Traditional",
+          difficulty: "beginner",
+          category: "popular",
+          durationSeconds: 14,
+          tags: ["beginner"],
+        },
+      ]),
+    );
+
+    await expect(
+      handlers[IpcChannels.LIST_BUILTIN_SONGS](null),
+    ).resolves.toEqual([
+      {
+        id: "hot-cross-buns",
+        file: "hot-cross-buns.mid",
+        title: "Hot Cross Buns",
+        composer: "Traditional",
+        difficulty: "beginner",
+        category: "popular",
+        durationSeconds: 14,
+        tags: ["beginner"],
+      },
+    ]);
+    expect(readFile).toHaveBeenCalledWith(manifestPath, "utf-8");
+  });
+
+  test("LOAD_SOUNDFONT reads packaged piano samples from app.asar.unpacked resources", async () => {
+    mockIsPackaged = true;
+    const soundFontPath =
+      "/mock/resources/app.asar.unpacked/resources/piano.sf2";
+    mockFileContents[soundFontPath] = Buffer.from([9, 8, 7]);
+
+    await expect(
+      handlers[IpcChannels.LOAD_SOUNDFONT](null, "piano.sf2"),
+    ).resolves.toEqual({
+      data: [9, 8, 7],
+      fileName: "piano.sf2",
+    });
+    expect(readFile).toHaveBeenCalledWith(soundFontPath);
   });
 });

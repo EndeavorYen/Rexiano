@@ -6,7 +6,7 @@
 
 **繁體中文** | [English](README.md)
 
-> **TL;DR** — Rexiano 安裝後可在 Windows、macOS、Linux 離線使用，也可使用 Windows 免安裝版。載入內建或匯入的 MIDI 後，可以用下落音符、五線譜、等待模式、循環、評分，以及 USB/藍牙 MIDI 鍵盤一起練習。
+> **TL;DR** — Rexiano 安裝後可在 Windows、macOS、Linux 離線使用，也可使用 Windows 免安裝 zip。載入內建或匯入的 MIDI 後，可以用下落音符、五線譜、等待模式、循環、評分，以及 USB/藍牙 MIDI 鍵盤一起練習。
 
 <p align="center">
   <img src="docs/assets/screenshots/rexiano-library.png" alt="Rexiano 曲庫" width="32%">
@@ -63,8 +63,8 @@
 
 **發佈與更新**
 
-- GitHub Releases 提供 Windows 安裝版/免安裝版 `.exe`、macOS `.dmg`、Linux `.AppImage`、Linux `.deb` 與 `SHA256SUMS.txt`
-- 最新已驗證版本：`v1.1.3`
+- GitHub Releases 提供 Windows 安裝版 `.exe`、Windows 免安裝版 `.zip`/`.exe`、macOS `.dmg`、Linux `.AppImage`、Linux `.deb` 與 `SHA256SUMS.txt`
+- 最新已驗證版本：`v1.2.1`
 - 設定 > 關於 可檢查 GitHub Releases 上的新版本
 - 目前公開 build 尚未簽章/公證；細節見 [release-signing.md](docs/release-signing.md)
 
@@ -76,7 +76,7 @@
 
 | 作業系統 | 檔案                                                        | 備注                                                   |
 | -------- | ----------------------------------------------------------- | ------------------------------------------------------ |
-| Windows  | `rexiano-x.x.x-setup.exe` / `rexiano-x.x.x-portable.exe`     | setup 會安裝捷徑；portable 可直接執行                  |
+| Windows  | `rexiano-x.x.x-setup.exe` / `rexiano-x.x.x-win-x64.zip`      | setup 會安裝捷徑；zip 解壓後可直接執行                 |
 | macOS    | `rexiano-x.x.x-arm64.dmg` / `rexiano-x.x.x-x64.dmg`         | 拖入應用程式；首次開啟請在「隱私權與安全性」中允許     |
 | Linux    | `rexiano-x.x.x-x86_64.AppImage` / `rexiano-x.x.x-amd64.deb` | AppImage 可 `chmod +x` 後直接執行                      |
 
@@ -124,7 +124,7 @@ pnpm dev
 | ------------------ | ---------------------------------- |
 | `pnpm dev`         | 以開發模式啟動 Electron（含 HMR）  |
 | `pnpm build`       | 型別檢查 + 正式版建置              |
-| `pnpm build:win`   | 建置 Windows 安裝檔（.exe）        |
+| `pnpm build:win`   | 建置 Windows 發佈檔（.exe、.zip）  |
 | `pnpm build:mac`   | 建置 macOS 磁碟映像（.dmg）        |
 | `pnpm build:linux` | 建置 Linux 套件（.AppImage、.deb） |
 | `pnpm test`        | 執行所有 Vitest 測試               |

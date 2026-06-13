@@ -32,11 +32,15 @@ fileAssociations:
 win:
   executableName: Rexiano
   icon: build/icon.ico
+  artifactName: ${name}-${version}-win-${arch}.${ext}
   target:
     - target: nsis
       arch:
         - x64
     - target: portable
+      arch:
+        - x64
+    - target: zip
       arch:
         - x64
 nsis:

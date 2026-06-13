@@ -12,6 +12,12 @@ import {
 } from "../../shared/types";
 import { approveMidiFilePath, isApprovedMidiFilePath } from "./midiPathAccess";
 
+function resolveBundledResourcesDir(): string {
+  return app.isPackaged
+    ? join(process.resourcesPath, "app.asar.unpacked", "resources")
+    : join(app.getAppPath(), "resources");
+}
+
 export function registerFileHandlers(): void {
   ipcMain.handle(
     IpcChannels.OPEN_MIDI_FILE,
@@ -45,9 +51,7 @@ export function registerFileHandlers(): void {
       const sfName = fileName ?? "default.sf2";
 
       // Look in resources/ directory (packaged or dev)
-      const resourcesDir = app.isPackaged
-        ? join(process.resourcesPath, "resources")
-        : join(app.getAppPath(), "resources");
+      const resourcesDir = resolveBundledResourcesDir();
 
       // Prevent path traversal: resolve and verify the path stays within resourcesDir.
       // Use path.relative() instead of startsWith() to avoid false matches on
@@ -129,9 +133,7 @@ export function registerFileHandlers(): void {
   ipcMain.handle(
     IpcChannels.LIST_BUILTIN_SONGS,
     async (): Promise<BuiltinSongMeta[]> => {
-      const resourcesDir = app.isPackaged
-        ? join(process.resourcesPath, "resources")
-        : join(app.getAppPath(), "resources");
+      const resourcesDir = resolveBundledResourcesDir();
 
       const manifestPath = join(resourcesDir, "midi", "songs.json");
 
@@ -148,9 +150,7 @@ export function registerFileHandlers(): void {
   ipcMain.handle(
     IpcChannels.LOAD_BUILTIN_SONG,
     async (_event, songId: string): Promise<MidiFileResult | null> => {
-      const resourcesDir = app.isPackaged
-        ? join(process.resourcesPath, "resources")
-        : join(app.getAppPath(), "resources");
+      const resourcesDir = resolveBundledResourcesDir();
 
       const midiDir = join(resourcesDir, "midi");
       const manifestPath = join(midiDir, "songs.json");

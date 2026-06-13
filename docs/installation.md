@@ -37,21 +37,24 @@
 ### 步驟
 
 1. 前往 [GitHub Releases 頁面](https://github.com/EndeavorYen/Rexiano/releases) 下載最新版本
-2. 下載 `rexiano-x.x.x-setup.exe` 安裝版，或 `rexiano-x.x.x-portable.exe` 免安裝版
-3. 安裝版請雙擊執行安裝程式；免安裝版可直接執行 `.exe`
+2. 下載 `rexiano-x.x.x-setup.exe` 安裝版，或 `rexiano-x.x.x-win-x64.zip` 免安裝版
+3. 安裝版請雙擊執行安裝程式；免安裝 zip 請先解壓縮，再執行 `Rexiano.exe`
 
 ### 安裝版與免安裝版差異
 
-| 版本     | 適合情境               | 行為                         |
-| -------- | ---------------------- | ---------------------------- |
-| setup    | 固定在這台電腦上使用   | 建立桌面捷徑與開始選單捷徑   |
-| portable | 臨時試用或不想安裝軟體 | 不建立捷徑，直接啟動 Rexiano |
+| 版本         | 適合情境                         | 行為                         |
+| ------------ | -------------------------------- | ---------------------------- |
+| setup        | 固定在這台電腦上使用             | 建立桌面捷徑與開始選單捷徑   |
+| portable zip | 臨時試用或不想安裝軟體           | 解壓後直接啟動 Rexiano       |
+| portable exe | 需要單一可執行檔，且瀏覽器未阻擋 | 不建立捷徑，直接啟動 Rexiano |
+
+如果瀏覽器把 direct `.exe` 下載標示為問題檔案，請下載 `rexiano-x.x.x-win-x64.zip`。這不等於正式簽章；它只是避開瀏覽器對未知 `.exe` 下載的額外攔截。
 
 ### 處理 Windows SmartScreen 警告
 
 首次執行安裝版或免安裝版時，Windows Defender SmartScreen 可能會顯示「Windows 已保護您的電腦」的警告畫面。**這不代表 Rexiano 是惡意軟體。**
 
-原因：Rexiano 目前尚未購買 Windows 程式碼簽章憑證（EV Code Signing Certificate），SmartScreen 會對未簽署的應用程式顯示警告。Rexiano 是完全開源的軟體，你可以在 [GitHub](https://github.com/EndeavorYen/Rexiano) 查看所有原始碼。
+原因：Rexiano 目前尚未購買 Windows 程式碼簽章憑證，瀏覽器與 SmartScreen 會對未簽署、下載量較少的應用程式顯示警告。Rexiano 是完全開源的軟體，你可以在 [GitHub](https://github.com/EndeavorYen/Rexiano) 查看所有原始碼。
 
 處理方式：
 
