@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.2.1](https://github.com/EndeavorYen/Rexiano/compare/v1.2.0...v1.2.1) (2026-06-13)
+
+
+### Bug Fixes
+
+* restore packaged song resources ([8ccf202](https://github.com/EndeavorYen/Rexiano/commit/8ccf2021ac60ba0f583ef793371f8dd8d43b0eeb))
+
 ## [1.2.0](https://github.com/EndeavorYen/Rexiano/compare/v1.1.3...v1.2.0) (2026-06-13)
 
 
