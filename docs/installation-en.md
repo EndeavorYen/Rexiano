@@ -1,6 +1,6 @@
 # Rexiano Installation Guide
 
-> **Version**: 0.4.1 | **Last updated**: 2026-05
+> **Version**: 1.1.3 | **Last updated**: 2026-06
 >
 > Other languages: [繁體中文](./installation.md)
 
@@ -37,12 +37,19 @@
 ### Steps
 
 1. Go to the [GitHub Releases page](https://github.com/EndeavorYen/Rexiano/releases) and download the latest version
-2. Download the `rexiano-x.x.x-setup.exe` file
-3. Double-click the installer to run it
+2. Download `rexiano-x.x.x-setup.exe` to install, or `rexiano-x.x.x-portable.exe` to run without installation
+3. For setup, double-click the installer. For portable, run the `.exe` directly.
+
+### Setup vs. Portable
+
+| Build    | Use when                       | Behavior                                 |
+| -------- | ------------------------------ | ---------------------------------------- |
+| setup    | You want Rexiano installed     | Adds desktop and Start Menu shortcuts    |
+| portable | You want to try without setup  | Runs directly without creating shortcuts |
 
 ### Handling the Windows SmartScreen Warning
 
-On first install, Windows Defender SmartScreen may show a "Windows protected your PC" warning. **This does not mean Rexiano is malware.**
+On first launch of either Windows build, Windows Defender SmartScreen may show a "Windows protected your PC" warning. **This does not mean Rexiano is malware.**
 
 Why this happens: Rexiano currently does not have an EV Code Signing Certificate for Windows. SmartScreen flags all unsigned applications. Rexiano is fully open-source — you can review every line of source code on [GitHub](https://github.com/EndeavorYen/Rexiano).
 

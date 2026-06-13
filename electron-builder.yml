@@ -36,6 +36,9 @@ win:
     - target: nsis
       arch:
         - x64
+    - target: portable
+      arch:
+        - x64
 nsis:
   artifactName: ${name}-${version}-setup.${ext}
   shortcutName: ${productName}
@@ -48,6 +51,9 @@ nsis:
   uninstallerIcon: build/icon.ico
   installerHeaderIcon: build/icon.ico
   license: LICENSE
+portable:
+  artifactName: ${name}-${version}-portable.${ext}
+  requestExecutionLevel: user
 
 # --- macOS ---
 mac:

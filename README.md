@@ -6,7 +6,7 @@ A free, open-source piano practice app with falling notes, MIDI keyboard support
 
 [繁體中文](README-zh.md) | **English**
 
-> **TL;DR** -- Rexiano runs offline on Windows, macOS, and Linux after install. Load a built-in or imported MIDI song, then practice with falling notes, sheet music, Wait mode, loops, scoring, and USB/Bluetooth MIDI keyboard feedback.
+> **TL;DR** -- Rexiano runs offline on Windows, macOS, and Linux after install, or from the Windows portable build. Load a built-in or imported MIDI song, then practice with falling notes, sheet music, Wait mode, loops, scoring, and USB/Bluetooth MIDI keyboard feedback.
 
 <p align="center">
   <img src="docs/assets/screenshots/rexiano-library.png" alt="Rexiano song library" width="32%">
@@ -63,7 +63,7 @@ A free, open-source piano practice app with falling notes, MIDI keyboard support
 
 **Release and Updates**
 
-- GitHub Releases provide Windows `.exe`, macOS `.dmg`, Linux `.AppImage`, Linux `.deb`, and `SHA256SUMS.txt`
+- GitHub Releases provide Windows setup/portable `.exe`, macOS `.dmg`, Linux `.AppImage`, Linux `.deb`, and `SHA256SUMS.txt`
 - Latest verified release: `v1.1.3`
 - Settings > About can check GitHub Releases for newer matching installers
 - Public builds are currently unsigned/not notarized; see [release-signing.md](docs/release-signing.md)
@@ -76,9 +76,9 @@ Download the latest release for your platform from the [Releases](https://github
 
 ### Windows
 
-1. Download `rexiano-x.x.x-setup.exe`
-2. Run the installer and follow the prompts
-3. Launch Rexiano from the desktop shortcut or Start Menu
+1. Download `rexiano-x.x.x-setup.exe` to install, or `rexiano-x.x.x-portable.exe` to run without installation.
+2. For the installer, run it and follow the prompts. For the portable build, run the `.exe` directly.
+3. The installer adds desktop/Start Menu shortcuts; the portable build does not.
 
 > **Windows SmartScreen warning**: Because the app is not code-signed, Windows may show a "Windows protected your PC" dialog. Click **More info**, then **Run anyway**. This is safe -- the app is open source and you can audit every line of code in this repository.
 
@@ -245,5 +245,4 @@ pnpm lint && pnpm typecheck && pnpm test
 ## Acknowledgments
 
 - Built with love for Rex, who is learning to play piano
-- [Synthesia](https://www.synthesia.app/) for the original inspiration
 - The open-source community for the incredible tools that make this project possible

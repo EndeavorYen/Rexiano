@@ -37,12 +37,19 @@
 ### 步驟
 
 1. 前往 [GitHub Releases 頁面](https://github.com/EndeavorYen/Rexiano/releases) 下載最新版本
-2. 下載 `rexiano-x.x.x-setup.exe` 檔案
-3. 雙擊執行安裝程式
+2. 下載 `rexiano-x.x.x-setup.exe` 安裝版，或 `rexiano-x.x.x-portable.exe` 免安裝版
+3. 安裝版請雙擊執行安裝程式；免安裝版可直接執行 `.exe`
+
+### 安裝版與免安裝版差異
+
+| 版本     | 適合情境               | 行為                         |
+| -------- | ---------------------- | ---------------------------- |
+| setup    | 固定在這台電腦上使用   | 建立桌面捷徑與開始選單捷徑   |
+| portable | 臨時試用或不想安裝軟體 | 不建立捷徑，直接啟動 Rexiano |
 
 ### 處理 Windows SmartScreen 警告
 
-首次安裝時，Windows Defender SmartScreen 可能會顯示「Windows 已保護您的電腦」的警告畫面。**這不代表 Rexiano 是惡意軟體。**
+首次執行安裝版或免安裝版時，Windows Defender SmartScreen 可能會顯示「Windows 已保護您的電腦」的警告畫面。**這不代表 Rexiano 是惡意軟體。**
 
 原因：Rexiano 目前尚未購買 Windows 程式碼簽章憑證（EV Code Signing Certificate），SmartScreen 會對未簽署的應用程式顯示警告。Rexiano 是完全開源的軟體，你可以在 [GitHub](https://github.com/EndeavorYen/Rexiano) 查看所有原始碼。
 

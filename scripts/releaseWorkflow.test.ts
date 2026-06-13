@@ -69,6 +69,18 @@ describe("release workflow", () => {
     expect(signingDocs).toContain("WINDOWS_CSC_KEY_PASSWORD");
   });
 
+  test("publishes a Windows portable executable alongside the installer", () => {
+    const workflow = readRepoFile(".github/workflows/release.yml");
+    const builderConfig = readRepoFile("electron-builder.yml");
+
+    expect(builderConfig).toContain("target: nsis");
+    expect(builderConfig).toContain("target: portable");
+    expect(builderConfig).toContain("${name}-${version}-setup.${ext}");
+    expect(builderConfig).toContain("${name}-${version}-portable.${ext}");
+    expect(workflow).toContain("dist/*.exe");
+    expect(workflow).toContain("sha256sum *.exe *.dmg *.AppImage *.deb");
+  });
+
   test("wires optional macOS signing and notarization secrets with unsigned fallback", () => {
     const workflow = readRepoFile(".github/workflows/release.yml");
     const builderConfig = readRepoFile("electron-builder.yml");
