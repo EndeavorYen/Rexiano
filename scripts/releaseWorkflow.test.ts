@@ -82,6 +82,7 @@ describe("release workflow", () => {
     expect(workflow).toContain("dist/*.exe");
     expect(workflow).toContain("dist/*.zip");
     expect(workflow).toContain("sha256sum *.exe *.zip *.dmg *.AppImage *.deb");
+    expect(workflow).toContain("artifacts/*.zip");
   });
 
   test("wires optional macOS signing and notarization secrets with unsigned fallback", () => {

@@ -214,6 +214,7 @@ jobs:
           body_path: artifacts/checksums.md
           files: |
             artifacts/*.exe
+            artifacts/*.zip
             artifacts/*.dmg
             artifacts/*.AppImage
             artifacts/*.deb
