@@ -113,7 +113,7 @@ test.describe("Lesson path and child focus mode", () => {
     await acceptDialog.accept();
     await acceptClick;
     await expect(
-      appPage.getByRole("button", { name: /Start Practicing/i }),
+      appPage.getByTestId("library-device-drawer-trigger"),
     ).toBeVisible();
   });
 });

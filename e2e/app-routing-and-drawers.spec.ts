@@ -16,7 +16,7 @@ test.describe("App routing and drawer behavior", () => {
     });
 
     await expect(
-      appPage.getByRole("button", { name: /Start Practicing/i }),
+      appPage.getByRole("button", { name: /Start Playing/i }),
     ).toBeVisible();
     await expect(appPage.getByTestId("playback-drawer-trigger")).toHaveCount(0);
   });
