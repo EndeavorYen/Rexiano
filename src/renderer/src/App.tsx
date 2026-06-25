@@ -60,6 +60,10 @@ import { selectNextPracticeAction } from "./features/practice/nextPracticeAction
 import { getFocusModeExitDecision } from "./features/practice/focusModeExitGuard";
 import { usePostSessionFlow } from "./features/practice/usePostSessionFlow";
 import {
+  mapSessionIntentToMode,
+  type PracticeSessionIntent,
+} from "./features/practice/sessionIntent";
+import {
   resolveSongPracticeSetupForSong,
   type TrackPracticePreferences,
 } from "./features/practice/songPracticeSetup";
@@ -114,6 +118,13 @@ function App(): React.JSX.Element {
     return parseRouteHash(window.location.hash);
   });
   const [showMenuSettings, setShowMenuSettings] = useState(false);
+  const [sessionIntent, setSessionIntentState] =
+    useState<PracticeSessionIntent>("practice");
+  const sessionIntentRef = useRef<PracticeSessionIntent>("practice");
+  const setSessionIntent = useCallback((intent: PracticeSessionIntent) => {
+    sessionIntentRef.current = intent;
+    setSessionIntentState(intent);
+  }, []);
 
   // Routing rule source of truth:
   // - Has song => playback
@@ -194,10 +205,15 @@ function App(): React.JSX.Element {
     showCelebrationForScore,
   } = usePostSessionFlow({
     song,
+    sessionIntent,
+    getSessionIntent: () => sessionIntentRef.current,
     activeTracks,
     speed,
     score,
-    onChooseSongRoute: () => applyRoute("menu"),
+    onChooseSongRoute: () => {
+      setSessionIntent("practice");
+      applyRoute("library");
+    },
   });
   // ─── End mode/celebration/stats flow ──────────────────
 
@@ -645,7 +661,11 @@ function App(): React.JSX.Element {
       defaultMode,
       defaultSpeed,
     });
-    usePracticeStore.getState().setMode(setup.defaultMode);
+    usePracticeStore
+      .getState()
+      .setMode(
+        mapSessionIntentToMode(sessionIntentRef.current, setup.defaultMode),
+      );
     usePracticeStore.getState().setSpeed(setup.defaultSpeed);
     usePracticeStore.getState().setActiveTracks(new Set(setup.activeTracks));
     usePracticeStore.getState().setSongPracticeSetup({
@@ -871,8 +891,9 @@ function App(): React.JSX.Element {
 
     useSongStore.getState().clearSong();
     usePlaybackStore.getState().reset();
-    applyRoute("menu");
-  }, [applyRoute, t]);
+    setSessionIntent("practice");
+    applyRoute("library");
+  }, [applyRoute, setSessionIntent, t]);
 
   const isSplitMode = displayMode === "split";
   const viewportHeight = viewportSize.height;
@@ -1049,7 +1070,10 @@ function App(): React.JSX.Element {
           <MainMenu
             onStartPractice={() => applyRoute("library")}
             onOpenSettings={() => setShowMenuSettings(true)}
-            onSelectRecent={(file) => void handleLoadMidiPath(file.path)}
+            onSelectRecent={(file) => {
+              setSessionIntent("practice");
+              void handleLoadMidiPath(file.path);
+            }}
           />
           {showMenuSettings && (
             <SettingsPanel inline onClose={() => setShowMenuSettings(false)} />
@@ -1064,8 +1088,12 @@ function App(): React.JSX.Element {
           className="flex-1 min-h-0 flex flex-col animate-page-enter"
         >
           <SongLibrary
-            onOpenFile={handleOpenFile}
+            onOpenFile={() => {
+              setSessionIntent("practice");
+              return handleOpenFile();
+            }}
             onBack={() => applyRoute("menu")}
+            onSessionIntentSelected={setSessionIntent}
           />
         </div>
       )}
@@ -1112,6 +1140,11 @@ function App(): React.JSX.Element {
                   </span>
                   <span className="control-chip playback-header-chip shrink-0">
                     {song.noteCount} {t("song.notes")}
+                  </span>
+                  <span className="control-chip playback-header-chip shrink-0">
+                    {sessionIntent === "play-along"
+                      ? t("playback.session.playAlong")
+                      : t("playback.session.practice")}
                   </span>
                   <span className="control-chip playback-header-chip tabular-nums shrink-0">
                     {speedPercent}%

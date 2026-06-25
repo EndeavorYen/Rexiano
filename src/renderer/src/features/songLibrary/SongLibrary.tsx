@@ -41,6 +41,7 @@ import {
   buildImportedSongActivity,
   buildImportedSongSelectionPreviewModel,
   buildPracticeRecommendationModel,
+  buildSongPreviewSessionActions,
   buildSongActivity,
   buildSongSelectionPreviewModel,
   filterSongsForLibrary,
@@ -68,6 +69,7 @@ import { DeviceSelector } from "../midiDevice/DeviceSelector";
 import { useTranslation } from "../../i18n/useTranslation";
 import { useDialogFocus } from "../../hooks/useDialogFocus";
 import { buildDailyGoalStatus } from "../practice/nextPracticeAction";
+import type { PracticeSessionIntent } from "../practice/sessionIntent";
 import appIcon from "../../../../../docs/figure/Rexiano_icon.png";
 import type { BuiltinSongMeta, RecentFile } from "../../../../shared/types";
 import type { TranslationKey } from "../../i18n/types";
@@ -75,6 +77,7 @@ import type { TranslationKey } from "../../i18n/types";
 interface SongLibraryProps {
   onOpenFile: () => Promise<void>;
   onBack?: () => void;
+  onSessionIntentSelected?: (intent: PracticeSessionIntent) => void;
 }
 
 type PreviewAudioStatus = "idle" | "loading" | "playing";
@@ -187,6 +190,7 @@ function createImportedMetadataPatch(
 export function SongLibrary({
   onOpenFile,
   onBack,
+  onSessionIntentSelected,
 }: SongLibraryProps): React.JSX.Element {
   const { t } = useTranslation();
 
@@ -492,7 +496,8 @@ export function SongLibrary({
   }, [sessions]);
 
   const handleSelectSong = useCallback(
-    async (songId: string) => {
+    async (songId: string, intent: PracticeSessionIntent = "practice") => {
+      onSessionIntentSelected?.(intent);
       setError(null);
       setLoadingId(songId);
       try {
@@ -516,7 +521,7 @@ export function SongLibrary({
         setLoadingId(null);
       }
     },
-    [loadSong, reset, refreshRecents, t],
+    [loadSong, onSessionIntentSelected, reset, refreshRecents, t],
   );
 
   const handlePreviewSong = useCallback((songId: string) => {
@@ -532,6 +537,7 @@ export function SongLibrary({
 
   const handleSelectRecent = useCallback(
     async (file: RecentFile) => {
+      onSessionIntentSelected?.("practice");
       setRecentRecovery(null);
       setLoadingRecentPath(file.path);
       try {
@@ -586,7 +592,7 @@ export function SongLibrary({
         setLoadingRecentPath(null);
       }
     },
-    [loadSong, reset, refreshRecents, t],
+    [loadSong, onSessionIntentSelected, reset, refreshRecents, t],
   );
 
   const handleRemoveRecent = useCallback(
@@ -626,12 +632,16 @@ export function SongLibrary({
   );
 
   const handlePracticeImportedSong = useCallback(
-    async (record: ImportedSongRecord) => {
+    async (
+      record: ImportedSongRecord,
+      intent: PracticeSessionIntent = "practice",
+    ) => {
       if (record.missing) {
         setError(t("library.importedMissing"));
         return;
       }
 
+      onSessionIntentSelected?.(intent);
       setError(null);
       setLoadingImportedPath(record.sourcePath);
       try {
@@ -657,18 +667,18 @@ export function SongLibrary({
         setLoadingImportedPath(null);
       }
     },
-    [loadSong, refreshRecents, reset, t],
+    [loadSong, onSessionIntentSelected, refreshRecents, reset, t],
   );
 
-  const handlePracticePreview = useCallback(
-    (preview: SongSelectionPreviewModel) => {
+  const handleStartPreviewSession = useCallback(
+    (preview: SongSelectionPreviewModel, intent: PracticeSessionIntent) => {
       stopAudioPreview();
       if (preview.kind === "builtin") {
-        void handleSelectSong(preview.song.id);
+        void handleSelectSong(preview.song.id, intent);
         return;
       }
 
-      void handlePracticeImportedSong(preview.importedSong);
+      void handlePracticeImportedSong(preview.importedSong, intent);
     },
     [handlePracticeImportedSong, handleSelectSong, stopAudioPreview],
   );
@@ -1163,7 +1173,7 @@ export function SongLibrary({
             preview={selectedSongPreview}
             isLoading={selectedPreviewIsLoading}
             audioStatus={selectedPreviewAudioStatus}
-            onPractice={handlePracticePreview}
+            onStartSession={handleStartPreviewSession}
             onToggleAudioPreview={handleToggleAudioPreview}
           />
         )}
@@ -1585,13 +1595,16 @@ function SongSelectionPreviewPanel({
   preview,
   isLoading,
   audioStatus,
-  onPractice,
+  onStartSession,
   onToggleAudioPreview,
 }: {
   preview: SongSelectionPreviewModel;
   isLoading: boolean;
   audioStatus: PreviewAudioStatus;
-  onPractice: (preview: SongSelectionPreviewModel) => void;
+  onStartSession: (
+    preview: SongSelectionPreviewModel,
+    intent: PracticeSessionIntent,
+  ) => void;
   onToggleAudioPreview: (preview: SongSelectionPreviewModel) => void;
 }): React.JSX.Element {
   const { t } = useTranslation();
@@ -1607,10 +1620,7 @@ function SongSelectionPreviewPanel({
     preview.bestAccuracy !== null
       ? `${Math.round(preview.bestAccuracy)}%`
       : t("library.neverPracticed");
-  const ctaLabel =
-    preview.primaryCta === "continue-practice"
-      ? t("library.continuePractice")
-      : t("library.recommendation.cta");
+  const sessionActions = buildSongPreviewSessionActions(preview.primaryCta);
   const audioPreviewLabel =
     audioStatus === "loading"
       ? t("library.preview.audioPreviewLoading")
@@ -1673,26 +1683,35 @@ function SongSelectionPreviewPanel({
             )}
             {audioPreviewLabel}
           </button>
-          <button
-            type="button"
-            onClick={() => onPractice(preview)}
-            disabled={isLoading}
-            className="btn-primary-themed flex min-h-10 items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-body font-semibold cursor-pointer disabled:cursor-wait disabled:opacity-60"
-            data-testid="song-selection-preview-practice"
-          >
-            {isLoading ? (
-              <span
-                className="h-4 w-4 rounded-full border-2 animate-spin"
-                style={{
-                  borderColor: "rgba(255,255,255,0.45)",
-                  borderTopColor: "#fff",
-                }}
-              />
-            ) : (
-              <PlayCircle size={16} />
-            )}
-            {ctaLabel}
-          </button>
+          {sessionActions.map((action) => (
+            <button
+              key={action.intent}
+              type="button"
+              onClick={() => onStartSession(preview, action.intent)}
+              disabled={isLoading}
+              className={`${
+                action.emphasis === "primary"
+                  ? "btn-primary-themed"
+                  : "btn-surface-themed"
+              } flex min-h-10 items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-body font-semibold cursor-pointer disabled:cursor-wait disabled:opacity-60`}
+              data-testid={`song-selection-preview-${action.intent}`}
+            >
+              {isLoading && action.emphasis === "primary" ? (
+                <span
+                  className="h-4 w-4 rounded-full border-2 animate-spin"
+                  style={{
+                    borderColor: "rgba(255,255,255,0.45)",
+                    borderTopColor: "#fff",
+                  }}
+                />
+              ) : action.intent === "play-along" ? (
+                <Music size={16} />
+              ) : (
+                <PlayCircle size={16} />
+              )}
+              {t(action.labelKey)}
+            </button>
+          ))}
         </div>
       </div>
 

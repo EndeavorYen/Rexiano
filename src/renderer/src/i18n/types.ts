@@ -105,6 +105,7 @@ export interface TranslationMap {
   "library.preview.audioPreviewLoading": string;
   "library.preview.audioPreviewStop": string;
   "library.preview.audioPreviewError": string;
+  "library.preview.playAlong": string;
   "library.lessonPath.title": string;
   "library.lessonPath.free": string;
   "library.lessonPath.next": string;
@@ -178,6 +179,10 @@ export interface TranslationMap {
   "song.track": string;
   "song.notes": string;
   "song.backToLibrary": string;
+
+  // ── Playback Session ───────────────────────────────────────────
+  "playback.session.practice": string;
+  "playback.session.playAlong": string;
 
   // ── MIDI Device ────────────────────────────────────────────────
   "midi.noDevices": string;

@@ -26,13 +26,13 @@ export const zhTW: TranslationMap = {
   "app.importActionReimport": "重新匯入",
   "app.importActionOpenPermissions": "檢查檔案權限",
   "app.insightsTitle": "練習洞察",
-  "app.startPractice": "開始練琴",
+  "app.startPractice": "開始彈琴",
   "app.openSettings": "設定",
   "app.menuGreeting": "今天要彈什麼呢？",
   "onboarding.dialogLabel": "歡迎導覽",
-  "onboarding.step.start.title": "開始練琴",
+  "onboarding.step.start.title": "開始彈琴",
   "onboarding.step.start.description":
-    "使用「開始練琴」開啟曲庫，選一首內建曲目，或匯入自己的 MIDI 檔案。",
+    "使用「開始彈琴」開啟曲庫，選一首內建曲目，或匯入自己的 MIDI 檔案。",
   "onboarding.step.choose.title": "選擇曲目",
   "onboarding.step.choose.description":
     "先預覽曲目，準備好時按下「開始練習」。",
@@ -111,6 +111,7 @@ export const zhTW: TranslationMap = {
   "library.preview.audioPreviewStop": "停止",
   "library.preview.audioPreviewError":
     "目前無法播放試聽，請改用開始練習載入曲目。",
+  "library.preview.playAlong": "跟彈",
   "library.lessonPath.title": "課程路徑",
   "library.lessonPath.free": "仍可自由選曲",
   "library.lessonPath.next": "下一課",
@@ -185,6 +186,8 @@ export const zhTW: TranslationMap = {
   "song.track": "軌道",
   "song.notes": "音符",
   "song.backToLibrary": "曲庫",
+  "playback.session.practice": "練習",
+  "playback.session.playAlong": "跟彈",
 
   // ── MIDI Device ────────────────────────────────────────────────
   "midi.noDevices": "未偵測到 MIDI 裝置",

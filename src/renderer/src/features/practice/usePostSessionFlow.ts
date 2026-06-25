@@ -21,6 +21,7 @@ interface CompletionCelebrationInput {
 interface UsePostSessionFlowOptions {
   song: ParsedSong | null;
   sessionIntent: PracticeSessionIntent;
+  getSessionIntent?: () => PracticeSessionIntent;
   activeTracks: Set<number>;
   speed: number;
   score: PracticeScore;
@@ -67,20 +68,20 @@ export function shouldShowModeSelectionModal({
   nextHasSong,
   intent,
 }: ModeSelectionInput): boolean {
-  return (
-    !previousHadSong && nextHasSong && shouldPromptForPracticeMode(intent)
-  );
+  return !previousHadSong && nextHasSong && shouldPromptForPracticeMode(intent);
 }
 
 export function usePostSessionFlow({
   song,
   sessionIntent,
+  getSessionIntent,
   activeTracks,
   speed,
   score,
   onChooseSongRoute,
 }: UsePostSessionFlowOptions): PostSessionFlowState {
   const sessionIntentRef = useRef(sessionIntent);
+  const getSessionIntentRef = useRef(getSessionIntent);
   const [showModeModal, setShowModeModal] = useState(false);
   const [showCelebration, setShowCelebration] = useState(false);
   const [showStats, setShowStats] = useState(false);
@@ -90,7 +91,8 @@ export function usePostSessionFlow({
 
   useEffect(() => {
     sessionIntentRef.current = sessionIntent;
-  }, [sessionIntent]);
+    getSessionIntentRef.current = getSessionIntent;
+  }, [getSessionIntent, sessionIntent]);
 
   useEffect(() => {
     return useSongStore.subscribe((state, prev) => {
@@ -99,7 +101,7 @@ export function usePostSessionFlow({
           shouldShowModeSelectionModal({
             previousHadSong: prev.song !== null,
             nextHasSong: state.song !== null,
-            intent: sessionIntentRef.current,
+            intent: getSessionIntentRef.current?.() ?? sessionIntentRef.current,
           }),
         );
         if (state.song) {

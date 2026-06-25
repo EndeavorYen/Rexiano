@@ -28,13 +28,13 @@ export const en: TranslationMap = {
   "app.importActionReimport": "Import again",
   "app.importActionOpenPermissions": "Check file permissions",
   "app.insightsTitle": "Practice Insights",
-  "app.startPractice": "Start Practicing",
+  "app.startPractice": "Start Playing",
   "app.openSettings": "Settings",
   "app.menuGreeting": "What shall we play today?",
   "onboarding.dialogLabel": "Welcome guide",
-  "onboarding.step.start.title": "Start Practicing",
+  "onboarding.step.start.title": "Start Playing",
   "onboarding.step.start.description":
-    "Use Start Practicing to open the song library and pick a built-in song or import your own MIDI file.",
+    "Use Start Playing to open the song library and pick a built-in song or import your own MIDI file.",
   "onboarding.step.choose.title": "Choose a Song",
   "onboarding.step.choose.description":
     "Preview a song, then press Practice when you are ready to play.",
@@ -114,6 +114,7 @@ export const en: TranslationMap = {
   "library.preview.audioPreviewStop": "Stop",
   "library.preview.audioPreviewError":
     "Could not play this audio preview. Try Practice to load the song.",
+  "library.preview.playAlong": "Play Along",
   "library.lessonPath.title": "Lesson path",
   "library.lessonPath.free": "Free song selection stays open",
   "library.lessonPath.next": "Next lesson",
@@ -188,6 +189,8 @@ export const en: TranslationMap = {
   "song.track": "track",
   "song.notes": "notes",
   "song.backToLibrary": "Library",
+  "playback.session.practice": "Practice",
+  "playback.session.playAlong": "Play Along",
 
   // ── MIDI Device ────────────────────────────────────────────────
   "midi.noDevices": "No MIDI devices detected",
