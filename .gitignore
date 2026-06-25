@@ -9,3 +9,5 @@ Thumbs.db
 .claude/
 playwright-report/
 test-results/
+.superpowers/
+.worktrees/

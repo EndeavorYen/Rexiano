@@ -60,9 +60,9 @@ test.describe("First-run onboarding", () => {
 
     const card = page.getByTestId("onboarding-card");
     await expect(card).toBeVisible();
-    await expect(card).toContainText("開始練琴");
+    await expect(card).toContainText("開始彈琴");
     await expect(card).toContainText("開啟曲庫");
-    await expect(card).not.toContainText("Start Practicing");
+    await expect(card).not.toContainText("Start Playing");
   });
 
   test("welcome guide traps keyboard focus and supports Escape", async ({

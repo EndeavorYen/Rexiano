@@ -8,6 +8,7 @@ import {
   normalizeImportedSongPath,
   type ImportedSongRecord,
 } from "./importedSongMetadata";
+import type { PracticeSessionIntent } from "../practice/sessionIntent";
 
 export interface SongLibraryFilters {
   difficultyFilter: DifficultyFilter;
@@ -73,6 +74,17 @@ export interface ImportedSongSelectionPreviewModel extends SongSelectionPreviewB
 export type SongSelectionPreviewModel =
   | BuiltinSongSelectionPreviewModel
   | ImportedSongSelectionPreviewModel;
+
+export type SongPreviewSessionLabelKey =
+  | "library.recommendation.cta"
+  | "library.continuePractice"
+  | "library.preview.playAlong";
+
+export interface SongPreviewSessionAction {
+  intent: PracticeSessionIntent;
+  labelKey: SongPreviewSessionLabelKey;
+  emphasis: "primary" | "secondary";
+}
 
 const difficultyRank: Record<BuiltinSongMeta["difficulty"], number> = {
   beginner: 0,
@@ -186,6 +198,26 @@ export function buildImportedSongSelectionPreviewModel(
     primaryCta: hasPracticeHistory ? "continue-practice" : "practice",
     trackCount,
   };
+}
+
+export function buildSongPreviewSessionActions(
+  primaryCta: SongSelectionPreviewModel["primaryCta"],
+): SongPreviewSessionAction[] {
+  return [
+    {
+      intent: "practice",
+      labelKey:
+        primaryCta === "continue-practice"
+          ? "library.continuePractice"
+          : "library.recommendation.cta",
+      emphasis: "primary",
+    },
+    {
+      intent: "play-along",
+      labelKey: "library.preview.playAlong",
+      emphasis: "secondary",
+    },
+  ];
 }
 
 function inferTargetGrade(

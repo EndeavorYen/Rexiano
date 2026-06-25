@@ -1,5 +1,8 @@
 import { describe, expect, test } from "vitest";
-import { shouldShowCompletionCelebration } from "./usePostSessionFlow";
+import {
+  shouldShowCompletionCelebration,
+  shouldShowModeSelectionModal,
+} from "./usePostSessionFlow";
 
 describe("shouldShowCompletionCelebration", () => {
   test("detects playback stopping near the end with scored notes", () => {
@@ -40,6 +43,42 @@ describe("shouldShowCompletionCelebration", () => {
         currentTime: 39.2,
         songDuration: 40,
         totalNotes: 8,
+      }),
+    ).toBe(false);
+  });
+});
+
+describe("shouldShowModeSelectionModal", () => {
+  test("shows mode selection only when a practice session loads a new song", () => {
+    expect(
+      shouldShowModeSelectionModal({
+        nextHasSong: true,
+        intent: "practice",
+      }),
+    ).toBe(true);
+
+    expect(
+      shouldShowModeSelectionModal({
+        nextHasSong: true,
+        intent: "play-along",
+      }),
+    ).toBe(false);
+  });
+
+  test("shows mode selection when a practice session replaces the loaded song", () => {
+    expect(
+      shouldShowModeSelectionModal({
+        nextHasSong: true,
+        intent: "practice",
+      }),
+    ).toBe(true);
+  });
+
+  test("does not show mode selection when the song is cleared", () => {
+    expect(
+      shouldShowModeSelectionModal({
+        nextHasSong: false,
+        intent: "practice",
       }),
     ).toBe(false);
   });

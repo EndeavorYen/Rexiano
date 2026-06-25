@@ -4,6 +4,7 @@ import {
   buildImportedSongActivity,
   buildImportedSongSelectionPreviewModel,
   buildPracticeRecommendationModel,
+  buildSongPreviewSessionActions,
   buildSongActivity,
   buildSongSelectionPreviewModel,
   filterSongsForLibrary,
@@ -420,6 +421,31 @@ describe("buildSongSelectionPreviewModel", () => {
       hasPracticeHistory: true,
       primaryCta: "continue-practice",
       trackCount: 2,
+    });
+  });
+});
+
+describe("buildSongPreviewSessionActions", () => {
+  test("offers practice first and play along second for new practice sessions", () => {
+    expect(buildSongPreviewSessionActions("practice")).toEqual([
+      {
+        intent: "practice",
+        labelKey: "library.recommendation.cta",
+        emphasis: "primary",
+      },
+      {
+        intent: "play-along",
+        labelKey: "library.preview.playAlong",
+        emphasis: "secondary",
+      },
+    ]);
+  });
+
+  test("keeps continue practice as the primary label when history exists", () => {
+    expect(buildSongPreviewSessionActions("continue-practice")[0]).toEqual({
+      intent: "practice",
+      labelKey: "library.continuePractice",
+      emphasis: "primary",
     });
   });
 });

@@ -1,10 +1,12 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { ParsedSong } from "@renderer/engines/midi/types";
 import type { PracticeMode, PracticeScore } from "@shared/types";
 import { usePlaybackStore } from "@renderer/stores/usePlaybackStore";
 import { usePracticeStore } from "@renderer/stores/usePracticeStore";
 import { useSongStore } from "@renderer/stores/useSongStore";
 import { applyPracticeModeChangeForSong } from "./practiceSetupControlActions";
+import type { PracticeSessionIntent } from "./sessionIntent";
+import { shouldPromptForPracticeMode } from "./sessionIntent";
 
 const CELEBRATION_DURATION_MS = 2200;
 
@@ -18,10 +20,17 @@ interface CompletionCelebrationInput {
 
 interface UsePostSessionFlowOptions {
   song: ParsedSong | null;
+  sessionIntent: PracticeSessionIntent;
+  getSessionIntent?: () => PracticeSessionIntent;
   activeTracks: Set<number>;
   speed: number;
   score: PracticeScore;
   onChooseSongRoute: () => void;
+}
+
+interface ModeSelectionInput {
+  nextHasSong: boolean;
+  intent: PracticeSessionIntent;
 }
 
 export interface PostSessionFlowState {
@@ -53,13 +62,24 @@ export function shouldShowCompletionCelebration({
   );
 }
 
+export function shouldShowModeSelectionModal({
+  nextHasSong,
+  intent,
+}: ModeSelectionInput): boolean {
+  return nextHasSong && shouldPromptForPracticeMode(intent);
+}
+
 export function usePostSessionFlow({
   song,
+  sessionIntent,
+  getSessionIntent,
   activeTracks,
   speed,
   score,
   onChooseSongRoute,
 }: UsePostSessionFlowOptions): PostSessionFlowState {
+  const sessionIntentRef = useRef(sessionIntent);
+  const getSessionIntentRef = useRef(getSessionIntent);
   const [showModeModal, setShowModeModal] = useState(false);
   const [showCelebration, setShowCelebration] = useState(false);
   const [showStats, setShowStats] = useState(false);
@@ -68,12 +88,24 @@ export function usePostSessionFlow({
   const displayScore = completedSessionScore ?? score;
 
   useEffect(() => {
+    sessionIntentRef.current = sessionIntent;
+    getSessionIntentRef.current = getSessionIntent;
+  }, [getSessionIntent, sessionIntent]);
+
+  useEffect(() => {
     return useSongStore.subscribe((state, prev) => {
-      if (state.song !== prev.song && state.song) {
-        setShowModeModal(true);
-        setShowCelebration(false);
-        setShowStats(false);
-        setCompletedSessionScore(null);
+      if (state.song !== prev.song) {
+        setShowModeModal(
+          shouldShowModeSelectionModal({
+            nextHasSong: state.song !== null,
+            intent: getSessionIntentRef.current?.() ?? sessionIntentRef.current,
+          }),
+        );
+        if (state.song) {
+          setShowCelebration(false);
+          setShowStats(false);
+          setCompletedSessionScore(null);
+        }
       }
     });
   }, []);
