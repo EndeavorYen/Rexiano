@@ -22,17 +22,17 @@
   --radius-xl: 1.25rem;
 
   /* Fallback colors before theme store hydrates */
-  --color-bg: #f2f6f6;
-  --color-surface: #e6eeed;
-  --color-surface-alt: #d6e2e1;
-  --color-accent: #1e6e72;
-  --color-accent-hover: #165a5d;
-  --color-text: #132425;
-  --color-text-muted: #435a5d;
-  --color-border: #bfd1cf;
-  --color-note3: #3d74a6;
-  --color-hit-glow: #66c7cb;
-  --color-streak-gold: #cfb066;
+  --color-bg: #f6f8f5;
+  --color-surface: #ffffff;
+  --color-surface-alt: #eaf1ea;
+  --color-accent: #0f766e;
+  --color-accent-hover: #0b5e58;
+  --color-text: #17211f;
+  --color-text-muted: #5c6f68;
+  --color-border: #c9d8d2;
+  --color-note3: #3e6ea8;
+  --color-hit-glow: #f4c95d;
+  --color-streak-gold: #d6a33a;
   --color-scrollbar-track: color-mix(
     in srgb,
     var(--color-surface-alt) 82%,
@@ -68,20 +68,20 @@ body {
   font-family: var(--font-body);
   color: var(--color-text);
   background:
-    radial-gradient(
-      1200px 700px at 8% -20%,
-      color-mix(in srgb, var(--color-accent) 14%, transparent),
-      transparent 62%
+    linear-gradient(
+      115deg,
+      color-mix(in srgb, var(--color-accent) 8%, transparent),
+      transparent 34%
     ),
-    radial-gradient(
-      1100px 650px at 95% -5%,
-      color-mix(in srgb, var(--color-note3) 14%, transparent),
-      transparent 60%
+    linear-gradient(
+      245deg,
+      color-mix(in srgb, var(--color-note3) 8%, transparent),
+      transparent 42%
     ),
     linear-gradient(
       170deg,
       var(--color-bg),
-      color-mix(in srgb, var(--color-bg) 88%, #ffffff)
+      color-mix(in srgb, var(--color-surface-alt) 38%, #ffffff)
     );
   text-rendering: geometricPrecision;
   -webkit-font-smoothing: antialiased;
@@ -128,65 +128,27 @@ textarea:focus-visible {
 
 .app-shell::before,
 .app-shell::after {
-  content: "";
-  position: absolute;
-  pointer-events: none;
-  z-index: -1;
-  filter: blur(38px);
-}
-
-.app-shell::before {
-  width: 48vw;
-  height: 42vh;
-  left: -15vw;
-  top: -20vh;
-  background: color-mix(in srgb, var(--color-accent) 18%, transparent);
-  animation: ambient-drift-a 24s ease-in-out infinite alternate;
-}
-
-.app-shell::after {
-  width: 46vw;
-  height: 36vh;
-  right: -12vw;
-  bottom: -16vh;
-  background: color-mix(in srgb, var(--color-note3) 14%, transparent);
-  animation: ambient-drift-b 28s ease-in-out infinite alternate;
-}
-
-@keyframes ambient-drift-a {
-  0% {
-    transform: translate3d(0, 0, 0) scale(1);
-  }
-  100% {
-    transform: translate3d(3vw, 2vh, 0) scale(1.06);
-  }
-}
-
-@keyframes ambient-drift-b {
-  0% {
-    transform: translate3d(0, 0, 0) scale(1);
-  }
-  100% {
-    transform: translate3d(-4vw, -2vh, 0) scale(1.08);
-  }
+  display: none;
 }
 
 .surface-panel {
-  background: color-mix(in srgb, var(--color-surface) 90%, transparent);
-  border: 1px solid color-mix(in srgb, var(--color-border) 78%, transparent);
+  background: color-mix(in srgb, var(--color-surface) 96%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-border) 88%, transparent);
   border-radius: var(--radius-xl);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
   box-shadow:
-    inset 0 1px 0 color-mix(in srgb, #ffffff 52%, transparent),
-    0 18px 36px color-mix(in srgb, #0d1719 10%, transparent);
+    inset 0 1px 0 color-mix(in srgb, #ffffff 70%, transparent),
+    0 16px 32px color-mix(in srgb, #17211f 8%, transparent);
 }
 
 .surface-elevated {
-  background: color-mix(in srgb, var(--color-surface) 82%, #ffffff 18%);
-  border: 1px solid color-mix(in srgb, var(--color-border) 88%, transparent);
+  background: color-mix(in srgb, var(--color-surface) 92%, var(--color-bg));
+  border: 1px solid color-mix(in srgb, var(--color-border) 92%, transparent);
   border-radius: var(--radius-lg);
-  box-shadow: inset 0 1px 0 color-mix(in srgb, #ffffff 44%, transparent);
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, #ffffff 74%, transparent),
+    0 8px 18px color-mix(in srgb, #17211f 5%, transparent);
 }
 
 .kicker-label {

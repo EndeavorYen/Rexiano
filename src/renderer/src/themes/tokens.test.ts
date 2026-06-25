@@ -31,6 +31,66 @@ const REQUIRED_COLOR_KEYS: (keyof ThemeTokens["colors"])[] = [
   "streakGold",
 ];
 
+function rgbFromHex(hex: string): { r: number; g: number; b: number } {
+  return {
+    r: parseInt(hex.slice(1, 3), 16) / 255,
+    g: parseInt(hex.slice(3, 5), 16) / 255,
+    b: parseInt(hex.slice(5, 7), 16) / 255,
+  };
+}
+
+function linearize(channel: number): number {
+  return channel <= 0.03928
+    ? channel / 12.92
+    : ((channel + 0.055) / 1.055) ** 2.4;
+}
+
+function relativeLuminance(hex: string): number {
+  const { r, g, b } = rgbFromHex(hex);
+  return 0.2126 * linearize(r) + 0.7152 * linearize(g) + 0.0722 * linearize(b);
+}
+
+function contrastRatio(foreground: string, background: string): number {
+  const a = relativeLuminance(foreground);
+  const b = relativeLuminance(background);
+  const lighter = Math.max(a, b);
+  const darker = Math.min(a, b);
+  return (lighter + 0.05) / (darker + 0.05);
+}
+
+function hslFromHex(hex: string): { h: number; s: number; l: number } {
+  const { r, g, b } = rgbFromHex(hex);
+  const max = Math.max(r, g, b);
+  const min = Math.min(r, g, b);
+  const l = (max + min) / 2;
+
+  if (max === min) {
+    return { h: 0, s: 0, l };
+  }
+
+  const d = max - min;
+  const s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+  let h = 0;
+  switch (max) {
+    case r:
+      h = (g - b) / d + (g < b ? 6 : 0);
+      break;
+    case g:
+      h = (b - r) / d + 2;
+      break;
+    default:
+      h = (r - g) / d + 4;
+      break;
+  }
+
+  return { h: h * 60, s, l };
+}
+
+function hueDistance(a: string, b: string): number {
+  const delta = Math.abs(hslFromHex(a).h - hslFromHex(b).h);
+  return Math.min(delta, 360 - delta);
+}
+
 describe("Theme tokens", () => {
   test("all four theme IDs are defined", () => {
     for (const id of ALL_THEME_IDS) {
@@ -131,6 +191,29 @@ describe("Theme tokens", () => {
     test("no two themes share the same label", () => {
       const labels = ALL_THEME_IDS.map((id) => themes[id].label);
       expect(new Set(labels).size).toBe(labels.length);
+    });
+  });
+
+  describe("ocean theme visual balance", () => {
+    const ocean = themes.ocean;
+
+    test("uses a clean elevated surface with strong text contrast", () => {
+      expect(hslFromHex(ocean.colors.surface).s).toBeLessThanOrEqual(0.08);
+      expect(relativeLuminance(ocean.colors.surface)).toBeGreaterThanOrEqual(
+        0.94,
+      );
+      expect(
+        contrastRatio(ocean.colors.text, ocean.colors.surface),
+      ).toBeGreaterThanOrEqual(12);
+    });
+
+    test("keeps feedback colors visually separate from the primary accent", () => {
+      expect(
+        hueDistance(ocean.colors.hitLine, ocean.colors.accent),
+      ).toBeGreaterThanOrEqual(90);
+      const glowHue = hslFromHex(ocean.colors.hitGlow).h;
+      expect(glowHue).toBeGreaterThanOrEqual(35);
+      expect(glowHue).toBeLessThanOrEqual(65);
     });
   });
 });
