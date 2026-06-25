@@ -29,7 +29,6 @@ interface UsePostSessionFlowOptions {
 }
 
 interface ModeSelectionInput {
-  previousHadSong: boolean;
   nextHasSong: boolean;
   intent: PracticeSessionIntent;
 }
@@ -64,11 +63,10 @@ export function shouldShowCompletionCelebration({
 }
 
 export function shouldShowModeSelectionModal({
-  previousHadSong,
   nextHasSong,
   intent,
 }: ModeSelectionInput): boolean {
-  return !previousHadSong && nextHasSong && shouldPromptForPracticeMode(intent);
+  return nextHasSong && shouldPromptForPracticeMode(intent);
 }
 
 export function usePostSessionFlow({
@@ -99,7 +97,6 @@ export function usePostSessionFlow({
       if (state.song !== prev.song) {
         setShowModeModal(
           shouldShowModeSelectionModal({
-            previousHadSong: prev.song !== null,
             nextHasSong: state.song !== null,
             intent: getSessionIntentRef.current?.() ?? sessionIntentRef.current,
           }),

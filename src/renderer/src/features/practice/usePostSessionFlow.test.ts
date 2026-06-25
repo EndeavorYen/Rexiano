@@ -52,7 +52,6 @@ describe("shouldShowModeSelectionModal", () => {
   test("shows mode selection only when a practice session loads a new song", () => {
     expect(
       shouldShowModeSelectionModal({
-        previousHadSong: false,
         nextHasSong: true,
         intent: "practice",
       }),
@@ -60,25 +59,24 @@ describe("shouldShowModeSelectionModal", () => {
 
     expect(
       shouldShowModeSelectionModal({
-        previousHadSong: false,
         nextHasSong: true,
         intent: "play-along",
       }),
     ).toBe(false);
   });
 
-  test("does not show mode selection when song state is unchanged or cleared", () => {
+  test("shows mode selection when a practice session replaces the loaded song", () => {
     expect(
       shouldShowModeSelectionModal({
-        previousHadSong: true,
         nextHasSong: true,
         intent: "practice",
       }),
-    ).toBe(false);
+    ).toBe(true);
+  });
 
+  test("does not show mode selection when the song is cleared", () => {
     expect(
       shouldShowModeSelectionModal({
-        previousHadSong: true,
         nextHasSong: false,
         intent: "practice",
       }),

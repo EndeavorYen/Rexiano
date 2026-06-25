@@ -208,4 +208,3 @@ Manual or Playwright verification should cover the full happy path:
   detailed practice settings.
 - Existing per-song setup should remain the source of truth for practice
   defaults.
-
