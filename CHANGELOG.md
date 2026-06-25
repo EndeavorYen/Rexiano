@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.3.0](https://github.com/EndeavorYen/Rexiano/compare/v1.2.1...v1.3.0) (2026-06-25)
+
+
+### Features
+
+* add session flow entry choices ([#173](https://github.com/EndeavorYen/Rexiano/issues/173)) ([a976706](https://github.com/EndeavorYen/Rexiano/commit/a9767061dae95758b5839f47e5c0933469d634e2))
+
+
+### Bug Fixes
+
+* improve ocean theme visual balance ([#175](https://github.com/EndeavorYen/Rexiano/issues/175)) ([81416c9](https://github.com/EndeavorYen/Rexiano/commit/81416c9454a54def79f0ac4927594fb4e0cd02d2))
+
 ## [1.2.1](https://github.com/EndeavorYen/Rexiano/compare/v1.2.0...v1.2.1) (2026-06-13)
 
 
