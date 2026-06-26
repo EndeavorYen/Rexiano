@@ -2,247 +2,158 @@
 
 # Rexiano
 
-A free, open-source piano practice app with falling notes, MIDI keyboard support, and practice tools -- built by a dad for his son, shared with everyone.
+Free, open-source piano practice for falling notes, sheet music, MIDI keyboards, and focused practice -- built by a dad for Rex and shared with learners.
 
 [繁體中文](README-zh.md) | **English**
 
-> **TL;DR** -- Rexiano runs offline on Windows, macOS, and Linux after install, or from the Windows portable zip. Load a built-in or imported MIDI song, then practice with falling notes, sheet music, Wait mode, loops, scoring, and USB/Bluetooth MIDI keyboard feedback.
+> **TL;DR** -- Rexiano runs offline on Windows, macOS, and Linux. Load a built-in or imported MIDI song, then practice with falling notes, sheet music, Watch/Wait/Free modes, loops, scoring, and USB/Bluetooth MIDI keyboard feedback. Current app version: `1.3.0`.
 
-<p align="center">
-  <img src="docs/assets/screenshots/rexiano-library.png" alt="Rexiano song library" width="32%">
-  <img src="docs/assets/screenshots/rexiano-practice.png" alt="Rexiano falling-notes practice" width="32%">
-  <img src="docs/assets/screenshots/rexiano-split-sheet.png" alt="Rexiano split sheet music and falling notes" width="32%">
-</p>
+<table>
+  <tr>
+    <td width="33%" align="center">
+      <img src="docs/assets/screenshots/rexiano-library.png" alt="Rexiano song library with built-in songs" width="100%"><br>
+      <sub>Song Library: built-in songs, filters, favorites, and recent files.</sub>
+    </td>
+    <td width="33%" align="center">
+      <img src="docs/assets/screenshots/rexiano-practice.png" alt="Rexiano falling notes practice view" width="100%"><br>
+      <sub>Practice View: falling notes, keyboard feedback, scoring, loops, and speed control.</sub>
+    </td>
+    <td width="33%" align="center">
+      <img src="docs/assets/screenshots/rexiano-split-sheet.png" alt="Rexiano split sheet music and falling notes view" width="100%"><br>
+      <sub>Split Sheet: notation and falling notes stay in sync.</sub>
+    </td>
+  </tr>
+</table>
 
----
+## Start Practicing
 
-## Features
+1. Download the latest build from [GitHub Releases](https://github.com/EndeavorYen/Rexiano/releases).
+2. Open Rexiano and choose a built-in song, or drag in your own `.mid` / `.midi` file.
+3. Start with **Watch** mode, then switch to **Wait** mode when you want Rexiano to pause until you play the right notes.
+4. Connect a USB or Bluetooth MIDI keyboard when you want live key feedback and scoring.
 
-**Visual Learning**
+No keyboard is required for listening and visual study. Wait mode and scored practice need MIDI input.
 
-- Falling notes display (rhythm game style) rendered at 60 FPS via WebGL
-- Sheet music view with split, sheet-only, and falling-notes display modes
-- 88-key piano keyboard with real-time highlighting
-- Note-name labels and fingering hints for beginner practice
-- Per-track note coloring for left/right hand distinction
+## Highlights
 
-**Audio**
+| Area            | What Rexiano Helps With                                                                                                    |
+| --------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| Visual learning | 60 FPS falling notes, 88-key highlighting, note labels, and per-track colors for left/right hand separation.               |
+| Sheet music     | Split, sheet-only, and falling-notes display modes for switching between notation and piano-roll practice.                 |
+| Practice focus  | Watch, Wait, and Free modes, plus speed control, A-B loop, split-hand practice, metronome, count-in, and progress history. |
+| MIDI keyboards  | USB and Bluetooth MIDI input/output, hot-plug detection, auto-reconnect, and sustain pedal support.                        |
+| Sound           | Bundled FreePats Upright Piano KW SoundFont with Web Audio playback and a synthesizer fallback.                            |
+| Files           | Built-in song library plus drag-and-drop import for your own MIDI files.                                                   |
 
-- Bundled FreePats Upright Piano KW SoundFont playback (Web Audio API)
-- Volume control with master slider
-- Synthesizer fallback when SoundFont is unavailable
+## Install
 
-**MIDI Connectivity**
+| Platform | Download                                                                   | Notes                                                                                                                          |
+| -------- | -------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
+| Windows  | `rexiano-x.x.x-setup.exe`, `rexiano-x.x.x-win-x64.zip`, or portable `.exe` | Use the `.zip` build if your browser blocks direct `.exe` downloads. The installer adds shortcuts; portable builds do not.     |
+| macOS    | `rexiano-x.x.x-arm64.dmg` or `rexiano-x.x.x-x64.dmg`                       | Drag Rexiano to Applications. On first launch, use Control-click > Open or System Settings > Privacy & Security > Open Anyway. |
+| Linux    | `rexiano-x.x.x-x86_64.AppImage` or `rexiano-x.x.x-amd64.deb`               | AppImage runs without installation; `.deb` integrates with Debian/Ubuntu app menus.                                            |
 
-- USB and Bluetooth MIDI keyboard input/output
-- Hot-plug detection (connect/disconnect devices while running)
-- Auto-reconnect to last used device
-- Sustain pedal (CC64) support
+Public builds are currently unsigned/not notarized, so Windows SmartScreen or macOS Gatekeeper may ask for confirmation on first launch. See the [Installation Guide](docs/installation-en.md) and [release signing notes](docs/release-signing.md) for details.
 
-**Practice Mode**
+Each release includes `SHA256SUMS.txt` for checksum verification. Rexiano can also check GitHub Releases from Settings > About.
 
-- **Watch Mode** -- sit back and observe the playback
-- **Wait Mode** -- playback pauses until you play the correct notes
-- **Free Mode** -- play along at your own pace
-- Adjustable speed (0.25x to 2.0x)
-- A-B loop for practicing difficult passages
-- Split-hand practice (select which tracks to practice)
-- Real-time scoring with accuracy and streak tracking
-- Metronome, count-in, post-session next action, and progress history
+## Bluetooth MIDI
 
-**Themes**
+Bluetooth MIDI support depends on how your operating system exposes the keyboard:
 
-- Four built-in themes: Lavender, Ocean, Peach, and Midnight (dark)
-- All colors driven by CSS custom properties for full consistency
+| Platform | Setup                                                                                                                                            |
+| -------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
+| macOS    | Pair the keyboard in Bluetooth settings, then select it in Rexiano.                                                                              |
+| Linux    | Pair through BlueZ/ALSA, confirm the MIDI port appears, then select it in Rexiano.                                                               |
+| Windows  | Try Rexiano's Bluetooth scan first. If the paired keyboard does not appear as MIDI input, use MIDIberry or the KORG BLE-MIDI Driver as a bridge. |
 
-**File Handling**
+Detailed steps live in [User Guide -- Connecting a MIDI Keyboard](docs/user-guide-en.md#5-connecting-a-midi-keyboard).
 
-- Import any `.mid` / `.midi` file
-- Drag-and-drop support
-- Built-in song library with grades, categories, sorting, favorites, previews, and recent files
+## Develop
 
-**Release and Updates**
-
-- GitHub Releases provide Windows setup `.exe`, Windows portable `.zip`/`.exe`, macOS `.dmg`, Linux `.AppImage`, Linux `.deb`, and `SHA256SUMS.txt`
-- Latest verified release: `v1.2.1`
-- Settings > About can check GitHub Releases for newer matching installers
-- Public builds are currently unsigned/not notarized; see [release-signing.md](docs/release-signing.md)
-
----
-
-## Installation
-
-Download the latest release for your platform from the [Releases](https://github.com/EndeavorYen/Rexiano/releases) page.
-
-### Windows
-
-1. Download `rexiano-x.x.x-setup.exe` to install, or `rexiano-x.x.x-win-x64.zip` to run without installation.
-2. For the installer, run it and follow the prompts. For the portable zip, extract it and run `Rexiano.exe`.
-3. If your browser blocks direct `.exe` downloads, use the `.zip` portable build. The installer adds shortcuts; portable builds do not.
-
-> **Windows SmartScreen warning**: Because the app is not code-signed, Windows may show a "Windows protected your PC" dialog. Click **More info**, then **Run anyway**. This is safe -- the app is open source and you can audit every line of code in this repository.
-
-### macOS
-
-1. Download `rexiano-x.x.x-arm64.dmg` (Apple Silicon) or `rexiano-x.x.x-x64.dmg` (Intel)
-2. Open the DMG and drag Rexiano to your Applications folder
-3. On first launch, right-click the app and select **Open** (or go to System Settings > Privacy & Security > Open Anyway)
-
-> **Gatekeeper notice**: Since the app is not notarized with Apple, macOS will block it on first launch. The right-click > Open workaround is only needed once.
-
-### Linux
-
-**AppImage** (recommended -- no installation required):
-
-1. Download `rexiano-x.x.x-x86_64.AppImage`
-2. Make it executable: `chmod +x rexiano-*.AppImage`
-3. Run it: `./rexiano-*.AppImage`
-
-**Debian / Ubuntu**:
-
-1. Download `rexiano-x.x.x-amd64.deb`
-2. Install: `sudo dpkg -i rexiano-*.deb`
-
----
-
-## Bluetooth MIDI Setup
-
-Bluetooth MIDI support depends on the operating system:
-
-| Platform | Setup                                                                                                                                                                                   |
-| -------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| macOS    | Pair the keyboard in Bluetooth settings, then select it in Rexiano.                                                                                                                     |
-| Linux    | Pair through BlueZ/ALSA, then select the exposed MIDI port.                                                                                                                             |
-| Windows  | Try Rexiano's Bluetooth scan first. If the keyboard does not appear as a MIDI input, install a bridge such as MIDIberry or the KORG BLE-MIDI Driver, then select the bridged MIDI port. |
-
-For detailed steps, see the **[User Guide — Connecting a MIDI Keyboard](docs/user-guide-en.md#5-connecting-a-midi-keyboard)**.
-
----
-
-## Development
-
-### Prerequisites
-
-- [Node.js](https://nodejs.org/) 22 or later
-- [pnpm](https://pnpm.io/) 10 or later
-- Git
-
-### Quick Start
+Prerequisites: [Node.js](https://nodejs.org/) `>=22 <23`, [pnpm](https://pnpm.io/) `>=10 <11`, and Git.
 
 ```bash
-# Clone the repository
 git clone https://github.com/EndeavorYen/Rexiano.git
 cd Rexiano
-
-# Install dependencies
 pnpm install
-
-# Start the dev server with hot reload
 pnpm dev
-
-# Run in sandbox mode (if not using WSL2)
-pnpm dev:sandbox
 ```
 
-### Scripts
+Common commands:
 
-| Command                | Description                                      |
-| ---------------------- | ------------------------------------------------ |
-| `pnpm dev`             | Start Electron in development mode with HMR      |
-| `pnpm build`           | Typecheck + production build                     |
-| `pnpm build:win`       | Build Windows artifacts (.exe, .zip)             |
-| `pnpm build:mac`       | Build macOS disk image (.dmg)                    |
-| `pnpm build:linux`     | Build Linux packages (.AppImage, .deb)           |
-| `pnpm test`            | Run all tests with Vitest                        |
-| `pnpm test:watch`      | Run tests in watch mode                          |
-| `pnpm test:e2e`        | Build app and run Playwright Electron E2E tests  |
-| `pnpm test:e2e:update` | Build app and update Playwright visual snapshots |
-| `pnpm test:visual`     | Build app and run focused UI visual guard tests  |
-| `pnpm lint`            | Run ESLint                                       |
-| `pnpm typecheck`       | Run TypeScript compiler checks                   |
-| `pnpm format`          | Format code with Prettier                        |
+| Command            | Purpose                                      |
+| ------------------ | -------------------------------------------- |
+| `pnpm dev`         | Start Electron in development mode with HMR. |
+| `pnpm build`       | Typecheck and build the production app.      |
+| `pnpm lint`        | Run ESLint.                                  |
+| `pnpm typecheck`   | Run TypeScript checks.                       |
+| `pnpm test`        | Run Vitest unit tests.                       |
+| `pnpm test:e2e`    | Build and run Playwright Electron E2E tests. |
+| `pnpm test:visual` | Build and run focused UI visual guard tests. |
 
-Focused UI suites for local changes:
-
-- Accessibility and keyboard flow: `pnpm build && pnpm exec playwright test e2e/accessibility-core.spec.ts`
-- Playback layout and visual guardrails: `pnpm build && pnpm exec playwright test e2e/ui-polish.spec.ts`
-- Sheet-music dense/key-signature SVG guards: `pnpm build && pnpm exec playwright test e2e/sheet-music-visual-fixtures.spec.ts`
-- README screenshots: `pnpm build && pnpm exec playwright test -c scripts/playwright.readme-screenshots.config.ts`
-
-### Project Structure
-
-```
-src/
-  main/                  # Electron main process
-    ipc/                 # IPC handlers (file dialog, MIDI permissions)
-  preload/               # Context bridge (secure IPC)
-  renderer/src/
-    engines/             # Pure logic (no React dependency)
-      audio/             # Web Audio API + SoundFont
-      fallingNotes/      # PixiJS rendering + ticker loop
-      midi/              # MIDI device management + parsing
-      practice/          # Wait mode, scoring, speed, loops
-    stores/              # Zustand state management
-    features/            # React UI components
-    themes/              # Theme tokens (CSS custom properties)
-resources/               # SoundFont files, bundled MIDI songs
-build/                   # Electron-builder resources (icons, entitlements)
-```
-
----
-
-## Tech Stack
-
-| Layer     | Technology                                    | Purpose                                       |
-| --------- | --------------------------------------------- | --------------------------------------------- |
-| Desktop   | Electron 39                                   | Cross-platform shell, system APIs, packaging  |
-| Build     | electron-vite 5 + Vite 7                      | Fast HMR, module bundling                     |
-| UI        | React 19 + TypeScript 5.9                     | Component-based interface                     |
-| Styling   | Tailwind CSS 4 + CSS Custom Properties        | Theme system                                  |
-| State     | Zustand 5                                     | Lightweight global state (8 stores)           |
-| Rendering | PixiJS 8                                      | WebGL canvas for falling notes at 60 FPS      |
-| MIDI      | @tonejs/midi + Web MIDI API                   | File parsing + live device I/O                |
-| Audio     | Web Audio API + SoundFont (soundfont2)        | Piano playback                                |
-| Fonts     | @fontsource (Nunito, DM Sans, JetBrains Mono) | Offline, no CDN                               |
-| Testing   | Vitest 4 + Playwright 1.58                    | Unit tests + Electron E2E + visual regression |
-| Packaging | electron-builder 26                           | Installers for Win / Mac / Linux              |
-
----
-
-## Documentation
-
-| Document               | English                                            | 繁體中文                                           |
-| ---------------------- | -------------------------------------------------- | -------------------------------------------------- |
-| **README**             | You are here                                       | [README-zh.md](README-zh.md)                       |
-| **User Guide**         | [docs/user-guide-en.md](docs/user-guide-en.md)     | [docs/user-guide.md](docs/user-guide.md)           |
-| **Installation Guide** | [docs/installation-en.md](docs/installation-en.md) | [docs/installation.md](docs/installation.md)       |
-| **Architecture**       | [docs/architecture.md](docs/architecture.md)       | [docs/architecture-zh.md](docs/architecture-zh.md) |
-| **System Design**      | [docs/DESIGN-en.md](docs/DESIGN-en.md)             | [docs/DESIGN.md](docs/DESIGN.md)                   |
-| **Roadmap**            | [docs/ROADMAP.md](docs/ROADMAP.md)                 | [docs/ROADMAP.md](docs/ROADMAP.md)                 |
-| **Release Signing**    | [docs/release-signing.md](docs/release-signing.md) | [docs/release-signing.md](docs/release-signing.md) |
-| **Update Flow**        | [docs/update-flow.md](docs/update-flow.md)         | [docs/update-flow.md](docs/update-flow.md)         |
-
----
-
-## License
-
-Rexiano is licensed under the [GNU General Public License v3.0](LICENSE).
-
-You are free to use, modify, and distribute this software under the terms of the GPL-3.0 license. If you distribute modified versions, you must also make your source code available under the same license.
-
----
-
-## Contributing
-
-Contributions are welcome! Please read [CONTRIBUTING.md](CONTRIBUTING.md), the [Architecture doc](docs/architecture.md), and the [System Design doc](docs/DESIGN-en.md) before writing code.
+Before opening a PR, run:
 
 ```bash
 pnpm lint && pnpm typecheck && pnpm test
 ```
 
----
+To refresh README screenshots:
+
+```bash
+pnpm build
+pnpm exec playwright test -c scripts/playwright.readme-screenshots.config.ts
+```
+
+## Project Map
+
+```text
+src/
+  main/                  Electron main process and IPC
+  preload/               Secure context bridge
+  renderer/src/
+    engines/             Pure logic: audio, falling notes, MIDI, practice
+    stores/              Zustand state
+    features/            React UI
+    themes/              CSS custom property tokens
+resources/               SoundFont files and built-in MIDI songs
+build/                   Electron-builder resources
+```
+
+## Tech Stack
+
+| Layer     | Technology                                            |
+| --------- | ----------------------------------------------------- |
+| Desktop   | Electron 39                                           |
+| UI        | React 19, TypeScript 5.9, Tailwind CSS 4              |
+| Rendering | PixiJS 8 for falling notes, VexFlow 5 for sheet music |
+| State     | Zustand 5                                             |
+| MIDI      | Web MIDI API, `@tonejs/midi`                          |
+| Audio     | Web Audio API, `soundfont2`                           |
+| Testing   | Vitest 4, Playwright 1.58                             |
+| Packaging | electron-builder 26                                   |
+
+## Documentation
+
+| Goal                                 | English                                                                        | 繁體中文                                                             |
+| ------------------------------------ | ------------------------------------------------------------------------------ | -------------------------------------------------------------------- |
+| Start using Rexiano                  | [User Guide](docs/user-guide-en.md)                                            | [使用手冊](docs/user-guide.md)                                       |
+| Install or troubleshoot first launch | [Installation Guide](docs/installation-en.md)                                  | [安裝指南](docs/installation.md)                                     |
+| Understand the architecture          | [Architecture](docs/architecture.md), [System Design](docs/DESIGN-en.md)       | [架構文件](docs/architecture-zh.md), [系統設計](docs/DESIGN.md)      |
+| Track project work                   | [Roadmap](docs/ROADMAP.md)                                                     | [開發路線圖](docs/ROADMAP.md)                                        |
+| Review release policy                | [Release Signing](docs/release-signing.md), [Update Flow](docs/update-flow.md) | [簽章政策](docs/release-signing.md), [更新流程](docs/update-flow.md) |
+
+## Contributing
+
+Contributions are welcome. Please read [CONTRIBUTING.md](CONTRIBUTING.md), the [Architecture doc](docs/architecture.md), and the [System Design doc](docs/DESIGN-en.md) before changing code.
+
+Keep changes small, testable, and aligned with the existing engine/store/feature boundaries.
+
+## License
+
+Rexiano is licensed under the [GNU General Public License v3.0](LICENSE). You may use, modify, and distribute it under GPL-3.0 terms; distributed modifications must make source code available under the same license.
 
 ## Acknowledgments
 
-- Built with love for Rex, who is learning to play piano
-- The open-source community for the incredible tools that make this project possible
+- Built with love for Rex, who is learning to play piano.
+- Thank you to the open-source projects that make Rexiano possible.

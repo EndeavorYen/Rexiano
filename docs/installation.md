@@ -1,6 +1,6 @@
 # Rexiano 安裝指南
 
-> **版本**: 1.1.3 | **最後更新**: 2026-06
+> **版本**: 1.3.0 | **最後更新**: 2026-06
 >
 > 其他語言：[English](./installation-en.md)
 
@@ -238,12 +238,20 @@ pnpm dev
 ### 常用指令
 
 ```bash
-pnpm dev          # 開發模式（熱模組替換）
-pnpm build        # 產出正式版安裝檔
+pnpm dev          # 開發模式（Electron + HMR）
+pnpm build        # 型別檢查 + renderer/main production build
 pnpm lint         # ESLint 檢查
 pnpm typecheck    # TypeScript 型別檢查
-pnpm test         # 執行所有測試
-pnpm test:watch   # 測試 Watch 模式
+pnpm test         # 執行 Vitest 單元/整合測試
+pnpm test:e2e     # 建置 app 並執行 Playwright Electron E2E
+pnpm test:visual  # 建置 app 並執行重點 UI 視覺回歸
+```
+
+更新 README 截圖時，先建置，再執行專用擷取流程：
+
+```bash
+pnpm build
+pnpm exec playwright test -c scripts/playwright.readme-screenshots.config.ts
 ```
 
 ### WSL2 開發注意事項（Windows）
@@ -254,8 +262,8 @@ pnpm test:watch   # 測試 Watch 模式
 # VS Code 終端可能設定了這個環境變數，需要取消
 unset ELECTRON_RUN_AS_NODE
 
-# Chromium 在 WSL2 中需要停用 sandbox
-NO_SANDBOX=1 pnpm dev
+# pnpm dev 會自動設定 NO_SANDBOX=1
+pnpm dev
 ```
 
 ---

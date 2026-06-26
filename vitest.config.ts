@@ -11,6 +11,7 @@ export default defineConfig({
   test: {
     include: [
       "src/**/*.test.ts",
+      "site/**/*.test.ts",
       "scripts/**/*.test.ts",
       "e2e/fixtures/**/*.test.ts",
     ],

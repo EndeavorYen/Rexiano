@@ -2,138 +2,101 @@
 
 # Rexiano
 
-免費、開源的鋼琴練習應用程式——有下落音符、MIDI 鍵盤支援和多種練習工具。一位爸爸為兒子而建，開放給所有人。
+免費、開源的鋼琴練習應用程式，支援下落音符、五線譜、MIDI 鍵盤與聚焦練習。一位爸爸為 Rex 打造，並分享給所有學琴的人。
 
 **繁體中文** | [English](README.md)
 
-> **TL;DR** — Rexiano 安裝後可在 Windows、macOS、Linux 離線使用，也可使用 Windows 免安裝 zip。載入內建或匯入的 MIDI 後，可以用下落音符、五線譜、等待模式、循環、評分，以及 USB/藍牙 MIDI 鍵盤一起練習。
+> **TL;DR** — Rexiano 安裝後可在 Windows、macOS、Linux 離線使用。載入內建或匯入的 MIDI 後，可以用下落音符、五線譜、Watch/Wait/Free 模式、循環、評分，以及 USB/藍牙 MIDI 鍵盤回饋一起練習。目前 app 版本：`1.3.0`。
 
-<p align="center">
-  <img src="docs/assets/screenshots/rexiano-library.png" alt="Rexiano 曲庫" width="32%">
-  <img src="docs/assets/screenshots/rexiano-practice.png" alt="Rexiano 下落音符練習" width="32%">
-  <img src="docs/assets/screenshots/rexiano-split-sheet.png" alt="Rexiano 樂譜與下落音符分割畫面" width="32%">
-</p>
+<table>
+  <tr>
+    <td width="33%" align="center">
+      <img src="docs/assets/screenshots/rexiano-library.png" alt="Rexiano 曲庫與內建曲目" width="100%"><br>
+      <sub>曲庫：內建曲目、篩選、收藏與最近檔案。</sub>
+    </td>
+    <td width="33%" align="center">
+      <img src="docs/assets/screenshots/rexiano-practice.png" alt="Rexiano 下落音符練習畫面" width="100%"><br>
+      <sub>練習畫面：下落音符、鍵盤回饋、評分、循環與速度控制。</sub>
+    </td>
+    <td width="33%" align="center">
+      <img src="docs/assets/screenshots/rexiano-split-sheet.png" alt="Rexiano 五線譜與下落音符分割畫面" width="100%"><br>
+      <sub>分割樂譜：五線譜與下落音符同步顯示。</sub>
+    </td>
+  </tr>
+</table>
 
----
+## 開始練習
 
-## 功能特色
+1. 從 [GitHub Releases](https://github.com/EndeavorYen/Rexiano/releases) 下載最新 build。
+2. 開啟 Rexiano，選擇內建曲目，或拖入自己的 `.mid` / `.midi` 檔案。
+3. 先用 **Watch** 模式聽與看，再切到 **Wait** 模式，讓 Rexiano 等你彈對音符才繼續。
+4. 想要即時琴鍵回饋與評分時，連接 USB 或藍牙 MIDI 鍵盤。
 
-**視覺學習**
+只聽音樂與看視覺化不需要外接鍵盤。Wait 模式與評分練習需要 MIDI 輸入。
 
-- 下落音符顯示（節奏遊戲風格），以 WebGL 60 FPS 渲染
-- 五線譜顯示，可切換分割、純五線譜、純下落音符模式
-- 88 鍵鋼琴鍵盤即時高亮
-- 音名標籤與指法提示，適合初學者
-- 不同聲部（手）使用不同顏色
+## 特色
 
-**音頻播放**
-
-- 內建 FreePats Upright Piano KW SoundFont 鋼琴音色（Web Audio API）
-- 主音量控制
-- SoundFont 載入失敗時退回合成器音色
-
-**MIDI 連接**
-
-- USB 和藍牙 MIDI 鍵盤輸入/輸出
-- 熱插拔偵測（執行中也能接連/斷開裝置）
-- 自動重連上次使用的裝置
-- 延音踏板（CC64）支援
-
-**練習模式**
-
-- **觀看模式（Watch）** — 坐著觀察播放
-- **等待模式（Wait）** — 播放在每個音符處暫停，等你彈對才繼續
-- **自由模式（Free）** — 跟著音樂隨意彈奏
-- 速度調整（0.25x 至 2.0x）
-- A-B 段落循環，反覆練習難點
-- 分手練習（選擇練習哪些聲部）
-- 即時評分：準確率與連擊追蹤
-- 節拍器、預備拍、練習後下一步建議與歷史進度
-
-**主題**
-
-- 四套內建主題：薰衣草（Lavender）、海洋（Ocean）、水蜜桃（Peach）、午夜（Midnight，深色）
-- 所有色彩統一透過 CSS Custom Properties 驅動
-
-**檔案管理**
-
-- 匯入任何 `.mid` / `.midi` 檔案
-- 拖放支援
-- 內建曲庫，含等級、分類、排序、收藏、預覽與最近檔案
-
-**發佈與更新**
-
-- GitHub Releases 提供 Windows 安裝版 `.exe`、Windows 免安裝版 `.zip`/`.exe`、macOS `.dmg`、Linux `.AppImage`、Linux `.deb` 與 `SHA256SUMS.txt`
-- 最新已驗證版本：`v1.2.1`
-- 設定 > 關於 可檢查 GitHub Releases 上的新版本
-- 目前公開 build 尚未簽章/公證；細節見 [release-signing.md](docs/release-signing.md)
-
----
+| 面向      | Rexiano 幫你做到                                                                       |
+| --------- | -------------------------------------------------------------------------------------- |
+| 視覺學習  | 60 FPS 下落音符、88 鍵高亮、音名標籤，以及左右手分色。                                 |
+| 五線譜    | 可切換分割、純五線譜、純下落音符模式，在樂譜與 piano-roll 練習間轉換。                 |
+| 聚焦練習  | Watch、Wait、Free 模式，加上速度控制、A-B 循環、分手練習、節拍器、預備拍與歷史進度。   |
+| MIDI 鍵盤 | USB 與藍牙 MIDI 輸入/輸出、熱插拔、自動重連與延音踏板支援。                            |
+| 音色      | 內建 FreePats Upright Piano KW SoundFont，透過 Web Audio 播放，並保留合成器 fallback。 |
+| 檔案      | 內建曲庫，也可拖放匯入自己的 MIDI 檔。                                                 |
 
 ## 安裝
 
-從 **[Releases 頁面](https://github.com/EndeavorYen/Rexiano/releases)** 下載對應平台的安裝檔：
+| 平台    | 下載檔案                                                                  | 備註                                                                                    |
+| ------- | ------------------------------------------------------------------------- | --------------------------------------------------------------------------------------- |
+| Windows | `rexiano-x.x.x-setup.exe`、`rexiano-x.x.x-win-x64.zip` 或 portable `.exe` | 若瀏覽器阻擋直接下載 `.exe`，請改用 `.zip`。安裝版會建立捷徑；免安裝版不會。            |
+| macOS   | `rexiano-x.x.x-arm64.dmg` 或 `rexiano-x.x.x-x64.dmg`                      | 拖到「應用程式」。首次開啟可用 Control-click > 開啟，或到系統設定的隱私權與安全性允許。 |
+| Linux   | `rexiano-x.x.x-x86_64.AppImage` 或 `rexiano-x.x.x-amd64.deb`              | AppImage 免安裝；`.deb` 會整合到 Debian/Ubuntu 應用程式選單。                           |
 
-| 作業系統 | 檔案                                                        | 備注                                                   |
-| -------- | ----------------------------------------------------------- | ------------------------------------------------------ |
-| Windows  | `rexiano-x.x.x-setup.exe` / `rexiano-x.x.x-win-x64.zip`      | setup 會安裝捷徑；zip 解壓後可直接執行                 |
-| macOS    | `rexiano-x.x.x-arm64.dmg` / `rexiano-x.x.x-x64.dmg`         | 拖入應用程式；首次開啟請在「隱私權與安全性」中允許     |
-| Linux    | `rexiano-x.x.x-x86_64.AppImage` / `rexiano-x.x.x-amd64.deb` | AppImage 可 `chmod +x` 後直接執行                      |
+目前公開 build 尚未簽章/公證，因此 Windows SmartScreen 或 macOS Gatekeeper 第一次啟動時可能要求確認。細節請看[安裝指南](docs/installation.md)與[簽章說明](docs/release-signing.md)。
 
-完整安裝說明請參閱 **[安裝指南](docs/installation.md)**。
+每個 release 都會附上 `SHA256SUMS.txt` 供 checksum 驗證。Rexiano 也可以從「設定 > 關於」檢查 GitHub Releases 上的新版本。
 
-## 藍牙 MIDI 設定
+## 藍牙 MIDI
 
-藍牙 MIDI 是否需要橋接工具取決於作業系統與鍵盤型號：
+藍牙 MIDI 是否可直接使用，取決於作業系統如何暴露鍵盤裝置：
 
 | 平台    | 設定方式                                                                                                         |
 | ------- | ---------------------------------------------------------------------------------------------------------------- |
 | macOS   | 在系統藍牙設定配對鍵盤，再於 Rexiano 選擇裝置。                                                                  |
-| Linux   | 透過 BlueZ/ALSA 配對並確認 MIDI port 出現，再於 Rexiano 選擇。                                                   |
-| Windows | 先嘗試 Rexiano 的 Bluetooth 掃描；若已配對但沒有 MIDI input，請使用 MIDIberry 或 KORG BLE-MIDI Driver 作為橋接。 |
+| Linux   | 透過 BlueZ/ALSA 配對，確認 MIDI port 出現後再於 Rexiano 選擇。                                                   |
+| Windows | 先嘗試 Rexiano 的 Bluetooth 掃描。若已配對但沒有 MIDI input，請使用 MIDIberry 或 KORG BLE-MIDI Driver 作為橋接。 |
 
-詳細說明請參閱 **[使用手冊 — 連接 MIDI 鍵盤](docs/user-guide.md#5-連接-midi-鍵盤)**。
-
----
+詳細步驟請看[使用手冊 — 連接 MIDI 鍵盤](docs/user-guide.md#5-連接-midi-鍵盤)。
 
 ## 開發
 
-### 前置需求
-
-- [Node.js](https://nodejs.org/) 22 或更新版本
-- [pnpm](https://pnpm.io/) 10 或更新版本
-- Git
-
-### 快速開始
+前置需求：[Node.js](https://nodejs.org/) `>=22 <23`、[pnpm](https://pnpm.io/) `>=10 <11` 與 Git。
 
 ```bash
-# 複製專案
 git clone https://github.com/EndeavorYen/Rexiano.git
 cd Rexiano
-
-# 安裝相依套件
 pnpm install
-
-# 啟動開發模式（含熱模組替換）
 pnpm dev
 ```
 
-### 常用指令
+常用指令：
 
-| 指令               | 說明                               |
-| ------------------ | ---------------------------------- |
-| `pnpm dev`         | 以開發模式啟動 Electron（含 HMR）  |
-| `pnpm build`       | 型別檢查 + 正式版建置              |
-| `pnpm build:win`   | 建置 Windows 發佈檔（.exe、.zip）  |
-| `pnpm build:mac`   | 建置 macOS 磁碟映像（.dmg）        |
-| `pnpm build:linux` | 建置 Linux 套件（.AppImage、.deb） |
-| `pnpm test`        | 執行所有 Vitest 測試               |
-| `pnpm test:watch`  | 測試 Watch 模式                    |
-| `pnpm test:e2e`    | 建置 app 並執行 Electron E2E 測試  |
-| `pnpm test:visual` | 執行重點 UI 視覺回歸測試           |
-| `pnpm lint`        | 執行 ESLint                        |
-| `pnpm typecheck`   | 執行 TypeScript 型別檢查           |
-| `pnpm format`      | 以 Prettier 格式化程式碼           |
+| 指令               | 用途                                      |
+| ------------------ | ----------------------------------------- |
+| `pnpm dev`         | 以開發模式啟動 Electron，含 HMR。         |
+| `pnpm build`       | 型別檢查並建置正式版 app。                |
+| `pnpm lint`        | 執行 ESLint。                             |
+| `pnpm typecheck`   | 執行 TypeScript 檢查。                    |
+| `pnpm test`        | 執行 Vitest 單元測試。                    |
+| `pnpm test:e2e`    | 建置後執行 Playwright Electron E2E 測試。 |
+| `pnpm test:visual` | 建置後執行重點 UI 視覺 guard 測試。       |
+
+送出 PR 前請執行：
+
+```bash
+pnpm lint && pnpm typecheck && pnpm test
+```
 
 更新 README 截圖：
 
@@ -142,100 +105,55 @@ pnpm build
 pnpm exec playwright test -c scripts/playwright.readme-screenshots.config.ts
 ```
 
-### 專案結構
+## 專案地圖
 
-```
+```text
 src/
-  main/                  # Electron 主程序
-    ipc/                 # IPC 處理器（檔案對話框、MIDI 權限）
-  preload/               # Context bridge（安全 IPC）
+  main/                  Electron 主程序與 IPC
+  preload/               安全 context bridge
   renderer/src/
-    engines/             # 純邏輯層（無 React 依賴）
-      audio/             # Web Audio API + SoundFont
-      fallingNotes/      # PixiJS 渲染 + ticker 迴圈
-      midi/              # MIDI 裝置管理 + 解析
-      practice/          # Wait 模式、評分、速度、循環
-    stores/              # Zustand 狀態管理
-    features/            # React UI 元件
-    themes/              # 主題 token（CSS Custom Properties）
-resources/               # SoundFont 檔案、內建 MIDI 曲目
-build/                   # Electron-builder 資源（圖示、權限）
+    engines/             純邏輯：音頻、下落音符、MIDI、練習
+    stores/              Zustand 狀態
+    features/            React UI
+    themes/              CSS custom property tokens
+resources/               SoundFont 檔案與內建 MIDI 曲目
+build/                   Electron-builder 資源
 ```
-
----
 
 ## 技術堆疊
 
-| 層級        | 技術                                          | 用途                          |
-| ----------- | --------------------------------------------- | ----------------------------- |
-| 桌面框架    | Electron 39                                   | 跨平台視窗、系統 API、打包    |
-| 建置工具    | electron-vite 5 + Vite 7                      | 快速 HMR、模組打包            |
-| UI 框架     | React 19 + TypeScript 5.9                     | 元件化介面                    |
-| 樣式        | Tailwind CSS 4 + CSS Custom Properties        | 主題系統                      |
-| 狀態管理    | Zustand 5                                     | 輕量全域狀態（8 個 store）    |
-| Canvas 渲染 | PixiJS 8                                      | WebGL Canvas，60 FPS 下落音符 |
-| MIDI        | @tonejs/midi + Web MIDI API                   | 檔案解析 + 即時裝置 I/O       |
-| 音頻        | Web Audio API + SoundFont (soundfont2)        | 鋼琴音色播放                  |
-| 字型        | @fontsource (Nunito, DM Sans, JetBrains Mono) | 離線字型，無 CDN              |
-| 測試        | Vitest 4 + Playwright 1.58                    | 單元測試 + E2E + 視覺回歸測試 |
-| 打包        | electron-builder 26                           | Win / Mac / Linux 安裝檔      |
-
----
-
-## 開發進度
-
-| 版本   | 里程碑                                | 狀態                      |
-| ------ | ------------------------------------- | ------------------------- |
-| v0.1.0 | 專案骨架 + 下落音符 + 主題系統        | ✅ 完成                   |
-| v0.2.0 | 音頻播放（SoundFont）                 | ✅ 完成                   |
-| v0.3.0 | MIDI 鍵盤連接（USB + BLE）            | ✅ 完成                   |
-| v0.4.0 | 練習模式（等待 / 速度 / 循環 / 評分） | ✅ 完成                   |
-| v0.4.1 | 兒童可用性增強                        | ✅ 完成                   |
-| v0.5.0 | 五線譜顯示                            | ✅ 完成                   |
-| v0.5.1 | 曲庫與練習入口優化                    | ✅ 完成                   |
-| v1.0.0 | 正式版（編輯器 + 發佈流程）           | ✅ 已發佈                 |
-| v1.1.2 | 安全預檢 + 發佈檔案                  | ✅ 已發佈                 |
-| v1.1.3 | esbuild audit 修補 + 發佈檔案         | ✅ 已發佈                 |
-
-詳細任務清單請見 **[ROADMAP.md](docs/ROADMAP.md)**。
-
----
+| 層級     | 技術                                     |
+| -------- | ---------------------------------------- |
+| 桌面框架 | Electron 39                              |
+| UI       | React 19、TypeScript 5.9、Tailwind CSS 4 |
+| 渲染     | PixiJS 8 下落音符、VexFlow 5 五線譜      |
+| 狀態     | Zustand 5                                |
+| MIDI     | Web MIDI API、`@tonejs/midi`             |
+| 音頻     | Web Audio API、`soundfont2`              |
+| 測試     | Vitest 4、Playwright 1.58                |
+| 打包     | electron-builder 26                      |
 
 ## 文件
 
-| 文件           | 繁體中文                                           | English                                            |
-| -------------- | -------------------------------------------------- | -------------------------------------------------- |
-| **README**     | 目前頁面                                           | [README.md](README.md)                             |
-| **使用手冊**   | [docs/user-guide.md](docs/user-guide.md)           | [docs/user-guide-en.md](docs/user-guide-en.md)     |
-| **安裝指南**   | [docs/installation.md](docs/installation.md)       | [docs/installation-en.md](docs/installation-en.md) |
-| **架構文件**   | [docs/architecture-zh.md](docs/architecture-zh.md) | [docs/architecture.md](docs/architecture.md)       |
-| **系統設計**   | [docs/DESIGN.md](docs/DESIGN.md)                   | [docs/DESIGN-en.md](docs/DESIGN-en.md)             |
-| **開發路線圖** | [docs/ROADMAP.md](docs/ROADMAP.md)                 | [docs/ROADMAP.md](docs/ROADMAP.md)                 |
-| **簽章政策**   | [docs/release-signing.md](docs/release-signing.md) | [docs/release-signing.md](docs/release-signing.md) |
-| **更新流程**   | [docs/update-flow.md](docs/update-flow.md)         | [docs/update-flow.md](docs/update-flow.md)         |
-
----
-
-## 授權
-
-Rexiano 以 [GNU General Public License v3.0](LICENSE) 釋出。
-
-你可以自由使用、修改和散佈此軟體，但若散佈修改版本，必須以相同授權開放原始碼。
-
----
+| 目標                   | 繁體中文                                                             | English                                                                        |
+| ---------------------- | -------------------------------------------------------------------- | ------------------------------------------------------------------------------ |
+| 開始使用 Rexiano       | [使用手冊](docs/user-guide.md)                                       | [User Guide](docs/user-guide-en.md)                                            |
+| 安裝或排除首次啟動問題 | [安裝指南](docs/installation.md)                                     | [Installation Guide](docs/installation-en.md)                                  |
+| 理解架構               | [架構文件](docs/architecture-zh.md)、[系統設計](docs/DESIGN.md)      | [Architecture](docs/architecture.md)、[System Design](docs/DESIGN-en.md)       |
+| 追蹤專案工作           | [開發路線圖](docs/ROADMAP.md)                                        | [Roadmap](docs/ROADMAP.md)                                                     |
+| 查看發佈政策           | [簽章政策](docs/release-signing.md)、[更新流程](docs/update-flow.md) | [Release Signing](docs/release-signing.md)、[Update Flow](docs/update-flow.md) |
 
 ## 貢獻
 
-歡迎任何形式的貢獻！在寫程式碼之前，請先閱讀 [CONTRIBUTING.md](CONTRIBUTING.md)、[架構文件](docs/architecture-zh.md)和[系統設計文件](docs/DESIGN.md)。
+歡迎任何形式的貢獻。改程式碼前，請先閱讀 [CONTRIBUTING.md](CONTRIBUTING.md)、[架構文件](docs/architecture-zh.md)與[系統設計](docs/DESIGN.md)。
 
-```bash
-# 送出 PR 前請先執行驗證
-pnpm lint && pnpm typecheck && pnpm test
-```
+請保持變更小、可測試，並符合既有 engine/store/feature 分層。
 
----
+## 授權
+
+Rexiano 以 [GNU General Public License v3.0](LICENSE) 釋出。你可以依 GPL-3.0 使用、修改與散佈；若散佈修改版本，需以相同授權提供原始碼。
 
 ## 致謝
 
-- 為學鋼琴的 Rex 而建，以愛打造
-- 感謝讓這個專案成為可能的所有開源工具的作者們
+- 為正在學鋼琴的 Rex 而建，以愛打造。
+- 感謝讓 Rexiano 成為可能的所有開源專案。

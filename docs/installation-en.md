@@ -1,6 +1,6 @@
 # Rexiano Installation Guide
 
-> **Version**: 1.1.3 | **Last updated**: 2026-06
+> **Version**: 1.3.0 | **Last updated**: 2026-06
 >
 > Other languages: [繁體中文](./installation.md)
 
@@ -42,10 +42,10 @@
 
 ### Setup vs. Portable
 
-| Build        | Use when                                  | Behavior                                 |
-| ------------ | ----------------------------------------- | ---------------------------------------- |
-| setup        | You want Rexiano installed                | Adds desktop and Start Menu shortcuts    |
-| portable zip | You want to try without setup             | Runs after extraction                    |
+| Build        | Use when                                      | Behavior                                 |
+| ------------ | --------------------------------------------- | ---------------------------------------- |
+| setup        | You want Rexiano installed                    | Adds desktop and Start Menu shortcuts    |
+| portable zip | You want to try without setup                 | Runs after extraction                    |
 | portable exe | You need one executable and browser allows it | Runs directly without creating shortcuts |
 
 If your browser marks direct `.exe` downloads as problem files, download `rexiano-x.x.x-win-x64.zip`. This is not a substitute for code signing; it only avoids the extra browser friction around unknown `.exe` downloads.
@@ -237,12 +237,20 @@ pnpm dev
 ### Common Commands
 
 ```bash
-pnpm dev          # Development mode with hot module replacement
-pnpm build        # Build production installer
+pnpm dev          # Development mode (Electron + HMR)
+pnpm build        # Typecheck + production renderer/main build
 pnpm lint         # ESLint code check
 pnpm typecheck    # TypeScript type check
-pnpm test         # Run all tests
-pnpm test:watch   # Test watch mode
+pnpm test         # Run Vitest unit/integration tests
+pnpm test:e2e     # Build app and run Playwright Electron E2E
+pnpm test:visual  # Build app and run focused UI visual regression
+```
+
+To refresh README screenshots, build first, then run the dedicated capture flow:
+
+```bash
+pnpm build
+pnpm exec playwright test -c scripts/playwright.readme-screenshots.config.ts
 ```
 
 ### WSL2 Notes (Windows Developers)
@@ -253,8 +261,8 @@ Running Electron inside WSL2 requires these additional steps:
 # VS Code terminal may set this — unset it first
 unset ELECTRON_RUN_AS_NODE
 
-# Chromium needs sandbox disabled in WSL2
-NO_SANDBOX=1 pnpm dev
+# pnpm dev automatically sets NO_SANDBOX=1
+pnpm dev
 ```
 
 ---

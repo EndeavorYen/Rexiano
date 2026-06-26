@@ -39,7 +39,12 @@
     "build:unpack": "pnpm build && electron-builder --dir",
     "build:win": "pnpm build && electron-builder --win",
     "build:mac": "electron-vite build && electron-builder --mac",
-    "build:linux": "electron-vite build && electron-builder --linux"
+    "build:linux": "electron-vite build && electron-builder --linux",
+    "site:assets": "node site/scripts/sync-assets.mjs",
+    "site:dev": "pnpm site:assets && vite --config site/vite.config.ts --host 127.0.0.1",
+    "site:build": "pnpm site:assets && vite build --config site/vite.config.ts",
+    "site:preview": "vite preview --config site/vite.config.ts --host 127.0.0.1",
+    "site:typecheck": "tsc --noEmit -p site/tsconfig.json"
   },
   "devDependencies": {
     "@electron-toolkit/eslint-config-prettier": "^3.0.0",

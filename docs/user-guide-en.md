@@ -1,546 +1,249 @@
 # Rexiano User Guide
 
-> **Version**: 0.4.1 | **Last updated**: 2026-05
+> **Version**: 1.3.0 | **Last updated**: 2026-06
 >
 > Other languages: [繁體中文](./user-guide.md)
+>
+> **TL;DR** - Press **Start Playing**, choose or import a MIDI song in the library, preview it, then start **Practice** or **Play Along**. In the player, use falling notes, sheet music, Wait mode, A-B loops, MIDI keyboard feedback, and practice reports to turn each session into a small, doable task.
 
 ---
 
 ## Table of Contents
 
-1. [Welcome](#1-welcome)
-2. [Installation](#2-installation)
-3. [Quick Start](#3-quick-start)
-4. [Feature Reference](#4-feature-reference)
+1. [Quick Start](#1-quick-start)
+2. [Song Library and MIDI Import](#2-song-library-and-midi-import)
+3. [Player and Display Modes](#3-player-and-display-modes)
+4. [Practice Modes and A-B Loop](#4-practice-modes-and-a-b-loop)
 5. [Connecting a MIDI Keyboard](#5-connecting-a-midi-keyboard)
-6. [Settings Panel](#6-settings-panel)
+6. [Settings, Backup, and Updates](#6-settings-backup-and-updates)
 7. [Keyboard Shortcuts](#7-keyboard-shortcuts)
 8. [FAQ](#8-faq)
-9. [Tips for Parents](#9-tips-for-parents)
+9. [Practice Tips for Parents](#9-practice-tips-for-parents)
 
 ---
 
-## 1. Welcome
+## 1. Quick Start
 
-**Rexiano** (Rex + Piano) is a free, open-source piano practice application inspired by Synthesia — but completely free and continuously evolving.
+Rexiano's main flow is: Start Playing -> Song Library -> Song Preview -> Practice or Play Along.
 
-This project started as a father's gift to his six-year-old son Rex — to make learning piano feel as fun as playing a video game. We then open-sourced it so every child and adult learning piano can enjoy the joy of music.
+1. Open Rexiano. On first launch, follow the short welcome guide or skip it.
+2. On the main menu, press **Start Playing**.
+3. In the library, choose a built-in song or use **Import your own MIDI file** for a `.mid` / `.midi` file.
+4. In **Song preview**, check length, level, category, best score, and track count. Press **Preview** if you want to listen first.
+5. Press **Practice** for a guided session; press **Play Along** to enter the player directly in free play.
+6. In the player, press **Space** to play or pause. Start with **Watch**, then move to **Wait** for slow practice.
 
-### What Can Rexiano Do?
+![Rexiano song library](./assets/screenshots/rexiano-library.png)
 
-- **Falling notes display** — Like a rhythm game, notes fall from the top of the screen and you play along
-- **Connect your keyboard** — Supports USB and Bluetooth MIDI keyboards (Roland, Yamaha, and more)
-- **Three practice modes** — Watch, Wait, and Free, for every stage of learning
-- **Real-time scoring** — Hit a note and it glows; chain them for combo effects
-- **26 built-in songs** — From Twinkle Twinkle to Moonlight Sonata, ordered by grade and difficulty
-- **Import your own MIDI files** — Practice whatever you want
-- **4 beautiful themes** — Lavender, Ocean, Peach, Midnight — find your favorite
-- **Completely free** — No ads, no paywalls, no subscriptions
-
-### Who Is This Guide For?
-
-Whether you're a parent looking for a practice tool for your child, or an adult learning piano on your own, this guide will walk you through Rexiano step by step. No technical background required.
+> **Screen callout**: The library header shows daily goal progress, the next recommendation, lesson path, and recent songs. Selecting a song opens the preview panel with the main action buttons.
 
 ---
 
-## 2. Installation
+## 2. Song Library and MIDI Import
 
-For complete installation instructions including system requirements and developer setup, see the dedicated **[Installation Guide](./installation-en.md)**.
+The library is where you choose songs, organize your own MIDI files, and track progress.
 
-**Quick links:**
+| Area                       | What it does                                           | Best use                                        |
+| -------------------------- | ------------------------------------------------------ | ----------------------------------------------- |
+| Daily goal                 | Shows today's practiced minutes                        | Treat it as a gentle "sit down and play" cue    |
+| Recommended next           | Suggests a song from your progress                     | Use it when you are not sure what to play       |
+| Lesson path                | Groups built-in songs by level and progress            | Let children move through L0, L1, L2 gradually  |
+| Recent / Continue Practice | Reopens recently used MIDI files                       | Great for new teacher-assigned files            |
+| All Songs                  | Built-in library with search, filters, sort, favorites | Favorite 2-3 songs for the week                 |
+| Imported MIDI              | Shows imported files and watched-folder songs          | Edit title, composer, tags, level, and category |
 
-- [Windows Installation](./installation-en.md#2-windows-installation)
-- [macOS Installation](./installation-en.md#3-macos-installation)
-- [Linux Installation](./installation-en.md#4-linux-installation)
-- [Developer Setup](./installation-en.md#7-developer-setup)
+### Import Your Own MIDI
 
----
+1. Press **Import your own MIDI file**, or drag a `.mid` / `.midi` file into the Rexiano window.
+2. To manage a whole folder, press **Add folder**. Rexiano lists matching MIDI files under **Imported MIDI**.
+3. After import, click the song row. It opens the preview instead of starting playback immediately.
+4. If the title or level is unclear, press the pencil icon to edit metadata for search and grouping.
 
-## 3. Quick Start
+### What to Choose in Song Preview
 
-Up and running in 5 minutes! Follow these steps to start your first practice session.
-
-### Step 1: Choose a Song
-
-When Rexiano launches, you'll see the **Song Library** screen. It lists 26 built-in songs organized by grade, category, and difficulty:
-
-| Difficulty   | Good for                | Example songs                                           |
-| ------------ | ----------------------- | ------------------------------------------------------- |
-| Beginner     | Just starting out       | Twinkle Twinkle, Mary Had a Little Lamb, Happy Birthday |
-| Intermediate | Some experience         | Ode to Joy, On Wings of Song, Minuet in G               |
-| Advanced     | Looking for a challenge | Moonlight Sonata, Für Elise                             |
-
-Click any song card to load it.
-
-> **Tip**: If you have your own MIDI file, click the "Open File" button in the top-right corner to import it, or drag and drop a `.mid` file directly into the Rexiano window.
-
-### Step 2: Press Space to Play
-
-After selecting a song, you'll see the falling notes view. There's a horizontal line in the middle of the screen (the hit line) — notes fall from above and pass through it.
-
-Press **Space** to start playback. Notes fall in time with the music. Watch and listen first to get a feel for the rhythm.
-
-Press **Space** again to pause.
-
-### Step 3: Choose a Practice Mode
-
-In the Practice Toolbar at the bottom of the screen, you can switch between three modes:
-
-- **Watch** — Listen only; music plays automatically. Great for getting familiar with a new song.
-- **Wait** — Music pauses at each note and waits for you to play the correct key. This is the most recommended mode!
-- **Free** — Music plays continuously and you play along. The system tracks your accuracy in real time.
-
-For beginners, we recommend: start with **Watch** mode to listen through, then switch to **Wait** mode for hands-on practice.
-
-### That's It!
-
-You've learned the core of Rexiano. The following sections cover more advanced features, but you can start practicing right now. Enjoy the music!
+| Button         | Result                                                            |
+| -------------- | ----------------------------------------------------------------- |
+| **Preview**    | Plays a short audio preview without entering practice             |
+| **Practice**   | Loads the song, usually asking you to choose **Wait** or **Free** |
+| **Play Along** | Starts directly in Free mode, best for songs you already know     |
 
 ---
 
-## 4. Feature Reference
+## 3. Player and Display Modes
 
-### 4.1 Falling Notes Display
+The player combines notation, falling notes, piano keys, transport controls, and practice tools in one workspace.
 
-The core of Rexiano is the **Falling Notes** view. It works like a piano roll turned upside down:
+![Rexiano falling-notes practice](./assets/screenshots/rexiano-practice.png)
 
-```
-  Time flows downward
-         |
-         ▼
-  +------------------------------+
-  |                              |  Upcoming notes
-  |    +--+     +----+          |
-  |    |  |     |    |          |  Note rectangles
-  |    +--+     +----+          |  (colors indicate tracks)
-  |                              |
-  | ----- hit line ------------- |  ← Current playback position
-  +------------------------------+
-  |  Piano keyboard (88 keys)    |  ← Keys light up as notes arrive
-  +------------------------------+
-```
+> **Screen callout**: When a falling note reaches the hit line above the keyboard, it is time to play. The lower controls handle playback, speed, metronome, volume, practice mode, and A-B looping.
 
-- The **horizontal position** of a note rectangle corresponds to the piano key
-- The **height** of the rectangle represents the note's duration
-- Different **tracks** (voices) use different colors — typically Track 1 = right hand, Track 2 = left hand
-- **Note name labels** (e.g., C4, F#5) are shown on the rectangles to help you identify notes
-- **Key names** are shown on the piano keys (can be turned off in Settings)
+### Three Display Modes
 
-### 4.2 Playback Controls (TransportBar)
+| Mode                | What you see                           | Best for                                      |
+| ------------------- | -------------------------------------- | --------------------------------------------- |
+| **Notes (Falling)** | Falling notes plus the 88-key keyboard | Beginners and rhythm-game-style play          |
+| **Sheet**           | Staff notation with a synced cursor    | Reading notation and checking pitch/rhythm    |
+| **Both (Split)**    | Sheet music above, falling notes below | Connecting staff reading to keyboard position |
 
-The TransportBar at the bottom provides:
+![Rexiano split sheet music and falling notes](./assets/screenshots/rexiano-split-sheet.png)
 
-| Element           | Description                                        |
-| ----------------- | -------------------------------------------------- |
-| Play/Pause button | Start or pause playback (or press Space)           |
-| Time display      | Shows current position / total duration            |
-| Seek bar          | Drag to jump to any position                       |
-| Volume control    | Adjust playback volume                             |
-| Metronome button  | Toggle metronome on/off (clock icon)               |
-| Audio status      | Spinning icon while loading; warning icon on error |
+> **Screen callout**: Both / Split mode helps move a learner's attention from "where does it land?" toward "what does the notation say?"
 
-### 4.3 Practice Modes
+### Playback Controls
 
-#### Watch Mode
+| Control       | Function                                                    |
+| ------------- | ----------------------------------------------------------- |
+| Play / Pause  | Starts or pauses the loaded song                            |
+| Back to start | Resets playback to 0:00                                     |
+| Seek slider   | Jumps to any part of the song                               |
+| Metronome     | Toggles beat cues; count-in runs before playback if enabled |
+| Volume        | Adjusts Rexiano's internal volume                           |
+| Audio status  | Shows loading, recovery, errors, and retry actions          |
 
-Music plays automatically. You just watch and listen. Best for:
+The player also has side panels for **Practice Insights**, **Editor**, and **MIDI**. You can ignore them at first; Insights becomes more useful after a few saved sessions.
 
-- Hearing a new song for the first time
-- Observing how notes are distributed between hands
-- Pure enjoyment
+---
 
-#### Wait Mode — Most Recommended!
+## 4. Practice Modes and A-B Loop
 
-This is Rexiano's signature practice feature:
+Choosing the right mode, speed, and loop is more effective than always playing from the beginning.
 
-1. Music plays normally
-2. When the next note reaches the hit line, **music automatically pauses**
-3. You play the **correct key** on your keyboard — then music resumes
-4. For chords (multiple simultaneous notes), you must press **all notes** to advance
-5. There's a 200 ms tolerance window — you don't need split-second timing
+| Mode      | Behavior                                       | Best for                                  |
+| --------- | ---------------------------------------------- | ----------------------------------------- |
+| **Watch** | Plays automatically while you watch and listen | First pass through a new song             |
+| **Wait**  | Pauses at notes until you play them correctly  | Slow practice and fixing wrong notes      |
+| **Free**  | Keeps playing while Rexiano tracks accuracy    | Testing rhythm and reaction once familiar |
 
-This mode lets you practice at your own pace — you're never rushed by the music, and mistakes aren't penalized.
+### Recommended Practice Flow
 
-#### Free Mode
+1. Use **Watch** once to hear the song and see the hand split.
+2. Switch to **Wait** and set speed to 50% or 75%.
+3. Open **More** and select only the right-hand or left-hand track.
+4. At a hard passage, press **A** at the start and **B** at the end to repeat that section.
+5. After three steady repeats, raise speed toward 100%, clear the loop, and reconnect the passage.
 
-Music plays continuously without pausing. Play along in real time:
+### Speed, Tracks, and A-B Loop
 
-- Hit a note: it briefly glows
-- Miss a note: it turns gray
+| Control | What it does                                                           | Tip                                              |
+| ------- | ---------------------------------------------------------------------- | ------------------------------------------------ |
+| Speed   | Quick 50%, 75%, 100% buttons plus a 25%-200% slider                    | Start new songs at 50%, not full speed           |
+| Tracks  | Chooses scored tracks and labels them right, left, both, or background | Mark accompaniment as background when needed     |
+| Sound   | Per-track sound, solo, visibility, and color options                   | Solo the melody in teacher-made multi-track MIDI |
+| A-B     | A sets loop start, B sets loop end; the seek bar highlights the range  | `L` clears the loop; use A/B to set points       |
 
-Best for when you know the song fairly well and want to test your reaction speed.
-
-### 4.4 Speed Control
-
-New songs often feel too fast at full speed. Rexiano lets you adjust playback speed:
-
-- Speed range: **0.25x** (quarter speed) to **2.0x** (double speed)
-- Preset buttons: 25% / 50% / 75% / 100% — one-click common speeds
-- Continuous slider: fine-tune to any speed
-- Keyboard shortcut: **Up/Down arrow keys** to adjust in 25% increments
-
-We recommend starting a new song at 50%, building confidence, then gradually increasing toward 100%.
-
-### 4.5 A-B Loop
-
-Found a tricky passage? Use the A-B loop to repeat it over and over:
-
-1. Find the **A-B Loop** controls in the Practice Toolbar
-2. Press the **A** button to set the loop start point
-3. Press the **B** button to set the loop end point
-4. Music will automatically jump back to A when it reaches B
-5. A colored highlight on the seek bar shows the loop range
-6. Press **L** or click again to cancel the loop
-
-### 4.6 Split-Hand Practice
-
-Many piano pieces have two voices: right-hand melody and left-hand accompaniment. Rexiano lets you practice each hand separately:
-
-1. Find the **Track** selector in the Practice Toolbar
-2. Check the track(s) you want to practice
-3. Unchecked tracks still play audio (as accompaniment) but aren't scored
-4. Scoring counts only the tracks you've selected
-
-Typical practice order: right hand first → left hand next → both hands together.
-
-### 4.7 Scoring & Celebration
-
-In Wait and Free modes, Rexiano tracks your performance:
-
-**Real-time feedback:**
-
-- The **Score Overlay** in the top-right shows live accuracy and combo count
-- Hitting a note makes it **briefly glow**
-- Missing or hitting the wrong note makes it **turn gray**
-- Reaching combo milestones triggers **special effects**
-
-**End-of-session results:**
-When you finish a song (or stop playback), a results screen appears based on accuracy:
-
-| Accuracy     | Effect                                           |
-| ------------ | ------------------------------------------------ |
-| 90% or above | Full-screen celebration animation + "Excellent!" |
-| 70%–89%      | Star effect + "Well done!"                       |
-| Below 70%    | Encouraging text + "Try again?"                  |
-
-Every session's score is automatically saved. In the song library, you'll see best-score badges:
-
-- Gold badge: 90%+ accuracy
-- Silver badge: 70%–89% accuracy
-- Green badge: below 70% accuracy
-
-If you beat your previous best, a "New Record!" highlight appears on the results screen.
+At the end of a session, Rexiano shows accuracy, hits, misses, best streak, new-record status, and a suggested next action.
 
 ---
 
 ## 5. Connecting a MIDI Keyboard
 
-Rexiano supports connecting an external MIDI keyboard for practicing on real keys. You can use Rexiano's Watch mode without a keyboard, but Wait mode and scoring require one.
+You can watch and listen without a keyboard. Wait mode, play-along scoring, and real key feedback need USB or Bluetooth MIDI.
 
-### 5.1 USB MIDI Keyboard (Plug and Play)
+### USB Keyboard
 
-The easiest connection method:
+1. Connect the keyboard with USB and turn it on.
+2. Open Rexiano and go to the library or player.
+3. Open the **MIDI** drawer.
+4. Choose your keyboard under **In**. If you want Rexiano to send sound or test notes to the keyboard, choose it under **Out** too.
+5. When the status turns green, press a few keys. The on-screen keyboard should light up.
+6. If an output is selected, press **Test** to send a C4 test note.
 
-1. Connect your MIDI keyboard to your computer with a USB cable
-2. Open Rexiano
-3. Find the MIDI device icon in the song view header
-4. Click the device selector — your keyboard should appear in the list
-5. Select your keyboard as the input device
-6. The status indicator turns **green** when connected
-7. Press a few keys — the on-screen piano keys should light up
+### Bluetooth MIDI
 
-> **Tip**: If your keyboard has built-in speakers (like a Roland digital piano), you can also set it as an output device in the selector, so Rexiano plays audio through your keyboard's speakers.
+| Platform | Suggested setup                                                                                                       |
+| -------- | --------------------------------------------------------------------------------------------------------------------- |
+| macOS    | Pair in system Bluetooth settings, then select the device in Rexiano; the **Bluetooth** button can also scan BLE MIDI |
+| Windows  | Pair first, then press **Bluetooth**; if no MIDI input appears, use MIDIberry or KORG BLE-MIDI Driver as a bridge     |
+| Linux    | Pair through BlueZ / ALSA, confirm a MIDI port appears, then select it in Rexiano                                     |
 
-### 5.2 Bluetooth MIDI Keyboard
+### Latency Compensation
 
-Bluetooth MIDI setup varies by operating system:
-
-#### macOS
-
-macOS natively supports Bluetooth MIDI — the easiest setup:
-
-1. Turn on your keyboard's Bluetooth
-2. Pair your keyboard in macOS System Settings > Bluetooth
-3. After pairing, return to Rexiano
-4. Your Bluetooth keyboard will appear automatically in the MIDI device list
-5. Select it and you're ready
-
-You can also use the "Bluetooth" button inside Rexiano to scan for nearby BLE MIDI devices.
-
-#### Windows
-
-Windows Bluetooth MIDI support depends on the keyboard, driver, and Windows build. Try the direct path first:
-
-1. Turn on your keyboard's Bluetooth
-2. Pair your keyboard in Windows Settings > Bluetooth & devices
-3. Return to Rexiano and click the "Bluetooth" scan button in the device selector
-4. Select your keyboard when it appears in the list
-
-If the keyboard pairs in Windows but does not appear as a MIDI input in Rexiano, use a bridge:
-
-1. Install a bridge such as MIDIberry from the Microsoft Store or the KORG BLE-MIDI Driver
-2. Connect the keyboard in the bridge app or driver panel
-3. Return to Rexiano and select the new bridged MIDI port
-4. Use the Test button to confirm incoming notes light up the on-screen keyboard
-
-#### Linux
-
-1. Pair your Bluetooth MIDI keyboard using BlueZ:
-   ```bash
-   bluetoothctl
-   scan on
-   pair [device-address]
-   connect [device-address]
-   ```
-2. After pairing, the keyboard appears as an ALSA MIDI device
-3. Select the corresponding MIDI port in Rexiano
-
-### 5.3 Testing Your Connection
-
-Not sure if your keyboard is connected? Use the **Test** button in the device selector:
-
-1. After selecting an input device, find the Test button
-2. Click it — Rexiano enters test mode
-3. Play a few notes on your keyboard
-4. If the on-screen piano keys respond (light up), you're connected
-5. Test mode ends automatically
-
-### 5.4 Latency Compensation
-
-Bluetooth connections can introduce a small delay. If Wait mode judgments feel off, adjust the latency compensation:
-
-1. Open Settings (gear icon)
-2. Find the "Latency Compensation" slider
-3. Start at 0 ms and increase gradually (10–30 ms is typical for BLE) until judgments feel accurate
-4. USB connections usually don't need any compensation (keep at 0 ms)
-
-### 5.5 Connection Status Indicator
-
-A small dot next to the device selector shows connection status:
-
-| Color | Meaning                                    |
-| ----- | ------------------------------------------ |
-| Green | Connected, all good                        |
-| Gray  | No device connected                        |
-| Red   | Connection error (check cables or re-pair) |
+If Bluetooth feels slightly late in Wait mode, open **Settings -> Advanced -> Practice** and adjust **Latency compensation**. USB usually stays at 0 ms; Bluetooth often feels better around 10-30 ms.
 
 ---
 
-## 6. Settings Panel
+## 6. Settings, Backup, and Updates
 
-Click the **gear icon** in the top-right of the song view to open Settings.
+Settings opens in **Basic** mode with theme and language only. Switch to **Advanced** for the full panel.
 
-### 6.1 Display Settings
+| Tab       | Controls                                                                                 |
+| --------- | ---------------------------------------------------------------------------------------- |
+| Theme     | Lavender, Ocean, Peach, Midnight                                                         |
+| Display   | Piano key labels, falling note labels, fingering numbers, compact key labels             |
+| Audio     | Volume, mute, audio compatibility mode                                                   |
+| Practice  | Child Focus Mode, default mode, default speed, metronome, count-in, latency compensation |
+| Shortcuts | Common playback, speed, loop, and back shortcuts                                         |
+| Language  | English / 繁體中文                                                                       |
+| Backup    | Export, import, or reset settings, progress, and recents                                 |
+| About     | Version, update check, and matching release download                                     |
 
-| Setting          | Description                                                                          | Default |
-| ---------------- | ------------------------------------------------------------------------------------ | ------- |
-| Piano key labels | Show note names (C, D, E, etc.) on white keys; C keys show octave numbers (e.g., C4) | On      |
-| Note name labels | Show note names (e.g., C4, F#5) on falling note rectangles                           | On      |
-
-### 6.2 Audio Settings
-
-| Setting | Description                  | Default |
-| ------- | ---------------------------- | ------- |
-| Volume  | Master volume, 0–100%        | 80%     |
-| Mute    | One-click mute (shortcut: M) | Off     |
-
-### 6.3 Practice Defaults
-
-| Setting       | Description                               | Default     |
-| ------------- | ----------------------------------------- | ----------- |
-| Default speed | Initial speed when starting a new session | 100% (1.0x) |
-| Default mode  | Initial mode when starting a new session  | Watch       |
-
-### 6.4 Metronome Settings
-
-| Setting        | Description                                     | Default |
-| -------------- | ----------------------------------------------- | ------- |
-| Metronome      | Toggle metronome on/off                         | Off     |
-| Count-in beats | Number of beats to count before playback starts | 4 beats |
-
-### 6.5 Latency Compensation
-
-| Setting              | Description                                         | Default |
-| -------------------- | --------------------------------------------------- | ------- |
-| Latency compensation | Compensate for MIDI keyboard input delay (0–100 ms) | 0 ms    |
-
-### 6.6 Theme Selection
-
-Rexiano offers four carefully designed visual themes:
-
-| Theme        | Style                                     | Best for                         |
-| ------------ | ----------------------------------------- | -------------------------------- |
-| **Lavender** | Soft purple, warm and elegant             | Daytime practice                 |
-| **Ocean**    | Serene ocean blue, clean and open         | Daytime practice                 |
-| **Peach**    | Warm sunset orange, energetic             | Daytime practice                 |
-| **Midnight** | Deep starry black with neon-colored notes | Night practice, dim environments |
-
-Your selected theme is automatically saved and restored on the next launch.
+**Child Focus Mode** hides some advanced controls for children practicing alone. If playback is active and someone tries to leave the player, Rexiano asks before returning to the library.
 
 ---
 
 ## 7. Keyboard Shortcuts
 
-Below are all keyboard shortcuts. Press **?** at any time to show/hide the shortcut reference on screen.
+Shortcuts are ignored while typing in search boxes or metadata fields.
 
-### Playback Controls
-
-| Shortcut    | Action                  |
-| ----------- | ----------------------- |
-| `Space`     | Play / Pause            |
-| `R`         | Reset to beginning      |
-| `←`         | Rewind 5 seconds        |
-| `→`         | Fast forward 5 seconds  |
-| `Shift + ←` | Rewind 15 seconds       |
-| `Shift + →` | Fast forward 15 seconds |
-
-### Practice Controls
-
-| Shortcut | Action                                     |
-| -------- | ------------------------------------------ |
-| `↑`      | Increase speed by 25% (e.g., 1.0x → 1.25x) |
-| `↓`      | Decrease speed by 25% (e.g., 1.0x → 0.75x) |
-| `1`      | Switch to Watch mode                       |
-| `2`      | Switch to Wait mode                        |
-| `3`      | Switch to Free mode                        |
-| `L`      | Clear A-B loop                             |
-
-### Other
-
-| Shortcut                                | Action                         |
-| --------------------------------------- | ------------------------------ |
-| `M`                                     | Mute / Unmute                  |
-| `Ctrl+O` (Win/Linux) or `Cmd+O` (macOS) | Open MIDI file                 |
-| `?`                                     | Show / hide shortcut reference |
+| Shortcut                  | Action                                                |
+| ------------------------- | ----------------------------------------------------- |
+| `Space`                   | Play / Pause                                          |
+| `R`                       | Reset to beginning                                    |
+| `←` / `→`                 | Rewind / fast forward 5 seconds                       |
+| `Shift + ←` / `Shift + →` | Rewind / fast forward 15 seconds                      |
+| `↑` or `]`                | Speed +25%                                            |
+| `↓` or `[`                | Speed -25%                                            |
+| `1` / `2` / `3`           | Switch Watch / Wait / Free                            |
+| `A` / `B`                 | Set A-B loop start / end                              |
+| `L`                       | Clear A-B loop                                        |
+| `M`                       | Mute / unmute                                         |
+| `Esc`                     | Pause during playback; usually closes focused dialogs |
+| `Ctrl+O` / `Cmd+O`        | Open MIDI file                                        |
+| `?`                       | Show / hide shortcut help                             |
 
 ---
 
 ## 8. FAQ
 
-### Q: I can't hear any sound. What should I do?
+### I cannot hear sound. What should I check?
 
-1. **Check Rexiano's volume**: Make sure the volume slider isn't at 0% and mute isn't on (press M to toggle)
-2. **Check system volume**: Make sure your computer's system audio isn't muted
-3. **Wait for loading**: On first play, the SoundFont audio file takes a few seconds to load. If the TransportBar shows a spinning icon, please wait
-4. **Audio load failure**: If the TransportBar shows a red warning icon, audio failed to load. Try restarting Rexiano
-5. **Browser audio policy**: Modern browsers (including Electron) require user interaction before activating the audio engine. Make sure you've clicked Play or pressed Space
+1. Check Rexiano volume and system volume.
+2. Make sure mute is off, or press `M`.
+3. The SoundFont can take a few seconds to load the first time; wait if loading is shown.
+4. If audio shows an error, use the retry action, or enable audio compatibility mode in Settings and reload the song.
 
-### Q: My keyboard isn't being detected. What should I do?
+### My MIDI keyboard does not appear. What should I do?
 
-**USB keyboard:**
+1. USB: unplug and reconnect, try another USB port, and confirm the keyboard is powered on.
+2. Bluetooth: pair at the operating-system level first, then press **Bluetooth** in Rexiano.
+3. Windows: if pairing works but no MIDI input appears, use MIDIberry or KORG BLE-MIDI Driver.
+4. Close DAWs or recording apps that may be holding the MIDI device, then reopen Rexiano.
 
-- Unplug the USB cable, wait 3 seconds, plug it back in
-- Try a different USB port
-- Make sure the keyboard is powered on
-- Reselect your keyboard in Rexiano's device selector
+### I imported a file, but now Rexiano cannot find it.
 
-**Bluetooth keyboard:**
+Recent files remember their original path. If the file moved or was deleted, Rexiano shows a recovery prompt. Import it again from the new location, or remove the stale recent item.
 
-- Make sure Bluetooth is enabled on your keyboard
-- Make sure you've completed OS-level Bluetooth pairing
-- Windows users: make sure the keyboard was paired in OS Bluetooth settings first
-- Try unpairing and re-pairing
+### Why do some notes not show labels?
 
-**General troubleshooting:**
+Very short notes hide text automatically to prevent label overlap. Use Sheet mode to confirm pitch, or slow the song down.
 
-- Restart Rexiano
-- Check that no other application (e.g., a DAW) is using the MIDI device
+### Should I use sheet music or falling notes?
 
-### Q: How do I import my own MIDI file?
-
-Three ways:
-
-1. **Drag and drop** (easiest): Drag a `.mid` or `.midi` file directly into the Rexiano window
-2. **File dialog**: Press `Ctrl+O` (Windows/Linux) or `Cmd+O` (macOS) and select a file
-3. **"Open File" button**: Click the button in the top-right of the song library
-
-Good sources for MIDI files:
-
-- [MuseScore](https://musescore.com/) — large library of free sheet music with MIDI export
-- [IMSLP](https://imslp.org/) — public domain classical music MIDI
-- Any MIDI-capable software (GarageBand, FL Studio, etc.)
-
-### Q: How do I handle the Windows SmartScreen warning?
-
-Rexiano doesn't currently have a Windows Code Signing Certificate, so SmartScreen may warn you on first install. **Rexiano is not malware.**
-
-Steps:
-
-1. When you see "Windows protected your PC", click **"More info"**
-2. Click **"Run anyway"**
-3. Continue with installation
-
-Rexiano is fully open-source — you can review all source code on [GitHub](https://github.com/EndeavorYen/Rexiano).
-
-### Q: Where are my recently opened files?
-
-At the top of the song library, you'll see a "Recent" section listing the 10 most recently opened MIDI files. Click any entry to reload it instantly — no need to navigate to the file dialog again.
-
-### Q: Why don't some notes show a label?
-
-If a note's duration is very short (rectangle height smaller than 16 pixels), Rexiano automatically hides the note name label to prevent text overflow and overlap. This is normal and typically happens with very fast ornamental notes or 32nd notes.
-
-### Q: Which MIDI keyboards are supported?
-
-Rexiano supports any MIDI-standard keyboard, including but not limited to:
-
-- Roland (FP-30X, FP-60X, GO:KEYS, etc.)
-- Yamaha (P-125, CLP series, etc.)
-- Casio (PX series, CDP series, etc.)
-- Korg, M-Audio, Arturia, and other brands
-- Any USB or Bluetooth MIDI controller
+Start with Notes / Falling to learn which keys to press. Move to Both / Split once the song is familiar. Use Sheet when you are ready to practice notation-first reading.
 
 ---
 
-## 9. Tips for Parents
+## 9. Practice Tips for Parents
 
-Rexiano was born from a father's love for his child's musical journey. Here are some suggestions for making practice more enjoyable and effective.
+Rexiano works best when practice becomes short, clear, and finishable.
 
-### 15–20 Minutes a Day Is Enough
+1. **Use 10-20 minute sessions**: build consistency before length.
+2. **Start with L0 / L1**: easy songs create early wins.
+3. **Listen before playing**: use Watch once, then Wait.
+4. **Slow is faster**: 50% speed with correct notes beats repeated full-speed mistakes.
+5. **Practice one hand at a time**: use track controls for right hand, then left hand, then both.
+6. **Loop two measures**: make hard passages tiny; reconnect them after three steady repeats.
+7. **Read the parent report, not one score**: 7-day and 30-day trends are better than a single session.
+8. **Praise specific progress**: "That C to G passage was steadier today" helps more than generic praise.
 
-For children aged 6–10, 15–20 minutes of focused daily practice is far more effective than a single hour-long session. Short sessions are easier to turn into habits, and children won't feel burdened.
-
-**Tip**: Schedule practice at the same time each day (e.g., before dinner or after homework), so it becomes part of the daily routine.
-
-### Start with Easy Songs
-
-Rexiano's built-in songs are organized by difficulty level. Always start with **Beginner** songs:
-
-- _Twinkle Twinkle Little Star_ — the classic first song
-- _Mary Had a Little Lamb_ — only a few notes
-- _Hot Cross Buns_ — playable with just three notes
-
-Let your child build confidence with easy songs before moving to harder ones.
-
-### Use Wait Mode + Slow Speed
-
-The most recommended practice combination:
-
-1. Switch to **Wait mode** (press 2)
-2. Set speed to **50%** (press the Down arrow a few times)
-3. Let your child play at their own pace, one note at a time
-
-Wait mode removes the frustration of falling behind the music; slow speed gives enough reaction time. Once a passage is comfortable, gradually increase the speed.
-
-### Celebrate Progress, Not Perfection
-
-Rexiano's scoring system is designed to encourage, not pressure.
-
-- Accuracy improved from 40% to 60%? That's real progress!
-- Chained 5 more notes than last time? That's worth celebrating!
-- Finished a song from beginning to end for the first time? That's a milestone!
-
-Every child learns at their own pace. What matters is enjoying the process, not chasing scores. When your child watches their badge change from green to silver to gold, that sense of achievement becomes the best motivation to keep practicing.
-
-### Play Together!
-
-Sometimes, sitting at the piano together — watching notes fall in Watch mode, talking about whether you like the song, clapping along to the rhythm — matters more than any practice technique.
-
-Music's greatest gift is that it connects people.
-
-We hope you and your child find the joy of music in Rexiano!
-
----
-
-_Rexiano is free, open-source software released under GPL-3.0._
-_Source code: [github.com/EndeavorYen/Rexiano](https://github.com/EndeavorYen/Rexiano)_
+_Rexiano is free, open-source software released under GPL-3.0. Source code: [github.com/EndeavorYen/Rexiano](https://github.com/EndeavorYen/Rexiano)._
