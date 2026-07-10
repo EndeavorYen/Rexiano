@@ -16,6 +16,7 @@ import {
   type UserDataFileBackupPort,
   validateUserDataBackupManifest,
 } from "./userDataBackup";
+import type { SongPracticeSetupSnapshot } from "../practice/songPracticeSetup";
 
 function createStorage(
   initial: Record<string, string> = {},
@@ -39,7 +40,7 @@ function createStorage(
   };
 }
 
-function practiceSetup() {
+function practiceSetup(): Record<string, SongPracticeSetupSnapshot> {
   return {
     "name:Chopsticks": {
       activeTracks: [0],
