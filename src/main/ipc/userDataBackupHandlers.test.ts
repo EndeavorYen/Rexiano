@@ -105,8 +105,14 @@ describe("userDataBackupHandlers", () => {
   });
 
   test("imports progress and recents as a round-trip userData backup", async () => {
-    const sessions = [session({ id: "restored-session" })];
-    const recents = [recent({ path: "/restored.mid" })];
+    const sessions = [
+      session({ id: "restored-session", songTitle: "  Restored Song  " }),
+    ];
+    const recents = [
+      recent({ path: "/restored.mid", name: "  restored.mid  " }),
+    ];
+    const normalizedSessions = [{ ...sessions[0], songTitle: "Restored Song" }];
+    const normalizedRecents = [{ ...recents[0], name: "restored.mid" }];
 
     await expect(
       importUserDataFiles({ progress: sessions, recents }, [
@@ -120,14 +126,46 @@ describe("userDataBackupHandlers", () => {
 
     expect(writeFile).toHaveBeenCalledWith(
       `${mockUserDataPath}/progress.json`,
-      JSON.stringify(sessions, null, 2),
+      JSON.stringify(normalizedSessions, null, 2),
       "utf-8",
     );
     expect(writeFile).toHaveBeenCalledWith(
       `${mockUserDataPath}/recents.json`,
-      JSON.stringify(recents, null, 2),
+      JSON.stringify(normalizedRecents, null, 2),
       "utf-8",
     );
+  });
+
+  test("rejects an invalid progress record without writing any scope", async () => {
+    const result = await importUserDataFiles(
+      {
+        progress: [session(), { ...session(), speed: 4 }],
+        recents: [recent()],
+      },
+      ["progress", "recents"],
+    );
+
+    expect(result).toEqual({
+      ok: false,
+      errors: ["Cannot import progress: record at index 1 is invalid."],
+    });
+    expect(writeFile).not.toHaveBeenCalled();
+  });
+
+  test("rejects an invalid recents record without partially writing progress", async () => {
+    const result = await importUserDataFiles(
+      {
+        progress: [session()],
+        recents: [recent({ timestamp: -1 })],
+      },
+      ["progress", "recents"],
+    );
+
+    expect(result).toEqual({
+      ok: false,
+      errors: ["Cannot import recents: record at index 0 is invalid."],
+    });
+    expect(writeFile).not.toHaveBeenCalled();
   });
 
   test("reports corrupt userData files before export", async () => {
@@ -136,6 +174,18 @@ describe("userDataBackupHandlers", () => {
     await expect(exportUserDataFiles(["progress"])).resolves.toEqual({
       ok: false,
       errors: ["Cannot export progress: progress.json is not valid JSON."],
+    });
+  });
+
+  test("rejects invalid stored records before export", async () => {
+    mockFileContents[`${mockUserDataPath}/progress.json`] = JSON.stringify([
+      session(),
+      { ...session(), score: { totalNotes: -1 } },
+    ]);
+
+    await expect(exportUserDataFiles(["progress"])).resolves.toEqual({
+      ok: false,
+      errors: ["Cannot export progress: record at index 1 is invalid."],
     });
   });
 
