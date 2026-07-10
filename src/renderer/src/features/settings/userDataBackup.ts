@@ -3,6 +3,7 @@ import type {
   UserDataFileBackupResult,
   UserDataFileMutationResult,
 } from "@shared/types";
+import { validateUserDataBackupScopeData } from "./userDataBackupScopeValidation";
 import { USER_DATA_STORAGE_KEYS } from "./userDataStorageKeys";
 
 export const USER_DATA_BACKUP_SCHEMA_VERSION = 1;
@@ -476,7 +477,9 @@ export function validateUserDataBackupManifest(
     for (const scope of selectedScopes) {
       if (!hasOwn(input.data, scope)) {
         errors.push(`Backup data is missing selected scope: ${scope}.`);
+        continue;
       }
+      errors.push(...validateUserDataBackupScopeData(scope, input.data[scope]));
     }
   }
 
