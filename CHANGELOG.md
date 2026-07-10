@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.3.1](https://github.com/EndeavorYen/Rexiano/compare/v1.3.0...v1.3.1) (2026-07-10)
+
+
+### Bug Fixes
+
+* harden user data backup integrity ([#176](https://github.com/EndeavorYen/Rexiano/issues/176)) ([9d2a271](https://github.com/EndeavorYen/Rexiano/commit/9d2a271bd2a354285ede5e73ef620b5933686bc3))
+
 ## [1.3.0](https://github.com/EndeavorYen/Rexiano/compare/v1.2.1...v1.3.0) (2026-06-25)
 
 
