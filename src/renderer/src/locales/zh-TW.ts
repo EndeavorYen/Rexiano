@@ -351,7 +351,7 @@ export const zhTW: TranslationMap = {
   "settings.compactKeyLabelsDesc": "在窄鍵盤上顯示較少鍵名",
   "settings.backupTitle": "使用者資料備份",
   "settings.backupDesc":
-    "將設定、練習進度、最近檔案與單曲練習設定匯出成一個 JSON 備份。",
+    "將設定、曲庫、練習進度、最近檔案與單曲練習設定匯出成一個 JSON 備份。",
   "settings.backupExport": "匯出備份",
   "settings.backupExportDesc": "建立可攜式 Rexiano 備份檔。",
   "settings.backupImport": "匯入備份",
