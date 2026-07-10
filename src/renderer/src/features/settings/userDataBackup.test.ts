@@ -129,7 +129,7 @@ describe("user data backup manifests", () => {
       {
         scope: "libraryMetadata",
         source: "localStorage",
-        storageKey: "rexiano-library-metadata",
+        storageKey: "rexiano-song-library",
         exportable: true,
         resettable: true,
       },
@@ -171,17 +171,21 @@ describe("user data backup manifests", () => {
 
 describe("user data reset plans", () => {
   test("builds an explicit reset-all plan from the backup inventory", () => {
-    expect(buildUserDataResetPlan("all")).toEqual({
+    const plan = buildUserDataResetPlan("all");
+
+    expect(plan).toEqual({
       scopes: USER_DATA_BACKUP_SCOPES,
       localStorageKeys: [
         "rexiano-settings",
-        "rexiano-library-metadata",
+        "rexiano-song-library",
         "rexiano-song-practice-setup",
       ],
       userDataFiles: ["progress.json", "recents.json"],
       errors: [],
       canReset: true,
     });
+    expect(plan.localStorageKeys).toContain("rexiano-song-library");
+    expect(plan.localStorageKeys).not.toContain("rexiano-library-metadata");
   });
 
   test("deduplicates selected scopes and preserves inventory order", () => {
@@ -290,6 +294,36 @@ describe("user data backup migrations", () => {
 });
 
 describe("localStorage backup round trip", () => {
+  test("exports the actual persisted song-library data", () => {
+    const libraryData = {
+      viewMode: "cards",
+      sortMode: "grade",
+      favoriteSongIds: ["amazing-grace"],
+      watchedFolders: ["/Users/rex/Music"],
+      importedSongs: [],
+    };
+    const source = createStorage({
+      "rexiano-song-library": JSON.stringify(libraryData),
+    });
+
+    expect(
+      createUserDataBackupFromLocalStorage(
+        source,
+        ["libraryMetadata"],
+        "2026-07-10T00:00:00.000Z",
+      ),
+    ).toEqual({
+      ok: true,
+      manifest: {
+        app: "rexiano",
+        schemaVersion: USER_DATA_BACKUP_SCHEMA_VERSION,
+        exportedAt: "2026-07-10T00:00:00.000Z",
+        scopes: ["libraryMetadata"],
+        data: { libraryMetadata: libraryData },
+      },
+    });
+  });
+
   test("exports and reapplies selected localStorage-backed scopes", () => {
     const source = createStorage({
       "rexiano-settings": JSON.stringify({ volume: 72, muted: false }),

@@ -3,6 +3,7 @@ import type {
   UserDataFileBackupResult,
   UserDataFileMutationResult,
 } from "@shared/types";
+import { USER_DATA_STORAGE_KEYS } from "./userDataStorageKeys";
 
 export const USER_DATA_BACKUP_SCHEMA_VERSION = 1;
 
@@ -30,7 +31,7 @@ export const USER_DATA_BACKUP_SCOPE_INVENTORY: readonly UserDataBackupScopeInven
     {
       scope: "settings",
       source: "localStorage",
-      storageKey: "rexiano-settings",
+      storageKey: USER_DATA_STORAGE_KEYS.settings,
       exportable: true,
       resettable: true,
     },
@@ -51,14 +52,14 @@ export const USER_DATA_BACKUP_SCOPE_INVENTORY: readonly UserDataBackupScopeInven
     {
       scope: "libraryMetadata",
       source: "localStorage",
-      storageKey: "rexiano-library-metadata",
+      storageKey: USER_DATA_STORAGE_KEYS.libraryMetadata,
       exportable: true,
       resettable: true,
     },
     {
       scope: "perSongSetup",
       source: "localStorage",
-      storageKey: "rexiano-song-practice-setup",
+      storageKey: USER_DATA_STORAGE_KEYS.perSongSetup,
       exportable: true,
       resettable: true,
     },
