@@ -9,6 +9,7 @@ import {
   type ImportedSongMetadataPatch,
   type ImportedSongRecord,
 } from "@renderer/features/songLibrary/importedSongMetadata";
+import { USER_DATA_STORAGE_KEYS } from "@renderer/features/settings/userDataStorageKeys";
 
 type DifficultyFilter = "all" | "beginner" | "intermediate" | "advanced";
 type GradeFilter = "all" | 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8;
@@ -64,7 +65,7 @@ export type {
   SongLibraryViewMode,
 };
 
-const STORAGE_KEY = "rexiano-song-library";
+const STORAGE_KEY = USER_DATA_STORAGE_KEYS.libraryMetadata;
 
 const defaultPrefs: PersistedSongLibraryPrefs = {
   viewMode: "list",

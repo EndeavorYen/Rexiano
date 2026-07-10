@@ -9,6 +9,10 @@ import {
   type UserDataFileBackupScope,
   type UserDataFileMutationResult,
 } from "../../shared/types";
+import {
+  normalizeRecentFile,
+  normalizeSessionRecord,
+} from "./persistenceValidators";
 
 const USER_DATA_FILE_SCOPES = ["progress", "recents"] as const;
 
@@ -45,6 +49,36 @@ function getUserDataFilePath(scope: UserDataFileBackupScope): string {
   return join(app.getPath("userData"), fileNames[scope]);
 }
 
+type BackupOperation = "export" | "import";
+
+type NormalizedFileRecordsResult =
+  | { ok: true; data: unknown[] }
+  | { ok: false; error: string };
+
+function normalizeFileRecords(
+  scope: UserDataFileBackupScope,
+  records: unknown[],
+  operation: BackupOperation,
+): NormalizedFileRecordsResult {
+  const normalized: unknown[] = [];
+
+  for (const [index, record] of records.entries()) {
+    const value =
+      scope === "progress"
+        ? normalizeSessionRecord(record)
+        : normalizeRecentFile(record);
+    if (!value) {
+      return {
+        ok: false,
+        error: `Cannot ${operation} ${scope}: record at index ${index} is invalid.`,
+      };
+    }
+    normalized.push(value);
+  }
+
+  return { ok: true, data: normalized };
+}
+
 async function readJsonArrayFile(
   scope: UserDataFileBackupScope,
 ): Promise<{ ok: true; data: unknown[] } | { ok: false; error: string }> {
@@ -60,7 +94,7 @@ async function readJsonArrayFile(
         error: `Cannot export ${scope}: ${fileNames[scope]} must contain a JSON array.`,
       };
     }
-    return { ok: true, data: parsed };
+    return normalizeFileRecords(scope, parsed, "export");
   } catch {
     return {
       ok: false,
@@ -116,16 +150,25 @@ export async function importUserDataFiles(
 ): Promise<UserDataFileMutationResult> {
   const selected = normalizeFileScopes(requestedScopes);
   const errors = [...selected.errors];
+  const normalizedData: UserDataFileBackupPayload = {};
 
   for (const scope of selected.scopes) {
-    if (!Array.isArray(payload[scope])) {
+    const records = payload[scope];
+    if (!Array.isArray(records)) {
       errors.push(`Cannot import ${scope}: backup data must be an array.`);
+      continue;
     }
+    const result = normalizeFileRecords(scope, records, "import");
+    if (!result.ok) {
+      errors.push(result.error);
+      continue;
+    }
+    normalizedData[scope] = result.data;
   }
   if (errors.length > 0) return { ok: false, errors };
 
   for (const scope of selected.scopes) {
-    await writeJsonArrayFile(scope, payload[scope] as unknown[]);
+    await writeJsonArrayFile(scope, normalizedData[scope] as unknown[]);
   }
 
   return { ok: true, scopes: selected.scopes };

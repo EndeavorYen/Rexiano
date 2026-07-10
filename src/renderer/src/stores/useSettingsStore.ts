@@ -1,9 +1,10 @@
 import { create } from "zustand";
 import type { PracticeMode } from "@shared/types";
+import { USER_DATA_STORAGE_KEYS } from "@renderer/features/settings/userDataStorageKeys";
 
 export type Language = "en" | "zh-TW";
 
-const STORAGE_KEY = "rexiano-settings";
+const STORAGE_KEY = USER_DATA_STORAGE_KEYS.settings;
 
 /** Detect initial language from browser/OS setting */
 function detectLanguage(): Language {

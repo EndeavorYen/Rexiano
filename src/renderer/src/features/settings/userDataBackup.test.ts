@@ -16,6 +16,7 @@ import {
   type UserDataFileBackupPort,
   validateUserDataBackupManifest,
 } from "./userDataBackup";
+import type { SongPracticeSetupSnapshot } from "../practice/songPracticeSetup";
 
 function createStorage(
   initial: Record<string, string> = {},
@@ -39,6 +40,18 @@ function createStorage(
   };
 }
 
+function practiceSetup(): Record<string, SongPracticeSetupSnapshot> {
+  return {
+    "name:Chopsticks": {
+      activeTracks: [0],
+      handAssignments: { 0: "both" },
+      defaultMode: "wait",
+      defaultSpeed: 1,
+      updatedAt: "2026-05-17T06:00:00.000Z",
+    },
+  };
+}
+
 describe("user data backup manifests", () => {
   test("accepts a valid scoped backup manifest", () => {
     const result = validateUserDataBackupManifest({
@@ -48,7 +61,7 @@ describe("user data backup manifests", () => {
       scopes: ["settings", "progress"],
       data: {
         settings: { volume: 80, childFocusMode: true },
-        progress: { sessions: [] },
+        progress: [],
       },
     });
 
@@ -129,7 +142,7 @@ describe("user data backup manifests", () => {
       {
         scope: "libraryMetadata",
         source: "localStorage",
-        storageKey: "rexiano-library-metadata",
+        storageKey: "rexiano-song-library",
         exportable: true,
         resettable: true,
       },
@@ -146,9 +159,9 @@ describe("user data backup manifests", () => {
   test("creates a canonical scoped manifest that validates for import", () => {
     const manifest = createUserDataBackupManifest(
       {
-        progress: { sessions: [] },
+        progress: [],
         settings: { volume: 0.8 },
-        recents: null,
+        recents: [],
         libraryMetadata: undefined,
       },
       "2026-05-17T03:00:00.000Z",
@@ -161,27 +174,73 @@ describe("user data backup manifests", () => {
       scopes: ["settings", "progress", "recents"],
       data: {
         settings: { volume: 0.8 },
-        progress: { sessions: [] },
-        recents: null,
+        progress: [],
+        recents: [],
       },
     });
     expect(validateUserDataBackupManifest(manifest).ok).toBe(true);
+  });
+
+  test.each([
+    ["settings", [], "Backup settings data must be an object."],
+    ["libraryMetadata", null, "Backup libraryMetadata data must be an object."],
+    ["progress", {}, "Backup progress data must be an array."],
+    ["recents", "invalid", "Backup recents data must be an array."],
+  ] as const)("rejects invalid %s scope containers", (scope, data, error) => {
+    expect(
+      validateUserDataBackupManifest({
+        app: "rexiano",
+        schemaVersion: USER_DATA_BACKUP_SCHEMA_VERSION,
+        exportedAt: "2026-07-10T01:00:00.000Z",
+        scopes: [scope],
+        data: { [scope]: data },
+      }),
+    ).toEqual({ ok: false, errors: [error] });
+  });
+
+  test("rejects malformed per-song setup snapshots", () => {
+    expect(
+      validateUserDataBackupManifest({
+        app: "rexiano",
+        schemaVersion: USER_DATA_BACKUP_SCHEMA_VERSION,
+        exportedAt: "2026-07-10T01:00:00.000Z",
+        scopes: ["perSongSetup"],
+        data: {
+          perSongSetup: {
+            "builtin:amazing-grace": {
+              activeTracks: [-1],
+              handAssignments: { 0: "right" },
+              defaultMode: "wait",
+              defaultSpeed: 1,
+              updatedAt: "2026-07-10T01:00:00.000Z",
+            },
+          },
+        },
+      }),
+    ).toEqual({
+      ok: false,
+      errors: ['Backup perSongSetup entry "builtin:amazing-grace" is invalid.'],
+    });
   });
 });
 
 describe("user data reset plans", () => {
   test("builds an explicit reset-all plan from the backup inventory", () => {
-    expect(buildUserDataResetPlan("all")).toEqual({
+    const plan = buildUserDataResetPlan("all");
+
+    expect(plan).toEqual({
       scopes: USER_DATA_BACKUP_SCOPES,
       localStorageKeys: [
         "rexiano-settings",
-        "rexiano-library-metadata",
+        "rexiano-song-library",
         "rexiano-song-practice-setup",
       ],
       userDataFiles: ["progress.json", "recents.json"],
       errors: [],
       canReset: true,
     });
+    expect(plan.localStorageKeys).toContain("rexiano-song-library");
+    expect(plan.localStorageKeys).not.toContain("rexiano-library-metadata");
   });
 
   test("deduplicates selected scopes and preserves inventory order", () => {
@@ -262,13 +321,22 @@ describe("parseUserDataBackupText", () => {
 
 describe("user data backup migrations", () => {
   test("migrates legacy v0 manifests by inferring scopes from data", () => {
+    const legacySetup = {
+      "name:Chopsticks": {
+        activeTracks: [0],
+        handAssignments: { 0: "both" },
+        defaultMode: "wait",
+        defaultSpeed: 1,
+        updatedAt: "2026-05-17T05:00:00.000Z",
+      },
+    };
     const result = migrateUserDataBackupManifest({
       app: "rexiano",
       schemaVersion: 0,
       exportedAt: "2026-05-17T05:00:00.000Z",
       data: {
         settings: { volume: 72 },
-        perSongSetup: { "name:Chopsticks": { activeTracks: [0] } },
+        perSongSetup: legacySetup,
         unsupported: true,
       },
     });
@@ -282,7 +350,7 @@ describe("user data backup migrations", () => {
         scopes: ["settings", "perSongSetup"],
         data: {
           settings: { volume: 72 },
-          perSongSetup: { "name:Chopsticks": { activeTracks: [0] } },
+          perSongSetup: legacySetup,
         },
       },
     });
@@ -290,12 +358,41 @@ describe("user data backup migrations", () => {
 });
 
 describe("localStorage backup round trip", () => {
+  test("exports the actual persisted song-library data", () => {
+    const libraryData = {
+      viewMode: "cards",
+      sortMode: "grade",
+      favoriteSongIds: ["amazing-grace"],
+      watchedFolders: ["/Users/rex/Music"],
+      importedSongs: [],
+    };
+    const source = createStorage({
+      "rexiano-song-library": JSON.stringify(libraryData),
+    });
+
+    expect(
+      createUserDataBackupFromLocalStorage(
+        source,
+        ["libraryMetadata"],
+        "2026-07-10T00:00:00.000Z",
+      ),
+    ).toEqual({
+      ok: true,
+      manifest: {
+        app: "rexiano",
+        schemaVersion: USER_DATA_BACKUP_SCHEMA_VERSION,
+        exportedAt: "2026-07-10T00:00:00.000Z",
+        scopes: ["libraryMetadata"],
+        data: { libraryMetadata: libraryData },
+      },
+    });
+  });
+
   test("exports and reapplies selected localStorage-backed scopes", () => {
+    const setup = practiceSetup();
     const source = createStorage({
       "rexiano-settings": JSON.stringify({ volume: 72, muted: false }),
-      "rexiano-song-practice-setup": JSON.stringify({
-        "name:Chopsticks": { activeTracks: [] },
-      }),
+      "rexiano-song-practice-setup": JSON.stringify(setup),
     });
 
     const exported = createUserDataBackupFromLocalStorage(
@@ -313,7 +410,7 @@ describe("localStorage backup round trip", () => {
         scopes: ["settings", "perSongSetup"],
         data: {
           settings: { volume: 72, muted: false },
-          perSongSetup: { "name:Chopsticks": { activeTracks: [] } },
+          perSongSetup: setup,
         },
       },
     });
@@ -333,9 +430,9 @@ describe("localStorage backup round trip", () => {
       volume: 72,
       muted: false,
     });
-    expect(JSON.parse(target.values["rexiano-song-practice-setup"])).toEqual({
-      "name:Chopsticks": { activeTracks: [] },
-    });
+    expect(JSON.parse(target.values["rexiano-song-practice-setup"])).toEqual(
+      setup,
+    );
   });
 
   test("reports corrupt stored JSON before creating an export file", () => {
@@ -352,11 +449,10 @@ describe("localStorage backup round trip", () => {
 
 describe("runtime backup round trip", () => {
   test("exports one portable manifest across localStorage and userData files", async () => {
+    const setup = practiceSetup();
     const source = createStorage({
       "rexiano-settings": JSON.stringify({ volume: 72 }),
-      "rexiano-song-practice-setup": JSON.stringify({
-        "name:Chopsticks": { activeTracks: [] },
-      }),
+      "rexiano-song-practice-setup": JSON.stringify(setup),
     });
     const filePort: UserDataFileBackupPort = {
       exportUserDataFiles: async () => ({
@@ -389,7 +485,7 @@ describe("runtime backup round trip", () => {
           settings: { volume: 72 },
           progress: [{ id: "session-1" }],
           recents: [{ path: "/lesson.mid" }],
-          perSongSetup: { "name:Chopsticks": { activeTracks: [] } },
+          perSongSetup: setup,
         },
       },
     });
@@ -424,7 +520,7 @@ describe("runtime backup round trip", () => {
     expect(result).toEqual({
       ok: false,
       appliedScopes: [],
-      errors: ["Cannot import progress: backup data must be an array."],
+      errors: ["Backup progress data must be an array."],
     });
     expect(target.values).toEqual({});
   });

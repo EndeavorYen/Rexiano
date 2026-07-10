@@ -2,8 +2,10 @@ import type { PracticeMode } from "@shared/types";
 import type { ParsedSong } from "@renderer/engines/midi/types";
 import type { TrackHandAssignment } from "@renderer/engines/midi/TrackHandAssignment";
 import { inferTrackHandAssignments } from "@renderer/engines/midi/TrackHandAssignment";
+import { USER_DATA_STORAGE_KEYS } from "@renderer/features/settings/userDataStorageKeys";
 
-export const SONG_PRACTICE_SETUP_STORAGE_KEY = "rexiano-song-practice-setup";
+export const SONG_PRACTICE_SETUP_STORAGE_KEY =
+  USER_DATA_STORAGE_KEYS.perSongSetup;
 
 export interface SongPracticeSetupIdentity {
   builtinSongId?: string;

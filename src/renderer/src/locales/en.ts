@@ -365,7 +365,7 @@ export const en: TranslationMap = {
   "settings.compactKeyLabelsDesc": "Show fewer key names on narrow keyboards",
   "settings.backupTitle": "User Data Backup",
   "settings.backupDesc":
-    "Export one JSON backup for settings, practice progress, recents, and per-song setup.",
+    "Export one JSON backup for settings, song library, practice progress, recents, and per-song setup.",
   "settings.backupExport": "Export Backup",
   "settings.backupExportDesc": "Create a portable Rexiano backup file.",
   "settings.backupImport": "Import Backup",
