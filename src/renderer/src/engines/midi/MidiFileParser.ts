@@ -10,6 +10,10 @@ import type {
 /**
  * Parse raw MIDI file bytes into a structured ParsedSong.
  *
+ * Both time bases are preserved: seconds drive playback (the audio clock is the
+ * master clock) and ticks drive notation. Deriving one from the other with a
+ * single BPM is only valid for constant-tempo songs, so neither is dropped.
+ *
  * @param fileName - Original file name for display
  * @param data - Raw MIDI file content as number array (from IPC)
  */
@@ -25,6 +29,8 @@ export function parseMidiFile(fileName: string, data: number[]): ParsedSong {
         time: note.time,
         duration: note.duration,
         velocity: Math.round(note.velocity * 127),
+        ticks: note.ticks,
+        durationTicks: note.durationTicks,
       }));
 
       // Sort by time, then by pitch for consistent ordering
@@ -41,6 +47,7 @@ export function parseMidiFile(fileName: string, data: number[]): ParsedSong {
   const tempos: TempoEvent[] = midi.header.tempos.map((t) => ({
     time: midi.header.ticksToSeconds(t.ticks),
     bpm: Math.round(t.bpm),
+    ticks: t.ticks,
   }));
 
   const timeSignatures: TimeSignatureEvent[] = midi.header.timeSignatures.map(
@@ -48,6 +55,7 @@ export function parseMidiFile(fileName: string, data: number[]): ParsedSong {
       time: midi.header.ticksToSeconds(ts.ticks),
       numerator: ts.timeSignature[0],
       denominator: ts.timeSignature[1],
+      ticks: ts.ticks,
     }),
   );
 
@@ -68,5 +76,6 @@ export function parseMidiFile(fileName: string, data: number[]): ParsedSong {
     tempos,
     timeSignatures,
     noteCount,
+    ppq: midi.header.ppq,
   };
 }
