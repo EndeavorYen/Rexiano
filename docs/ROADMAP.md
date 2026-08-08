@@ -328,8 +328,12 @@
 > 前置：Phase 4 ✅（需要播放同步）
 
 - [x] 方案選型確認（VexFlow vs OSMD）— VexFlow 5.0 已安裝
+- [x] `engines/midi/TempoMap.ts` — 秒 ↔ tick 精確換算 + 小節表
+  - [x] 跨速度變化（含漸快 / 漸慢）的分段線性換算
+  - [x] 依拍號事件產生小節表（支援中途變拍）
+  - [x] 檔案原生 PPQ（不再寫死 480）
 - [x] `features/sheetMusic/MidiToNotation.ts` — MIDI → 樂譜轉換
-  - [x] 音符量化（對齊節拍格線）
+  - [x] 音符量化（在 tick 域對齊節拍格線）
   - [x] 時值推斷（秒 → 四分/八分/十六分音符）
   - [x] 休止符插入（空譜表自動填入全休止符）
   - [x] 小節線切割
@@ -348,11 +352,13 @@
   - [x] 模式 C：僅下落音符（falling，預設）
 - [x] 基本符號支援
   - [x] 音符 + 休止符
-  - [x] 拍號
+  - [x] 拍號（含樂曲中途變拍，變拍小節會重印拍號）
   - [x] 調號
   - [x] 符桿方向（多聲部時明確指定上/下符桿）
   - [x] 連結線（跨小節音符）
+- [x] 小節完整性守門員（`NotationData.measureIssues`）
 - [x] 測試：量化、游標同步、樂譜視覺 fixtures
+- [x] 測試：變速 / 漸慢 / 變拍回歸（`MidiToNotation.tempo.test.ts`）
 
 ---
 

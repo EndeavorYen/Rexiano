@@ -119,6 +119,7 @@ src/
     +-- engines/
     |   +-- midi/                # MIDI 解析
     |   |   +-- MidiFileParser.ts
+    |   |   +-- TempoMap.ts            # 秒 ↔ tick 精確換算 + 小節表
     |   |   +-- MidiDeviceManager.ts   ← Phase 5
     |   |   +-- MidiInputParser.ts     ← Phase 5
     |   |   +-- MidiOutputSender.ts    ← Phase 5
@@ -133,6 +134,8 @@ src/
     |   |   +-- AudioEngine.ts
     |   |   +-- SoundFontLoader.ts
     |   |   +-- AudioScheduler.ts
+    |   +-- transport/           # 播放時鐘（不依賴任何 renderer）
+    |   |   +-- TransportClock.ts
     |   +-- practice/*           ← Phase 6
     |   +-- metronome/*          ← Phase 6.5
     +-- features/
@@ -901,15 +904,40 @@ src/renderer/src/
 ### 架構設計
 
 ```
+engines/midi/
++-- TempoMap.ts               # 秒 ↔ tick 精確換算（跨速度變化）+ 小節表（跨拍號變化）
 features/sheetMusic/
 +-- SheetMusicPanel.tsx       # React 元件，嵌入 VexFlow 渲染
-+-- MidiToNotation.ts         # MIDI ParsedNote[] → VexFlow StaveNote[]
-|   +-- 量化（quantize）：將浮點秒數對齊到最近的節拍格線
-|   +-- 音符分組：依小節線切割
++-- MidiToNotation.ts         # ParsedSong → NotationData
+|   +-- 量化（quantize）：在 tick 域對齊到 16 分音符格線
+|   +-- 音符分組：依 TempoMap 產生的小節表切割
 |   +-- 符桿方向：依音高決定
 |   +-- 調號 / 拍號推斷
-+-- CursorSync.ts             # 同步下落音符的 currentTime 到譜面游標位置
++-- CursorSync.ts             # 同步 currentTime 到譜面游標位置（透過 TempoMap）
 ```
+
+### 時間模型（重要）
+
+樂譜需要的是**音樂時間（tick）**，播放需要的是**牆鐘時間（秒）**。兩者只有在
+全曲等速時可以用單一 BPM 互換；一旦樂曲有速度變化，用 `tempos[0].bpm` 反推
+tick 會讓變速之後的所有音符時值與小節線全部錯位。
+
+因此：
+
+- `MidiFileParser` **同時保留**兩種時間基準：`ParsedNote.time/duration`（秒，
+  給播放）與 `ParsedNote.ticks/durationTicks`（tick，給樂譜），並保留檔案原生
+  `ppq` 與帶 tick 的 `tempos` / `timeSignatures`。
+- `TempoMap` 以分段線性方式做精確換算，並依拍號事件產生小節表。
+- `convertSongToNotation(song)` 只吃 tick，不再從秒數反推。
+- 合成歌曲（測試 fixture、內建曲庫、鋼琴捲軸編輯器）沒有 tick，由
+  `toMusicalNote()` 這個**唯一的邊界**透過 TempoMap 推導；邊界以下只有一條路徑。
+
+### 小節完整性守門員
+
+VexFlow 以 `setStrict(false)` 渲染，好讓異常樂譜降級顯示而不是直接拋錯崩潰；
+代價是 VexFlow 本身無法充當「樂譜是否損壞」的檢查點。因此改由轉換層負責：
+`NotationData.measureIssues` 會列出任何聲部 tick 總和不等於該小節拍號的情況。
+這個檢查是純資料運算，可在沒有 DOM 的情況下測試。
 
 ### 顯示模式
 
