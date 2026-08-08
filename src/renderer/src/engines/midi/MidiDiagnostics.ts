@@ -6,6 +6,8 @@ export type MidiDiagnosticCode =
   | "empty-song"
   | "missing-tempo"
   | "missing-time-signature"
+  | "tempo-change"
+  | "time-signature-change"
   | "many-tracks"
   | "loose-quantization"
   | "wide-chord-spread"
@@ -89,16 +91,22 @@ function hasHandMetadata(song: ParsedSong): boolean {
 }
 
 function defaultQuantizationGridSeconds(song: ParsedSong): number[] {
-  const firstTempo = song.tempos[0];
-  if (!firstTempo || firstTempo.bpm <= 0) return [0.125];
+  const tempos = song.tempos.filter((tempo) => tempo.bpm > 0);
+  if (tempos.length === 0) return [0.125];
 
-  const secondsPerQuarter = 60 / firstTempo.bpm;
-  return [
-    secondsPerQuarter / 4,
-    secondsPerQuarter / 3,
-    secondsPerQuarter / 2,
-    secondsPerQuarter,
-  ];
+  // A note is on-grid if it aligns with the grid of any tempo the song uses.
+  // Scoring every note against only the first tempo flags an entire section
+  // after a tempo change as loosely quantized when it is perfectly aligned.
+  const grids = new Set<number>();
+  for (const tempo of tempos) {
+    const secondsPerQuarter = 60 / tempo.bpm;
+    grids.add(secondsPerQuarter / 4);
+    grids.add(secondsPerQuarter / 3);
+    grids.add(secondsPerQuarter / 2);
+    grids.add(secondsPerQuarter);
+  }
+
+  return [...grids];
 }
 
 function distanceToNearestGrid(time: number, gridSeconds: number): number {
@@ -231,6 +239,26 @@ export function diagnoseParsedSong(
       severity: "warning",
       message: "No time signature metadata was found.",
       blocking: false,
+    });
+  }
+
+  if (song.tempos.length > 1) {
+    diagnostics.push({
+      code: "tempo-change",
+      severity: "info",
+      message: "This song changes tempo during playback.",
+      blocking: false,
+      value: song.tempos.length,
+    });
+  }
+
+  if (song.timeSignatures.length > 1) {
+    diagnostics.push({
+      code: "time-signature-change",
+      severity: "info",
+      message: "This song changes time signature during playback.",
+      blocking: false,
+      value: song.timeSignatures.length,
     });
   }
 

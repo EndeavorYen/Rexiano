@@ -1,20 +1,35 @@
 /**
- * MidiToNotation — Converts MIDI ParsedNote[] to notation-ready data.
+ * MidiToNotation — Converts MIDI notes to notation-ready data.
  *
  * This is the core conversion engine for Phase 7. It handles:
- * - Quantization: aligning float seconds to the nearest beat grid
- * - Duration inference: seconds → quarter/eighth/sixteenth notes
+ * - Quantization: aligning musical ticks to the nearest beat grid
+ * - Duration inference: ticks → quarter/eighth/sixteenth notes
  * - Rest insertion: inferring rests from gaps between notes
- * - Measure splitting: grouping notes into bars
+ * - Measure splitting: grouping notes into bars via the song's measure map
  * - Clef assignment: treble (MIDI >= 60) / bass (MIDI < 60)
+ *
+ * Time model
+ * ----------
+ * Notation works in *musical* ticks, never in seconds. A note's tick position
+ * cannot be recovered from its start time with a single BPM once a song changes
+ * tempo, and barlines cannot be placed with a single time signature once a song
+ * changes meter. Both come from `TempoMap`, which is exact across changes.
+ * Imported MIDI supplies real ticks; synthetic songs have them derived.
  *
  * Pure logic — no React or DOM dependencies.
  */
 
-import type { ParsedNote } from "@renderer/engines/midi/types";
+import type { ParsedNote, ParsedSong } from "@renderer/engines/midi/types";
+import {
+  TempoMap,
+  DEFAULT_BPM,
+  DEFAULT_PPQ,
+  type MeasureInfo,
+} from "@renderer/engines/midi/TempoMap";
 import type {
   NotationData,
   NotationMeasure,
+  NotationMeasureIssue,
   NotationNote,
   NotationRhythmApproximation,
   NotationTuplet,
@@ -25,8 +40,8 @@ import type {
 /** Middle C boundary for clef assignment */
 const MIDDLE_C = 60;
 
-/** Supported quantization grid sizes in ticks per quarter note */
-const QUANTIZE_GRID = 4; // 16th note = ticksPerQuarter / 4
+/** Quantization grid: 16th note = ticksPerQuarter / 4 */
+const QUANTIZE_GRID = 4;
 const UNSUPPORTED_RHYTHM_TOLERANCE_DIVISOR = 16;
 const TRIPLET_TOLERANCE_DIVISOR = 16;
 const EIGHTH_TRIPLET_TOTAL_NOTES = 3;
@@ -67,6 +82,13 @@ const SHARP_KEY_ORDER = ["f", "c", "g", "d", "a", "e", "b"];
 const FLAT_KEY_ORDER = ["b", "e", "a", "d", "g", "c", "f"];
 
 type Clef = "treble" | "bass";
+
+/** A note already resolved to musical time, before quantization. */
+interface MusicalNote {
+  midi: number;
+  rawStartTicks: number;
+  rawDurationTicks: number;
+}
 
 interface QuantizedNote {
   midi: number;
@@ -123,6 +145,16 @@ interface VoiceCluster<T extends VoiceSpan> {
   assignedVoiceIndex: number;
 }
 
+/** Options accepted by {@link convertSongToNotation}. */
+export interface ConvertSongOptions {
+  /** Sharps (positive) or flats (negative) in the key signature. */
+  keySignature?: number;
+  /** Force a meter, overriding the song's own time signature events. */
+  timeSignatureTop?: number;
+  /** Force a meter, overriding the song's own time signature events. */
+  timeSignatureBottom?: number;
+}
+
 /**
  * Convert a MIDI note number to a VexFlow key string.
  * @example midiToVexKey(60) → "c/4"
@@ -177,17 +209,12 @@ function midiToNotationKey(midi: number, keySignature: number): string {
   return `${noteNames[noteIndex]}/${octave}`;
 }
 
-function secondsToTicks(
-  timeSeconds: number,
-  bpm: number,
-  ticksPerQuarter: number,
-): number {
-  const secondsPerTick = 60 / (bpm * ticksPerQuarter);
-  return timeSeconds / secondsPerTick;
-}
-
 /**
  * Quantize a time value (in seconds) to the nearest grid position.
+ *
+ * Only valid for constant-tempo material; song-level conversion goes through
+ * `TempoMap` instead. Retained for callers that already work in a fixed tempo.
+ *
  * @param timeSeconds - Time in seconds
  * @param bpm - Tempo in beats per minute
  * @param ticksPerQuarter - Resolution in ticks per quarter note
@@ -200,6 +227,11 @@ export function quantizeToGrid(
 ): number {
   const secondsPerTick = 60 / (bpm * ticksPerQuarter);
   const rawTicks = timeSeconds / secondsPerTick;
+  return quantizeTicks(rawTicks, ticksPerQuarter);
+}
+
+/** Snap a raw tick position to the 16th-note grid. */
+function quantizeTicks(rawTicks: number, ticksPerQuarter: number): number {
   const gridSize = ticksPerQuarter / QUANTIZE_GRID;
   return Math.round(rawTicks / gridSize) * gridSize;
 }
@@ -230,11 +262,24 @@ function getDurationPieces(ticksPerQuarter: number): DurationPiece[] {
   ].sort((a, b) => b.ticks - a.ticks);
 }
 
+/**
+ * Express a duration as a sequence of renderable note values.
+ *
+ * The input is first snapped to the 16th-note grid. Every grid multiple is
+ * exactly representable by the piece set (16, 8, 8d, q, qd, h, hd, w cover 1,
+ * 2, 3, 4, 6, 8, 12 and 16 grid units), so this never leaves a remainder.
+ * Emitting a filler note for a sub-grid remainder — as an earlier version did —
+ * inflates the duration and overfills the measure.
+ */
 function splitTicksIntoDurations(
   durationTicks: number,
   ticksPerQuarter: number,
 ): DurationPiece[] {
-  let remaining = Math.round(durationTicks);
+  const gridSize = ticksPerQuarter / QUANTIZE_GRID;
+  let remaining = Math.max(
+    gridSize,
+    Math.round(durationTicks / gridSize) * gridSize,
+  );
   const pieces: DurationPiece[] = [];
 
   for (const piece of getDurationPieces(ticksPerQuarter)) {
@@ -242,14 +287,6 @@ function splitTicksIntoDurations(
       pieces.push(piece);
       remaining -= piece.ticks;
     }
-  }
-
-  if (remaining > 0) {
-    pieces.push({
-      vexDuration: "16",
-      ticks: ticksPerQuarter / QUANTIZE_GRID,
-      dots: 0,
-    });
   }
 
   return pieces;
@@ -605,6 +642,36 @@ function assignQuantizedNotesToVoices(notes: QuantizedNote[]): QuantizedNote[] {
   return notes;
 }
 
+/**
+ * Collapse event boundaries that sit closer together than one grid unit.
+ *
+ * Sub-grid slivers arise when grid-aligned and triplet-aligned material share a
+ * voice. Rendering a sliver forces a minimum-length note value, which overfills
+ * the bar, so neighbouring boundaries are merged instead. The measure end is
+ * always preserved as the final boundary so the bar still totals correctly.
+ */
+function sanitizeBoundaries(
+  boundarySet: Set<number>,
+  measureTicks: number,
+  minIntervalTicks: number,
+): number[] {
+  const sorted = [...boundarySet].sort((a, b) => a - b);
+  const boundaries: number[] = [];
+
+  for (const boundary of sorted) {
+    const previous = boundaries[boundaries.length - 1];
+    if (previous === undefined || boundary - previous >= minIntervalTicks) {
+      boundaries.push(boundary);
+    }
+  }
+
+  if (boundaries[boundaries.length - 1] !== measureTicks) {
+    boundaries[boundaries.length - 1] = measureTicks;
+  }
+
+  return boundaries;
+}
+
 function buildSingleVoiceEvents(
   segments: NoteSegment[],
   clef: Clef,
@@ -647,7 +714,11 @@ function buildSingleVoiceEvents(
     boundarySet.add(segment.startTick);
     boundarySet.add(segment.endTick);
   }
-  const boundaries = [...boundarySet].sort((a, b) => a - b);
+  const boundaries = sanitizeBoundaries(
+    boundarySet,
+    measureTicks,
+    ticksPerQuarter / QUANTIZE_GRID,
+  );
 
   const events: NotationNote[] = [];
 
@@ -765,47 +836,74 @@ function buildVoiceEvents(
 }
 
 /**
- * Convert an array of ParsedNotes into notation-ready data.
+ * Check that every voice in a measure fills exactly its time signature.
  *
- * @param notes - All parsed notes from the MIDI file
- * @param bpm - Tempo (from song.tempos[0].bpm)
- * @param ticksPerQuarter - MIDI resolution (default 480)
- * @param timeSignatureTop - Beats per measure (default 4)
- * @param timeSignatureBottom - Beat unit (default 4)
- * @returns NotationData with measures ready for VexFlow rendering
+ * Tuplet notes are counted at their rendered tick length, so a complete
+ * triplet group sums to the beat it occupies.
  */
-export function convertToNotation(
-  notes: ParsedNote[],
+function collectMeasureIssues(
+  measureIndex: number,
+  expectedTicks: number,
+  trebleNotes: NotationNote[],
+  bassNotes: NotationNote[],
+): NotationMeasureIssue[] {
+  const issues: NotationMeasureIssue[] = [];
+
+  const check = (clef: Clef, notes: NotationNote[]): void => {
+    const totals = new Map<number, number>();
+    for (const note of notes) {
+      const voiceIndex = note.voiceIndex ?? 0;
+      totals.set(
+        voiceIndex,
+        (totals.get(voiceIndex) ?? 0) + note.durationTicks,
+      );
+    }
+
+    for (const [voiceIndex, actualTicks] of totals) {
+      if (Math.abs(actualTicks - expectedTicks) < 1) continue;
+      issues.push({
+        kind: "measure-tick-mismatch",
+        measureIndex,
+        clef,
+        voiceIndex,
+        expectedTicks,
+        actualTicks: Math.round(actualTicks),
+      });
+    }
+  };
+
+  check("treble", trebleNotes);
+  check("bass", bassNotes);
+
+  return issues;
+}
+
+/**
+ * Core conversion: musical notes plus a measure map become notation data.
+ */
+function buildNotation(
+  musicalNotes: MusicalNote[],
+  measureMap: MeasureInfo[],
+  ticksPerQuarter: number,
+  keySignature: number,
   bpm: number,
-  ticksPerQuarter = 480,
-  timeSignatureTop = 4,
-  timeSignatureBottom = 4,
-  keySignature = 0,
 ): NotationData {
-  if (notes.length === 0) {
+  if (musicalNotes.length === 0) {
     return { measures: [], bpm, ticksPerQuarter, warnings: [] };
   }
 
-  const ticksPerMeasure =
-    ticksPerQuarter * timeSignatureTop * (4 / timeSignatureBottom);
-
-  // Quantize all notes.
-  const quantized: QuantizedNote[] = notes.map((note) => {
-    const rawStartTicks = secondsToTicks(note.time, bpm, ticksPerQuarter);
-    const rawDurationTicks = secondsToTicks(
-      note.duration,
-      bpm,
+  const quantized: QuantizedNote[] = musicalNotes.map((note) => {
+    const standardStartTick = quantizeTicks(
+      note.rawStartTicks,
       ticksPerQuarter,
     );
-    const standardStartTick = quantizeToGrid(note.time, bpm, ticksPerQuarter);
-    const standardEndTick = quantizeToGrid(
-      note.time + note.duration,
-      bpm,
+    const standardEndTick = quantizeTicks(
+      note.rawStartTicks + note.rawDurationTicks,
       ticksPerQuarter,
     );
     const tripletCandidate = getTripletCandidate(
-      rawStartTicks,
-      rawDurationTicks,
+      note.rawStartTicks,
+      note.rawDurationTicks,
       ticksPerQuarter,
     );
     const startTick = tripletCandidate?.startTick ?? standardStartTick;
@@ -821,7 +919,7 @@ export function convertToNotation(
       endTick: startTick + durationTicks,
       standardStartTick,
       standardEndTick,
-      rawDurationTicks,
+      rawDurationTicks: note.rawDurationTicks,
       tupletCandidate: tripletCandidate,
       vexKey: midiToNotationKey(note.midi, keySignature),
       accidental: getDisplayAccidental(
@@ -830,9 +928,11 @@ export function convertToNotation(
       ),
     };
   });
+
   const voicedQuantized = assignQuantizedNotesToVoices(quantized);
   assignSupportedTuplets(voicedQuantized, ticksPerQuarter);
   finalizeQuantizedTiming(voicedQuantized, ticksPerQuarter);
+
   const warnings: NotationWarning[] = voicedQuantized.flatMap((note) =>
     note.rhythmApproximation
       ? [
@@ -845,14 +945,17 @@ export function convertToNotation(
       : [],
   );
 
-  // Group into measures
   const maxTick = Math.max(...voicedQuantized.map((n) => n.endTick));
-  const measureCount = Math.ceil(maxTick / ticksPerMeasure) || 1;
+  // Trim the measure map to the music, but always keep at least one bar.
   const measures: NotationMeasure[] = [];
+  const measureIssues: NotationMeasureIssue[] = [];
 
-  for (let i = 0; i < measureCount; i++) {
-    const measureStart = i * ticksPerMeasure;
-    const measureEnd = measureStart + ticksPerMeasure;
+  for (const measureInfo of measureMap) {
+    if (measureInfo.startTick >= maxTick && measures.length > 0) break;
+
+    const measureStart = measureInfo.startTick;
+    const measureEnd = measureInfo.endTick;
+    const measureTicks = measureInfo.ticksPerMeasure;
 
     const measureSegments: NoteSegment[] = voicedQuantized
       .filter((n) => n.startTick < measureEnd && n.endTick > measureStart)
@@ -877,25 +980,172 @@ export function convertToNotation(
     const trebleSegments = measureSegments.filter((n) => n.midi >= MIDDLE_C);
     const bassSegments = measureSegments.filter((n) => n.midi < MIDDLE_C);
 
+    const trebleNotes = buildVoiceEvents(
+      trebleSegments,
+      "treble",
+      measureTicks,
+      ticksPerQuarter,
+    );
+    const bassNotes = buildVoiceEvents(
+      bassSegments,
+      "bass",
+      measureTicks,
+      ticksPerQuarter,
+    );
+
+    measureIssues.push(
+      ...collectMeasureIssues(
+        measures.length,
+        measureTicks,
+        trebleNotes,
+        bassNotes,
+      ),
+    );
+
     measures.push({
-      index: i,
-      timeSignatureTop,
-      timeSignatureBottom,
+      index: measures.length,
+      startTick: measureStart,
+      ticksPerMeasure: measureTicks,
+      timeSignatureTop: measureInfo.numerator,
+      timeSignatureBottom: measureInfo.denominator,
       keySignature,
-      trebleNotes: buildVoiceEvents(
-        trebleSegments,
-        "treble",
-        ticksPerMeasure,
-        ticksPerQuarter,
-      ),
-      bassNotes: buildVoiceEvents(
-        bassSegments,
-        "bass",
-        ticksPerMeasure,
-        ticksPerQuarter,
-      ),
+      trebleNotes,
+      bassNotes,
     });
   }
 
-  return { measures, bpm, ticksPerQuarter, warnings };
+  return {
+    measures,
+    bpm,
+    ticksPerQuarter,
+    warnings,
+    measureIssues,
+  };
+}
+
+/**
+ * Convert a parsed song into notation data.
+ *
+ * This is the entry point the app uses. It is exact across tempo and meter
+ * changes because both come from the song's own event lists via `TempoMap`.
+ */
+export function convertSongToNotation(
+  song: ParsedSong,
+  options: ConvertSongOptions = {},
+): NotationData {
+  const keySignature = options.keySignature ?? 0;
+  const forcedMeter =
+    options.timeSignatureTop !== undefined ||
+    options.timeSignatureBottom !== undefined;
+
+  const timeSignatures = forcedMeter
+    ? [
+        {
+          time: 0,
+          ticks: 0,
+          numerator: options.timeSignatureTop ?? 4,
+          denominator: options.timeSignatureBottom ?? 4,
+        },
+      ]
+    : song.timeSignatures;
+
+  const tempoMap = new TempoMap(
+    song.tempos,
+    timeSignatures,
+    song.ppq ?? DEFAULT_PPQ,
+  );
+  const ticksPerQuarter = tempoMap.ppq;
+
+  const musicalNotes: MusicalNote[] = song.tracks
+    .flatMap((track) => track.notes)
+    .map((note) => toMusicalNote(note, tempoMap));
+
+  const maxTick = musicalNotes.reduce(
+    (max, note) => Math.max(max, note.rawStartTicks + note.rawDurationTicks),
+    0,
+  );
+
+  return buildNotation(
+    musicalNotes,
+    tempoMap.buildMeasures(maxTick),
+    ticksPerQuarter,
+    keySignature,
+    song.tempos[0]?.bpm ?? DEFAULT_BPM,
+  );
+}
+
+/**
+ * Resolve one note to musical time.
+ *
+ * This is the single place where the two time bases meet: real MIDI carries
+ * ticks, and anything synthetic has them derived through the tempo map. Below
+ * this boundary the notation engine only ever sees ticks.
+ */
+function toMusicalNote(note: ParsedNote, tempoMap: TempoMap): MusicalNote {
+  if (note.ticks !== undefined && note.durationTicks !== undefined) {
+    return {
+      midi: note.midi,
+      rawStartTicks: note.ticks,
+      rawDurationTicks: note.durationTicks,
+    };
+  }
+
+  const rawStartTicks = tempoMap.secondsToTicks(note.time);
+  const rawEndTicks = tempoMap.secondsToTicks(note.time + note.duration);
+
+  return {
+    midi: note.midi,
+    rawStartTicks,
+    rawDurationTicks: rawEndTicks - rawStartTicks,
+  };
+}
+
+/**
+ * Convert a constant-tempo note list into notation data.
+ *
+ * Kept for callers that genuinely have a fixed tempo and meter — fixtures, the
+ * piano-roll editor preview and unit tests. Songs go through
+ * {@link convertSongToNotation}, which handles tempo and meter changes.
+ *
+ * @param notes - Notes to convert
+ * @param bpm - Constant tempo
+ * @param ticksPerQuarter - Resolution (default 480)
+ * @param timeSignatureTop - Beats per measure (default 4)
+ * @param timeSignatureBottom - Beat unit (default 4)
+ * @param keySignature - Sharps (positive) or flats (negative)
+ */
+export function convertToNotation(
+  notes: ParsedNote[],
+  bpm: number,
+  ticksPerQuarter = DEFAULT_PPQ,
+  timeSignatureTop = 4,
+  timeSignatureBottom = 4,
+  keySignature = 0,
+): NotationData {
+  const tempoMap = new TempoMap(
+    [{ time: 0, ticks: 0, bpm }],
+    [
+      {
+        time: 0,
+        ticks: 0,
+        numerator: timeSignatureTop,
+        denominator: timeSignatureBottom,
+      },
+    ],
+    ticksPerQuarter,
+  );
+
+  const musicalNotes = notes.map((note) => toMusicalNote(note, tempoMap));
+  const maxTick = musicalNotes.reduce(
+    (max, note) => Math.max(max, note.rawStartTicks + note.rawDurationTicks),
+    0,
+  );
+
+  return buildNotation(
+    musicalNotes,
+    tempoMap.buildMeasures(maxTick),
+    ticksPerQuarter,
+    keySignature,
+    bpm,
+  );
 }

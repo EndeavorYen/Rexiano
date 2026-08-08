@@ -10,6 +10,17 @@ export interface ParsedNote {
   duration: number;
   /** Velocity (0-127) */
   velocity: number;
+  /**
+   * Start position in MIDI ticks, as stored in the source file.
+   *
+   * Notation needs musical time, and musical time cannot be recovered from
+   * `time` alone once a song changes tempo. Synthetic songs (test fixtures, the
+   * generated song library, the piano-roll editor) may omit this; consumers
+   * derive it through `TempoMap` instead — see `sheetMusic/notationSource.ts`.
+   */
+  ticks?: number;
+  /** Duration in MIDI ticks, as stored in the source file. */
+  durationTicks?: number;
 }
 
 /** A single track within a MIDI file */
@@ -30,9 +41,11 @@ export interface TempoEvent {
   time: number;
   /** Tempo in BPM */
   bpm: number;
+  /** Position in MIDI ticks, when known. Preferred over `time` by `TempoMap`. */
+  ticks?: number;
 }
 
-/** Time signature event */
+/** Time signature change event */
 export interface TimeSignatureEvent {
   /** Time in seconds */
   time: number;
@@ -40,6 +53,8 @@ export interface TimeSignatureEvent {
   numerator: number;
   /** Denominator (e.g. 4 in 4/4) */
   denominator: number;
+  /** Position in MIDI ticks, when known. Preferred over `time` by `TempoMap`. */
+  ticks?: number;
 }
 
 /** Complete parsed representation of a MIDI file */
@@ -56,4 +71,9 @@ export interface ParsedSong {
   timeSignatures: TimeSignatureEvent[];
   /** Total number of notes across all tracks */
   noteCount: number;
+  /**
+   * Pulses per quarter note from the source file.
+   * Absent for synthetic songs, which fall back to `DEFAULT_PPQ`.
+   */
+  ppq?: number;
 }

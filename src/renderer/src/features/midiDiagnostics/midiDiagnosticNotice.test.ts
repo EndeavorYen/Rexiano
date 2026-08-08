@@ -108,6 +108,8 @@ describe("buildMidiDiagnosticNotice", () => {
       measures: [
         {
           index: 0,
+          startTick: 0,
+          ticksPerMeasure: 1920,
           timeSignatureTop: 4,
           timeSignatureBottom: 4,
           keySignature: 0,

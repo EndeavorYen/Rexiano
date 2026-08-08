@@ -44,6 +44,9 @@ export class AudioScheduler implements IAudioScheduler {
   /** Playback speed multiplier (0.25–2.0). 1.0 = normal speed. */
   private _speed = 1.0;
 
+  /** Song time captured by pause(), used as the default resume position. */
+  private _pausedSongTime: number | null = null;
+
   /** Track indices excluded from playback scheduling. */
   private _mutedTracks = new Set<number>();
 
@@ -95,6 +98,43 @@ export class AudioScheduler implements IAudioScheduler {
       this._intervalId = null;
     }
     this._engine.allNotesOff();
+  }
+
+  /**
+   * Freeze scheduling while leaving sounding notes to ring out.
+   *
+   * Wait mode pauses playback at every note the learner has to play. Using
+   * stop() there silences sustained notes mid-ring, which is audible on held
+   * bass notes. Only the unheard look-ahead is dropped, and the track cursors
+   * rewind so those notes are rescheduled by {@link resume}.
+   */
+  pause(): void {
+    if (this._intervalId === null) return;
+
+    const songTime = this.getCurrentTime();
+
+    clearInterval(this._intervalId);
+    this._intervalId = null;
+
+    const ctx = this._engine.audioContext;
+    if (ctx) {
+      this._engine.releaseScheduledAfter(ctx.currentTime);
+    }
+
+    if (songTime !== null) {
+      this._pausedSongTime = songTime;
+      this._resetCursors(songTime);
+    }
+  }
+
+  /**
+   * Resume after {@link pause}, continuing from the frozen song position.
+   * @param songTime  Position to resume from; defaults to where pause() froze.
+   */
+  resume(songTime?: number): void {
+    const target = songTime ?? this._pausedSongTime;
+    if (target === null) return;
+    this.start(target);
   }
 
   seek(songTime: number): void {

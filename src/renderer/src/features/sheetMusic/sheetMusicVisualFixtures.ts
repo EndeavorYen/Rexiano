@@ -67,6 +67,8 @@ function makeMeasure(
 ): NotationMeasure {
   return {
     index,
+    startTick: index * TICKS_PER_MEASURE,
+    ticksPerMeasure: TICKS_PER_MEASURE,
     timeSignatureTop: 4,
     timeSignatureBottom: 4,
     keySignature,

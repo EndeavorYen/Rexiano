@@ -168,24 +168,9 @@ describe("FallingNotesCanvas ticker logic (via createTickerUpdate)", () => {
     expect(cb).not.toHaveBeenCalled();
   });
 
-  test("advances currentTime when playing", () => {
+  test("never writes playback time — the ticker only draws", () => {
     songStoreState = { song: makeSong() };
     playbackStoreState.isPlaying = true;
-    playbackStoreState.currentTime = 5.0;
-    const tick = createTickerUpdate(noteRenderer, () => SCREEN, {
-      current: undefined,
-    });
-
-    tick({ deltaMS: 16.67 });
-
-    expect(playbackStoreState.setCurrentTime).toHaveBeenCalledWith(
-      expect.closeTo(5.01667, 3),
-    );
-  });
-
-  test("does not advance time when paused", () => {
-    songStoreState = { song: makeSong() };
-    playbackStoreState.isPlaying = false;
     playbackStoreState.currentTime = 5.0;
     const tick = createTickerUpdate(noteRenderer, () => SCREEN, {
       current: undefined,
@@ -194,63 +179,6 @@ describe("FallingNotesCanvas ticker logic (via createTickerUpdate)", () => {
     tick({ deltaMS: 16.67 });
 
     expect(playbackStoreState.setCurrentTime).not.toHaveBeenCalled();
-  });
-
-  test("clamps time to song duration", () => {
-    songStoreState = { song: makeSong({ duration: 10 }) };
-    playbackStoreState.isPlaying = true;
-    playbackStoreState.currentTime = 9.999;
-    const tick = createTickerUpdate(noteRenderer, () => SCREEN, {
-      current: undefined,
-    });
-
-    tick({ deltaMS: 100 });
-
-    expect(playbackStoreState.setCurrentTime).toHaveBeenCalledWith(10);
-  });
-
-  test("auto-stops at end of song", () => {
-    songStoreState = { song: makeSong({ duration: 10 }) };
-    playbackStoreState.isPlaying = true;
-    playbackStoreState.currentTime = 9.999;
-    const tick = createTickerUpdate(noteRenderer, () => SCREEN, {
-      current: undefined,
-    });
-
-    tick({ deltaMS: 100 });
-
-    expect(playbackStoreState.setPlaying).toHaveBeenCalledWith(false);
-  });
-
-  test("clamps deltaMS to prevent large time jumps after tab backgrounding", () => {
-    songStoreState = { song: makeSong({ duration: 30 }) };
-    playbackStoreState.isPlaying = true;
-    playbackStoreState.currentTime = 5.0;
-    const tick = createTickerUpdate(noteRenderer, () => SCREEN, {
-      current: undefined,
-    });
-
-    tick({ deltaMS: 5000 }); // 5-second spike
-
-    // MAX_DELTA_SECONDS = 0.1, so should advance by at most 0.1
-    expect(playbackStoreState.setCurrentTime).toHaveBeenCalledWith(
-      expect.closeTo(5.1, 3),
-    );
-  });
-
-  test("accumulates time correctly over multiple frames", () => {
-    songStoreState = { song: makeSong({ duration: 30 }) };
-    playbackStoreState.isPlaying = true;
-    playbackStoreState.currentTime = 0;
-    const tick = createTickerUpdate(noteRenderer, () => SCREEN, {
-      current: undefined,
-    });
-
-    for (let i = 0; i < 60; i++) {
-      tick({ deltaMS: 16.6667 });
-    }
-
-    expect(playbackStoreState.currentTime).toBeCloseTo(1.0, 1);
   });
 
   test("notifies onActiveNotesChange when notes reach hit line", () => {
@@ -409,7 +337,6 @@ describe("FallingNotesCanvas ticker logic (via createTickerUpdate)", () => {
         noteRenderer,
         () => SCREEN,
         { current: undefined },
-        undefined,
         onDiagnostics,
       );
 

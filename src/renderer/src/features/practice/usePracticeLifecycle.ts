@@ -143,8 +143,10 @@ export function usePracticeLifecycle(
         }
       },
       onWait: () => {
-        // Pause audio when waiting for user input
-        audioRef.current.scheduler?.stop();
+        // Freeze audio while waiting for input. pause() leaves notes that are
+        // already sounding to ring out, where stop() would cut sustained notes
+        // at every single wait.
+        audioRef.current.scheduler?.pause();
       },
       onResume: () => {
         // Resume audio — read fresh time INSIDE the .then() callback
@@ -153,7 +155,7 @@ export function usePracticeLifecycle(
           void engine
             .resume()
             .then(() => {
-              scheduler.start(usePlaybackStore.getState().currentTime);
+              scheduler.resume(usePlaybackStore.getState().currentTime);
             })
             .catch((err) => {
               console.error("WaitMode audio resume failed:", err);

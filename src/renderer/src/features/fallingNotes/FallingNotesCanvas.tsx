@@ -19,8 +19,6 @@ import {
 interface FallingNotesCanvasProps {
   /** Callback to send active MIDI notes to PianoKeyboard */
   onActiveNotesChange?: (notes: Set<number>) => void;
-  /** Phase 4: Get current playback time from AudioScheduler */
-  getAudioCurrentTime?: () => number | null;
   /** Expose the NoteRenderer instance for external use (e.g. practice visual feedback) */
   onNoteRendererReady?: (renderer: NoteRenderer) => void;
   /** Optional minimum render height in px */
@@ -29,7 +27,6 @@ interface FallingNotesCanvasProps {
 
 export function FallingNotesCanvas({
   onActiveNotesChange,
-  getAudioCurrentTime,
   onNoteRendererReady,
   minHeight = 200,
 }: FallingNotesCanvasProps): React.JSX.Element {
@@ -52,11 +49,6 @@ export function FallingNotesCanvas({
   }, [onActiveNotesChange]);
 
   // Stable ref for audio time callback
-  const getAudioCurrentTimeRef = useRef(getAudioCurrentTime);
-  useEffect(() => {
-    getAudioCurrentTimeRef.current = getAudioCurrentTime;
-  }, [getAudioCurrentTime]);
-
   // Stable ref for note renderer callback
   const onNoteRendererReadyRef = useRef(onNoteRendererReady);
   useEffect(() => {
@@ -131,7 +123,6 @@ export function FallingNotesCanvas({
           noteRenderer,
           () => ({ width: app.screen.width, height: app.screen.height }),
           onActiveNotesChangeRef,
-          () => getAudioCurrentTimeRef.current?.() ?? null,
           diagnosticsEnabled
             ? (frame) => onRenderDiagnosticsRef.current?.(frame)
             : undefined,

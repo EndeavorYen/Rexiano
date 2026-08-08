@@ -46,6 +46,12 @@ export interface IAudioEngine {
   /** Stop all currently sounding notes immediately */
   allNotesOff(): void;
 
+  /**
+   * Cancel notes scheduled to start after `time` without silencing notes that
+   * are already sounding.
+   */
+  releaseScheduledAfter(time: number): void;
+
   /** Resume AudioContext (after browser suspend) */
   resume(): Promise<void>;
 
@@ -149,6 +155,15 @@ export interface IAudioScheduler {
 
   /** Stop scheduling and cancel all pending notes */
   stop(): void;
+
+  /**
+   * Freeze scheduling without cutting sounding notes.
+   * Used by wait mode, which pauses between notes rather than stopping.
+   */
+  pause(): void;
+
+  /** Resume scheduling from a song time after {@link pause}. */
+  resume(songTime: number): void;
 
   /**
    * Handle seek: flush all scheduled notes and restart from new position.
