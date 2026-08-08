@@ -11,6 +11,7 @@
 import { useRef, useEffect, useState, useMemo } from "react";
 import { useTranslation } from "@renderer/i18n/useTranslation";
 import { usePlaybackStore } from "@renderer/stores/usePlaybackStore";
+import type { TempoMap } from "@renderer/engines/midi/TempoMap";
 import type { NotationData, NotationMeasure, DisplayMode } from "./types";
 import { getCursorPosition, getMeasureWindow } from "./CursorSync";
 import {
@@ -53,6 +54,11 @@ interface SheetMusicPanelProps {
   notationData: NotationData | null;
   mode: DisplayMode;
   height?: number;
+  /**
+   * The song's tempo map. Required for cursor tracking to stay correct on songs
+   * that change tempo; without it the cursor assumes a constant BPM.
+   */
+  tempoMap?: TempoMap | null;
 }
 
 interface RenderedVoice {
@@ -358,17 +364,19 @@ function renderMeasure(
   y: number,
   width: number,
   isFirst: boolean,
+  showTimeSignature: boolean,
 ): RenderedMeasure {
   const { Stave, Voice, Formatter, StaveConnector } = VF;
+  const timeSignature = `${measure.timeSignatureTop}/${measure.timeSignatureBottom}`;
 
   const treble = new Stave(x, y, width);
   if (isFirst) {
     treble
       .addClef("treble")
-      .addKeySignature(keySignatureToVexKey(measure.keySignature))
-      .addTimeSignature(
-        `${measure.timeSignatureTop}/${measure.timeSignatureBottom}`,
-      );
+      .addKeySignature(keySignatureToVexKey(measure.keySignature));
+  }
+  if (showTimeSignature) {
+    treble.addTimeSignature(timeSignature);
   }
   treble.setContext(context).draw();
 
@@ -376,10 +384,10 @@ function renderMeasure(
   if (isFirst) {
     bass
       .addClef("bass")
-      .addKeySignature(keySignatureToVexKey(measure.keySignature))
-      .addTimeSignature(
-        `${measure.timeSignatureTop}/${measure.timeSignatureBottom}`,
-      );
+      .addKeySignature(keySignatureToVexKey(measure.keySignature));
+  }
+  if (showTimeSignature) {
+    bass.addTimeSignature(timeSignature);
   }
   bass.setContext(context).draw();
 
@@ -515,6 +523,7 @@ export function SheetMusicPanel({
   notationData,
   mode,
   height = 220,
+  tempoMap = null,
 }: SheetMusicPanelProps): React.JSX.Element | null {
   const { t } = useTranslation();
   const currentTime = usePlaybackStore((s) => s.currentTime);
@@ -524,8 +533,8 @@ export function SheetMusicPanel({
   const hidden = mode === "falling";
   const cursorPosition = useMemo(() => {
     if (!notationData) return null;
-    return getCursorPosition(currentTime, notationData);
-  }, [currentTime, notationData]);
+    return getCursorPosition(currentTime, notationData, tempoMap ?? undefined);
+  }, [currentTime, notationData, tempoMap]);
   const activeMeasureIndex = cursorPosition?.measureIndex ?? 0;
 
   const visibleMeasures = useMemo(() => {
@@ -633,10 +642,25 @@ export function SheetMusicPanel({
           }
 
           const measure = notationData.measures[measureIndex];
+          const previousMeasure = notationData.measures[measureIndex - 1];
+          const meterChanged =
+            previousMeasure !== undefined &&
+            (previousMeasure.timeSignatureTop !== measure.timeSignatureTop ||
+              previousMeasure.timeSignatureBottom !==
+                measure.timeSignatureBottom);
 
           try {
             renderedMeasures.push(
-              renderMeasure(VF, context, measure, x, y, width, isFirst),
+              renderMeasure(
+                VF,
+                context,
+                measure,
+                x,
+                y,
+                width,
+                isFirst,
+                isFirst || meterChanged,
+              ),
             );
           } catch (e) {
             console.warn(

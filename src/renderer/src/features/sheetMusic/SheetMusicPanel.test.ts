@@ -31,6 +31,8 @@ function makeNote(
 function makeMeasure(index: number, noteCount: number): NotationMeasure {
   return {
     index,
+    startTick: index * 1920,
+    ticksPerMeasure: 1920,
     timeSignatureTop: 4,
     timeSignatureBottom: 4,
     keySignature: 0,

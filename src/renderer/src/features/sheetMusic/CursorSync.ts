@@ -6,10 +6,17 @@
  * - Provide scroll/page-flip logic for the sheet music view
  * - Highlight the current note on the staff
  *
+ * Measures are located through each measure's own `startTick` and
+ * `ticksPerMeasure`, so a song that changes meter still resolves correctly.
+ * Converting seconds to ticks needs the song's tempo map; without one this
+ * falls back to the notation's single BPM, which is correct only while the
+ * tempo never changes.
+ *
  * Pure logic — no React or DOM dependencies.
  */
 
-import type { NotationData } from "./types";
+import type { TempoMap } from "@renderer/engines/midi/TempoMap";
+import type { NotationData, NotationMeasure } from "./types";
 
 /** Position on the score */
 export interface CursorPosition {
@@ -23,40 +30,65 @@ export interface CursorPosition {
 
 const DISPLAY_MEASURE_COUNT = 4;
 
+function ticksPerMeasureOf(
+  measure: NotationMeasure,
+  ticksPerQuarter: number,
+): number {
+  if (measure.ticksPerMeasure > 0) return measure.ticksPerMeasure;
+  return (
+    ticksPerQuarter *
+    measure.timeSignatureTop *
+    (4 / measure.timeSignatureBottom)
+  );
+}
+
+function ticksPerBeatOf(
+  measure: NotationMeasure,
+  ticksPerQuarter: number,
+): number {
+  return ticksPerQuarter * (4 / measure.timeSignatureBottom);
+}
+
 /**
  * Compute the cursor position from a playback time.
  *
  * @param currentTime - Playback time in seconds
  * @param notationData - The full notation data (measures, bpm, ticksPerQuarter)
+ * @param tempoMap - The song's tempo map; required for tempo-changing songs
  * @returns The cursor position, or null if notation data is empty
  */
 export function getCursorPosition(
   currentTime: number,
   notationData: NotationData,
+  tempoMap?: TempoMap,
 ): CursorPosition | null {
-  if (notationData.measures.length === 0) return null;
+  const { measures, bpm, ticksPerQuarter } = notationData;
+  if (measures.length === 0) return null;
 
-  const { bpm, ticksPerQuarter, measures } = notationData;
-  const secondsPerTick = 60 / (bpm * ticksPerQuarter);
+  const totalTick = tempoMap
+    ? tempoMap.secondsToTicks(currentTime)
+    : currentTime * ((bpm * ticksPerQuarter) / 60);
 
-  const totalTick = currentTime / secondsPerTick;
-  const firstMeasure = measures[0];
-  const ticksPerMeasure =
-    ticksPerQuarter *
-    firstMeasure.timeSignatureTop *
-    (4 / firstMeasure.timeSignatureBottom);
-  const ticksPerBeat = ticksPerQuarter * (4 / firstMeasure.timeSignatureBottom);
+  // Measures are ordered by startTick, so the last one that starts at or
+  // before the cursor is the active one.
+  let activeIndex = 0;
+  for (let i = 0; i < measures.length; i++) {
+    const startTick = measures[i].startTick ?? 0;
+    if (startTick > totalTick) break;
+    activeIndex = i;
+  }
 
-  const measureIndex = Math.max(
+  const measure = measures[activeIndex];
+  const measureStart = measure.startTick ?? 0;
+  const measureTicks = ticksPerMeasureOf(measure, ticksPerQuarter);
+  const tickInMeasure = Math.max(
     0,
-    Math.min(Math.floor(totalTick / ticksPerMeasure), measures.length - 1),
+    Math.min(totalTick - measureStart, measureTicks),
   );
-  const tickInMeasure = totalTick - measureIndex * ticksPerMeasure;
-  const beat = tickInMeasure / ticksPerBeat;
 
   return {
-    measureIndex,
-    beat,
+    measureIndex: measure.index,
+    beat: tickInMeasure / ticksPerBeatOf(measure, ticksPerQuarter),
     tick: Math.round(tickInMeasure),
   };
 }

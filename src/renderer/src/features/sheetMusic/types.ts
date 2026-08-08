@@ -42,6 +42,27 @@ export interface NotationWarning extends NotationRhythmApproximation {
   startTick: number;
 }
 
+/**
+ * A measure whose rendered events do not add up to its time signature.
+ *
+ * VexFlow runs in non-strict mode so that a malformed measure degrades instead
+ * of throwing in the user's face, which means VexFlow itself cannot be the
+ * guard against notation corruption. This is that guard: it is computed by the
+ * converter, so it is deterministic and testable without a DOM.
+ */
+export interface NotationMeasureIssue {
+  kind: "measure-tick-mismatch";
+  /** 0-based measure index */
+  measureIndex: number;
+  clef: "treble" | "bass";
+  /** Staff-local voice index whose total is wrong */
+  voiceIndex: number;
+  /** Ticks the measure's time signature requires */
+  expectedTicks: number;
+  /** Ticks the rendered events actually occupy */
+  actualTicks: number;
+}
+
 /** A quantized note ready for notation rendering */
 export interface NotationNote {
   /** MIDI note number (0-127) */
@@ -80,6 +101,10 @@ export interface NotationNote {
 export interface NotationMeasure {
   /** 0-based measure index */
   index: number;
+  /** Absolute tick position of this measure's barline from song start */
+  startTick: number;
+  /** Ticks this measure spans, derived from its own time signature */
+  ticksPerMeasure: number;
   /** Time signature numerator */
   timeSignatureTop: number;
   /** Time signature denominator */
@@ -96,10 +121,12 @@ export interface NotationMeasure {
 export interface NotationData {
   /** All measures */
   measures: NotationMeasure[];
-  /** Tempo in BPM (from first tempo event) */
+  /** Tempo in BPM (from first tempo event; display only) */
   bpm: number;
   /** Ticks per quarter note (for quantization) */
   ticksPerQuarter: number;
   /** Pure conversion warnings, such as unsupported tuplets rendered via fallback */
   warnings?: NotationWarning[];
+  /** Measures whose rendered events do not match their time signature */
+  measureIssues?: NotationMeasureIssue[];
 }

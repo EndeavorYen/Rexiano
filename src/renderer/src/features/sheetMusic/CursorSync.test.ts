@@ -4,6 +4,7 @@ import {
   getScrollTarget,
   getMeasureWindow,
 } from "./CursorSync";
+import { TempoMap } from "@renderer/engines/midi/TempoMap";
 import type { NotationData } from "./types";
 
 describe("CursorSync", () => {
@@ -11,18 +12,26 @@ describe("CursorSync", () => {
     measureCount: number,
     timeSignatureTop = 4,
     timeSignatureBottom = 4,
-  ): NotationData => ({
-    measures: Array.from({ length: measureCount }, (_, i) => ({
-      index: i,
-      timeSignatureTop,
-      timeSignatureBottom,
-      keySignature: 0,
-      trebleNotes: [],
-      bassNotes: [],
-    })),
-    bpm: 120,
-    ticksPerQuarter: 480,
-  });
+  ): NotationData => {
+    const ticksPerQuarter = 480;
+    const ticksPerMeasure =
+      ticksPerQuarter * timeSignatureTop * (4 / timeSignatureBottom);
+
+    return {
+      measures: Array.from({ length: measureCount }, (_, i) => ({
+        index: i,
+        startTick: i * ticksPerMeasure,
+        ticksPerMeasure,
+        timeSignatureTop,
+        timeSignatureBottom,
+        keySignature: 0,
+        trebleNotes: [],
+        bassNotes: [],
+      })),
+      bpm: 120,
+      ticksPerQuarter,
+    };
+  };
 
   describe("getCursorPosition", () => {
     it("returns null for empty notation data", () => {
@@ -69,6 +78,99 @@ describe("CursorSync", () => {
       const data = makeNotationData(4);
       const pos = getCursorPosition(100, data)!;
       expect(pos.measureIndex).toBe(3); // last measure
+    });
+  });
+
+  describe("getCursorPosition with a tempo map", () => {
+    it("tracks the score across a tempo change", () => {
+      // Two 4/4 measures; the second plays at double tempo.
+      const data = makeNotationData(2);
+      const tempoMap = new TempoMap(
+        [
+          { time: 0, ticks: 0, bpm: 120 },
+          { time: 2, ticks: 1920, bpm: 240 },
+        ],
+        [{ time: 0, ticks: 0, numerator: 4, denominator: 4 }],
+        480,
+      );
+
+      // Start of measure 2 in real time is 2.0s
+      expect(getCursorPosition(2.0, data, tempoMap)).toMatchObject({
+        measureIndex: 1,
+        tick: 0,
+      });
+
+      // The second measure only lasts 1.0s at 240bpm, so the song ends at 3.0s
+      // and the cursor must be at the end of measure 2 by then — not halfway,
+      // which is where a constant-BPM mapping would leave it.
+      const atEnd = getCursorPosition(3.0, data, tempoMap)!;
+      expect(atEnd.measureIndex).toBe(1);
+      expect(atEnd.beat).toBeCloseTo(4, 1);
+
+      // A constant-BPM reading of the same moment is only halfway through.
+      const withoutMap = getCursorPosition(3.0, data)!;
+      expect(withoutMap.beat).toBeCloseTo(2, 1);
+    });
+
+    it("resolves measures across a meter change", () => {
+      const ticksPerQuarter = 480;
+      const data: NotationData = {
+        measures: [
+          {
+            index: 0,
+            startTick: 0,
+            ticksPerMeasure: 1440,
+            timeSignatureTop: 3,
+            timeSignatureBottom: 4,
+            keySignature: 0,
+            trebleNotes: [],
+            bassNotes: [],
+          },
+          {
+            index: 1,
+            startTick: 1440,
+            ticksPerMeasure: 1440,
+            timeSignatureTop: 3,
+            timeSignatureBottom: 4,
+            keySignature: 0,
+            trebleNotes: [],
+            bassNotes: [],
+          },
+          {
+            index: 2,
+            startTick: 2880,
+            ticksPerMeasure: 1920,
+            timeSignatureTop: 4,
+            timeSignatureBottom: 4,
+            keySignature: 0,
+            trebleNotes: [],
+            bassNotes: [],
+          },
+        ],
+        bpm: 120,
+        ticksPerQuarter,
+      };
+      const tempoMap = new TempoMap(
+        [{ time: 0, ticks: 0, bpm: 120 }],
+        [
+          { time: 0, ticks: 0, numerator: 3, denominator: 4 },
+          { time: 3, ticks: 2880, numerator: 4, denominator: 4 },
+        ],
+        ticksPerQuarter,
+      );
+
+      // 1.5s = tick 1440 = start of the second 3/4 measure
+      expect(getCursorPosition(1.5, data, tempoMap)).toMatchObject({
+        measureIndex: 1,
+        tick: 0,
+      });
+      // 3.0s = tick 2880 = start of the 4/4 measure
+      expect(getCursorPosition(3.0, data, tempoMap)).toMatchObject({
+        measureIndex: 2,
+        tick: 0,
+      });
+      // Beat 3 of the 4/4 measure
+      expect(getCursorPosition(4.0, data, tempoMap)!.beat).toBeCloseTo(2, 1);
     });
   });
 
