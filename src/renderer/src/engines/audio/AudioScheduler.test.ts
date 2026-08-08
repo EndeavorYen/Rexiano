@@ -48,6 +48,7 @@ interface MockAudioEngine {
   noteOn: Mock;
   noteOff: Mock;
   allNotesOff: Mock;
+  releaseScheduledAfter: Mock;
   resume: Mock;
   suspend: Mock;
   setVolume: Mock;
@@ -71,6 +72,7 @@ function createMockEngine(initialTime = 0): MockAudioEngine {
     noteOn: vi.fn(),
     noteOff: vi.fn(),
     allNotesOff: vi.fn(),
+    releaseScheduledAfter: vi.fn(),
     resume: vi.fn().mockResolvedValue(undefined),
     suspend: vi.fn().mockResolvedValue(undefined),
     setVolume: vi.fn(),

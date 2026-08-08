@@ -19,6 +19,8 @@ import { SoundFontLoader } from "./SoundFontLoader";
 interface ActiveNote {
   source: AudioBufferSourceNode;
   gain: GainNode;
+  /** AudioContext time this note is scheduled to start sounding */
+  startTime: number;
 }
 
 /** Release time in seconds for noteOff envelope */
@@ -133,7 +135,11 @@ export class AudioEngine implements IAudioEngine {
       source.start(time);
 
       // Track the active note
-      const activeNote: ActiveNote = { source, gain: velocityGain };
+      const activeNote: ActiveNote = {
+        source,
+        gain: velocityGain,
+        startTime: time,
+      };
       const existing = this._activeNotes.get(midi);
       if (existing) {
         existing.push(activeNote);
@@ -186,6 +192,43 @@ export class AudioEngine implements IAudioEngine {
       }
     } catch (err) {
       this._handleRuntimeError(err, "noteOff");
+    }
+  }
+
+  /**
+   * Cancel notes scheduled to begin after `time`, leaving sounding notes alone.
+   *
+   * Wait mode freezes playback between notes. Silencing everything would cut
+   * whatever is still ringing, so only the look-ahead window that has not been
+   * heard yet is dropped; the scheduler reschedules it on resume.
+   */
+  releaseScheduledAfter(time: number): void {
+    for (const [midi, notes] of this._activeNotes) {
+      const remaining: ActiveNote[] = [];
+
+      for (const activeNote of notes) {
+        if (activeNote.startTime <= time) {
+          remaining.push(activeNote);
+          continue;
+        }
+
+        const { source, gain } = activeNote;
+        try {
+          source.onended = null;
+          gain.gain.cancelScheduledValues(time);
+          source.stop(time);
+          source.disconnect();
+          gain.disconnect();
+        } catch {
+          /* already stopped */
+        }
+      }
+
+      if (remaining.length === 0) {
+        this._activeNotes.delete(midi);
+      } else {
+        this._activeNotes.set(midi, remaining);
+      }
     }
   }
 

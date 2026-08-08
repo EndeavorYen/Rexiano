@@ -59,6 +59,7 @@ function makeEngine(callOrder: string[] = []): IAudioEngine {
     noteOff: vi.fn((midi: number) => {
       callOrder.push(`off:${midi}`);
     }),
+    releaseScheduledAfter: vi.fn(),
     allNotesOff: vi.fn(() => {
       callOrder.push("stop");
     }),
