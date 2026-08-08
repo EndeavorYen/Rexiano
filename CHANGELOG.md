@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.4.0](https://github.com/EndeavorYen/Rexiano/compare/v1.3.1...v1.4.0) (2026-08-08)
+
+
+### Features
+
+* make sheet notation correct across tempo and meter changes ([#178](https://github.com/EndeavorYen/Rexiano/issues/178)) ([ece751b](https://github.com/EndeavorYen/Rexiano/commit/ece751b23a13f5bfb46f48ad3d25adf23e5f8a51))
+
 ## [1.3.1](https://github.com/EndeavorYen/Rexiano/compare/v1.3.0...v1.3.1) (2026-07-10)
 
 
