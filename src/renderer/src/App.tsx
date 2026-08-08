@@ -44,7 +44,9 @@ import { useKeyboardShortcuts } from "./hooks/useKeyboardShortcuts";
 import { useTranslation } from "./i18n/useTranslation";
 import { SheetMusicPanel } from "./features/sheetMusic/SheetMusicPanel";
 import { DisplayModeToggle } from "./features/sheetMusic/DisplayModeToggle";
-import { convertToNotation } from "./features/sheetMusic/MidiToNotation";
+import { convertSongToNotation } from "./features/sheetMusic/MidiToNotation";
+import { TempoMap } from "./engines/midi/TempoMap";
+import { TransportClock } from "./engines/transport/TransportClock";
 import type { NotationData } from "./features/sheetMusic/types";
 import {
   getSheetMusicVisualFixture,
@@ -285,28 +287,23 @@ function App(): React.JSX.Element {
   const notationData = useMemo(() => {
     if (sheetFixtureNotationData) return sheetFixtureNotationData;
     if (!song) return null;
-    const allNotes = song.tracks.flatMap((tr) => tr.notes);
-    const bpm = song.tempos.length > 0 ? song.tempos[0].bpm : 120;
-    const midiTimeSignature = song.timeSignatures[0];
-    const timeSignatureTop =
-      builtinNotationMetadata?.timeSignatureTop ??
-      midiTimeSignature?.numerator ??
-      4;
-    const timeSignatureBottom =
-      builtinNotationMetadata?.timeSignatureBottom ??
-      midiTimeSignature?.denominator ??
-      4;
-    const keySignature = builtinNotationMetadata?.keySignature ?? 0;
 
-    return convertToNotation(
-      allNotes,
-      bpm,
-      480,
-      timeSignatureTop,
-      timeSignatureBottom,
-      keySignature,
-    );
+    // Curated metadata may pin a meter for a built-in song; otherwise the
+    // song's own time signature events drive the barlines, including changes.
+    return convertSongToNotation(song, {
+      keySignature: builtinNotationMetadata?.keySignature ?? 0,
+      timeSignatureTop: builtinNotationMetadata?.timeSignatureTop,
+      timeSignatureBottom: builtinNotationMetadata?.timeSignatureBottom,
+    });
   }, [builtinNotationMetadata, sheetFixtureNotationData, song]);
+
+  // Cursor placement needs exact seconds → ticks, which only the tempo map can
+  // give once a song changes tempo. Fixture notation is synthetic and carries
+  // no matching song, so it keeps the constant-BPM reading.
+  const notationTempoMap = useMemo(() => {
+    if (sheetFixtureNotationData || !song) return null;
+    return TempoMap.fromSong(song);
+  }, [sheetFixtureNotationData, song]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -750,10 +747,19 @@ function App(): React.JSX.Element {
     };
   }, []);
 
-  // Callback for FallingNotesCanvas to sync visual with audio time
+  // Audio clock source for the transport. The scheduler derives song time from
+  // AudioContext.currentTime, which stays the master clock for playback.
   const getAudioCurrentTime = useCallback((): number | null => {
     return audioRef.current.scheduler?.getCurrentTime() ?? null;
   }, []);
+
+  // The transport clock advances playback time independently of any view, so
+  // playback keeps running in sheet-only mode where no canvas is mounted.
+  useEffect(() => {
+    const clock = new TransportClock(getAudioCurrentTime);
+    clock.start();
+    return () => clock.dispose();
+  }, [getAudioCurrentTime]);
 
   // ─── Phase 6.5: Startup wiring — initAutoSave ──────────
   // Subscribe to playback state transitions to auto-save session records on stop.
@@ -1320,11 +1326,12 @@ function App(): React.JSX.Element {
                     notationData={notationData}
                     mode={displayMode}
                     height={splitSheetHeight}
+                    tempoMap={notationTempoMap}
                   />
                 </div>
 
-                {/* Falling notes canvas — always mounted so PixiJS ticker keeps
-                running (WaitMode relies on it). Hidden via CSS in sheet mode. */}
+                {/* Falling notes canvas. Playback time belongs to
+                TransportClock, so this can unmount without stopping the song. */}
                 <div
                   data-testid="falling-notes-panel"
                   className="flex-1 min-h-0 relative flex flex-col"
@@ -1340,12 +1347,13 @@ function App(): React.JSX.Element {
                     isSplitMode && setSplitFocusPanel("falling")
                   }
                 >
-                  <FallingNotesCanvas
-                    onActiveNotesChange={handleActiveNotesChange}
-                    getAudioCurrentTime={getAudioCurrentTime}
-                    onNoteRendererReady={handleFallingNoteRendererReady}
-                    minHeight={fallingCanvasMinHeight}
-                  />
+                  {displayMode !== "sheet" && (
+                    <FallingNotesCanvas
+                      onActiveNotesChange={handleActiveNotesChange}
+                      onNoteRendererReady={handleFallingNoteRendererReady}
+                      minHeight={fallingCanvasMinHeight}
+                    />
+                  )}
                 </div>
                 <ScoreOverlay />
               </>
