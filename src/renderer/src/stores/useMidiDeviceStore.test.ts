@@ -23,6 +23,7 @@ const mockManager = {
   connectOutput: vi.fn(() => true),
   disconnectOutput: vi.fn(),
   getActiveInput: vi.fn(() => null),
+  getActiveOutput: vi.fn(() => null),
   onDeviceListChange: vi.fn(),
   onActiveInputChange: vi.fn(),
   onActiveOutputChange: vi.fn(),
@@ -36,7 +37,10 @@ vi.mock("@renderer/engines/midi/MidiDeviceManager", () => ({
   },
 }));
 
-import { useMidiDeviceStore } from "./useMidiDeviceStore";
+import {
+  getMidiPlaybackOutputSender,
+  useMidiDeviceStore,
+} from "./useMidiDeviceStore";
 
 describe("useMidiDeviceStore", () => {
   beforeEach(() => {
@@ -58,6 +62,7 @@ describe("useMidiDeviceStore", () => {
     mockManager.inputs = [];
     mockManager.outputs = [];
     vi.clearAllMocks();
+    getMidiPlaybackOutputSender().detach();
   });
 
   // ─── Initial state ────────────────────────────────────
@@ -189,6 +194,26 @@ describe("useMidiDeviceStore", () => {
   test("selectOutput() calls manager.connectOutput with device ID", () => {
     useMidiDeviceStore.getState().selectOutput("out-1");
     expect(mockManager.connectOutput).toHaveBeenCalledWith("out-1");
+  });
+
+  test("active output changes attach the shared playback sender", async () => {
+    const output = {
+      send: vi.fn(),
+      clear: vi.fn(),
+    } as unknown as MIDIOutput;
+    mockManager.getActiveOutput.mockReturnValue(output);
+    mockManager.init.mockImplementation(async () => {
+      mockManager.status = "ready";
+    });
+    let onOutputChange: ((device: unknown) => void) | null = null;
+    mockManager.onActiveOutputChange.mockImplementation((callback) => {
+      onOutputChange = callback;
+    });
+
+    await useMidiDeviceStore.getState().connect();
+    onOutputChange?.({ id: "out-1" });
+
+    expect(getMidiPlaybackOutputSender().isAttached).toBe(true);
   });
 
   test("selectOutput(null) calls manager.disconnectOutput", () => {

@@ -164,6 +164,23 @@ describe("MidiOutputSender", () => {
     });
   });
 
+  describe("clearScheduled", () => {
+    test("cancels queued messages before silencing held notes", () => {
+      sender.attach(mockOutput);
+      sender.clearScheduled();
+
+      expect(mockOutput.clear).toHaveBeenCalledOnce();
+      expect(mockOutput.send).toHaveBeenCalledWith([
+        0xb0,
+        CC.ALL_NOTES_OFF,
+        0,
+      ]);
+      expect(vi.mocked(mockOutput.clear).mock.invocationCallOrder[0]).toBeLessThan(
+        vi.mocked(mockOutput.send).mock.invocationCallOrder.at(-1)!,
+      );
+    });
+  });
+
   describe("sendParsedNote", () => {
     test("sends Note On and scheduled Note Off for a ParsedNote", () => {
       sender.attach(mockOutput);

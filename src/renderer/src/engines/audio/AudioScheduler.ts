@@ -26,6 +26,13 @@ const DEFAULT_CONFIG: AudioSchedulerConfig = {
   intervalMs: 25,
 };
 
+/** Minimal renderer-owned sink for mirroring playback to Web MIDI. */
+export interface MidiPlaybackOutput {
+  noteOn(midi: number, velocity: number, timestamp: number): void;
+  noteOff(midi: number, timestamp: number): void;
+  clearScheduled(): void;
+}
+
 export class AudioScheduler implements IAudioScheduler {
   private _engine: IAudioEngine;
   private _song: ParsedSong | null = null;
@@ -49,6 +56,7 @@ export class AudioScheduler implements IAudioScheduler {
 
   /** Track indices excluded from playback scheduling. */
   private _mutedTracks = new Set<number>();
+  private _midiOutput: MidiPlaybackOutput | null = null;
 
   constructor(engine: IAudioEngine, config?: Partial<AudioSchedulerConfig>) {
     this._engine = engine;
@@ -74,6 +82,7 @@ export class AudioScheduler implements IAudioScheduler {
           (audioTime - oldStartAudioTime) * oldSpeed + oldSeekOffset;
 
         this._engine.releaseScheduledAfter(audioTime);
+        this._midiOutput?.clearScheduled();
         this._rewindCancelledCursors(
           audioTime,
           oldStartAudioTime,
@@ -90,11 +99,30 @@ export class AudioScheduler implements IAudioScheduler {
 
   /** Set track indices that should not sound during playback. */
   setMutedTracks(trackIndices: Set<number>): void {
+    const changed =
+      trackIndices.size !== this._mutedTracks.size ||
+      [...trackIndices].some((track) => !this._mutedTracks.has(track));
+    if (!changed) return;
+
+    const currentTime = this.getCurrentTime();
     this._mutedTracks = new Set(trackIndices);
+    if (currentTime !== null) {
+      this._engine.allNotesOff();
+      this._midiOutput?.clearScheduled();
+      this._resetCursors(currentTime);
+    }
+  }
+
+  /** Bind the stable sender owned by the MIDI device store. */
+  setMidiOutput(output: MidiPlaybackOutput | null): void {
+    if (this._midiOutput === output) return;
+    this._midiOutput?.clearScheduled();
+    this._midiOutput = output;
   }
 
   /** Bind a song for scheduling. Call before start(). */
   setSong(song: ParsedSong): void {
+    this._midiOutput?.clearScheduled();
     this._song = song;
     this._trackCursors = song.tracks.map(() => 0);
   }
@@ -122,6 +150,7 @@ export class AudioScheduler implements IAudioScheduler {
       this._intervalId = null;
     }
     this._engine.allNotesOff();
+    this._midiOutput?.clearScheduled();
   }
 
   /**
@@ -144,6 +173,7 @@ export class AudioScheduler implements IAudioScheduler {
     if (ctx) {
       this._engine.releaseScheduledAfter(ctx.currentTime);
     }
+    this._midiOutput?.clearScheduled();
 
     if (songTime !== null) {
       this._pausedSongTime = songTime;
@@ -165,6 +195,7 @@ export class AudioScheduler implements IAudioScheduler {
     if (!this._song) return;
 
     this._engine.allNotesOff();
+    this._midiOutput?.clearScheduled();
 
     const ctx = this._engine.audioContext;
     if (!ctx) return;
@@ -196,6 +227,7 @@ export class AudioScheduler implements IAudioScheduler {
     this.stop();
     this._song = null;
     this._trackCursors = [];
+    this._midiOutput = null;
   }
 
   // ─── Private ────────────────────────────
@@ -312,6 +344,19 @@ export class AudioScheduler implements IAudioScheduler {
         // Ensure noteOff is always after noteOn (noteOn may have been clamped forward)
         const clampedOffTime = Math.max(offTime, clampedOnTime + 0.01);
         this._engine.noteOff(note.midi, clampedOffTime);
+
+        if (this._midiOutput) {
+          const midiNow = performance.now();
+          this._midiOutput.noteOn(
+            note.midi,
+            note.velocity,
+            midiNow + (clampedOnTime - ctx.currentTime) * 1000,
+          );
+          this._midiOutput.noteOff(
+            note.midi,
+            midiNow + (clampedOffTime - ctx.currentTime) * 1000,
+          );
+        }
 
         cursor++;
       }

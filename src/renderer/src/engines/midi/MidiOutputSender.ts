@@ -37,7 +37,7 @@ export class MidiOutputSender {
   /** Unbind from the current output port */
   detach(): void {
     if (this._output) {
-      this.allNotesOff();
+      this.clearScheduled();
       this._output = null;
     }
   }
@@ -96,6 +96,13 @@ export class MidiOutputSender {
   allNotesOff(): void {
     if (!this._output) return;
     this._output.send([CONTROL_CHANGE | this._channel, CC.ALL_NOTES_OFF, 0]);
+  }
+
+  /** Cancel future Web MIDI messages, then silence anything already sounding. */
+  clearScheduled(): void {
+    if (!this._output) return;
+    this._output.clear();
+    this.allNotesOff();
   }
 
   /**

@@ -42,7 +42,10 @@ import { BluetoothDeviceSelectionDialog } from "./features/midiDevice/BluetoothD
 import { InsightsPanel } from "./features/insights/InsightsPanel";
 import { WeakSpotAnalyzer } from "./features/insights/WeakSpotAnalyzer";
 import { buildSessionSummariesForSong } from "./features/insights/sessionSummary";
-import { useMidiDeviceStore } from "./stores/useMidiDeviceStore";
+import {
+  getMidiPlaybackOutputSender,
+  useMidiDeviceStore,
+} from "./stores/useMidiDeviceStore";
 import { usePracticeLifecycle } from "./features/practice/usePracticeLifecycle";
 import { PracticeToolbar } from "./features/practice/PracticeToolbar";
 import { ScoreOverlay } from "./features/practice/ScoreOverlay";
@@ -621,6 +624,7 @@ function App(): React.JSX.Element {
         },
       });
       const scheduler = new AudioScheduler(engine);
+      scheduler.setMidiOutput(getMidiPlaybackOutputSender());
       const stack = { engine, scheduler };
       const owner = audioInitializationOwnerRef.current;
       if (!owner) {
