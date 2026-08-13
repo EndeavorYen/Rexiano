@@ -35,11 +35,13 @@ platform-specific checks:
 - Linux: exact `x86_64`-named AppImage and `amd64`-named Debian package inventory
   from a checked build.
 
-The publish job re-fetches the tag, rejects a moved tag or an already-public or
-duplicate release, downloads only verified artifacts, checks the exact seven
+The publish job re-fetches the tag and requires exactly one matching draft. A
+missing, duplicate, or already-public release fails closed, so the upload action
+cannot create a replacement release without the notes prepared by Release
+Please. It then downloads only verified artifacts, checks the exact seven
 package files, creates a locale-stable `SHA256SUMS.txt`, and verifies that file
-before making the draft public. It appends the checksums without replacing the
-release notes prepared by Release Please.
+before making the prepared draft public. It appends the checksums without
+replacing the Release Please notes.
 
 ## Required GitHub Actions secrets
 
@@ -91,6 +93,8 @@ electron-builder signing/notarization invocation.
   Gatekeeper, stapler, or checksum failure prevents publication.
 - A tag that moves after initial resolution is rejected again by the publish
   job.
+- Tag-push and workflow-dispatch runs must find exactly one matching draft;
+  neither trigger creates a missing release as a fallback.
 - A failed run may leave the Release Please draft available for diagnosis, but
   it cannot turn that draft into a public release.
 - Pull-request CI does not need private signing secrets because it verifies the

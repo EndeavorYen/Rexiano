@@ -633,18 +633,16 @@ jobs:
               '$2 == tag { count += 1 } END { print count + 0 }' \
               "$release_rows"
           )"
-          if [[ "$release_count" -gt 1 ]]; then
-            echo "Duplicate releases found for $RELEASE_TAG." >&2
+          if [[ "$release_count" -ne 1 ]]; then
+            echo "Expected exactly one prepared draft release for $RELEASE_TAG; found $release_count." >&2
             exit 1
           fi
-          if [[ "$release_count" -eq 1 ]]; then
-            release_is_draft="$(
-              awk -F '\t' -v tag="$RELEASE_TAG" '$2 == tag { print $3 }' "$release_rows"
-            )"
-            if [[ "$release_is_draft" != "true" ]]; then
-              echo "Release is already public; refusing duplicate publication." >&2
-              exit 1
-            fi
+          release_is_draft="$(
+            awk -F '\t' -v tag="$RELEASE_TAG" '$2 == tag { print $3 }' "$release_rows"
+          )"
+          if [[ "$release_is_draft" != "true" ]]; then
+            echo "Release is already public; refusing duplicate publication." >&2
+            exit 1
           fi
 
       - name: Download verified artifacts

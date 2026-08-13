@@ -233,8 +233,12 @@ describe("release workflow", () => {
     );
     expect(publish).toContain("refs/tags/$RELEASE_TAG^{commit}");
     expect(publish).toContain("releases?per_page=100");
+    expect(publish).toContain('if [[ "$release_count" -ne 1 ]]; then');
+    expect(publish).toContain(
+      "Expected exactly one prepared draft release for $RELEASE_TAG; found $release_count.",
+    );
+    expect(publish).not.toContain('if [[ "$release_count" -eq 1 ]]; then');
     expect(publish).toContain("Release is already public");
-    expect(publish).toContain("Duplicate releases found");
     expect(publish).toContain("actions/download-artifact@v8");
     expect(publish).toContain("Expected exactly 7 release packages");
     expect(publish).toContain("LC_ALL=C");
@@ -288,8 +292,13 @@ describe("release workflow", () => {
     expect(signingDocs).toContain("Authenticode");
     expect(signingDocs).toContain("Gatekeeper");
     expect(signingDocs).toContain("SHA256SUMS.txt");
+    expect(signingDocs).toContain(
+      "Tag-push and workflow-dispatch runs must find exactly one matching draft",
+    );
     expect(design).toContain("fail closed");
+    expect(design).toContain("恰好一個 matching draft");
     expect(englishDesign).toContain("fail closed");
+    expect(englishDesign).toContain("exactly one matching draft");
   });
 
   test("documents conventional squash subjects for release notes", () => {

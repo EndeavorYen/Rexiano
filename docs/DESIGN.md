@@ -1043,7 +1043,7 @@ jobs:
   - build-windows: checked build + signed .exe / zip + Authenticode 驗證
   - build-mac: checked build + signed/notarized .dmg + Gatekeeper 驗證
   - build-linux: checked build + .AppImage / .deb
-  - publish: 重驗 tag 與七個 artifacts/checksums 後公開既有 draft
+  - publish: 重驗 tag、要求恰好一個 matching draft，並驗證七個 artifacts/checksums 後公開該 draft；tag push / workflow dispatch 不會補建遺失的 release
 ```
 
 #### 12.2 自動更新

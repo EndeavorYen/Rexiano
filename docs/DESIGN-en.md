@@ -422,6 +422,9 @@ GitHub Actions pipeline:
    notarization, platform verification, exact artifact inventory, and checksums
    must all succeed before the draft becomes public. Local and fork packaging
    can still use the unsigned defaults in `electron-builder.yml`.
+5. Both tag-push and workflow-dispatch runs must find exactly one matching draft
+   at publication time; a missing, duplicate, or public release is rejected
+   instead of being recreated by the upload action.
 
 ### Auto-Update
 
