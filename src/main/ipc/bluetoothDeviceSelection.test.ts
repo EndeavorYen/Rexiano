@@ -8,7 +8,12 @@ class FakeWebContents extends EventEmitter {
   id = 17;
   mainFrame = {
     url: "file:///Applications/Rexiano.app/Contents/Resources/app.asar/out/renderer/index.html",
+    top: null as unknown as FakeWebContents["mainFrame"],
   };
+  constructor() {
+    super();
+    this.mainFrame.top = this.mainFrame;
+  }
   send = vi.fn();
   isDestroyed = vi.fn(() => false);
   getURL = vi.fn(() => this.mainFrame.url);
@@ -61,6 +66,28 @@ describe("BluetoothDeviceSelectionRegistry", () => {
         ],
       }),
     );
+  });
+
+  test("allows Just Works pairing only for an offered device in the active trusted chooser", () => {
+    window.webContents.emit(
+      "select-bluetooth-device",
+      { preventDefault: vi.fn() },
+      [{ deviceId: "piano", deviceName: "Piano" }],
+      vi.fn(),
+    );
+
+    expect(registry.allowsPairing(window.webContents.mainFrame, "piano")).toBe(
+      true,
+    );
+    expect(registry.allowsPairing(window.webContents.mainFrame, "other")).toBe(
+      false,
+    );
+    expect(
+      registry.allowsPairing(
+        { url: window.webContents.mainFrame.url, top: null },
+        "piano",
+      ),
+    ).toBe(false);
   });
 
   test("accepts only the owning trusted main frame and offered device IDs", () => {

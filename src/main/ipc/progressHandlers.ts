@@ -7,6 +7,7 @@ import {
   withFileMutationLock,
   writeFileAtomically,
 } from "./atomicFilePersistence";
+import { requireTrustedMainFrame } from "./trustedIpc";
 
 /** Path to the progress data file inside Electron's userData directory */
 function getProgressPath(): string {
@@ -69,7 +70,8 @@ export async function appendSessionRecord(
 export function registerProgressHandlers(): void {
   ipcMain.handle(
     IpcChannels.LOAD_SESSIONS,
-    async (): Promise<SessionRecord[]> => {
+    async (event): Promise<SessionRecord[]> => {
+      requireTrustedMainFrame(event);
       return readSessions();
     },
   );
@@ -77,6 +79,7 @@ export function registerProgressHandlers(): void {
   ipcMain.handle(
     IpcChannels.SAVE_SESSION,
     async (_event, record: SessionRecord): Promise<void> => {
+      requireTrustedMainFrame(_event);
       await appendSessionRecord(getProgressPath(), record);
     },
   );

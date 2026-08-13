@@ -11,9 +11,10 @@ vi.mock("electron", () => ({
   shell: { openExternal: vi.fn(), openPath: vi.fn(async () => "") },
 }));
 
-vi.mock("./midiPermissionPolicy", () => ({
-  isTrustedRendererUrl: vi.fn(
-    (url: string) => url === "file:///mock/renderer/index.html",
+vi.mock("./trustedIpc", () => ({
+  isTrustedMainFrame: vi.fn(
+    (event: { senderFrame: { url: string } }) =>
+      event.senderFrame.url === "file:///mock/renderer/index.html",
   ),
 }));
 

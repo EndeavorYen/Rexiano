@@ -36,7 +36,7 @@ function response(options: {
   url?: string;
   contentLength?: number;
 }): Response {
-  const result = new Response(options.body ?? bytes, {
+  const result = new Response(Buffer.from(options.body ?? bytes), {
     status: 200,
     headers: {
       "content-length": String(options.contentLength ?? asset.size),

@@ -19,6 +19,11 @@ import {
   AssociatedMidiFileOpenQueue,
   findAssociatedMidiArgument,
 } from "./associatedMidiFileOpen";
+import {
+  createSecureRendererPreferences,
+  installRendererNavigationGuard,
+} from "./rendererWindowSecurity";
+import { requireTrustedMainFrame } from "./ipc/trustedIpc";
 
 // WSL2 doesn't forward Windows display scaling to X11/Wayland,
 // so Electron defaults to devicePixelRatio=1. Force the correct factor.
@@ -70,10 +75,9 @@ function createWindow(): BrowserWindow {
     show: false,
     autoHideMenuBar: true,
     ...(process.platform === "linux" ? { icon } : {}),
-    webPreferences: {
-      preload: join(__dirname, "../preload/index.js"),
-      sandbox: false,
-    },
+    webPreferences: createSecureRendererPreferences(
+      join(__dirname, "../preload/index.js"),
+    ),
   });
 
   mainWindow = createdWindow;
@@ -93,6 +97,7 @@ function createWindow(): BrowserWindow {
     }
     return { action: "deny" };
   });
+  installRendererNavigationGuard(createdWindow.webContents);
 
   bluetoothDeviceSelectionRegistry.attachWindow(createdWindow);
 
@@ -132,9 +137,10 @@ if (!hasSingleInstanceLock) {
     registerWatchedFolderHandlers();
     registerAppInfoHandlers();
     registerUpdateHandlers();
-    ipcMain.handle(IpcChannels.TAKE_PENDING_ASSOCIATED_MIDI_FILE, () =>
-      associatedMidiFiles.take(),
-    );
+    ipcMain.handle(IpcChannels.TAKE_PENDING_ASSOCIATED_MIDI_FILE, (event) => {
+      requireTrustedMainFrame(event);
+      return associatedMidiFiles.take();
+    });
 
     createWindow();
     const coldStartFilePath = findAssociatedMidiArgument(process.argv);

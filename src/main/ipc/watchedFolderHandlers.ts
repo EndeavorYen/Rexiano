@@ -10,6 +10,7 @@ import {
   approveMidiFolderPath,
   resolveApprovedMidiFolderPath,
 } from "./midiPathAccess";
+import { requireTrustedMainFrame } from "./trustedIpc";
 
 const MIDI_FILE_PATTERN = /\.(mid|midi|kar)$/i;
 const DEFAULT_MAX_DEPTH = 8;
@@ -151,7 +152,8 @@ export async function scanWatchedMidiFolders(
 export function registerWatchedFolderHandlers(): void {
   ipcMain.handle(
     IpcChannels.SELECT_WATCHED_MIDI_FOLDER,
-    async (): Promise<WatchedMidiFolder | null> => {
+    async (event): Promise<WatchedMidiFolder | null> => {
+      requireTrustedMainFrame(event);
       const window = BrowserWindow.getFocusedWindow();
       if (!window) return null;
 
@@ -171,9 +173,10 @@ export function registerWatchedFolderHandlers(): void {
   ipcMain.handle(
     IpcChannels.SCAN_WATCHED_MIDI_FOLDERS,
     async (
-      _event,
+      event,
       folderPaths: unknown,
     ): Promise<WatchedMidiFoldersScanResult> => {
+      requireTrustedMainFrame(event);
       if (!Array.isArray(folderPaths)) {
         return {
           folders: [],

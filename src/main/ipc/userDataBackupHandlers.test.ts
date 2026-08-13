@@ -53,6 +53,11 @@ import {
   registerUserDataBackupHandlers,
   resetUserDataFiles,
 } from "./userDataBackupHandlers";
+import { configureTrustedRendererUrl } from "./midiPermissionPolicy";
+import { createTrustedIpcTestEvent } from "./trustedIpcTestEvent";
+
+configureTrustedRendererUrl("file:///mock/renderer/index.html");
+const trustedEvent = createTrustedIpcTestEvent();
 
 function session(overrides: Partial<SessionRecord> = {}): SessionRecord {
   return {
@@ -222,5 +227,16 @@ describe("userDataBackupHandlers", () => {
     expect(handlers["userData:rollbackTransaction"]).toBeDefined();
     expect(handlers["userData:completeTransaction"]).toBeDefined();
     expect(handlers["userData:recoverTransaction"]).toBeDefined();
+  });
+
+  test("registered handlers reject callers outside the trusted main frame", async () => {
+    registerUserDataBackupHandlers();
+
+    await expect(
+      handlers["userData:exportFiles"]({
+        ...trustedEvent,
+        senderFrame: { url: "https://attacker.invalid" },
+      }),
+    ).rejects.toThrow(/trusted Rexiano main frame/);
   });
 });

@@ -21,6 +21,7 @@ import {
   recoverUserDataFileTransaction,
   rollbackUserDataFileTransaction,
 } from "./userDataFileTransaction";
+import { requireTrustedMainFrame } from "./trustedIpc";
 
 const USER_DATA_FILE_SCOPES = ["progress", "recents"] as const;
 
@@ -282,30 +283,40 @@ export async function completeUserDataFilesTransaction(
 }
 
 export function registerUserDataBackupHandlers(): void {
-  ipcMain.handle(IpcChannels.USER_DATA_EXPORT_FILES, async (_event, scopes) =>
-    exportUserDataFiles(scopes),
-  );
+  ipcMain.handle(IpcChannels.USER_DATA_EXPORT_FILES, async (event, scopes) => {
+    requireTrustedMainFrame(event);
+    return exportUserDataFiles(scopes);
+  });
   ipcMain.handle(
     IpcChannels.USER_DATA_IMPORT_FILES,
-    async (_event, payload, scopes, rendererSnapshot) =>
-      importUserDataFiles(payload, scopes, rendererSnapshot),
+    async (event, payload, scopes, rendererSnapshot) => {
+      requireTrustedMainFrame(event);
+      return importUserDataFiles(payload, scopes, rendererSnapshot);
+    },
   );
   ipcMain.handle(
     IpcChannels.USER_DATA_RESET_FILES,
-    async (_event, scopes, rendererSnapshot) =>
-      resetUserDataFiles(scopes, rendererSnapshot),
+    async (event, scopes, rendererSnapshot) => {
+      requireTrustedMainFrame(event);
+      return resetUserDataFiles(scopes, rendererSnapshot);
+    },
   );
   ipcMain.handle(
     IpcChannels.USER_DATA_ROLLBACK_TRANSACTION,
-    async (_event, transactionId) =>
-      rollbackUserDataFilesTransaction(transactionId),
+    async (event, transactionId) => {
+      requireTrustedMainFrame(event);
+      return rollbackUserDataFilesTransaction(transactionId);
+    },
   );
   ipcMain.handle(
     IpcChannels.USER_DATA_COMPLETE_TRANSACTION,
-    async (_event, transactionId) =>
-      completeUserDataFilesTransaction(transactionId),
+    async (event, transactionId) => {
+      requireTrustedMainFrame(event);
+      return completeUserDataFilesTransaction(transactionId);
+    },
   );
-  ipcMain.handle(IpcChannels.USER_DATA_RECOVER_TRANSACTION, async () =>
-    recoverUserDataFilesTransaction(),
-  );
+  ipcMain.handle(IpcChannels.USER_DATA_RECOVER_TRANSACTION, async (event) => {
+    requireTrustedMainFrame(event);
+    return recoverUserDataFilesTransaction();
+  });
 }

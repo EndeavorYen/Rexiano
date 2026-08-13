@@ -12,7 +12,7 @@ import {
   type AppUpdateDownloadResult,
   type AppUpdateProgress,
 } from "../../shared/types";
-import { isTrustedRendererUrl } from "./midiPermissionPolicy";
+import { isTrustedMainFrame } from "./trustedIpc";
 import {
   type GitHubRelease,
   type GitHubReleaseAsset,
@@ -49,10 +49,7 @@ interface UpdateHandlerDependencies {
 }
 
 function isTrustedEvent(event: IpcMainInvokeEvent): boolean {
-  return (
-    event.senderFrame === event.sender.mainFrame &&
-    isTrustedRendererUrl(event.senderFrame?.url || event.sender.getURL())
-  );
+  return isTrustedMainFrame(event);
 }
 
 function toFailedResult(

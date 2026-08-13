@@ -7,6 +7,7 @@ import {
   withFileMutationLock,
   writeFileAtomically,
 } from "./atomicFilePersistence";
+import { requireTrustedMainFrame } from "./trustedIpc";
 
 /** Maximum number of recent files to keep */
 const MAX_RECENTS = 10;
@@ -100,7 +101,8 @@ export async function removeRecentFileRecord(
 export function registerRecentFilesHandlers(): void {
   ipcMain.handle(
     IpcChannels.LOAD_RECENT_FILES,
-    async (): Promise<RecentFile[]> => {
+    async (event): Promise<RecentFile[]> => {
+      requireTrustedMainFrame(event);
       return readRecents();
     },
   );
@@ -108,6 +110,7 @@ export function registerRecentFilesHandlers(): void {
   ipcMain.handle(
     IpcChannels.SAVE_RECENT_FILE,
     async (_event, file: RecentFile): Promise<void> => {
+      requireTrustedMainFrame(_event);
       await saveRecentFileRecord(getRecentsPath(), file);
     },
   );
@@ -115,6 +118,7 @@ export function registerRecentFilesHandlers(): void {
   ipcMain.handle(
     IpcChannels.REMOVE_RECENT_FILE,
     async (_event, filePath: string): Promise<boolean> => {
+      requireTrustedMainFrame(_event);
       return removeRecentFileRecord(getRecentsPath(), filePath);
     },
   );

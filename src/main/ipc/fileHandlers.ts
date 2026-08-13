@@ -15,6 +15,7 @@ import {
   resolveApprovedMidiFilePath,
 } from "./midiPathAccess";
 import { readBoundedMidiFile } from "./midiFileReader";
+import { requireTrustedMainFrame } from "./trustedIpc";
 
 function resolveBundledResourcesDir(): string {
   return app.isPackaged
@@ -25,7 +26,8 @@ function resolveBundledResourcesDir(): string {
 export function registerFileHandlers(): void {
   ipcMain.handle(
     IpcChannels.OPEN_MIDI_FILE,
-    async (): Promise<MidiFileResult | null> => {
+    async (event): Promise<MidiFileResult | null> => {
+      requireTrustedMainFrame(event);
       const window = BrowserWindow.getFocusedWindow();
       if (!window) return null;
 
@@ -53,6 +55,7 @@ export function registerFileHandlers(): void {
   ipcMain.handle(
     IpcChannels.LOAD_SOUNDFONT,
     async (_event, fileName?: string): Promise<SoundFontResult | null> => {
+      requireTrustedMainFrame(_event);
       const sfName = fileName ?? "default.sf2";
 
       // Look in resources/ directory (packaged or dev)
@@ -87,11 +90,12 @@ export function registerFileHandlers(): void {
   ipcMain.handle(
     IpcChannels.LOAD_MIDI_PATH,
     async (_event, filePath: string): Promise<MidiFileResult | null> => {
+      requireTrustedMainFrame(_event);
       if (typeof filePath !== "string" || filePath.length === 0) return null;
       const canonicalPath = await resolveApprovedMidiFilePath(filePath);
       if (!canonicalPath) return null;
 
-      const buffer = await readFile(canonicalPath);
+      const buffer = await readBoundedMidiFile(canonicalPath);
       return {
         fileName: basename(canonicalPath),
         data: Array.from(buffer),
@@ -103,6 +107,7 @@ export function registerFileHandlers(): void {
   ipcMain.handle(
     IpcChannels.EXPORT_MIDI_FILE,
     async (_event, request: MidiExportRequest): Promise<MidiExportResult> => {
+      requireTrustedMainFrame(_event);
       const window = BrowserWindow.getFocusedWindow();
       if (!window) return { ok: false, reason: "cancelled" };
 
@@ -137,7 +142,8 @@ export function registerFileHandlers(): void {
 
   ipcMain.handle(
     IpcChannels.LIST_BUILTIN_SONGS,
-    async (): Promise<BuiltinSongMeta[]> => {
+    async (event): Promise<BuiltinSongMeta[]> => {
+      requireTrustedMainFrame(event);
       const resourcesDir = resolveBundledResourcesDir();
 
       const manifestPath = join(resourcesDir, "midi", "songs.json");
@@ -155,6 +161,7 @@ export function registerFileHandlers(): void {
   ipcMain.handle(
     IpcChannels.LOAD_BUILTIN_SONG,
     async (_event, songId: string): Promise<MidiFileResult | null> => {
+      requireTrustedMainFrame(_event);
       const resourcesDir = resolveBundledResourcesDir();
 
       const midiDir = join(resourcesDir, "midi");

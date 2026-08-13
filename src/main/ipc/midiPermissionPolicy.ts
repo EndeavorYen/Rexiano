@@ -1,4 +1,4 @@
-const ALLOWED_PERMISSIONS = new Set(["midi", "midiSysex", "bluetooth"]);
+const ALLOWED_PERMISSIONS = new Set(["midi", "bluetooth"]);
 const TRUSTED_RENDERER_PROTOCOLS = new Set(["file:", "http:", "https:"]);
 
 let trustedRendererUrl: URL | null = null;
@@ -6,6 +6,7 @@ let trustedRendererUrl: URL | null = null;
 interface MidiPermissionRequest {
   permission: string;
   url: string;
+  isMainFrame?: boolean;
 }
 
 interface DevicePermissionRequest {
@@ -50,8 +51,13 @@ export function isTrustedRendererUrl(candidate: string | undefined): boolean {
 export function isAllowedMidiPermissionRequest({
   permission,
   url,
+  isMainFrame = true,
 }: MidiPermissionRequest): boolean {
-  return ALLOWED_PERMISSIONS.has(permission) && isTrustedRendererUrl(url);
+  return (
+    isMainFrame &&
+    ALLOWED_PERMISSIONS.has(permission) &&
+    isTrustedRendererUrl(url)
+  );
 }
 
 export function isAllowedBluetoothDevicePermission({

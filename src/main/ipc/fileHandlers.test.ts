@@ -68,6 +68,12 @@ vi.mock("fs", () => ({
 import { registerFileHandlers } from "./fileHandlers";
 import { dialog, ipcMain } from "electron";
 import { readFile, writeFile } from "fs/promises";
+import { configureTrustedRendererUrl } from "./midiPermissionPolicy";
+import { createTrustedIpcTestEvent } from "./trustedIpcTestEvent";
+
+configureTrustedRendererUrl("file:///mock/renderer/index.html");
+const trustedEvent = createTrustedIpcTestEvent();
+
 describe("fileHandlers", () => {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let handlers: Record<string, (...args: any[]) => Promise<any>>;
@@ -98,7 +104,7 @@ describe("fileHandlers", () => {
     mockFileContents["/Users/rex/Music/Secret.mid"] = Buffer.from([1, 2, 3]);
 
     const result = await handlers[IpcChannels.LOAD_MIDI_PATH](
-      null,
+      trustedEvent,
       "/Users/rex/Music/Secret.mid",
     );
 
@@ -111,7 +117,10 @@ describe("fileHandlers", () => {
     await approveMidiFilePath("/Users/rex/Music/Scale.mid");
 
     await expect(
-      handlers[IpcChannels.LOAD_MIDI_PATH](null, "/Users/rex/Music/Scale.mid"),
+      handlers[IpcChannels.LOAD_MIDI_PATH](
+        trustedEvent,
+        "/Users/rex/Music/Scale.mid",
+      ),
     ).resolves.toEqual({
       fileName: "Scale.mid",
       data: [1, 2, 3],
@@ -126,7 +135,7 @@ describe("fileHandlers", () => {
     vi.mocked(readFile).mockClear();
 
     await expect(
-      handlers[IpcChannels.LOAD_MIDI_PATH](null, path),
+      handlers[IpcChannels.LOAD_MIDI_PATH](trustedEvent, path),
     ).rejects.toMatchObject({ reason: "too-large" });
     expect(readFile).not.toHaveBeenCalledWith(path);
   });
@@ -138,7 +147,7 @@ describe("fileHandlers", () => {
     });
 
     await expect(
-      handlers[IpcChannels.EXPORT_MIDI_FILE](null, {
+      handlers[IpcChannels.EXPORT_MIDI_FILE](trustedEvent, {
         suggestedName: "Edited.mid",
         data: [77, 84, 104, 100],
       }),
@@ -160,7 +169,7 @@ describe("fileHandlers", () => {
     });
 
     await expect(
-      handlers[IpcChannels.EXPORT_MIDI_FILE](null, {
+      handlers[IpcChannels.EXPORT_MIDI_FILE](trustedEvent, {
         suggestedName: "Edited.mid",
         data: [1, 2, 3],
       }),
@@ -189,7 +198,7 @@ describe("fileHandlers", () => {
     );
 
     await expect(
-      handlers[IpcChannels.LIST_BUILTIN_SONGS](null),
+      handlers[IpcChannels.LIST_BUILTIN_SONGS](trustedEvent),
     ).resolves.toEqual([
       {
         id: "hot-cross-buns",
@@ -212,7 +221,7 @@ describe("fileHandlers", () => {
     mockFileContents[soundFontPath] = Buffer.from([9, 8, 7]);
 
     await expect(
-      handlers[IpcChannels.LOAD_SOUNDFONT](null, "piano.sf2"),
+      handlers[IpcChannels.LOAD_SOUNDFONT](trustedEvent, "piano.sf2"),
     ).resolves.toEqual({
       data: [9, 8, 7],
       fileName: "piano.sf2",

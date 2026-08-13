@@ -38,6 +38,11 @@ vi.mock("fs", () => ({
 import { registerRecentFilesHandlers } from "./recentFilesHandlers";
 import { ipcMain } from "electron";
 import { writeFile } from "fs/promises";
+import { configureTrustedRendererUrl } from "./midiPermissionPolicy";
+import { createTrustedIpcTestEvent } from "./trustedIpcTestEvent";
+
+configureTrustedRendererUrl("file:///mock/renderer/index.html");
+const trustedEvent = createTrustedIpcTestEvent();
 
 function makeRecentFile(overrides: Partial<RecentFile> = {}): RecentFile {
   return {
@@ -76,7 +81,7 @@ describe("recentFilesHandlers", () => {
 
   // ─── LOAD_RECENT_FILES ────────────────────────────────
   test("LOAD_RECENT_FILES returns empty array on first run", async () => {
-    const result = await handlers["recents:loadRecentFiles"]();
+    const result = await handlers["recents:loadRecentFiles"](trustedEvent);
     expect(result).toEqual([]);
   });
 
@@ -85,7 +90,7 @@ describe("recentFilesHandlers", () => {
     const filePath = `${mockUserDataPath}/recents.json`;
     mockFileContents[filePath] = JSON.stringify(files);
 
-    const result = await handlers["recents:loadRecentFiles"]();
+    const result = await handlers["recents:loadRecentFiles"](trustedEvent);
     expect(result).toEqual(files);
   });
 
@@ -93,7 +98,7 @@ describe("recentFilesHandlers", () => {
     const filePath = `${mockUserDataPath}/recents.json`;
     mockFileContents[filePath] = "not valid json!!!";
 
-    const result = await handlers["recents:loadRecentFiles"]();
+    const result = await handlers["recents:loadRecentFiles"](trustedEvent);
     expect(result).toEqual([]);
   });
 
@@ -101,7 +106,7 @@ describe("recentFilesHandlers", () => {
     const filePath = `${mockUserDataPath}/recents.json`;
     mockFileContents[filePath] = JSON.stringify({ not: "an array" });
 
-    const result = await handlers["recents:loadRecentFiles"]();
+    const result = await handlers["recents:loadRecentFiles"](trustedEvent);
     expect(result).toEqual([]);
   });
 
@@ -114,7 +119,7 @@ describe("recentFilesHandlers", () => {
       { path: "/bad.txt", name: "bad.txt", timestamp: 1 },
     ]);
 
-    const result = await handlers["recents:loadRecentFiles"]();
+    const result = await handlers["recents:loadRecentFiles"](trustedEvent);
     expect(result).toEqual([
       expect.objectContaining({ path: "/valid.mid", name: "valid.mid" }),
     ]);
@@ -123,7 +128,7 @@ describe("recentFilesHandlers", () => {
   // ─── SAVE_RECENT_FILE ─────────────────────────────────
   test("SAVE_RECENT_FILE saves to empty file", async () => {
     const file = makeRecentFile();
-    await handlers["recents:saveRecentFile"](null, file);
+    await handlers["recents:saveRecentFile"](trustedEvent, file);
 
     expect(writeFile).toHaveBeenCalledTimes(1);
     const written = JSON.parse(vi.mocked(writeFile).mock.calls[0][1] as string);
@@ -145,7 +150,7 @@ describe("recentFilesHandlers", () => {
       name: "b.mid",
       timestamp: 3,
     });
-    await handlers["recents:saveRecentFile"](null, updated);
+    await handlers["recents:saveRecentFile"](trustedEvent, updated);
 
     const written = JSON.parse(vi.mocked(writeFile).mock.calls[0][1] as string);
     expect(written).toHaveLength(2);
@@ -163,7 +168,7 @@ describe("recentFilesHandlers", () => {
 
     // Add an 11th file
     const newFile = makeRecentFile({ path: "/new.mid", name: "new.mid" });
-    await handlers["recents:saveRecentFile"](null, newFile);
+    await handlers["recents:saveRecentFile"](trustedEvent, newFile);
 
     const written = JSON.parse(vi.mocked(writeFile).mock.calls[0][1] as string);
     expect(written).toHaveLength(10);
@@ -175,7 +180,7 @@ describe("recentFilesHandlers", () => {
   });
 
   test("SAVE_RECENT_FILE ignores invalid renderer payloads", async () => {
-    await handlers["recents:saveRecentFile"](null, {
+    await handlers["recents:saveRecentFile"](trustedEvent, {
       path: "/notes.txt",
       name: "notes.txt",
       timestamp: Date.now(),
@@ -194,7 +199,7 @@ describe("recentFilesHandlers", () => {
     mockFileContents[filePath] = JSON.stringify(existing);
 
     await expect(
-      handlers["recents:removeRecentFile"](null, "/stale.mid"),
+      handlers["recents:removeRecentFile"](trustedEvent, "/stale.mid"),
     ).resolves.toBe(true);
 
     const written = JSON.parse(vi.mocked(writeFile).mock.calls[0][1] as string);
@@ -207,7 +212,7 @@ describe("recentFilesHandlers", () => {
     mockFileContents[filePath] = JSON.stringify(existing);
 
     await expect(
-      handlers["recents:removeRecentFile"](null, "/missing.mid"),
+      handlers["recents:removeRecentFile"](trustedEvent, "/missing.mid"),
     ).resolves.toBe(true);
 
     const written = JSON.parse(vi.mocked(writeFile).mock.calls[0][1] as string);
@@ -215,9 +220,9 @@ describe("recentFilesHandlers", () => {
   });
 
   test("REMOVE_RECENT_FILE rejects an invalid path without touching disk", async () => {
-    await expect(handlers["recents:removeRecentFile"](null, "")).resolves.toBe(
-      false,
-    );
+    await expect(
+      handlers["recents:removeRecentFile"](trustedEvent, ""),
+    ).resolves.toBe(false);
 
     expect(writeFile).not.toHaveBeenCalled();
   });

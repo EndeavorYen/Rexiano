@@ -63,6 +63,12 @@ import {
   registerWatchedFolderHandlers,
 } from "./watchedFolderHandlers";
 import { clearApprovedMidiPathAccessForTests } from "./midiPathAccess";
+import { configureTrustedRendererUrl } from "./midiPermissionPolicy";
+import { createTrustedIpcTestEvent } from "./trustedIpcTestEvent";
+
+configureTrustedRendererUrl("file:///mock/renderer/index.html");
+const trustedEvent = createTrustedIpcTestEvent();
+
 describe("watchedFolderHandlers", () => {
   beforeEach(() => {
     Object.keys(mocks.handlers).forEach((key) => delete mocks.handlers[key]);
@@ -137,13 +143,13 @@ describe("watchedFolderHandlers", () => {
     registerWatchedFolderHandlers();
 
     await expect(
-      mocks.handlers["library:selectWatchedMidiFolder"](null),
+      mocks.handlers["library:selectWatchedMidiFolder"](trustedEvent),
     ).resolves.toEqual({
       folderPath: "/Users/rex/Music",
       midiFilePaths: ["/Users/rex/Music/Scale.mid"],
     });
     await expect(
-      mocks.handlers["library:scanWatchedMidiFolders"](null, [
+      mocks.handlers["library:scanWatchedMidiFolders"](trustedEvent, [
         "/Users/rex/Music",
       ]),
     ).resolves.toEqual({
