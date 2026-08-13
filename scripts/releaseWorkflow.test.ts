@@ -29,10 +29,12 @@ describe("release workflow", () => {
     const config = JSON.parse(readRepoFile("release-please-config.json")) as {
       draft?: boolean;
       "force-tag-creation"?: boolean;
+      "include-component-in-tag"?: boolean;
     };
 
     expect(config.draft).toBe(true);
     expect(config["force-tag-creation"]).toBe(true);
+    expect(config["include-component-in-tag"]).toBe(false);
     expect(releasePleaseWorkflow).toContain(
       "uses: googleapis/release-please-action@v5",
     );
