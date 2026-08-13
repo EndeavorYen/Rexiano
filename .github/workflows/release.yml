@@ -27,7 +27,7 @@ jobs:
       tag: ${{ steps.resolve.outputs.tag }}
       sha: ${{ steps.resolve.outputs.sha }}
     steps:
-      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
           persist-credentials: false
@@ -98,7 +98,7 @@ jobs:
     needs: resolve-release-ref
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ needs.resolve-release-ref.outputs.sha }}
           persist-credentials: false
@@ -135,7 +135,7 @@ jobs:
     needs: resolve-release-ref
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ needs.resolve-release-ref.outputs.sha }}
           persist-credentials: false
@@ -170,7 +170,7 @@ jobs:
     needs: [resolve-release-ref, preflight]
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ needs.resolve-release-ref.outputs.sha }}
           persist-credentials: false
@@ -299,7 +299,7 @@ jobs:
     needs: [resolve-release-ref, preflight]
     runs-on: macos-latest
     steps:
-      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ needs.resolve-release-ref.outputs.sha }}
           persist-credentials: false
@@ -507,7 +507,7 @@ jobs:
     needs: [resolve-release-ref, preflight]
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ needs.resolve-release-ref.outputs.sha }}
           persist-credentials: false
@@ -581,7 +581,7 @@ jobs:
     permissions:
       contents: write
     steps:
-      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ needs.resolve-release-ref.outputs.sha }}
           fetch-depth: 0
