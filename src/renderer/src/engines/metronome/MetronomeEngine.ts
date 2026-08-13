@@ -24,6 +24,17 @@ const LOOK_AHEAD = 0.1;
 /** How often the scheduler runs, in milliseconds */
 const SCHEDULE_INTERVAL = 25;
 
+export interface MetronomeStartAlignment {
+  currentBeat: number;
+  firstClickBeat: number;
+  firstClickDelaySeconds: number;
+}
+
+interface ScheduledClick {
+  oscillator: OscillatorNode;
+  gain: GainNode;
+}
+
 export class MetronomeEngine {
   private _audioContext: AudioContext;
   private _enabled = false;
@@ -36,6 +47,8 @@ export class MetronomeEngine {
 
   /** Current beat within the measure (0-based) */
   private _currentBeat = 0;
+  private _nextBeat = 0;
+  private _scheduledClicks = new Set<ScheduledClick>();
 
   /** Count-in state: beats remaining before song starts, -1 = not counting in */
   private _countInRemaining = -1;
@@ -67,6 +80,21 @@ export class MetronomeEngine {
     return this._currentBeat;
   }
 
+  /** Observable scheduler state for playback/E2E probes. */
+  getRuntimeSnapshot(): {
+    isRunning: boolean;
+    enabled: boolean;
+    countInRemaining: number;
+    scheduledClickCount: number;
+  } {
+    return {
+      isRunning: this.isRunning,
+      enabled: this._enabled,
+      countInRemaining: this._countInRemaining,
+      scheduledClickCount: this._scheduledClicks.size,
+    };
+  }
+
   /** Number of beats per measure */
   get beatsPerMeasure(): number {
     return this._beatsPerMeasure;
@@ -74,7 +102,7 @@ export class MetronomeEngine {
 
   setEnabled(enabled: boolean): void {
     this._enabled = enabled;
-    if (!enabled && this._intervalId !== null) {
+    if (!enabled && this._intervalId !== null && this._countInRemaining < 0) {
       this.stop();
     }
   }
@@ -88,13 +116,20 @@ export class MetronomeEngine {
    * @param bpm            Tempo in beats per minute
    * @param beatsPerMeasure Number of beats per measure (e.g. 4 for 4/4 time)
    */
-  start(bpm: number, beatsPerMeasure: number): void {
+  start(
+    bpm: number,
+    beatsPerMeasure: number,
+    alignment?: MetronomeStartAlignment,
+  ): void {
     this.stop();
 
     this._bpm = Math.max(20, Math.min(300, bpm));
     this._beatsPerMeasure = Math.max(1, beatsPerMeasure);
-    this._currentBeat = 0;
-    this._nextClickTime = this._audioContext.currentTime;
+    this._currentBeat = this._normalizeBeat(alignment?.currentBeat ?? 0);
+    this._nextBeat = this._normalizeBeat(alignment?.firstClickBeat ?? 0);
+    this._nextClickTime =
+      this._audioContext.currentTime +
+      Math.max(0, alignment?.firstClickDelaySeconds ?? 0);
 
     this._intervalId = setInterval(() => this._tick(), SCHEDULE_INTERVAL);
   }
@@ -117,7 +152,8 @@ export class MetronomeEngine {
     this._bpm = Math.max(20, Math.min(300, bpm));
     this._beatsPerMeasure = Math.max(1, beatsPerMeasure);
     this._currentBeat = 0;
-    this._countInRemaining = beats;
+    this._nextBeat = 0;
+    this._countInRemaining = Math.max(0, Math.floor(beats));
     this._onCountInComplete = onComplete;
     this._nextClickTime = this._audioContext.currentTime;
 
@@ -131,6 +167,16 @@ export class MetronomeEngine {
     }
     this._countInRemaining = -1;
     this._onCountInComplete = null;
+    for (const click of this._scheduledClicks) {
+      try {
+        click.oscillator.stop(this._audioContext.currentTime);
+      } catch {
+        // Already-ended oscillator nodes may reject a second stop call.
+      }
+      click.oscillator.disconnect();
+      click.gain.disconnect();
+    }
+    this._scheduledClicks.clear();
   }
 
   dispose(): void {
@@ -145,7 +191,10 @@ export class MetronomeEngine {
 
     while (this._nextClickTime < now + LOOK_AHEAD) {
       // Check count-in completion BEFORE scheduling next click
-      if (this._countInRemaining === 0) {
+      if (
+        this._countInRemaining === 0 &&
+        this._nextClickTime <= now + Number.EPSILON
+      ) {
         const cb = this._onCountInComplete;
         this._countInRemaining = -1;
         this._onCountInComplete = null;
@@ -159,14 +208,17 @@ export class MetronomeEngine {
         return;
       }
 
+      if (this._countInRemaining === 0) return;
+
       if (this._enabled || this._countInRemaining > 0) {
-        const isStrong = this._currentBeat === 0;
+        this._currentBeat = this._nextBeat;
+        const isStrong = this._nextBeat === 0;
         this._scheduleClick(this._nextClickTime, isStrong);
       }
 
       // Advance to next beat
       this._nextClickTime += secondsPerBeat;
-      this._currentBeat = (this._currentBeat + 1) % this._beatsPerMeasure;
+      this._nextBeat = (this._nextBeat + 1) % this._beatsPerMeasure;
 
       if (this._countInRemaining > 0) {
         this._countInRemaining--;
@@ -195,9 +247,20 @@ export class MetronomeEngine {
     osc.stop(time + CLICK_DURATION);
 
     // Cleanup after the pulse finishes
+    const scheduledClick = { oscillator: osc, gain };
+    this._scheduledClicks.add(scheduledClick);
     osc.onended = () => {
+      this._scheduledClicks.delete(scheduledClick);
       osc.disconnect();
       gain.disconnect();
     };
+  }
+
+  private _normalizeBeat(beat: number): number {
+    const integerBeat = Number.isFinite(beat) ? Math.floor(beat) : 0;
+    return (
+      ((integerBeat % this._beatsPerMeasure) + this._beatsPerMeasure) %
+      this._beatsPerMeasure
+    );
   }
 }

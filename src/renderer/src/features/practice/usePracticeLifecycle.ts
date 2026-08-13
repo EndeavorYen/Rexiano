@@ -14,6 +14,7 @@ import { useSongStore } from "@renderer/stores/useSongStore";
 import { usePlaybackStore } from "@renderer/stores/usePlaybackStore";
 import { usePracticeStore } from "@renderer/stores/usePracticeStore";
 import { useMidiDeviceStore } from "@renderer/stores/useMidiDeviceStore";
+import { useSettingsStore } from "@renderer/stores/useSettingsStore";
 import {
   initPracticeEngines,
   getPracticeEngines,
@@ -24,6 +25,8 @@ import type { AudioEngine } from "@renderer/engines/audio/AudioEngine";
 import type { AudioScheduler } from "@renderer/engines/audio/AudioScheduler";
 import type { ParsedSong } from "@renderer/engines/midi/types";
 import type { WaitMode } from "@renderer/engines/practice/WaitMode";
+import { getMetronome } from "@renderer/engines/metronome/metronomeManager";
+import { syncMetronomeToPlayback } from "@renderer/engines/metronome/metronomeRuntime";
 import type { PracticeMode } from "@shared/types";
 
 interface AudioRef {
@@ -33,6 +36,21 @@ interface AudioRef {
 
 /** Streak milestones that trigger a combo pop — defined once, not on every hit. */
 const COMBO_MILESTONES = new Set([5, 10, 25, 50, 100]);
+
+function syncCurrentPracticeMetronome(): void {
+  const engine = getMetronome();
+  const song = useSongStore.getState().song;
+  const playback = usePlaybackStore.getState();
+  if (!engine || !song || !playback.isPlaying || playback.countInActive) return;
+
+  syncMetronomeToPlayback({
+    engine,
+    song,
+    currentTime: playback.currentTime,
+    speed: usePracticeStore.getState().speed,
+    enabled: useSettingsStore.getState().metronomeEnabled,
+  });
+}
 
 interface PracticeLifecycleResult {
   noteRendererRef: React.MutableRefObject<NoteRenderer | null>;
@@ -251,6 +269,7 @@ export function usePracticeLifecycle(
         // already sounding to ring out, where stop() would cut sustained notes
         // at every single wait.
         audioRef.current.scheduler?.pause();
+        getMetronome()?.stop();
       },
       onResume: () => {
         // Resume audio — read fresh time INSIDE the .then() callback
@@ -260,6 +279,7 @@ export function usePracticeLifecycle(
             .resume()
             .then(() => {
               scheduler.resume(usePlaybackStore.getState().currentTime);
+              syncCurrentPracticeMetronome();
             })
             .catch((err) => {
               console.error("WaitMode audio resume failed:", err);
@@ -304,6 +324,7 @@ export function usePracticeLifecycle(
                     usePlaybackStore.getState().isPlaying
                   ) {
                     scheduler.resume(usePlaybackStore.getState().currentTime);
+                    syncCurrentPracticeMetronome();
                   }
                 })
                 .catch((err) => {
@@ -350,6 +371,7 @@ export function usePracticeLifecycle(
                   usePlaybackStore.getState().isPlaying
                 ) {
                   scheduler.resume(usePlaybackStore.getState().currentTime);
+                  syncCurrentPracticeMetronome();
                 }
               })
               .catch((err) => {

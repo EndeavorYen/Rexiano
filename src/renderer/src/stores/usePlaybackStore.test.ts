@@ -11,6 +11,7 @@ describe("usePlaybackStore audio recovery state", () => {
       audioStatus: "uninitialized",
       currentTime: 0,
       isPlaying: false,
+      countInActive: false,
     });
   });
 
@@ -43,5 +44,13 @@ describe("usePlaybackStore audio recovery state", () => {
     expect(state.audioRecoveryState).toBe("idle");
     expect(state.audioRecoveryAttempt).toBe(0);
     expect(state.audioRecoveryMaxAttempts).toBe(0);
+  });
+
+  test("count-in gate starts explicitly and reset always clears it", () => {
+    usePlaybackStore.getState().setCountInActive(true);
+    expect(usePlaybackStore.getState().countInActive).toBe(true);
+
+    usePlaybackStore.getState().reset();
+    expect(usePlaybackStore.getState().countInActive).toBe(false);
   });
 });

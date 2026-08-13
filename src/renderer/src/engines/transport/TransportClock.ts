@@ -45,6 +45,7 @@ export function createTransportTick(
 
     const playState = usePlaybackStore.getState();
     if (!playState.isPlaying) return;
+    if (playState.countInActive) return;
 
     const { waitMode, speedController, loopController } = getPracticeEngines();
 

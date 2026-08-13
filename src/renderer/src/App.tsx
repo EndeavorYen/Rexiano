@@ -16,7 +16,14 @@ import { useSettingsStore } from "./stores/useSettingsStore";
 import {
   initMetronome,
   disposeMetronome,
+  getMetronome,
 } from "./engines/metronome/metronomeManager";
+import {
+  beginMetronomePlayback,
+  rebaseMetronomeDiscontinuity,
+  syncMetronomeToPlayback,
+} from "./engines/metronome/metronomeRuntime";
+import { resolveMetronomeSegmentKey } from "./engines/metronome/metronomeTiming";
 import { AudioEngine } from "./engines/audio/AudioEngine";
 import { AudioScheduler } from "./engines/audio/AudioScheduler";
 import {
@@ -215,6 +222,8 @@ function App(): React.JSX.Element {
     return useSongStore.subscribe((state) => {
       if (!state.song) {
         setShowEditor(false);
+        getMetronome()?.stop();
+        usePlaybackStore.getState().setCountInActive(false);
       }
     });
   }, []);
@@ -451,6 +460,16 @@ function App(): React.JSX.Element {
         storeScoreTotal: number;
         storeResultCount: number;
       } | null;
+      __rexianoGetMetronomeFixtureSnapshot?: () => {
+        isPlaying: boolean;
+        currentTime: number;
+        countInActive: boolean;
+        metronomeEnabled: boolean;
+        isRunning: boolean;
+        enabled: boolean;
+        countInRemaining: number;
+        scheduledClickCount: number;
+      } | null;
     };
 
     e2eWindow.__rexianoLoadSheetMusicFixture = (fixtureName) => {
@@ -567,6 +586,18 @@ function App(): React.JSX.Element {
         storeResultCount: practice.noteResults.size,
       };
     };
+    e2eWindow.__rexianoGetMetronomeFixtureSnapshot = () => {
+      const metronome = getMetronome();
+      if (!metronome) return null;
+      const playback = usePlaybackStore.getState();
+      return {
+        isPlaying: playback.isPlaying,
+        currentTime: playback.currentTime,
+        countInActive: playback.countInActive,
+        metronomeEnabled: useSettingsStore.getState().metronomeEnabled,
+        ...metronome.getRuntimeSnapshot(),
+      };
+    };
 
     return () => {
       delete e2eWindow.__rexianoLoadSheetMusicFixture;
@@ -577,6 +608,7 @@ function App(): React.JSX.Element {
       delete e2eWindow.__rexianoSendMidiNoteFixture;
       delete e2eWindow.__rexianoSetPracticeLifecycleFixtureState;
       delete e2eWindow.__rexianoGetPracticeSessionFixtureSnapshot;
+      delete e2eWindow.__rexianoGetMetronomeFixtureSnapshot;
     };
   }, [
     applyRoute,
@@ -654,10 +686,36 @@ function App(): React.JSX.Element {
     null,
   );
   const audioOutputSnapshotRef = useRef<string[] | null>(null);
+  const metronomeSegmentRef = useRef<string | null>(null);
   const e2eAudioRecoveryDelayMsRef = useRef(0);
   const triggerRecoveryRef = useRef<(reason: string, error?: unknown) => void>(
     () => {},
   );
+
+  const syncCurrentMetronome = useCallback((): void => {
+    const engine = getMetronome();
+    const liveSong = useSongStore.getState().song;
+    const playback = usePlaybackStore.getState();
+    if (playback.countInActive) return;
+    if (!engine || !liveSong || !playback.isPlaying) {
+      engine?.stop();
+      metronomeSegmentRef.current = null;
+      return;
+    }
+
+    syncMetronomeToPlayback({
+      engine,
+      song: liveSong,
+      currentTime: playback.currentTime,
+      speed: usePracticeStore.getState().speed,
+      enabled: useSettingsStore.getState().metronomeEnabled,
+    });
+    metronomeSegmentRef.current = resolveMetronomeSegmentKey(
+      liveSong,
+      playback.currentTime,
+      usePracticeStore.getState().speed,
+    );
+  }, []);
 
   const readAudioOutputSnapshot = useCallback(async (): Promise<
     string[] | null
@@ -775,8 +833,12 @@ function App(): React.JSX.Element {
               rebuild: rebuildAudioStack,
               getCurrentSong: () => useSongStore.getState().song,
               getPlaybackIntent: () => {
-                const { isPlaying, currentTime } = usePlaybackStore.getState();
-                return { isPlaying, currentTime };
+                const { isPlaying, countInActive, currentTime } =
+                  usePlaybackStore.getState();
+                return {
+                  isPlaying: isPlaying && !countInActive,
+                  currentTime,
+                };
               },
               getRuntime: () => {
                 const { engine, scheduler } = audioRef.current;
@@ -784,6 +846,14 @@ function App(): React.JSX.Element {
               },
             });
             if (outcome === "stale") return;
+            const playback = usePlaybackStore.getState();
+            if (playback.countInActive) {
+              playback.setCountInActive(false);
+              playback.setPlaying(false);
+              playback.setPlaying(true);
+            } else {
+              syncCurrentMetronome();
+            }
             usePlaybackStore.getState().setAudioRecoverySucceeded();
             return;
           } catch (err) {
@@ -811,7 +881,7 @@ function App(): React.JSX.Element {
 
       recoveryInFlightRef.current = recovery;
     },
-    [rebuildAudioStack],
+    [rebuildAudioStack, syncCurrentMetronome],
   );
 
   useEffect(() => {
@@ -989,18 +1059,51 @@ function App(): React.JSX.Element {
         ) {
           return;
         }
-        // Start scheduler synchronously so the ticker loop gets valid
-        // audioTime immediately. AudioContext.resume() can happen in the
-        // background — ctx.currentTime is valid (just frozen) while
-        // suspended, and the math (currentTime - startAudioTime + offset)
-        // still works once it unfreezes.
-        scheduler.start(state.currentTime);
-        void engine.resume().catch((err) => {
-          scheduler.stop();
-          triggerRecoveryRef.current("resume-failed", err);
-        });
+        const currentSong = useSongStore.getState().song;
+        const metronome = getMetronome();
+        const startTransport = (songTime: number): void => {
+          // The scheduler must own the clock before AudioContext resumes.
+          scheduler.start(songTime);
+          void engine.resume().catch((err) => {
+            scheduler.stop();
+            getMetronome()?.stop();
+            usePlaybackStore.getState().setCountInActive(false);
+            triggerRecoveryRef.current("resume-failed", err);
+          });
+        };
+
+        if (currentSong && metronome) {
+          const settings = useSettingsStore.getState();
+          beginMetronomePlayback({
+            engine: metronome,
+            song: currentSong,
+            currentTime: state.currentTime,
+            speed: usePracticeStore.getState().speed,
+            metronomeEnabled: settings.metronomeEnabled,
+            countInBeats: settings.countInBeats,
+            setCountInActive: usePlaybackStore.getState().setCountInActive,
+            startTransport,
+            getLiveState: () => {
+              const playback = usePlaybackStore.getState();
+              return {
+                song: useSongStore.getState().song,
+                isPlaying: playback.isPlaying,
+                countInActive: playback.countInActive,
+                currentTime: playback.currentTime,
+                speed: usePracticeStore.getState().speed,
+                metronomeEnabled: useSettingsStore.getState().metronomeEnabled,
+              };
+            },
+          });
+        } else {
+          startTransport(state.currentTime);
+        }
       } else if (!state.isPlaying && prev.isPlaying) {
         scheduler.stop();
+        getMetronome()?.stop();
+        if (state.countInActive) {
+          usePlaybackStore.getState().setCountInActive(false);
+        }
       }
     });
     return unsub;
@@ -1008,7 +1111,25 @@ function App(): React.JSX.Element {
 
   useEffect(() => {
     return registerPlaybackDiscontinuityHandler(({ targetTime, reason }) => {
-      audioRef.current.scheduler?.seek(targetTime);
+      const { scheduler, engine } = audioRef.current;
+      scheduler?.seek(targetTime);
+      const playback = usePlaybackStore.getState();
+      rebaseMetronomeDiscontinuity({
+        reason,
+        targetTime,
+        countInActive: playback.countInActive,
+        stopCountIn: () => getMetronome()?.stop(),
+        setCountInActive: playback.setCountInActive,
+        startTransport: (songTime) => {
+          if (!scheduler || !engine) return;
+          scheduler.start(songTime);
+          void engine.resume().catch((err) => {
+            scheduler.stop();
+            triggerRecoveryRef.current("seek-resume-failed", err);
+          });
+        },
+        syncMetronome: syncCurrentMetronome,
+      });
       if (reason === "manual-reset") {
         const { waitMode, scoreCalculator } = getPracticeEngines();
         resetPracticeSession({
@@ -1018,7 +1139,7 @@ function App(): React.JSX.Element {
         });
       }
     });
-  }, []);
+  }, [syncCurrentMetronome]);
 
   // Cleanup audio on unmount
   useEffect(() => {
@@ -1071,6 +1192,48 @@ function App(): React.JSX.Element {
     return unsub;
   }, []);
 
+  useEffect(() => {
+    const unsub = useSettingsStore.subscribe((state, prev) => {
+      if (state.metronomeEnabled === prev.metronomeEnabled) return;
+      const engine = getMetronome();
+      if (!engine) return;
+      const playback = usePlaybackStore.getState();
+      if (playback.countInActive) {
+        engine.setEnabled(state.metronomeEnabled);
+      } else if (playback.isPlaying) {
+        syncCurrentMetronome();
+      } else {
+        engine.setEnabled(state.metronomeEnabled);
+        engine.stop();
+      }
+    });
+    return unsub;
+  }, [syncCurrentMetronome]);
+
+  useEffect(() => {
+    const unsub = usePlaybackStore.subscribe((state, prev) => {
+      if (!state.isPlaying || state.countInActive) {
+        metronomeSegmentRef.current = null;
+        return;
+      }
+      if (state.currentTime === prev.currentTime) return;
+      const currentSong = useSongStore.getState().song;
+      if (!currentSong || !useSettingsStore.getState().metronomeEnabled) return;
+
+      const segment = resolveMetronomeSegmentKey(
+        currentSong,
+        state.currentTime,
+        usePracticeStore.getState().speed,
+      );
+      if (metronomeSegmentRef.current === null) {
+        metronomeSegmentRef.current = segment;
+      } else if (metronomeSegmentRef.current !== segment) {
+        syncCurrentMetronome();
+      }
+    });
+    return unsub;
+  }, [syncCurrentMetronome]);
+
   // ─── Phase 6.5: Startup wiring — speed sync to AudioScheduler ──
   // When practice speed changes, sync the multiplier to the AudioScheduler
   // so audio playback rate matches the visual slow-down.
@@ -1078,9 +1241,10 @@ function App(): React.JSX.Element {
     const unsub = usePracticeStore.subscribe((state, prev) => {
       if (state.speed === prev.speed) return;
       audioRef.current.scheduler?.setSpeed(state.speed);
+      syncCurrentMetronome();
     });
     return unsub;
-  }, []);
+  }, [syncCurrentMetronome]);
 
   // ─── Phase 6: Practice Engine lifecycle (extracted to hook) ──
   const { handleNoteRendererReady, noteRendererRef } = usePracticeLifecycle(

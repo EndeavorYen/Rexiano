@@ -73,6 +73,40 @@ describe("MetronomeEngine", () => {
     metronome.start(120, 4);
     expect(metronome.isRunning).toBe(true);
     expect(metronome.bpm).toBe(120);
+    expect(metronome.getRuntimeSnapshot()).toMatchObject({
+      isRunning: true,
+      enabled: true,
+      countInRemaining: -1,
+    });
+  });
+
+  it("reports scheduled clicks after the look-ahead window is filled", () => {
+    metronome.setEnabled(true);
+    metronome.start(120, 4);
+    vi.advanceTimersByTime(25);
+    expect(metronome.getRuntimeSnapshot().scheduledClickCount).toBeGreaterThan(
+      0,
+    );
+  });
+
+  it("starts from an aligned beat and waits until its exact click time", () => {
+    metronome.setEnabled(true);
+    metronome.start(120, 4, {
+      currentBeat: 2,
+      firstClickBeat: 3,
+      firstClickDelaySeconds: 0.25,
+    });
+
+    vi.advanceTimersByTime(25);
+    expect(ctx.createOscillator).not.toHaveBeenCalled();
+    expect(metronome.currentBeat).toBe(2);
+
+    (ctx as unknown as { currentTime: number }).currentTime = 0.16;
+    vi.advanceTimersByTime(25);
+    expect(ctx.createOscillator).toHaveBeenCalledOnce();
+    expect(metronome.currentBeat).toBe(3);
+    const oscillator = vi.mocked(ctx.createOscillator).mock.results[0].value;
+    expect(oscillator.start).toHaveBeenCalledWith(0.25);
   });
 
   it("stop() halts the metronome", () => {
@@ -145,6 +179,50 @@ describe("MetronomeEngine", () => {
     }
 
     expect(onComplete).toHaveBeenCalledTimes(1);
+  });
+
+  it("does not release count-in inside the look-ahead window", () => {
+    const onComplete = vi.fn();
+    metronome.startCountIn(4, 120, 4, onComplete);
+
+    for (let i = 0; i <= 76; i++) {
+      (ctx as unknown as { currentTime: number }).currentTime = i * 0.025;
+      vi.advanceTimersByTime(25);
+    }
+    expect(ctx.createOscillator).toHaveBeenCalledTimes(4);
+    expect(onComplete).not.toHaveBeenCalled();
+
+    (ctx as unknown as { currentTime: number }).currentTime = 2;
+    vi.advanceTimersByTime(100);
+    expect(onComplete).toHaveBeenCalledOnce();
+  });
+
+  it("disabling regular clicks does not cancel an active count-in", () => {
+    const onComplete = vi.fn();
+    metronome.setEnabled(true);
+    metronome.startCountIn(2, 120, 4, onComplete);
+
+    metronome.setEnabled(false);
+    expect(metronome.isRunning).toBe(true);
+
+    for (let i = 0; i <= 41; i++) {
+      (ctx as unknown as { currentTime: number }).currentTime = i * 0.025;
+      vi.advanceTimersByTime(25);
+    }
+    expect(onComplete).toHaveBeenCalledOnce();
+  });
+
+  it("stop cancels oscillator nodes that were scheduled ahead", () => {
+    metronome.setEnabled(true);
+    metronome.start(120, 4);
+    vi.advanceTimersByTime(25);
+    const oscillator = vi.mocked(ctx.createOscillator).mock.results[0].value;
+    const stopCallsBefore = vi.mocked(oscillator.stop).mock.calls.length;
+
+    metronome.stop();
+
+    expect(oscillator.stop).toHaveBeenCalledTimes(stopCallsBefore + 1);
+    expect(oscillator.disconnect).toHaveBeenCalled();
   });
 
   it("count-in stops if metronome is not enabled", () => {
