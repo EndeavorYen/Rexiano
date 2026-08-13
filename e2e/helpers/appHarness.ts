@@ -4,12 +4,20 @@ import { expect } from "../fixtures/electronApp";
 type PracticeModeChoice = "watch" | "wait" | "free";
 
 export async function gotoLibrary(page: Page): Promise<void> {
+  const trigger = page.getByTestId("library-device-drawer-trigger");
+  const menuSettings = page.getByTestId("main-menu-settings");
+  await expect(trigger.or(menuSettings)).toBeVisible({ timeout: 20_000 });
+  if (await trigger.isVisible()) return;
+
   await page.evaluate(() => {
+    // Setting the same hash is a no-op. Bounce through menu so hashchange
+    // fires after React has attached its listener and view-sync effect.
+    if (window.location.hash === "#/library") {
+      window.location.hash = "#/menu";
+    }
     window.location.hash = "#/library";
   });
-  await expect(page.getByTestId("library-device-drawer-trigger")).toBeVisible({
-    timeout: 20_000,
-  });
+  await expect(trigger).toBeVisible({ timeout: 20_000 });
 }
 
 export async function openLibraryDrawer(page: Page): Promise<Locator> {
