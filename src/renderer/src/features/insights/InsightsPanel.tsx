@@ -282,7 +282,7 @@ function StatCard({
   negative,
 }: StatCardProps): React.JSX.Element {
   let valueColor = "var(--color-text)";
-  if (accent) valueColor = "var(--color-accent)";
+  if (accent) valueColor = "var(--color-accent-text)";
   if (positive) valueColor = "var(--color-success-text)";
   if (negative) valueColor = "var(--color-danger-text)";
 

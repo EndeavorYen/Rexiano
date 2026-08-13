@@ -10,6 +10,7 @@ const REQUIRED_COLOR_KEYS: (keyof ThemeTokens["colors"])[] = [
   "surfaceAlt",
   "accent",
   "accentHover",
+  "accentText",
   "onAccent",
   "successText",
   "dangerText",
@@ -233,24 +234,28 @@ describe("Theme tokens", () => {
     const EXPECTED_SEMANTIC_COLORS = {
       lavender: {
         accent: "#705A87",
+        accentText: "#5F4A75",
         onAccent: "#FFFFFF",
         successText: "#166534",
         dangerText: "#B91C1C",
       },
       ocean: {
         accent: "#0F766E",
+        accentText: "#0B5E58",
         onAccent: "#FFFFFF",
         successText: "#166534",
         dangerText: "#B91C1C",
       },
       peach: {
         accent: "#9C5A3C",
+        accentText: "#7F4931",
         onAccent: "#FFFFFF",
         successText: "#166534",
         dangerText: "#B91C1C",
       },
       midnight: {
         accent: "#4C8EA3",
+        accentText: "#5EA5BB",
         onAccent: "#0E1013",
         successText: "#86C4AD",
         dangerText: "#FCA5A5",
@@ -259,13 +264,23 @@ describe("Theme tokens", () => {
       ThemeId,
       Pick<
         ThemeTokens["colors"],
-        "accent" | "onAccent" | "successText" | "dangerText"
+        "accent" | "accentText" | "onAccent" | "successText" | "dangerText"
       >
     >;
 
     test.each(ALL_THEME_IDS)("%s keeps the approved semantic palette", (id) => {
       expect(themes[id].colors).toMatchObject(EXPECTED_SEMANTIC_COLORS[id]);
     });
+
+    test.each(ALL_THEME_IDS)(
+      "%s accent text remains readable on alternate surfaces",
+      (id) => {
+        const { accentText, surfaceAlt } = themes[id].colors;
+        expect(contrastRatio(accentText, surfaceAlt)).toBeGreaterThanOrEqual(
+          4.5,
+        );
+      },
+    );
 
     test.each(ALL_THEME_IDS)(
       "%s primary gradient text remains readable at rest and on hover",

@@ -145,6 +145,21 @@ async function saveScreenshot(
   await testInfo.attach(name, { path, contentType: "image/png" });
 }
 
+async function computedCssVariable(
+  page: Page,
+  variable: string,
+): Promise<string> {
+  return page.evaluate((cssVariable) => {
+    const rootStyle = getComputedStyle(document.documentElement);
+    const probe = document.createElement("span");
+    probe.style.color = rootStyle.getPropertyValue(cssVariable);
+    document.body.append(probe);
+    const color = getComputedStyle(probe).color;
+    probe.remove();
+    return color;
+  }, variable);
+}
+
 test("Ocean and Midnight keep primary actions and status text readable", async ({
   electronApp,
   appPage,
@@ -193,21 +208,30 @@ test("Ocean and Midnight keep primary actions and status text readable", async (
     await appPage.getByTestId("insights-trigger").click();
 
     const dialog = appPage.getByRole("dialog", { name: "Practice Insights" });
+    const bestAccuracyValue = dialog.getByText("85.0%", { exact: true });
     const improvementValue = dialog.getByText(fixture.improvement);
+    await expect(bestAccuracyValue).toBeVisible();
     await expect(improvementValue).toBeVisible();
+    const accentContrast = await computedContrast(bestAccuracyValue, {
+      backgroundFromParent: true,
+    });
+    const accentTextColor = await computedCssVariable(
+      appPage,
+      "--color-accent-text",
+    );
+    expect(accentContrast.foreground).toBe(accentTextColor);
+    expect(accentContrast.ratios[0]).toBeGreaterThanOrEqual(
+      MINIMUM_TEXT_CONTRAST,
+    );
+
     const statusCard = improvementValue.locator("..");
     const statusContrast = await computedContrast(improvementValue, {
       backgroundFromParent: true,
     });
-    const semanticColor = await appPage.evaluate((variable) => {
-      const rootStyle = getComputedStyle(document.documentElement);
-      const probe = document.createElement("span");
-      probe.style.color = rootStyle.getPropertyValue(variable);
-      document.body.append(probe);
-      const color = getComputedStyle(probe).color;
-      probe.remove();
-      return color;
-    }, fixture.semanticVariable);
+    const semanticColor = await computedCssVariable(
+      appPage,
+      fixture.semanticVariable,
+    );
 
     expect(statusContrast.foreground).toBe(semanticColor);
     expect(statusContrast.ratios[0]).toBeGreaterThanOrEqual(

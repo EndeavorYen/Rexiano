@@ -11,6 +11,8 @@ export interface ThemeTokens {
     surfaceAlt: string;
     accent: string;
     accentHover: string;
+    /** Accent-colored text displayed on themed surfaces */
+    accentText: string;
     /** Text and icons displayed on the primary accent gradient */
     onAccent: string;
     /** Readable positive status text on themed surfaces */
@@ -57,6 +59,7 @@ export const themes: Record<ThemeId, ThemeTokens> = {
       surfaceAlt: "#E4DEE8",
       accent: "#705A87",
       accentHover: "#5F4A75",
+      accentText: "#5F4A75",
       onAccent: "#FFFFFF",
       successText: "#166534",
       dangerText: "#B91C1C",
@@ -94,6 +97,7 @@ export const themes: Record<ThemeId, ThemeTokens> = {
       surfaceAlt: "#EAF1EA",
       accent: "#0F766E",
       accentHover: "#0B5E58",
+      accentText: "#0B5E58",
       onAccent: "#FFFFFF",
       successText: "#166534",
       dangerText: "#B91C1C",
@@ -131,6 +135,7 @@ export const themes: Record<ThemeId, ThemeTokens> = {
       surfaceAlt: "#E8DACD",
       accent: "#9C5A3C",
       accentHover: "#8E5337",
+      accentText: "#7F4931",
       onAccent: "#FFFFFF",
       successText: "#166534",
       dangerText: "#B91C1C",
@@ -168,6 +173,7 @@ export const themes: Record<ThemeId, ThemeTokens> = {
       surfaceAlt: "#232A33",
       accent: "#4C8EA3",
       accentHover: "#5EA5BB",
+      accentText: "#5EA5BB",
       onAccent: "#0E1013",
       successText: "#86C4AD",
       dangerText: "#FCA5A5",
