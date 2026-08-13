@@ -10,7 +10,10 @@ import {
   type SoundFontResult,
   type BuiltinSongMeta,
 } from "../../shared/types";
-import { approveMidiFilePath, isApprovedMidiFilePath } from "./midiPathAccess";
+import {
+  approveMidiFilePath,
+  resolveApprovedMidiFilePath,
+} from "./midiPathAccess";
 
 function resolveBundledResourcesDir(): string {
   return app.isPackaged
@@ -34,13 +37,14 @@ export function registerFileHandlers(): void {
       if (result.canceled || result.filePaths.length === 0) return null;
 
       const filePath = result.filePaths[0];
-      const buffer = await readFile(filePath);
-      approveMidiFilePath(filePath);
+      const canonicalPath = await approveMidiFilePath(filePath);
+      if (!canonicalPath) return null;
+      const buffer = await readFile(canonicalPath);
 
       return {
-        fileName: basename(filePath),
+        fileName: basename(canonicalPath),
         data: Array.from(buffer),
-        path: filePath,
+        path: canonicalPath,
       };
     },
   );
@@ -83,14 +87,14 @@ export function registerFileHandlers(): void {
     IpcChannels.LOAD_MIDI_PATH,
     async (_event, filePath: string): Promise<MidiFileResult | null> => {
       if (typeof filePath !== "string" || filePath.length === 0) return null;
-      if (!isApprovedMidiFilePath(filePath)) return null;
-      if (!existsSync(filePath)) return null;
+      const canonicalPath = await resolveApprovedMidiFilePath(filePath);
+      if (!canonicalPath) return null;
 
-      const buffer = await readFile(filePath);
+      const buffer = await readFile(canonicalPath);
       return {
-        fileName: basename(filePath),
+        fileName: basename(canonicalPath),
         data: Array.from(buffer),
-        path: filePath,
+        path: canonicalPath,
       };
     },
   );
@@ -113,7 +117,7 @@ export function registerFileHandlers(): void {
 
       try {
         await writeFile(result.filePath, Buffer.from(request.data));
-        approveMidiFilePath(result.filePath);
+        await approveMidiFilePath(result.filePath);
         return { ok: true, path: result.filePath };
       } catch (error) {
         return {

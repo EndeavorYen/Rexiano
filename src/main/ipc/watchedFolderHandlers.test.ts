@@ -29,6 +29,7 @@ function dir(name: string): (typeof mocks.directoryEntries)[string][number] {
 }
 
 vi.mock("electron", () => ({
+  app: { getPath: vi.fn(() => "/mock/userData") },
   ipcMain: {
     handle: vi.fn(
       (channel: string, handler: (...args: unknown[]) => unknown) => {
@@ -48,13 +49,20 @@ vi.mock("fs/promises", () => ({
   readdir: vi.fn(
     async (folderPath: string) => mocks.directoryEntries[folderPath] ?? [],
   ),
+  realpath: vi.fn(async (path: string) => path),
+  stat: vi.fn(async (path: string) => ({
+    dev: 1,
+    ino: path.length,
+    isDirectory: () => path in mocks.directoryEntries,
+    isFile: () => !(path in mocks.directoryEntries),
+  })),
 }));
 
 import {
   discoverMidiFilesInFolder,
   registerWatchedFolderHandlers,
 } from "./watchedFolderHandlers";
-
+import { clearApprovedMidiPathAccessForTests } from "./midiPathAccess";
 describe("watchedFolderHandlers", () => {
   beforeEach(() => {
     Object.keys(mocks.handlers).forEach((key) => delete mocks.handlers[key]);
@@ -62,6 +70,7 @@ describe("watchedFolderHandlers", () => {
       (key) => delete mocks.directoryEntries[key],
     );
     vi.clearAllMocks();
+    clearApprovedMidiPathAccessForTests();
   });
 
   test("discovers MIDI files recursively in deterministic order", async () => {
@@ -128,7 +137,7 @@ describe("watchedFolderHandlers", () => {
     registerWatchedFolderHandlers();
 
     await expect(
-      mocks.handlers["library:selectWatchedMidiFolder"](),
+      mocks.handlers["library:selectWatchedMidiFolder"](null),
     ).resolves.toEqual({
       folderPath: "/Users/rex/Music",
       midiFilePaths: ["/Users/rex/Music/Scale.mid"],

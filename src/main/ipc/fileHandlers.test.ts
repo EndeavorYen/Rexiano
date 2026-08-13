@@ -39,6 +39,20 @@ vi.mock("fs/promises", () => ({
     return contents;
   }),
   writeFile: vi.fn(async () => {}),
+  realpath: vi.fn(async (path: string) => {
+    const normalized = path.replace(/\\/g, "/");
+    if (!(normalized in mockFileContents)) {
+      throw Object.assign(new Error("ENOENT"), { code: "ENOENT" });
+    }
+    return normalized;
+  }),
+  stat: vi.fn(async (path: string) => ({
+    size: mockFileContents[path.replace(/\\/g, "/")]?.byteLength ?? 0,
+    dev: 1,
+    ino: path.length,
+    isFile: () => path.replace(/\\/g, "/") in mockFileContents,
+    isDirectory: () => false,
+  })),
 }));
 
 vi.mock("fs", () => ({
@@ -53,7 +67,6 @@ vi.mock("fs", () => ({
 import { registerFileHandlers } from "./fileHandlers";
 import { dialog, ipcMain } from "electron";
 import { readFile, writeFile } from "fs/promises";
-
 describe("fileHandlers", () => {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let handlers: Record<string, (...args: any[]) => Promise<any>>;
@@ -94,7 +107,7 @@ describe("fileHandlers", () => {
 
   test("LOAD_MIDI_PATH loads a user-approved MIDI file", async () => {
     mockFileContents["/Users/rex/Music/Scale.mid"] = Buffer.from([1, 2, 3]);
-    approveMidiFilePath("/Users/rex/Music/Scale.mid");
+    await approveMidiFilePath("/Users/rex/Music/Scale.mid");
 
     await expect(
       handlers[IpcChannels.LOAD_MIDI_PATH](null, "/Users/rex/Music/Scale.mid"),
@@ -104,6 +117,7 @@ describe("fileHandlers", () => {
       path: "/Users/rex/Music/Scale.mid",
     });
   });
+
 
   test("EXPORT_MIDI_FILE writes selected MIDI bytes to a user-selected path", async () => {
     vi.mocked(dialog.showSaveDialog).mockResolvedValue({

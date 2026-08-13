@@ -480,6 +480,7 @@
 - [x] 無障礙：`@media (prefers-reduced-motion: reduce)` 停用所有動畫
 - [x] 無障礙：ARIA labels, 螢幕閱讀器
 - [x] E2E 測試（Playwright）
+- [x] MIDI 路徑存取採 canonical path 與檔案身分授權，監看資料夾拒絕 symlink escape（#193）
 
 > 以下項目已移入 Phase 6.5 的具體 Sprint 中：
 >
