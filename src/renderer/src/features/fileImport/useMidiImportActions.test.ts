@@ -1,9 +1,10 @@
-import { describe, expect, test } from "vitest";
+import { describe, expect, test, vi } from "vitest";
 import {
   reduceImportErrorForEvent,
   getMidiFileExtension,
   getUnsupportedMidiDropError,
   getFileNameFromPath,
+  removeRecentForRecovery,
 } from "./useMidiImportActions";
 
 describe("useMidiImportActions helpers", () => {
@@ -49,5 +50,43 @@ describe("useMidiImportActions helpers", () => {
       "song.midi",
     );
     expect(getFileNameFromPath("")).toBeUndefined();
+  });
+
+  test("awaits confirmed recent removal before reporting recovery success", async () => {
+    let confirmRemoval: ((removed: boolean) => void) | undefined;
+    const remove = vi.fn(
+      () =>
+        new Promise<boolean>((resolve) => {
+          confirmRemoval = resolve;
+        }),
+    );
+
+    const recovery = removeRecentForRecovery("/stale.mid", remove);
+    let settled = false;
+    void recovery.finally(() => {
+      settled = true;
+    });
+    await Promise.resolve();
+
+    expect(settled).toBe(false);
+    confirmRemoval?.(true);
+    await expect(recovery).resolves.toEqual({ ok: true });
+  });
+
+  test("keeps recovery active when recent removal is declined or rejects", async () => {
+    await expect(
+      removeRecentForRecovery("/stale.mid", async () => false),
+    ).resolves.toEqual({ ok: false });
+
+    const diagnostic = new Error("recents file is read-only");
+    await expect(
+      removeRecentForRecovery("/stale.mid", async () => {
+        throw diagnostic;
+      }),
+    ).resolves.toEqual({ ok: false, diagnostic });
+
+    await expect(
+      removeRecentForRecovery(undefined, async () => true),
+    ).resolves.toEqual({ ok: false });
   });
 });

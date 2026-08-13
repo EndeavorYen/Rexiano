@@ -191,7 +191,9 @@ describe("recentFilesHandlers", () => {
     const filePath = `${mockUserDataPath}/recents.json`;
     mockFileContents[filePath] = JSON.stringify(existing);
 
-    await handlers["recents:removeRecentFile"](null, "/stale.mid");
+    await expect(
+      handlers["recents:removeRecentFile"](null, "/stale.mid"),
+    ).resolves.toBe(true);
 
     const written = JSON.parse(vi.mocked(writeFile).mock.calls[0][1] as string);
     expect(written).toEqual([expect.objectContaining({ path: "/keep.mid" })]);
@@ -202,9 +204,19 @@ describe("recentFilesHandlers", () => {
     const filePath = `${mockUserDataPath}/recents.json`;
     mockFileContents[filePath] = JSON.stringify(existing);
 
-    await handlers["recents:removeRecentFile"](null, "/missing.mid");
+    await expect(
+      handlers["recents:removeRecentFile"](null, "/missing.mid"),
+    ).resolves.toBe(true);
 
     const written = JSON.parse(vi.mocked(writeFile).mock.calls[0][1] as string);
     expect(written).toEqual(existing);
+  });
+
+  test("REMOVE_RECENT_FILE rejects an invalid path without touching disk", async () => {
+    await expect(handlers["recents:removeRecentFile"](null, "")).resolves.toBe(
+      false,
+    );
+
+    expect(writeFile).not.toHaveBeenCalled();
   });
 });

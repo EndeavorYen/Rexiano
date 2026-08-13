@@ -57,7 +57,7 @@ declare global {
       /** Phase 6.5: Save a recently opened MIDI file */
       saveRecentFile: (file: RecentFile) => Promise<void>;
       /** Phase 6.5: Remove a stale recently opened MIDI file */
-      removeRecentFile: (filePath: string) => Promise<void>;
+      removeRecentFile: (filePath: string) => Promise<boolean>;
       /** User data backup: export file-backed userData scopes */
       exportUserDataFiles: (
         scopes?: string[],

@@ -37,6 +37,8 @@ interface UseMidiImportActionsOptions {
   t: Translate;
   loadSong: (song: ParsedSong) => void;
   resetPlayback: () => void;
+  removeRecentFile: (filePath: string) => Promise<boolean>;
+  refreshRecentFiles: () => void;
 }
 
 export interface MidiImportActions {
@@ -48,7 +50,7 @@ export interface MidiImportActions {
   handleImportRecoveryAction: (
     actionId: FileImportRecoveryActionId,
     input: FileImportErrorInput,
-  ) => void;
+  ) => Promise<void>;
   handleDragEnter: (event: DragEvent) => void;
   handleDragLeave: (event: DragEvent) => void;
   handleDragOver: (event: DragEvent) => void;
@@ -75,10 +77,30 @@ export function getFileNameFromPath(filePath: string): string | undefined {
   return filePath.split(/[\\/]/).pop() || undefined;
 }
 
+export type RecentRemovalRecoveryResult =
+  | { ok: true }
+  | { ok: false; diagnostic?: unknown };
+
+export async function removeRecentForRecovery(
+  filePath: string | undefined,
+  removeRecentFile: (path: string) => Promise<boolean>,
+): Promise<RecentRemovalRecoveryResult> {
+  if (!filePath) return { ok: false };
+
+  try {
+    const removed = await removeRecentFile(filePath);
+    return removed ? { ok: true } : { ok: false };
+  } catch (diagnostic) {
+    return { ok: false, diagnostic };
+  }
+}
+
 export function useMidiImportActions({
   t,
   loadSong,
   resetPlayback,
+  removeRecentFile,
+  refreshRecentFiles,
 }: UseMidiImportActionsOptions): MidiImportActions {
   const [importError, setImportError] = useState<ImportErrorState | null>(null);
   const [isDragging, setIsDragging] = useState(false);
@@ -131,17 +153,22 @@ export function useMidiImportActions({
       }
 
       if (result.path) {
-        void window.api.saveRecentFile({
-          path: result.path,
-          name: result.fileName,
-          timestamp: Date.now(),
-        });
+        void window.api
+          .saveRecentFile({
+            path: result.path,
+            name: result.fileName,
+            timestamp: Date.now(),
+          })
+          .then(refreshRecentFiles)
+          .catch((error: unknown) => {
+            console.error("Failed to save recent MIDI file:", error);
+          });
       }
     } catch (error) {
       console.error("Failed to read MIDI file:", error);
       showImportError({ kind: "read-failed", diagnostic: error });
     }
-  }, [loadParsedSong, showImportError]);
+  }, [loadParsedSong, refreshRecentFiles, showImportError]);
 
   const handleLoadMidiPath = useCallback(
     async (filePath: string): Promise<void> => {
@@ -185,15 +212,36 @@ export function useMidiImportActions({
   }, []);
 
   const handleImportRecoveryAction = useCallback(
-    (actionId: FileImportRecoveryActionId, input: FileImportErrorInput) => {
+    async (
+      actionId: FileImportRecoveryActionId,
+      input: FileImportErrorInput,
+    ): Promise<void> => {
+      if (actionId === "remove-recent") {
+        const result = await removeRecentForRecovery(
+          input.path,
+          removeRecentFile,
+        );
+        if (!result.ok) {
+          if (result.diagnostic) {
+            console.error(
+              "Failed to remove recent MIDI file:",
+              result.diagnostic,
+            );
+          }
+          return;
+        }
+
+        setImportError((current) =>
+          current?.input.path === input.path
+            ? reduceImportErrorForEvent(current, "recovery-start")
+            : current,
+        );
+        return;
+      }
+
       setImportError((current) =>
         reduceImportErrorForEvent(current, "recovery-start"),
       );
-
-      if (actionId === "remove-recent") {
-        if (input.path) void window.api.removeRecentFile(input.path);
-        return;
-      }
 
       if (actionId === "retry-read" && input.path) {
         void handleLoadMidiPath(input.path);
@@ -202,7 +250,7 @@ export function useMidiImportActions({
 
       void handleOpenFile();
     },
-    [handleLoadMidiPath, handleOpenFile],
+    [handleLoadMidiPath, handleOpenFile, removeRecentFile],
   );
 
   const handleDragEnter = useCallback((event: DragEvent) => {

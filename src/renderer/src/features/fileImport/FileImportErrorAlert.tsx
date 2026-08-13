@@ -56,6 +56,13 @@ export function FileImportErrorAlert({
           })
         ) {
           target.focus({ preventScroll: true });
+          return;
+        }
+
+        if (alertHadFocus) {
+          document
+            .querySelector<HTMLElement>("[data-import-recovery-focus-fallback]")
+            ?.focus({ preventScroll: true });
         }
       }, 0);
     };

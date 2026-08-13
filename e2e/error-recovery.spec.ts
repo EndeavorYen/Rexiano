@@ -4,8 +4,8 @@ import {
   loadFirstBuiltInSong,
   openLibraryDrawer,
 } from "./helpers/appHarness";
-import { readFileSync } from "fs";
-import { resolve } from "path";
+import { readFileSync, writeFileSync } from "fs";
+import { join, resolve } from "path";
 import type { Page } from "@playwright/test";
 
 async function enterAndLeaveDrag(page: Page): Promise<void> {
@@ -154,6 +154,47 @@ test.describe("Error recovery", () => {
     await appPage.keyboard.press("Enter");
     await expect(alert).toBeHidden();
     await expect(importLauncher).toBeFocused();
+  });
+
+  test("confirmed removal immediately clears a real stale main-menu recent", async ({
+    electronApp,
+    appPage,
+  }) => {
+    const userDataPath = await electronApp.evaluate(({ app }) =>
+      app.getPath("userData"),
+    );
+    const recentsPath = join(userDataPath, "recents.json");
+    const stalePath = join(userDataPath, "moved-away.mid");
+    writeFileSync(
+      recentsPath,
+      JSON.stringify([
+        {
+          path: stalePath,
+          name: "moved-away.mid",
+          timestamp: Date.now(),
+        },
+      ]),
+      "utf-8",
+    );
+    await appPage.reload();
+    await appPage.waitForLoadState("domcontentloaded");
+
+    const staleCard = appPage.getByTitle("moved-away.mid");
+    await expect(staleCard).toBeVisible();
+    await staleCard.click();
+
+    const alert = appPage.getByRole("alert");
+    await expect(alert).toContainText("Recent file is no longer available");
+    const remove = alert.getByRole("button", { name: "Remove from recents" });
+    await remove.focus();
+    await appPage.keyboard.press("Enter");
+
+    await expect(alert).toBeHidden();
+    await expect(staleCard).toBeHidden();
+    await expect(
+      appPage.getByRole("button", { name: "Start Playing" }),
+    ).toBeFocused();
+    expect(JSON.parse(readFileSync(recentsPath, "utf-8"))).toEqual([]);
   });
 
   test("Space activates import recovery without toggling background playback", async ({

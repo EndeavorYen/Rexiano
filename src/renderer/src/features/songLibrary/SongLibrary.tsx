@@ -597,8 +597,12 @@ export function SongLibrary({
 
   const handleRemoveRecent = useCallback(
     async (filePath: string) => {
-      await removeRecent(filePath);
-      setRecentRecovery(null);
+      try {
+        const removed = await removeRecent(filePath);
+        if (removed) setRecentRecovery(null);
+      } catch (error) {
+        console.error("Failed to remove recent MIDI file:", error);
+      }
     },
     [removeRecent],
   );

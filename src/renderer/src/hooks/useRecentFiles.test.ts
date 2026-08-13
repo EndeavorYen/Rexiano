@@ -31,7 +31,7 @@ vi.stubGlobal("window", {
   api: {
     loadRecentFiles: vi.fn(async () => [...mockRecentFiles]),
     saveRecentFile: vi.fn(async () => {}),
-    removeRecentFile: vi.fn(async () => {}),
+    removeRecentFile: vi.fn(async () => true),
     loadMidiPath: vi.fn(async () => null),
     loadBuiltinSong: vi.fn(async () => null),
   },
@@ -50,7 +50,12 @@ vi.mock("react", () => {
       const idx = stateCounter++;
       if (!capturedStates.has(idx)) {
         const setter = (val: unknown): void => {
-          capturedStates.set(idx, [val, setter]);
+          const previous = capturedStates.get(idx)?.[0];
+          const next =
+            typeof val === "function"
+              ? (val as (current: unknown) => unknown)(previous)
+              : val;
+          capturedStates.set(idx, [next, setter]);
         };
         capturedStates.set(idx, [initial, setter]);
       }
@@ -80,6 +85,7 @@ describe("useRecentFiles", () => {
     vi.mocked(window.api.loadRecentFiles).mockResolvedValue([
       ...mockRecentFiles,
     ]);
+    vi.mocked(window.api.removeRecentFile).mockResolvedValue(true);
   });
 
   test("returns initial state with loading=true and empty recentFiles", () => {
@@ -155,14 +161,46 @@ describe("useRecentFiles", () => {
     ).resolves.toBeUndefined();
   });
 
-  test("remove function calls window.api.removeRecentFile then refreshes recents", async () => {
+  test("remove waits for IPC success, then immediately invalidates the cached path", async () => {
+    useRecentFiles();
+    capturedStates.get(0)![1]([...mockRecentFiles]);
+    stateCounter = 0;
     const result = useRecentFiles();
 
-    await result.remove("/songs/song1.mid");
+    await expect(result.remove("/songs/song1.mid")).resolves.toBe(true);
 
     expect(window.api.removeRecentFile).toHaveBeenCalledWith(
       "/songs/song1.mid",
     );
-    expect(window.api.loadRecentFiles).toHaveBeenCalledTimes(1);
+    expect(capturedStates.get(0)?.[0]).toEqual(mockRecentFiles.slice(1));
+    expect(window.api.loadRecentFiles).not.toHaveBeenCalled();
+  });
+
+  test("remove keeps the cached path when IPC declines the mutation", async () => {
+    vi.mocked(window.api.removeRecentFile).mockResolvedValueOnce(false);
+    useRecentFiles();
+    capturedStates.get(0)![1]([...mockRecentFiles]);
+    stateCounter = 0;
+    const result = useRecentFiles();
+
+    await expect(result.remove("/songs/song1.mid")).resolves.toBe(false);
+
+    expect(capturedStates.get(0)?.[0]).toEqual(mockRecentFiles);
+  });
+
+  test("remove keeps the cached path when IPC rejects", async () => {
+    vi.mocked(window.api.removeRecentFile).mockRejectedValueOnce(
+      new Error("disk full"),
+    );
+    useRecentFiles();
+    capturedStates.get(0)![1]([...mockRecentFiles]);
+    stateCounter = 0;
+    const result = useRecentFiles();
+
+    await expect(result.remove("/songs/song1.mid")).rejects.toThrow(
+      "disk full",
+    );
+
+    expect(capturedStates.get(0)?.[0]).toEqual(mockRecentFiles);
   });
 });

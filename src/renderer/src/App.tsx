@@ -93,6 +93,7 @@ import { FileImportErrorAlert } from "./features/fileImport/FileImportErrorAlert
 import { buildMidiDiagnosticNotice } from "./features/midiDiagnostics/midiDiagnosticNotice";
 import { OnboardingGuide } from "./features/onboarding/OnboardingGuide";
 import { shouldExposeE2eFixtures } from "./e2eFixtureAccess";
+import { useRecentFiles } from "./hooks/useRecentFiles";
 
 const HEADER_ESTIMATED_HEIGHT = 112;
 const TRANSPORT_ESTIMATED_HEIGHT = 84;
@@ -127,6 +128,11 @@ function App(): React.JSX.Element {
   const song = useSongStore((s) => s.song);
   const loadSong = useSongStore((s) => s.loadSong);
   const reset = usePlaybackStore((s) => s.reset);
+  const {
+    recentFiles,
+    refresh: refreshRecentFiles,
+    remove: removeRecentFile,
+  } = useRecentFiles();
   const [routeIntent, setRouteIntent] = useState<AppRoute>(() => {
     if (typeof window === "undefined") return "menu";
     return parseRouteHash(window.location.hash);
@@ -1030,6 +1036,8 @@ function App(): React.JSX.Element {
     t,
     loadSong,
     resetPlayback: reset,
+    removeRecentFile,
+    refreshRecentFiles,
   });
 
   useEffect(() => {
@@ -1236,6 +1244,7 @@ function App(): React.JSX.Element {
           <MainMenu
             onStartPractice={() => applyRoute("library")}
             onOpenSettings={() => setShowMenuSettings(true)}
+            recentFiles={recentFiles}
             onSelectRecent={(file) => {
               setSessionIntent("practice");
               void handleLoadMidiPath(file.path);
