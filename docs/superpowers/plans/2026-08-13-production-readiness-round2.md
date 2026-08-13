@@ -6,61 +6,63 @@
 
 ## Wave A — Gameplay core
 
-- [ ] #198: RED Electron + integration tests for live forward/back/reset/slider
+- [x] #198: RED Electron + integration tests for live forward/back/reset/slider
       seek; implement one scheduler/transport discontinuity command.
-- [ ] #199: RED Wait pause/reset/mode/track lifecycle matrix; implement explicit
+- [x] #199: RED Wait pause/reset/mode/track lifecycle matrix; implement explicit
       preserve-vs-reset transitions.
-- [ ] #200: RED fast-sequence and cross-track chord tests; split onset grouping
+- [x] #200: RED fast-sequence and cross-track chord tests; split onset grouping
       from hit tolerance.
-- [ ] #201: RED wrong-only/extra/chord/sustain tests; implement one-shot wrong
+- [x] #201: RED wrong-only/extra/chord/sustain tests; implement one-shot wrong
       input feedback and scoring.
-- [ ] #202: RED deferred audio-rebuild tests; commit latest playback intent.
-- [ ] #203: RED multi-pause session tests; persist one terminal session record.
-- [ ] #204: RED controlled AudioContext + Electron oscillator tests; wire
+- [x] #202: RED deferred audio-rebuild tests; commit latest playback intent.
+- [x] #203: RED multi-pause session tests; persist one terminal session record.
+- [x] #204: RED controlled AudioContext + Electron oscillator tests; wire
       metronome/count-in through playback lifecycle.
-- [ ] #205: RED scheduler→MIDI output tests; mirror notes and clear them across
+- [x] #205: RED scheduler→MIDI output tests; mirror notes and clear them across
       every discontinuity/device loss.
-- [ ] #206: RED successful BLE→unexpected disconnect tests; propagate status and
+- [x] #206: RED successful BLE→unexpected disconnect tests; propagate status and
       clear held notes.
 
 ## Wave B — Data and filesystem
 
-- [ ] #191: RED delayed-filesystem interleaving and failure injection; add one
+- [x] #191: RED delayed-filesystem interleaving and failure injection; add one
       per-path serialized atomic JSON writer used by every progress/recent
       writer.
-- [ ] #212: RED multi-scope/main+renderer rollback tests; add deterministic
+- [x] #212: RED multi-scope/main+renderer rollback tests; add deterministic
       backup transaction and restart recovery.
-- [ ] #193: RED real symlink/unapproved folder tests; canonicalize authority and
+- [x] #193: RED real symlink/unapproved folder tests; canonicalize authority and
       require reauthorization after restore.
-- [ ] #194: RED byte-boundary/import recovery tests; reject non-regular and
+- [x] #194: RED byte-boundary/import recovery tests; reject non-regular and
       oversized MIDI before read/IPC expansion.
 
 ## Wave C — Platform, security, and release
 
 - [x] #190: Preserve unprefixed tags with a failing then passing workflow
       contract test; stale PR #189 closed.
-- [ ] #192: RED argv/open-file/second-instance queue tests; implement
+- [x] #192: RED argv/open-file/second-instance queue tests; implement
       single-instance OS file-open routing through the import UI.
-- [ ] #195: RED hostile update descriptor/redirect/digest/path tests; move
+- [x] #195: RED hostile update descriptor/redirect/digest/path tests; move
       artifact identity, streaming verification, and open authority into main.
-- [ ] #196: Configure a least-privilege release automation token, one release
-      trigger, and required CI/E2E checks; prove on a regenerated release PR.
-- [ ] #213: RED untrusted-frame/navigation tests; sandbox renderer and apply a
+- [x] #196: Main requires Lint/Typecheck/Test/Windows E2E; Release Please
+      dispatches those checks onto the release PR SHA; artifact builds have one
+      `workflow_dispatch` + `expected_sha` trigger. External proof of a regenerated
+      release PR remains post-merge.
+- [x] #213: RED untrusted-frame/navigation tests; sandbox renderer and apply a
       shared privileged IPC trust guard.
-- [ ] #214: Pin every external action to an official immutable commit, add a
+- [x] #214: Pin every external action to an official immutable commit, add a
       contract test, and enable repository SHA policy when supported.
 - [x] #197: Enable Pages, deploy successfully, smoke live assets, set homepage,
       and close with evidence.
 
 ## Wave D — UI/UX
 
-- [ ] #207: RED keyboard selection flow; advance focus to the Practice CTA.
-- [ ] #208: RED ThemePicker ARIA/Escape/restore tests; implement one coherent
+- [x] #207: RED keyboard selection flow; advance focus to the Practice CTA.
+- [x] #208: RED ThemePicker ARIA/Escape/restore tests; implement one coherent
       popup selection model.
-- [ ] #209: RED zh-TW AX/raw-English allowlist; move core player strings to i18n.
-- [ ] #210: RED rendered contrast matrix; replace literal foregrounds with
+- [x] #209: RED zh-TW AX/raw-English allowlist; move core player strings to i18n.
+- [x] #210: RED rendered contrast matrix; replace literal foregrounds with
       semantic theme roles.
-- [ ] #211: RED computed typography; move form reset into the correct CSS layer.
+- [x] #211: RED computed typography; move form reset into the correct CSS layer.
 
 ## Independent acceptance
 
