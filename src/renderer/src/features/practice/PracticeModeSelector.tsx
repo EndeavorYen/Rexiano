@@ -143,7 +143,9 @@ export function PracticeModeSelector(): React.JSX.Element {
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-body font-medium cursor-pointer"
             style={{
               background: isActive ? "var(--color-accent)" : "transparent",
-              color: isActive ? "#fff" : "var(--color-text-muted)",
+              color: isActive
+                ? "var(--color-on-accent)"
+                : "var(--color-text-muted)",
               boxShadow: isActive ? "0 1px 4px rgba(0,0,0,0.15)" : "none",
               transition: "all 0.2s ease",
               transform: isActive ? "scale(1)" : "scale(0.98)",

@@ -66,7 +66,9 @@ export function SpeedSlider(): React.JSX.Element {
                 background: isActive
                   ? "var(--color-accent)"
                   : "var(--color-surface-alt)",
-                color: isActive ? "#fff" : "var(--color-text-muted)",
+                color: isActive
+                  ? "var(--color-on-accent)"
+                  : "var(--color-text-muted)",
                 boxShadow: isActive ? "0 1px 4px rgba(0,0,0,0.12)" : "none",
                 transition: "all 0.15s ease",
               }}

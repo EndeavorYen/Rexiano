@@ -247,7 +247,7 @@ export function CelebrationOverlay({
         {/* Title */}
         <h2
           className="text-3xl font-display font-bold celebration-title"
-          style={{ color: "var(--color-accent)" }}
+          style={{ color: "var(--color-accent-text)" }}
         >
           {t(TIER_TITLE_KEYS[tier])}
         </h2>
@@ -265,7 +265,7 @@ export function CelebrationOverlay({
         {showNewRecord && (
           <div
             className="font-display font-bold tracking-wide text-sm celebration-new-record"
-            style={{ color: "var(--color-accent)" }}
+            style={{ color: "var(--color-accent-text)" }}
             data-testid="celebration-new-record"
           >
             {t("celebration.newRecord")}
@@ -341,7 +341,7 @@ export function CelebrationOverlay({
             className="px-6 py-2.5 text-sm font-display font-bold rounded-xl cursor-pointer transition-transform hover:scale-105 active:scale-95"
             style={{
               background: "var(--color-accent)",
-              color: "#fff",
+              color: "var(--color-on-accent)",
               boxShadow:
                 "0 2px 8px color-mix(in srgb, var(--color-accent) 30%, transparent)",
             }}

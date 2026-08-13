@@ -31,6 +31,7 @@
   --color-on-accent: #ffffff;
   --color-success-text: #166534;
   --color-danger-text: #b91c1c;
+  --color-control-border: #5c6f68;
   --color-text: #17211f;
   --color-text-muted: #5c6f68;
   --color-border: #c9d8d2;
@@ -91,11 +92,13 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-button,
-input,
-select,
-textarea {
-  font: inherit;
+@layer base {
+  button,
+  input,
+  select,
+  textarea {
+    font: inherit;
+  }
 }
 
 ::selection {
@@ -107,8 +110,9 @@ button:focus-visible,
 input:focus-visible,
 select:focus-visible,
 textarea:focus-visible {
-  outline: 2px solid color-mix(in srgb, var(--color-accent) 55%, transparent);
+  outline: 2px solid var(--color-on-accent);
   outline-offset: 1px;
+  box-shadow: 0 0 0 4px var(--color-accent);
 }
 
 /* ── Layout shell accents ── */
@@ -758,7 +762,7 @@ input.seek-slider-input {
 .input-themed,
 .select-themed {
   background: color-mix(in srgb, var(--color-surface) 92%, #fff);
-  border: 1px solid color-mix(in srgb, var(--color-border) 88%, transparent);
+  border: 1px solid var(--color-control-border);
   color: var(--color-text);
   border-radius: 0.7rem;
   transition:
@@ -769,13 +773,10 @@ input.seek-slider-input {
 
 .input-themed:focus,
 .select-themed:focus {
-  border-color: color-mix(
-    in srgb,
-    var(--color-accent) 65%,
-    var(--color-border)
-  );
-  outline: none;
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-accent) 16%, transparent);
+  border-color: var(--color-accent);
+  outline: 2px solid var(--color-accent);
+  outline-offset: 1px;
+  box-shadow: 0 0 0 4px var(--color-on-accent);
   background: color-mix(in srgb, var(--color-surface) 98%, #fff);
 }
 

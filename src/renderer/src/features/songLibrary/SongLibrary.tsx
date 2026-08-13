@@ -1048,16 +1048,17 @@ export function SongLibrary({
                 <span
                   className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full"
                   style={{
-                    background: "var(--color-note1)",
-                    color: "#fff",
+                    background: "var(--color-accent)",
+                    color: "var(--color-on-accent)",
                   }}
                 >
                   {loadingId === practiceRecommendation.song.id ? (
                     <span
                       className="h-4 w-4 rounded-full border-2 animate-spin"
                       style={{
-                        borderColor: "rgba(255,255,255,0.45)",
-                        borderTopColor: "#fff",
+                        borderColor:
+                          "color-mix(in srgb, var(--color-on-accent) 45%, transparent)",
+                        borderTopColor: "var(--color-on-accent)",
                       }}
                     />
                   ) : (
@@ -1067,7 +1068,7 @@ export function SongLibrary({
                 <span className="min-w-0">
                   <span
                     className="block text-xs font-body font-semibold uppercase tracking-wide"
-                    style={{ color: "var(--color-note1)" }}
+                    style={{ color: "var(--color-accent-text)" }}
                   >
                     {t("library.recommendation.title")}
                   </span>
@@ -1093,8 +1094,8 @@ export function SongLibrary({
               <span
                 className="hidden shrink-0 rounded-lg px-3 py-1.5 text-xs font-body font-semibold sm:inline-flex"
                 style={{
-                  color: "#fff",
-                  background: "var(--color-note1)",
+                  color: "var(--color-on-accent)",
+                  background: "var(--color-accent)",
                 }}
               >
                 {t("library.recommendation.cta")}
@@ -1152,8 +1153,8 @@ export function SongLibrary({
                   <span
                     className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full"
                     style={{
-                      background: "var(--color-note2)",
-                      color: "#fff",
+                      background: "var(--color-accent)",
+                      color: "var(--color-on-accent)",
                     }}
                   >
                     <PlayCircle size={18} />
@@ -1161,7 +1162,7 @@ export function SongLibrary({
                   <span className="min-w-0">
                     <span
                       className="block text-[10px] font-body font-semibold uppercase tracking-wide"
-                      style={{ color: "var(--color-note2)" }}
+                      style={{ color: "var(--color-accent-text)" }}
                     >
                       {t("library.lessonPath.next")}
                     </span>
@@ -1285,15 +1286,16 @@ export function SongLibrary({
                   className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full"
                   style={{
                     background: "var(--color-accent)",
-                    color: "#fff",
+                    color: "var(--color-on-accent)",
                   }}
                 >
                   {loadingRecentPath === continueRecent.path ? (
                     <span
                       className="h-4 w-4 rounded-full border-2 animate-spin"
                       style={{
-                        borderColor: "rgba(255,255,255,0.45)",
-                        borderTopColor: "#fff",
+                        borderColor:
+                          "color-mix(in srgb, var(--color-on-accent) 45%, transparent)",
+                        borderTopColor: "var(--color-on-accent)",
                       }}
                     />
                   ) : (
@@ -1303,7 +1305,7 @@ export function SongLibrary({
                 <span className="min-w-0">
                   <span
                     className="block text-xs font-body font-semibold uppercase tracking-wide"
-                    style={{ color: "var(--color-accent)" }}
+                    style={{ color: "var(--color-accent-text)" }}
                   >
                     {t("library.continuePractice")}
                   </span>
@@ -1366,7 +1368,7 @@ export function SongLibrary({
             {recentRecovery && (
               <div
                 className="flex flex-wrap items-center gap-2 mt-2 text-xs font-body"
-                style={{ color: "#dc2626" }}
+                style={{ color: "var(--color-danger-text)" }}
                 title={recentRecovery.guidance.diagnostic || undefined}
                 data-testid="recent-file-recovery"
               >
@@ -1616,7 +1618,7 @@ export function SongLibrary({
         {error && (
           <p
             className="mt-4 text-sm font-body"
-            style={{ color: "var(--color-accent)" }}
+            style={{ color: "var(--color-danger-text)" }}
           >
             {error}
           </p>
@@ -1740,7 +1742,7 @@ function SongSelectionPreviewPanel({
         <div className="min-w-0">
           <span
             className="kicker-label"
-            style={{ color: "var(--color-accent)" }}
+            style={{ color: "var(--color-accent-text)" }}
           >
             {t("library.preview.title")}
           </span>
@@ -1794,8 +1796,9 @@ function SongSelectionPreviewPanel({
                 <span
                   className="h-4 w-4 rounded-full border-2 animate-spin"
                   style={{
-                    borderColor: "rgba(255,255,255,0.45)",
-                    borderTopColor: "#fff",
+                    borderColor:
+                      "color-mix(in srgb, var(--color-on-accent) 45%, transparent)",
+                    borderTopColor: "var(--color-on-accent)",
                   }}
                 />
               ) : action.intent === "play-along" ? (

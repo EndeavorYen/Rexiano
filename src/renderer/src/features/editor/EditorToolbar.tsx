@@ -134,7 +134,7 @@ function ToolbarButton({
       onClick={onClick}
       className="flex h-8 w-8 items-center justify-center rounded-md transition-colors disabled:cursor-not-allowed disabled:opacity-45"
       style={{
-        color: active ? "var(--color-accent)" : "var(--color-text-muted)",
+        color: active ? "var(--color-accent-text)" : "var(--color-text-muted)",
         background: active
           ? "color-mix(in srgb, var(--color-accent) 12%, var(--color-surface))"
           : "transparent",

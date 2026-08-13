@@ -115,11 +115,10 @@ export function NoteInspector({
         <div
           className="rounded-md px-2 py-1.5 text-[10px] leading-snug"
           style={{
-            color: "#92400e",
+            color: "var(--color-danger-text)",
             background:
-              "color-mix(in srgb, var(--color-streak-gold) 18%, var(--color-surface))",
-            border:
-              "1px solid color-mix(in srgb, var(--color-streak-gold) 42%, transparent)",
+              "color-mix(in srgb, var(--color-danger-text) 9%, var(--color-surface))",
+            border: "1px solid var(--color-danger-text)",
           }}
           role="status"
           data-testid="note-inspector-warning"

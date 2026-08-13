@@ -47,7 +47,7 @@ export function TrackManager({
           type="button"
           className="flex h-7 w-7 items-center justify-center rounded-md"
           style={{
-            color: "var(--color-accent)",
+            color: "var(--color-accent-text)",
             background:
               "color-mix(in srgb, var(--color-accent) 10%, var(--color-surface))",
             border:
@@ -71,7 +71,9 @@ export function TrackManager({
               type="button"
               className="flex h-8 w-full items-center justify-between gap-2 rounded-md px-2 text-left text-xs font-body"
               style={{
-                color: selected ? "var(--color-accent)" : "var(--color-text)",
+                color: selected
+                  ? "var(--color-accent-text)"
+                  : "var(--color-text)",
                 background: selected
                   ? "color-mix(in srgb, var(--color-accent) 11%, var(--color-surface))"
                   : "var(--color-surface)",
@@ -123,11 +125,10 @@ export function TrackManager({
             type="button"
             className="flex h-8 w-full items-center justify-center gap-1.5 rounded-md text-xs font-body font-semibold"
             style={{
-              color: "#b42318",
+              color: "var(--color-danger-text)",
               background:
-                "color-mix(in srgb, #f04438 8%, var(--color-surface))",
-              border:
-                "1px solid color-mix(in srgb, #f04438 24%, var(--color-border))",
+                "color-mix(in srgb, var(--color-danger-text) 8%, var(--color-surface))",
+              border: "1px solid var(--color-danger-text)",
             }}
             onClick={() => onDeleteTrack(selectedTrack.id)}
             disabled={song.tracks.length <= 1}

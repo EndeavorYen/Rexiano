@@ -9,7 +9,6 @@ import {
 } from "../../stores/useSongLibraryStore";
 import { useTranslation } from "../../i18n/useTranslation";
 import type { TranslationKey } from "../../i18n/types";
-import { getGradeColor } from "./songCardUtils";
 
 const difficulties: { value: DifficultyFilter; key: TranslationKey }[] = [
   { value: "all", key: "library.difficulty.all" },
@@ -116,7 +115,9 @@ export function SongLibraryFilters(): React.JSX.Element {
                     ? "var(--color-accent)"
                     : "transparent",
                 color:
-                  difficultyFilter === d.value ? "#fff" : "var(--color-text)",
+                  difficultyFilter === d.value
+                    ? "var(--color-on-accent)"
+                    : "var(--color-text)",
               }}
             >
               {t(d.key)}
@@ -130,19 +131,21 @@ export function SongLibraryFilters(): React.JSX.Element {
         <div className="flex min-w-0 flex-wrap items-center gap-1.5">
           {grades.map((g) => {
             const isActive = gradeFilter === g.value;
-            const color =
-              g.value === "all"
-                ? "var(--color-accent)"
-                : getGradeColor(g.value as number);
             return (
               <button
                 key={String(g.value)}
                 onClick={() => setGradeFilter(g.value)}
                 className="min-h-9 px-2.5 py-1 rounded-lg text-xs font-body font-medium transition-colors cursor-pointer"
                 style={{
-                  background: isActive ? color : "transparent",
-                  color: isActive ? "#fff" : "var(--color-text-muted)",
-                  border: `1px solid ${isActive ? color : "var(--color-border)"}`,
+                  background: isActive ? "var(--color-accent)" : "transparent",
+                  color: isActive
+                    ? "var(--color-on-accent)"
+                    : "var(--color-text-muted)",
+                  border: `1px solid ${
+                    isActive
+                      ? "var(--color-accent)"
+                      : "var(--color-control-border)"
+                  }`,
                 }}
               >
                 {t(g.key)}
@@ -194,7 +197,9 @@ export function SongLibraryFilters(): React.JSX.Element {
                     background: isActive
                       ? "var(--color-accent)"
                       : "transparent",
-                    color: isActive ? "#fff" : "var(--color-text-muted)",
+                    color: isActive
+                      ? "var(--color-on-accent)"
+                      : "var(--color-text-muted)",
                   }}
                 >
                   <Icon size={14} />

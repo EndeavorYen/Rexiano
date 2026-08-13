@@ -43,7 +43,7 @@ export function ScoreOverlay(): React.JSX.Element {
       {/* Encouragement text */}
       <span
         className="text-xs font-display font-semibold"
-        style={{ color: "var(--color-accent)" }}
+        style={{ color: "var(--color-accent-text)" }}
       >
         {encouragement}
       </span>

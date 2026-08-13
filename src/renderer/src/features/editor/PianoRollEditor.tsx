@@ -376,7 +376,7 @@ export function PianoRollEditor({
           type="button"
           className="flex h-8 w-8 items-center justify-center rounded-md"
           style={{
-            color: "var(--color-accent)",
+            color: "var(--color-accent-text)",
             border:
               "1px solid color-mix(in srgb, var(--color-accent) 26%, var(--color-border))",
             background:
@@ -409,7 +409,7 @@ export function PianoRollEditor({
         <div
           className="px-3 py-1.5 text-[11px] font-body"
           style={{
-            color: "var(--color-accent)",
+            color: "var(--color-accent-text)",
             background:
               "color-mix(in srgb, var(--color-accent) 9%, var(--color-surface))",
             borderBottom: "1px solid var(--color-border)",

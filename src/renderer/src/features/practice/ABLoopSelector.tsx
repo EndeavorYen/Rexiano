@@ -70,7 +70,7 @@ export function ABLoopSelector(): React.JSX.Element {
             background: hasA
               ? "var(--color-accent)"
               : "var(--color-surface-alt)",
-            color: hasA ? "#fff" : "var(--color-text-muted)",
+            color: hasA ? "var(--color-on-accent)" : "var(--color-text-muted)",
             border: !hasA
               ? "1px dashed var(--color-border)"
               : "1px solid transparent",
@@ -107,7 +107,7 @@ export function ABLoopSelector(): React.JSX.Element {
             background: hasB
               ? "var(--color-accent)"
               : "var(--color-surface-alt)",
-            color: hasB ? "#fff" : "var(--color-text-muted)",
+            color: hasB ? "var(--color-on-accent)" : "var(--color-text-muted)",
             border: !hasB
               ? "1px dashed var(--color-border)"
               : "1px solid transparent",
@@ -153,7 +153,7 @@ export function ABLoopSelector(): React.JSX.Element {
           <span
             className="inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-mono tabular-nums animate-page-enter"
             style={{
-              color: "var(--color-accent)",
+              color: "var(--color-accent-text)",
               background:
                 "color-mix(in srgb, var(--color-accent) 12%, var(--color-surface))",
               border:
