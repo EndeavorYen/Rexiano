@@ -228,7 +228,7 @@ export function DeviceSelector({
           onClick={disconnectBluetooth}
           className="flex min-h-9 items-center gap-1 px-2.5 py-1 rounded text-xs font-medium transition-colors cursor-pointer btn-primary-themed"
           style={{
-            color: "#fff",
+            color: "var(--color-on-accent)",
           }}
           title={t("midi.bleDeviceTitle", {
             name: bluetoothConnectedLabel,

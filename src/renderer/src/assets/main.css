@@ -27,6 +27,9 @@
   --color-surface-alt: #eaf1ea;
   --color-accent: #0f766e;
   --color-accent-hover: #0b5e58;
+  --color-on-accent: #ffffff;
+  --color-success-text: #166534;
+  --color-danger-text: #b91c1c;
   --color-text: #17211f;
   --color-text-muted: #5c6f68;
   --color-border: #c9d8d2;
@@ -709,7 +712,7 @@ input.seek-slider-input {
     var(--color-accent),
     color-mix(in srgb, var(--color-accent) 70%, var(--color-note3))
   );
-  color: #fff;
+  color: var(--color-on-accent);
   border: 1px solid transparent;
   position: relative;
   overflow: hidden;
