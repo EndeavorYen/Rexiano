@@ -1,9 +1,6 @@
 import { usePlaybackStore } from "@renderer/stores/usePlaybackStore";
 
-export type PlaybackDiscontinuityReason =
-  | "user-seek"
-  | "manual-reset"
-  | "loop";
+export type PlaybackDiscontinuityReason = "user-seek" | "manual-reset" | "loop";
 
 export interface PlaybackDiscontinuity {
   targetTime: number;

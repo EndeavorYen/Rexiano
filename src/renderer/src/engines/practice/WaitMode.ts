@@ -37,9 +37,7 @@ function hasSameMusicalOnset(
   if (left.ticks !== undefined && right.ticks !== undefined) {
     return left.ticks === right.ticks;
   }
-  return (
-    Math.abs(left.time - right.time) <= WAIT_CHORD_ONSET_EPSILON_SECONDS
-  );
+  return Math.abs(left.time - right.time) <= WAIT_CHORD_ONSET_EPSILON_SECONDS;
 }
 
 /**

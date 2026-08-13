@@ -95,8 +95,7 @@ export function initAutoSave(): () => void {
     if (!_activeSession || _activeSession.activeSegmentStartedAt === null) {
       return;
     }
-    _activeSession.accumulatedMs +=
-      now - _activeSession.activeSegmentStartedAt;
+    _activeSession.accumulatedMs += now - _activeSession.activeSegmentStartedAt;
     _activeSession.activeSegmentStartedAt = null;
   };
 
