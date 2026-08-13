@@ -1,10 +1,13 @@
 import { test as base, expect } from "@playwright/test";
 import { _electron as electron } from "playwright";
+import { execFile } from "child_process";
 import { copyFileSync, mkdirSync, mkdtempSync, rmSync } from "fs";
 import { tmpdir } from "os";
 import { basename, join, resolve } from "path";
+import { promisify } from "util";
 
 const sourceMidiPath = resolve("resources/midi/hot-cross-buns.mid");
+const execFileAsync = promisify(execFile);
 
 function createLaunchEnv(userDataPath: string): NodeJS.ProcessEnv {
   const env = {
@@ -42,13 +45,10 @@ base("routes cold-start and warm-instance file associations", async () => {
     );
     await expect(page.getByTestId("mode-selection-backdrop")).toBeVisible();
 
-    const secondary = await electron.launch({
-      executablePath: electronBinary,
+    await execFileAsync(electronBinary, [".", warmMidiPath], {
       cwd: process.cwd(),
-      args: [".", warmMidiPath],
       env: createLaunchEnv(userDataPath),
     });
-    await secondary.close().catch(() => undefined);
 
     await expect(page.getByTestId("playback-song-title")).toHaveText(
       basename(warmMidiPath),
