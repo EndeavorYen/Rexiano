@@ -8,7 +8,11 @@ import type {
 } from "@playwright/test";
 import type { SessionRecord } from "../src/shared/types";
 import { test, expect, waitForUiSettled } from "./fixtures/electronApp";
-import { gotoLibrary, loadFirstBuiltInSong } from "./helpers/appHarness";
+import {
+  gotoLibrary,
+  loadFirstBuiltInSong,
+  startBuiltInSongFromLibrary,
+} from "./helpers/appHarness";
 
 const MINIMUM_TEXT_CONTRAST = 4.5;
 
@@ -51,7 +55,7 @@ async function writeProgressFixture(
 
 async function applyTheme(
   page: Page,
-  themeId: "ocean" | "midnight",
+  themeId: "lavender" | "ocean" | "peach" | "midnight",
 ): Promise<void> {
   await page.evaluate((id) => {
     localStorage.setItem("rexiano-theme", id);
@@ -159,6 +163,36 @@ async function computedCssVariable(
     return color;
   }, variable);
 }
+
+test("all themes keep the current-default badge readable on its actual tint", async ({
+  appPage,
+}) => {
+  await appPage.setViewportSize({ width: 1440, height: 900 });
+
+  for (const themeId of ["lavender", "ocean", "peach", "midnight"] as const) {
+    await applyTheme(appPage, themeId);
+    await gotoLibrary(appPage);
+    await startBuiltInSongFromLibrary(appPage, "hot-cross-buns");
+
+    const badge = appPage.getByTestId("mode-select-current-default");
+    await expect(badge).toBeVisible();
+    const badgeContrast = await computedContrast(badge);
+    const accentTextColor = await computedCssVariable(
+      appPage,
+      "--color-accent-text",
+    );
+
+    expect(badgeContrast.foreground, themeId).toBe(accentTextColor);
+    expect(badgeContrast.ratios[0], themeId).toBeGreaterThanOrEqual(
+      MINIMUM_TEXT_CONTRAST,
+    );
+
+    await appPage.getByTestId("mode-select-back").click();
+    await expect(
+      appPage.getByTestId("library-device-drawer-trigger"),
+    ).toBeVisible();
+  }
+});
 
 test("Ocean and Midnight keep primary actions and status text readable", async ({
   electronApp,

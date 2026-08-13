@@ -39,7 +39,7 @@ export function ModeSelectionModal({
 
   return (
     <div
-      className="fixed inset-0 z-[200] flex items-start justify-center overflow-y-auto overscroll-contain p-4 modal-backdrop-cinematic"
+      className="mode-selection-backdrop fixed inset-0 z-[200] flex items-start justify-center overflow-y-auto overscroll-contain p-4 modal-backdrop-cinematic"
       onClick={(event) => {
         if (event.target === event.currentTarget) onDismiss();
       }}
@@ -47,7 +47,7 @@ export function ModeSelectionModal({
     >
       <div
         ref={dialogRef}
-        className="max-h-[calc(100vh-2rem)] w-full max-w-[680px] overflow-y-auto rounded-2xl shadow-2xl modal-card-cinematic p-4 sm:w-[92vw] sm:p-6"
+        className="mode-selection-dialog max-h-[calc(100vh-2rem)] w-full max-w-[680px] overflow-y-auto rounded-2xl shadow-2xl modal-card-cinematic p-4 sm:w-[92vw] sm:p-6"
         style={{
           background:
             "color-mix(in srgb, var(--color-surface) 90%, transparent)",
@@ -59,30 +59,30 @@ export function ModeSelectionModal({
         tabIndex={-1}
       >
         {/* Title */}
-        <div className="flex justify-center mb-1">
+        <div className="mode-selection-kicker flex justify-center mb-1">
           <span className="kicker-label">{t("app.subtitle")}</span>
         </div>
         <h2
-          className="text-xl font-display font-bold text-center mb-1"
+          className="mode-selection-title text-xl font-display font-bold text-center mb-1"
           style={{ color: "var(--color-text)" }}
         >
           {t("modeSelect.title")}
         </h2>
         <p
-          className="text-sm font-body text-center mb-6"
+          className="mode-selection-subtitle text-sm font-body text-center mb-6"
           style={{ color: "var(--color-text-muted)" }}
         >
           {t("modeSelect.subtitle")}
         </p>
 
         {/* Mode cards */}
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+        <div className="mode-selection-grid grid grid-cols-1 gap-3 sm:grid-cols-3">
           {options.map((opt, idx) => (
             <button
               key={opt.mode}
               ref={opt.isDefault ? defaultButtonRef : undefined}
               onClick={() => onSelect(opt.mode)}
-              className="card-hover animate-page-enter relative flex min-h-[120px] cursor-pointer flex-col items-center gap-2 rounded-xl p-3 transition-all sm:min-h-[170px] sm:gap-3 sm:p-4"
+              className="mode-selection-card card-hover animate-page-enter relative flex min-h-[120px] cursor-pointer flex-col items-center gap-2 rounded-xl p-3 transition-all sm:min-h-[170px] sm:gap-3 sm:p-4"
               style={{
                 background:
                   "color-mix(in srgb, var(--color-surface-alt) 80%, var(--color-surface))",
@@ -98,9 +98,9 @@ export function ModeSelectionModal({
             >
               {opt.isDefault && (
                 <span
-                  className="absolute right-2 top-2 rounded-full px-2 py-0.5 text-[9px] font-body font-bold uppercase tracking-wide"
+                  className="mode-selection-default-badge absolute right-2 top-2 rounded-full px-2 py-0.5 text-[9px] font-body font-bold uppercase tracking-wide"
                   style={{
-                    color: "var(--color-accent)",
+                    color: "var(--color-accent-text)",
                     background:
                       "color-mix(in srgb, var(--color-accent) 12%, var(--color-surface))",
                   }}
@@ -110,7 +110,7 @@ export function ModeSelectionModal({
                 </span>
               )}
               <div
-                className="w-11 h-11 rounded-full flex items-center justify-center"
+                className="mode-selection-card-icon w-11 h-11 rounded-full flex items-center justify-center"
                 style={{
                   color: "var(--color-accent)",
                   background:
@@ -122,13 +122,13 @@ export function ModeSelectionModal({
                 <ModeIcon mode={opt.mode} />
               </div>
               <span
-                className="text-sm font-display font-bold"
+                className="mode-selection-card-title text-sm font-display font-bold"
                 style={{ color: "var(--color-text)" }}
               >
                 {t(opt.titleKey)}
               </span>
               <span
-                className="text-[11px] font-body text-center leading-relaxed"
+                className="mode-selection-card-description text-[11px] font-body text-center leading-relaxed"
                 style={{ color: "var(--color-text-muted)" }}
               >
                 {t(opt.descKey)}
@@ -138,16 +138,16 @@ export function ModeSelectionModal({
         </div>
 
         <p
-          className="text-[11px] font-body text-center mt-4"
+          className="mode-selection-help text-[11px] font-body text-center mt-4"
           style={{ color: "var(--color-text-muted)" }}
         >
           {t("modeSelect.mustChoose")}
         </p>
-        <div className="mt-3 flex justify-center">
+        <div className="mode-selection-actions mt-3 flex justify-center">
           <button
             type="button"
             onClick={onDismiss}
-            className="btn-surface-themed flex min-h-10 items-center gap-2 rounded-xl px-4 py-2 text-sm font-body font-semibold cursor-pointer"
+            className="mode-selection-back btn-surface-themed flex min-h-10 items-center gap-2 rounded-xl px-4 py-2 text-sm font-body font-semibold cursor-pointer"
             data-testid="mode-select-back"
           >
             <ArrowLeft size={15} aria-hidden="true" />

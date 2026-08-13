@@ -9,6 +9,7 @@ test.describe("Per-song practice setup", () => {
   test("offers all modes, marks Watch as the current default, and starts it", async ({
     appPage,
   }) => {
+    await appPage.setViewportSize({ width: 1440, height: 900 });
     await appPage.evaluate(() => {
       localStorage.removeItem("rexiano-song-practice-setup");
     });
@@ -22,6 +23,10 @@ test.describe("Per-song practice setup", () => {
       "Current default",
     );
     await expect(appPage.getByTestId("mode-select-watch")).toBeFocused();
+    const desktopWatchCard = await appPage
+      .getByTestId("mode-select-watch")
+      .boundingBox();
+    expect(desktopWatchCard?.height).toBeGreaterThanOrEqual(160);
 
     await choosePracticeMode(appPage, "watch");
 

@@ -23,51 +23,6 @@ async function expectNoPageHorizontalOverflow(
   expect(metrics.bodyScrollWidth).toBeLessThanOrEqual(metrics.innerWidth + 1);
 }
 
-async function expectLocatorStartsInsideViewport(
-  appPage: Parameters<typeof waitForUiSettled>[0],
-  locator: Locator,
-): Promise<void> {
-  const [box, viewport] = await Promise.all([
-    locator.boundingBox(),
-    appPage.viewportSize(),
-  ]);
-  const debugMetrics = await locator.evaluate((element) => {
-    const style = window.getComputedStyle(element);
-    const parent = element.parentElement;
-    const parentStyle = parent ? window.getComputedStyle(parent) : null;
-    const parentRect = parent?.getBoundingClientRect();
-    return {
-      innerWidth: window.innerWidth,
-      innerHeight: window.innerHeight,
-      visualViewportWidth: window.visualViewport?.width ?? null,
-      visualViewportHeight: window.visualViewport?.height ?? null,
-      parentAlignItems: parentStyle?.alignItems ?? null,
-      parentScrollTop: parent?.scrollTop ?? null,
-      parentRect: parentRect
-        ? {
-            x: parentRect.x,
-            y: parentRect.y,
-            width: parentRect.width,
-            height: parentRect.height,
-          }
-        : null,
-      parentClassName: parent?.className ?? null,
-      height: style.height,
-      maxHeight: style.maxHeight,
-      overflowY: style.overflowY,
-    };
-  });
-
-  expect(box).not.toBeNull();
-  expect(viewport).not.toBeNull();
-  if (!box || !viewport) return;
-
-  const debug = JSON.stringify({ box, viewport, debugMetrics });
-  expect(box.x, debug).toBeGreaterThanOrEqual(-1);
-  expect(box.y, debug).toBeGreaterThanOrEqual(-1);
-  expect(box.x + box.width, debug).toBeLessThanOrEqual(viewport.width + 1);
-}
-
 async function expectLocatorFitsInsideViewport(
   appPage: Parameters<typeof waitForUiSettled>[0],
   locator: Locator,
@@ -897,11 +852,41 @@ test.describe("Playback UI polish guardrails", () => {
     const dialog = appPage.getByRole("dialog", {
       name: /How do you want to play\?|你想怎麼練習？/,
     });
+    const backdrop = appPage.getByTestId("mode-selection-backdrop");
+    const modeControls = [
+      appPage.getByTestId("mode-select-watch"),
+      appPage.getByTestId("mode-select-wait"),
+      appPage.getByTestId("mode-select-free"),
+      appPage.getByTestId("mode-select-back"),
+    ];
     await expect(dialog).toBeVisible();
-    await expectLocatorStartsInsideViewport(appPage, dialog);
+    await expectLocatorFitsInsideViewport(appPage, dialog);
 
-    await expect(appPage.getByTestId("mode-select-wait")).toBeInViewport();
-    await expect(appPage.getByTestId("mode-select-free")).toBeInViewport();
+    for (const control of modeControls) {
+      await expect(control).toBeInViewport();
+      await expectLocatorCenterReceivesPointer(control);
+    }
+
+    await expect(modeControls[0]).toBeFocused();
+    for (const control of modeControls.slice(1)) {
+      await appPage.keyboard.press("Tab");
+      await expect(control).toBeFocused();
+    }
+
+    const backgroundScrollBefore = await appPage.evaluate(() => ({
+      windowY: window.scrollY,
+      shellY:
+        document.querySelector<HTMLElement>(".app-shell")?.scrollTop ?? null,
+    }));
+    await backdrop.hover({ position: { x: 2, y: 2 } });
+    await appPage.mouse.wheel(0, 600);
+    const backgroundScrollAfter = await appPage.evaluate(() => ({
+      windowY: window.scrollY,
+      shellY:
+        document.querySelector<HTMLElement>(".app-shell")?.scrollTop ?? null,
+    }));
+
+    expect(backgroundScrollAfter).toEqual(backgroundScrollBefore);
   });
 
   test("settings dialog keeps header tabs and overflowing content reachable on short viewports", async ({

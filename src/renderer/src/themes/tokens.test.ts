@@ -283,6 +283,18 @@ describe("Theme tokens", () => {
     );
 
     test.each(ALL_THEME_IDS)(
+      "%s accent text remains readable on the current-default badge tint",
+      (id) => {
+        const { accent, accentText, surface } = themes[id].colors;
+        const badgeBackground = mixSrgb(accent, surface, 0.12);
+
+        expect(
+          contrastRatioRgb(rgbFromHex(accentText), badgeBackground),
+        ).toBeGreaterThanOrEqual(4.5);
+      },
+    );
+
+    test.each(ALL_THEME_IDS)(
       "%s primary gradient text remains readable at rest and on hover",
       (id) => {
         const { accent, note3, onAccent } = themes[id].colors;
