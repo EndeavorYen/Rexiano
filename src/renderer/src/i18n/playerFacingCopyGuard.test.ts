@@ -6,6 +6,9 @@ const PLAYER_FLOW_FILES = [
   "features/songLibrary/songCardUtils.ts",
   "features/songLibrary/lessonProgression.ts",
   "features/songLibrary/SongCard.tsx",
+  "features/songLibrary/SongLibrary.tsx",
+  "features/settings/SettingsPanel.tsx",
+  "features/settings/ThemePicker.tsx",
   "features/practice/PracticeModeSelector.tsx",
   "features/practice/SpeedSlider.tsx",
   "features/practice/ABLoopSelector.tsx",
@@ -43,6 +46,7 @@ const FORBIDDEN_PLAYER_COPY = [
   "Close editor",
   "Track topology changed.",
   "Accuracy trend chart",
+  "themes[id].label",
 ] as const;
 
 // These are product names, music notation, or user/content data rather than UI

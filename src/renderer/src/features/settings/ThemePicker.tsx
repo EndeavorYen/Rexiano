@@ -6,6 +6,7 @@ import {
   getThemePickerNavigationTarget,
   themePickerThemeIds,
 } from "./themePickerKeyboard";
+import { themeNameKeys } from "./themeNameKeys";
 
 const focusableSelector = [
   "a[href]",
@@ -184,7 +185,7 @@ export function ThemePicker(): React.JSX.Element {
               }}
               type="button"
               role="menuitemradio"
-              aria-label={themes[id].label}
+              aria-label={t(themeNameKeys[id])}
               aria-checked={id === currentId}
               tabIndex={id === activeId ? 0 : -1}
               onClick={() => {
@@ -199,7 +200,7 @@ export function ThemePicker(): React.JSX.Element {
                     ? "0 0 0 2px var(--color-bg), 0 0 0 4px var(--color-accent)"
                     : "none",
               }}
-              title={themes[id].label}
+              title={t(themeNameKeys[id])}
             >
               {id === currentId && (
                 <svg

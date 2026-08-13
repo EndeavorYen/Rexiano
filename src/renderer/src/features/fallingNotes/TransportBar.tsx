@@ -156,11 +156,12 @@ export function TransportBar({
           <button
             onClick={handlePlayPause}
             disabled={!song}
-            className="flex items-center justify-center rounded-full text-white disabled:opacity-40 cursor-pointer"
+            className="flex items-center justify-center rounded-full disabled:opacity-40 cursor-pointer"
             style={{
               width: primaryButtonSize,
               height: primaryButtonSize,
               background: "var(--color-accent)",
+              color: "var(--color-on-accent)",
               boxShadow: playPulse
                 ? "0 0 0 6px color-mix(in srgb, var(--color-accent) 25%, transparent)"
                 : "0 2px 8px color-mix(in srgb, var(--color-accent) 30%, transparent)",

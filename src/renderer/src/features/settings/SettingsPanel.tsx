@@ -21,6 +21,7 @@ import { useThemeStore } from "@renderer/stores/useThemeStore";
 import { useSettingsStore } from "@renderer/stores/useSettingsStore";
 import type { Language } from "@renderer/stores/useSettingsStore";
 import { themes, type ThemeId } from "@renderer/themes/tokens";
+import { themeNameKeys } from "./themeNameKeys";
 import { getAvailableLanguages } from "@renderer/i18n";
 import { useTranslation } from "@renderer/i18n/useTranslation";
 import { useDialogFocus } from "@renderer/hooks/useDialogFocus";
@@ -470,8 +471,8 @@ export function SettingsPanel({
   }, [availableUpdate, t]);
 
   const handleOpenRelease = useCallback(() => {
-    if (updateReleaseUrl) void window.api.openUpdateRelease(updateReleaseUrl);
-  }, [updateReleaseUrl]);
+    void window.api.openUpdateRelease();
+  }, []);
 
   const handleOpenDownloaded = useCallback(() => {
     if (downloadedPath) void window.api.openDownloadedUpdate();
@@ -552,7 +553,7 @@ export function SettingsPanel({
                       : "color-mix(in srgb, var(--color-accent) 10%, var(--color-surface))",
                     color: isBasicMode
                       ? "var(--color-text-muted)"
-                      : "var(--color-accent)",
+                      : "var(--color-accent-text)",
                     border: isBasicMode
                       ? "1px solid var(--color-border)"
                       : "1px solid color-mix(in srgb, var(--color-accent) 30%, transparent)",
@@ -595,8 +596,8 @@ export function SettingsPanel({
                     style={{
                       color:
                         resolvedActiveTab === id
-                          ? "var(--color-accent)"
-                          : "var(--color-text-muted)",
+                          ? "var(--color-accent-text)"
+                          : "var(--color-text)",
                       background:
                         resolvedActiveTab === id
                           ? "color-mix(in srgb, var(--color-accent) 9%, var(--color-surface))"
@@ -697,7 +698,7 @@ export function SettingsPanel({
                         key={id}
                         onClick={() => setTheme(id)}
                         className="flex flex-col items-center gap-2 cursor-pointer group"
-                        title={themes[id].label}
+                        title={t(themeNameKeys[id])}
                         data-testid={`theme-dot-${id}`}
                       >
                         <div
@@ -737,7 +738,7 @@ export function SettingsPanel({
                                 : "var(--color-text-muted)",
                           }}
                         >
-                          {themes[id].label}
+                          {t(themeNameKeys[id])}
                         </span>
                       </button>
                     ))}
@@ -1054,7 +1055,7 @@ export function SettingsPanel({
                           style={{
                             color:
                               language === lang.code
-                                ? "var(--color-accent)"
+                                ? "var(--color-accent-text)"
                                 : "var(--color-text)",
                           }}
                         >

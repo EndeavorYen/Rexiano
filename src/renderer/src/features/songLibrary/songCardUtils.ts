@@ -42,17 +42,17 @@ export const gradeDescriptionKeys: Record<number, TranslationKey> = {
  * Green family for L0-L2, amber for L3-L4, orange for L5-L6, red for L7-L8.
  */
 export function getGradeColor(grade: number): string {
-  if (grade <= 2) return "#22c55e"; // green
-  if (grade <= 4) return "#f59e0b"; // amber
-  if (grade <= 6) return "#f97316"; // orange
-  return "#ef4444"; // red
+  if (grade <= 2) return "var(--color-success-text)";
+  if (grade <= 4) return "var(--color-accent-text)";
+  if (grade <= 6) return "var(--color-accent-text)";
+  return "var(--color-danger-text)";
 }
 
 /** Determine the color for a best-score badge based on accuracy */
 export function getBestScoreColor(accuracy: number): string {
-  if (accuracy >= 90) return "#22c55e"; // green
-  if (accuracy >= 70) return "var(--color-accent)";
-  return "var(--color-text-secondary)";
+  if (accuracy >= 90) return "var(--color-success-text)";
+  if (accuracy >= 70) return "var(--color-accent-text)";
+  return "var(--color-text-muted)";
 }
 
 // ─── Category grouping ──────────────────────────────────────────────

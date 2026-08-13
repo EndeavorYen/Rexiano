@@ -319,6 +319,10 @@ export interface TranslationMap {
   "settings.language": string;
   "settings.showFingering": string;
   "settings.theme": string;
+  "settings.themeName.lavender": string;
+  "settings.themeName.ocean": string;
+  "settings.themeName.peach": string;
+  "settings.themeName.midnight": string;
   "settings.changeTheme": string;
   "settings.tab.theme": string;
   "settings.tab.display": string;

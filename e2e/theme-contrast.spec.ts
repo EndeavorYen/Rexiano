@@ -9,8 +9,11 @@ import type {
 import type { SessionRecord } from "../src/shared/types";
 import { test, expect, waitForUiSettled } from "./fixtures/electronApp";
 import {
+  choosePracticeMode,
+  closeTopDrawer,
   gotoLibrary,
   loadFirstBuiltInSong,
+  openPlaybackDrawer,
   startBuiltInSongFromLibrary,
 } from "./helpers/appHarness";
 
@@ -494,11 +497,38 @@ test("settings and practice controls honor authored typography utilities", async
   appPage,
 }) => {
   for (const viewport of [
-    { width: 960, height: 600 },
     { width: 1280, height: 800 },
+    { width: 960, height: 600 },
   ]) {
     await appPage.setViewportSize(viewport);
-    await appPage.getByRole("button", { name: "Settings" }).click();
+    await waitForUiSettled(appPage);
+    await gotoLibrary(appPage);
+    await startBuiltInSongFromLibrary(appPage, "hot-cross-buns");
+
+    const fullSpeed = appPage.getByRole("button", {
+      name: "Set speed to 100%",
+    });
+    await expect(fullSpeed).toBeVisible();
+    const speedStyle = await fullSpeed.evaluate((element) => {
+      const style = getComputedStyle(element);
+      return {
+        fontSize: style.fontSize,
+        fontWeight: style.fontWeight,
+        fontFamily: style.fontFamily,
+      };
+    });
+    expect(speedStyle.fontSize, `${viewport.width} practice speed`).toBe(
+      "11px",
+    );
+    expect(
+      Number(speedStyle.fontWeight),
+      `${viewport.width} practice weight`,
+    ).toBeGreaterThanOrEqual(600);
+    expect(speedStyle.fontFamily.toLowerCase()).toMatch(/dm sans/);
+
+    await choosePracticeMode(appPage, "watch");
+    await openPlaybackDrawer(appPage);
+    await appPage.getByTestId("settings-trigger").click();
     await appPage.getByTestId("settings-mode-toggle").click();
 
     const quickButton = appPage
@@ -524,31 +554,8 @@ test("settings and practice controls honor authored typography utilities", async
     expect(quickStyle.fontFamily.toLowerCase()).toMatch(/dm sans/);
 
     await appPage.getByTestId("settings-close").click();
-    await gotoLibrary(appPage);
-    await startBuiltInSongFromLibrary(appPage, "hot-cross-buns");
-
-    const fullSpeed = appPage.getByRole("button", {
-      name: "Set speed to 100%",
-    });
-    await expect(fullSpeed).toBeVisible();
-    const speedStyle = await fullSpeed.evaluate((element) => {
-      const style = getComputedStyle(element);
-      return {
-        fontSize: style.fontSize,
-        fontWeight: style.fontWeight,
-        fontFamily: style.fontFamily,
-      };
-    });
-    expect(speedStyle.fontSize, `${viewport.width} practice speed`).toBe(
-      "11px",
-    );
-    expect(
-      Number(speedStyle.fontWeight),
-      `${viewport.width} practice weight`,
-    ).toBeGreaterThanOrEqual(600);
-    expect(speedStyle.fontFamily.toLowerCase()).toMatch(/dm sans/);
-
-    await appPage.getByTestId("mode-select-back").click();
+    await closeTopDrawer(appPage);
+    await appPage.getByRole("button", { name: "Library" }).click();
     await expect(
       appPage.getByTestId("library-device-drawer-trigger"),
     ).toBeVisible();

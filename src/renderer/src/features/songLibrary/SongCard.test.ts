@@ -43,28 +43,28 @@ describe("song-card translation keys", () => {
 
 describe("getBestScoreColor", () => {
   test("returns green for accuracy >= 90", () => {
-    expect(getBestScoreColor(90)).toBe("#22c55e");
-    expect(getBestScoreColor(95)).toBe("#22c55e");
-    expect(getBestScoreColor(100)).toBe("#22c55e");
+    expect(getBestScoreColor(90)).toBe("var(--color-success-text)");
+    expect(getBestScoreColor(95)).toBe("var(--color-success-text)");
+    expect(getBestScoreColor(100)).toBe("var(--color-success-text)");
   });
 
   test("returns accent color for accuracy >= 70 and < 90", () => {
-    expect(getBestScoreColor(70)).toBe("var(--color-accent)");
-    expect(getBestScoreColor(75)).toBe("var(--color-accent)");
-    expect(getBestScoreColor(89)).toBe("var(--color-accent)");
+    expect(getBestScoreColor(70)).toBe("var(--color-accent-text)");
+    expect(getBestScoreColor(75)).toBe("var(--color-accent-text)");
+    expect(getBestScoreColor(89)).toBe("var(--color-accent-text)");
   });
 
   test("returns secondary text color for accuracy < 70", () => {
-    expect(getBestScoreColor(0)).toBe("var(--color-text-secondary)");
-    expect(getBestScoreColor(50)).toBe("var(--color-text-secondary)");
-    expect(getBestScoreColor(69)).toBe("var(--color-text-secondary)");
+    expect(getBestScoreColor(0)).toBe("var(--color-text-muted)");
+    expect(getBestScoreColor(50)).toBe("var(--color-text-muted)");
+    expect(getBestScoreColor(69)).toBe("var(--color-text-muted)");
   });
 
   test("boundary: 89.5 rounds visually but function uses raw value", () => {
     // 89.5 < 90, so it should be accent
-    expect(getBestScoreColor(89.5)).toBe("var(--color-accent)");
+    expect(getBestScoreColor(89.5)).toBe("var(--color-accent-text)");
     // 90.0 exactly → green
-    expect(getBestScoreColor(90.0)).toBe("#22c55e");
+    expect(getBestScoreColor(90.0)).toBe("var(--color-success-text)");
   });
 });
 
@@ -134,7 +134,9 @@ describe("SongCard best score via useProgressStore", () => {
 
     const best = useProgressStore.getState().getBestScore("song-1");
     expect(best).not.toBeNull();
-    expect(getBestScoreColor(best!.score.accuracy)).toBe("var(--color-accent)");
+    expect(getBestScoreColor(best!.score.accuracy)).toBe(
+      "var(--color-accent-text)",
+    );
   });
 });
 

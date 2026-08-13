@@ -1111,10 +1111,13 @@ export function SongLibrary({
           >
             <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
               <div className="flex items-center gap-2">
-                <Target size={14} style={{ color: "var(--color-note2)" }} />
+                <Target
+                  size={14}
+                  style={{ color: "var(--color-accent-text)" }}
+                />
                 <span
                   className="text-xs font-body font-semibold uppercase tracking-wide"
-                  style={{ color: "var(--color-note2)" }}
+                  style={{ color: "var(--color-accent-text)" }}
                 >
                   {t("library.lessonPath.title")}
                 </span>
@@ -1236,8 +1239,8 @@ export function SongLibrary({
                           style={{
                             width: `${progressPercent}%`,
                             background: group.completed
-                              ? "var(--color-success, #22c55e)"
-                              : "var(--color-note2)",
+                              ? "var(--color-success-text)"
+                              : "var(--color-accent)",
                           }}
                         />
                       </div>
