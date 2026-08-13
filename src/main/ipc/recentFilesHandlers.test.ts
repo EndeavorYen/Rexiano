@@ -20,10 +20,12 @@ vi.mock("fs/promises", () => ({
     if (mockFileContents[n] !== undefined) {
       return mockFileContents[n];
     }
-    throw new Error("ENOENT");
+    throw Object.assign(new Error("ENOENT"), { code: "ENOENT" });
   }),
   writeFile: vi.fn(async () => {}),
   mkdir: vi.fn(async () => {}),
+  rename: vi.fn(async () => {}),
+  unlink: vi.fn(async () => {}),
 }));
 
 vi.mock("fs", () => ({
