@@ -169,7 +169,7 @@ export function OnboardingGuide(): React.JSX.Element {
             className="px-5 py-2 text-sm font-display font-bold rounded-xl cursor-pointer transition-transform hover:scale-105 active:scale-95"
             style={{
               background: "var(--color-accent)",
-              color: "#fff",
+              color: "var(--color-on-accent)",
             }}
             data-testid="onboarding-next"
           >

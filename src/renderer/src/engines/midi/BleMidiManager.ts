@@ -22,6 +22,13 @@ export interface BleMidiCallbacks {
   onNoteOn?: (note: number, velocity: number) => void;
   onNoteOff?: (note: number, velocity: number) => void;
   onCC?: (controller: number, value: number) => void;
+  onStatusChange?: (
+    status: BleMidiStatus,
+    deviceName: string | null,
+    error: string | null,
+  ) => void;
+  /** Fired only when an established connection is lost unexpectedly. */
+  onDisconnect?: () => void;
 }
 
 export type BleMidiStatus =
@@ -63,6 +70,14 @@ export class BleMidiManager {
     this._callbacks = callbacks;
   }
 
+  private _publishStatus(): void {
+    this._callbacks.onStatusChange?.(
+      this._status,
+      this.deviceName,
+      this._error,
+    );
+  }
+
   /**
    * Scan for and connect to a BLE MIDI device.
    * This triggers the browser/Electron Bluetooth device picker.
@@ -71,11 +86,13 @@ export class BleMidiManager {
     if (!BleMidiManager.isSupported) {
       this._status = "error";
       this._error = "Bluetooth not supported";
+      this._publishStatus();
       return;
     }
 
     this._status = "scanning";
     this._error = null;
+    this._publishStatus();
 
     let device: BluetoothDevice;
     try {
@@ -103,11 +120,13 @@ export class BleMidiManager {
         this._status = "error";
         this._error = msg;
       }
+      this._publishStatus();
       return;
     }
 
     this._device = device;
     this._status = "connecting";
+    this._publishStatus();
 
     try {
       // Listen for disconnection
@@ -129,12 +148,14 @@ export class BleMidiManager {
 
       this._status = "connected";
       this._error = null;
+      this._publishStatus();
     } catch (err) {
       this._cleanupConnection();
       const msg = getConnectionErrorMessage(err);
       console.warn(`[BLE MIDI] Error: ${msg}`);
       this._status = "error";
       this._error = msg;
+      this._publishStatus();
     }
   }
 
@@ -143,6 +164,7 @@ export class BleMidiManager {
     this._cleanupConnection();
     this._status = "idle";
     this._error = null;
+    this._publishStatus();
   }
 
   private _cleanupConnection(): void {
@@ -171,6 +193,8 @@ export class BleMidiManager {
     this._cleanupConnection();
     this._status = "idle";
     this._error = null;
+    this._publishStatus();
+    this._callbacks.onDisconnect?.();
   };
 
   private _onData = (event: Event): void => {

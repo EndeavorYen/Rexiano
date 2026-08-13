@@ -36,6 +36,11 @@ export interface BluetoothSelectionCommandEvent {
   senderFrame: BluetoothSelectionFrame | null;
 }
 
+export interface BluetoothPairingFrame {
+  url: string;
+  top: BluetoothPairingFrame | null;
+}
+
 interface WindowAdapter {
   webContents: BluetoothSelectionWebContents;
   controller: BluetoothDeviceSelectionController;
@@ -158,6 +163,27 @@ export class BluetoothDeviceSelectionRegistry {
     if (!isCancelCommand(command)) return false;
     const adapter = this.trustedAdapter(event);
     return adapter?.controller.cancel(command.requestId) ?? false;
+  }
+
+  allowsPairing(
+    frame: BluetoothPairingFrame | null,
+    deviceId: string,
+  ): boolean {
+    if (!frame || frame.top !== frame || !isTrustedRendererUrl(frame.url)) {
+      return false;
+    }
+    for (const adapter of this.adapters.values()) {
+      if (
+        adapter.webContents.mainFrame === frame &&
+        !adapter.webContents.isDestroyed() &&
+        adapter.controller.currentRequest?.devices.some(
+          (device) => device.deviceId === deviceId,
+        )
+      ) {
+        return true;
+      }
+    }
+    return false;
   }
 
   disposeWindow(webContentsId: number): void {

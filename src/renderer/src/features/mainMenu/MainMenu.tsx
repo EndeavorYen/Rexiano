@@ -150,6 +150,7 @@ export function MainMenu({
                 <button
                   onClick={onOpenSettings}
                   className="btn-surface-themed flex items-center gap-2.5 rounded-xl px-5 py-3 text-sm font-body font-medium cursor-pointer"
+                  data-testid="main-menu-settings"
                 >
                   <SlidersHorizontal size={16} />
                   {t("app.openSettings")}

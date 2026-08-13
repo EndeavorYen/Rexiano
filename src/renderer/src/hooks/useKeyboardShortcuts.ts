@@ -9,6 +9,10 @@ import { usePlaybackStore } from "@renderer/stores/usePlaybackStore";
 import { usePracticeStore } from "@renderer/stores/usePracticeStore";
 import { useSongStore } from "@renderer/stores/useSongStore";
 import type { PracticeMode } from "@shared/types";
+import {
+  resetPlayback,
+  seekPlayback,
+} from "@renderer/engines/transport/playbackDiscontinuity";
 
 /** Seek offset in seconds for arrow-key shortcuts */
 const SEEK_STEP = 5;
@@ -140,7 +144,7 @@ export function createKeyboardHandler(
       case "KeyR": {
         if (e.ctrlKey || e.metaKey) return; // don't intercept Ctrl+R (reload)
         if (!hasSong) return;
-        usePlaybackStore.getState().setCurrentTime(0);
+        resetPlayback();
         break;
       }
 
@@ -150,15 +154,11 @@ export function createKeyboardHandler(
         if (e.shiftKey) {
           // Shift+← : large seek backward
           const ct = usePlaybackStore.getState().currentTime;
-          usePlaybackStore
-            .getState()
-            .setCurrentTime(Math.max(0, ct - SEEK_STEP_LARGE));
+          seekPlayback(Math.max(0, ct - SEEK_STEP_LARGE));
         } else if (!e.ctrlKey && !e.metaKey && !e.altKey) {
           // ← : seek backward
           const ct = usePlaybackStore.getState().currentTime;
-          usePlaybackStore
-            .getState()
-            .setCurrentTime(Math.max(0, ct - SEEK_STEP));
+          seekPlayback(Math.max(0, ct - SEEK_STEP));
         }
         break;
       }
@@ -169,14 +169,10 @@ export function createKeyboardHandler(
         const duration = useSongStore.getState().song?.duration ?? 0;
         if (e.shiftKey) {
           const ct = usePlaybackStore.getState().currentTime;
-          usePlaybackStore
-            .getState()
-            .setCurrentTime(Math.min(duration, ct + SEEK_STEP_LARGE));
+          seekPlayback(Math.min(duration, ct + SEEK_STEP_LARGE));
         } else if (!e.ctrlKey && !e.metaKey && !e.altKey) {
           const ct = usePlaybackStore.getState().currentTime;
-          usePlaybackStore
-            .getState()
-            .setCurrentTime(Math.min(duration, ct + SEEK_STEP));
+          seekPlayback(Math.min(duration, ct + SEEK_STEP));
         }
         break;
       }

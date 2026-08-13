@@ -142,7 +142,7 @@ export function DeviceSelector({
                 value={selectedInputId ?? ""}
                 onChange={handleInputChange}
                 className="select-themed rounded px-2 py-1 text-xs outline-none cursor-pointer"
-                aria-label="MIDI input device"
+                aria-label={t("midi.inputDevice")}
               >
                 <option value="">{t("midi.noneOption")}</option>
                 {connectedInputs.map((d) => (
@@ -171,7 +171,7 @@ export function DeviceSelector({
                 value={selectedOutputId ?? ""}
                 onChange={handleOutputChange}
                 className="select-themed rounded px-2 py-1 text-xs outline-none cursor-pointer"
-                aria-label="MIDI output device"
+                aria-label={t("midi.outputDevice")}
               >
                 <option value="">{t("midi.noneOption")}</option>
                 {connectedOutputs.map((d) => (
@@ -191,8 +191,13 @@ export function DeviceSelector({
               className="btn-surface-themed px-2.5 py-1 rounded text-xs font-medium transition-colors cursor-pointer"
               style={{
                 background:
-                  testState === "ok" ? "#22c55e" : "var(--color-surface)",
-                color: testState === "ok" ? "#fff" : "var(--color-text)",
+                  testState === "ok"
+                    ? "color-mix(in srgb, var(--color-success-text) 12%, var(--color-surface))"
+                    : "var(--color-surface)",
+                color:
+                  testState === "ok"
+                    ? "var(--color-success-text)"
+                    : "var(--color-text)",
                 opacity: testState === "playing" ? 0.7 : 1,
               }}
               title={t("midi.testTitle")}
@@ -265,10 +270,10 @@ export function DeviceSelector({
         <div
           className="flex items-center gap-2 rounded-lg px-2 py-1.5 max-w-[420px]"
           style={{
-            color: "#f87171",
-            background: "color-mix(in srgb, #ef4444 8%, var(--color-surface))",
-            border:
-              "1px solid color-mix(in srgb, #ef4444 30%, var(--color-border))",
+            color: "var(--color-danger-text)",
+            background:
+              "color-mix(in srgb, var(--color-danger-text) 8%, var(--color-surface))",
+            border: "1px solid var(--color-danger-text)",
           }}
           data-testid="midi-error-guidance"
         >

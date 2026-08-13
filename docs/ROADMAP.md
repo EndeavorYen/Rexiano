@@ -255,6 +255,9 @@
   - [x] `features/settings/SettingsPanel.tsx` — modal 設定面板（主題 + 顯示 + 音訊 + 練習預設 + 快捷鍵）
   - [x] 欄位：showNoteLabels, showFallingNoteLabels, volume, muted, defaultSpeed, defaultMode, metronomeEnabled, countInBeats
   - [x] 鍵盤快捷鍵參考表（基礎版）
+- [x] 使用者資料備份、匯入與分範圍重設
+  - [x] `progress.json` / `recents.json` 共用每路徑序列化與同目錄原子替換
+  - [x] 檔案與 localStorage 跨程序交易具備 rollback journal 與重啟復原
 
 ### Sprint 4 — 教學工具（可與 Sprint 3 平行）
 
@@ -455,7 +458,7 @@
   - [x] 簽章/公證 secrets、local/fork unsigned 邊界與 evidence checklist 文件（`docs/release-signing.md`）
   - [ ] 使用 production secrets 完成真實三平台簽章發行與安裝 smoke 證據（#187）
 - [x] 檔案關聯
-  - [x] `.mid` 檔案雙擊以 Rexiano 開啟（electron-builder.yml fileAssociations）
+  - [x] `.mid` 檔案雙擊以 Rexiano 開啟（electron-builder.yml fileAssociations + 冷啟動／已開啟實例路由，#192）
   - [x] 各平台的 MIME type 註冊（Linux mimeTypes: audio/midi, audio/x-midi）
 - [x] 安裝體驗優化
   - [x] Windows: 桌面捷徑、開始選單（nsis createDesktopShortcut + createStartMenuShortcut）
@@ -477,6 +480,8 @@
 - [x] 無障礙：`@media (prefers-reduced-motion: reduce)` 停用所有動畫
 - [x] 無障礙：ARIA labels, 螢幕閱讀器
 - [x] E2E 測試（Playwright）
+- [x] MIDI 路徑存取採 canonical path 與檔案身分授權，監看資料夾拒絕 symlink escape（#193）
+- [x] MIDI 匯入於 Main／拖放路徑統一限制 8 MiB，超限提供本地化可復原提示（#194）
 
 > 以下項目已移入 Phase 6.5 的具體 Sprint 中：
 >

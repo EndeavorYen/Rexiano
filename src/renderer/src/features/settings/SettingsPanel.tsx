@@ -21,6 +21,7 @@ import { useThemeStore } from "@renderer/stores/useThemeStore";
 import { useSettingsStore } from "@renderer/stores/useSettingsStore";
 import type { Language } from "@renderer/stores/useSettingsStore";
 import { themes, type ThemeId } from "@renderer/themes/tokens";
+import { themeNameKeys } from "./themeNameKeys";
 import { getAvailableLanguages } from "@renderer/i18n";
 import { useTranslation } from "@renderer/i18n/useTranslation";
 import { useDialogFocus } from "@renderer/hooks/useDialogFocus";
@@ -456,7 +457,9 @@ export function SettingsPanel({
       },
     });
     try {
-      setUpdateStatus(await window.api.downloadUpdate(availableUpdate));
+      setUpdateStatus(
+        await window.api.downloadUpdate(availableUpdate.artifactId),
+      );
     } catch (error) {
       setUpdateStatus({
         status: "failed",
@@ -468,11 +471,11 @@ export function SettingsPanel({
   }, [availableUpdate, t]);
 
   const handleOpenRelease = useCallback(() => {
-    if (updateReleaseUrl) void window.api.openUpdateRelease(updateReleaseUrl);
-  }, [updateReleaseUrl]);
+    void window.api.openUpdateRelease();
+  }, []);
 
   const handleOpenDownloaded = useCallback(() => {
-    if (downloadedPath) void window.api.openDownloadedUpdate(downloadedPath);
+    if (downloadedPath) void window.api.openDownloadedUpdate();
   }, [downloadedPath]);
 
   return (
@@ -550,7 +553,7 @@ export function SettingsPanel({
                       : "color-mix(in srgb, var(--color-accent) 10%, var(--color-surface))",
                     color: isBasicMode
                       ? "var(--color-text-muted)"
-                      : "var(--color-accent)",
+                      : "var(--color-accent-text)",
                     border: isBasicMode
                       ? "1px solid var(--color-border)"
                       : "1px solid color-mix(in srgb, var(--color-accent) 30%, transparent)",
@@ -593,8 +596,8 @@ export function SettingsPanel({
                     style={{
                       color:
                         resolvedActiveTab === id
-                          ? "var(--color-accent)"
-                          : "var(--color-text-muted)",
+                          ? "var(--color-accent-text)"
+                          : "var(--color-text)",
                       background:
                         resolvedActiveTab === id
                           ? "color-mix(in srgb, var(--color-accent) 9%, var(--color-surface))"
@@ -645,7 +648,9 @@ export function SettingsPanel({
                     onClick={() => setMuted(!muted)}
                     className="px-2.5 py-1 rounded-md text-[11px] font-body font-medium cursor-pointer"
                     style={{
-                      color: muted ? "#fff" : "var(--color-text-muted)",
+                      color: muted
+                        ? "var(--color-on-accent)"
+                        : "var(--color-text-muted)",
                       background: muted
                         ? "var(--color-accent)"
                         : "var(--color-surface-alt)",
@@ -658,7 +663,7 @@ export function SettingsPanel({
                     className="px-2.5 py-1 rounded-md text-[11px] font-body font-medium cursor-pointer"
                     style={{
                       color: metronomeEnabled
-                        ? "#fff"
+                        ? "var(--color-on-accent)"
                         : "var(--color-text-muted)",
                       background: metronomeEnabled
                         ? "var(--color-accent)"
@@ -672,7 +677,7 @@ export function SettingsPanel({
                     className="px-2.5 py-1 rounded-md text-[11px] font-body font-medium cursor-pointer"
                     style={{
                       color: showNoteLabels
-                        ? "#fff"
+                        ? "var(--color-on-accent)"
                         : "var(--color-text-muted)",
                       background: showNoteLabels
                         ? "var(--color-accent)"
@@ -693,7 +698,7 @@ export function SettingsPanel({
                         key={id}
                         onClick={() => setTheme(id)}
                         className="flex flex-col items-center gap-2 cursor-pointer group"
-                        title={themes[id].label}
+                        title={t(themeNameKeys[id])}
                         data-testid={`theme-dot-${id}`}
                       >
                         <div
@@ -716,7 +721,7 @@ export function SettingsPanel({
                             >
                               <path
                                 d="M2.5 6L5 8.5L9.5 3.5"
-                                stroke="white"
+                                stroke="var(--color-on-accent)"
                                 strokeWidth="1.5"
                                 strokeLinecap="round"
                                 strokeLinejoin="round"
@@ -729,11 +734,11 @@ export function SettingsPanel({
                           style={{
                             color:
                               id === currentThemeId
-                                ? "var(--color-accent)"
+                                ? "var(--color-accent-text)"
                                 : "var(--color-text-muted)",
                           }}
                         >
-                          {themes[id].label}
+                          {t(themeNameKeys[id])}
                         </span>
                       </button>
                     ))}
@@ -864,7 +869,7 @@ export function SettingsPanel({
                                   : "var(--color-surface-alt)",
                               color:
                                 defaultMode === m.value
-                                  ? "#fff"
+                                  ? "var(--color-on-accent)"
                                   : "var(--color-text-muted)",
                             }}
                             data-testid={`mode-btn-${m.value}`}
@@ -896,7 +901,7 @@ export function SettingsPanel({
                                   : "var(--color-surface-alt)",
                               color:
                                 defaultSpeed === s
-                                  ? "#fff"
+                                  ? "var(--color-on-accent)"
                                   : "var(--color-text-muted)",
                             }}
                           >
@@ -927,6 +932,7 @@ export function SettingsPanel({
                         {[0, 2, 4, 8].map((n) => (
                           <button
                             key={n}
+                            data-testid={`count-in-beats-${n}`}
                             onClick={() => setCountInBeats(n)}
                             className="px-2.5 py-1 text-[11px] font-mono rounded-lg cursor-pointer transition-colors"
                             style={{
@@ -936,7 +942,7 @@ export function SettingsPanel({
                                   : "var(--color-surface-alt)",
                               color:
                                 countInBeats === n
-                                  ? "#fff"
+                                  ? "var(--color-on-accent)"
                                   : "var(--color-text-muted)",
                             }}
                           >
@@ -1049,7 +1055,7 @@ export function SettingsPanel({
                           style={{
                             color:
                               language === lang.code
-                                ? "var(--color-accent)"
+                                ? "var(--color-accent-text)"
                                 : "var(--color-text)",
                           }}
                         >
@@ -1168,16 +1174,16 @@ export function SettingsPanel({
                       style={{
                         color:
                           backupStatus.kind === "success"
-                            ? "var(--color-accent)"
-                            : "#b42318",
+                            ? "var(--color-success-text)"
+                            : "var(--color-danger-text)",
                         background:
                           backupStatus.kind === "success"
-                            ? "color-mix(in srgb, var(--color-accent) 9%, var(--color-surface))"
-                            : "color-mix(in srgb, #f04438 10%, var(--color-surface))",
+                            ? "color-mix(in srgb, var(--color-success-text) 9%, var(--color-surface))"
+                            : "color-mix(in srgb, var(--color-danger-text) 10%, var(--color-surface))",
                         border:
                           backupStatus.kind === "success"
-                            ? "1px solid color-mix(in srgb, var(--color-accent) 28%, transparent)"
-                            : "1px solid color-mix(in srgb, #f04438 28%, transparent)",
+                            ? "1px solid var(--color-success-text)"
+                            : "1px solid var(--color-danger-text)",
                       }}
                       role="status"
                       data-testid="user-data-backup-status"
@@ -1203,7 +1209,7 @@ export function SettingsPanel({
                         style={{
                           background:
                             "color-mix(in srgb, var(--color-accent) 10%, var(--color-surface))",
-                          color: "var(--color-accent)",
+                          color: "var(--color-accent-text)",
                         }}
                       >
                         {appInfo ? `v${appInfo.version}` : "…"}
@@ -1236,7 +1242,7 @@ export function SettingsPanel({
                           {childFocusMode && (
                             <p
                               className="mt-1 text-[11px] font-body leading-relaxed"
-                              style={{ color: "var(--color-accent)" }}
+                              style={{ color: "var(--color-accent-text)" }}
                             >
                               {t("about.updateFocusModeNote")}
                             </p>
@@ -1246,7 +1252,7 @@ export function SettingsPanel({
                           type="button"
                           className="inline-flex h-8 shrink-0 items-center gap-1.5 rounded-lg px-2.5 text-[11px] font-body font-semibold disabled:cursor-not-allowed disabled:opacity-60"
                           style={{
-                            color: "var(--color-accent)",
+                            color: "var(--color-accent-text)",
                             background:
                               "color-mix(in srgb, var(--color-accent) 10%, var(--color-surface))",
                             border:
@@ -1305,7 +1311,7 @@ export function SettingsPanel({
                             type="button"
                             className="inline-flex h-8 items-center gap-1.5 rounded-lg px-2.5 text-[11px] font-body font-semibold"
                             style={{
-                              color: "var(--color-accent)",
+                              color: "var(--color-accent-text)",
                               background:
                                 "color-mix(in srgb, var(--color-accent) 10%, var(--color-surface))",
                               border:
@@ -1323,7 +1329,7 @@ export function SettingsPanel({
                             type="button"
                             className="inline-flex h-8 items-center gap-1.5 rounded-lg px-2.5 text-[11px] font-body font-semibold"
                             style={{
-                              color: "var(--color-accent)",
+                              color: "var(--color-accent-text)",
                               background:
                                 "color-mix(in srgb, var(--color-accent) 10%, var(--color-surface))",
                               border:
@@ -1469,7 +1475,9 @@ function ToggleRow({
         <span
           className="absolute top-[2px] w-4 h-4 rounded-full transition-all duration-150"
           style={{
-            background: checked ? "#fff" : "var(--color-text-muted)",
+            background: checked
+              ? "var(--color-on-accent)"
+              : "var(--color-text-muted)",
             left: checked ? "calc(100% - 19px)" : "2px",
             boxShadow: "0 1px 2px rgba(0,0,0,0.12)",
           }}
@@ -1504,10 +1512,10 @@ function BackupActionButton({
       className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-left transition-colors disabled:cursor-not-allowed disabled:opacity-60"
       style={{
         background: danger
-          ? "color-mix(in srgb, #f04438 7%, var(--color-surface))"
+          ? "color-mix(in srgb, var(--color-danger-text) 7%, var(--color-surface))"
           : "color-mix(in srgb, var(--color-surface-alt) 52%, var(--color-surface))",
         border: danger
-          ? "1px solid color-mix(in srgb, #f04438 22%, var(--color-border))"
+          ? "1px solid var(--color-danger-text)"
           : "1px solid var(--color-border)",
       }}
       data-testid={testId}
@@ -1515,9 +1523,11 @@ function BackupActionButton({
       <span
         className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg"
         style={{
-          color: danger ? "#b42318" : "var(--color-accent)",
+          color: danger
+            ? "var(--color-danger-text)"
+            : "var(--color-accent-text)",
           background: danger
-            ? "color-mix(in srgb, #f04438 12%, var(--color-surface))"
+            ? "color-mix(in srgb, var(--color-danger-text) 12%, var(--color-surface))"
             : "color-mix(in srgb, var(--color-accent) 10%, var(--color-surface))",
         }}
       >
@@ -1526,7 +1536,9 @@ function BackupActionButton({
       <span className="min-w-0">
         <span
           className="block text-xs font-body font-semibold"
-          style={{ color: danger ? "#b42318" : "var(--color-text)" }}
+          style={{
+            color: danger ? "var(--color-danger-text)" : "var(--color-text)",
+          }}
         >
           {label}
         </span>

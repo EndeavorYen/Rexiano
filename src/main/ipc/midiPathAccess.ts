@@ -1,17 +1,26 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "fs";
+import { realpath, stat } from "fs/promises";
 import { app } from "electron";
 import { dirname, isAbsolute, relative, resolve } from "path";
 
 const MIDI_PATH_PATTERN = /\.(mid|midi|kar)$/i;
 const MIDI_PATH_ACCESS_FILE = "midi-path-access.json";
 
-const approvedMidiFiles = new Set<string>();
-const approvedMidiFolders = new Set<string>();
-let persistedPathAccessLoaded = false;
+const approvedMidiFiles = new Map<string, string>();
+const approvedMidiFolders = new Map<string, string>();
 
 interface PersistedMidiPathAccess {
   files?: unknown;
-  folders?: unknown;
+}
+
+interface PersistedMidiFileApproval {
+  path: string;
+  identity: string;
+}
+
+interface CanonicalPathIdentity {
+  path: string;
+  identity: string;
 }
 
 function normalizeAbsolutePath(candidate: string): string | null {
@@ -36,41 +45,43 @@ function getMidiPathAccessFilePath(): string | null {
   }
 }
 
-function addPersistedPaths(
-  candidates: unknown,
-  target: Set<string>,
-  options: { midiOnly: boolean },
-): void {
-  if (!Array.isArray(candidates)) return;
-
-  for (const candidate of candidates) {
-    if (typeof candidate !== "string") continue;
-    const normalized = normalizeAbsolutePath(candidate);
-    if (!normalized) continue;
-    if (options.midiOnly && !isMidiPath(normalized)) continue;
-    target.add(normalized);
-  }
-}
-
 function loadPersistedMidiPathAccess(): void {
-  if (persistedPathAccessLoaded) return;
-  persistedPathAccessLoaded = true;
-
   const accessFilePath = getMidiPathAccessFilePath();
-  if (!accessFilePath || !existsSync(accessFilePath)) return;
+  if (!accessFilePath || !existsSync(accessFilePath)) {
+    return;
+  }
 
   try {
     const parsed = JSON.parse(
       readFileSync(accessFilePath, "utf-8"),
     ) as PersistedMidiPathAccess;
-    addPersistedPaths(parsed.files, approvedMidiFiles, { midiOnly: true });
-    addPersistedPaths(parsed.folders, approvedMidiFolders, { midiOnly: false });
+    if (Array.isArray(parsed.files)) {
+      for (const candidate of parsed.files) {
+        if (
+          typeof candidate !== "object" ||
+          candidate === null ||
+          typeof (candidate as Partial<PersistedMidiFileApproval>).path !==
+            "string" ||
+          typeof (candidate as Partial<PersistedMidiFileApproval>).identity !==
+            "string"
+        ) {
+          continue;
+        }
+        const approval = candidate as PersistedMidiFileApproval;
+        const normalized = normalizeAbsolutePath(approval.path);
+        if (normalized && isMidiPath(normalized)) {
+          approvedMidiFiles.set(normalized, approval.identity);
+        }
+      }
+    }
+    // Folder grants are intentionally never restored. A path copied from
+    // localStorage/backup must go through the native folder chooser again.
   } catch {
     // Corrupt path-access data should not block manual file/folder selection.
   }
 }
 
-function persistMidiPathAccess(): void {
+function persistMidiFileAccess(): void {
   const accessFilePath = getMidiPathAccessFilePath();
   if (!accessFilePath) return;
 
@@ -80,8 +91,9 @@ function persistMidiPathAccess(): void {
       accessFilePath,
       JSON.stringify(
         {
-          files: [...approvedMidiFiles].sort((a, b) => a.localeCompare(b)),
-          folders: [...approvedMidiFolders].sort((a, b) => a.localeCompare(b)),
+          files: [...approvedMidiFiles]
+            .map(([path, identity]) => ({ path, identity }))
+            .sort((a, b) => a.path.localeCompare(b.path)),
         },
         null,
         2,
@@ -93,41 +105,104 @@ function persistMidiPathAccess(): void {
   }
 }
 
-export function approveMidiFilePath(filePath: string): void {
-  loadPersistedMidiPathAccess();
-  const normalized = normalizeAbsolutePath(filePath);
-  if (!normalized || !isMidiPath(normalized)) return;
-  approvedMidiFiles.add(normalized);
-  persistMidiPathAccess();
-}
-
-export function approveMidiFolderPath(folderPath: string): void {
-  loadPersistedMidiPathAccess();
-  const normalized = normalizeAbsolutePath(folderPath);
-  if (!normalized) return;
-  approvedMidiFolders.add(normalized);
-  persistMidiPathAccess();
-}
-
-export function isApprovedMidiFilePath(
+async function canonicalRegularMidiPath(
   candidate: unknown,
-): candidate is string {
-  loadPersistedMidiPathAccess();
-  if (typeof candidate !== "string") return false;
+): Promise<CanonicalPathIdentity | null> {
+  if (typeof candidate !== "string") return null;
   const normalized = normalizeAbsolutePath(candidate);
-  if (!normalized || !isMidiPath(normalized)) return false;
+  if (!normalized || !isMidiPath(normalized)) return null;
 
-  if (approvedMidiFiles.has(normalized)) return true;
+  try {
+    const canonical = await realpath(normalized);
+    const fileStats = await stat(canonical);
+    if (!isMidiPath(canonical) || !fileStats.isFile()) return null;
+    return {
+      path: canonical,
+      identity: `${fileStats.dev}:${fileStats.ino}`,
+    };
+  } catch {
+    return null;
+  }
+}
 
-  for (const folderPath of approvedMidiFolders) {
-    if (isPathInsideFolder(normalized, folderPath)) return true;
+async function canonicalDirectoryPath(
+  candidate: unknown,
+): Promise<CanonicalPathIdentity | null> {
+  if (typeof candidate !== "string") return null;
+  const normalized = normalizeAbsolutePath(candidate);
+  if (!normalized) return null;
+
+  try {
+    const canonical = await realpath(normalized);
+    const directoryStats = await stat(canonical);
+    return directoryStats.isDirectory()
+      ? {
+          path: canonical,
+          identity: `${directoryStats.dev}:${directoryStats.ino}`,
+        }
+      : null;
+  } catch {
+    return null;
+  }
+}
+
+export async function approveMidiFilePath(
+  filePath: string,
+): Promise<string | null> {
+  loadPersistedMidiPathAccess();
+  const canonical = await canonicalRegularMidiPath(filePath);
+  if (!canonical) return null;
+  approvedMidiFiles.set(canonical.path, canonical.identity);
+  persistMidiFileAccess();
+  return canonical.path;
+}
+
+export async function approveMidiFolderPath(
+  folderPath: string,
+): Promise<string | null> {
+  loadPersistedMidiPathAccess();
+  const canonical = await canonicalDirectoryPath(folderPath);
+  if (!canonical) return null;
+  approvedMidiFolders.set(canonical.path, canonical.identity);
+  return canonical.path;
+}
+
+export async function resolveApprovedMidiFolderPath(
+  candidate: unknown,
+): Promise<string | null> {
+  loadPersistedMidiPathAccess();
+  const canonical = await canonicalDirectoryPath(candidate);
+  return canonical &&
+    approvedMidiFolders.get(canonical.path) === canonical.identity
+    ? canonical.path
+    : null;
+}
+
+export async function resolveApprovedMidiFilePath(
+  candidate: unknown,
+): Promise<string | null> {
+  loadPersistedMidiPathAccess();
+  const canonical = await canonicalRegularMidiPath(candidate);
+  if (!canonical) return null;
+  if (approvedMidiFiles.get(canonical.path) === canonical.identity) {
+    return canonical.path;
   }
 
-  return false;
+  for (const [folderPath, folderIdentity] of approvedMidiFolders) {
+    if (!isPathInsideFolder(canonical.path, folderPath)) continue;
+    const folder = await canonicalDirectoryPath(folderPath);
+    if (folder?.identity === folderIdentity) return canonical.path;
+  }
+  return null;
+}
+
+export async function isApprovedMidiFilePath(
+  candidate: unknown,
+): Promise<boolean> {
+  return (await resolveApprovedMidiFilePath(candidate)) !== null;
 }
 
 export function clearApprovedMidiPathAccessForTests(): void {
   approvedMidiFiles.clear();
   approvedMidiFolders.clear();
-  persistedPathAccessLoaded = false;
 }

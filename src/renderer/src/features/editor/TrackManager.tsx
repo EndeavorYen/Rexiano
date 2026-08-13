@@ -1,5 +1,6 @@
 import { Plus, Trash2 } from "lucide-react";
 import type { EditableSong, EditableTrack } from "./editorTypes";
+import { useTranslation } from "@renderer/i18n/useTranslation";
 
 interface TrackManagerProps {
   song: EditableSong;
@@ -21,6 +22,7 @@ export function TrackManager({
   onDeleteTrack,
   onUpdateTrack,
 }: TrackManagerProps): React.JSX.Element {
+  const { t } = useTranslation();
   const selectedTrack =
     song.tracks.find((track) => track.id === selectedTrackId) ?? null;
 
@@ -39,20 +41,20 @@ export function TrackManager({
           className="text-[11px] font-display font-bold uppercase tracking-wider"
           style={{ color: "var(--color-text-muted)" }}
         >
-          Tracks
+          {t("editor.tracks")}
         </p>
         <button
           type="button"
           className="flex h-7 w-7 items-center justify-center rounded-md"
           style={{
-            color: "var(--color-accent)",
+            color: "var(--color-accent-text)",
             background:
               "color-mix(in srgb, var(--color-accent) 10%, var(--color-surface))",
             border:
               "1px solid color-mix(in srgb, var(--color-accent) 24%, var(--color-border))",
           }}
-          title="Add track"
-          aria-label="Add track"
+          title={t("editor.addTrack")}
+          aria-label={t("editor.addTrack")}
           onClick={onAddTrack}
           data-testid="track-add"
         >
@@ -69,7 +71,9 @@ export function TrackManager({
               type="button"
               className="flex h-8 w-full items-center justify-between gap-2 rounded-md px-2 text-left text-xs font-body"
               style={{
-                color: selected ? "var(--color-accent)" : "var(--color-text)",
+                color: selected
+                  ? "var(--color-accent-text)"
+                  : "var(--color-text)",
                 background: selected
                   ? "color-mix(in srgb, var(--color-accent) 11%, var(--color-surface))"
                   : "var(--color-surface)",
@@ -82,7 +86,7 @@ export function TrackManager({
             >
               <span className="truncate">{track.name}</span>
               <span className="font-mono text-[10px] opacity-70">
-                ch {track.channel + 1}
+                {t("editor.channelAbbrev")} {track.channel + 1}
               </span>
             </button>
           );
@@ -92,7 +96,7 @@ export function TrackManager({
       {selectedTrack && (
         <div className="space-y-2" data-testid="track-metadata">
           <TrackInput
-            label="Name"
+            label={t("editor.trackName")}
             value={selectedTrack.name}
             onCommit={(value) =>
               onUpdateTrack(selectedTrack.id, { name: value })
@@ -100,7 +104,7 @@ export function TrackManager({
             testId="track-name"
           />
           <TrackInput
-            label="Channel"
+            label={t("editor.channel")}
             value={String(selectedTrack.channel)}
             type="number"
             onCommit={(value) =>
@@ -109,7 +113,7 @@ export function TrackManager({
             testId="track-channel"
           />
           <TrackInput
-            label="Instrument"
+            label={t("editor.instrument")}
             value={String(selectedTrack.instrument ?? 0)}
             type="number"
             onCommit={(value) =>
@@ -121,18 +125,17 @@ export function TrackManager({
             type="button"
             className="flex h-8 w-full items-center justify-center gap-1.5 rounded-md text-xs font-body font-semibold"
             style={{
-              color: "#b42318",
+              color: "var(--color-danger-text)",
               background:
-                "color-mix(in srgb, #f04438 8%, var(--color-surface))",
-              border:
-                "1px solid color-mix(in srgb, #f04438 24%, var(--color-border))",
+                "color-mix(in srgb, var(--color-danger-text) 8%, var(--color-surface))",
+              border: "1px solid var(--color-danger-text)",
             }}
             onClick={() => onDeleteTrack(selectedTrack.id)}
             disabled={song.tracks.length <= 1}
             data-testid="track-delete"
           >
             <Trash2 size={14} />
-            Delete
+            {t("editor.deleteTrack")}
           </button>
         </div>
       )}

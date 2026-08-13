@@ -1,6 +1,10 @@
-import { app, ipcMain, shell } from "electron";
-import { mkdir, writeFile } from "fs/promises";
-import { join, normalize, sep } from "path";
+import { app, ipcMain, shell, type IpcMainInvokeEvent } from "electron";
+import { createHash } from "crypto";
+import { createWriteStream } from "fs";
+import { mkdir, rename, rm, stat } from "fs/promises";
+import { basename, join } from "path";
+import { Readable } from "stream";
+import { pipeline } from "stream/promises";
 import {
   IpcChannels,
   type AppUpdateAvailable,
@@ -8,13 +12,29 @@ import {
   type AppUpdateDownloadResult,
   type AppUpdateProgress,
 } from "../../shared/types";
-import { normalizeExternalUrl } from "../externalUrlPolicy";
-import { type GitHubRelease, resolveUpdateCheck } from "./updateChecker";
+import { isTrustedMainFrame } from "./trustedIpc";
+import {
+  type GitHubRelease,
+  type GitHubReleaseAsset,
+  resolveUpdateCheck,
+} from "./updateChecker";
 
 const RELEASE_API_URL =
   "https://api.github.com/repos/EndeavorYen/Rexiano/releases/latest";
+const ASSET_URL_PREFIX =
+  "https://github.com/EndeavorYen/Rexiano/releases/download/";
+const ALLOWED_DOWNLOAD_HOSTS = new Set([
+  "github.com",
+  "release-assets.githubusercontent.com",
+  "github-releases.githubusercontent.com",
+]);
 
 type DownloadProgressCallback = (progress: AppUpdateProgress) => void;
+
+interface TrustedUpdateCandidate {
+  result: AppUpdateAvailable;
+  asset: GitHubReleaseAsset;
+}
 
 interface UpdateHandlerDependencies {
   isPackaged: () => boolean;
@@ -23,20 +43,13 @@ interface UpdateHandlerDependencies {
   platform: NodeJS.Platform;
   arch: string;
   downloadArtifact: (
-    update: AppUpdateAvailable,
+    asset: GitHubReleaseAsset,
     onProgress: DownloadProgressCallback,
   ) => Promise<string>;
 }
 
-function getDefaultDependencies(): UpdateHandlerDependencies {
-  return {
-    isPackaged: () => app.isPackaged,
-    currentVersion: () => app.getVersion(),
-    fetchLatestRelease,
-    platform: process.platform,
-    arch: process.arch,
-    downloadArtifact,
-  };
+function isTrustedEvent(event: IpcMainInvokeEvent): boolean {
+  return isTrustedMainFrame(event);
 }
 
 function toFailedResult(
@@ -50,6 +63,17 @@ function toFailedResult(
   };
 }
 
+function toDownloadFailedResult(
+  currentVersion: string,
+  error: unknown,
+): AppUpdateDownloadResult {
+  return {
+    status: "failed",
+    currentVersion,
+    message: error instanceof Error ? error.message : "Update download failed.",
+  };
+}
+
 async function fetchLatestRelease(): Promise<GitHubRelease> {
   const response = await fetch(RELEASE_API_URL, {
     headers: {
@@ -58,93 +82,151 @@ async function fetchLatestRelease(): Promise<GitHubRelease> {
     },
   });
 
-  if (!response.ok) {
+  if (!response.ok || response.url !== RELEASE_API_URL) {
     throw new Error(`GitHub Releases returned HTTP ${response.status}.`);
   }
 
   return (await response.json()) as GitHubRelease;
 }
 
-function getDownloadPath(fileName: string): string {
-  const safeName = fileName.replace(/[/\\]/g, "-");
-  return join(app.getPath("userData"), "updates", safeName);
+function validatedAssetUrl(asset: GitHubReleaseAsset): URL {
+  if (!asset.name || basename(asset.name) !== asset.name) {
+    throw new Error("Update artifact name is invalid.");
+  }
+  const versionMatch = /^rexiano-(\d+\.\d+\.\d+)-/.exec(asset.name);
+  if (!versionMatch) throw new Error("Update artifact version is invalid.");
+  const url = new URL(asset.browser_download_url);
+  const expectedUrl = `${ASSET_URL_PREFIX}v${versionMatch[1]}/${asset.name}`;
+  if (
+    url.protocol !== "https:" ||
+    url.username ||
+    url.password ||
+    url.href !== expectedUrl
+  ) {
+    throw new Error("Update artifact URL does not match the official release.");
+  }
+  return url;
 }
 
-function isInsideUpdatesDirectory(filePath: string): boolean {
-  const updatesDir = normalize(join(app.getPath("userData"), "updates"));
-  const candidate = normalize(filePath);
-  return (
-    candidate === updatesDir || candidate.startsWith(`${updatesDir}${sep}`)
-  );
+function hashTransform(expectedDigest: string): TransformStream<Uint8Array> {
+  const hash = createHash("sha256");
+  return new TransformStream({
+    transform(chunk, controller) {
+      hash.update(chunk);
+      controller.enqueue(chunk);
+    },
+    flush() {
+      if (`sha256:${hash.digest("hex")}` !== expectedDigest) {
+        throw new Error("Update artifact SHA-256 digest did not match GitHub.");
+      }
+    },
+  });
 }
 
-async function downloadArtifact(
-  update: AppUpdateAvailable,
+export async function downloadVerifiedArtifact(
+  asset: GitHubReleaseAsset,
   onProgress: DownloadProgressCallback,
 ): Promise<string> {
-  const downloadUrl = normalizeExternalUrl(update.artifactUrl);
-  if (!downloadUrl) {
-    throw new Error("Update artifact URL is not a valid HTTPS URL.");
+  const initialUrl = validatedAssetUrl(asset);
+  if (!asset.size || !/^sha256:[0-9a-f]{64}$/.test(asset.digest ?? "")) {
+    throw new Error("Update artifact metadata is not verifiable.");
   }
 
-  const response = await fetch(downloadUrl);
-  if (!response.ok) {
-    throw new Error(`Update download returned HTTP ${response.status}.`);
+  const response = await fetch(initialUrl, { redirect: "follow" });
+  const finalUrl = new URL(response.url);
+  if (
+    !response.ok ||
+    finalUrl.protocol !== "https:" ||
+    !ALLOWED_DOWNLOAD_HOSTS.has(finalUrl.hostname) ||
+    finalUrl.username ||
+    finalUrl.password
+  ) {
+    throw new Error("Update download redirect was not trusted.");
+  }
+  const contentLength = Number(response.headers.get("content-length"));
+  if (contentLength !== asset.size || !response.body) {
+    throw new Error("Update artifact size did not match GitHub metadata.");
   }
 
-  const totalBytes =
-    Number(response.headers.get("content-length")) || update.artifactSize || 0;
-  const chunks: Buffer[] = [];
+  const updatesDir = join(app.getPath("userData"), "updates");
+  const finalPath = join(updatesDir, asset.name);
+  const temporaryPath = `${finalPath}.${process.pid}.${Date.now()}.part`;
+  await mkdir(updatesDir, { recursive: true });
+  await rm(finalPath, { force: true });
+
   let transferredBytes = 0;
-
-  if (response.body) {
-    const reader = response.body.getReader();
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-      if (!value) continue;
-
-      const chunk = Buffer.from(value);
-      chunks.push(chunk);
+  const progress = new TransformStream<Uint8Array, Uint8Array>({
+    transform(chunk, controller) {
       transferredBytes += chunk.byteLength;
+      if (transferredBytes > asset.size!) {
+        throw new Error("Update artifact exceeded its declared size.");
+      }
       onProgress({
-        percent:
-          totalBytes > 0
-            ? Math.round((transferredBytes / totalBytes) * 100)
-            : 0,
+        percent: Math.round((transferredBytes / asset.size!) * 100),
         transferredBytes,
-        totalBytes,
+        totalBytes: asset.size!,
       });
-    }
-  } else {
-    const arrayBuffer = await response.arrayBuffer();
-    const chunk = Buffer.from(arrayBuffer);
-    chunks.push(chunk);
-    transferredBytes = chunk.byteLength;
-  }
-
-  const downloadedPath = getDownloadPath(update.artifactName);
-  await mkdir(join(app.getPath("userData"), "updates"), { recursive: true });
-  await writeFile(downloadedPath, Buffer.concat(chunks));
-
-  onProgress({
-    percent: 100,
-    transferredBytes,
-    totalBytes: totalBytes || transferredBytes,
+      controller.enqueue(chunk);
+    },
   });
 
-  return downloadedPath;
+  try {
+    const stream = response.body
+      .pipeThrough(progress)
+      .pipeThrough(hashTransform(asset.digest!));
+    await pipeline(
+      Readable.fromWeb(stream as never),
+      createWriteStream(temporaryPath, { flags: "wx", mode: 0o600 }),
+    );
+    const written = await stat(temporaryPath);
+    if (written.size !== asset.size || transferredBytes !== asset.size) {
+      throw new Error("Update artifact ended before its declared size.");
+    }
+    await rename(temporaryPath, finalPath);
+  } catch (error) {
+    await rm(temporaryPath, { force: true });
+    throw error;
+  }
+
+  return finalPath;
+}
+
+function getDefaultDependencies(): UpdateHandlerDependencies {
+  return {
+    isPackaged: () => app.isPackaged,
+    currentVersion: () => app.getVersion(),
+    fetchLatestRelease,
+    platform: process.platform,
+    arch: process.arch,
+    downloadArtifact: downloadVerifiedArtifact,
+  };
 }
 
 export function registerUpdateHandlers(
   overrides: Partial<UpdateHandlerDependencies> = {},
 ): void {
   const dependencies = { ...getDefaultDependencies(), ...overrides };
+  let candidate: TrustedUpdateCandidate | null = null;
+  let verifiedPath: string | null = null;
+  let trustedReleaseUrl: string | null = null;
+  let downloadInProgress = false;
 
   ipcMain.handle(
     IpcChannels.UPDATE_CHECK,
-    async (): Promise<AppUpdateCheckResult> => {
+    async (event): Promise<AppUpdateCheckResult> => {
       const currentVersion = dependencies.currentVersion();
+      if (!isTrustedEvent(event)) {
+        return toFailedResult(currentVersion, "Untrusted update request.");
+      }
+      if (downloadInProgress) {
+        return toFailedResult(
+          currentVersion,
+          "Update download already in progress.",
+        );
+      }
+      candidate = null;
+      verifiedPath = null;
+      trustedReleaseUrl = null;
       if (!dependencies.isPackaged()) {
         return {
           status: "disabled",
@@ -155,13 +237,23 @@ export function registerUpdateHandlers(
 
       try {
         const release = await dependencies.fetchLatestRelease();
-        return resolveUpdateCheck({
+        const result = resolveUpdateCheck({
           isPackaged: true,
           currentVersion,
           platform: dependencies.platform,
           arch: dependencies.arch,
           release,
         });
+        if (result.status === "available") {
+          const asset = (release.assets ?? []).find(
+            (entry) => String(entry.id) === result.artifactId,
+          );
+          if (!asset) throw new Error("Selected update artifact disappeared.");
+          validatedAssetUrl(asset);
+          candidate = { result, asset };
+          trustedReleaseUrl = result.releaseUrl;
+        }
+        return result;
       } catch (error) {
         return toFailedResult(currentVersion, error);
       }
@@ -170,64 +262,68 @@ export function registerUpdateHandlers(
 
   ipcMain.handle(
     IpcChannels.UPDATE_DOWNLOAD,
-    async (
-      event,
-      update: AppUpdateAvailable,
-    ): Promise<AppUpdateDownloadResult> => {
+    async (event, artifactId: string): Promise<AppUpdateDownloadResult> => {
+      const current = candidate;
+      if (
+        !isTrustedEvent(event) ||
+        !current ||
+        artifactId !== current.result.artifactId ||
+        downloadInProgress
+      ) {
+        return toDownloadFailedResult(
+          dependencies.currentVersion(),
+          "Update must be checked and selected by the main process first.",
+        );
+      }
+
+      candidate = null;
+      verifiedPath = null;
+      downloadInProgress = true;
       try {
         let latestProgress: AppUpdateProgress = {
           percent: 0,
           transferredBytes: 0,
-          totalBytes: update.artifactSize,
+          totalBytes: current.result.artifactSize,
         };
         const downloadedPath = await dependencies.downloadArtifact(
-          update,
+          current.asset,
           (progress) => {
             latestProgress = progress;
             event.sender.send(IpcChannels.UPDATE_PROGRESS, {
               status: "downloading",
-              currentVersion: update.currentVersion,
-              latestVersion: update.latestVersion,
-              artifactName: update.artifactName,
+              currentVersion: current.result.currentVersion,
+              latestVersion: current.result.latestVersion,
+              artifactName: current.result.artifactName,
               progress,
             });
           },
         );
-
+        verifiedPath = downloadedPath;
         return {
-          ...update,
+          ...current.result,
           status: "ready",
           downloadedPath,
           progress: latestProgress,
         };
       } catch (error) {
-        return {
-          status: "failed",
-          currentVersion: update.currentVersion,
-          message:
-            error instanceof Error ? error.message : "Update download failed.",
-        };
+        return toDownloadFailedResult(current.result.currentVersion, error);
+      } finally {
+        downloadInProgress = false;
       }
     },
   );
 
-  ipcMain.handle(
-    IpcChannels.UPDATE_OPEN_RELEASE,
-    async (_event, releaseUrl: string) => {
-      const url = normalizeExternalUrl(releaseUrl);
-      if (!url) return false;
+  ipcMain.handle(IpcChannels.UPDATE_OPEN_RELEASE, async (event) => {
+    if (!isTrustedEvent(event) || !trustedReleaseUrl) return false;
+    await shell.openExternal(trustedReleaseUrl);
+    return true;
+  });
 
-      await shell.openExternal(url);
-      return true;
-    },
-  );
-
-  ipcMain.handle(
-    IpcChannels.UPDATE_OPEN_DOWNLOADED,
-    async (_event, downloadedPath: string) => {
-      if (!isInsideUpdatesDirectory(downloadedPath)) return false;
-      const errorMessage = await shell.openPath(downloadedPath);
-      return errorMessage.length === 0;
-    },
-  );
+  ipcMain.handle(IpcChannels.UPDATE_OPEN_DOWNLOADED, async (event) => {
+    if (!isTrustedEvent(event) || !verifiedPath) return false;
+    const path = verifiedPath;
+    verifiedPath = null;
+    const errorMessage = await shell.openPath(path);
+    return errorMessage.length === 0;
+  });
 }

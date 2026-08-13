@@ -22,7 +22,7 @@ describe("midiPermissionPolicy", () => {
         permission: "midiSysex",
         url: "http://localhost:5173/",
       }),
-    ).toBe(true);
+    ).toBe(false);
     configureTrustedRendererUrl("http://127.0.0.1:5173/");
     expect(
       isAllowedMidiPermissionRequest({
@@ -40,6 +40,13 @@ describe("midiPermissionPolicy", () => {
       isAllowedMidiPermissionRequest({
         permission: "midi",
         url: "https://example.com/",
+      }),
+    ).toBe(false);
+    expect(
+      isAllowedMidiPermissionRequest({
+        permission: "midi",
+        url: "file:///Applications/Rexiano.app/Contents/Resources/app.asar/out/renderer/index.html",
+        isMainFrame: false,
       }),
     ).toBe(false);
     expect(
@@ -98,13 +105,13 @@ describe("midiPermissionPolicy", () => {
 
     expect(
       isAllowedMidiPermissionRequest({
-        permission: "midiSysex",
+        permission: "midi",
         url: "http://localhost:5173/song/1?debug=true",
       }),
     ).toBe(true);
     expect(
       isAllowedMidiPermissionRequest({
-        permission: "midiSysex",
+        permission: "midi",
         url: "http://localhost:9999/",
       }),
     ).toBe(false);

@@ -70,6 +70,58 @@ test.describe("Core accessibility guardrails", () => {
     await expect(drawerLauncher).toBeFocused();
   });
 
+  test("ThemePicker exposes a menu-radio model and restores focus on every close path", async ({
+    appPage,
+  }) => {
+    await gotoLibrary(appPage);
+
+    const trigger = appPage.getByRole("button", { name: "Change theme" });
+    await expect(trigger).toHaveAttribute("aria-haspopup", "menu");
+    await expect(trigger).toHaveAttribute("aria-expanded", "false");
+    await trigger.focus();
+    await appPage.keyboard.press("Enter");
+
+    const menu = appPage.getByRole("menu", { name: "Choose a Theme" });
+    await expect(menu).toBeVisible();
+    await expect(trigger).toHaveAttribute("aria-expanded", "true");
+    await expect(trigger).toHaveAttribute(
+      "aria-controls",
+      await menu.getAttribute("id"),
+    );
+
+    const ocean = menu.getByRole("menuitemradio", { name: "Ocean" });
+    const peach = menu.getByRole("menuitemradio", { name: "Peach" });
+    await expect(ocean).toHaveAttribute("aria-checked", "true");
+    await expect(ocean).toBeFocused();
+
+    await appPage.keyboard.press("ArrowRight");
+    await expect(peach).toBeFocused();
+    await appPage.keyboard.press("Enter");
+    await expect(menu).toBeHidden();
+    await expect(trigger).toBeFocused();
+
+    await appPage.keyboard.press("Enter");
+    await expect(peach).toBeFocused();
+    await appPage.keyboard.press("Escape");
+    await expect(menu).toBeHidden();
+    await expect(trigger).toBeFocused();
+
+    await appPage.keyboard.press("Enter");
+    await expect(menu).toBeVisible();
+    await appPage.getByRole("heading", { name: "Rexiano" }).click();
+    await expect(menu).toBeHidden();
+    await expect(trigger).toBeFocused();
+
+    await appPage.keyboard.press("Enter");
+    await expect(menu).toBeVisible();
+    await expect(peach).toBeFocused();
+    await appPage.keyboard.press("Tab");
+    await expect(menu).toBeHidden();
+    await expect(
+      appPage.getByTestId("song-library-recommendation"),
+    ).toBeFocused();
+  });
+
   test("playback drawer and transport controls expose keyboard-safe names", async ({
     appPage,
   }) => {

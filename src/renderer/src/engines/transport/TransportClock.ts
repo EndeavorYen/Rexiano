@@ -19,6 +19,7 @@ import { useSongStore } from "@renderer/stores/useSongStore";
 import { usePlaybackStore } from "@renderer/stores/usePlaybackStore";
 import { usePracticeStore } from "@renderer/stores/usePracticeStore";
 import { getPracticeEngines } from "@renderer/engines/practice/practiceManager";
+import { seekPlayback } from "./playbackDiscontinuity";
 
 /** Cap frame delta to prevent large time jumps (e.g. after tab backgrounding) */
 export const MAX_DELTA_SECONDS = 0.1;
@@ -44,6 +45,7 @@ export function createTransportTick(
 
     const playState = usePlaybackStore.getState();
     if (!playState.isPlaying) return;
+    if (playState.countInActive) return;
 
     const { waitMode, speedController, loopController } = getPracticeEngines();
 
@@ -68,10 +70,11 @@ export function createTransportTick(
     // ── Loop check: auto-seek at B point (before writing to store) ──
     if (loopController?.isActive && loopController.shouldLoop(effectiveTime)) {
       effectiveTime = loopController.getLoopStart();
+      seekPlayback(effectiveTime, "loop");
+    } else {
+      // Rendering frames publish ordinary continuous clock movement only.
+      playState.setCurrentTime(effectiveTime);
     }
-
-    // Single setCurrentTime per frame (avoids double-fire to subscribers)
-    playState.setCurrentTime(effectiveTime);
 
     if (effectiveTime >= song.duration) {
       playState.setPlaying(false);

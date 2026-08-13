@@ -41,7 +41,9 @@ export function DisplayModeToggle(): React.JSX.Element {
             className="flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] font-body cursor-pointer transition-colors"
             style={{
               background: isActive ? "var(--color-accent)" : "transparent",
-              color: isActive ? "#fff" : "var(--color-text-muted)",
+              color: isActive
+                ? "var(--color-on-accent)"
+                : "var(--color-text-muted)",
             }}
             aria-pressed={isActive}
             aria-label={t(labelKey)}

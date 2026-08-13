@@ -9,7 +9,14 @@
 // Intended for embedding in TransportBar, near the metronome toggle.
 
 import { useSettingsStore } from "@renderer/stores/useSettingsStore";
-import { getDotColor, getDotOpacity, getDotSize } from "./metronomePulseUtils";
+import { usePlaybackStore } from "@renderer/stores/usePlaybackStore";
+import {
+  getDotColor,
+  getDotOpacity,
+  getDotSize,
+  shouldShowMetronomePulse,
+} from "./metronomePulseUtils";
+import { useTranslation } from "@renderer/i18n/useTranslation";
 
 export interface MetronomePulseProps {
   isPlaying: boolean;
@@ -22,15 +29,28 @@ export function MetronomePulse({
   currentBeat,
   beatsPerMeasure,
 }: MetronomePulseProps): React.JSX.Element | null {
+  const { t } = useTranslation();
   const metronomeEnabled = useSettingsStore((s) => s.metronomeEnabled);
+  const countInActive = usePlaybackStore((s) => s.countInActive);
 
-  if (!metronomeEnabled || !isPlaying) return null;
+  if (
+    !shouldShowMetronomePulse({
+      metronomeEnabled,
+      countInActive,
+      isRunning: isPlaying,
+    })
+  ) {
+    return null;
+  }
 
   return (
     <div
       className="flex items-center gap-1.5"
       role="group"
-      aria-label={`Beat ${currentBeat + 1} of ${beatsPerMeasure}`}
+      aria-label={t("practice.metronomeBeat", {
+        beat: currentBeat + 1,
+        total: beatsPerMeasure,
+      })}
       data-testid="metronome-pulse"
     >
       {Array.from({ length: beatsPerMeasure }, (_, i) => {

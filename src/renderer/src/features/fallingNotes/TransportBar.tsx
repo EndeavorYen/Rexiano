@@ -17,6 +17,10 @@ import { getAudioStatusGuidance } from "@renderer/features/audio/audioStatusGuid
 import { MetronomePulse } from "@renderer/features/metronome/MetronomePulse";
 import { useMetronomeBeat } from "@renderer/hooks/useMetronomeBeat";
 import { useTranslation } from "@renderer/i18n/useTranslation";
+import {
+  resetPlayback,
+  seekPlayback,
+} from "@renderer/engines/transport/playbackDiscontinuity";
 
 // eslint-disable-next-line react-refresh/only-export-components
 export function formatTime(seconds: number): string {
@@ -80,8 +84,6 @@ export function TransportBar({
   const isPlaying = usePlaybackStore((s) => s.isPlaying);
   const volume = usePlaybackStore((s) => s.volume);
   const setPlaying = usePlaybackStore((s) => s.setPlaying);
-  const setCurrentTime = usePlaybackStore((s) => s.setCurrentTime);
-  const reset = usePlaybackStore((s) => s.reset);
   const audioStatus = usePlaybackStore((s) => s.audioStatus);
   const audioRecoveryState = usePlaybackStore((s) => s.audioRecoveryState);
   const audioRecoveryAttempt = usePlaybackStore((s) => s.audioRecoveryAttempt);
@@ -154,11 +156,12 @@ export function TransportBar({
           <button
             onClick={handlePlayPause}
             disabled={!song}
-            className="flex items-center justify-center rounded-full text-white disabled:opacity-40 cursor-pointer"
+            className="flex items-center justify-center rounded-full disabled:opacity-40 cursor-pointer"
             style={{
               width: primaryButtonSize,
               height: primaryButtonSize,
               background: "var(--color-accent)",
+              color: "var(--color-on-accent)",
               boxShadow: playPulse
                 ? "0 0 0 6px color-mix(in srgb, var(--color-accent) 25%, transparent)"
                 : "0 2px 8px color-mix(in srgb, var(--color-accent) 30%, transparent)",
@@ -183,7 +186,7 @@ export function TransportBar({
           </button>
 
           <button
-            onClick={reset}
+            onClick={resetPlayback}
             disabled={!song}
             className="btn-surface-themed flex items-center justify-center rounded-lg disabled:opacity-40 cursor-pointer"
             style={{
@@ -356,7 +359,7 @@ export function TransportBar({
                   borderRadius: 3,
                 }}
                 data-testid="loop-highlight"
-                aria-label="A-B loop range"
+                aria-label={t("practice.abLoopRange")}
               />
             )}
             <input
@@ -365,7 +368,7 @@ export function TransportBar({
               max={duration || 1}
               step={0.1}
               value={currentTime}
-              onChange={(e) => setCurrentTime(parseFloat(e.target.value))}
+              onChange={(e) => seekPlayback(parseFloat(e.target.value))}
               disabled={!song}
               className="seek-slider-input w-full relative z-10"
               style={{ accentColor: "var(--color-accent)" }}

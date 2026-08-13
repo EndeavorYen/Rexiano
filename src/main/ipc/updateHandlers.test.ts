@@ -2,36 +2,54 @@ import { beforeEach, describe, expect, test, vi } from "vitest";
 import { IpcChannels, type AppUpdateAvailable } from "../../shared/types";
 
 vi.mock("electron", () => ({
-  ipcMain: {
-    handle: vi.fn(),
-  },
+  ipcMain: { handle: vi.fn() },
   app: {
     isPackaged: false,
     getVersion: vi.fn(() => "1.0.0"),
     getPath: vi.fn(() => "/mock/userData"),
   },
-  shell: {
-    openExternal: vi.fn(),
-    openPath: vi.fn(async () => ""),
-  },
+  shell: { openExternal: vi.fn(), openPath: vi.fn(async () => "") },
 }));
 
-import { ipcMain } from "electron";
+vi.mock("./trustedIpc", () => ({
+  isTrustedMainFrame: vi.fn(
+    (event: { senderFrame: { url: string } }) =>
+      event.senderFrame.url === "file:///mock/renderer/index.html",
+  ),
+}));
+
+import { ipcMain, shell } from "electron";
 import { registerUpdateHandlers } from "./updateHandlers";
 
+const digest =
+  "sha256:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef";
 const release = {
   tag_name: "v1.1.0",
   name: "Rexiano 1.1.0",
   html_url: "https://github.com/EndeavorYen/Rexiano/releases/tag/v1.1.0",
   assets: [
     {
+      id: 123,
       name: "rexiano-1.1.0-arm64.dmg",
       browser_download_url:
         "https://github.com/EndeavorYen/Rexiano/releases/download/v1.1.0/rexiano-1.1.0-arm64.dmg",
       size: 100,
+      digest,
     },
   ],
 };
+const available: AppUpdateAvailable = {
+  status: "available",
+  currentVersion: "1.0.0",
+  latestVersion: "1.1.0",
+  releaseName: "Rexiano 1.1.0",
+  releaseUrl: release.html_url,
+  artifactId: "123",
+  artifactName: "rexiano-1.1.0-arm64.dmg",
+  artifactSize: 100,
+};
+const mainFrame = { url: "file:///mock/renderer/index.html" };
+const event = { senderFrame: mainFrame, sender: { mainFrame, send: vi.fn() } };
 
 describe("updateHandlers", () => {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -59,7 +77,7 @@ describe("updateHandlers", () => {
       arch: "arm64",
     });
 
-    await expect(handlers[IpcChannels.UPDATE_CHECK]()).resolves.toEqual({
+    await expect(handlers[IpcChannels.UPDATE_CHECK](event)).resolves.toEqual({
       status: "disabled",
       currentVersion: "1.0.0",
       reason: "development-build",
@@ -67,63 +85,163 @@ describe("updateHandlers", () => {
     expect(fetchLatestRelease).not.toHaveBeenCalled();
   });
 
-  test("checks GitHub Releases for packaged builds", async () => {
+  test("retains trusted metadata in main and downloads only the checked opaque asset", async () => {
+    const downloadArtifact = vi.fn(async (_asset, onProgress) => {
+      onProgress({ percent: 100, transferredBytes: 100, totalBytes: 100 });
+      return "/mock/userData/updates/rexiano-1.1.0-arm64.dmg";
+    });
     registerUpdateHandlers({
       isPackaged: () => true,
       currentVersion: () => "1.0.0",
       fetchLatestRelease: async () => release,
       platform: "darwin",
       arch: "arm64",
+      downloadArtifact,
     });
 
-    await expect(handlers[IpcChannels.UPDATE_CHECK]()).resolves.toMatchObject({
-      status: "available",
-      currentVersion: "1.0.0",
-      latestVersion: "1.1.0",
-      artifactName: "rexiano-1.1.0-arm64.dmg",
+    await expect(handlers[IpcChannels.UPDATE_CHECK](event)).resolves.toEqual(
+      available,
+    );
+    await expect(
+      handlers[IpcChannels.UPDATE_DOWNLOAD](event, "123"),
+    ).resolves.toMatchObject({
+      status: "ready",
+      artifactId: "123",
+      downloadedPath: "/mock/userData/updates/rexiano-1.1.0-arm64.dmg",
     });
+    expect(downloadArtifact).toHaveBeenCalledWith(
+      expect.objectContaining({
+        id: 123,
+        browser_download_url: release.assets[0].browser_download_url,
+        digest,
+      }),
+      expect.any(Function),
+    );
   });
 
-  test("emits download progress and returns a ready update", async () => {
-    const available: AppUpdateAvailable = {
-      status: "available",
-      currentVersion: "1.0.0",
-      latestVersion: "1.1.0",
-      releaseName: "Rexiano 1.1.0",
-      releaseUrl: release.html_url,
-      artifactName: "rexiano-1.1.0-arm64.dmg",
-      artifactUrl:
-        "https://github.com/EndeavorYen/Rexiano/releases/download/v1.1.0/rexiano-1.1.0-arm64.dmg",
-      artifactSize: 100,
-    };
-    const send = vi.fn();
-
+  test("rejects unchecked, stale, concurrent, and untrusted-frame downloads", async () => {
+    let finishDownload: ((path: string) => void) | undefined;
+    const downloadArtifact = vi.fn(
+      () =>
+        new Promise<string>((resolve) => {
+          finishDownload = resolve;
+        }),
+    );
     registerUpdateHandlers({
       isPackaged: () => true,
       currentVersion: () => "1.0.0",
       fetchLatestRelease: async () => release,
       platform: "darwin",
       arch: "arm64",
-      downloadArtifact: async (_update, onProgress) => {
-        onProgress({ percent: 50, transferredBytes: 50, totalBytes: 100 });
-        onProgress({ percent: 100, transferredBytes: 100, totalBytes: 100 });
-        return "/mock/userData/updates/rexiano-1.1.0-arm64.dmg";
-      },
+      downloadArtifact,
+    });
+
+    const uncheckedResult = await Promise.race([
+      handlers[IpcChannels.UPDATE_DOWNLOAD](event, "123"),
+      Promise.resolve("pending"),
+    ]);
+    expect(uncheckedResult).not.toBe("pending");
+    expect(uncheckedResult).toMatchObject({ status: "failed" });
+    await handlers[IpcChannels.UPDATE_CHECK](event);
+    await expect(
+      handlers[IpcChannels.UPDATE_DOWNLOAD](
+        { ...event, senderFrame: { url: "https://attacker.invalid" } },
+        "123",
+      ),
+    ).resolves.toMatchObject({ status: "failed" });
+
+    const first = handlers[IpcChannels.UPDATE_DOWNLOAD](event, "123");
+    await expect(
+      handlers[IpcChannels.UPDATE_DOWNLOAD](event, "123"),
+    ).resolves.toMatchObject({ status: "failed" });
+    finishDownload?.("/mock/userData/updates/rexiano-1.1.0-arm64.dmg");
+    await first;
+    await expect(
+      handlers[IpcChannels.UPDATE_DOWNLOAD](event, "123"),
+    ).resolves.toMatchObject({ status: "failed" });
+  });
+
+  test("opens only the last trusted release URL and ignores renderer-supplied addresses", async () => {
+    registerUpdateHandlers({
+      isPackaged: () => true,
+      currentVersion: () => "1.0.0",
+      fetchLatestRelease: async () => release,
+      platform: "darwin",
+      arch: "arm64",
     });
 
     await expect(
-      handlers[IpcChannels.UPDATE_DOWNLOAD]({ sender: { send } }, available),
-    ).resolves.toMatchObject({
-      status: "ready",
-      latestVersion: "1.1.0",
-      downloadedPath: "/mock/userData/updates/rexiano-1.1.0-arm64.dmg",
+      handlers[IpcChannels.UPDATE_OPEN_RELEASE](
+        event,
+        "https://github.com/EndeavorYen/Rexiano/releases/download/v1.1.0/rexiano-1.1.0-arm64.dmg",
+      ),
+    ).resolves.toBe(false);
+    expect(shell.openExternal).not.toHaveBeenCalled();
+
+    await handlers[IpcChannels.UPDATE_CHECK](event);
+    await expect(
+      handlers[IpcChannels.UPDATE_OPEN_RELEASE](
+        event,
+        "https://github.com/EndeavorYen/Rexiano/releases/download/v1.1.0/rexiano-1.1.0-arm64.dmg",
+      ),
+    ).resolves.toBe(true);
+    expect(shell.openExternal).toHaveBeenCalledWith(release.html_url);
+  });
+
+  test("untrusted update checks cannot clear a verified download", async () => {
+    registerUpdateHandlers({
+      isPackaged: () => true,
+      currentVersion: () => "1.0.0",
+      fetchLatestRelease: async () => release,
+      platform: "darwin",
+      arch: "arm64",
+      downloadArtifact: async () =>
+        "/mock/userData/updates/rexiano-1.1.0-arm64.dmg",
     });
-    expect(send).toHaveBeenCalledWith(IpcChannels.UPDATE_PROGRESS, {
-      status: "downloading",
-      currentVersion: "1.0.0",
-      latestVersion: "1.1.0",
-      artifactName: "rexiano-1.1.0-arm64.dmg",
-      progress: { percent: 50, transferredBytes: 50, totalBytes: 100 },
+    await handlers[IpcChannels.UPDATE_CHECK](event);
+    await handlers[IpcChannels.UPDATE_DOWNLOAD](event, "123");
+
+    await expect(
+      handlers[IpcChannels.UPDATE_CHECK]({
+        ...event,
+        senderFrame: { url: "https://attacker.invalid" },
+      }),
+    ).resolves.toMatchObject({ status: "failed" });
+    await expect(
+      handlers[IpcChannels.UPDATE_OPEN_DOWNLOADED](event),
+    ).resolves.toBe(true);
+    expect(shell.openPath).toHaveBeenCalledWith(
+      "/mock/userData/updates/rexiano-1.1.0-arm64.dmg",
+    );
+  });
+
+  test("opens only the last verified artifact and consumes its authority", async () => {
+    registerUpdateHandlers({
+      isPackaged: () => true,
+      currentVersion: () => "1.0.0",
+      fetchLatestRelease: async () => release,
+      platform: "darwin",
+      arch: "arm64",
+      downloadArtifact: async () =>
+        "/mock/userData/updates/rexiano-1.1.0-arm64.dmg",
     });
+    await handlers[IpcChannels.UPDATE_CHECK](event);
+    await handlers[IpcChannels.UPDATE_DOWNLOAD](event, "123");
+
+    await expect(
+      handlers[IpcChannels.UPDATE_OPEN_DOWNLOADED](event),
+    ).resolves.toBe(true);
+    expect(shell.openPath).toHaveBeenCalledWith(
+      "/mock/userData/updates/rexiano-1.1.0-arm64.dmg",
+    );
+    await expect(
+      handlers[IpcChannels.UPDATE_OPEN_DOWNLOADED](event),
+    ).resolves.toBe(false);
+    await expect(
+      handlers[IpcChannels.UPDATE_OPEN_DOWNLOADED]({
+        ...event,
+        senderFrame: { url: "https://attacker.invalid" },
+      }),
+    ).resolves.toBe(false);
   });
 });

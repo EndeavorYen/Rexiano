@@ -9,9 +9,10 @@ import type {
   UserDataFileBackupPayload,
   UserDataFileBackupResult,
   UserDataFileMutationResult,
+  UserDataFileTransactionRecovery,
+  UserDataRendererSnapshot,
   WatchedMidiFolder,
   WatchedMidiFoldersScanResult,
-  AppUpdateAvailable,
   AppUpdateCheckResult,
   AppUpdateDownloadResult,
   AppUpdateStatus,
@@ -66,11 +67,23 @@ declare global {
       importUserDataFiles: (
         payload: UserDataFileBackupPayload,
         scopes?: string[],
+        rendererSnapshot?: UserDataRendererSnapshot,
       ) => Promise<UserDataFileMutationResult>;
       /** User data backup: reset file-backed userData scopes */
       resetUserDataFiles: (
         scopes?: string[],
+        rendererSnapshot?: UserDataRendererSnapshot,
       ) => Promise<UserDataFileMutationResult>;
+      /** Roll back file scopes for a pending renderer-coordinated mutation */
+      rollbackUserDataFileTransaction: (
+        transactionId: string,
+      ) => Promise<UserDataFileTransactionRecovery | null>;
+      /** Finalize a committed or fully rolled-back user-data transaction */
+      completeUserDataFileTransaction: (
+        transactionId: string,
+      ) => Promise<boolean>;
+      /** Recover file scopes after an interrupted renderer transaction */
+      recoverUserDataFileTransaction: () => Promise<UserDataFileTransactionRecovery | null>;
       /** Song library: choose a watched MIDI folder and scan it */
       selectWatchedMidiFolder: () => Promise<WatchedMidiFolder | null>;
       /** Song library: rescan watched MIDI folders */
@@ -79,6 +92,10 @@ declare global {
       ) => Promise<WatchedMidiFoldersScanResult>;
       /** Phase 6.5: Load a MIDI file by absolute path (for recent files) */
       loadMidiPath: (filePath: string) => Promise<MidiFileResult | null>;
+      /** OS file association: take the latest approved pending MIDI path once */
+      takePendingAssociatedMidiFile: () => Promise<string | null>;
+      /** OS file association: subscribe to pending-path notifications */
+      onAssociatedMidiFilePending: (callback: () => void) => () => void;
       /** Editor: export generated MIDI bytes with a save dialog */
       exportMidiFile: (request: MidiExportRequest) => Promise<MidiExportResult>;
       /** Release pipeline: get app version and changelog */
@@ -86,13 +103,11 @@ declare global {
       /** Release pipeline: check GitHub Releases for packaged updates */
       checkForUpdates: () => Promise<AppUpdateCheckResult>;
       /** Release pipeline: download an available update artifact */
-      downloadUpdate: (
-        update: AppUpdateAvailable,
-      ) => Promise<AppUpdateDownloadResult>;
+      downloadUpdate: (artifactId: string) => Promise<AppUpdateDownloadResult>;
       /** Release pipeline: open a GitHub Releases page */
-      openUpdateRelease: (releaseUrl: string) => Promise<boolean>;
+      openUpdateRelease: () => Promise<boolean>;
       /** Release pipeline: open the downloaded installer */
-      openDownloadedUpdate: (downloadedPath: string) => Promise<boolean>;
+      openDownloadedUpdate: () => Promise<boolean>;
       /** Release pipeline: subscribe to update download progress */
       onUpdateProgress: (
         callback: (status: AppUpdateStatus) => void,

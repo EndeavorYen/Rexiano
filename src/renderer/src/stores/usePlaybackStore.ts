@@ -8,6 +8,8 @@ interface PlaybackState {
   currentTime: number;
   /** Whether auto-play is active */
   isPlaying: boolean;
+  /** True while the metronome gates transport before beat one. */
+  countInActive: boolean;
   /** Vertical zoom: how many pixels represent one second of music */
   pixelsPerSecond: number;
 
@@ -26,9 +28,12 @@ interface PlaybackState {
   audioRecoverySuccessVisible: boolean;
   /** Monotonic trigger value for user-initiated recovery */
   audioRecoverySignal: number;
+  /** Monotonic marker that distinguishes Reset from an ordinary pause/seek. */
+  resetSignal: number;
 
   setCurrentTime: (time: number) => void;
   setPlaying: (playing: boolean) => void;
+  setCountInActive: (active: boolean) => void;
   setPixelsPerSecond: (pps: number) => void;
   setAudioStatus: (status: AudioEngineStatus) => void;
   setVolume: (volume: number) => void;
@@ -46,6 +51,7 @@ let recoverySuccessTimer: ReturnType<typeof setTimeout> | null = null;
 export const usePlaybackStore = create<PlaybackState>()((set) => ({
   currentTime: 0,
   isPlaying: false,
+  countInActive: false,
   pixelsPerSecond: 200,
 
   // Phase 4 defaults
@@ -56,9 +62,11 @@ export const usePlaybackStore = create<PlaybackState>()((set) => ({
   audioRecoveryMaxAttempts: 0,
   audioRecoverySuccessVisible: false,
   audioRecoverySignal: 0,
+  resetSignal: 0,
 
   setCurrentTime: (time) => set({ currentTime: time }),
   setPlaying: (playing) => set({ isPlaying: playing }),
+  setCountInActive: (active) => set({ countInActive: active }),
   setPixelsPerSecond: (pps) => set({ pixelsPerSecond: pps }),
   setAudioStatus: (status) => set({ audioStatus: status }),
   setVolume: (volume) => set({ volume: Math.max(0, Math.min(1, volume)) }),
@@ -99,13 +107,15 @@ export const usePlaybackStore = create<PlaybackState>()((set) => ({
       clearTimeout(recoverySuccessTimer);
       recoverySuccessTimer = null;
     }
-    set({
+    set((state) => ({
       currentTime: 0,
       isPlaying: false,
+      countInActive: false,
       audioRecoveryState: "idle",
       audioRecoveryAttempt: 0,
       audioRecoveryMaxAttempts: 0,
       audioRecoverySuccessVisible: false,
-    });
+      resetSignal: state.resetSignal + 1,
+    }));
   },
 }));

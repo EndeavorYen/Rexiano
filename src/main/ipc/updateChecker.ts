@@ -1,9 +1,14 @@
 import type { AppUpdateCheckResult } from "../../shared/types";
 
+const ASSET_DOWNLOAD_PREFIX =
+  "https://github.com/EndeavorYen/Rexiano/releases/download/";
+
 export interface GitHubReleaseAsset {
+  id?: number;
   name: string;
   browser_download_url: string;
   size?: number;
+  digest?: string | null;
 }
 
 export interface GitHubRelease {
@@ -21,13 +26,16 @@ interface ResolveUpdateCheckInput {
   release: GitHubRelease;
 }
 
-function normalizeVersion(version: string): string {
-  return version.trim().replace(/^v/i, "");
+function normalizeVersion(version: string): string | null {
+  const match = /^v?(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$/.exec(
+    version.trim(),
+  );
+  return match ? `${match[1]}.${match[2]}.${match[3]}` : null;
 }
 
 function compareVersions(a: string, b: string): number {
-  const aParts = normalizeVersion(a).split(".").map(Number);
-  const bParts = normalizeVersion(b).split(".").map(Number);
+  const aParts = a.split(".").map(Number);
+  const bParts = b.split(".").map(Number);
   const maxLength = Math.max(aParts.length, bParts.length);
 
   for (let index = 0; index < maxLength; index += 1) {
@@ -43,21 +51,15 @@ function assetMatchesPlatform(
   assetName: string,
   platform: NodeJS.Platform,
   arch: string,
+  version: string,
 ): boolean {
   const name = assetName.toLowerCase();
-  const archMatches =
-    arch === "arm64"
-      ? name.includes("arm64") || name.includes("aarch64")
-      : name.includes("x64") ||
-        name.includes("x86_64") ||
-        name.includes("amd64");
-
-  if (platform === "darwin") return archMatches && name.endsWith(".dmg");
-  if (platform === "win32")
-    return name.endsWith(".exe") || name.endsWith(".msi");
-  if (platform === "linux") {
-    return archMatches && (name.endsWith(".appimage") || name.endsWith(".deb"));
-  }
+  if (platform === "darwin" && (arch === "arm64" || arch === "x64"))
+    return name === `rexiano-${version}-${arch}.dmg`;
+  if (platform === "win32" && arch === "x64")
+    return name === `rexiano-${version}-setup.exe`;
+  if (platform === "linux" && arch === "x64")
+    return name === `rexiano-${version}-x86_64.appimage`;
 
   return false;
 }
@@ -66,10 +68,12 @@ function selectReleaseAsset(
   assets: GitHubReleaseAsset[],
   platform: NodeJS.Platform,
   arch: string,
+  version: string,
 ): GitHubReleaseAsset | null {
   return (
-    assets.find((asset) => assetMatchesPlatform(asset.name, platform, arch)) ??
-    null
+    assets.find((asset) =>
+      assetMatchesPlatform(asset.name, platform, arch, version),
+    ) ?? null
   );
 }
 
@@ -85,8 +89,12 @@ export function resolveUpdateCheck(
   }
 
   const latestVersion = normalizeVersion(input.release.tag_name ?? "");
+  const currentVersion = normalizeVersion(input.currentVersion);
   const releaseUrl = input.release.html_url ?? "";
-  if (!latestVersion || !releaseUrl) {
+  const expectedReleaseUrl = latestVersion
+    ? `https://github.com/EndeavorYen/Rexiano/releases/tag/v${latestVersion}`
+    : "";
+  if (!latestVersion || !currentVersion || releaseUrl !== expectedReleaseUrl) {
     return {
       status: "failed",
       currentVersion: input.currentVersion,
@@ -94,7 +102,7 @@ export function resolveUpdateCheck(
     };
   }
 
-  if (compareVersions(latestVersion, input.currentVersion) <= 0) {
+  if (compareVersions(latestVersion, currentVersion) <= 0) {
     return {
       status: "not-available",
       currentVersion: input.currentVersion,
@@ -107,6 +115,7 @@ export function resolveUpdateCheck(
     input.release.assets ?? [],
     input.platform,
     input.arch,
+    latestVersion,
   );
   if (!asset) {
     return {
@@ -116,14 +125,35 @@ export function resolveUpdateCheck(
     };
   }
 
+  if (
+    !Number.isSafeInteger(asset.id) ||
+    !asset.id ||
+    !asset.size ||
+    !/^sha256:[0-9a-f]{64}$/.test(asset.digest ?? "")
+  ) {
+    return {
+      status: "failed",
+      currentVersion: input.currentVersion,
+      message: "The matching installer cannot be cryptographically verified.",
+    };
+  }
+  const expectedArtifactUrl = `${ASSET_DOWNLOAD_PREFIX}v${latestVersion}/${asset.name}`;
+  if (asset.browser_download_url !== expectedArtifactUrl) {
+    return {
+      status: "failed",
+      currentVersion: input.currentVersion,
+      message: "The matching installer URL is not an official release asset.",
+    };
+  }
+
   return {
     status: "available",
     currentVersion: input.currentVersion,
     latestVersion,
     releaseName: input.release.name ?? `Rexiano ${latestVersion}`,
     releaseUrl,
+    artifactId: String(asset.id),
     artifactName: asset.name,
-    artifactUrl: asset.browser_download_url,
     artifactSize: asset.size ?? 0,
   };
 }

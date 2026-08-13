@@ -12,6 +12,7 @@ import {
   migrateUserDataBackupManifest,
   parseUserDataBackupText,
   resetUserDataBackupRuntime,
+  recoverPendingUserDataBackupRuntime,
   type UserDataMutableLocalStoragePort,
   type UserDataFileBackupPort,
   validateUserDataBackupManifest,
@@ -559,5 +560,146 @@ describe("runtime backup round trip", () => {
       "rexiano-song-practice-setup",
     ]);
     expect(target.values).toEqual({});
+  });
+
+  test("rolls file and localStorage scopes back when a later local write fails", async () => {
+    const originalSettings = JSON.stringify({ volume: 72 });
+    const originalLibrary = JSON.stringify({ viewMode: "cards" });
+    const target = createStorage({
+      "rexiano-settings": originalSettings,
+      "rexiano-song-library": originalLibrary,
+    });
+    const originalSetItem = target.setItem.bind(target);
+    let writes = 0;
+    target.setItem = (key, value) => {
+      writes += 1;
+      if (writes === 2) throw new Error("quota exceeded");
+      originalSetItem(key, value);
+    };
+    const calls: string[] = [];
+    const filePort: UserDataFileBackupPort = {
+      exportUserDataFiles: async () => ({ ok: true, scopes: [], data: {} }),
+      importUserDataFiles: async () => ({
+        ok: true,
+        scopes: ["progress"],
+        transactionId: "txn-1",
+      }),
+      resetUserDataFiles: async () => ({ ok: true, scopes: [] }),
+      rollbackUserDataFileTransaction: async (id) => {
+        calls.push(`rollback:${id}`);
+        return { transactionId: id, rendererSnapshot: {} };
+      },
+      completeUserDataFileTransaction: async (id) => {
+        calls.push(`complete:${id}`);
+        return true;
+      },
+      recoverUserDataFileTransaction: async () => null,
+    };
+
+    const result = await applyUserDataBackupToRuntime(
+      createUserDataBackupManifest({
+        settings: { volume: 10 },
+        progress: [],
+        libraryMetadata: { viewMode: "rows" },
+      }),
+      target,
+      filePort,
+    );
+
+    expect(result).toEqual({
+      ok: false,
+      appliedScopes: [],
+      errors: ["quota exceeded"],
+    });
+    expect(target.values["rexiano-settings"]).toBe(originalSettings);
+    expect(target.values["rexiano-song-library"]).toBe(originalLibrary);
+    expect(calls).toEqual(["rollback:txn-1", "complete:txn-1"]);
+  });
+
+  test("restores renderer state from a pending restart recovery", async () => {
+    const target = createStorage({
+      "rexiano-settings": JSON.stringify({ volume: 10 }),
+      "rexiano-song-library": JSON.stringify({ viewMode: "rows" }),
+    });
+    const completed: string[] = [];
+    const filePort: UserDataFileBackupPort = {
+      exportUserDataFiles: async () => ({ ok: true, scopes: [], data: {} }),
+      importUserDataFiles: async () => ({ ok: true, scopes: [] }),
+      resetUserDataFiles: async () => ({ ok: true, scopes: [] }),
+      rollbackUserDataFileTransaction: async (id) => ({
+        transactionId: id,
+        rendererSnapshot: {},
+      }),
+      completeUserDataFileTransaction: async (id) => {
+        completed.push(id);
+        return true;
+      },
+      recoverUserDataFileTransaction: async () => ({
+        transactionId: "txn-restart",
+        rendererSnapshot: {
+          "rexiano-settings": JSON.stringify({ volume: 72 }),
+          "rexiano-song-library": null,
+        },
+      }),
+    };
+
+    await expect(
+      recoverPendingUserDataBackupRuntime(target, filePort),
+    ).resolves.toEqual({ ok: true, recovered: true });
+    expect(JSON.parse(target.values["rexiano-settings"])).toEqual({
+      volume: 72,
+    });
+    expect(target.values["rexiano-song-library"]).toBeUndefined();
+    expect(completed).toEqual(["txn-restart"]);
+  });
+
+  test("rolls reset back when removing a later localStorage key fails", async () => {
+    const originalSettings = JSON.stringify({ volume: 72 });
+    const originalSetup = JSON.stringify(practiceSetup());
+    const target = createStorage({
+      "rexiano-settings": originalSettings,
+      "rexiano-song-practice-setup": originalSetup,
+    });
+    const originalRemoveItem = target.removeItem.bind(target);
+    let removals = 0;
+    target.removeItem = (key) => {
+      removals += 1;
+      if (removals === 2) throw new Error("storage is read-only");
+      originalRemoveItem(key);
+    };
+    const calls: string[] = [];
+    const filePort: UserDataFileBackupPort = {
+      exportUserDataFiles: async () => ({ ok: true, scopes: [], data: {} }),
+      importUserDataFiles: async () => ({ ok: true, scopes: [] }),
+      resetUserDataFiles: async () => ({
+        ok: true,
+        scopes: ["progress"],
+        transactionId: "txn-reset",
+      }),
+      rollbackUserDataFileTransaction: async (id) => {
+        calls.push(`rollback:${id}`);
+        return { transactionId: id, rendererSnapshot: {} };
+      },
+      completeUserDataFileTransaction: async (id) => {
+        calls.push(`complete:${id}`);
+        return true;
+      },
+      recoverUserDataFileTransaction: async () => null,
+    };
+
+    await expect(
+      resetUserDataBackupRuntime(target, filePort, [
+        "settings",
+        "progress",
+        "perSongSetup",
+      ]),
+    ).resolves.toEqual({
+      ok: false,
+      appliedScopes: [],
+      errors: ["storage is read-only"],
+    });
+    expect(target.values["rexiano-settings"]).toBe(originalSettings);
+    expect(target.values["rexiano-song-practice-setup"]).toBe(originalSetup);
+    expect(calls).toEqual(["rollback:txn-reset", "complete:txn-reset"]);
   });
 });

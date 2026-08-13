@@ -14,6 +14,7 @@ vi.mock("@renderer/stores/usePlaybackStore", () => {
     isPlaying: false,
     setCurrentTime: vi.fn(),
     setPlaying: vi.fn(),
+    reset: vi.fn(),
   };
   const store = Object.assign(() => state, {
     getState: () => state,
@@ -218,14 +219,12 @@ describe("useKeyboardShortcuts", () => {
   describe("R — Reset", () => {
     test("resets time to 0", () => {
       fireKey("KeyR");
-      expect(usePlaybackStore.getState().setCurrentTime).toHaveBeenCalledWith(
-        0,
-      );
+      expect(usePlaybackStore.getState().reset).toHaveBeenCalledOnce();
     });
 
     test("does not reset on Ctrl+R", () => {
       fireKey("KeyR", { ctrlKey: true });
-      expect(usePlaybackStore.getState().setCurrentTime).not.toHaveBeenCalled();
+      expect(usePlaybackStore.getState().reset).not.toHaveBeenCalled();
     });
   });
 

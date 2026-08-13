@@ -96,6 +96,8 @@ graph TB
 
 Electron 的 Main Process 與 Renderer Process 之間透過 `contextBridge` 溝通。為避免 `Uint8Array` 在 structured clone 時遺失型別，所有二進位資料一律用 `number[]` 傳遞，Renderer 端再轉回。
 
+MIDI 匯入檔案上限為 **8 MiB**。Main process 會在讀檔前依檔案 metadata 拒絕超限內容，並於讀取後再次檢查實際 byte length；拖放匯入也會在建立 `number[]` 前執行同一限制。這個上限同時約束原始 buffer 與 IPC `number[]` 的記憶體放大，避免惡意或誤選的大型檔案阻塞介面。所有以路徑載入的 MIDI（最近檔案、監看資料夾、作業系統檔案關聯）都先由 Main process 解析 canonical path，並只接受仍符合原始檔案／資料夾授權與 regular-file 身分的目標。
+
 ### 目錄結構
 
 ```

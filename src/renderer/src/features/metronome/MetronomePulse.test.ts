@@ -1,6 +1,11 @@
 import { describe, test, expect, beforeEach } from "vitest";
 import { useSettingsStore } from "@renderer/stores/useSettingsStore";
-import { getDotColor, getDotOpacity, getDotSize } from "./metronomePulseUtils";
+import {
+  getDotColor,
+  getDotOpacity,
+  getDotSize,
+  shouldShowMetronomePulse,
+} from "./metronomePulseUtils";
 
 // ─── getDotColor ────────────────────────────────────────
 
@@ -78,6 +83,16 @@ describe("MetronomePulse visibility conditions", () => {
     const metronomeEnabled = useSettingsStore.getState().metronomeEnabled;
     const isPlaying = true;
     expect(metronomeEnabled && isPlaying).toBe(true);
+  });
+
+  test("renders during count-in even when regular metronome is disabled", () => {
+    expect(
+      shouldShowMetronomePulse({
+        metronomeEnabled: false,
+        countInActive: true,
+        isRunning: true,
+      }),
+    ).toBe(true);
   });
 });
 

@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, test, vi } from "vitest";
 import { IpcChannels } from "../../shared/types";
+import { MAX_MIDI_FILE_BYTES } from "../../shared/midiFileLimits";
 import {
   approveMidiFilePath,
   clearApprovedMidiPathAccessForTests,
@@ -10,6 +11,7 @@ const mockAppPath = "/mock/app";
 const mockResourcesPath = "/mock/resources";
 let mockIsPackaged = false;
 let mockFileContents: Record<string, Buffer> = {};
+const mockFdReads: string[] = [];
 
 vi.mock("electron", () => ({
   ipcMain: {
@@ -38,7 +40,47 @@ vi.mock("fs/promises", () => ({
     if (!contents) throw new Error("ENOENT");
     return contents;
   }),
+  open: vi.fn(async (path: string) => {
+    const normalized = path.replace(/\\/g, "/");
+    const contents = mockFileContents[normalized];
+    if (!contents) {
+      throw Object.assign(new Error("ENOENT"), { code: "ENOENT" });
+    }
+    return {
+      stat: async () => ({
+        size: contents.byteLength,
+        isFile: () => true,
+      }),
+      read: async (
+        buffer: Buffer,
+        offset: number,
+        length: number,
+        position: number,
+      ) => {
+        mockFdReads.push(normalized);
+        const start = position ?? 0;
+        const bytesRead = Math.min(length, contents.byteLength - start);
+        contents.copy(buffer, offset, start, start + bytesRead);
+        return { bytesRead };
+      },
+      close: async () => undefined,
+    };
+  }),
   writeFile: vi.fn(async () => {}),
+  realpath: vi.fn(async (path: string) => {
+    const normalized = path.replace(/\\/g, "/");
+    if (!(normalized in mockFileContents)) {
+      throw Object.assign(new Error("ENOENT"), { code: "ENOENT" });
+    }
+    return normalized;
+  }),
+  stat: vi.fn(async (path: string) => ({
+    size: mockFileContents[path.replace(/\\/g, "/")]?.byteLength ?? 0,
+    dev: 1,
+    ino: path.length,
+    isFile: () => path.replace(/\\/g, "/") in mockFileContents,
+    isDirectory: () => false,
+  })),
 }));
 
 vi.mock("fs", () => ({
@@ -53,6 +95,11 @@ vi.mock("fs", () => ({
 import { registerFileHandlers } from "./fileHandlers";
 import { dialog, ipcMain } from "electron";
 import { readFile, writeFile } from "fs/promises";
+import { configureTrustedRendererUrl } from "./midiPermissionPolicy";
+import { createTrustedIpcTestEvent } from "./trustedIpcTestEvent";
+
+configureTrustedRendererUrl("file:///mock/renderer/index.html");
+const trustedEvent = createTrustedIpcTestEvent();
 
 describe("fileHandlers", () => {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -61,6 +108,7 @@ describe("fileHandlers", () => {
   beforeEach(() => {
     mockIsPackaged = false;
     mockFileContents = {};
+    mockFdReads.length = 0;
     clearApprovedMidiPathAccessForTests();
     vi.clearAllMocks();
     Object.defineProperty(process, "resourcesPath", {
@@ -84,7 +132,7 @@ describe("fileHandlers", () => {
     mockFileContents["/Users/rex/Music/Secret.mid"] = Buffer.from([1, 2, 3]);
 
     const result = await handlers[IpcChannels.LOAD_MIDI_PATH](
-      null,
+      trustedEvent,
       "/Users/rex/Music/Secret.mid",
     );
 
@@ -94,15 +142,29 @@ describe("fileHandlers", () => {
 
   test("LOAD_MIDI_PATH loads a user-approved MIDI file", async () => {
     mockFileContents["/Users/rex/Music/Scale.mid"] = Buffer.from([1, 2, 3]);
-    approveMidiFilePath("/Users/rex/Music/Scale.mid");
+    await approveMidiFilePath("/Users/rex/Music/Scale.mid");
 
     await expect(
-      handlers[IpcChannels.LOAD_MIDI_PATH](null, "/Users/rex/Music/Scale.mid"),
+      handlers[IpcChannels.LOAD_MIDI_PATH](
+        trustedEvent,
+        "/Users/rex/Music/Scale.mid",
+      ),
     ).resolves.toEqual({
       fileName: "Scale.mid",
       data: [1, 2, 3],
       path: "/Users/rex/Music/Scale.mid",
     });
+  });
+
+  test("LOAD_MIDI_PATH rejects an oversized approved file before read", async () => {
+    const path = "/Users/rex/Music/Huge.mid";
+    mockFileContents[path] = Buffer.alloc(MAX_MIDI_FILE_BYTES + 1);
+    await approveMidiFilePath(path);
+
+    await expect(
+      handlers[IpcChannels.LOAD_MIDI_PATH](trustedEvent, path),
+    ).rejects.toMatchObject({ reason: "too-large" });
+    expect(mockFdReads).not.toContain(path);
   });
 
   test("EXPORT_MIDI_FILE writes selected MIDI bytes to a user-selected path", async () => {
@@ -112,7 +174,7 @@ describe("fileHandlers", () => {
     });
 
     await expect(
-      handlers[IpcChannels.EXPORT_MIDI_FILE](null, {
+      handlers[IpcChannels.EXPORT_MIDI_FILE](trustedEvent, {
         suggestedName: "Edited.mid",
         data: [77, 84, 104, 100],
       }),
@@ -134,7 +196,7 @@ describe("fileHandlers", () => {
     });
 
     await expect(
-      handlers[IpcChannels.EXPORT_MIDI_FILE](null, {
+      handlers[IpcChannels.EXPORT_MIDI_FILE](trustedEvent, {
         suggestedName: "Edited.mid",
         data: [1, 2, 3],
       }),
@@ -163,7 +225,7 @@ describe("fileHandlers", () => {
     );
 
     await expect(
-      handlers[IpcChannels.LIST_BUILTIN_SONGS](null),
+      handlers[IpcChannels.LIST_BUILTIN_SONGS](trustedEvent),
     ).resolves.toEqual([
       {
         id: "hot-cross-buns",
@@ -186,7 +248,7 @@ describe("fileHandlers", () => {
     mockFileContents[soundFontPath] = Buffer.from([9, 8, 7]);
 
     await expect(
-      handlers[IpcChannels.LOAD_SOUNDFONT](null, "piano.sf2"),
+      handlers[IpcChannels.LOAD_SOUNDFONT](trustedEvent, "piano.sf2"),
     ).resolves.toEqual({
       data: [9, 8, 7],
       fileName: "piano.sf2",

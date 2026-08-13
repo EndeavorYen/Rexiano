@@ -293,5 +293,55 @@ describe("BleMidiManager", () => {
       expect(manager.status).toBe("error");
       expect(manager.error).toBe("BLE MIDI service was not found");
     });
+
+    it("emits device loss after a successful unexpected disconnect", async () => {
+      let disconnectListener: (() => void) | null = null;
+      const characteristic = {
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn(),
+        startNotifications: vi.fn().mockResolvedValue(undefined),
+      } as unknown as BluetoothRemoteGATTCharacteristic;
+      const device = {
+        name: "Stage Piano",
+        addEventListener: vi.fn((event: string, listener: () => void) => {
+          if (event === "gattserverdisconnected") disconnectListener = listener;
+        }),
+        removeEventListener: vi.fn(),
+        gatt: {
+          connected: false,
+          connect: vi.fn().mockResolvedValue({
+            getPrimaryService: vi.fn().mockResolvedValue({
+              getCharacteristic: vi.fn().mockResolvedValue(characteristic),
+            }),
+          }),
+          disconnect: vi.fn(),
+        },
+      } as unknown as BluetoothDevice;
+      Object.defineProperty(navigator, "bluetooth", {
+        configurable: true,
+        value: { requestDevice: vi.fn().mockResolvedValue(device) },
+      });
+      const onDisconnect = vi.fn();
+      const onStatusChange = vi.fn();
+      manager.setCallbacks({ onDisconnect, onStatusChange });
+
+      await manager.connect();
+      expect(manager.status).toBe("connected");
+      expect(disconnectListener).not.toBeNull();
+
+      disconnectListener!();
+
+      expect(manager.status).toBe("idle");
+      expect(manager.deviceName).toBeNull();
+      expect(onDisconnect).toHaveBeenCalledOnce();
+      expect(onStatusChange).toHaveBeenLastCalledWith("idle", null, null);
+
+      await manager.connect();
+      expect(manager.status).toBe("connected");
+      disconnectListener!();
+      expect(onDisconnect).toHaveBeenCalledTimes(2);
+      expect(device.addEventListener).toHaveBeenCalledTimes(2);
+      expect(device.removeEventListener).toHaveBeenCalledTimes(2);
+    });
   });
 });

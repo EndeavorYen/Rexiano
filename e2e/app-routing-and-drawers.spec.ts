@@ -29,6 +29,17 @@ test.describe("App routing and drawer behavior", () => {
     await closeTopDrawer(appPage);
   });
 
+  test("library hash after reload still reaches the library", async ({
+    appPage,
+  }) => {
+    await appPage.reload();
+    await appPage.waitForLoadState("domcontentloaded");
+    await gotoLibrary(appPage);
+    await expect(
+      appPage.getByTestId("library-device-drawer-trigger"),
+    ).toBeVisible();
+  });
+
   test("loaded song forces playback route and playback drawer works", async ({
     appPage,
   }) => {

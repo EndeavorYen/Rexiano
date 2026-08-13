@@ -1,5 +1,5 @@
-import { writeFileSync } from "fs";
-import { dirname, join, resolve } from "path";
+import { realpathSync, statSync, writeFileSync } from "fs";
+import { join, resolve } from "path";
 import type { Locator } from "@playwright/test";
 import { createImportedSongId } from "../src/renderer/src/features/songLibrary/importedSongMetadata";
 import { test, expect } from "./fixtures/electronApp";
@@ -42,10 +42,26 @@ test.describe("Song library selection workflow", () => {
       recommendation.getByTestId("song-library-recommendation-title"),
     ).not.toHaveText("");
 
-    await recommendation.click();
-    await expect(appPage.getByTestId("mode-select-wait")).toBeVisible({
+    await recommendation.focus();
+    await appPage.keyboard.press("Enter");
+    await expect(appPage.getByTestId("mode-select-watch")).toBeFocused({
       timeout: 20_000,
     });
+
+    await appPage.getByTestId("mode-select-back").click();
+    await expect(recommendation).toBeFocused({ timeout: 20_000 });
+
+    const continuePractice = appPage.getByTestId(
+      "song-library-continue-action",
+    );
+    await expect(continuePractice).toBeVisible();
+    await continuePractice.focus();
+    await appPage.keyboard.press("Enter");
+    await expect(appPage.getByTestId("mode-select-watch")).toBeFocused({
+      timeout: 20_000,
+    });
+    await appPage.getByTestId("mode-select-back").click();
+    await expect(continuePractice).toBeFocused({ timeout: 20_000 });
   });
 
   test("shows quiet daily practice goal progress on the launcher", async ({
@@ -188,31 +204,74 @@ test.describe("Song library selection workflow", () => {
     await expect(appPage.getByTestId("mode-select-wait")).toBeHidden();
   });
 
+  test("keeps keyboard focus on the forward song-to-practice path and restores it on Back", async ({
+    appPage,
+  }) => {
+    await appPage.setViewportSize({ width: 1440, height: 900 });
+    await resetLibraryPrefs(appPage);
+    await gotoLibrary(appPage);
+
+    const hotCrossBuns = appPage.getByTestId("song-select-hot-cross-buns");
+    await hotCrossBuns.focus();
+    await appPage.keyboard.press("Enter");
+
+    const practice = appPage.getByTestId("song-selection-preview-practice");
+    await expect(practice).toBeFocused();
+    await expect(practice).toBeInViewport();
+
+    await appPage.keyboard.press("Enter");
+    await expect(appPage.getByTestId("mode-select-watch")).toBeFocused({
+      timeout: 20_000,
+    });
+
+    await appPage.getByTestId("mode-select-back").click();
+    await expect(hotCrossBuns).toBeFocused({ timeout: 20_000 });
+
+    // Pointer selection deliberately keeps focus on the row rather than
+    // teleporting it to a newly rendered control.
+    await hotCrossBuns.click();
+    await expect(hotCrossBuns).toBeFocused();
+    await expect(practice).toBeInViewport();
+  });
+
   test("shows imported-song preview before starting practice", async ({
     appPage,
     electronApp,
   }) => {
-    const sourcePath = resolve("resources/midi/c-major-scale.mid");
-    const watchedFolder = dirname(sourcePath);
+    const sourcePath = realpathSync(
+      resolve("resources/midi/c-major-scale.mid"),
+    );
     const importedSongId = createImportedSongId(sourcePath);
+    const fileStats = statSync(sourcePath);
     const userDataPath = await electronApp.evaluate(({ app }) =>
       app.getPath("userData"),
     );
     writeFileSync(
       join(userDataPath, "midi-path-access.json"),
-      JSON.stringify({ files: [], folders: [watchedFolder] }, null, 2),
+      JSON.stringify(
+        {
+          files: [
+            {
+              path: sourcePath,
+              identity: `${fileStats.dev}:${fileStats.ino}`,
+            },
+          ],
+        },
+        null,
+        2,
+      ),
       "utf-8",
     );
 
     await appPage.evaluate(
-      ({ importedSongId, sourcePath, watchedFolder }) => {
+      ({ importedSongId, sourcePath }) => {
         localStorage.setItem(
           "rexiano-song-library",
           JSON.stringify({
             viewMode: "list",
             sortMode: "recent",
             favoriteSongIds: [],
-            watchedFolders: [watchedFolder],
+            watchedFolders: [],
             importedSongs: [
               {
                 id: importedSongId,
@@ -228,12 +287,16 @@ test.describe("Song library selection workflow", () => {
           }),
         );
       },
-      { importedSongId, sourcePath, watchedFolder },
+      { importedSongId, sourcePath },
     );
     await appPage.reload();
     await gotoLibrary(appPage);
 
-    await appPage.getByTestId(`imported-song-select-${importedSongId}`).click();
+    const importedSong = appPage.getByTestId(
+      `imported-song-select-${importedSongId}`,
+    );
+    await importedSong.focus();
+    await appPage.keyboard.press("Enter");
 
     const preview = appPage.getByTestId("song-selection-preview");
     await expect(preview).toBeVisible();
@@ -246,6 +309,9 @@ test.describe("Song library selection workflow", () => {
     await expect(
       preview.getByTestId("song-selection-preview-audio"),
     ).toHaveText("Preview");
+    await expect(
+      preview.getByTestId("song-selection-preview-practice"),
+    ).toBeFocused();
     await expect(appPage.getByTestId("mode-select-wait")).toBeHidden();
 
     await preview.getByTestId("song-selection-preview-practice").click();

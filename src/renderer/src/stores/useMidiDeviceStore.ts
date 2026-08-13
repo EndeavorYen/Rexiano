@@ -6,6 +6,7 @@ import {
   BleMidiManager,
   type BleMidiStatus,
 } from "@renderer/engines/midi/BleMidiManager";
+import { MidiOutputSender } from "@renderer/engines/midi/MidiOutputSender";
 
 interface MidiDeviceState {
   /** Available MIDI input devices */
@@ -48,6 +49,8 @@ interface MidiDeviceState {
   connectBluetooth: () => Promise<void>;
   /** Disconnect BLE MIDI device */
   disconnectBluetooth: () => void;
+  /** Reconcile renderer state after an established BLE link is lost. */
+  handleBluetoothDeviceLoss: () => void;
 }
 
 /** Module-level parser instance — one per app, managed by the store */
@@ -55,6 +58,13 @@ let _parser: MidiInputParser | null = null;
 
 /** Module-level BLE MIDI manager */
 let _bleManager: BleMidiManager | null = null;
+
+/** One stable sender is shared by device selection and song scheduling. */
+const _playbackOutputSender = new MidiOutputSender();
+
+export function getMidiPlaybackOutputSender(): MidiOutputSender {
+  return _playbackOutputSender;
+}
 
 function getParser(store: {
   onNoteOn: (midi: number) => void;
@@ -114,6 +124,12 @@ export const useMidiDeviceStore = create<MidiDeviceState>()((set, get) => ({
     });
 
     manager.onActiveOutputChange((device) => {
+      const output = manager.getActiveOutput();
+      if (output) {
+        _playbackOutputSender.attach(output);
+      } else {
+        _playbackOutputSender.detach();
+      }
       set({ selectedOutputId: device?.id ?? null });
     });
 
@@ -150,6 +166,7 @@ export const useMidiDeviceStore = create<MidiDeviceState>()((set, get) => ({
     const manager = MidiDeviceManager.getInstance();
     manager.disconnectInput();
     manager.disconnectOutput();
+    _playbackOutputSender.detach();
     manager.onDeviceListChange(null);
     manager.onActiveInputChange(null);
     manager.onActiveOutputChange(null);
@@ -230,6 +247,16 @@ export const useMidiDeviceStore = create<MidiDeviceState>()((set, get) => ({
     _bleManager.setCallbacks({
       onNoteOn: (note) => get().onNoteOn(note),
       onNoteOff: (note) => get().onNoteOff(note),
+      onStatusChange: (bleStatus, bleDeviceName, connectionError) => {
+        set({
+          bleStatus,
+          bleDeviceName,
+          connectionError,
+          isConnected:
+            bleStatus === "connected" || get().selectedInputId !== null,
+        });
+      },
+      onDisconnect: () => get().handleBluetoothDeviceLoss(),
     });
 
     set({ bleStatus: "scanning", connectionError: null });
@@ -253,6 +280,16 @@ export const useMidiDeviceStore = create<MidiDeviceState>()((set, get) => ({
     set({
       bleStatus: "idle",
       bleDeviceName: null,
+      isConnected: get().selectedInputId !== null,
+      activeNotes: new Set(),
+    });
+  },
+
+  handleBluetoothDeviceLoss: () => {
+    set({
+      bleStatus: "idle",
+      bleDeviceName: null,
+      connectionError: null,
       isConnected: get().selectedInputId !== null,
       activeNotes: new Set(),
     });

@@ -19,6 +19,8 @@ export interface ThemeTokens {
     successText: string;
     /** Readable negative status text on themed surfaces */
     dangerText: string;
+    /** Visible boundary for interactive form controls */
+    controlBorder: string;
     text: string;
     textMuted: string;
     border: string;
@@ -63,6 +65,7 @@ export const themes: Record<ThemeId, ThemeTokens> = {
       onAccent: "#FFFFFF",
       successText: "#166534",
       dangerText: "#B91C1C",
+      controlBorder: "#6C6478",
       text: "#1F1A26",
       textMuted: "#6C6478",
       border: "#D7D0DE",
@@ -101,6 +104,7 @@ export const themes: Record<ThemeId, ThemeTokens> = {
       onAccent: "#FFFFFF",
       successText: "#166534",
       dangerText: "#B91C1C",
+      controlBorder: "#5C6F68",
       text: "#17211F",
       textMuted: "#5C6F68",
       border: "#C9D8D2",
@@ -139,6 +143,7 @@ export const themes: Record<ThemeId, ThemeTokens> = {
       onAccent: "#FFFFFF",
       successText: "#166534",
       dangerText: "#B91C1C",
+      controlBorder: "#6F5C50",
       text: "#2E231D",
       textMuted: "#6F5C50",
       border: "#DAC8BA",
@@ -177,6 +182,7 @@ export const themes: Record<ThemeId, ThemeTokens> = {
       onAccent: "#0E1013",
       successText: "#86C4AD",
       dangerText: "#FCA5A5",
+      controlBorder: "#97A6B6",
       text: "#E8EDF2",
       textMuted: "#97A6B6",
       border: "#303947",

@@ -4,7 +4,9 @@ import type { ParsedNote } from "./types";
 
 // ─── Mock MIDIOutput ────────────────────────────
 
-function createMockMIDIOutput(): MIDIOutput {
+function createMockMIDIOutput(): MIDIOutput & {
+  clear: ReturnType<typeof vi.fn>;
+} {
   return {
     id: "output-1",
     name: "Test Output",
@@ -22,14 +24,14 @@ function createMockMIDIOutput(): MIDIOutput {
     addEventListener: vi.fn(),
     removeEventListener: vi.fn(),
     dispatchEvent: vi.fn().mockReturnValue(true),
-  } as unknown as MIDIOutput;
+  } as unknown as MIDIOutput & { clear: ReturnType<typeof vi.fn> };
 }
 
 // ─── Tests ───────────────────────────────────────
 
 describe("MidiOutputSender", () => {
   let sender: MidiOutputSender;
-  let mockOutput: MIDIOutput;
+  let mockOutput: MIDIOutput & { clear: ReturnType<typeof vi.fn> };
 
   beforeEach(() => {
     sender = new MidiOutputSender();
@@ -161,6 +163,21 @@ describe("MidiOutputSender", () => {
     test("does nothing when not attached", () => {
       sender.allNotesOff();
       expect(mockOutput.send).not.toHaveBeenCalled();
+    });
+  });
+
+  describe("clearScheduled", () => {
+    test("cancels queued messages before silencing held notes", () => {
+      sender.attach(mockOutput);
+      sender.clearScheduled();
+
+      expect(mockOutput.clear).toHaveBeenCalledOnce();
+      expect(mockOutput.send).toHaveBeenCalledWith([0xb0, CC.ALL_NOTES_OFF, 0]);
+      expect(
+        vi.mocked(mockOutput.clear).mock.invocationCallOrder[0],
+      ).toBeLessThan(
+        vi.mocked(mockOutput.send).mock.invocationCallOrder.at(-1)!,
+      );
     });
   });
 

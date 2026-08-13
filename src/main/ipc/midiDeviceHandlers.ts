@@ -8,6 +8,7 @@ import {
   bluetoothDeviceSelectionRegistry,
   type BluetoothSelectionCommandEvent,
 } from "./bluetoothDeviceSelection";
+import { requireTrustedMainFrame } from "./trustedIpc";
 
 export function registerMidiDeviceHandlers(): void {
   // Auto-approve MIDI permission requests from Rexiano renderer pages.
@@ -18,11 +19,12 @@ export function registerMidiDeviceHandlers(): void {
   // Chromium sends "bluetooth" at runtime but Electron's TS types don't
   // include it in the permission union, so we cast to string for the check.
   session.defaultSession.setPermissionRequestHandler(
-    (webContents, permission, callback) => {
+    (webContents, permission, callback, details) => {
       callback(
         isAllowedMidiPermissionRequest({
           permission,
-          url: webContents.getURL(),
+          url: details.requestingUrl || webContents.getURL(),
+          isMainFrame: details.isMainFrame,
         }),
       );
     },
@@ -41,7 +43,17 @@ export function registerMidiDeviceHandlers(): void {
   // Auto-approve BLE pairing requests.
   // Roland pianos use "Just Works" pairing (no PIN) for BLE MIDI.
   session.defaultSession.setBluetoothPairingHandler((_details, callback) => {
-    callback({ confirmed: true });
+    callback({
+      confirmed:
+        _details.pairingKind === "confirm" &&
+        bluetoothDeviceSelectionRegistry.allowsPairing(
+          _details.frame as unknown as {
+            url: string;
+            top: never;
+          },
+          _details.deviceId,
+        ),
+    });
   });
 
   // Confirm MIDI access is available. The renderer calls this before
@@ -49,7 +61,8 @@ export function registerMidiDeviceHandlers(): void {
   // configured permission approval.
   ipcMain.handle(
     IpcChannels.MIDI_REQUEST_ACCESS,
-    async (): Promise<boolean> => {
+    async (event): Promise<boolean> => {
+      requireTrustedMainFrame(event);
       return true;
     },
   );
@@ -60,7 +73,8 @@ export function registerMidiDeviceHandlers(): void {
   // of truth for connected devices.
   ipcMain.handle(
     IpcChannels.MIDI_DEVICE_LIST,
-    async (): Promise<MidiDeviceInfo[]> => {
+    async (event): Promise<MidiDeviceInfo[]> => {
+      requireTrustedMainFrame(event);
       return [];
     },
   );

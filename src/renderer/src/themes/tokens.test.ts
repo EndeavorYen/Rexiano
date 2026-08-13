@@ -14,6 +14,7 @@ const REQUIRED_COLOR_KEYS: (keyof ThemeTokens["colors"])[] = [
   "onAccent",
   "successText",
   "dangerText",
+  "controlBorder",
   "text",
   "textMuted",
   "border",
@@ -238,6 +239,7 @@ describe("Theme tokens", () => {
         onAccent: "#FFFFFF",
         successText: "#166534",
         dangerText: "#B91C1C",
+        controlBorder: "#6C6478",
       },
       ocean: {
         accent: "#0F766E",
@@ -245,6 +247,7 @@ describe("Theme tokens", () => {
         onAccent: "#FFFFFF",
         successText: "#166534",
         dangerText: "#B91C1C",
+        controlBorder: "#5C6F68",
       },
       peach: {
         accent: "#9C5A3C",
@@ -252,6 +255,7 @@ describe("Theme tokens", () => {
         onAccent: "#FFFFFF",
         successText: "#166534",
         dangerText: "#B91C1C",
+        controlBorder: "#6F5C50",
       },
       midnight: {
         accent: "#4C8EA3",
@@ -259,12 +263,18 @@ describe("Theme tokens", () => {
         onAccent: "#0E1013",
         successText: "#86C4AD",
         dangerText: "#FCA5A5",
+        controlBorder: "#97A6B6",
       },
     } satisfies Record<
       ThemeId,
       Pick<
         ThemeTokens["colors"],
-        "accent" | "accentText" | "onAccent" | "successText" | "dangerText"
+        | "accent"
+        | "accentText"
+        | "onAccent"
+        | "successText"
+        | "dangerText"
+        | "controlBorder"
       >
     >;
 
@@ -333,6 +343,17 @@ describe("Theme tokens", () => {
         );
         expect(contrastRatio(dangerText, surfaceAlt)).toBeGreaterThanOrEqual(
           4.5,
+        );
+      },
+    );
+
+    test.each(ALL_THEME_IDS)(
+      "%s control boundaries remain visible on form surfaces",
+      (id) => {
+        const { controlBorder, surface, surfaceAlt } = themes[id].colors;
+        expect(contrastRatio(controlBorder, surface)).toBeGreaterThanOrEqual(3);
+        expect(contrastRatio(controlBorder, surfaceAlt)).toBeGreaterThanOrEqual(
+          3,
         );
       },
     );

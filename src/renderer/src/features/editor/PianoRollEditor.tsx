@@ -43,6 +43,7 @@ import {
   timeToX,
   yToPitch,
 } from "./pianoRollModel";
+import { useTranslation } from "@renderer/i18n/useTranslation";
 
 interface PianoRollEditorProps {
   parsedSong: ParsedSong;
@@ -69,6 +70,7 @@ export function PianoRollEditor({
   parsedSong,
   onClose,
 }: PianoRollEditorProps): React.JSX.Element {
+  const { t } = useTranslation();
   const grid = useMemo(() => getDefaultPianoRollGrid(), []);
   const [editableSong, setEditableSong] = useState<EditableSong>(() =>
     createEditableSongFromParsedSong(parsedSong),
@@ -283,25 +285,30 @@ export function PianoRollEditor({
     });
     setExportStatus(
       result.ok
-        ? `Exported ${buildMidiExportFileName(editableSong.title)}`
+        ? t("editor.exported", {
+            fileName: buildMidiExportFileName(editableSong.title),
+          })
         : result.reason === "cancelled"
           ? null
-          : (result.message ?? "MIDI export failed."),
+          : t("editor.exportFailed"),
     );
-  }, [editableSong]);
+  }, [editableSong, t]);
 
   const handleAddTrack = useCallback(() => {
     const result = addEditorTrack(editableSong, {
       id: `editor-track-${Date.now()}`,
+      name: t("editor.defaultTrackName", {
+        number: editableSong.tracks.length + 1,
+      }),
     });
     setEditableSong(result.song);
     setSelectedTrackId(result.selectedTrackId);
     setTrackImpactMessage(
       result.practiceSetupImpact.kind === "reset-required"
-        ? result.practiceSetupImpact.reason
+        ? t("editor.trackTopologyChanged")
         : null,
     );
-  }, [editableSong]);
+  }, [editableSong, t]);
 
   const handleDeleteTrack = useCallback(
     (trackId: string) => {
@@ -318,11 +325,11 @@ export function PianoRollEditor({
       }));
       setTrackImpactMessage(
         result.practiceSetupImpact.kind === "reset-required"
-          ? result.practiceSetupImpact.reason
+          ? t("editor.trackTopologyChanged")
           : null,
       );
     },
-    [editableSong, selectedTrackId],
+    [editableSong, selectedTrackId, t],
   );
 
   const handleUpdateTrack = useCallback(
@@ -369,14 +376,14 @@ export function PianoRollEditor({
           type="button"
           className="flex h-8 w-8 items-center justify-center rounded-md"
           style={{
-            color: "var(--color-accent)",
+            color: "var(--color-accent-text)",
             border:
               "1px solid color-mix(in srgb, var(--color-accent) 26%, var(--color-border))",
             background:
               "color-mix(in srgb, var(--color-accent) 10%, var(--color-surface))",
           }}
-          title="Export MIDI"
-          aria-label="Export MIDI"
+          title={t("editor.exportMidi")}
+          aria-label={t("editor.exportMidi")}
           onClick={handleExportMidi}
           data-testid="editor-export-midi"
         >
@@ -390,8 +397,8 @@ export function PianoRollEditor({
             border: "1px solid var(--color-border)",
             background: "var(--color-surface)",
           }}
-          title="Close editor"
-          aria-label="Close editor"
+          title={t("editor.close")}
+          aria-label={t("editor.close")}
           onClick={onClose}
           data-testid="close-editor"
         >
@@ -402,7 +409,7 @@ export function PianoRollEditor({
         <div
           className="px-3 py-1.5 text-[11px] font-body"
           style={{
-            color: "var(--color-accent)",
+            color: "var(--color-accent-text)",
             background:
               "color-mix(in srgb, var(--color-accent) 9%, var(--color-surface))",
             borderBottom: "1px solid var(--color-border)",

@@ -59,6 +59,26 @@ describe("getFileImportErrorGuidance", () => {
     });
   });
 
+  test("maps oversized files to a localized choose-another-file recovery", () => {
+    expect(
+      getFileImportErrorGuidance(
+        { kind: "oversized", fileName: "huge.mid" },
+        t,
+      ),
+    ).toEqual({
+      title: "app.importErrorOversizedTitle",
+      guidance: "app.importErrorOversizedGuidance:fileName=huge.mid",
+      diagnostic: "huge.mid",
+      actions: [
+        {
+          id: "choose-midi-file",
+          label: "app.importActionChooseMidi",
+          emphasis: "primary",
+        },
+      ],
+    });
+  });
+
   test("maps missing recent files to re-import and remove actions", () => {
     expect(
       getFileImportErrorGuidance(

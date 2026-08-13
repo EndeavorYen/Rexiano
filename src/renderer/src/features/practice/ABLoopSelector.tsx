@@ -70,14 +70,16 @@ export function ABLoopSelector(): React.JSX.Element {
             background: hasA
               ? "var(--color-accent)"
               : "var(--color-surface-alt)",
-            color: hasA ? "#fff" : "var(--color-text-muted)",
+            color: hasA ? "var(--color-on-accent)" : "var(--color-text-muted)",
             border: !hasA
               ? "1px dashed var(--color-border)"
               : "1px solid transparent",
             transition: "all 0.15s ease",
           }}
           title={
-            hasA ? `Loop start: ${fmtSec(loopRange![0])}` : t("practice.setA")
+            hasA
+              ? t("practice.loopStartValue", { time: fmtSec(loopRange![0]) })
+              : t("practice.setA")
           }
           aria-label={t("practice.setALabel")}
         >
@@ -105,14 +107,16 @@ export function ABLoopSelector(): React.JSX.Element {
             background: hasB
               ? "var(--color-accent)"
               : "var(--color-surface-alt)",
-            color: hasB ? "#fff" : "var(--color-text-muted)",
+            color: hasB ? "var(--color-on-accent)" : "var(--color-text-muted)",
             border: !hasB
               ? "1px dashed var(--color-border)"
               : "1px solid transparent",
             transition: "all 0.15s ease",
           }}
           title={
-            hasB ? `Loop end: ${fmtSec(loopRange![1])}` : t("practice.setB")
+            hasB
+              ? t("practice.loopEndValue", { time: fmtSec(loopRange![1]) })
+              : t("practice.setB")
           }
           aria-label={t("practice.setBLabel")}
         >
@@ -149,7 +153,7 @@ export function ABLoopSelector(): React.JSX.Element {
           <span
             className="inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-mono tabular-nums animate-page-enter"
             style={{
-              color: "var(--color-accent)",
+              color: "var(--color-accent-text)",
               background:
                 "color-mix(in srgb, var(--color-accent) 12%, var(--color-surface))",
               border:

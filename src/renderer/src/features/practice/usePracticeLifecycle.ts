@@ -14,6 +14,7 @@ import { useSongStore } from "@renderer/stores/useSongStore";
 import { usePlaybackStore } from "@renderer/stores/usePlaybackStore";
 import { usePracticeStore } from "@renderer/stores/usePracticeStore";
 import { useMidiDeviceStore } from "@renderer/stores/useMidiDeviceStore";
+import { useSettingsStore } from "@renderer/stores/useSettingsStore";
 import {
   initPracticeEngines,
   getPracticeEngines,
@@ -23,6 +24,10 @@ import type { NoteRenderer } from "@renderer/engines/fallingNotes/NoteRenderer";
 import type { AudioEngine } from "@renderer/engines/audio/AudioEngine";
 import type { AudioScheduler } from "@renderer/engines/audio/AudioScheduler";
 import type { ParsedSong } from "@renderer/engines/midi/types";
+import type { WaitMode } from "@renderer/engines/practice/WaitMode";
+import { getMetronome } from "@renderer/engines/metronome/metronomeManager";
+import { syncMetronomeToPlayback } from "@renderer/engines/metronome/metronomeRuntime";
+import type { PracticeMode } from "@shared/types";
 
 interface AudioRef {
   engine: AudioEngine | null;
@@ -31,6 +36,21 @@ interface AudioRef {
 
 /** Streak milestones that trigger a combo pop — defined once, not on every hit. */
 const COMBO_MILESTONES = new Set([5, 10, 25, 50, 100]);
+
+function syncCurrentPracticeMetronome(): void {
+  const engine = getMetronome();
+  const song = useSongStore.getState().song;
+  const playback = usePlaybackStore.getState();
+  if (!engine || !song || !playback.isPlaying || playback.countInActive) return;
+
+  syncMetronomeToPlayback({
+    engine,
+    song,
+    currentTime: playback.currentTime,
+    speed: usePracticeStore.getState().speed,
+    enabled: useSettingsStore.getState().metronomeEnabled,
+  });
+}
 
 interface PracticeLifecycleResult {
   noteRendererRef: React.MutableRefObject<NoteRenderer | null>;
@@ -63,6 +83,113 @@ export function resolveInitialPracticeActiveTracks({
   };
 }
 
+/** Record a non-target NoteOn with a durable, non-colour session key. */
+export function recordWrongPracticeInput(
+  midi: number,
+  sequence: number,
+): string {
+  const key = `wrong:${sequence}:${midi}`;
+  usePracticeStore.getState().recordMiss(key);
+  return key;
+}
+
+interface WaitPlaybackTransition {
+  state: string;
+  pause(): void;
+  start(): void;
+  stop(): void;
+}
+
+export function applyPracticePlaybackTransition({
+  waitMode,
+  isPlaying,
+  wasPlaying,
+}: {
+  waitMode: WaitPlaybackTransition;
+  isPlaying: boolean;
+  wasPlaying: boolean;
+}): void {
+  if (isPlaying && !wasPlaying) waitMode.start();
+  if (!isPlaying && wasPlaying) waitMode.pause();
+}
+
+export function shouldStartPracticeScheduler({
+  mode,
+  waitState,
+}: {
+  mode: PracticeMode;
+  waitState: string | null;
+}): boolean {
+  return mode !== "wait" || waitState !== "waiting";
+}
+
+export function shouldRouteWaitMidiInput({
+  mode,
+  isPlaying,
+  countInActive,
+}: {
+  mode: PracticeMode;
+  isPlaying: boolean;
+  countInActive: boolean;
+}): boolean {
+  return mode === "wait" && isPlaying && !countInActive;
+}
+
+export function applyPracticeModeTransition({
+  waitMode,
+  nextMode,
+  isPlaying,
+  resumeScheduler,
+}: {
+  waitMode: Pick<WaitPlaybackTransition, "state" | "stop">;
+  nextMode: PracticeMode;
+  isPlaying: boolean;
+  resumeScheduler: () => void;
+}): void {
+  const wasWaiting = waitMode.state === "waiting";
+  if (nextMode !== "wait") {
+    waitMode.stop();
+    if (wasWaiting && isPlaying) resumeScheduler();
+  }
+}
+
+export function applyPracticeActiveTrackTransition({
+  waitMode,
+  tracks,
+  activeTracks,
+  isPlaying,
+  mode,
+  resumeScheduler,
+}: {
+  waitMode: Pick<WaitMode, "state" | "init" | "start">;
+  tracks: ParsedSong["tracks"];
+  activeTracks: Set<number>;
+  isPlaying: boolean;
+  mode: PracticeMode;
+  resumeScheduler: () => void;
+}): void {
+  const wasWaiting = waitMode.state === "waiting";
+  waitMode.init(tracks, activeTracks);
+  if (mode === "wait" && isPlaying) {
+    waitMode.start();
+    if (wasWaiting) resumeScheduler();
+  }
+}
+
+export function resetPracticeSession({
+  resetWaitMode,
+  resetScoreCalculator,
+  resetPracticeScore,
+}: {
+  resetWaitMode: () => void;
+  resetScoreCalculator: () => void;
+  resetPracticeScore: () => void;
+}): void {
+  resetWaitMode();
+  resetScoreCalculator();
+  resetPracticeScore();
+}
+
 /**
  * Manages the full Phase 6 practice engine lifecycle for a loaded song.
  *
@@ -74,8 +201,10 @@ export function resolveInitialPracticeActiveTracks({
 export function usePracticeLifecycle(
   song: ParsedSong | null,
   audioRef: React.MutableRefObject<AudioRef>,
+  onWrongInput?: (midi: number) => void,
 ): PracticeLifecycleResult {
   const noteRendererRef = useRef<NoteRenderer | null>(null);
+  const wrongInputSequenceRef = useRef(0);
 
   const handleNoteRendererReady = useCallback((renderer: NoteRenderer) => {
     noteRendererRef.current = renderer;
@@ -142,20 +271,31 @@ export function usePracticeLifecycle(
           }
         }
       },
+      onWrongInput: (midi) => {
+        wrongInputSequenceRef.current += 1;
+        recordWrongPracticeInput(midi, wrongInputSequenceRef.current);
+        onWrongInput?.(midi);
+      },
       onWait: () => {
         // Freeze audio while waiting for input. pause() leaves notes that are
         // already sounding to ring out, where stop() would cut sustained notes
         // at every single wait.
         audioRef.current.scheduler?.pause();
+        getMetronome()?.stop();
       },
       onResume: () => {
+        const playback = usePlaybackStore.getState();
+        if (!playback.isPlaying || playback.countInActive) return;
         // Resume audio — read fresh time INSIDE the .then() callback
         const { scheduler, engine } = audioRef.current;
         if (scheduler && engine) {
           void engine
             .resume()
             .then(() => {
-              scheduler.resume(usePlaybackStore.getState().currentTime);
+              const livePlayback = usePlaybackStore.getState();
+              if (!livePlayback.isPlaying || livePlayback.countInActive) return;
+              scheduler.resume(livePlayback.currentTime);
+              syncCurrentPracticeMetronome();
             })
             .catch((err) => {
               console.error("WaitMode audio resume failed:", err);
@@ -167,7 +307,7 @@ export function usePracticeLifecycle(
     return () => {
       disposePracticeEngines();
     };
-  }, [song, audioRef]);
+  }, [song, audioRef, onWrongInput]);
 
   // ── Sync practice store → engine singletons (permanent subscriber) ──
   useEffect(() => {
@@ -184,7 +324,30 @@ export function usePracticeLifecycle(
             waitMode.start();
           }
         } else {
-          waitMode.stop();
+          applyPracticeModeTransition({
+            waitMode,
+            nextMode: state.mode,
+            isPlaying: usePlaybackStore.getState().isPlaying,
+            resumeScheduler: () => {
+              const scheduler = audioRef.current.scheduler;
+              const engine = audioRef.current.engine;
+              if (!scheduler || !engine) return;
+              void engine
+                .resume()
+                .then(() => {
+                  if (
+                    usePracticeStore.getState().mode !== "wait" &&
+                    usePlaybackStore.getState().isPlaying
+                  ) {
+                    scheduler.resume(usePlaybackStore.getState().currentTime);
+                    syncCurrentPracticeMetronome();
+                  }
+                })
+                .catch((err) => {
+                  console.error("Practice mode audio resume failed:", err);
+                });
+            },
+          });
         }
         scoreCalculator?.reset();
         usePracticeStore.getState().resetScore();
@@ -206,11 +369,36 @@ export function usePracticeLifecycle(
 
       // Active tracks change
       if (state.activeTracks !== prev.activeTracks && waitMode && currentSong) {
-        waitMode.init(currentSong.tracks, state.activeTracks);
+        applyPracticeActiveTrackTransition({
+          waitMode,
+          tracks: currentSong.tracks,
+          activeTracks: state.activeTracks,
+          isPlaying: usePlaybackStore.getState().isPlaying,
+          mode: state.mode,
+          resumeScheduler: () => {
+            const scheduler = audioRef.current.scheduler;
+            const engine = audioRef.current.engine;
+            if (!scheduler || !engine) return;
+            void engine
+              .resume()
+              .then(() => {
+                if (
+                  usePracticeStore.getState().mode === "wait" &&
+                  usePlaybackStore.getState().isPlaying
+                ) {
+                  scheduler.resume(usePlaybackStore.getState().currentTime);
+                  syncCurrentPracticeMetronome();
+                }
+              })
+              .catch((err) => {
+                console.error("Practice track audio resume failed:", err);
+              });
+          },
+        });
       }
     });
     return unsub;
-  }, []);
+  }, [audioRef]);
 
   // ── Wire MIDI input → WaitMode.checkInput() ──
   useEffect(() => {
@@ -218,7 +406,15 @@ export function usePracticeLifecycle(
       if (state.activeNotes !== prev.activeNotes) {
         const { waitMode } = getPracticeEngines();
         const practiceMode = usePracticeStore.getState().mode;
-        if (waitMode && practiceMode === "wait") {
+        const playback = usePlaybackStore.getState();
+        if (
+          waitMode &&
+          shouldRouteWaitMidiInput({
+            mode: practiceMode,
+            isPlaying: playback.isPlaying,
+            countInActive: playback.countInActive,
+          })
+        ) {
           waitMode.checkInput(state.activeNotes);
         }
       }
@@ -232,17 +428,16 @@ export function usePracticeLifecycle(
       const { waitMode } = getPracticeEngines();
       const practiceMode = usePracticeStore.getState().mode;
       if (!waitMode || practiceMode !== "wait") return;
-
-      if (state.isPlaying && !prev.isPlaying) {
-        waitMode.start();
-      } else if (!state.isPlaying && prev.isPlaying) {
-        waitMode.stop();
-      }
+      applyPracticePlaybackTransition({
+        waitMode,
+        isPlaying: state.isPlaying,
+        wasPlaying: prev.isPlaying,
+      });
     });
     return unsub;
   }, []);
 
-  // ── Loop seek → AudioScheduler sync + WaitMode reset ──
+  // ── Loop discontinuity → WaitMode reset ──
   useEffect(() => {
     const unsub = usePlaybackStore.subscribe((state, prev) => {
       const { loopController, waitMode } = getPracticeEngines();
@@ -253,9 +448,8 @@ export function usePracticeLifecycle(
         state.currentTime < prev.currentTime &&
         Math.abs(state.currentTime - loopController.getLoopStart()) < 0.1
       ) {
-        audioRef.current.scheduler?.seek(state.currentTime);
-
-        // Reset WaitMode so notes are re-judged on the next loop pass
+        // TransportClock already committed the single scheduler/output seek.
+        // Reset WaitMode so notes are re-judged on the next loop pass.
         if (usePracticeStore.getState().mode === "wait" && waitMode) {
           waitMode.reset();
           waitMode.start();
@@ -263,7 +457,7 @@ export function usePracticeLifecycle(
       }
     });
     return unsub;
-  }, [audioRef]);
+  }, []);
 
   return { noteRendererRef, handleNoteRendererReady };
 }

@@ -36,3 +36,15 @@ export function getDotOpacity(isActive: boolean): number {
 export function getDotSize(isActive: boolean): number {
   return isActive ? DOT_SIZE_ACTIVE : DOT_SIZE;
 }
+
+export function shouldShowMetronomePulse({
+  metronomeEnabled,
+  countInActive,
+  isRunning,
+}: {
+  metronomeEnabled: boolean;
+  countInActive: boolean;
+  isRunning: boolean;
+}): boolean {
+  return isRunning && (metronomeEnabled || countInActive);
+}

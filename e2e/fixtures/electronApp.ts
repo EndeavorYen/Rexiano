@@ -87,6 +87,7 @@ async function applyStableSettings(page: Page): Promise<void> {
           language: "en",
           defaultMode: "watch",
           metronomeEnabled: false,
+          countInBeats: 0,
           showNoteLabels: true,
           showFallingNoteLabels: true,
         }),

@@ -7,9 +7,10 @@ import type {
   UserDataFileBackupPayload,
   UserDataFileBackupResult,
   UserDataFileMutationResult,
+  UserDataFileTransactionRecovery,
+  UserDataRendererSnapshot,
   WatchedMidiFolder,
   WatchedMidiFoldersScanResult,
-  AppUpdateAvailable,
   AppUpdateCheckResult,
   AppUpdateDownloadResult,
   AppUpdateStatus,
@@ -71,12 +72,38 @@ const api = {
   importUserDataFiles: (
     payload: UserDataFileBackupPayload,
     scopes?: string[],
+    rendererSnapshot?: UserDataRendererSnapshot,
   ): Promise<UserDataFileMutationResult> =>
-    ipcRenderer.invoke(IpcChannels.USER_DATA_IMPORT_FILES, payload, scopes),
+    ipcRenderer.invoke(
+      IpcChannels.USER_DATA_IMPORT_FILES,
+      payload,
+      scopes,
+      rendererSnapshot,
+    ),
   resetUserDataFiles: (
     scopes?: string[],
+    rendererSnapshot?: UserDataRendererSnapshot,
   ): Promise<UserDataFileMutationResult> =>
-    ipcRenderer.invoke(IpcChannels.USER_DATA_RESET_FILES, scopes),
+    ipcRenderer.invoke(
+      IpcChannels.USER_DATA_RESET_FILES,
+      scopes,
+      rendererSnapshot,
+    ),
+  rollbackUserDataFileTransaction: (
+    transactionId: string,
+  ): Promise<UserDataFileTransactionRecovery | null> =>
+    ipcRenderer.invoke(
+      IpcChannels.USER_DATA_ROLLBACK_TRANSACTION,
+      transactionId,
+    ),
+  completeUserDataFileTransaction: (transactionId: string): Promise<boolean> =>
+    ipcRenderer.invoke(
+      IpcChannels.USER_DATA_COMPLETE_TRANSACTION,
+      transactionId,
+    ),
+  recoverUserDataFileTransaction:
+    (): Promise<UserDataFileTransactionRecovery | null> =>
+      ipcRenderer.invoke(IpcChannels.USER_DATA_RECOVER_TRANSACTION),
   selectWatchedMidiFolder: (): Promise<WatchedMidiFolder | null> =>
     ipcRenderer.invoke(IpcChannels.SELECT_WATCHED_MIDI_FOLDER),
   scanWatchedMidiFolders: (
@@ -87,6 +114,17 @@ const api = {
   // Phase 6.5: Load MIDI file by path (for recent files direct loading)
   loadMidiPath: (filePath: string) =>
     ipcRenderer.invoke(IpcChannels.LOAD_MIDI_PATH, filePath),
+  takePendingAssociatedMidiFile: (): Promise<string | null> =>
+    ipcRenderer.invoke(IpcChannels.TAKE_PENDING_ASSOCIATED_MIDI_FILE),
+  onAssociatedMidiFilePending: (callback: () => void): (() => void) => {
+    const listener = (): void => callback();
+    ipcRenderer.on(IpcChannels.ASSOCIATED_MIDI_FILE_PENDING, listener);
+    return () =>
+      ipcRenderer.removeListener(
+        IpcChannels.ASSOCIATED_MIDI_FILE_PENDING,
+        listener,
+      );
+  },
   exportMidiFile: (request: MidiExportRequest): Promise<MidiExportResult> =>
     ipcRenderer.invoke(IpcChannels.EXPORT_MIDI_FILE, request),
 
@@ -94,14 +132,12 @@ const api = {
   getAppInfo: (): Promise<AppInfo> => ipcRenderer.invoke("app:getAppInfo"),
   checkForUpdates: (): Promise<AppUpdateCheckResult> =>
     ipcRenderer.invoke(IpcChannels.UPDATE_CHECK),
-  downloadUpdate: (
-    update: AppUpdateAvailable,
-  ): Promise<AppUpdateDownloadResult> =>
-    ipcRenderer.invoke(IpcChannels.UPDATE_DOWNLOAD, update),
-  openUpdateRelease: (releaseUrl: string): Promise<boolean> =>
-    ipcRenderer.invoke(IpcChannels.UPDATE_OPEN_RELEASE, releaseUrl),
-  openDownloadedUpdate: (downloadedPath: string): Promise<boolean> =>
-    ipcRenderer.invoke(IpcChannels.UPDATE_OPEN_DOWNLOADED, downloadedPath),
+  downloadUpdate: (artifactId: string): Promise<AppUpdateDownloadResult> =>
+    ipcRenderer.invoke(IpcChannels.UPDATE_DOWNLOAD, artifactId),
+  openUpdateRelease: (): Promise<boolean> =>
+    ipcRenderer.invoke(IpcChannels.UPDATE_OPEN_RELEASE),
+  openDownloadedUpdate: (): Promise<boolean> =>
+    ipcRenderer.invoke(IpcChannels.UPDATE_OPEN_DOWNLOADED),
   onUpdateProgress: (
     callback: (status: AppUpdateStatus) => void,
   ): (() => void) => {

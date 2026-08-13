@@ -22,9 +22,15 @@ export interface NotePropertyPatchInput {
   velocity?: number;
 }
 
+export type NotePropertyWarning =
+  | "pitch-clamped"
+  | "start-clamped"
+  | "duration-clamped"
+  | "velocity-clamped";
+
 export interface NotePropertyPatchResult {
   patch: EditableNotePatch;
-  warnings: string[];
+  warnings: NotePropertyWarning[];
 }
 
 const MIN_DURATION_SECONDS = 0.03125;
@@ -45,8 +51,8 @@ function clampWithWarning(
   value: number | undefined,
   min: number,
   max: number,
-  warning: string,
-  warnings: string[],
+  warning: NotePropertyWarning,
+  warnings: NotePropertyWarning[],
 ): number | undefined {
   if (value === undefined || !Number.isFinite(value)) return undefined;
   const clamped = Math.min(max, Math.max(min, value));
@@ -73,14 +79,14 @@ export function getNotePropertyModel(
 export function buildNotePropertyPatch(
   input: NotePropertyPatchInput,
 ): NotePropertyPatchResult {
-  const warnings: string[] = [];
+  const warnings: NotePropertyWarning[] = [];
   const patch: EditableNotePatch = {};
 
   const pitch = clampWithWarning(
     input.pitch,
     0,
     127,
-    "Pitch was clamped to the MIDI range 0-127.",
+    "pitch-clamped",
     warnings,
   );
   if (pitch !== undefined) patch.pitch = Math.round(pitch);
@@ -89,7 +95,7 @@ export function buildNotePropertyPatch(
     input.start,
     0,
     Number.MAX_SAFE_INTEGER,
-    "Start time was clamped to 0 seconds or later.",
+    "start-clamped",
     warnings,
   );
   if (start !== undefined) patch.start = start;
@@ -98,7 +104,7 @@ export function buildNotePropertyPatch(
     input.duration,
     MIN_DURATION_SECONDS,
     Number.MAX_SAFE_INTEGER,
-    "Duration was clamped to at least 0.03125 seconds.",
+    "duration-clamped",
     warnings,
   );
   if (duration !== undefined) patch.duration = duration;
@@ -107,7 +113,7 @@ export function buildNotePropertyPatch(
     input.velocity,
     1,
     127,
-    "Velocity was clamped to the MIDI range 1-127.",
+    "velocity-clamped",
     warnings,
   );
   if (velocity !== undefined) patch.velocity = Math.round(velocity);

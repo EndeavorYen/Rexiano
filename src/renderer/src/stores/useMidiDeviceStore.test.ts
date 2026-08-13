@@ -23,6 +23,7 @@ const mockManager = {
   connectOutput: vi.fn(() => true),
   disconnectOutput: vi.fn(),
   getActiveInput: vi.fn(() => null),
+  getActiveOutput: vi.fn((): MIDIOutput | null => null),
   onDeviceListChange: vi.fn(),
   onActiveInputChange: vi.fn(),
   onActiveOutputChange: vi.fn(),
@@ -36,7 +37,10 @@ vi.mock("@renderer/engines/midi/MidiDeviceManager", () => ({
   },
 }));
 
-import { useMidiDeviceStore } from "./useMidiDeviceStore";
+import {
+  getMidiPlaybackOutputSender,
+  useMidiDeviceStore,
+} from "./useMidiDeviceStore";
 
 describe("useMidiDeviceStore", () => {
   beforeEach(() => {
@@ -49,6 +53,8 @@ describe("useMidiDeviceStore", () => {
       isConnected: false,
       connectionError: null,
       activeNotes: new Set(),
+      bleStatus: "idle",
+      bleDeviceName: null,
     });
 
     // Reset mock state
@@ -56,6 +62,7 @@ describe("useMidiDeviceStore", () => {
     mockManager.inputs = [];
     mockManager.outputs = [];
     vi.clearAllMocks();
+    getMidiPlaybackOutputSender().detach();
   });
 
   // ─── Initial state ────────────────────────────────────
@@ -189,6 +196,28 @@ describe("useMidiDeviceStore", () => {
     expect(mockManager.connectOutput).toHaveBeenCalledWith("out-1");
   });
 
+  test("active output changes attach the shared playback sender", async () => {
+    const output = {
+      send: vi.fn(),
+      clear: vi.fn(),
+    } as unknown as MIDIOutput;
+    mockManager.getActiveOutput.mockReturnValue(output);
+    mockManager.init.mockImplementation(async () => {
+      mockManager.status = "ready";
+    });
+    let onOutputChange: ((device: { id: string } | null) => void) | undefined;
+    mockManager.onActiveOutputChange.mockImplementation(
+      (callback: (device: { id: string } | null) => void) => {
+        onOutputChange = callback;
+      },
+    );
+
+    await useMidiDeviceStore.getState().connect();
+    onOutputChange?.({ id: "out-1" });
+
+    expect(getMidiPlaybackOutputSender().isAttached).toBe(true);
+  });
+
   test("selectOutput(null) calls manager.disconnectOutput", () => {
     useMidiDeviceStore.getState().selectOutput(null);
     expect(mockManager.disconnectOutput).toHaveBeenCalled();
@@ -256,5 +285,25 @@ describe("useMidiDeviceStore", () => {
 
     expect(useMidiDeviceStore.getState().inputs).toEqual(inputs);
     expect(useMidiDeviceStore.getState().outputs).toEqual(outputs);
+  });
+
+  test("unexpected BLE loss clears held notes but preserves ordinary MIDI connection", () => {
+    useMidiDeviceStore.setState({
+      selectedInputId: "in-1",
+      isConnected: true,
+      bleStatus: "connected",
+      bleDeviceName: "Stage Piano",
+      activeNotes: new Set([60, 64]),
+    });
+
+    useMidiDeviceStore.getState().handleBluetoothDeviceLoss();
+
+    expect(useMidiDeviceStore.getState()).toMatchObject({
+      selectedInputId: "in-1",
+      isConnected: true,
+      bleStatus: "idle",
+      bleDeviceName: null,
+    });
+    expect(useMidiDeviceStore.getState().activeNotes).toEqual(new Set());
   });
 });

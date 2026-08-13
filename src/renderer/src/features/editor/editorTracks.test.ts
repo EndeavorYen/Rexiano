@@ -49,7 +49,7 @@ describe("editorTracks", () => {
     expect(result.selectedTrackId).toBe("track-3");
     expect(result.practiceSetupImpact).toEqual({
       kind: "reset-required",
-      reason: "Track topology changed.",
+      reason: "track-topology-changed",
     });
   });
 
@@ -96,7 +96,7 @@ describe("editorTracks", () => {
     });
     expect(getTrackPracticeSetupImpact("topology")).toEqual({
       kind: "reset-required",
-      reason: "Track topology changed.",
+      reason: "track-topology-changed",
     });
   });
 });

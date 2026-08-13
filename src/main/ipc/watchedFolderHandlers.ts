@@ -1,12 +1,16 @@
 import { BrowserWindow, dialog, ipcMain } from "electron";
-import { readdir } from "fs/promises";
-import { join } from "path";
+import { readdir, realpath, stat } from "fs/promises";
+import { isAbsolute, join, relative } from "path";
 import {
   IpcChannels,
   type WatchedMidiFolder,
   type WatchedMidiFoldersScanResult,
 } from "../../shared/types";
-import { approveMidiFolderPath } from "./midiPathAccess";
+import {
+  approveMidiFolderPath,
+  resolveApprovedMidiFolderPath,
+} from "./midiPathAccess";
+import { requireTrustedMainFrame } from "./trustedIpc";
 
 const MIDI_FILE_PATTERN = /\.(mid|midi|kar)$/i;
 const DEFAULT_MAX_DEPTH = 8;
@@ -27,6 +31,7 @@ function shouldSkipEntry(entryName: string): boolean {
 
 async function collectMidiFilesInFolder(
   folderPath: string,
+  authorizedRoot: string,
   options: Required<FolderDiscoveryOptions>,
   depth: number,
   discovered: string[],
@@ -46,11 +51,44 @@ async function collectMidiFilesInFolder(
 
     const entryPath = join(folderPath, entry.name);
     if (entry.isDirectory()) {
-      await collectMidiFilesInFolder(entryPath, options, depth + 1, discovered);
+      try {
+        const canonicalDirectory = await realpath(entryPath);
+        const rel = relative(authorizedRoot, canonicalDirectory);
+        if (
+          rel !== "" &&
+          !rel.startsWith("..") &&
+          !isAbsolute(rel) &&
+          (await stat(canonicalDirectory)).isDirectory()
+        ) {
+          await collectMidiFilesInFolder(
+            canonicalDirectory,
+            authorizedRoot,
+            options,
+            depth + 1,
+            discovered,
+          );
+        }
+      } catch {
+        // Replaced, unreadable, and escaping entries fail closed.
+      }
       continue;
     }
     if (entry.isFile() && isMidiFile(entry.name)) {
-      discovered.push(entryPath);
+      try {
+        const canonicalFile = await realpath(entryPath);
+        const rel = relative(authorizedRoot, canonicalFile);
+        if (
+          rel !== "" &&
+          !rel.startsWith("..") &&
+          !isAbsolute(rel) &&
+          isMidiFile(canonicalFile) &&
+          (await stat(canonicalFile)).isFile()
+        ) {
+          discovered.push(canonicalFile);
+        }
+      } catch {
+        // Replaced, unreadable, non-regular, and escaping entries fail closed.
+      }
     }
   }
 }
@@ -61,6 +99,7 @@ export async function discoverMidiFilesInFolder(
 ): Promise<string[]> {
   const discovered: string[] = [];
   await collectMidiFilesInFolder(
+    folderPath,
     folderPath,
     {
       maxDepth: options.maxDepth ?? DEFAULT_MAX_DEPTH,
@@ -90,7 +129,15 @@ export async function scanWatchedMidiFolders(
 
   for (const folderPath of folderPaths) {
     try {
-      folders.push(await scanWatchedFolder(folderPath));
+      const canonicalFolder = await resolveApprovedMidiFolderPath(folderPath);
+      if (!canonicalFolder) {
+        errors.push({
+          folderPath,
+          message: "Watched MIDI folder is not authorized.",
+        });
+        continue;
+      }
+      folders.push(await scanWatchedFolder(canonicalFolder));
     } catch (error) {
       errors.push({
         folderPath,
@@ -105,7 +152,8 @@ export async function scanWatchedMidiFolders(
 export function registerWatchedFolderHandlers(): void {
   ipcMain.handle(
     IpcChannels.SELECT_WATCHED_MIDI_FOLDER,
-    async (): Promise<WatchedMidiFolder | null> => {
+    async (event): Promise<WatchedMidiFolder | null> => {
+      requireTrustedMainFrame(event);
       const window = BrowserWindow.getFocusedWindow();
       if (!window) return null;
 
@@ -116,18 +164,19 @@ export function registerWatchedFolderHandlers(): void {
 
       if (result.canceled || result.filePaths.length === 0) return null;
 
-      const folder = await scanWatchedFolder(result.filePaths[0]);
-      approveMidiFolderPath(folder.folderPath);
-      return folder;
+      const canonicalFolder = await approveMidiFolderPath(result.filePaths[0]);
+      if (!canonicalFolder) return null;
+      return scanWatchedFolder(canonicalFolder);
     },
   );
 
   ipcMain.handle(
     IpcChannels.SCAN_WATCHED_MIDI_FOLDERS,
     async (
-      _event,
+      event,
       folderPaths: unknown,
     ): Promise<WatchedMidiFoldersScanResult> => {
+      requireTrustedMainFrame(event);
       if (!Array.isArray(folderPaths)) {
         return {
           folders: [],

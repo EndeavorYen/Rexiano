@@ -5,6 +5,7 @@ import type { ParsedSong } from "@renderer/engines/midi/types";
 const mockPlaybackState = {
   currentTime: 0,
   isPlaying: false,
+  countInActive: false,
   pixelsPerSecond: 200,
   setCurrentTime: vi.fn(),
   setPlaying: vi.fn(),
@@ -70,6 +71,7 @@ describe("TransportClock — createTransportTick", () => {
     vi.clearAllMocks();
     mockPlaybackState.currentTime = 0;
     mockPlaybackState.isPlaying = false;
+    mockPlaybackState.countInActive = false;
     mockSongState.song = mockSong;
     mockPracticeState.mode = "watch";
     mockWaitMode.tick.mockReturnValue(true);
@@ -87,6 +89,15 @@ describe("TransportClock — createTransportTick", () => {
   it("does not advance time when paused", () => {
     mockPlaybackState.isPlaying = false;
     createTransportTick()(16);
+    expect(mockPlaybackState.setCurrentTime).not.toHaveBeenCalled();
+  });
+
+  it("does not advance transport while count-in owns the clock", () => {
+    mockPlaybackState.isPlaying = true;
+    mockPlaybackState.countInActive = true;
+
+    createTransportTick(() => 4)(100);
+
     expect(mockPlaybackState.setCurrentTime).not.toHaveBeenCalled();
   });
 

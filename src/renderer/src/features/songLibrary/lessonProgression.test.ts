@@ -4,6 +4,7 @@ import type { SongActivity } from "./songLibrarySelectors";
 import {
   buildLessonProgression,
   classifySongLessonGroup,
+  lessonGroupDefinitions,
 } from "./lessonProgression";
 
 function makeSong(
@@ -36,6 +37,14 @@ function activity(
 }
 
 describe("classifySongLessonGroup", () => {
+  test("lesson definitions expose translation keys instead of English copy", () => {
+    expect(lessonGroupDefinitions[0]).toMatchObject({
+      id: "first-notes",
+      titleKey: "library.lessonGroup.firstNotes.title",
+      descriptionKey: "library.lessonGroup.firstNotes.description",
+    });
+  });
+
   test("maps built-in songs to beginner-friendly lesson stages", () => {
     expect(classifySongLessonGroup(makeSong("hot-cross", { grade: 0 }))).toBe(
       "first-notes",

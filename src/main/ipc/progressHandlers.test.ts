@@ -20,10 +20,12 @@ vi.mock("fs/promises", () => ({
     if (mockFileContents[n] !== undefined) {
       return mockFileContents[n];
     }
-    throw new Error("ENOENT");
+    throw Object.assign(new Error("ENOENT"), { code: "ENOENT" });
   }),
   writeFile: vi.fn(async () => {}),
   mkdir: vi.fn(async () => {}),
+  rename: vi.fn(async () => {}),
+  unlink: vi.fn(async () => {}),
 }));
 
 vi.mock("fs", () => ({
@@ -36,6 +38,11 @@ vi.mock("fs", () => ({
 import { registerProgressHandlers } from "./progressHandlers";
 import { ipcMain } from "electron";
 import { writeFile } from "fs/promises";
+import { configureTrustedRendererUrl } from "./midiPermissionPolicy";
+import { createTrustedIpcTestEvent } from "./trustedIpcTestEvent";
+
+configureTrustedRendererUrl("file:///mock/renderer/index.html");
+const trustedEvent = createTrustedIpcTestEvent();
 
 function makeScore(accuracy: number): PracticeScore {
   return {
@@ -90,7 +97,7 @@ describe("progressHandlers", () => {
 
   // ─── LOAD_SESSIONS ────────────────────────────────────
   test("LOAD_SESSIONS returns empty array on first run", async () => {
-    const result = await handlers["progress:loadSessions"]();
+    const result = await handlers["progress:loadSessions"](trustedEvent);
     expect(result).toEqual([]);
   });
 
@@ -99,7 +106,7 @@ describe("progressHandlers", () => {
     const filePath = `${mockUserDataPath}/progress.json`;
     mockFileContents[filePath] = JSON.stringify(sessions);
 
-    const result = await handlers["progress:loadSessions"]();
+    const result = await handlers["progress:loadSessions"](trustedEvent);
     expect(result).toEqual(sessions);
   });
 
@@ -107,7 +114,7 @@ describe("progressHandlers", () => {
     const filePath = `${mockUserDataPath}/progress.json`;
     mockFileContents[filePath] = "not valid json!!!";
 
-    const result = await handlers["progress:loadSessions"]();
+    const result = await handlers["progress:loadSessions"](trustedEvent);
     expect(result).toEqual([]);
   });
 
@@ -115,7 +122,7 @@ describe("progressHandlers", () => {
     const filePath = `${mockUserDataPath}/progress.json`;
     mockFileContents[filePath] = JSON.stringify({ not: "an array" });
 
-    const result = await handlers["progress:loadSessions"]();
+    const result = await handlers["progress:loadSessions"](trustedEvent);
     expect(result).toEqual([]);
   });
 
@@ -128,14 +135,14 @@ describe("progressHandlers", () => {
       { id: "missing-score" },
     ]);
 
-    const result = await handlers["progress:loadSessions"]();
+    const result = await handlers["progress:loadSessions"](trustedEvent);
     expect(result).toEqual([expect.objectContaining({ id: "valid-session" })]);
   });
 
   // ─── SAVE_SESSION ─────────────────────────────────────
   test("SAVE_SESSION appends to empty file", async () => {
     const session = makeSession();
-    await handlers["progress:saveSession"](null, session);
+    await handlers["progress:saveSession"](trustedEvent, session);
 
     expect(writeFile).toHaveBeenCalledTimes(1);
     const written = JSON.parse(vi.mocked(writeFile).mock.calls[0][1] as string);
@@ -149,7 +156,7 @@ describe("progressHandlers", () => {
     mockFileContents[filePath] = JSON.stringify(existing);
 
     const newSession = makeSession({ id: "new-1" });
-    await handlers["progress:saveSession"](null, newSession);
+    await handlers["progress:saveSession"](trustedEvent, newSession);
 
     const written = JSON.parse(vi.mocked(writeFile).mock.calls[0][1] as string);
     expect(written).toHaveLength(2);
@@ -158,7 +165,7 @@ describe("progressHandlers", () => {
   });
 
   test("SAVE_SESSION ignores invalid renderer payloads", async () => {
-    await handlers["progress:saveSession"](null, {
+    await handlers["progress:saveSession"](trustedEvent, {
       id: "bad",
       songId: "song",
       songTitle: "Song",

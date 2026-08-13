@@ -456,6 +456,43 @@ describe("AudioScheduler", () => {
   // ─── _tick scheduling (indirect) ──────────
 
   describe("tick scheduling", () => {
+    test("mirrors song notes to MIDI output on the performance timeline", () => {
+      const midiOutput = {
+        noteOn: vi.fn(),
+        noteOff: vi.fn(),
+        clearScheduled: vi.fn(),
+      };
+      vi.spyOn(performance, "now").mockReturnValue(1_000);
+      engine._setCurrentTime(10);
+      scheduler.setMidiOutput(midiOutput);
+      scheduler.setSong(song([track([note(0, 0.5, 60, 100)])]));
+
+      scheduler.start(0);
+      vi.advanceTimersByTime(25);
+
+      expect(midiOutput.noteOn).toHaveBeenCalledWith(60, 100, 1_000);
+      expect(midiOutput.noteOff).toHaveBeenCalledWith(60, 1_500);
+    });
+
+    test("flushes queued MIDI messages across seek, pause, and stop", () => {
+      const midiOutput = {
+        noteOn: vi.fn(),
+        noteOff: vi.fn(),
+        clearScheduled: vi.fn(),
+      };
+      scheduler.setMidiOutput(midiOutput);
+      scheduler.setSong(song([track([note(0, 0.5)])]));
+      scheduler.start(0);
+      midiOutput.clearScheduled.mockClear();
+
+      scheduler.seek(1);
+      scheduler.pause();
+      scheduler.start(1);
+      scheduler.stop();
+
+      expect(midiOutput.clearScheduled).toHaveBeenCalledTimes(3);
+    });
+
     test("schedules noteOn and noteOff with correct AudioContext times", () => {
       engine._setCurrentTime(10); // audioContext.currentTime = 10
       const s = song([track([note(0, 0.5, 60, 100)])]);

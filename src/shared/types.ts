@@ -11,6 +11,10 @@ export interface MidiFileResult {
 /** IPC channel names — single source of truth */
 export const IpcChannels = {
   OPEN_MIDI_FILE: "dialog:openMidiFile",
+  /** OS file association: renderer atomically takes the latest pending MIDI path */
+  TAKE_PENDING_ASSOCIATED_MIDI_FILE: "app:takePendingAssociatedMidiFile",
+  /** OS file association: main notifies renderer that a path is ready to pull */
+  ASSOCIATED_MIDI_FILE_PENDING: "app:associatedMidiFilePending",
   /** Phase 4: Load SoundFont file from resources/ directory */
   LOAD_SOUNDFONT: "audio:loadSoundFont",
   /** Phase 5: Grant MIDI device access permission */
@@ -47,6 +51,12 @@ export const IpcChannels = {
   USER_DATA_IMPORT_FILES: "userData:importFiles",
   /** User data backup: reset file-backed scopes in userData */
   USER_DATA_RESET_FILES: "userData:resetFiles",
+  /** User data backup: roll back a pending cross-process transaction */
+  USER_DATA_ROLLBACK_TRANSACTION: "userData:rollbackTransaction",
+  /** User data backup: finalize and clear a pending transaction journal */
+  USER_DATA_COMPLETE_TRANSACTION: "userData:completeTransaction",
+  /** User data backup: recover an interrupted transaction after restart */
+  USER_DATA_RECOVER_TRANSACTION: "userData:recoverTransaction",
   /** Song library: choose a watched folder and scan MIDI files */
   SELECT_WATCHED_MIDI_FOLDER: "library:selectWatchedMidiFolder",
   /** Song library: rescan existing watched MIDI folders */
@@ -234,8 +244,9 @@ export interface AppUpdateAvailable {
   latestVersion: string;
   releaseName: string;
   releaseUrl: string;
+  /** Opaque GitHub asset identity; main retains all trusted download metadata. */
+  artifactId: string;
   artifactName: string;
-  artifactUrl: string;
   artifactSize: number;
 }
 
@@ -307,8 +318,16 @@ export type UserDataFileMutationResult =
   | {
       ok: true;
       scopes: UserDataFileBackupScope[];
+      transactionId?: string;
     }
   | {
       ok: false;
       errors: string[];
     };
+
+export type UserDataRendererSnapshot = Record<string, string | null>;
+
+export interface UserDataFileTransactionRecovery {
+  transactionId: string;
+  rendererSnapshot: UserDataRendererSnapshot;
+}

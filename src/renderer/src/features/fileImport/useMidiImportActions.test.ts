@@ -5,7 +5,13 @@ import {
   getUnsupportedMidiDropError,
   getFileNameFromPath,
   removeRecentForRecovery,
+  getOversizedMidiImportError,
+  getMidiReadFailureError,
 } from "./useMidiImportActions";
+import {
+  MAX_MIDI_FILE_BYTES,
+  MIDI_FILE_TOO_LARGE_DIAGNOSTIC,
+} from "@shared/midiFileLimits";
 
 describe("useMidiImportActions helpers", () => {
   test("drag hover preserves recovery while explicit resolution clears it", () => {
@@ -42,6 +48,41 @@ describe("useMidiImportActions helpers", () => {
       fileName: "notes.txt",
     });
     expect(getUnsupportedMidiDropError("song.mid")).toBeNull();
+  });
+
+  test("rejects oversized drops before FileReader allocation", () => {
+    expect(
+      getOversizedMidiImportError({
+        name: "huge.mid",
+        size: MAX_MIDI_FILE_BYTES + 1,
+      }),
+    ).toEqual({
+      kind: "oversized",
+      fileName: "huge.mid",
+    });
+    expect(
+      getOversizedMidiImportError({
+        name: "exact.mid",
+        size: MAX_MIDI_FILE_BYTES,
+      }),
+    ).toBeNull();
+  });
+
+  test("routes main-process size rejection into persistent oversized recovery", () => {
+    const diagnostic = new Error(
+      `${MIDI_FILE_TOO_LARGE_DIAGNOSTIC}: 8 MiB limit`,
+    );
+    expect(
+      getMidiReadFailureError(diagnostic, "huge.mid", "/huge.mid"),
+    ).toEqual({
+      kind: "oversized",
+      fileName: "huge.mid",
+      path: "/huge.mid",
+      diagnostic,
+    });
+    expect(
+      getMidiReadFailureError(new Error("EACCES"), "locked.mid"),
+    ).toMatchObject({ kind: "read-failed", fileName: "locked.mid" });
   });
 
   test("extracts filenames from native paths", () => {

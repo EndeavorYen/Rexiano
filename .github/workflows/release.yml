@@ -1,9 +1,6 @@
 name: Release
 
 on:
-  push:
-    tags:
-      - "v*"
   workflow_dispatch:
     inputs:
       tag:
@@ -30,7 +27,7 @@ jobs:
       tag: ${{ steps.resolve.outputs.tag }}
       sha: ${{ steps.resolve.outputs.sha }}
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
         with:
           fetch-depth: 0
           persist-credentials: false
@@ -43,20 +40,19 @@ jobs:
           WORKFLOW_REF: ${{ github.workflow_ref }}
           DISPATCH_TAG: ${{ github.event.inputs.tag }}
           EXPECTED_SHA: ${{ github.event.inputs.expected_sha }}
-          PUSH_TAG: ${{ github.ref_name }}
         run: |
           set -euo pipefail
 
-          if [[ "$EVENT_NAME" == "workflow_dispatch" ]]; then
-            expected_workflow_ref="$GITHUB_REPOSITORY/.github/workflows/release.yml@refs/heads/main"
-            if [[ "$WORKFLOW_REF" != "$expected_workflow_ref" ]]; then
-              echo "Release dispatches must run from refs/heads/main." >&2
-              exit 1
-            fi
-            release_tag="$DISPATCH_TAG"
-          else
-            release_tag="$PUSH_TAG"
+          if [[ "$EVENT_NAME" != "workflow_dispatch" ]]; then
+            echo "Release artifacts require an explicit immutable-SHA dispatch." >&2
+            exit 1
           fi
+          expected_workflow_ref="$GITHUB_REPOSITORY/.github/workflows/release.yml@refs/heads/main"
+          if [[ "$WORKFLOW_REF" != "$expected_workflow_ref" ]]; then
+            echo "Release dispatches must run from refs/heads/main." >&2
+            exit 1
+          fi
+          release_tag="$DISPATCH_TAG"
 
           if [[ ! "$release_tag" =~ ^v(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$ ]]; then
             echo "Release tag must be a strict vMAJOR.MINOR.PATCH value." >&2
@@ -70,15 +66,13 @@ jobs:
           fi
 
           release_sha="$(git rev-parse "refs/tags/$release_tag^{commit}")"
-          if [[ "$EVENT_NAME" == "workflow_dispatch" ]]; then
-            if [[ ! "$EXPECTED_SHA" =~ ^[0-9a-f]{40}$ ]]; then
-              echo "expected_sha must be a full lowercase commit SHA." >&2
-              exit 1
-            fi
-            if [[ "$release_sha" != "$EXPECTED_SHA" ]]; then
-              echo "Release tag no longer resolves to expected_sha." >&2
-              exit 1
-            fi
+          if [[ ! "$EXPECTED_SHA" =~ ^[0-9a-f]{40}$ ]]; then
+            echo "expected_sha must be a full lowercase commit SHA." >&2
+            exit 1
+          fi
+          if [[ "$release_sha" != "$EXPECTED_SHA" ]]; then
+            echo "Release tag no longer resolves to expected_sha." >&2
+            exit 1
           fi
 
           if ! git merge-base --is-ancestor "$release_sha" origin/main; then
@@ -104,7 +98,7 @@ jobs:
     needs: resolve-release-ref
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
         with:
           ref: ${{ needs.resolve-release-ref.outputs.sha }}
           persist-credentials: false
@@ -117,9 +111,9 @@ jobs:
           set -euo pipefail
           [[ "$(git rev-parse HEAD)" == "$EXPECTED_SHA" ]]
 
-      - uses: pnpm/action-setup@v6
+      - uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6
 
-      - uses: actions/setup-node@v6
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
         with:
           node-version: 22
           cache: pnpm
@@ -141,7 +135,7 @@ jobs:
     needs: resolve-release-ref
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
         with:
           ref: ${{ needs.resolve-release-ref.outputs.sha }}
           persist-credentials: false
@@ -156,9 +150,9 @@ jobs:
             throw "Checkout SHA does not match the resolved release SHA."
           }
 
-      - uses: pnpm/action-setup@v6
+      - uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6
 
-      - uses: actions/setup-node@v6
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
         with:
           node-version: 22
           cache: pnpm
@@ -176,7 +170,7 @@ jobs:
     needs: [resolve-release-ref, preflight]
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
         with:
           ref: ${{ needs.resolve-release-ref.outputs.sha }}
           persist-credentials: false
@@ -191,9 +185,9 @@ jobs:
             throw "Checkout SHA does not match the resolved release SHA."
           }
 
-      - uses: pnpm/action-setup@v6
+      - uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6
 
-      - uses: actions/setup-node@v6
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
         with:
           node-version: 22
           cache: pnpm
@@ -290,7 +284,7 @@ jobs:
           }
 
       - name: Upload verified Windows artifacts
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: release-windows
           path: |
@@ -305,7 +299,7 @@ jobs:
     needs: [resolve-release-ref, preflight]
     runs-on: macos-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
         with:
           ref: ${{ needs.resolve-release-ref.outputs.sha }}
           persist-credentials: false
@@ -318,9 +312,9 @@ jobs:
           set -euo pipefail
           [[ "$(git rev-parse HEAD)" == "$EXPECTED_SHA" ]]
 
-      - uses: pnpm/action-setup@v6
+      - uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6
 
-      - uses: actions/setup-node@v6
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
         with:
           node-version: 22
           cache: pnpm
@@ -499,7 +493,7 @@ jobs:
           done
 
       - name: Upload verified macOS artifacts
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: release-macos
           path: |
@@ -513,7 +507,7 @@ jobs:
     needs: [resolve-release-ref, preflight]
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
         with:
           ref: ${{ needs.resolve-release-ref.outputs.sha }}
           persist-credentials: false
@@ -526,9 +520,9 @@ jobs:
           set -euo pipefail
           [[ "$(git rev-parse HEAD)" == "$EXPECTED_SHA" ]]
 
-      - uses: pnpm/action-setup@v6
+      - uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6
 
-      - uses: actions/setup-node@v6
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
         with:
           node-version: 22
           cache: pnpm
@@ -565,7 +559,7 @@ jobs:
           done
 
       - name: Upload verified Linux artifacts
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: release-linux
           path: |
@@ -587,7 +581,7 @@ jobs:
     permissions:
       contents: write
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
         with:
           ref: ${{ needs.resolve-release-ref.outputs.sha }}
           fetch-depth: 0
@@ -646,7 +640,7 @@ jobs:
           fi
 
       - name: Download verified artifacts
-        uses: actions/download-artifact@v8
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
         with:
           path: artifacts
           merge-multiple: true
@@ -692,7 +686,7 @@ jobs:
           )
 
       - name: Publish verified release
-        uses: softprops/action-gh-release@v3
+        uses: softprops/action-gh-release@3d0d9888cb7fd7b750713d6e236d1fcb99157228 # v3
         with:
           tag_name: ${{ needs.resolve-release-ref.outputs.tag }}
           target_commitish: ${{ needs.resolve-release-ref.outputs.sha }}

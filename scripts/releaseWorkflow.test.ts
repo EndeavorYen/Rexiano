@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { readFileSync } from "fs";
+import { readFileSync, readdirSync } from "fs";
 import { resolve } from "path";
 
 const readRepoFile = (path: string): string =>
@@ -7,6 +7,20 @@ const readRepoFile = (path: string): string =>
 
 const escapeRegExp = (value: string): string =>
   value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+const officialActionPins: Record<string, string> = {
+  "actions/checkout": "d23441a48e516b6c34aea4fa41551a30e30af803",
+  "actions/configure-pages": "45bfe0192ca1faeb007ade9deae92b16b8254a0d",
+  "actions/deploy-pages": "cd2ce8fcbc39b97be8ca5fce6e763baed58fa128",
+  "actions/download-artifact": "3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c",
+  "actions/setup-node": "249970729cb0ef3589644e2896645e5dc5ba9c38",
+  "actions/upload-artifact": "043fb46d1a93c77aae656e7c1c64a875d1fc6a0a",
+  "actions/upload-pages-artifact": "fc324d3547104276b827a68afc52ff2a11cc49c9",
+  "googleapis/release-please-action":
+    "45996ed1f6d02564a971a2fa1b5860e934307cf7",
+  "pnpm/action-setup": "0977fd99725f1db4007ccb2928dbb4e90d06cc86",
+  "softprops/action-gh-release": "3d0d9888cb7fd7b750713d6e236d1fcb99157228",
+};
 
 const jobBlock = (workflow: string, jobName: string): string => {
   const match = workflow.match(
@@ -25,16 +39,52 @@ describe("release workflow", () => {
     ".github/workflows/release-please.yml",
   );
 
+  test("pins every third-party workflow action to its verified commit", () => {
+    const workflowNames = readdirSync(
+      resolve(process.cwd(), ".github/workflows"),
+    )
+      .filter((name) => name.endsWith(".yml"))
+      .sort();
+    const seenActions = new Set<string>();
+
+    for (const workflowName of workflowNames) {
+      const workflow = readRepoFile(`.github/workflows/${workflowName}`);
+      const uses = workflow.matchAll(/uses:\s+([^\s@]+)@([^\s#]+)/g);
+
+      for (const [, action, ref] of uses) {
+        if (action.startsWith("./")) continue;
+        seenActions.add(action);
+        expect(ref, `${workflowName}: ${action}`).toBe(
+          officialActionPins[action],
+        );
+      }
+    }
+
+    expect([...seenActions].sort()).toEqual(
+      Object.keys(officialActionPins).sort(),
+    );
+  });
+
+  test("keeps immutable action pins reviewable through Dependabot", () => {
+    const dependabot = readRepoFile(".github/dependabot.yml");
+
+    expect(dependabot).toContain('package-ecosystem: "github-actions"');
+    expect(dependabot).toContain('directory: "/"');
+    expect(dependabot).toContain('interval: "monthly"');
+  });
+
   test("creates draft Release Please releases and dispatches the immutable commit", () => {
     const config = JSON.parse(readRepoFile("release-please-config.json")) as {
       draft?: boolean;
       "force-tag-creation"?: boolean;
+      "include-component-in-tag"?: boolean;
     };
 
     expect(config.draft).toBe(true);
     expect(config["force-tag-creation"]).toBe(true);
+    expect(config["include-component-in-tag"]).toBe(false);
     expect(releasePleaseWorkflow).toContain(
-      "uses: googleapis/release-please-action@v5",
+      `uses: googleapis/release-please-action@${officialActionPins["googleapis/release-please-action"]}`,
     );
     expect(releasePleaseWorkflow).not.toContain("release-type:");
     expect(releasePleaseWorkflow).toContain(
@@ -58,8 +108,54 @@ describe("release workflow", () => {
     );
   });
 
+  test("dispatches required checks for token-created release pull requests", () => {
+    expect(releasePleaseWorkflow).toContain(
+      "if: ${{ steps.release.outputs.prs_created == 'true' }}",
+    );
+    expect(releasePleaseWorkflow).toContain(
+      "RELEASE_PRS: ${{ steps.release.outputs.prs }}",
+    );
+    expect(releasePleaseWorkflow).toContain(
+      'jq -er \'length == 1 and .[0].baseBranchName == "main"',
+    );
+    expect(releasePleaseWorkflow).toContain(
+      'git/ref/heads/$release_branch" --jq .object.sha',
+    );
+    expect(releasePleaseWorkflow).toContain(
+      '.github/workflows/ci.yml --repo "$GITHUB_REPOSITORY" --ref "$release_branch"',
+    );
+    expect(releasePleaseWorkflow).toContain(
+      '.github/workflows/playwright.yml --repo "$GITHUB_REPOSITORY" --ref "$release_branch"',
+    );
+    expect(releasePleaseWorkflow).toContain(
+      '--field expected_sha="$release_sha"',
+    );
+
+    for (const workflowPath of [
+      ".github/workflows/ci.yml",
+      ".github/workflows/playwright.yml",
+    ]) {
+      const workflow = readRepoFile(workflowPath);
+      expect(workflow).toContain("workflow_dispatch:");
+      expect(workflow).toContain("expected_sha:");
+      expect(workflow).toContain("Assert dispatched commit SHA");
+      expect(workflow).toContain(
+        "if: ${{ github.event_name == 'workflow_dispatch' }}",
+      );
+      expect(workflow).toContain(
+        '[[ "$(git rev-parse HEAD)" == "$EXPECTED_SHA" ]]',
+      );
+    }
+  });
+
   test("uses read-only defaults, exact release inputs, and per-tag serialization", () => {
-    expect(releaseWorkflow).toContain('      - "v*"');
+    const eventBlock = releaseWorkflow.slice(
+      releaseWorkflow.indexOf("on:"),
+      releaseWorkflow.indexOf("permissions:"),
+    );
+
+    expect(eventBlock).not.toContain("push:");
+    expect(eventBlock).toContain("workflow_dispatch:");
     expect(releaseWorkflow).toContain("expected_sha:");
     expect(releaseWorkflow).toContain("required: true");
     expect(releaseWorkflow).toContain("permissions:\n  contents: read");
@@ -239,12 +335,16 @@ describe("release workflow", () => {
     );
     expect(publish).not.toContain('if [[ "$release_count" -eq 1 ]]; then');
     expect(publish).toContain("Release is already public");
-    expect(publish).toContain("actions/download-artifact@v8");
+    expect(publish).toContain(
+      `actions/download-artifact@${officialActionPins["actions/download-artifact"]}`,
+    );
     expect(publish).toContain("Expected exactly 7 release packages");
     expect(publish).toContain("LC_ALL=C");
     expect(publish).toContain("SHA256SUMS.txt");
     expect(publish).toContain("sha256sum --check SHA256SUMS.txt");
-    expect(publish).toContain("uses: softprops/action-gh-release@v3");
+    expect(publish).toContain(
+      `uses: softprops/action-gh-release@${officialActionPins["softprops/action-gh-release"]}`,
+    );
     expect(publish).toContain("artifacts/rexiano-*-x86_64.AppImage");
     expect(publish).not.toContain("artifacts/rexiano-*-x64.AppImage");
     expect(publish).toContain("artifacts/rexiano-*-amd64.deb");
@@ -289,11 +389,13 @@ describe("release workflow", () => {
     expect(signingDocs).toContain("MACOS_CSC_LINK");
     expect(signingDocs).toContain("Exactly one");
     expect(signingDocs).toContain("Issue #187");
+    expect(signingDocs).toContain("single authoritative release trigger");
+    expect(signingDocs).toContain("Playwright (Windows)");
     expect(signingDocs).toContain("Authenticode");
     expect(signingDocs).toContain("Gatekeeper");
     expect(signingDocs).toContain("SHA256SUMS.txt");
     expect(signingDocs).toContain(
-      "Tag-push and workflow-dispatch runs must find exactly one matching draft",
+      "explicit workflow-dispatch run must find exactly one matching draft",
     );
     expect(design).toContain("fail closed");
     expect(design).toContain("恰好一個 matching draft");
