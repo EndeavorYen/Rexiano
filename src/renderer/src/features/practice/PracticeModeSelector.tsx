@@ -119,7 +119,7 @@ export function PracticeModeSelector(): React.JSX.Element {
       className="flex items-center gap-1 p-0.5 rounded-lg"
       style={{ background: "var(--color-surface-alt)" }}
       role="radiogroup"
-      aria-label="Practice mode"
+      aria-label={t("practice.modeLabel")}
     >
       {modes.map(({ id, labelKey, icon }) => {
         const isActive = currentMode === id;

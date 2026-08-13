@@ -1,13 +1,14 @@
 import type { BuiltinSongMeta } from "../../../../shared/types";
+import type { TranslationKey } from "@renderer/i18n/types";
 
 /** Tooltip descriptions explaining each difficulty level */
-export const difficultyDescriptions: Record<
+export const difficultyDescriptionKeys: Record<
   BuiltinSongMeta["difficulty"],
-  string
+  TranslationKey
 > = {
-  beginner: "Simple melodies, single hand, slow tempo",
-  intermediate: "Both hands, moderate tempo, basic chords",
-  advanced: "Complex rhythms, fast passages, wide range",
+  beginner: "library.difficultyDescription.beginner",
+  intermediate: "library.difficultyDescription.intermediate",
+  advanced: "library.difficultyDescription.advanced",
 };
 
 /** Short label for each grade level */
@@ -24,16 +25,16 @@ export const gradeLabelShort: Record<number, string> = {
 };
 
 /** Tooltip description for each grade level */
-export const gradeDescriptions: Record<number, string> = {
-  0: "Pre-Starter — 3–5 notes, right hand only (C-E)",
-  1: "Starter — 5-note position, stepwise (C-G)",
-  2: "Early Beginner — full octave, light skips",
-  3: "Beginner — first two-hand, simple bass notes",
-  4: "Elementary — both hands, I-V-I chord bass",
-  5: "Pre-Intermediate — position shifts, light accidentals",
-  6: "Intermediate — arpeggios, Alberti bass, 2 accidentals",
-  7: "Upper-Intermediate — wide range, complex rhythms",
-  8: "Advanced — concert-level technique",
+export const gradeDescriptionKeys: Record<number, TranslationKey> = {
+  0: "library.gradeDescription.0",
+  1: "library.gradeDescription.1",
+  2: "library.gradeDescription.2",
+  3: "library.gradeDescription.3",
+  4: "library.gradeDescription.4",
+  5: "library.gradeDescription.5",
+  6: "library.gradeDescription.6",
+  7: "library.gradeDescription.7",
+  8: "library.gradeDescription.8",
 };
 
 /**
@@ -68,17 +69,17 @@ export const CATEGORY_ORDER: SongCategory[] = [
 ];
 
 /** Human-readable labels for each category */
-export const categoryLabels: Record<SongCategory, string> = {
-  exercise: "Exercises",
-  popular: "Popular",
-  holiday: "Holiday",
-  classical: "Classical",
+export const categoryLabelKeys: Record<SongCategory, TranslationKey> = {
+  exercise: "library.category.exercise",
+  popular: "library.category.popular",
+  holiday: "library.category.holiday",
+  classical: "library.category.classical",
 };
 
 /** A category group with its songs */
 export interface CategoryGroup {
   category: SongCategory;
-  label: string;
+  labelKey: TranslationKey;
   songs: BuiltinSongMeta[];
 }
 
@@ -116,7 +117,7 @@ export function groupSongsByCategory(
     if (catSongs.length > 0) {
       result.push({
         category: cat,
-        label: categoryLabels[cat],
+        labelKey: categoryLabelKeys[cat],
         songs: catSongs,
       });
     }

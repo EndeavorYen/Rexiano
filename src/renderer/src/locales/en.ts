@@ -145,6 +145,47 @@ export const en: TranslationMap = {
   "library.noSongsHint": "Import a MIDI file below to get started!",
   "library.noMatchSearch": "No songs match your search",
   "library.noMatchHint": "Try a different keyword or clear the filter",
+  "library.difficultyDescription.beginner":
+    "Simple melodies, single hand, slow tempo",
+  "library.difficultyDescription.intermediate":
+    "Both hands, moderate tempo, basic chords",
+  "library.difficultyDescription.advanced":
+    "Complex rhythms, fast passages, wide range",
+  "library.difficultyAria": "Difficulty: {difficulty} — {description}",
+  "library.gradeDescription.0":
+    "Pre-Starter — 3–5 notes, right hand only (C-E)",
+  "library.gradeDescription.1": "Starter — 5-note position, stepwise (C-G)",
+  "library.gradeDescription.2": "Early Beginner — full octave, light skips",
+  "library.gradeDescription.3": "Beginner — first two-hand, simple bass notes",
+  "library.gradeDescription.4": "Elementary — both hands, I-V-I chord bass",
+  "library.gradeDescription.5":
+    "Pre-Intermediate — position shifts, light accidentals",
+  "library.gradeDescription.6":
+    "Intermediate — arpeggios, Alberti bass, 2 accidentals",
+  "library.gradeDescription.7":
+    "Upper-Intermediate — wide range, complex rhythms",
+  "library.gradeDescription.8": "Advanced — concert-level technique",
+  "library.category.exercise": "Exercises",
+  "library.category.popular": "Popular",
+  "library.category.holiday": "Holiday",
+  "library.category.classical": "Classical",
+  "library.practiced": "Practiced",
+  "library.bestScoreValue": "Best: {accuracy}%",
+  "library.lessonGroup.firstNotes.title": "First notes",
+  "library.lessonGroup.firstNotes.description":
+    "Very short songs and note patterns for first sessions.",
+  "library.lessonGroup.rightHand.title": "Right-hand melodies",
+  "library.lessonGroup.rightHand.description":
+    "Single-line songs that build reading and hand confidence.",
+  "library.lessonGroup.twoHand.title": "First two-hand pieces",
+  "library.lessonGroup.twoHand.description":
+    "Simple two-hand coordination without dense accompaniment.",
+  "library.lessonGroup.rhythm.title": "Rhythm and expression",
+  "library.lessonGroup.rhythm.description":
+    "Longer pieces with meter, phrasing, and key variety.",
+  "library.lessonGroup.classics.title": "Intermediate classics",
+  "library.lessonGroup.classics.description":
+    "Classical repertoire and higher-grade pieces.",
 
   // ── Parent Practice Report ────────────────────────────────────
   "parentReport.title": "Parent report",
@@ -197,6 +238,8 @@ export const en: TranslationMap = {
   "midi.noDevices": "No MIDI devices detected",
   "midi.inputLabel": "In",
   "midi.outputLabel": "Out",
+  "midi.inputDevice": "MIDI input device",
+  "midi.outputDevice": "MIDI output device",
   "midi.noneOption": "-- None --",
   "midi.disconnect": "Disconnect",
   "midi.connected": "Connected",
@@ -289,6 +332,13 @@ export const en: TranslationMap = {
   "practice.encourageGettingThere": "Getting there!",
   "practice.encourageYouCanDoIt": "You can do it!",
   "practice.scoreLabel": "Practice score",
+  "practice.modeLabel": "Practice mode",
+  "practice.setSpeedTo": "Set speed to {speed}",
+  "practice.playbackSpeedPercentage": "Playback speed percentage",
+  "practice.loopStartValue": "Loop start: {time}",
+  "practice.loopEndValue": "Loop end: {time}",
+  "practice.metronomeBeat": "Beat {beat} of {total}",
+  "practice.abLoopRange": "A-B loop range",
 
   // ── Settings ───────────────────────────────────────────────────
   "settings.title": "Settings",
@@ -419,6 +469,9 @@ export const en: TranslationMap = {
   "insights.practiceNumber": "Practice #",
   "insights.accuracyPercent": "Accuracy %",
   "insights.practiceTime": "Practice time",
+  "insights.noDataYet": "No data yet",
+  "insights.accuracyTrendChart": "Accuracy trend chart",
+  "insights.sessionAccuracy": "Session {session}: {accuracy}%",
 
   // ── Celebration ────────────────────────────────────────────────
   "celebration.amazing.title": "You're a star!",
@@ -458,6 +511,46 @@ export const en: TranslationMap = {
   "celebration.nextAction.nextSong.title": "Choose the next song",
   "celebration.nextAction.nextSong.body":
     "That pass is solid. Pick a new song near this level.",
+  "celebration.starRating": "{filled} out of {total} stars",
+
+  // ── Piano Roll Editor ─────────────────────────────────────────
+  "editor.open": "Piano roll editor",
+  "editor.toolbar": "Piano roll editor tools",
+  "editor.tool.select": "Select tool",
+  "editor.tool.draw": "Draw tool",
+  "editor.tool.erase": "Erase tool",
+  "editor.toggleQuantize": "Toggle quantize",
+  "editor.copySelection": "Copy selection",
+  "editor.pasteNotes": "Paste notes",
+  "editor.notes": "Notes",
+  "editor.noSelection": "No selection",
+  "editor.selectedCount": "{count} selected",
+  "editor.field.pitch": "Pitch",
+  "editor.field.start": "Start",
+  "editor.field.duration": "Duration",
+  "editor.field.velocity": "Velocity",
+  "editor.mixed": "Mixed",
+  "editor.none": "None",
+  "editor.warning.pitchClamped": "Pitch was clamped to the MIDI range 0-127.",
+  "editor.warning.startClamped":
+    "Start time was clamped to 0 seconds or later.",
+  "editor.warning.durationClamped":
+    "Duration was clamped to at least 0.03125 seconds.",
+  "editor.warning.velocityClamped":
+    "Velocity was clamped to the MIDI range 1-127.",
+  "editor.tracks": "Tracks",
+  "editor.addTrack": "Add track",
+  "editor.trackName": "Name",
+  "editor.channel": "Channel",
+  "editor.channelAbbrev": "ch",
+  "editor.instrument": "Instrument",
+  "editor.deleteTrack": "Delete",
+  "editor.defaultTrackName": "Track {number}",
+  "editor.trackTopologyChanged": "Track topology changed.",
+  "editor.exportMidi": "Export MIDI",
+  "editor.exported": "Exported {fileName}",
+  "editor.exportFailed": "MIDI export failed.",
+  "editor.close": "Close editor",
 
   // ── Sheet Music ────────────────────────────────────────────────
   "sheetMusic.loadSong": "Load a song to see sheet music",

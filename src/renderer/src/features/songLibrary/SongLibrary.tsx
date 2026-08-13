@@ -31,7 +31,7 @@ import { SongCard } from "./SongCard";
 import { SongLibraryFilters } from "./SongLibraryFilters";
 import { ThemePicker } from "../settings/ThemePicker";
 import {
-  categoryLabels,
+  categoryLabelKeys,
   getGradeColor,
   gradeLabelShort,
   groupSongsByCategory,
@@ -1211,7 +1211,7 @@ export function SongLibrary({
                           className="truncate text-xs font-body font-semibold"
                           style={{ color: "var(--color-text)" }}
                         >
-                          {group.title}
+                          {t(group.titleKey)}
                         </span>
                         <span
                           className="shrink-0 text-[10px] font-mono tabular-nums"
@@ -1559,7 +1559,7 @@ export function SongLibrary({
                           style={{ color: "var(--color-text-muted)" }}
                         >
                           <span className="text-xs font-body font-semibold uppercase tracking-wider">
-                            {group.label}
+                            {t(group.labelKey)}
                           </span>
                           <span
                             className="text-[10px] font-mono px-1.5 py-0.5 rounded-full"
@@ -1705,7 +1705,9 @@ function SongSelectionPreviewPanel({
       : `imported:${preview.importedSong.id}`;
   const grade =
     preview.grade !== undefined ? gradeLabelShort[preview.grade] : "--";
-  const category = preview.category ? categoryLabels[preview.category] : "--";
+  const category = preview.category
+    ? t(categoryLabelKeys[preview.category])
+    : "--";
   const bestScore =
     preview.bestAccuracy !== null
       ? `${Math.round(preview.bestAccuracy)}%`
@@ -1957,7 +1959,7 @@ function ImportedSongRow({
               border: "1px solid var(--color-border)",
             }}
           >
-            {record.category ? categoryLabels[record.category] : "--"}
+            {record.category ? t(categoryLabelKeys[record.category]) : "--"}
           </span>
         </span>
 
@@ -2105,7 +2107,7 @@ function ImportedSongMetadataEditor({
         <option value="">--</option>
         {importedCategoryOptions.map((category) => (
           <option key={category} value={category}>
-            {categoryLabels[category]}
+            {t(categoryLabelKeys[category])}
           </option>
         ))}
       </select>
@@ -2217,7 +2219,7 @@ function SongListRow({
               border: "1px solid var(--color-border)",
             }}
           >
-            {categoryLabels[category]}
+            {t(categoryLabelKeys[category])}
           </span>
         </span>
 

@@ -12,6 +12,7 @@
  */
 
 import { useId } from "react";
+import { useTranslation } from "@renderer/i18n/useTranslation";
 
 interface ProgressChartProps {
   /** Accuracy values (0-100) in chronological order */
@@ -63,6 +64,7 @@ export function ProgressChart({
   width = 400,
   height = 200,
 }: ProgressChartProps): React.JSX.Element {
+  const { t } = useTranslation();
   // useId must be called unconditionally (React hooks rule)
   const reactId = useId();
   const gradientId = `progress-gradient-${reactId.replace(/:/g, "")}`;
@@ -73,7 +75,7 @@ export function ProgressChart({
         className="flex items-center justify-center text-xs font-body"
         style={{ width, height, color: "var(--color-text-muted)" }}
       >
-        No data yet
+        {t("insights.noDataYet")}
       </div>
     );
   }
@@ -108,7 +110,7 @@ export function ProgressChart({
       viewBox={`0 0 ${width} ${height}`}
       className="block"
       role="img"
-      aria-label="Accuracy trend chart"
+      aria-label={t("insights.accuracyTrendChart")}
     >
       <defs>
         <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
@@ -200,7 +202,12 @@ export function ProgressChart({
             strokeWidth={2}
           />
           {/* Tooltip-like hover target */}
-          <title>{`Session ${i + 1}: ${p.val.toFixed(1)}%`}</title>
+          <title>
+            {t("insights.sessionAccuracy", {
+              session: i + 1,
+              accuracy: p.val.toFixed(1),
+            })}
+          </title>
         </g>
       ))}
 

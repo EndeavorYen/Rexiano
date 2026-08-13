@@ -2,11 +2,13 @@ import { useCallback } from "react";
 import type { BuiltinSongMeta } from "../../../../shared/types";
 import { useProgressStore } from "@renderer/stores/useProgressStore";
 import {
-  difficultyDescriptions,
+  difficultyDescriptionKeys,
   gradeLabelShort,
-  gradeDescriptions,
+  gradeDescriptionKeys,
   getGradeColor,
 } from "./songCardUtils";
+import { useTranslation } from "@renderer/i18n/useTranslation";
+import type { TranslationKey } from "@renderer/i18n/types";
 
 interface SongCardProps {
   song: BuiltinSongMeta;
@@ -27,10 +29,13 @@ const difficultyDots: Record<BuiltinSongMeta["difficulty"], number> = {
   advanced: 3,
 };
 
-const difficultyLabels: Record<BuiltinSongMeta["difficulty"], string> = {
-  beginner: "Beginner",
-  intermediate: "Intermediate",
-  advanced: "Advanced",
+const difficultyLabelKeys: Record<
+  BuiltinSongMeta["difficulty"],
+  TranslationKey
+> = {
+  beginner: "library.difficulty.beginner",
+  intermediate: "library.difficulty.intermediate",
+  advanced: "library.difficulty.advanced",
 };
 
 /** Convert accuracy (0-100) to a 0-3 star count */
@@ -46,6 +51,7 @@ export function SongCard({
   onSelect,
   colorIndex,
 }: SongCardProps): React.JSX.Element {
+  const { t } = useTranslation();
   const noteColors = [
     "var(--color-note1)",
     "var(--color-note2)",
@@ -63,13 +69,14 @@ export function SongCard({
     [song.id, onSelect],
   );
 
-  const difficultyDescription = difficultyDescriptions[song.difficulty];
+  const difficultyDescription = t(difficultyDescriptionKeys[song.difficulty]);
+  const difficultyLabel = t(difficultyLabelKeys[song.difficulty]);
   const dots = difficultyDots[song.difficulty];
   const stars = bestScore ? accuracyToStars(bestScore.score.accuracy) : 0;
   const gradeLabel =
     song.grade !== undefined ? gradeLabelShort[song.grade] : null;
   const gradeDesc =
-    song.grade !== undefined ? gradeDescriptions[song.grade] : null;
+    song.grade !== undefined ? t(gradeDescriptionKeys[song.grade]) : null;
   const gradeColor =
     song.grade !== undefined ? getGradeColor(song.grade) : null;
 
@@ -115,7 +122,7 @@ export function SongCard({
                 boxShadow:
                   "0 0 0 4px color-mix(in srgb, var(--color-accent) 18%, transparent)",
               }}
-              title="Practiced"
+              title={t("library.practiced")}
             />
           )}
         </div>
@@ -124,8 +131,11 @@ export function SongCard({
           <div className="flex items-center gap-2.5 min-w-0">
             <div
               className="flex items-center gap-0.5"
-              title={`${difficultyLabels[song.difficulty]}: ${difficultyDescription}`}
-              aria-label={`Difficulty: ${difficultyLabels[song.difficulty]} — ${difficultyDescription}`}
+              title={`${difficultyLabel}: ${difficultyDescription}`}
+              aria-label={t("library.difficultyAria", {
+                difficulty: difficultyLabel,
+                description: difficultyDescription,
+              })}
             >
               {[1, 2, 3].map((n) => (
                 <div
@@ -142,7 +152,9 @@ export function SongCard({
             {bestScore && (
               <div
                 className="flex items-center gap-px"
-                title={`Best: ${Math.round(bestScore.score.accuracy)}%`}
+                title={t("library.bestScoreValue", {
+                  accuracy: Math.round(bestScore.score.accuracy),
+                })}
               >
                 {[1, 2, 3].map((n) => (
                   <svg

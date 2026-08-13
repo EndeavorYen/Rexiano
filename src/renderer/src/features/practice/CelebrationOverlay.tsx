@@ -126,13 +126,14 @@ function formatSpeed(speed: number | undefined): string {
 
 /** Render star display */
 function StarDisplay({ accuracy }: { accuracy: number }): React.JSX.Element {
+  const { t } = useTranslation();
   const filled = getStarCount(accuracy);
   const total = 5;
 
   return (
     <div
       className="flex items-center gap-1"
-      aria-label={`${filled} out of ${total} stars`}
+      aria-label={t("celebration.starRating", { filled, total })}
     >
       {Array.from({ length: total }, (_, i) => {
         const isFilled = i < filled;

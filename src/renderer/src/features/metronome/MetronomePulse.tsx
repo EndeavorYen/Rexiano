@@ -10,6 +10,7 @@
 
 import { useSettingsStore } from "@renderer/stores/useSettingsStore";
 import { getDotColor, getDotOpacity, getDotSize } from "./metronomePulseUtils";
+import { useTranslation } from "@renderer/i18n/useTranslation";
 
 export interface MetronomePulseProps {
   isPlaying: boolean;
@@ -22,6 +23,7 @@ export function MetronomePulse({
   currentBeat,
   beatsPerMeasure,
 }: MetronomePulseProps): React.JSX.Element | null {
+  const { t } = useTranslation();
   const metronomeEnabled = useSettingsStore((s) => s.metronomeEnabled);
 
   if (!metronomeEnabled || !isPlaying) return null;
@@ -30,7 +32,10 @@ export function MetronomePulse({
     <div
       className="flex items-center gap-1.5"
       role="group"
-      aria-label={`Beat ${currentBeat + 1} of ${beatsPerMeasure}`}
+      aria-label={t("practice.metronomeBeat", {
+        beat: currentBeat + 1,
+        total: beatsPerMeasure,
+      })}
       data-testid="metronome-pulse"
     >
       {Array.from({ length: beatsPerMeasure }, (_, i) => {

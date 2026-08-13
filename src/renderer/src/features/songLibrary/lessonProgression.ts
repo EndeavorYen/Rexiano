@@ -1,5 +1,6 @@
 import type { BuiltinSongMeta } from "@shared/types";
 import type { SongActivity } from "./songLibrarySelectors";
+import type { TranslationKey } from "@renderer/i18n/types";
 
 export type LessonGroupId =
   | "first-notes"
@@ -15,8 +16,8 @@ export type LessonRecommendationReason =
 
 export interface LessonGroupDefinition {
   id: LessonGroupId;
-  title: string;
-  description: string;
+  titleKey: TranslationKey;
+  descriptionKey: TranslationKey;
 }
 
 export interface LessonSongProgress {
@@ -56,28 +57,28 @@ export interface LessonProgressionModel {
 export const lessonGroupDefinitions: readonly LessonGroupDefinition[] = [
   {
     id: "first-notes",
-    title: "First notes",
-    description: "Very short songs and note patterns for first sessions.",
+    titleKey: "library.lessonGroup.firstNotes.title",
+    descriptionKey: "library.lessonGroup.firstNotes.description",
   },
   {
     id: "right-hand-melodies",
-    title: "Right-hand melodies",
-    description: "Single-line songs that build reading and hand confidence.",
+    titleKey: "library.lessonGroup.rightHand.title",
+    descriptionKey: "library.lessonGroup.rightHand.description",
   },
   {
     id: "first-two-hand",
-    title: "First two-hand pieces",
-    description: "Simple two-hand coordination without dense accompaniment.",
+    titleKey: "library.lessonGroup.twoHand.title",
+    descriptionKey: "library.lessonGroup.twoHand.description",
   },
   {
     id: "rhythm-and-expression",
-    title: "Rhythm and expression",
-    description: "Longer pieces with meter, phrasing, and key variety.",
+    titleKey: "library.lessonGroup.rhythm.title",
+    descriptionKey: "library.lessonGroup.rhythm.description",
   },
   {
     id: "intermediate-classics",
-    title: "Intermediate classics",
-    description: "Classical repertoire and higher-grade pieces.",
+    titleKey: "library.lessonGroup.classics.title",
+    descriptionKey: "library.lessonGroup.classics.description",
   },
 ] as const;
 

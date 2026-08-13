@@ -1,5 +1,6 @@
 import { Plus, Trash2 } from "lucide-react";
 import type { EditableSong, EditableTrack } from "./editorTypes";
+import { useTranslation } from "@renderer/i18n/useTranslation";
 
 interface TrackManagerProps {
   song: EditableSong;
@@ -21,6 +22,7 @@ export function TrackManager({
   onDeleteTrack,
   onUpdateTrack,
 }: TrackManagerProps): React.JSX.Element {
+  const { t } = useTranslation();
   const selectedTrack =
     song.tracks.find((track) => track.id === selectedTrackId) ?? null;
 
@@ -39,7 +41,7 @@ export function TrackManager({
           className="text-[11px] font-display font-bold uppercase tracking-wider"
           style={{ color: "var(--color-text-muted)" }}
         >
-          Tracks
+          {t("editor.tracks")}
         </p>
         <button
           type="button"
@@ -51,8 +53,8 @@ export function TrackManager({
             border:
               "1px solid color-mix(in srgb, var(--color-accent) 24%, var(--color-border))",
           }}
-          title="Add track"
-          aria-label="Add track"
+          title={t("editor.addTrack")}
+          aria-label={t("editor.addTrack")}
           onClick={onAddTrack}
           data-testid="track-add"
         >
@@ -82,7 +84,7 @@ export function TrackManager({
             >
               <span className="truncate">{track.name}</span>
               <span className="font-mono text-[10px] opacity-70">
-                ch {track.channel + 1}
+                {t("editor.channelAbbrev")} {track.channel + 1}
               </span>
             </button>
           );
@@ -92,7 +94,7 @@ export function TrackManager({
       {selectedTrack && (
         <div className="space-y-2" data-testid="track-metadata">
           <TrackInput
-            label="Name"
+            label={t("editor.trackName")}
             value={selectedTrack.name}
             onCommit={(value) =>
               onUpdateTrack(selectedTrack.id, { name: value })
@@ -100,7 +102,7 @@ export function TrackManager({
             testId="track-name"
           />
           <TrackInput
-            label="Channel"
+            label={t("editor.channel")}
             value={String(selectedTrack.channel)}
             type="number"
             onCommit={(value) =>
@@ -109,7 +111,7 @@ export function TrackManager({
             testId="track-channel"
           />
           <TrackInput
-            label="Instrument"
+            label={t("editor.instrument")}
             value={String(selectedTrack.instrument ?? 0)}
             type="number"
             onCommit={(value) =>
@@ -132,7 +134,7 @@ export function TrackManager({
             data-testid="track-delete"
           >
             <Trash2 size={14} />
-            Delete
+            {t("editor.deleteTrack")}
           </button>
         </div>
       )}

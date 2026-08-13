@@ -70,7 +70,9 @@ export function SpeedSlider(): React.JSX.Element {
                 boxShadow: isActive ? "0 1px 4px rgba(0,0,0,0.12)" : "none",
                 transition: "all 0.15s ease",
               }}
-              aria-label={`Set speed to ${presetLabel(v)}`}
+              aria-label={t("practice.setSpeedTo", {
+                speed: presetLabel(v),
+              })}
               aria-pressed={isActive}
             >
               {presetLabel(v)}
@@ -89,7 +91,7 @@ export function SpeedSlider(): React.JSX.Element {
         onChange={(e) => applySpeed(parseFloat(e.target.value) / 100)}
         className="speed-slider-input shrink-0"
         style={{ accentColor: "var(--color-accent)", width: 96 }}
-        aria-label="Playback speed percentage"
+        aria-label={t("practice.playbackSpeedPercentage")}
         data-testid="speed-slider"
       />
 

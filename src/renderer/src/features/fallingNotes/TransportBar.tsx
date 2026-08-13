@@ -358,7 +358,7 @@ export function TransportBar({
                   borderRadius: 3,
                 }}
                 data-testid="loop-highlight"
-                aria-label="A-B loop range"
+                aria-label={t("practice.abLoopRange")}
               />
             )}
             <input

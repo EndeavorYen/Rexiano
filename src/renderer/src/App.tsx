@@ -1466,8 +1466,8 @@ function App(): React.JSX.Element {
                         setShowEditor(true);
                       }}
                       className="btn-surface-themed w-9 h-9 flex items-center justify-center rounded-full cursor-pointer"
-                      title="Piano roll editor"
-                      aria-label="Piano roll editor"
+                      title={t("editor.open")}
+                      aria-label={t("editor.open")}
                       data-testid="open-editor"
                     >
                       <PencilRuler

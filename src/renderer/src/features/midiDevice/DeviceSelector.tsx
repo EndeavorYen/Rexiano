@@ -142,7 +142,7 @@ export function DeviceSelector({
                 value={selectedInputId ?? ""}
                 onChange={handleInputChange}
                 className="select-themed rounded px-2 py-1 text-xs outline-none cursor-pointer"
-                aria-label="MIDI input device"
+                aria-label={t("midi.inputDevice")}
               >
                 <option value="">{t("midi.noneOption")}</option>
                 {connectedInputs.map((d) => (
@@ -171,7 +171,7 @@ export function DeviceSelector({
                 value={selectedOutputId ?? ""}
                 onChange={handleOutputChange}
                 className="select-themed rounded px-2 py-1 text-xs outline-none cursor-pointer"
-                aria-label="MIDI output device"
+                aria-label={t("midi.outputDevice")}
               >
                 <option value="">{t("midi.noneOption")}</option>
                 {connectedOutputs.map((d) => (

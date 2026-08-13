@@ -77,7 +77,9 @@ export function ABLoopSelector(): React.JSX.Element {
             transition: "all 0.15s ease",
           }}
           title={
-            hasA ? `Loop start: ${fmtSec(loopRange![0])}` : t("practice.setA")
+            hasA
+              ? t("practice.loopStartValue", { time: fmtSec(loopRange![0]) })
+              : t("practice.setA")
           }
           aria-label={t("practice.setALabel")}
         >
@@ -112,7 +114,9 @@ export function ABLoopSelector(): React.JSX.Element {
             transition: "all 0.15s ease",
           }}
           title={
-            hasB ? `Loop end: ${fmtSec(loopRange![1])}` : t("practice.setB")
+            hasB
+              ? t("practice.loopEndValue", { time: fmtSec(loopRange![1]) })
+              : t("practice.setB")
           }
           aria-label={t("practice.setBLabel")}
         >

@@ -136,6 +136,35 @@ export interface TranslationMap {
   "library.noSongsHint": string;
   "library.noMatchSearch": string;
   "library.noMatchHint": string;
+  "library.difficultyDescription.beginner": string;
+  "library.difficultyDescription.intermediate": string;
+  "library.difficultyDescription.advanced": string;
+  "library.difficultyAria": string;
+  "library.gradeDescription.0": string;
+  "library.gradeDescription.1": string;
+  "library.gradeDescription.2": string;
+  "library.gradeDescription.3": string;
+  "library.gradeDescription.4": string;
+  "library.gradeDescription.5": string;
+  "library.gradeDescription.6": string;
+  "library.gradeDescription.7": string;
+  "library.gradeDescription.8": string;
+  "library.category.exercise": string;
+  "library.category.popular": string;
+  "library.category.holiday": string;
+  "library.category.classical": string;
+  "library.practiced": string;
+  "library.bestScoreValue": string;
+  "library.lessonGroup.firstNotes.title": string;
+  "library.lessonGroup.firstNotes.description": string;
+  "library.lessonGroup.rightHand.title": string;
+  "library.lessonGroup.rightHand.description": string;
+  "library.lessonGroup.twoHand.title": string;
+  "library.lessonGroup.twoHand.description": string;
+  "library.lessonGroup.rhythm.title": string;
+  "library.lessonGroup.rhythm.description": string;
+  "library.lessonGroup.classics.title": string;
+  "library.lessonGroup.classics.description": string;
 
   // ── Parent Practice Report ────────────────────────────────────
   "parentReport.title": string;
@@ -189,6 +218,8 @@ export interface TranslationMap {
   "midi.noDevices": string;
   "midi.inputLabel": string;
   "midi.outputLabel": string;
+  "midi.inputDevice": string;
+  "midi.outputDevice": string;
   "midi.noneOption": string;
   "midi.disconnect": string;
   "midi.connected": string;
@@ -272,6 +303,13 @@ export interface TranslationMap {
   "practice.encourageGettingThere": string;
   "practice.encourageYouCanDoIt": string;
   "practice.scoreLabel": string;
+  "practice.modeLabel": string;
+  "practice.setSpeedTo": string;
+  "practice.playbackSpeedPercentage": string;
+  "practice.loopStartValue": string;
+  "practice.loopEndValue": string;
+  "practice.metronomeBeat": string;
+  "practice.abLoopRange": string;
 
   // ── Settings ───────────────────────────────────────────────────
   "settings.title": string;
@@ -389,6 +427,9 @@ export interface TranslationMap {
   "insights.practiceNumber": string;
   "insights.accuracyPercent": string;
   "insights.practiceTime": string;
+  "insights.noDataYet": string;
+  "insights.accuracyTrendChart": string;
+  "insights.sessionAccuracy": string;
 
   // ── Celebration ────────────────────────────────────────────────
   "celebration.amazing.title": string;
@@ -421,6 +462,43 @@ export interface TranslationMap {
   "celebration.nextAction.practiceWeakSection.body": string;
   "celebration.nextAction.nextSong.title": string;
   "celebration.nextAction.nextSong.body": string;
+  "celebration.starRating": string;
+
+  // ── Piano Roll Editor ─────────────────────────────────────────
+  "editor.open": string;
+  "editor.toolbar": string;
+  "editor.tool.select": string;
+  "editor.tool.draw": string;
+  "editor.tool.erase": string;
+  "editor.toggleQuantize": string;
+  "editor.copySelection": string;
+  "editor.pasteNotes": string;
+  "editor.notes": string;
+  "editor.noSelection": string;
+  "editor.selectedCount": string;
+  "editor.field.pitch": string;
+  "editor.field.start": string;
+  "editor.field.duration": string;
+  "editor.field.velocity": string;
+  "editor.mixed": string;
+  "editor.none": string;
+  "editor.warning.pitchClamped": string;
+  "editor.warning.startClamped": string;
+  "editor.warning.durationClamped": string;
+  "editor.warning.velocityClamped": string;
+  "editor.tracks": string;
+  "editor.addTrack": string;
+  "editor.trackName": string;
+  "editor.channel": string;
+  "editor.channelAbbrev": string;
+  "editor.instrument": string;
+  "editor.deleteTrack": string;
+  "editor.defaultTrackName": string;
+  "editor.trackTopologyChanged": string;
+  "editor.exportMidi": string;
+  "editor.exported": string;
+  "editor.exportFailed": string;
+  "editor.close": string;
 
   // ── Sheet Music ────────────────────────────────────────────────
   "sheetMusic.loadSong": string;

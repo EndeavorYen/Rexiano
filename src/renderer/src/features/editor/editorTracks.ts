@@ -2,7 +2,7 @@ import type { EditableSong, EditableTrack } from "./editorTypes";
 
 export type TrackPracticeSetupImpact =
   | { kind: "preserved" }
-  | { kind: "reset-required"; reason: "Track topology changed." };
+  | { kind: "reset-required"; reason: "track-topology-changed" };
 
 export interface AddEditorTrackInput {
   id: string;
@@ -44,7 +44,7 @@ export function getTrackPracticeSetupImpact(
 ): TrackPracticeSetupImpact {
   return change === "metadata"
     ? { kind: "preserved" }
-    : { kind: "reset-required", reason: "Track topology changed." };
+    : { kind: "reset-required", reason: "track-topology-changed" };
 }
 
 export function addEditorTrack(

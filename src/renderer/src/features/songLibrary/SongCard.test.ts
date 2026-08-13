@@ -1,41 +1,41 @@
 import { describe, test, expect, beforeEach } from "vitest";
 import {
-  difficultyDescriptions,
+  difficultyDescriptionKeys,
+  gradeDescriptionKeys,
   getBestScoreColor,
   groupSongsByCategory,
   CATEGORY_ORDER,
-  categoryLabels,
+  categoryLabelKeys,
 } from "@renderer/features/songLibrary/songCardUtils";
 import { useProgressStore } from "@renderer/stores/useProgressStore";
 import type { BuiltinSongMeta, SessionRecord } from "@shared/types";
 
 // ─── Difficulty descriptions ────────────────────────────────────────
 
-describe("difficultyDescriptions", () => {
-  test("beginner has correct description", () => {
-    expect(difficultyDescriptions.beginner).toBe(
-      "Simple melodies, single hand, slow tempo",
+describe("song-card translation keys", () => {
+  test("difficulty descriptions stay semantic", () => {
+    expect(difficultyDescriptionKeys.beginner).toBe(
+      "library.difficultyDescription.beginner",
     );
-  });
-
-  test("intermediate has correct description", () => {
-    expect(difficultyDescriptions.intermediate).toBe(
-      "Both hands, moderate tempo, basic chords",
+    expect(difficultyDescriptionKeys.intermediate).toBe(
+      "library.difficultyDescription.intermediate",
     );
-  });
-
-  test("advanced has correct description", () => {
-    expect(difficultyDescriptions.advanced).toBe(
-      "Complex rhythms, fast passages, wide range",
+    expect(difficultyDescriptionKeys.advanced).toBe(
+      "library.difficultyDescription.advanced",
     );
   });
 
   test("all three difficulty levels are defined", () => {
-    expect(Object.keys(difficultyDescriptions)).toEqual([
+    expect(Object.keys(difficultyDescriptionKeys)).toEqual([
       "beginner",
       "intermediate",
       "advanced",
     ]);
+  });
+
+  test("grade descriptions stay semantic", () => {
+    expect(gradeDescriptionKeys[0]).toBe("library.gradeDescription.0");
+    expect(gradeDescriptionKeys[8]).toBe("library.gradeDescription.8");
   });
 });
 
@@ -168,12 +168,12 @@ describe("CATEGORY_ORDER", () => {
   });
 });
 
-describe("categoryLabels", () => {
-  test("has human-readable label for every category", () => {
-    expect(categoryLabels.exercise).toBe("Exercises");
-    expect(categoryLabels.popular).toBe("Popular");
-    expect(categoryLabels.holiday).toBe("Holiday");
-    expect(categoryLabels.classical).toBe("Classical");
+describe("categoryLabelKeys", () => {
+  test("has a translation key for every category", () => {
+    expect(categoryLabelKeys.exercise).toBe("library.category.exercise");
+    expect(categoryLabelKeys.popular).toBe("library.category.popular");
+    expect(categoryLabelKeys.holiday).toBe("library.category.holiday");
+    expect(categoryLabelKeys.classical).toBe("library.category.classical");
   });
 });
 
@@ -251,15 +251,15 @@ describe("groupSongsByCategory", () => {
     ]);
   });
 
-  test("label is set correctly for each group", () => {
+  test("label key is set correctly for each group", () => {
     const songs = [
       makeSong("scale", "exercise"),
       makeSong("jingle", "holiday"),
     ];
 
     const groups = groupSongsByCategory(songs);
-    expect(groups[0].label).toBe("Exercises");
-    expect(groups[1].label).toBe("Holiday");
+    expect(groups[0].labelKey).toBe("library.category.exercise");
+    expect(groups[1].labelKey).toBe("library.category.holiday");
   });
 
   test("handles a realistic full library", () => {

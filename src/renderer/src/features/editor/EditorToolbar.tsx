@@ -13,6 +13,8 @@ import {
   type EditorModeState,
   type EditorTool,
 } from "./editorMode";
+import { useTranslation } from "@renderer/i18n/useTranslation";
+import type { TranslationKey } from "@renderer/i18n/types";
 
 interface EditorToolbarProps {
   state: EditorModeState;
@@ -21,25 +23,25 @@ interface EditorToolbarProps {
 
 const toolButtons: {
   tool: EditorTool;
-  label: string;
+  labelKey: TranslationKey;
   icon: React.ReactNode;
   testId: string;
 }[] = [
   {
     tool: "select",
-    label: "Select tool",
+    labelKey: "editor.tool.select",
     icon: <MousePointer2 size={16} />,
     testId: "editor-tool-select",
   },
   {
     tool: "draw",
-    label: "Draw tool",
+    labelKey: "editor.tool.draw",
     icon: <Pencil size={16} />,
     testId: "editor-tool-draw",
   },
   {
     tool: "erase",
-    label: "Erase tool",
+    labelKey: "editor.tool.erase",
     icon: <Eraser size={16} />,
     testId: "editor-tool-erase",
   },
@@ -49,6 +51,7 @@ export function EditorToolbar({
   state,
   onAction,
 }: EditorToolbarProps): React.JSX.Element {
+  const { t } = useTranslation();
   return (
     <div
       className="inline-flex items-center gap-1 rounded-lg px-1.5 py-1"
@@ -58,13 +61,13 @@ export function EditorToolbar({
         border: "1px solid var(--color-border)",
       }}
       role="toolbar"
-      aria-label="Piano roll editor tools"
+      aria-label={t("editor.toolbar")}
       data-testid="editor-toolbar"
     >
       {toolButtons.map((button) => (
         <ToolbarButton
           key={button.tool}
-          label={button.label}
+          label={t(button.labelKey)}
           active={state.tool === button.tool}
           onClick={() => onAction({ type: "set-tool", tool: button.tool })}
           testId={button.testId}
@@ -79,7 +82,7 @@ export function EditorToolbar({
       />
 
       <ToolbarButton
-        label="Toggle quantize"
+        label={t("editor.toggleQuantize")}
         active={state.quantizeEnabled}
         onClick={() => onAction({ type: "toggle-quantize" })}
         testId="editor-quantize"
@@ -87,7 +90,7 @@ export function EditorToolbar({
         <Magnet size={16} />
       </ToolbarButton>
       <ToolbarButton
-        label="Copy selection"
+        label={t("editor.copySelection")}
         disabled={!canCopySelection(state)}
         onClick={() => onAction({ type: "copy" })}
         testId="editor-copy"
@@ -95,7 +98,7 @@ export function EditorToolbar({
         <Copy size={16} />
       </ToolbarButton>
       <ToolbarButton
-        label="Paste notes"
+        label={t("editor.pasteNotes")}
         disabled={!canPasteClipboard(state)}
         onClick={() => onAction({ type: "paste" })}
         testId="editor-paste"

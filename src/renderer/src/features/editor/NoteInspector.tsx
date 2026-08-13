@@ -4,8 +4,11 @@ import type { EditableSong } from "./editorTypes";
 import {
   buildNotePropertyPatch,
   getNotePropertyModel,
+  type NotePropertyWarning,
   type NotePropertyValue,
 } from "./noteProperties";
+import { useTranslation } from "@renderer/i18n/useTranslation";
+import type { TranslationKey } from "@renderer/i18n/types";
 
 interface NoteInspectorProps {
   song: EditableSong;
@@ -15,11 +18,18 @@ interface NoteInspectorProps {
 
 type EditableField = "pitch" | "start" | "duration" | "velocity";
 
-const labels: Record<EditableField, string> = {
-  pitch: "Pitch",
-  start: "Start",
-  duration: "Duration",
-  velocity: "Velocity",
+const labelKeys: Record<EditableField, TranslationKey> = {
+  pitch: "editor.field.pitch",
+  start: "editor.field.start",
+  duration: "editor.field.duration",
+  velocity: "editor.field.velocity",
+};
+
+const warningKeys: Record<NotePropertyWarning, TranslationKey> = {
+  "pitch-clamped": "editor.warning.pitchClamped",
+  "start-clamped": "editor.warning.startClamped",
+  "duration-clamped": "editor.warning.durationClamped",
+  "velocity-clamped": "editor.warning.velocityClamped",
 };
 
 export function NoteInspector({
@@ -27,8 +37,9 @@ export function NoteInspector({
   selectedNoteIds,
   onPatch,
 }: NoteInspectorProps): React.JSX.Element {
+  const { t } = useTranslation();
   const model = getNotePropertyModel(song, selectedNoteIds);
-  const [warnings, setWarnings] = useState<string[]>([]);
+  const [warnings, setWarnings] = useState<NotePropertyWarning[]>([]);
 
   const commitField = (field: EditableField, rawValue: string): void => {
     if (rawValue.trim() === "") return;
@@ -56,7 +67,7 @@ export function NoteInspector({
           className="text-[11px] font-display font-bold uppercase tracking-wider"
           style={{ color: "var(--color-text-muted)" }}
         >
-          Notes
+          {t("editor.notes")}
         </p>
         <p
           className="mt-1 text-xs font-body"
@@ -64,8 +75,8 @@ export function NoteInspector({
           data-testid="note-inspector-selection"
         >
           {model.selectedCount === 0
-            ? "No selection"
-            : `${model.selectedCount} selected`}
+            ? t("editor.noSelection")
+            : t("editor.selectedCount", { count: model.selectedCount })}
         </p>
       </div>
 
@@ -113,7 +124,7 @@ export function NoteInspector({
           role="status"
           data-testid="note-inspector-warning"
         >
-          {warnings[0]}
+          {t(warningKeys[warnings[0]])}
         </div>
       )}
     </aside>
@@ -122,12 +133,6 @@ export function NoteInspector({
 
 function getInputValue(value: NotePropertyValue): string {
   return value.kind === "value" ? String(value.value) : "";
-}
-
-function getPlaceholder(value: NotePropertyValue): string {
-  if (value.kind === "mixed") return "Mixed";
-  if (value.kind === "empty") return "None";
-  return "";
 }
 
 function PropertyInput({
@@ -143,21 +148,28 @@ function PropertyInput({
   batchEditable: boolean;
   onCommit: (field: EditableField, value: string) => void;
 }): React.JSX.Element {
+  const { t } = useTranslation();
   const disabled = selectedCount === 0 || (selectedCount > 1 && !batchEditable);
+  const placeholder =
+    value.kind === "mixed"
+      ? t("editor.mixed")
+      : value.kind === "empty"
+        ? t("editor.none")
+        : "";
   return (
     <label className="block">
       <span
         className="mb-1 block text-[10px] font-body font-semibold uppercase tracking-wider"
         style={{ color: "var(--color-text-muted)" }}
       >
-        {labels[field]}
+        {t(labelKeys[field])}
       </span>
       <input
         key={`${field}-${selectedCount}-${value.kind}-${getInputValue(value)}`}
         type="number"
         step={field === "duration" || field === "start" ? 0.03125 : 1}
         defaultValue={getInputValue(value)}
-        placeholder={getPlaceholder(value)}
+        placeholder={placeholder}
         disabled={disabled}
         className="h-8 w-full rounded-md px-2 text-xs font-mono outline-none disabled:opacity-50"
         style={{

@@ -77,10 +77,10 @@ describe("noteProperties", () => {
         velocity: 127,
       },
       warnings: [
-        "Pitch was clamped to the MIDI range 0-127.",
-        "Start time was clamped to 0 seconds or later.",
-        "Duration was clamped to at least 0.03125 seconds.",
-        "Velocity was clamped to the MIDI range 1-127.",
+        "pitch-clamped",
+        "start-clamped",
+        "duration-clamped",
+        "velocity-clamped",
       ],
     });
   });
