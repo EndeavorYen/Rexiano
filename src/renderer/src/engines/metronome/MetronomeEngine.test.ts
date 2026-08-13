@@ -80,13 +80,21 @@ describe("MetronomeEngine", () => {
     });
   });
 
-  it("reports scheduled clicks after the look-ahead window is filled", () => {
+  it("schedules the first click immediately so playback does not wait on the interval", () => {
     metronome.setEnabled(true);
     metronome.start(120, 4);
-    vi.advanceTimersByTime(25);
     expect(metronome.getRuntimeSnapshot().scheduledClickCount).toBeGreaterThan(
       0,
     );
+
+    metronome.startCountIn(4, 120, 4, vi.fn());
+    expect(metronome.getRuntimeSnapshot()).toMatchObject({
+      isRunning: true,
+      scheduledClickCount: 1,
+    });
+    expect(
+      metronome.getRuntimeSnapshot().countInRemaining,
+    ).toBeGreaterThanOrEqual(0);
   });
 
   it("starts from an aligned beat and waits until its exact click time", () => {

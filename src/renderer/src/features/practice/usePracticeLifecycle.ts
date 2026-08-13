@@ -123,6 +123,18 @@ export function shouldStartPracticeScheduler({
   return mode !== "wait" || waitState !== "waiting";
 }
 
+export function shouldRouteWaitMidiInput({
+  mode,
+  isPlaying,
+  countInActive,
+}: {
+  mode: PracticeMode;
+  isPlaying: boolean;
+  countInActive: boolean;
+}): boolean {
+  return mode === "wait" && isPlaying && !countInActive;
+}
+
 export function applyPracticeModeTransition({
   waitMode,
   nextMode,
@@ -272,13 +284,17 @@ export function usePracticeLifecycle(
         getMetronome()?.stop();
       },
       onResume: () => {
+        const playback = usePlaybackStore.getState();
+        if (!playback.isPlaying || playback.countInActive) return;
         // Resume audio — read fresh time INSIDE the .then() callback
         const { scheduler, engine } = audioRef.current;
         if (scheduler && engine) {
           void engine
             .resume()
             .then(() => {
-              scheduler.resume(usePlaybackStore.getState().currentTime);
+              const livePlayback = usePlaybackStore.getState();
+              if (!livePlayback.isPlaying || livePlayback.countInActive) return;
+              scheduler.resume(livePlayback.currentTime);
               syncCurrentPracticeMetronome();
             })
             .catch((err) => {
@@ -390,7 +406,15 @@ export function usePracticeLifecycle(
       if (state.activeNotes !== prev.activeNotes) {
         const { waitMode } = getPracticeEngines();
         const practiceMode = usePracticeStore.getState().mode;
-        if (waitMode && practiceMode === "wait") {
+        const playback = usePlaybackStore.getState();
+        if (
+          waitMode &&
+          shouldRouteWaitMidiInput({
+            mode: practiceMode,
+            isPlaying: playback.isPlaying,
+            countInActive: playback.countInActive,
+          })
+        ) {
           waitMode.checkInput(state.activeNotes);
         }
       }

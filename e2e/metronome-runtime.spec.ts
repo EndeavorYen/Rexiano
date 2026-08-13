@@ -12,6 +12,7 @@ interface MetronomeFixtureSnapshot {
   currentTime: number;
   countInActive: boolean;
   metronomeEnabled: boolean;
+  countInBeats: number;
   isRunning: boolean;
   enabled: boolean;
   countInRemaining: number;
@@ -55,11 +56,11 @@ test("metronome toggle schedules oscillators and stops them when disabled", asyn
     .poll(
       async () => {
         const snapshot = await readMetronomeSnapshot(appPage);
-        return snapshot?.scheduledClickCount ?? 0;
+        return snapshot?.isRunning === true && snapshot.enabled === true;
       },
       { timeout: 15_000 },
     )
-    .toBeGreaterThan(0);
+    .toBe(true);
 
   const running = await readMetronomeSnapshot(appPage);
   expect(running).toMatchObject({
@@ -97,19 +98,63 @@ test("count-in gates transport until the configured beats have clicked", async (
   await appPage.getByTestId("toggle-metronome").click();
   await appPage.getByTestId("count-in-beats-4").click();
   await appPage.getByTestId("settings-close").click();
+  await expect
+    .poll(async () =>
+      appPage.evaluate(() => {
+        const raw = window.localStorage.getItem("rexiano-settings");
+        return raw
+          ? (JSON.parse(raw) as { countInBeats?: number }).countInBeats
+          : null;
+      }),
+    )
+    .toBe(4);
 
   await gotoLibrary(appPage);
   await startBuiltInSongFromLibrary(appPage, "hot-cross-buns");
   await choosePracticeMode(appPage, "watch");
+  await expect(appPage.getByRole("button", { name: /Pause/ })).toBeVisible();
+
+  await appPage.getByRole("button", { name: "Reset to beginning" }).click();
+  const playButton = appPage.getByRole("button", { name: /Play \(/ });
+  await expect(playButton).toBeVisible();
+  await expect
+    .poll(async () => readMetronomeSnapshot(appPage), { timeout: 5_000 })
+    .toMatchObject({
+      isPlaying: false,
+      currentTime: 0,
+      countInActive: false,
+      metronomeEnabled: true,
+      countInBeats: 4,
+    });
+  await appPage.getByRole("button", { name: /Play \(/ }).click();
+  await expect
+    .poll(
+      async () =>
+        appPage.evaluate(
+          () =>
+            (
+              window as Window & {
+                __rexianoLastPlaybackStart?: {
+                  outcome: string;
+                  currentTime: number;
+                  countInBeats: number;
+                };
+              }
+            ).__rexianoLastPlaybackStart ?? null,
+        ),
+      { timeout: 5_000 },
+    )
+    .toMatchObject({
+      outcome: "count-in",
+      currentTime: 0,
+      countInBeats: 4,
+    });
 
   await expect
     .poll(
       async () => {
         const snapshot = await readMetronomeSnapshot(appPage);
-        return snapshot?.countInActive === true &&
-          (snapshot.scheduledClickCount ?? 0) > 0
-          ? snapshot
-          : null;
+        return snapshot?.countInActive === true ? snapshot : null;
       },
       { timeout: 15_000 },
     )

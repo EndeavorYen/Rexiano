@@ -49,21 +49,25 @@ function engine(): MetronomeHarness {
   let onCountInComplete: (() => void) | null = null;
   return {
     runtime: {
-      setEnabled: vi.fn((_enabled: boolean) => undefined),
+      setEnabled: vi.fn((enabled: boolean) => {
+        void enabled;
+      }),
       start: vi.fn(
         (
-          _bpm: number,
-          _beatsPerMeasure: number,
-          _alignment?: MetronomeStartAlignment,
-        ) => undefined,
+          bpm: number,
+          beatsPerMeasure: number,
+          alignment?: MetronomeStartAlignment,
+        ) => {
+          void bpm;
+          void beatsPerMeasure;
+          void alignment;
+        },
       ),
       startCountIn: vi.fn(
-        (
-          _beats: number,
-          _bpm: number,
-          _meter: number,
-          onComplete: () => void,
-        ) => {
+        (beats: number, bpm: number, meter: number, onComplete: () => void) => {
+          void beats;
+          void bpm;
+          void meter;
           onCountInComplete = onComplete;
         },
       ),

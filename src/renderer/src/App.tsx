@@ -23,7 +23,10 @@ import {
   rebaseMetronomeDiscontinuity,
   syncMetronomeToPlayback,
 } from "./engines/metronome/metronomeRuntime";
-import { resolveMetronomeSegmentKey } from "./engines/metronome/metronomeTiming";
+import {
+  resolveMetronomeSegmentKey,
+  shouldRunPlaybackCountIn,
+} from "./engines/metronome/metronomeTiming";
 import { AudioEngine } from "./engines/audio/AudioEngine";
 import { AudioScheduler } from "./engines/audio/AudioScheduler";
 import {
@@ -465,6 +468,7 @@ function App(): React.JSX.Element {
         currentTime: number;
         countInActive: boolean;
         metronomeEnabled: boolean;
+        countInBeats: number;
         isRunning: boolean;
         enabled: boolean;
         countInRemaining: number;
@@ -545,11 +549,11 @@ function App(): React.JSX.Element {
         resetPracticeScore: usePracticeStore.getState().resetScore,
       });
       seekPlayback(firstNote.time);
-      usePlaybackStore.getState().setPlaying(true);
-      await new Promise<void>((resolve) => setTimeout(resolve, 50));
       waitMode.start();
       waitMode.tick(firstNote.time);
-      return [...waitMode.targetNotes];
+      const targets = [...waitMode.targetNotes];
+      usePlaybackStore.getState().setPlaying(true);
+      return targets;
     };
     e2eWindow.__rexianoSendMidiNoteFixture = (midi) => {
       useMidiDeviceStore.setState({ activeNotes: new Set([midi]) });
@@ -578,7 +582,9 @@ function App(): React.JSX.Element {
         isPlaying: playback.isPlaying,
         currentTime: playback.currentTime,
         waitState: waitMode.state,
-        waitResultCount: waitMode.noteResults.size,
+        waitResultCount: [...waitMode.noteResults.values()].filter(
+          (result) => result !== "pending",
+        ).length,
         waitTargetCount: waitMode.targetNotes.size,
         waitTargets: [...waitMode.targetNotes],
         engineScoreTotal: scoreCalculator.getScore().totalNotes,
@@ -595,6 +601,7 @@ function App(): React.JSX.Element {
         currentTime: playback.currentTime,
         countInActive: playback.countInActive,
         metronomeEnabled: useSettingsStore.getState().metronomeEnabled,
+        countInBeats: useSettingsStore.getState().countInBeats,
         ...metronome.getRuntimeSnapshot(),
       };
     };
@@ -732,6 +739,90 @@ function App(): React.JSX.Element {
     }
   }, []);
 
+  const startOwnedPlayback = useCallback((): void => {
+    const { engine, scheduler } = audioRef.current;
+    if (!engine || !scheduler) return;
+
+    const playback = usePlaybackStore.getState();
+    if (!playback.isPlaying) return;
+
+    const { waitMode } = getPracticeEngines();
+    if (
+      !shouldStartPracticeScheduler({
+        mode: usePracticeStore.getState().mode,
+        waitState: waitMode?.state ?? null,
+      })
+    ) {
+      return;
+    }
+
+    const currentSong = useSongStore.getState().song;
+    const metronome = getMetronome();
+    const startTransport = (songTime: number): void => {
+      scheduler.start(songTime);
+      void engine.resume().catch((err) => {
+        scheduler.stop();
+        getMetronome()?.stop();
+        usePlaybackStore.getState().setCountInActive(false);
+        triggerRecoveryRef.current("resume-failed", err);
+      });
+    };
+
+    if (currentSong && metronome) {
+      const settings = useSettingsStore.getState();
+      const outcome = beginMetronomePlayback({
+        engine: metronome,
+        song: currentSong,
+        currentTime: playback.currentTime,
+        speed: usePracticeStore.getState().speed,
+        metronomeEnabled: settings.metronomeEnabled,
+        countInBeats: settings.countInBeats,
+        setCountInActive: playback.setCountInActive,
+        startTransport,
+        getLiveState: () => {
+          const livePlayback = usePlaybackStore.getState();
+          return {
+            song: useSongStore.getState().song,
+            isPlaying: livePlayback.isPlaying,
+            countInActive: livePlayback.countInActive,
+            currentTime: livePlayback.currentTime,
+            speed: usePracticeStore.getState().speed,
+            metronomeEnabled: useSettingsStore.getState().metronomeEnabled,
+          };
+        },
+      });
+      if (window.api.isE2eTestMode) {
+        (
+          window as typeof window & {
+            __rexianoLastPlaybackStart?: {
+              outcome: typeof outcome;
+              currentTime: number;
+              countInBeats: number;
+            };
+          }
+        ).__rexianoLastPlaybackStart = {
+          outcome,
+          currentTime: playback.currentTime,
+          countInBeats: settings.countInBeats,
+        };
+      }
+      return;
+    }
+
+    if (
+      currentSong &&
+      shouldRunPlaybackCountIn({
+        currentTime: playback.currentTime,
+        countInBeats: useSettingsStore.getState().countInBeats,
+      })
+    ) {
+      playback.setCountInActive(true);
+      return;
+    }
+
+    startTransport(playback.currentTime);
+  }, []);
+
   const rebuildAudioStack = useCallback(
     async (
       targetSong: NonNullable<typeof song>,
@@ -785,6 +876,7 @@ function App(): React.JSX.Element {
           usePlaybackStore.getState().setAudioStatus("ready");
           usePlaybackStore.getState().clearAudioRecovery();
           attemptPendingPlaybackStart();
+          startOwnedPlayback();
         },
         cleanupStale: () => {
           engine.setRuntimeErrorHandler(null);
@@ -796,7 +888,7 @@ function App(): React.JSX.Element {
         },
       });
     },
-    [attemptPendingPlaybackStart],
+    [attemptPendingPlaybackStart, startOwnedPlayback],
   );
 
   const recoverAudio = useCallback(
@@ -1050,54 +1142,7 @@ function App(): React.JSX.Element {
 
       // Play / pause
       if (state.isPlaying && !prev.isPlaying) {
-        const { waitMode } = getPracticeEngines();
-        if (
-          !shouldStartPracticeScheduler({
-            mode: usePracticeStore.getState().mode,
-            waitState: waitMode?.state ?? null,
-          })
-        ) {
-          return;
-        }
-        const currentSong = useSongStore.getState().song;
-        const metronome = getMetronome();
-        const startTransport = (songTime: number): void => {
-          // The scheduler must own the clock before AudioContext resumes.
-          scheduler.start(songTime);
-          void engine.resume().catch((err) => {
-            scheduler.stop();
-            getMetronome()?.stop();
-            usePlaybackStore.getState().setCountInActive(false);
-            triggerRecoveryRef.current("resume-failed", err);
-          });
-        };
-
-        if (currentSong && metronome) {
-          const settings = useSettingsStore.getState();
-          beginMetronomePlayback({
-            engine: metronome,
-            song: currentSong,
-            currentTime: state.currentTime,
-            speed: usePracticeStore.getState().speed,
-            metronomeEnabled: settings.metronomeEnabled,
-            countInBeats: settings.countInBeats,
-            setCountInActive: usePlaybackStore.getState().setCountInActive,
-            startTransport,
-            getLiveState: () => {
-              const playback = usePlaybackStore.getState();
-              return {
-                song: useSongStore.getState().song,
-                isPlaying: playback.isPlaying,
-                countInActive: playback.countInActive,
-                currentTime: playback.currentTime,
-                speed: usePracticeStore.getState().speed,
-                metronomeEnabled: useSettingsStore.getState().metronomeEnabled,
-              };
-            },
-          });
-        } else {
-          startTransport(state.currentTime);
-        }
+        startOwnedPlayback();
       } else if (!state.isPlaying && prev.isPlaying) {
         scheduler.stop();
         getMetronome()?.stop();
@@ -1107,7 +1152,7 @@ function App(): React.JSX.Element {
       }
     });
     return unsub;
-  }, []);
+  }, [startOwnedPlayback]);
 
   useEffect(() => {
     return registerPlaybackDiscontinuityHandler(({ targetTime, reason }) => {

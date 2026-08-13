@@ -6,6 +6,7 @@ import {
   resetPracticeSession,
   recordWrongPracticeInput,
   resolveInitialPracticeActiveTracks,
+  shouldRouteWaitMidiInput,
   shouldStartPracticeScheduler,
 } from "./usePracticeLifecycle";
 import { usePracticeStore } from "@renderer/stores/usePracticeStore";
@@ -77,6 +78,37 @@ describe("practice lifecycle transitions", () => {
     expect(waitMode.pause).toHaveBeenCalledOnce();
     expect(waitMode.start).toHaveBeenCalledOnce();
     expect(waitMode.stop).not.toHaveBeenCalled();
+  });
+
+  test("paused or gated Wait sessions do not route MIDI into the matcher", () => {
+    expect(
+      shouldRouteWaitMidiInput({
+        mode: "wait",
+        isPlaying: false,
+        countInActive: false,
+      }),
+    ).toBe(false);
+    expect(
+      shouldRouteWaitMidiInput({
+        mode: "wait",
+        isPlaying: true,
+        countInActive: true,
+      }),
+    ).toBe(false);
+    expect(
+      shouldRouteWaitMidiInput({
+        mode: "watch",
+        isPlaying: true,
+        countInActive: false,
+      }),
+    ).toBe(false);
+    expect(
+      shouldRouteWaitMidiInput({
+        mode: "wait",
+        isPlaying: true,
+        countInActive: false,
+      }),
+    ).toBe(true);
   });
 
   test("resuming a player pause does not restart audio past a pending Wait target", () => {

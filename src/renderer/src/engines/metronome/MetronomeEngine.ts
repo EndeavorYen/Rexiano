@@ -132,6 +132,7 @@ export class MetronomeEngine {
       Math.max(0, alignment?.firstClickDelaySeconds ?? 0);
 
     this._intervalId = setInterval(() => this._tick(), SCHEDULE_INTERVAL);
+    this._tick();
   }
 
   /**
@@ -158,6 +159,7 @@ export class MetronomeEngine {
     this._nextClickTime = this._audioContext.currentTime;
 
     this._intervalId = setInterval(() => this._tick(), SCHEDULE_INTERVAL);
+    this._tick();
   }
 
   stop(): void {

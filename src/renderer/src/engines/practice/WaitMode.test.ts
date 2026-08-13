@@ -113,7 +113,7 @@ describe("WaitMode", () => {
     expect(onWrongInput).toHaveBeenCalledTimes(2);
   });
 
-  it("records an extra note before accepting a corrected target", () => {
+  it("records an extra note and only accepts the target after extras are released", () => {
     const onWrongInput = vi.fn();
     const onHit = vi.fn();
     wm.setCallbacks({ onWrongInput, onHit });
@@ -122,9 +122,24 @@ describe("WaitMode", () => {
     wm.tick(1);
 
     expect(wm.checkInput(new Set([61]))).toBe(false);
-    expect(wm.checkInput(new Set([61, 64]))).toBe(true);
+    expect(wm.checkInput(new Set([61, 64]))).toBe(false);
     expect(onWrongInput).toHaveBeenCalledTimes(1);
+    expect(onHit).not.toHaveBeenCalled();
+    expect(wm.checkInput(new Set([64]))).toBe(true);
     expect(onHit).toHaveBeenCalledTimes(1);
+  });
+
+  it("does not award a hit when a non-target is already held", () => {
+    const onHit = vi.fn();
+    wm.setCallbacks({ onHit });
+    wm.init(makeTracks([{ midi: 64, time: 1 }]), new Set([0]));
+    wm.start();
+    expect(wm.checkInput(new Set([61]))).toBe(false);
+    wm.tick(1);
+
+    expect(wm.checkInput(new Set([61, 64]))).toBe(false);
+    expect(onHit).not.toHaveBeenCalled();
+    expect(wm.state).toBe("waiting");
   });
 
   it("does not penalize incomplete legitimate chords", () => {

@@ -254,6 +254,10 @@ export class WaitMode {
       if (!activeNotes.has(midi)) return false;
     }
 
+    for (const midi of activeNotes) {
+      if (!this._targetNotes.has(midi)) return false;
+    }
+
     // All matched — mark pending notes as hit and resume
     this._markPendingAs("hit");
     this._targetNotes.clear();
