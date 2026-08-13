@@ -9,6 +9,8 @@ import type {
   UserDataFileBackupPayload,
   UserDataFileBackupResult,
   UserDataFileMutationResult,
+  UserDataFileTransactionRecovery,
+  UserDataRendererSnapshot,
   WatchedMidiFolder,
   WatchedMidiFoldersScanResult,
   AppUpdateAvailable,
@@ -66,11 +68,23 @@ declare global {
       importUserDataFiles: (
         payload: UserDataFileBackupPayload,
         scopes?: string[],
+        rendererSnapshot?: UserDataRendererSnapshot,
       ) => Promise<UserDataFileMutationResult>;
       /** User data backup: reset file-backed userData scopes */
       resetUserDataFiles: (
         scopes?: string[],
+        rendererSnapshot?: UserDataRendererSnapshot,
       ) => Promise<UserDataFileMutationResult>;
+      /** Roll back file scopes for a pending renderer-coordinated mutation */
+      rollbackUserDataFileTransaction: (
+        transactionId: string,
+      ) => Promise<UserDataFileTransactionRecovery | null>;
+      /** Finalize a committed or fully rolled-back user-data transaction */
+      completeUserDataFileTransaction: (
+        transactionId: string,
+      ) => Promise<boolean>;
+      /** Recover file scopes after an interrupted renderer transaction */
+      recoverUserDataFileTransaction: () => Promise<UserDataFileTransactionRecovery | null>;
       /** Song library: choose a watched MIDI folder and scan it */
       selectWatchedMidiFolder: () => Promise<WatchedMidiFolder | null>;
       /** Song library: rescan watched MIDI folders */

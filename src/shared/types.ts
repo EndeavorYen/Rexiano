@@ -47,6 +47,12 @@ export const IpcChannels = {
   USER_DATA_IMPORT_FILES: "userData:importFiles",
   /** User data backup: reset file-backed scopes in userData */
   USER_DATA_RESET_FILES: "userData:resetFiles",
+  /** User data backup: roll back a pending cross-process transaction */
+  USER_DATA_ROLLBACK_TRANSACTION: "userData:rollbackTransaction",
+  /** User data backup: finalize and clear a pending transaction journal */
+  USER_DATA_COMPLETE_TRANSACTION: "userData:completeTransaction",
+  /** User data backup: recover an interrupted transaction after restart */
+  USER_DATA_RECOVER_TRANSACTION: "userData:recoverTransaction",
   /** Song library: choose a watched folder and scan MIDI files */
   SELECT_WATCHED_MIDI_FOLDER: "library:selectWatchedMidiFolder",
   /** Song library: rescan existing watched MIDI folders */
@@ -307,8 +313,16 @@ export type UserDataFileMutationResult =
   | {
       ok: true;
       scopes: UserDataFileBackupScope[];
+      transactionId?: string;
     }
   | {
       ok: false;
       errors: string[];
     };
+
+export type UserDataRendererSnapshot = Record<string, string | null>;
+
+export interface UserDataFileTransactionRecovery {
+  transactionId: string;
+  rendererSnapshot: UserDataRendererSnapshot;
+}

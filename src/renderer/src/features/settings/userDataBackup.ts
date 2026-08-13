@@ -2,6 +2,8 @@ import type {
   UserDataFileBackupPayload,
   UserDataFileBackupResult,
   UserDataFileMutationResult,
+  UserDataFileTransactionRecovery,
+  UserDataRendererSnapshot,
 } from "@shared/types";
 import { validateUserDataBackupScopeData } from "./userDataBackupScopeValidation";
 import { USER_DATA_STORAGE_KEYS } from "./userDataStorageKeys";
@@ -103,8 +105,17 @@ export interface UserDataFileBackupPort {
   importUserDataFiles(
     payload: UserDataFileBackupPayload,
     scopes?: string[],
+    rendererSnapshot?: UserDataRendererSnapshot,
   ): Promise<UserDataFileMutationResult>;
-  resetUserDataFiles(scopes?: string[]): Promise<UserDataFileMutationResult>;
+  resetUserDataFiles(
+    scopes?: string[],
+    rendererSnapshot?: UserDataRendererSnapshot,
+  ): Promise<UserDataFileMutationResult>;
+  rollbackUserDataFileTransaction?(
+    transactionId: string,
+  ): Promise<UserDataFileTransactionRecovery | null>;
+  completeUserDataFileTransaction?(transactionId: string): Promise<boolean>;
+  recoverUserDataFileTransaction?(): Promise<UserDataFileTransactionRecovery | null>;
 }
 
 export type UserDataBackupCreationResult =
@@ -265,6 +276,81 @@ function fileBackedScopes(
   );
 }
 
+function localStorageInventory(
+  scopes: readonly UserDataBackupScope[],
+): UserDataBackupScopeInventoryItem[] {
+  return USER_DATA_BACKUP_SCOPE_INVENTORY.filter(
+    (item) =>
+      item.source === "localStorage" &&
+      Boolean(item.storageKey) &&
+      scopes.includes(item.scope),
+  );
+}
+
+function snapshotLocalStorage(
+  storage: UserDataLocalStoragePort,
+  scopes: readonly UserDataBackupScope[],
+): UserDataRendererSnapshot {
+  const snapshot: UserDataRendererSnapshot = {};
+  for (const item of localStorageInventory(scopes)) {
+    snapshot[item.storageKey as string] = storage.getItem(
+      item.storageKey as string,
+    );
+  }
+  return snapshot;
+}
+
+function restoreLocalStorageSnapshot(
+  storage: UserDataMutableLocalStoragePort,
+  snapshot: UserDataRendererSnapshot,
+): void {
+  for (const [key, value] of Object.entries(snapshot)) {
+    if (value === null) storage.removeItem(key);
+    else storage.setItem(key, value);
+  }
+}
+
+function errorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : "User-data mutation failed.";
+}
+
+async function finishRolledBackTransaction(
+  transactionId: string | undefined,
+  storage: UserDataMutableLocalStoragePort,
+  snapshot: UserDataRendererSnapshot,
+  filePort: UserDataFileBackupPort,
+): Promise<string[]> {
+  const errors: string[] = [];
+  if (transactionId && filePort.rollbackUserDataFileTransaction) {
+    try {
+      await filePort.rollbackUserDataFileTransaction(transactionId);
+    } catch (error) {
+      errors.push(`File rollback failed: ${errorMessage(error)}`);
+    }
+  }
+
+  try {
+    restoreLocalStorageSnapshot(storage, snapshot);
+  } catch (error) {
+    errors.push(`Renderer rollback failed: ${errorMessage(error)}`);
+  }
+
+  if (
+    errors.length === 0 &&
+    transactionId &&
+    filePort.completeUserDataFileTransaction
+  ) {
+    try {
+      const completed =
+        await filePort.completeUserDataFileTransaction(transactionId);
+      if (!completed) errors.push("Transaction journal could not be cleared.");
+    } catch (error) {
+      errors.push(`Transaction finalization failed: ${errorMessage(error)}`);
+    }
+  }
+  return errors;
+}
+
 export async function createUserDataBackupFromRuntime(
   storage: UserDataLocalStoragePort,
   filePort: UserDataFileBackupPort,
@@ -331,7 +417,7 @@ export function applyUserDataBackupToLocalStorage(
 
 export async function applyUserDataBackupToRuntime(
   input: unknown,
-  storage: UserDataLocalStoragePort,
+  storage: UserDataMutableLocalStoragePort,
   filePort: UserDataFileBackupPort,
 ): Promise<UserDataBackupApplyResult> {
   const result = migrateUserDataBackupManifest(input);
@@ -340,6 +426,13 @@ export async function applyUserDataBackupToRuntime(
   }
 
   const userDataFileScopes = fileBackedScopes(result.manifest.scopes);
+  let rendererSnapshot: UserDataRendererSnapshot;
+  try {
+    rendererSnapshot = snapshotLocalStorage(storage, result.manifest.scopes);
+  } catch (error) {
+    return { ok: false, appliedScopes: [], errors: [errorMessage(error)] };
+  }
+  let transactionId: string | undefined;
   if (userDataFileScopes.length > 0) {
     const filePayload: UserDataFileBackupPayload = {};
     for (const scope of userDataFileScopes) {
@@ -349,17 +442,41 @@ export async function applyUserDataBackupToRuntime(
     const fileResult = await filePort.importUserDataFiles(
       filePayload,
       userDataFileScopes,
+      rendererSnapshot,
     );
     if (!fileResult.ok) {
       return { ok: false, appliedScopes: [], errors: fileResult.errors };
     }
+    transactionId = fileResult.transactionId;
   }
 
-  const localStorageResult = applyUserDataBackupToLocalStorage(
-    result.manifest,
-    storage,
-  );
-  if (!localStorageResult.ok) return localStorageResult;
+  try {
+    const localStorageResult = applyUserDataBackupToLocalStorage(
+      result.manifest,
+      storage,
+    );
+    if (!localStorageResult.ok) return localStorageResult;
+
+    if (transactionId && filePort.completeUserDataFileTransaction) {
+      const completed =
+        await filePort.completeUserDataFileTransaction(transactionId);
+      if (!completed) {
+        throw new Error("Transaction journal could not be finalized.");
+      }
+    }
+  } catch (error) {
+    const rollbackErrors = await finishRolledBackTransaction(
+      transactionId,
+      storage,
+      rendererSnapshot,
+      filePort,
+    );
+    return {
+      ok: false,
+      appliedScopes: [],
+      errors: [errorMessage(error), ...rollbackErrors],
+    };
+  }
 
   return { ok: true, appliedScopes: result.manifest.scopes };
 }
@@ -382,18 +499,93 @@ export async function resetUserDataBackupRuntime(
   }
 
   const userDataFileScopes = fileBackedScopes(plan.scopes);
+  let rendererSnapshot: UserDataRendererSnapshot;
+  try {
+    rendererSnapshot = snapshotLocalStorage(storage, plan.scopes);
+  } catch (error) {
+    return { ok: false, appliedScopes: [], errors: [errorMessage(error)] };
+  }
+  let transactionId: string | undefined;
   if (userDataFileScopes.length > 0) {
-    const fileResult = await filePort.resetUserDataFiles(userDataFileScopes);
+    const fileResult = await filePort.resetUserDataFiles(
+      userDataFileScopes,
+      rendererSnapshot,
+    );
     if (!fileResult.ok) {
       return { ok: false, appliedScopes: [], errors: fileResult.errors };
     }
+    transactionId = fileResult.transactionId;
   }
 
-  for (const key of plan.localStorageKeys) {
-    storage.removeItem(key);
+  try {
+    for (const key of plan.localStorageKeys) {
+      storage.removeItem(key);
+    }
+    if (transactionId && filePort.completeUserDataFileTransaction) {
+      const completed =
+        await filePort.completeUserDataFileTransaction(transactionId);
+      if (!completed) {
+        throw new Error("Transaction journal could not be finalized.");
+      }
+    }
+  } catch (error) {
+    const rollbackErrors = await finishRolledBackTransaction(
+      transactionId,
+      storage,
+      rendererSnapshot,
+      filePort,
+    );
+    return {
+      ok: false,
+      appliedScopes: [],
+      errors: [errorMessage(error), ...rollbackErrors],
+    };
   }
 
   return { ok: true, appliedScopes: plan.scopes };
+}
+
+export async function recoverPendingUserDataBackupRuntime(
+  storage: UserDataMutableLocalStoragePort,
+  filePort: UserDataFileBackupPort,
+): Promise<
+  | { ok: true; recovered: boolean }
+  | { ok: false; recovered: false; errors: string[] }
+> {
+  if (!filePort.recoverUserDataFileTransaction) {
+    return { ok: true, recovered: false };
+  }
+
+  try {
+    const recovery = await filePort.recoverUserDataFileTransaction();
+    if (!recovery) return { ok: true, recovered: false };
+
+    restoreLocalStorageSnapshot(storage, recovery.rendererSnapshot);
+    if (!filePort.completeUserDataFileTransaction) {
+      return {
+        ok: false,
+        recovered: false,
+        errors: ["Transaction journal finalization is unavailable."],
+      };
+    }
+    const completed = await filePort.completeUserDataFileTransaction(
+      recovery.transactionId,
+    );
+    if (!completed) {
+      return {
+        ok: false,
+        recovered: false,
+        errors: ["Transaction journal could not be cleared."],
+      };
+    }
+    return { ok: true, recovered: true };
+  } catch (error) {
+    return {
+      ok: false,
+      recovered: false,
+      errors: [errorMessage(error)],
+    };
+  }
 }
 
 export function buildUserDataResetPlan(

@@ -7,6 +7,8 @@ import type {
   UserDataFileBackupPayload,
   UserDataFileBackupResult,
   UserDataFileMutationResult,
+  UserDataFileTransactionRecovery,
+  UserDataRendererSnapshot,
   WatchedMidiFolder,
   WatchedMidiFoldersScanResult,
   AppUpdateAvailable,
@@ -71,12 +73,38 @@ const api = {
   importUserDataFiles: (
     payload: UserDataFileBackupPayload,
     scopes?: string[],
+    rendererSnapshot?: UserDataRendererSnapshot,
   ): Promise<UserDataFileMutationResult> =>
-    ipcRenderer.invoke(IpcChannels.USER_DATA_IMPORT_FILES, payload, scopes),
+    ipcRenderer.invoke(
+      IpcChannels.USER_DATA_IMPORT_FILES,
+      payload,
+      scopes,
+      rendererSnapshot,
+    ),
   resetUserDataFiles: (
     scopes?: string[],
+    rendererSnapshot?: UserDataRendererSnapshot,
   ): Promise<UserDataFileMutationResult> =>
-    ipcRenderer.invoke(IpcChannels.USER_DATA_RESET_FILES, scopes),
+    ipcRenderer.invoke(
+      IpcChannels.USER_DATA_RESET_FILES,
+      scopes,
+      rendererSnapshot,
+    ),
+  rollbackUserDataFileTransaction: (
+    transactionId: string,
+  ): Promise<UserDataFileTransactionRecovery | null> =>
+    ipcRenderer.invoke(
+      IpcChannels.USER_DATA_ROLLBACK_TRANSACTION,
+      transactionId,
+    ),
+  completeUserDataFileTransaction: (transactionId: string): Promise<boolean> =>
+    ipcRenderer.invoke(
+      IpcChannels.USER_DATA_COMPLETE_TRANSACTION,
+      transactionId,
+    ),
+  recoverUserDataFileTransaction:
+    (): Promise<UserDataFileTransactionRecovery | null> =>
+      ipcRenderer.invoke(IpcChannels.USER_DATA_RECOVER_TRANSACTION),
   selectWatchedMidiFolder: (): Promise<WatchedMidiFolder | null> =>
     ipcRenderer.invoke(IpcChannels.SELECT_WATCHED_MIDI_FOLDER),
   scanWatchedMidiFolders: (

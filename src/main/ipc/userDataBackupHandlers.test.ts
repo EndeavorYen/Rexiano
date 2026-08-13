@@ -17,10 +17,26 @@ vi.mock("fs/promises", () => ({
   readFile: vi.fn(async (path: string) => {
     const n = path.replace(/\\/g, "/");
     if (mockFileContents[n] !== undefined) return mockFileContents[n];
-    throw new Error("ENOENT");
+    throw Object.assign(new Error("ENOENT"), { code: "ENOENT" });
   }),
-  writeFile: vi.fn(async () => {}),
+  writeFile: vi.fn(async (path: string, data: string | Buffer) => {
+    mockFileContents[path.replace(/\\/g, "/")] =
+      typeof data === "string" ? data : data.toString("utf-8");
+  }),
   mkdir: vi.fn(async () => {}),
+  rename: vi.fn(async (from: string, to: string) => {
+    const source = from.replace(/\\/g, "/");
+    const target = to.replace(/\\/g, "/");
+    mockFileContents[target] = mockFileContents[source];
+    delete mockFileContents[source];
+  }),
+  unlink: vi.fn(async (path: string) => {
+    const normalized = path.replace(/\\/g, "/");
+    if (!(normalized in mockFileContents)) {
+      throw Object.assign(new Error("ENOENT"), { code: "ENOENT" });
+    }
+    delete mockFileContents[normalized];
+  }),
 }));
 
 vi.mock("fs", () => ({
@@ -124,15 +140,11 @@ describe("userDataBackupHandlers", () => {
       scopes: ["progress", "recents"],
     });
 
-    expect(writeFile).toHaveBeenCalledWith(
-      `${mockUserDataPath}/progress.json`,
+    expect(mockFileContents[`${mockUserDataPath}/progress.json`]).toBe(
       JSON.stringify(normalizedSessions, null, 2),
-      "utf-8",
     );
-    expect(writeFile).toHaveBeenCalledWith(
-      `${mockUserDataPath}/recents.json`,
+    expect(mockFileContents[`${mockUserDataPath}/recents.json`]).toBe(
       JSON.stringify(normalizedRecents, null, 2),
-      "utf-8",
     );
   });
 
@@ -195,16 +207,10 @@ describe("userDataBackupHandlers", () => {
       scopes: ["progress"],
     });
 
-    expect(writeFile).toHaveBeenCalledWith(
-      `${mockUserDataPath}/progress.json`,
-      "[]",
-      "utf-8",
-    );
-    expect(writeFile).not.toHaveBeenCalledWith(
-      `${mockUserDataPath}/recents.json`,
-      "[]",
-      "utf-8",
-    );
+    expect(mockFileContents[`${mockUserDataPath}/progress.json`]).toBe("[]");
+    expect(
+      mockFileContents[`${mockUserDataPath}/recents.json`],
+    ).toBeUndefined();
   });
 
   test("registers IPC handlers for file-backed backup actions", () => {
@@ -213,5 +219,8 @@ describe("userDataBackupHandlers", () => {
     expect(handlers["userData:exportFiles"]).toBeDefined();
     expect(handlers["userData:importFiles"]).toBeDefined();
     expect(handlers["userData:resetFiles"]).toBeDefined();
+    expect(handlers["userData:rollbackTransaction"]).toBeDefined();
+    expect(handlers["userData:completeTransaction"]).toBeDefined();
+    expect(handlers["userData:recoverTransaction"]).toBeDefined();
   });
 });

@@ -255,6 +255,9 @@
   - [x] `features/settings/SettingsPanel.tsx` — modal 設定面板（主題 + 顯示 + 音訊 + 練習預設 + 快捷鍵）
   - [x] 欄位：showNoteLabels, showFallingNoteLabels, volume, muted, defaultSpeed, defaultMode, metronomeEnabled, countInBeats
   - [x] 鍵盤快捷鍵參考表（基礎版）
+- [x] 使用者資料備份、匯入與分範圍重設
+  - [x] `progress.json` / `recents.json` 共用每路徑序列化與同目錄原子替換
+  - [x] 檔案與 localStorage 跨程序交易具備 rollback journal 與重啟復原
 
 ### Sprint 4 — 教學工具（可與 Sprint 3 平行）
 
