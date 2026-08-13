@@ -17,6 +17,9 @@ import type {
   AppUpdateStatus,
   MidiExportRequest,
   MidiExportResult,
+  BluetoothDeviceSelectionUpdate,
+  BluetoothDeviceSelectionChooseCommand,
+  BluetoothDeviceSelectionCancelCommand,
 } from "../shared/types";
 
 declare global {
@@ -29,6 +32,18 @@ declare global {
       requestMidiAccess: () => Promise<boolean>;
       /** Phase 5: List available MIDI devices (via main process) */
       listMidiDevices: () => Promise<MidiDeviceInfo[]>;
+      /** BLE MIDI: subscribe to native chooser discovery snapshots */
+      onBluetoothSelectionUpdate: (
+        callback: (update: BluetoothDeviceSelectionUpdate | null) => void,
+      ) => () => void;
+      /** BLE MIDI: explicitly choose an offered device */
+      chooseBluetoothDevice: (
+        command: BluetoothDeviceSelectionChooseCommand,
+      ) => Promise<boolean>;
+      /** BLE MIDI: cancel the active chooser request */
+      cancelBluetoothSelection: (
+        command: BluetoothDeviceSelectionCancelCommand,
+      ) => Promise<boolean>;
       /** Song library: list built-in songs */
       listBuiltinSongs: () => Promise<BuiltinSongMeta[]>;
       /** Song library: load a built-in song by ID */
@@ -42,7 +57,7 @@ declare global {
       /** Phase 6.5: Save a recently opened MIDI file */
       saveRecentFile: (file: RecentFile) => Promise<void>;
       /** Phase 6.5: Remove a stale recently opened MIDI file */
-      removeRecentFile: (filePath: string) => Promise<void>;
+      removeRecentFile: (filePath: string) => Promise<boolean>;
       /** User data backup: export file-backed userData scopes */
       exportUserDataFiles: (
         scopes?: string[],

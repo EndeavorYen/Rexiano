@@ -25,6 +25,7 @@ export const zhTW: TranslationMap = {
   "app.importActionRetry": "再試一次",
   "app.importActionReimport": "重新匯入",
   "app.importActionOpenPermissions": "檢查檔案權限",
+  "app.importRecoveryActionsLabel": "匯入復原操作",
   "app.insightsTitle": "練習洞察",
   "app.startPractice": "開始彈琴",
   "app.openSettings": "設定",
@@ -225,6 +226,13 @@ export const zhTW: TranslationMap = {
   "midi.bluetooth": "藍牙",
   "midi.bleDisconnect": "中斷藍牙 MIDI",
   "midi.bleDeviceTitle": "藍牙：{name}（點擊中斷連線）",
+  "midi.bleConnectedDevice": "藍牙 MIDI 裝置",
+  "midi.blePickerTitle": "選擇藍牙 MIDI 裝置",
+  "midi.blePickerDescription": "請選擇要連線的鋼琴或 MIDI 控制器。",
+  "midi.blePickerScanning": "正在搜尋附近的藍牙裝置…",
+  "midi.blePickerCount": "找到 {count} 個藍牙裝置",
+  "midi.blePickerUnnamed": "未命名的藍牙裝置",
+  "midi.blePickerCancel": "取消",
 
   // ── Practice Mode ──────────────────────────────────────────────
   "practice.watch": "觀看",
@@ -380,6 +388,7 @@ export const zhTW: TranslationMap = {
 
   // ── Insights Panel ─────────────────────────────────────────────
   "insights.title": "練習洞察",
+  "insights.dialogDescription": "檢視練習進度、準確率趨勢與建議的下一步。",
   "insights.weakSpots": "弱點分析",
   "insights.accuracyTrend": "準確率趨勢",
   "insights.totalMinutes": "總練習時間",
@@ -447,6 +456,8 @@ export const zhTW: TranslationMap = {
   "modeSelect.freeDesc": "自由彈奏，不受引導",
   "modeSelect.escToSkip": "按 Esc 跳過",
   "modeSelect.mustChoose": "請先選擇模式，才能開始彈奏",
+  "modeSelect.currentDefault": "目前預設",
+  "modeSelect.backToLibrary": "返回曲庫",
 
   // ── Statistics ─────────────────────────────────────────────────
   "stats.title": "練習統計",

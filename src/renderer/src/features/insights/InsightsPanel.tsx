@@ -15,17 +15,21 @@ import { ProgressChart } from "./ProgressChart";
 import { useTranslation } from "@renderer/i18n/useTranslation";
 import type { InterpolationParams, TranslationKey } from "@renderer/i18n/types";
 import type { PracticeInsight, WeakSpot } from "./WeakSpotAnalyzer";
+import type { RefObject } from "react";
 
 interface InsightsPanelProps {
   /** Analysis results from WeakSpotAnalyzer */
   insight: PracticeInsight | null;
   /** Called when user wants to close the panel */
   onClose?: () => void;
+  /** Explicit initial-focus target for modal hosts. */
+  closeButtonRef?: RefObject<HTMLButtonElement | null>;
 }
 
 export function InsightsPanel({
   insight,
   onClose,
+  closeButtonRef,
 }: InsightsPanelProps): React.JSX.Element {
   const { t } = useTranslation();
 
@@ -104,6 +108,8 @@ export function InsightsPanel({
 
         {onClose && (
           <button
+            ref={closeButtonRef}
+            type="button"
             onClick={onClose}
             className="px-4 py-2 rounded-lg text-xs font-body font-medium cursor-pointer btn-ghost-themed"
           >
@@ -148,6 +154,8 @@ export function InsightsPanel({
         </h2>
         {onClose && (
           <button
+            ref={closeButtonRef}
+            type="button"
             onClick={onClose}
             className="w-7 h-7 flex items-center justify-center rounded-md transition-colors cursor-pointer"
             style={{
@@ -274,9 +282,9 @@ function StatCard({
   negative,
 }: StatCardProps): React.JSX.Element {
   let valueColor = "var(--color-text)";
-  if (accent) valueColor = "var(--color-accent)";
-  if (positive) valueColor = "#22c55e";
-  if (negative) valueColor = "#ef4444";
+  if (accent) valueColor = "var(--color-accent-text)";
+  if (positive) valueColor = "var(--color-success-text)";
+  if (negative) valueColor = "var(--color-danger-text)";
 
   return (
     <div

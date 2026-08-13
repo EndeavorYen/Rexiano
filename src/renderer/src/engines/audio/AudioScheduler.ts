@@ -57,10 +57,34 @@ export class AudioScheduler implements IAudioScheduler {
 
   /**
    * Set the playback speed multiplier.
-   * Must be called before start() or after seek() to take immediate effect.
+   * Rebases active playback so changing speed does not move the song position.
    * @param speed  Multiplier in range 0.25–2.0 (clamped by SpeedController upstream)
    */
   setSpeed(speed: number): void {
+    if (speed === this._speed) return;
+
+    if (this._intervalId !== null) {
+      const ctx = this._engine.audioContext;
+      if (ctx) {
+        const audioTime = ctx.currentTime;
+        const oldStartAudioTime = this._startAudioTime;
+        const oldSeekOffset = this._seekOffset;
+        const oldSpeed = this._speed;
+        const songTime =
+          (audioTime - oldStartAudioTime) * oldSpeed + oldSeekOffset;
+
+        this._engine.releaseScheduledAfter(audioTime);
+        this._rewindCancelledCursors(
+          audioTime,
+          oldStartAudioTime,
+          oldSeekOffset,
+          oldSpeed,
+        );
+        this._startAudioTime = audioTime;
+        this._seekOffset = songTime;
+      }
+    }
+
     this._speed = speed;
   }
 
@@ -202,6 +226,40 @@ export class AudioScheduler implements IAudioScheduler {
     this._trackCursors = this._song.tracks.map((track) =>
       this._findCursorPosition(track.notes, songTime),
     );
+  }
+
+  /**
+   * Rewind only notes that were previously scheduled beyond the cutoff and
+   * therefore cancelled. Muted tracks had no scheduled sources, so their
+   * cursors remain unchanged.
+   */
+  private _rewindCancelledCursors(
+    cutoffAudioTime: number,
+    oldStartAudioTime: number,
+    oldSeekOffset: number,
+    oldSpeed: number,
+  ): void {
+    if (!this._song) return;
+
+    this._trackCursors = this._song.tracks.map((track, trackIndex) => {
+      const previousCursor = this._trackCursors[trackIndex] ?? 0;
+      if (this._mutedTracks.has(trackIndex)) return previousCursor;
+
+      let lo = 0;
+      let hi = Math.min(previousCursor, track.notes.length);
+      while (lo < hi) {
+        const mid = (lo + hi) >>> 1;
+        const scheduledAudioTime =
+          oldStartAudioTime +
+          (track.notes[mid].time - oldSeekOffset) / oldSpeed;
+        if (scheduledAudioTime <= cutoffAudioTime) {
+          lo = mid + 1;
+        } else {
+          hi = mid;
+        }
+      }
+      return lo;
+    });
   }
 
   /**

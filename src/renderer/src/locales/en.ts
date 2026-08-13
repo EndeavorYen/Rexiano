@@ -27,6 +27,7 @@ export const en: TranslationMap = {
   "app.importActionRetry": "Try again",
   "app.importActionReimport": "Import again",
   "app.importActionOpenPermissions": "Check file permissions",
+  "app.importRecoveryActionsLabel": "Import recovery actions",
   "app.insightsTitle": "Practice Insights",
   "app.startPractice": "Start Playing",
   "app.openSettings": "Settings",
@@ -234,6 +235,14 @@ export const en: TranslationMap = {
   "midi.bluetooth": "Bluetooth",
   "midi.bleDisconnect": "Disconnect Bluetooth MIDI",
   "midi.bleDeviceTitle": "Bluetooth: {name} (click to disconnect)",
+  "midi.bleConnectedDevice": "Bluetooth MIDI device",
+  "midi.blePickerTitle": "Choose a Bluetooth MIDI device",
+  "midi.blePickerDescription":
+    "Select the piano or MIDI controller you want to connect.",
+  "midi.blePickerScanning": "Looking for nearby Bluetooth devices…",
+  "midi.blePickerCount": "Bluetooth devices found: {count}",
+  "midi.blePickerUnnamed": "Unnamed Bluetooth device",
+  "midi.blePickerCancel": "Cancel",
 
   // ── Practice Mode ──────────────────────────────────────────────
   "practice.watch": "Watch",
@@ -394,6 +403,8 @@ export const en: TranslationMap = {
 
   // ── Insights Panel ─────────────────────────────────────────────
   "insights.title": "Practice Insights",
+  "insights.dialogDescription":
+    "Review practice progress, accuracy trends, and suggested next steps.",
   "insights.weakSpots": "Weak Spots",
   "insights.accuracyTrend": "Accuracy Trend",
   "insights.totalMinutes": "Total practice time",
@@ -462,6 +473,8 @@ export const en: TranslationMap = {
   "modeSelect.freeDesc": "Play freely without guidance",
   "modeSelect.escToSkip": "Press Esc to skip",
   "modeSelect.mustChoose": "Choose a mode to start playing",
+  "modeSelect.currentDefault": "Current default",
+  "modeSelect.backToLibrary": "Back to library",
 
   // ── Statistics ─────────────────────────────────────────────────
   "stats.title": "Session Stats",

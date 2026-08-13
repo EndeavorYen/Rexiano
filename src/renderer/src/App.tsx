@@ -1,4 +1,5 @@
 import { useState, useCallback, useRef, useEffect, useMemo } from "react";
+import { createPortal } from "react-dom";
 import {
   AlertTriangle,
   ArrowLeft,
@@ -26,12 +27,18 @@ import {
   extractAudioOutputIds,
   hasAudioOutputChanged,
 } from "./engines/audio/recoveryUtils";
+import {
+  AudioInitializationOwner,
+  runOwnedAudioInitialization,
+  type AudioInitializationOutcome,
+} from "./engines/audio/audioInitializationOwnership";
 import { FallingNotesCanvas } from "./features/fallingNotes/FallingNotesCanvas";
 import { PianoKeyboard } from "./features/fallingNotes/PianoKeyboard";
 import { TransportBar } from "./features/fallingNotes/TransportBar";
 import { SettingsPanel } from "./features/settings/SettingsPanel";
 import { SongLibrary } from "./features/songLibrary/SongLibrary";
 import { DeviceSelector } from "./features/midiDevice/DeviceSelector";
+import { BluetoothDeviceSelectionDialog } from "./features/midiDevice/BluetoothDeviceSelectionDialog";
 import { InsightsPanel } from "./features/insights/InsightsPanel";
 import { WeakSpotAnalyzer } from "./features/insights/WeakSpotAnalyzer";
 import { buildSessionSummariesForSong } from "./features/insights/sessionSummary";
@@ -60,7 +67,11 @@ import { CelebrationOverlay } from "./features/practice/CelebrationOverlay";
 import { PianoRollEditor } from "./features/editor/PianoRollEditor";
 import { selectNextPracticeAction } from "./features/practice/nextPracticeAction";
 import { getFocusModeExitDecision } from "./features/practice/focusModeExitGuard";
-import { usePostSessionFlow } from "./features/practice/usePostSessionFlow";
+import {
+  canStartRequestedPlayback,
+  usePostSessionFlow,
+} from "./features/practice/usePostSessionFlow";
+import { getPracticeEngines } from "./engines/practice/practiceManager";
 import {
   mapSessionIntentToMode,
   type PracticeSessionIntent,
@@ -78,9 +89,11 @@ import {
   type AppRoute,
 } from "./features/routing/appRoute";
 import { useMidiImportActions } from "./features/fileImport/useMidiImportActions";
+import { FileImportErrorAlert } from "./features/fileImport/FileImportErrorAlert";
 import { buildMidiDiagnosticNotice } from "./features/midiDiagnostics/midiDiagnosticNotice";
 import { OnboardingGuide } from "./features/onboarding/OnboardingGuide";
 import { shouldExposeE2eFixtures } from "./e2eFixtureAccess";
+import { useRecentFiles } from "./hooks/useRecentFiles";
 
 const HEADER_ESTIMATED_HEIGHT = 112;
 const TRANSPORT_ESTIMATED_HEIGHT = 84;
@@ -115,6 +128,11 @@ function App(): React.JSX.Element {
   const song = useSongStore((s) => s.song);
   const loadSong = useSongStore((s) => s.loadSong);
   const reset = usePlaybackStore((s) => s.reset);
+  const {
+    recentFiles,
+    refresh: refreshRecentFiles,
+    remove: removeRecentFile,
+  } = useRecentFiles();
   const [routeIntent, setRouteIntent] = useState<AppRoute>(() => {
     if (typeof window === "undefined") return "menu";
     return parseRouteHash(window.location.hash);
@@ -194,12 +212,60 @@ function App(): React.JSX.Element {
   const speed = usePracticeStore((s) => s.speed);
   const activeTracks = usePracticeStore((s) => s.activeTracks);
   const score = usePracticeStore((s) => s.score);
+  const pendingPlaybackStartSongRef = useRef<NonNullable<typeof song> | null>(
+    null,
+  );
+  const audioReadySongRef = useRef<NonNullable<typeof song> | null>(null);
+  const audioInitializationOwnerRef = useRef<AudioInitializationOwner | null>(
+    null,
+  );
+  if (!audioInitializationOwnerRef.current) {
+    audioInitializationOwnerRef.current = new AudioInitializationOwner();
+  }
+  const attemptPendingPlaybackStart = useCallback((): boolean => {
+    const requestedSong = pendingPlaybackStartSongRef.current;
+    if (
+      !canStartRequestedPlayback({
+        requestedSong,
+        currentSong: useSongStore.getState().song,
+        readySong: audioReadySongRef.current,
+        audioStatus: usePlaybackStore.getState().audioStatus,
+      })
+    ) {
+      return false;
+    }
+
+    pendingPlaybackStartSongRef.current = null;
+    usePlaybackStore.getState().setPlaying(true);
+    return true;
+  }, []);
+  const requestPlaybackStart = useCallback(
+    (requestedSong: NonNullable<typeof song>): void => {
+      pendingPlaybackStartSongRef.current = requestedSong;
+      attemptPendingPlaybackStart();
+    },
+    [attemptPendingPlaybackStart],
+  );
+  const cancelPendingPlaybackStart = useCallback((): void => {
+    pendingPlaybackStartSongRef.current = null;
+    audioReadySongRef.current = null;
+    audioInitializationOwnerRef.current?.invalidate();
+  }, []);
+  const getCurrentSessionIntent = useCallback(
+    () => sessionIntentRef.current,
+    [],
+  );
+  const handleChooseSongRoute = useCallback(() => {
+    setSessionIntent("practice");
+    applyRoute("library");
+  }, [applyRoute, setSessionIntent]);
   const {
     showModeModal,
     showCelebration,
     showStats,
     displayScore,
     handleModeSelect,
+    handleModeDismiss,
     handlePracticeAgain,
     handleChooseSong,
     handleViewStats,
@@ -208,15 +274,34 @@ function App(): React.JSX.Element {
   } = usePostSessionFlow({
     song,
     sessionIntent,
-    getSessionIntent: () => sessionIntentRef.current,
+    getSessionIntent: getCurrentSessionIntent,
     activeTracks,
     speed,
     score,
-    onChooseSongRoute: () => {
-      setSessionIntent("practice");
-      applyRoute("library");
-    },
+    onChooseSongRoute: handleChooseSongRoute,
+    onRequestPlaybackStart: requestPlaybackStart,
+    onCancelPendingPlaybackStart: cancelPendingPlaybackStart,
   });
+
+  useEffect(() => {
+    return useSongStore.subscribe((state, previousState) => {
+      if (state.song !== previousState.song) {
+        cancelPendingPlaybackStart();
+      }
+    });
+  }, [cancelPendingPlaybackStart]);
+
+  const modeSelectionDefault = useMemo((): PracticeMode => {
+    if (!song) return mode;
+    const { defaultMode, defaultSpeed } = useSettingsStore.getState();
+    return mapSessionIntentToMode(
+      sessionIntent,
+      resolveSongPracticeSetupForSong(song, {
+        defaultMode,
+        defaultSpeed,
+      }).defaultMode,
+    );
+  }, [mode, sessionIntent, song]);
   // ─── End mode/celebration/stats flow ──────────────────
 
   const resetAppViewportScroll = useCallback((): void => {
@@ -243,6 +328,17 @@ function App(): React.JSX.Element {
 
   // ─── Phase 6.5 Sprint 5: Insights Panel ──────────────
   const [showInsights, setShowInsights] = useState(false);
+  const insightsDialogRef = useRef<HTMLDivElement>(null);
+  const insightsCloseButtonRef = useRef<HTMLButtonElement>(null);
+  const insightsTriggerRef = useRef<HTMLButtonElement>(null);
+  const closeInsights = useCallback(() => setShowInsights(false), []);
+  useDialogFocus({
+    active: showInsights,
+    containerRef: insightsDialogRef,
+    initialFocusRef: insightsCloseButtonRef,
+    returnFocusRef: insightsTriggerRef,
+    onDismiss: closeInsights,
+  });
   const sessions = useProgressStore((s) => s.sessions);
   const songId = song?.fileName ?? "";
 
@@ -323,10 +419,23 @@ function App(): React.JSX.Element {
         speed?: number;
       }) => void;
       __rexianoForcePlaybackState?: (state: { isPlaying?: boolean }) => void;
+      __rexianoPrimePracticeSessionFixture?: () => boolean;
+      __rexianoGetPracticeSessionFixtureSnapshot?: () => {
+        mode: PracticeMode;
+        isPlaying: boolean;
+        currentTime: number;
+        waitState: string | null;
+        waitResultCount: number;
+        waitTargetCount: number;
+        engineScoreTotal: number;
+        storeScoreTotal: number;
+        storeResultCount: number;
+      } | null;
     };
 
     e2eWindow.__rexianoLoadSheetMusicFixture = (fixtureName) => {
       const fixture = getSheetMusicVisualFixture(fixtureName);
+      cancelPendingPlaybackStart();
       reset();
       usePracticeStore.getState().setDisplayMode("sheet");
       usePracticeStore.getState().setMode("watch");
@@ -339,6 +448,7 @@ function App(): React.JSX.Element {
 
     e2eWindow.__rexianoShowCelebrationFixture = (celebrationFixture) => {
       const fixture = getSheetMusicVisualFixture("dense-sparse");
+      cancelPendingPlaybackStart();
       reset();
       setSheetFixtureNotationData(fixture.notationData);
       loadSong(fixture.song);
@@ -361,14 +471,52 @@ function App(): React.JSX.Element {
         playback.isPlaying = state.isPlaying;
       }
     };
+    e2eWindow.__rexianoPrimePracticeSessionFixture = () => {
+      const currentSong = useSongStore.getState().song;
+      const { waitMode, scoreCalculator } = getPracticeEngines();
+      const firstNote = currentSong?.tracks[0]?.notes[0];
+      if (!currentSong || !waitMode || !scoreCalculator || !firstNote) {
+        return false;
+      }
+
+      usePracticeStore.getState().setMode("wait");
+      waitMode.reset();
+      waitMode.start();
+      waitMode.tick(currentSong.duration + 1);
+      scoreCalculator.reset();
+      scoreCalculator.noteHit(firstNote.midi, firstNote.time);
+      usePracticeStore.getState().resetScore();
+      usePracticeStore.getState().recordHit("__e2e_practice_fixture__");
+      return true;
+    };
+    e2eWindow.__rexianoGetPracticeSessionFixtureSnapshot = () => {
+      const { waitMode, scoreCalculator } = getPracticeEngines();
+      if (!waitMode || !scoreCalculator) return null;
+      const practice = usePracticeStore.getState();
+      const playback = usePlaybackStore.getState();
+      return {
+        mode: practice.mode,
+        isPlaying: playback.isPlaying,
+        currentTime: playback.currentTime,
+        waitState: waitMode.state,
+        waitResultCount: waitMode.noteResults.size,
+        waitTargetCount: waitMode.targetNotes.size,
+        engineScoreTotal: scoreCalculator.getScore().totalNotes,
+        storeScoreTotal: practice.score.totalNotes,
+        storeResultCount: practice.noteResults.size,
+      };
+    };
 
     return () => {
       delete e2eWindow.__rexianoLoadSheetMusicFixture;
       delete e2eWindow.__rexianoShowCelebrationFixture;
       delete e2eWindow.__rexianoForcePlaybackState;
+      delete e2eWindow.__rexianoPrimePracticeSessionFixture;
+      delete e2eWindow.__rexianoGetPracticeSessionFixtureSnapshot;
     };
   }, [
     applyRoute,
+    cancelPendingPlaybackStart,
     hidePostSessionFlow,
     loadSong,
     reset,
@@ -434,11 +582,9 @@ function App(): React.JSX.Element {
   }, []);
 
   const rebuildAudioStack = useCallback(
-    async (targetSong: NonNullable<typeof song>): Promise<void> => {
-      audioRef.current.engine?.setRuntimeErrorHandler(null);
-      audioRef.current.scheduler?.dispose();
-      audioRef.current.engine?.dispose();
-
+    async (
+      targetSong: NonNullable<typeof song>,
+    ): Promise<AudioInitializationOutcome> => {
       const { audioCompatibilityMode } = useSettingsStore.getState();
       const engine = new AudioEngine({
         latencyHint: audioCompatibilityMode ? "playback" : "interactive",
@@ -447,29 +593,53 @@ function App(): React.JSX.Element {
         },
       });
       const scheduler = new AudioScheduler(engine);
-      audioRef.current = { engine, scheduler };
-
-      usePlaybackStore.getState().setAudioStatus("loading");
-      await engine.init();
-
-      const { muted } = useSettingsStore.getState();
-      engine.setVolume(muted ? 0 : usePlaybackStore.getState().volume);
-
-      // Rebind metronome to the latest live AudioContext after recovery/rebuild.
-      disposeMetronome();
-      if (engine.audioContext) {
-        initMetronome(engine.audioContext);
+      const stack = { engine, scheduler };
+      const owner = audioInitializationOwnerRef.current;
+      if (!owner) {
+        throw new Error("Audio initialization owner is unavailable");
       }
 
-      scheduler.setSong(targetSong);
-      scheduler.setSpeed(usePracticeStore.getState().speed);
-      scheduler.setMutedTracks(
-        getMutedTrackIndices(usePracticeStore.getState().trackPreferences),
-      );
-      usePlaybackStore.getState().setAudioStatus("ready");
-      usePlaybackStore.getState().clearAudioRecovery();
+      return runOwnedAudioInitialization(owner, {
+        activate: () => {
+          audioReadySongRef.current = null;
+          audioRef.current.engine?.setRuntimeErrorHandler(null);
+          audioRef.current.scheduler?.dispose();
+          audioRef.current.engine?.dispose();
+          audioRef.current = stack;
+          usePlaybackStore.getState().setAudioStatus("loading");
+        },
+        initialize: () => engine.init(),
+        commit: () => {
+          const { muted } = useSettingsStore.getState();
+          engine.setVolume(muted ? 0 : usePlaybackStore.getState().volume);
+
+          // Rebind metronome only after this stack still owns initialization.
+          disposeMetronome();
+          if (engine.audioContext) {
+            initMetronome(engine.audioContext);
+          }
+
+          scheduler.setSong(targetSong);
+          scheduler.setSpeed(usePracticeStore.getState().speed);
+          scheduler.setMutedTracks(
+            getMutedTrackIndices(usePracticeStore.getState().trackPreferences),
+          );
+          audioReadySongRef.current = targetSong;
+          usePlaybackStore.getState().setAudioStatus("ready");
+          usePlaybackStore.getState().clearAudioRecovery();
+          attemptPendingPlaybackStart();
+        },
+        cleanupStale: () => {
+          engine.setRuntimeErrorHandler(null);
+          scheduler.dispose();
+          engine.dispose();
+          if (audioRef.current === stack) {
+            audioRef.current = { engine: null, scheduler: null };
+          }
+        },
+      });
     },
-    [],
+    [attemptPendingPlaybackStart],
   );
 
   const recoverAudio = useCallback(
@@ -502,7 +672,8 @@ function App(): React.JSX.Element {
             }
 
             const { isPlaying, currentTime } = usePlaybackStore.getState();
-            await rebuildAudioStack(liveSong);
+            const outcome = await rebuildAudioStack(liveSong);
+            if (outcome === "stale") return;
 
             if (isPlaying) {
               const { engine, scheduler } = audioRef.current;
@@ -639,12 +810,15 @@ function App(): React.JSX.Element {
         scheduler.setMutedTracks(
           getMutedTrackIndices(usePracticeStore.getState().trackPreferences),
         );
+        audioReadySongRef.current = song;
         usePlaybackStore.getState().setAudioStatus("ready");
+        attemptPendingPlaybackStart();
         return;
       }
 
       try {
-        await rebuildAudioStack(song);
+        const outcome = await rebuildAudioStack(song);
+        if (outcome === "stale") return;
       } catch (err) {
         if (cancelled) return;
         console.error("Audio init failed:", err);
@@ -675,7 +849,7 @@ function App(): React.JSX.Element {
     return () => {
       cancelled = true;
     };
-  }, [song, rebuildAudioStack]);
+  }, [attemptPendingPlaybackStart, song, rebuildAudioStack]);
 
   // Sync playback state → AudioScheduler
   const seekTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -735,6 +909,7 @@ function App(): React.JSX.Element {
   // Cleanup audio on unmount
   useEffect(() => {
     return () => {
+      audioInitializationOwnerRef.current?.invalidate();
       audioRef.current.engine?.setRuntimeErrorHandler(null);
       audioRef.current.scheduler?.dispose();
       audioRef.current.engine?.dispose();
@@ -744,6 +919,8 @@ function App(): React.JSX.Element {
       }
       disposeMetronome();
       triggerRecoveryRef.current = () => {};
+      pendingPlaybackStartSongRef.current = null;
+      audioReadySongRef.current = null;
     };
   }, []);
 
@@ -849,6 +1026,7 @@ function App(): React.JSX.Element {
     isDragging,
     handleOpenFile,
     handleLoadMidiPath,
+    dismissImportError,
     handleImportRecoveryAction,
     handleDragEnter,
     handleDragLeave,
@@ -858,7 +1036,28 @@ function App(): React.JSX.Element {
     t,
     loadSong,
     resetPlayback: reset,
+    removeRecentFile,
+    refreshRecentFiles,
   });
+
+  useEffect(() => {
+    if (
+      typeof window === "undefined" ||
+      !shouldExposeE2eFixtures({
+        isE2eTestMode: window.api.isE2eTestMode,
+      })
+    ) {
+      return;
+    }
+
+    const e2eWindow = window as typeof window & {
+      __rexianoTriggerMissingMidiImport?: (path: string) => Promise<void>;
+    };
+    e2eWindow.__rexianoTriggerMissingMidiImport = handleLoadMidiPath;
+    return () => {
+      delete e2eWindow.__rexianoTriggerMissingMidiImport;
+    };
+  }, [handleLoadMidiPath]);
 
   // ─── Phase 6.5: Mute toggle ────────────────────────────
   const muteRef = useRef({ prevVolume: 0.8 });
@@ -985,6 +1184,8 @@ function App(): React.JSX.Element {
       ref={appShellRef}
       className="app-root-shell app-shell flex h-screen flex-col"
       style={{ color: "var(--color-text)" }}
+      inert={showInsights ? true : undefined}
+      aria-hidden={showInsights ? "true" : undefined}
       onDragEnter={handleDragEnter}
       onDragLeave={handleDragLeave}
       onDragOver={handleDragOver}
@@ -992,6 +1193,7 @@ function App(): React.JSX.Element {
     >
       {showSceneCurtain && <div className="scene-curtain" />}
       <OnboardingGuide />
+      <BluetoothDeviceSelectionDialog />
 
       {/* Drag-and-drop overlay */}
       {isDragging && (
@@ -1026,48 +1228,14 @@ function App(): React.JSX.Element {
         </div>
       )}
 
-      {/* Drag error toast */}
+      {/* Import errors are announced but never steal keyboard focus. */}
       {importError && (
-        <div
-          className="fixed top-4 left-1/2 -translate-x-1/2 z-50 max-w-[420px] rounded-lg px-4 py-3 text-sm font-body subtle-shadow"
-          style={{
-            background: "#dc2626",
-            color: "#ffffff",
-          }}
-          title={importError.guidance.diagnostic || undefined}
-          data-testid="file-import-error-toast"
-        >
-          <div className="font-semibold">{importError.guidance.title}</div>
-          <div className="mt-0.5 text-xs leading-snug">
-            {importError.guidance.guidance}
-          </div>
-          {importError.guidance.actions.length > 0 && (
-            <div className="mt-2 flex flex-wrap gap-1.5">
-              {importError.guidance.actions.map((action) => (
-                <button
-                  key={action.id}
-                  type="button"
-                  onClick={() =>
-                    handleImportRecoveryAction(action.id, importError.input)
-                  }
-                  className="rounded px-2 py-1 text-[11px] font-body font-semibold cursor-pointer"
-                  style={{
-                    color:
-                      action.emphasis === "primary" ? "#991b1b" : "#ffffff",
-                    background:
-                      action.emphasis === "primary"
-                        ? "#ffffff"
-                        : "rgba(255, 255, 255, 0.14)",
-                    border: "1px solid rgba(255, 255, 255, 0.45)",
-                  }}
-                  data-import-recovery-action={action.id}
-                >
-                  {action.label}
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
+        <FileImportErrorAlert
+          input={importError.input}
+          guidance={importError.guidance}
+          onAction={handleImportRecoveryAction}
+          onDismiss={dismissImportError}
+        />
       )}
 
       {/* View: Main Menu */}
@@ -1076,6 +1244,7 @@ function App(): React.JSX.Element {
           <MainMenu
             onStartPractice={() => applyRoute("library")}
             onOpenSettings={() => setShowMenuSettings(true)}
+            recentFiles={recentFiles}
             onSelectRecent={(file) => {
               setSessionIntent("practice");
               void handleLoadMidiPath(file.path);
@@ -1094,6 +1263,9 @@ function App(): React.JSX.Element {
           className="flex-1 min-h-0 flex flex-col animate-page-enter"
         >
           <SongLibrary
+            recentFiles={recentFiles}
+            onRefreshRecentFiles={refreshRecentFiles}
+            onRemoveRecentFile={removeRecentFile}
             onOpenFile={() => {
               setSessionIntent("practice");
               return handleOpenFile();
@@ -1167,6 +1339,21 @@ function App(): React.JSX.Element {
                 className="flex items-center gap-1 shrink-0"
                 data-testid="playback-header-actions"
               >
+                <button
+                  ref={insightsTriggerRef}
+                  type="button"
+                  onClick={() => setShowInsights(true)}
+                  className="btn-surface-themed flex min-h-9 min-w-9 items-center justify-center rounded-lg cursor-pointer"
+                  title={t("app.insightsTitle")}
+                  aria-label={t("app.insightsTitle")}
+                  data-testid="insights-trigger"
+                >
+                  <BarChart3
+                    size={15}
+                    style={{ color: "var(--color-text)" }}
+                    aria-hidden="true"
+                  />
+                </button>
                 <button
                   ref={playbackDrawerTriggerRef}
                   onClick={() => setShowPlaybackDrawer(true)}
@@ -1249,7 +1436,9 @@ function App(): React.JSX.Element {
                     <DisplayModeToggle />
                   </section>
                   <section className="app-side-section">
-                    <DeviceSelector />
+                    <DeviceSelector
+                      onBeforeBluetoothConnect={closePlaybackDrawer}
+                    />
                   </section>
                   <section className="app-side-section flex items-center gap-2">
                     <button
@@ -1266,20 +1455,6 @@ function App(): React.JSX.Element {
                       data-testid="open-editor"
                     >
                       <PencilRuler
-                        size={16}
-                        style={{ color: "var(--color-text)" }}
-                      />
-                    </button>
-                    <button
-                      onClick={() => {
-                        setShowPlaybackDrawer(false);
-                        setShowInsights(true);
-                      }}
-                      className="btn-surface-themed w-9 h-9 flex items-center justify-center rounded-full cursor-pointer"
-                      title={t("app.insightsTitle")}
-                      data-testid="insights-trigger"
-                    >
-                      <BarChart3
                         size={16}
                         style={{ color: "var(--color-text)" }}
                       />
@@ -1360,24 +1535,6 @@ function App(): React.JSX.Element {
             )}
           </div>
 
-          {/* Insights modal */}
-          {showInsights && (
-            <div
-              className="fixed inset-0 z-[100] flex items-center justify-center modal-backdrop-cinematic"
-              onClick={() => setShowInsights(false)}
-            >
-              <div
-                className="w-[92vw] max-w-[460px] max-h-[85vh] overflow-y-auto modal-card-cinematic subtle-shadow-md"
-                onClick={(e) => e.stopPropagation()}
-              >
-                <InsightsPanel
-                  insight={insight}
-                  onClose={() => setShowInsights(false)}
-                />
-              </div>
-            </div>
-          )}
-
           {/* Transport bar */}
           {showTransportBar && <TransportBar compact={compactPlaybackChrome} />}
 
@@ -1398,7 +1555,11 @@ function App(): React.JSX.Element {
 
       {/* Mode selection modal (shown when a song first loads). */}
       {song && showModeModal && (
-        <ModeSelectionModal onSelect={handleModeSelect} />
+        <ModeSelectionModal
+          defaultMode={modeSelectionDefault}
+          onSelect={handleModeSelect}
+          onDismiss={handleModeDismiss}
+        />
       )}
 
       {/* Celebration overlay (shown when song ends).
@@ -1426,6 +1587,42 @@ function App(): React.JSX.Element {
           onChooseSong={handleChooseSong}
         />
       )}
+      {showInsights &&
+        typeof document !== "undefined" &&
+        createPortal(
+          <div
+            className="fixed inset-0 z-[200] flex items-center justify-center p-4 modal-backdrop-cinematic"
+            onClick={(event) => {
+              if (event.target === event.currentTarget) closeInsights();
+            }}
+            data-testid="insights-backdrop"
+          >
+            <div
+              ref={insightsDialogRef}
+              className="w-[min(92vw,460px)] max-h-[85vh] overflow-y-auto rounded-2xl modal-card-cinematic subtle-shadow-md"
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="practice-insights-dialog-title"
+              aria-describedby="practice-insights-dialog-description"
+              tabIndex={-1}
+              data-testid="insights-dialog"
+              onClick={(event) => event.stopPropagation()}
+            >
+              <h2 id="practice-insights-dialog-title" className="sr-only">
+                {t("insights.title")}
+              </h2>
+              <p id="practice-insights-dialog-description" className="sr-only">
+                {t("insights.dialogDescription")}
+              </p>
+              <InsightsPanel
+                insight={insight}
+                onClose={closeInsights}
+                closeButtonRef={insightsCloseButtonRef}
+              />
+            </div>
+          </div>,
+          document.body,
+        )}
     </div>
   );
 }

@@ -13,7 +13,6 @@ import appIcon from "../../../../../docs/figure/Rexiano_icon.png";
 import { useTranslation } from "@renderer/i18n/useTranslation";
 import { useProgressStore } from "@renderer/stores/useProgressStore";
 import { useSettingsStore } from "@renderer/stores/useSettingsStore";
-import { useRecentFiles } from "@renderer/hooks/useRecentFiles";
 import {
   buildParentPracticeReport,
   type ParentPracticeAccuracyLevel,
@@ -29,12 +28,14 @@ interface MainMenuProps {
   onStartPractice: () => void;
   onOpenSettings: () => void;
   onSelectRecent?: (file: RecentFile) => void;
+  recentFiles: RecentFile[];
 }
 
 export function MainMenu({
   onStartPractice,
   onOpenSettings,
   onSelectRecent,
+  recentFiles: allRecents,
 }: MainMenuProps): React.JSX.Element {
   const { t } = useTranslation();
   const sessions = useProgressStore((s) => s.sessions);
@@ -42,7 +43,6 @@ export function MainMenu({
   const loadSessions = useProgressStore((s) => s.loadSessions);
   const defaultMode = useSettingsStore((s) => s.defaultMode);
   const defaultSpeed = useSettingsStore((s) => s.defaultSpeed);
-  const { recentFiles: allRecents } = useRecentFiles();
   const recentFiles = allRecents.slice(0, 5);
   const [reportNow] = useState(() => Date.now());
 
@@ -142,6 +142,7 @@ export function MainMenu({
                 <button
                   onClick={onStartPractice}
                   className="btn-primary-themed flex items-center gap-2.5 rounded-xl px-6 py-3.5 text-sm font-body font-semibold cursor-pointer"
+                  data-import-recovery-focus-fallback
                 >
                   <Play size={17} />
                   {t("app.startPractice")}

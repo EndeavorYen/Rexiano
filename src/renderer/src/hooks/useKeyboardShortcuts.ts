@@ -1,8 +1,8 @@
 /**
  * Phase 6.5: Global keyboard shortcuts for playback and practice controls.
  *
- * Binds to window keydown events. Skips shortcuts when focus is inside
- * an input or textarea to avoid interfering with text entry.
+ * Binds to window keydown events. Skips shortcuts when focus is on an
+ * interactive control or a modal owns the keyboard.
  */
 import { useEffect, useRef } from "react";
 import { usePlaybackStore } from "@renderer/stores/usePlaybackStore";
@@ -44,14 +44,64 @@ const MODE_MAP: Record<string, PracticeMode> = {
   "3": "free",
 };
 
-/**
- * Returns true if the event target is an element that accepts text input,
- * in which case we should not intercept the keystroke.
- */
+const INTERACTIVE_TARGET_SELECTOR = [
+  "button",
+  "a",
+  "input",
+  "select",
+  "textarea",
+  "summary",
+  "[contenteditable]:not([contenteditable='false'])",
+  "[role='button']",
+  "[role='link']",
+  "[role='checkbox']",
+  "[role='radio']",
+  "[role='switch']",
+  "[role='tab']",
+  "[role='menuitem']",
+  "[role='option']",
+  "[role='slider']",
+  "[role='spinbutton']",
+  "[role='textbox']",
+  "[role='combobox']",
+  "[role='listbox']",
+].join(",");
+
+interface ClosestTarget {
+  closest: (selector: string) => Element | null;
+}
+
+function hasClosest(
+  target: EventTarget | null,
+): target is EventTarget & ClosestTarget {
+  return (
+    target !== null &&
+    typeof (target as Partial<ClosestTarget>).closest === "function"
+  );
+}
+
+/** Protect native and ARIA controls, including events from their descendants. */
+function isInteractiveTarget(target: EventTarget | null): boolean {
+  return (
+    hasClosest(target) && target.closest(INTERACTIVE_TARGET_SELECTOR) !== null
+  );
+}
+
+/** Backwards-compatible text-entry predicate used by existing integrations. */
 function isTextInput(target: EventTarget | null): boolean {
-  if (!target || !(target instanceof HTMLElement)) return false;
-  const tag = target.tagName.toLowerCase();
-  return tag === "input" || tag === "textarea" || target.isContentEditable;
+  if (!hasClosest(target)) return false;
+  return (
+    target.closest(
+      "input,textarea,[contenteditable]:not([contenteditable='false'])",
+    ) !== null
+  );
+}
+
+function hasActiveModal(): boolean {
+  return (
+    typeof document !== "undefined" &&
+    document.querySelector('[aria-modal="true"]') !== null
+  );
 }
 
 export interface KeyboardShortcutDeps {
@@ -73,7 +123,7 @@ export function createKeyboardHandler(
   getDeps: () => KeyboardShortcutDeps,
 ): (e: KeyboardEvent) => void {
   return function handler(e: KeyboardEvent): void {
-    if (isTextInput(e.target)) return;
+    if (isInteractiveTarget(e.target) || hasActiveModal()) return;
 
     const hasSong = useSongStore.getState().song !== null;
 
@@ -248,4 +298,13 @@ export function useKeyboardShortcuts(deps: KeyboardShortcutDeps = {}): void {
 }
 
 // Exported for testing
-export { isTextInput, SEEK_STEP, SEEK_STEP_LARGE, SPEED_STEP, MODE_MAP };
+export {
+  hasActiveModal,
+  INTERACTIVE_TARGET_SELECTOR,
+  isInteractiveTarget,
+  isTextInput,
+  SEEK_STEP,
+  SEEK_STEP_LARGE,
+  SPEED_STEP,
+  MODE_MAP,
+};

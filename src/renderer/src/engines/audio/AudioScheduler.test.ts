@@ -128,6 +128,168 @@ describe("AudioScheduler", () => {
     });
   });
 
+  // ─── setSpeed ─────────────────────────────
+
+  describe("setSpeed", () => {
+    test("preserves the current song time when slowing from 1x to 0.5x", () => {
+      scheduler.setSong(song([track([note(5, 0.5)])]));
+      scheduler.start(0);
+
+      engine._setCurrentTime(2);
+      scheduler.setSpeed(0.5);
+
+      expect(scheduler.getCurrentTime()).toBe(2);
+
+      engine._setCurrentTime(4);
+      expect(scheduler.getCurrentTime()).toBe(3);
+    });
+
+    test("preserves the current song time when accelerating from 1x to 2x", () => {
+      scheduler.setSong(song([track([note(5, 0.5)])]));
+      scheduler.start(0);
+
+      engine._setCurrentTime(2);
+      scheduler.setSpeed(2);
+
+      expect(scheduler.getCurrentTime()).toBe(2);
+
+      engine._setCurrentTime(3);
+      expect(scheduler.getCurrentTime()).toBe(4);
+    });
+
+    test("releases pending notes at the rebase audio time and reschedules them", () => {
+      scheduler = new AudioScheduler(engine, { lookAheadSeconds: 2 });
+      scheduler.setSong(song([track([note(1, 0.5)])]));
+      scheduler.start(0);
+      vi.advanceTimersByTime(25);
+      expect(engine.noteOn).toHaveBeenCalledWith(60, 80, 1);
+
+      engine.noteOn.mockClear();
+      engine._setCurrentTime(0.25);
+      scheduler.setSpeed(0.5);
+
+      expect(engine.releaseScheduledAfter).toHaveBeenCalledWith(0.25);
+
+      vi.advanceTimersByTime(25);
+      expect(engine.noteOn).toHaveBeenCalledWith(60, 80, 1.75);
+    });
+
+    test("takes one audio clock snapshot when rebasing active playback", () => {
+      scheduler.setSong(song([track([note(5, 0.5)])]));
+      scheduler.start(0);
+
+      let currentTimeReads = 0;
+      Object.defineProperty(engine.audioContext, "currentTime", {
+        configurable: true,
+        get() {
+          currentTimeReads++;
+          return currentTimeReads === 1 ? 2 : 3;
+        },
+      });
+
+      scheduler.setSpeed(0.5);
+
+      expect(currentTimeReads).toBe(1);
+      expect(engine.releaseScheduledAfter).toHaveBeenCalledWith(2);
+
+      Object.defineProperty(engine.audioContext, "currentTime", {
+        configurable: true,
+        value: 2,
+      });
+      expect(scheduler.getCurrentTime()).toBe(2);
+    });
+
+    test("keeps an unscheduled time-zero note eligible after a speed change", () => {
+      scheduler.setSong(song([track([note(0, 0.5)])]));
+      scheduler.start(0);
+
+      scheduler.setSpeed(0.5);
+      vi.advanceTimersByTime(25);
+
+      expect(engine.noteOn).toHaveBeenCalledWith(60, 80, 0);
+    });
+
+    test("does not reschedule a note retained at the speed-change boundary", () => {
+      scheduler = new AudioScheduler(engine, { lookAheadSeconds: 2 });
+      scheduler.setSong(song([track([note(1, 0.5)])]));
+      scheduler.start(0);
+      vi.advanceTimersByTime(25);
+      engine.noteOn.mockClear();
+
+      engine._setCurrentTime(1);
+      scheduler.setSpeed(0.5);
+      vi.advanceTimersByTime(25);
+
+      expect(engine.releaseScheduledAfter).toHaveBeenCalledWith(1);
+      expect(engine.noteOn).not.toHaveBeenCalled();
+    });
+
+    test("does not duplicate a retained note at a fractional old-speed boundary", () => {
+      const retainedNoteTime = 0.03;
+      const oldSpeed = 1.1;
+      const scheduledAudioStart = retainedNoteTime / oldSpeed;
+      scheduler = new AudioScheduler(engine, { lookAheadSeconds: 2 });
+      scheduler.setSong(song([track([note(retainedNoteTime, 0.5)])]));
+      scheduler.setSpeed(oldSpeed);
+      scheduler.start(0);
+      vi.advanceTimersByTime(25);
+      engine.noteOn.mockClear();
+
+      engine._setCurrentTime(scheduledAudioStart);
+      scheduler.setSpeed(0.5);
+      vi.advanceTimersByTime(25);
+
+      expect(engine.noteOn).not.toHaveBeenCalled();
+    });
+
+    test("stores a changed speed while paused and applies it on resume", () => {
+      scheduler.setSong(song([track([note(1, 0.5)])]));
+      scheduler.start(0);
+      engine._setCurrentTime(1);
+      scheduler.pause();
+      engine.releaseScheduledAfter.mockClear();
+
+      scheduler.setSpeed(0.5);
+      expect(engine.releaseScheduledAfter).not.toHaveBeenCalled();
+
+      engine._setCurrentTime(9);
+      scheduler.resume();
+      expect(scheduler.getCurrentTime()).toBe(1);
+
+      engine._setCurrentTime(11);
+      expect(scheduler.getCurrentTime()).toBe(2);
+    });
+
+    test("stores a changed speed while stopped and applies it on a fresh start", () => {
+      scheduler.setSong(song([track([note(1, 0.5)])]));
+      scheduler.start(0);
+      scheduler.stop();
+      engine.releaseScheduledAfter.mockClear();
+
+      scheduler.setSpeed(2);
+      expect(engine.releaseScheduledAfter).not.toHaveBeenCalled();
+
+      engine._setCurrentTime(4);
+      scheduler.start(0);
+      engine._setCurrentTime(5);
+      expect(scheduler.getCurrentTime()).toBe(2);
+    });
+
+    test("does not disturb pending scheduling when the speed is unchanged", () => {
+      scheduler = new AudioScheduler(engine, { lookAheadSeconds: 2 });
+      scheduler.setSong(song([track([note(1, 0.5)])]));
+      scheduler.start(0);
+      vi.advanceTimersByTime(25);
+      engine.noteOn.mockClear();
+
+      scheduler.setSpeed(1);
+      vi.advanceTimersByTime(25);
+
+      expect(engine.releaseScheduledAfter).not.toHaveBeenCalled();
+      expect(engine.noteOn).not.toHaveBeenCalled();
+    });
+  });
+
   // ─── start / stop ─────────────────────────
 
   describe("start / stop", () => {

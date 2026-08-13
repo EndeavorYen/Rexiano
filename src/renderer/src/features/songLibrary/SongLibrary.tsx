@@ -26,7 +26,6 @@ import { usePlaybackStore } from "../../stores/usePlaybackStore";
 import { useSettingsStore } from "../../stores/useSettingsStore";
 import { useSongLibraryStore } from "../../stores/useSongLibraryStore";
 import { useProgressStore } from "../../stores/useProgressStore";
-import { useRecentFiles } from "../../hooks/useRecentFiles";
 import { formatRelativeTime } from "../../utils/relativeTime";
 import { SongCard } from "./SongCard";
 import { SongLibraryFilters } from "./SongLibraryFilters";
@@ -78,6 +77,9 @@ interface SongLibraryProps {
   onOpenFile: () => Promise<void>;
   onBack?: () => void;
   onSessionIntentSelected?: (intent: PracticeSessionIntent) => void;
+  recentFiles: RecentFile[];
+  onRefreshRecentFiles: () => void;
+  onRemoveRecentFile: (filePath: string) => Promise<boolean>;
 }
 
 type PreviewAudioStatus = "idle" | "loading" | "playing";
@@ -191,6 +193,9 @@ export function SongLibrary({
   onOpenFile,
   onBack,
   onSessionIntentSelected,
+  recentFiles,
+  onRefreshRecentFiles: refreshRecents,
+  onRemoveRecentFile: removeRecent,
 }: SongLibraryProps): React.JSX.Element {
   const { t } = useTranslation();
 
@@ -227,12 +232,6 @@ export function SongLibrary({
   const sessions = useProgressStore((s) => s.sessions);
   const isProgressLoaded = useProgressStore((s) => s.isLoaded);
   const loadSessions = useProgressStore((s) => s.loadSessions);
-
-  const {
-    recentFiles,
-    refresh: refreshRecents,
-    remove: removeRecent,
-  } = useRecentFiles();
 
   const [loadingId, setLoadingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -597,8 +596,12 @@ export function SongLibrary({
 
   const handleRemoveRecent = useCallback(
     async (filePath: string) => {
-      await removeRecent(filePath);
-      setRecentRecovery(null);
+      try {
+        const removed = await removeRecent(filePath);
+        if (removed) setRecentRecovery(null);
+      } catch (error) {
+        console.error("Failed to remove recent MIDI file:", error);
+      }
     },
     [removeRecent],
   );
@@ -1572,7 +1575,9 @@ export function SongLibrary({
               </div>
               <div className="app-side-drawer-body">
                 <section className="app-side-section">
-                  <DeviceSelector />
+                  <DeviceSelector
+                    onBeforeBluetoothConnect={closeDeviceDrawer}
+                  />
                 </section>
               </div>
             </aside>

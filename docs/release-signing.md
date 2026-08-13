@@ -1,101 +1,128 @@
 # Release Signing and Notarization
 
-Rexiano keeps unsigned community builds possible by default. Official release
-jobs are now secret-aware: they sign and notarize only when maintainers provide
-the required GitHub Actions secrets, and otherwise keep producing unsigned
-artifacts.
+Official production releases fail closed. A missing credential, failed test,
+unexpected artifact, invalid signature, failed notarization check, or changed tag
+stops the workflow before a GitHub Release becomes public. Release Please first
+creates a draft and an immutable tag; the release workflow publishes that draft
+only after every platform gate succeeds.
 
-This setup follows electron-builder's documented environment-variable flow:
-Windows signing can use `WIN_CSC_LINK` / `WIN_CSC_KEY_PASSWORD`, macOS signing
-can use `CSC_LINK` / `CSC_KEY_PASSWORD`, and notarization requires one complete
-Apple credential set.
+Local and fork builds may remain unsigned. `electron-builder.yml` deliberately
+keeps `mac.notarize: false` so contributors can package the application without
+maintainer credentials. That local setting is not an official release path: the
+GitHub release workflow overrides it with mandatory signing and notarization and
+has no unsigned fallback.
 
-## Current CI Policy
+## Production release gates
 
-- Windows release builds read optional `WINDOWS_CSC_LINK` and
-  `WINDOWS_CSC_KEY_PASSWORD` secrets. If either value is missing, the job clears
-  signing certificate variables, sets `CSC_IDENTITY_AUTO_DISCOVERY=false`, and
-  produces an unsigned installer.
-- Windows releases also publish a portable `.zip` so browsers that block direct
-  unknown `.exe` downloads have a lower-friction path. This is only a download
-  experience mitigation; it does not replace Authenticode signing.
-- macOS release builds read optional certificate and Apple notarization secrets.
-  If either the certificate or notarization credentials are incomplete, the job
-  clears certificate variables and runs
-  `electron-builder --mac -c.mac.identity=null -c.mac.notarize=false`.
-- `electron-builder.yml` keeps `mac.notarize: false` for local builds. The
-  release workflow passes `-c.mac.notarize=true` only when the required macOS
-  signing and notarization secrets are present.
+The workflow accepts only a strict `vMAJOR.MINOR.PATCH` tag. It resolves annotated
+and lightweight tags to a full commit SHA, requires that commit to be reachable
+from `origin/main`, and checks that `package.json` contains the same version.
+Release Please dispatches the workflow from `main` with both the tag and expected
+SHA. Every later job checks out and verifies that exact SHA.
 
-## Windows Signing Path
+Before packaging, CI must pass the frozen install, lint, typecheck, and unit test
+gate. A Windows runner also executes the real Playwright player-flow suite. The
+release stays in draft state until all three platform packages have passed their
+platform-specific checks:
 
-Required maintainer assets:
+- Windows: exact setup, portable executable, and portable zip inventory;
+  Authenticode must report `Valid`, and `signtool verify /pa /tw /v` must pass for
+  both published executables and the `Rexiano.exe` inside the zip.
+- macOS: exactly two architecture-specific DMGs; both intermediate apps and the
+  apps mounted from each DMG must have a Developer ID Application authority and
+  consistent TeamIdentifier, pass Gatekeeper assessment, and contain a valid
+  stapled notarization ticket.
+- Linux: exact `x86_64`-named AppImage and `amd64`-named Debian package inventory
+  from a checked build.
 
-- EV or OV code-signing certificate in an electron-builder-supported form, such
-  as a base64-encoded `.pfx` / `.p12` certificate or a secure HTTPS download URL.
-- `WINDOWS_CSC_LINK` GitHub secret containing the certificate value or URL.
-- `WINDOWS_CSC_KEY_PASSWORD` GitHub secret containing the certificate password.
+The publish job re-fetches the tag and requires exactly one matching draft. A
+missing, duplicate, or already-public release fails closed, so the upload action
+cannot create a replacement release without the notes prepared by Release
+Please. It then downloads only verified artifacts, checks the exact seven
+package files, creates a locale-stable `SHA256SUMS.txt`, and verifies that file
+before making the prepared draft public. It appends the checksums without
+replacing the Release Please notes.
 
-For EV certificates that cannot be exported from a hardware token, use the
-certificate vendor's cloud signing flow or add a custom electron-builder signing
-hook before enabling official signed Windows releases.
+## Required GitHub Actions secrets
 
-Verification commands after a signed Windows release build:
+### Windows Authenticode
 
-```powershell
-Get-AuthenticodeSignature .\dist\Rexiano-*-setup.exe
-signtool verify /pa /tw .\dist\Rexiano-*-setup.exe
-```
+Both values are mandatory for an official release:
 
-## macOS Signing and Notarization Path
+- `WINDOWS_CSC_LINK`: an electron-builder-supported certificate value or secure
+  URL, normally a base64-encoded `.pfx` or `.p12` certificate.
+- `WINDOWS_CSC_KEY_PASSWORD`: the certificate password.
 
-Required maintainer assets:
+For non-exportable EV certificates, configure the certificate vendor's supported
+cloud-signing integration before attempting an official release. The workflow
+does not substitute an unsigned installer.
 
-- Apple Developer ID Application certificate exported in an
-  electron-builder-supported form.
-- `MACOS_CSC_LINK` GitHub secret containing the certificate value or URL.
-- `MACOS_CSC_KEY_PASSWORD` GitHub secret containing the certificate password.
+### macOS Developer ID and notarization
 
-Preferred notarization secrets:
+Both Developer ID certificate values are mandatory:
 
-- `APPLE_API_KEY_BASE64`: base64-encoded App Store Connect API key `.p8` file.
-- `APPLE_API_KEY_ID`: App Store Connect API key ID.
-- `APPLE_API_ISSUER`: App Store Connect issuer UUID.
+- `MACOS_CSC_LINK`: an electron-builder-supported Developer ID Application
+  certificate value or secure URL.
+- `MACOS_CSC_KEY_PASSWORD`: the certificate password.
 
-Alternative notarization secrets:
+Exactly one complete notarization credential set is mandatory. Partial sets,
+both sets, and no set are all rejected.
+
+App Store Connect API key set:
+
+- `APPLE_API_KEY_BASE64`: base64-encoded `.p8` API key.
+- `APPLE_API_KEY_ID`: API key ID.
+- `APPLE_API_ISSUER`: issuer UUID.
+
+Apple ID set:
 
 - `APPLE_ID`: Apple Developer account email.
-- `APPLE_APP_SPECIFIC_PASSWORD`: app-specific password for that Apple ID.
-- `APPLE_TEAM_ID`: Apple Developer Team ID.
+- `APPLE_APP_SPECIFIC_PASSWORD`: app-specific password.
+- `APPLE_TEAM_ID`: Developer Team ID.
 
-The workflow materializes `APPLE_API_KEY_BASE64` into a temporary `.p8` file,
-then exports `APPLE_API_KEY` only when that file and its companion API key
-metadata are present. If the API key set is missing or incomplete, the workflow
-can still notarize with the Apple ID app-specific password set.
+For the API-key path, the runner decodes the key into a permission-restricted
+temporary directory and deletes it after the single authoritative
+electron-builder signing/notarization invocation.
 
-Verification commands after a signed and notarized macOS build:
+## Failure behavior
 
-```bash
-codesign --verify --deep --strict --verbose=2 "dist/mac/Rexiano.app"
-spctl --assess --type execute --verbose "dist/mac/Rexiano.app"
-xcrun stapler validate "dist/Rexiano-"*.dmg
-```
+- Missing or incomplete signing credentials fail the relevant build job.
+- Providing both macOS notarization sets fails rather than choosing one
+  implicitly.
+- Any lint, typecheck, unit, Windows E2E, package inventory, signature,
+  Gatekeeper, stapler, or checksum failure prevents publication.
+- A tag that moves after initial resolution is rejected again by the publish
+  job.
+- Tag-push and workflow-dispatch runs must find exactly one matching draft;
+  neither trigger creates a missing release as a fallback.
+- A failed run may leave the Release Please draft available for diagnosis, but
+  it cannot turn that draft into a public release.
+- Pull-request CI does not need private signing secrets because it verifies the
+  workflow contract without running the production release workflow.
 
-## Unsigned Fallback Evidence
+## Issue #187 production evidence checklist
 
-The release workflow contract is covered by:
+Do not close Issue #187 from configuration or unit-test evidence alone. It needs
+one real production run using maintainer credentials and the following retained
+evidence:
+
+- Release workflow URL and run ID, with the tag, resolved SHA, `origin/main`, and
+  `package.json` version shown to match.
+- Green preflight and Windows player E2E jobs.
+- Windows logs showing Authenticode `Valid` and successful `signtool` checks for
+  setup, portable, and zip-contained executables.
+- macOS logs showing Developer ID authority and TeamIdentifier plus successful
+  `codesign`, Gatekeeper, and stapler checks for both intermediate and mounted
+  DMG applications.
+- Exact seven-package inventory and a published `SHA256SUMS.txt` that passes
+  verification after download.
+- Download, install, launch, and basic MIDI-player smoke evidence on supported
+  Windows, Intel/Apple Silicon macOS, and Linux environments.
+- A public GitHub Release whose target tag and commit remain identical to the
+  validated values.
+
+The contract itself is covered by:
 
 ```bash
 pnpm vitest run scripts/releaseWorkflow.test.ts
 ```
-
-That test asserts Windows and macOS signing secrets are optional and that the
-macOS job keeps an explicit unsigned fallback path. PR CI still runs without
-private signing secrets.
-
-## User-Facing Copy
-
-Installation docs should continue to describe SmartScreen and Gatekeeper
-workarounds for unsigned local/dev builds. Once official releases are actually
-signed and notarized with maintainer credentials, update those warnings to
-distinguish official releases from local or fork builds.

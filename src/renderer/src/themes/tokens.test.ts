@@ -10,6 +10,10 @@ const REQUIRED_COLOR_KEYS: (keyof ThemeTokens["colors"])[] = [
   "surfaceAlt",
   "accent",
   "accentHover",
+  "accentText",
+  "onAccent",
+  "successText",
+  "dangerText",
   "text",
   "textMuted",
   "border",
@@ -53,6 +57,38 @@ function relativeLuminance(hex: string): number {
 function contrastRatio(foreground: string, background: string): number {
   const a = relativeLuminance(foreground);
   const b = relativeLuminance(background);
+  const lighter = Math.max(a, b);
+  const darker = Math.min(a, b);
+  return (lighter + 0.05) / (darker + 0.05);
+}
+
+type Rgb = { r: number; g: number; b: number };
+
+function mixSrgb(first: string, second: string, firstWeight: number): Rgb {
+  const a = rgbFromHex(first);
+  const b = rgbFromHex(second);
+  return {
+    r: a.r * firstWeight + b.r * (1 - firstWeight),
+    g: a.g * firstWeight + b.g * (1 - firstWeight),
+    b: a.b * firstWeight + b.b * (1 - firstWeight),
+  };
+}
+
+function brightenSrgb(color: Rgb, factor: number): Rgb {
+  return {
+    r: Math.min(1, color.r * factor),
+    g: Math.min(1, color.g * factor),
+    b: Math.min(1, color.b * factor),
+  };
+}
+
+function relativeLuminanceRgb({ r, g, b }: Rgb): number {
+  return 0.2126 * linearize(r) + 0.7152 * linearize(g) + 0.0722 * linearize(b);
+}
+
+function contrastRatioRgb(foreground: Rgb, background: Rgb): number {
+  const a = relativeLuminanceRgb(foreground);
+  const b = relativeLuminanceRgb(background);
   const lighter = Math.max(a, b);
   const darker = Math.min(a, b);
   return (lighter + 0.05) / (darker + 0.05);
@@ -192,6 +228,114 @@ describe("Theme tokens", () => {
       const labels = ALL_THEME_IDS.map((id) => themes[id].label);
       expect(new Set(labels).size).toBe(labels.length);
     });
+  });
+
+  describe("semantic text contrast", () => {
+    const EXPECTED_SEMANTIC_COLORS = {
+      lavender: {
+        accent: "#705A87",
+        accentText: "#5F4A75",
+        onAccent: "#FFFFFF",
+        successText: "#166534",
+        dangerText: "#B91C1C",
+      },
+      ocean: {
+        accent: "#0F766E",
+        accentText: "#0B5E58",
+        onAccent: "#FFFFFF",
+        successText: "#166534",
+        dangerText: "#B91C1C",
+      },
+      peach: {
+        accent: "#9C5A3C",
+        accentText: "#7F4931",
+        onAccent: "#FFFFFF",
+        successText: "#166534",
+        dangerText: "#B91C1C",
+      },
+      midnight: {
+        accent: "#4C8EA3",
+        accentText: "#5EA5BB",
+        onAccent: "#0E1013",
+        successText: "#86C4AD",
+        dangerText: "#FCA5A5",
+      },
+    } satisfies Record<
+      ThemeId,
+      Pick<
+        ThemeTokens["colors"],
+        "accent" | "accentText" | "onAccent" | "successText" | "dangerText"
+      >
+    >;
+
+    test.each(ALL_THEME_IDS)("%s keeps the approved semantic palette", (id) => {
+      expect(themes[id].colors).toMatchObject(EXPECTED_SEMANTIC_COLORS[id]);
+    });
+
+    test.each(ALL_THEME_IDS)(
+      "%s accent text remains readable on alternate surfaces",
+      (id) => {
+        const { accentText, surfaceAlt } = themes[id].colors;
+        expect(contrastRatio(accentText, surfaceAlt)).toBeGreaterThanOrEqual(
+          4.5,
+        );
+      },
+    );
+
+    test.each(ALL_THEME_IDS)(
+      "%s accent text remains readable on the current-default badge tint",
+      (id) => {
+        const { accent, accentText, surface } = themes[id].colors;
+        const badgeBackground = mixSrgb(accent, surface, 0.12);
+
+        expect(
+          contrastRatioRgb(rgbFromHex(accentText), badgeBackground),
+        ).toBeGreaterThanOrEqual(4.5);
+      },
+    );
+
+    test.each(ALL_THEME_IDS)(
+      "%s primary gradient text remains readable at rest and on hover",
+      (id) => {
+        const { accent, note3, onAccent } = themes[id].colors;
+        const foreground = rgbFromHex(onAccent);
+        const gradientEndpoints = [
+          rgbFromHex(accent),
+          mixSrgb(accent, note3, 0.7),
+        ];
+        const states = [
+          { foreground, backgrounds: gradientEndpoints },
+          {
+            foreground: brightenSrgb(foreground, 1.04),
+            backgrounds: gradientEndpoints.map((endpoint) =>
+              brightenSrgb(endpoint, 1.04),
+            ),
+          },
+        ];
+
+        for (const state of states) {
+          for (const background of state.backgrounds) {
+            expect(
+              contrastRatioRgb(state.foreground, background),
+              `${id} primary text contrast`,
+            ).toBeGreaterThanOrEqual(4.5);
+          }
+        }
+      },
+    );
+
+    test.each(ALL_THEME_IDS)(
+      "%s status text remains readable on alternate surfaces",
+      (id) => {
+        const { successText, dangerText, surfaceAlt } = themes[id].colors;
+        expect(contrastRatio(successText, surfaceAlt)).toBeGreaterThanOrEqual(
+          4.5,
+        );
+        expect(contrastRatio(dangerText, surfaceAlt)).toBeGreaterThanOrEqual(
+          4.5,
+        );
+      },
+    );
   });
 
   describe("ocean theme visual balance", () => {

@@ -17,7 +17,6 @@ jobs:
       - id: release
         uses: googleapis/release-please-action@v5
         with:
-          release-type: node
           config-file: release-please-config.json
           manifest-file: .release-please-manifest.json
 
@@ -26,4 +25,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           RELEASE_TAG: ${{ steps.release.outputs.tag_name }}
-        run: gh workflow run release.yml --repo "$GITHUB_REPOSITORY" --ref main --field tag="$RELEASE_TAG"
+          RELEASE_SHA: ${{ steps.release.outputs.sha }}
+        run: >-
+          gh workflow run release.yml --repo "$GITHUB_REPOSITORY" --ref main
+          --field tag="$RELEASE_TAG" --field expected_sha="$RELEASE_SHA"

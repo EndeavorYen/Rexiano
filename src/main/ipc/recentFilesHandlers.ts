@@ -74,10 +74,15 @@ export function registerRecentFilesHandlers(): void {
 
   ipcMain.handle(
     IpcChannels.REMOVE_RECENT_FILE,
-    async (_event, filePath: string): Promise<void> => {
+    async (_event, filePath: string): Promise<boolean> => {
+      if (typeof filePath !== "string" || filePath.trim().length === 0) {
+        return false;
+      }
+
       const recents = await readRecents();
       const filtered = recents.filter((r) => r.path !== filePath);
       await writeRecents(filtered);
+      return true;
     },
   );
 }

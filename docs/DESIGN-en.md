@@ -402,20 +402,29 @@ MusicXML import/export remains a documented boundary evaluation in
 
 ### Targets
 
-| Platform | Format                    | Notes                                 |
-| -------- | ------------------------- | ------------------------------------- |
-| Windows  | `.exe` (NSIS installer)   | Requires code signing for SmartScreen |
-| macOS    | `.dmg` (Universal Binary) | Requires notarization for Gatekeeper  |
-| Linux    | `.AppImage` + `.deb`      | AppImage preferred for portability    |
+| Platform | Format                  | Notes                                 |
+| -------- | ----------------------- | ------------------------------------- |
+| Windows  | `.exe` (NSIS installer) | Requires code signing for SmartScreen |
+| macOS    | `.dmg` (x64 + arm64)    | Requires notarization for Gatekeeper  |
+| Linux    | `.AppImage` + `.deb`    | AppImage preferred for portability    |
 
 ### CI/CD
 
 GitHub Actions pipeline:
 
 1. Push to `main` → lint + typecheck + test
-2. Tag `v*.*.*` → build all three platform installers → publish to GitHub Releases
-3. Optional signing secrets enable Windows signing, macOS signing, and macOS
-   notarization; incomplete secrets fall back to unsigned artifacts.
+2. Release Please creates a draft and `vMAJOR.MINOR.PATCH` tag, then dispatches
+   the artifact workflow with the tag's full expected commit SHA.
+3. The artifact workflow resolves the tag back to an `origin/main` commit, runs
+   lint, typecheck, unit, and Windows E2E gates, and builds all three platforms
+   from that exact SHA.
+4. Official production releases fail closed: Windows signing, macOS signing and
+   notarization, platform verification, exact artifact inventory, and checksums
+   must all succeed before the draft becomes public. Local and fork packaging
+   can still use the unsigned defaults in `electron-builder.yml`.
+5. Both tag-push and workflow-dispatch runs must find exactly one matching draft
+   at publication time; a missing, duplicate, or public release is rejected
+   instead of being recreated by the upload action.
 
 ### Auto-Update
 

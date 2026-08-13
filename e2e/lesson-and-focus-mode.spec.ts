@@ -78,6 +78,11 @@ test.describe("Lesson path and child focus mode", () => {
       });
     };
 
+    const pauseButton = appPage.getByRole("button", {
+      name: "Pause (Space)",
+    });
+    await expect(pauseButton).toBeVisible();
+    await pauseButton.click();
     await expect(
       appPage.getByRole("button", { name: "Play (Space)" }),
     ).toBeVisible();

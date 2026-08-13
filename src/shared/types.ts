@@ -17,6 +17,12 @@ export const IpcChannels = {
   MIDI_REQUEST_ACCESS: "midi:requestAccess",
   /** Phase 5: List available MIDI devices */
   MIDI_DEVICE_LIST: "midi:deviceList",
+  /** BLE MIDI: discovered device snapshot from main to renderer */
+  BLUETOOTH_SELECTION_UPDATE: "midi:bluetoothSelectionUpdate",
+  /** BLE MIDI: choose one device offered by the active native request */
+  BLUETOOTH_SELECTION_CHOOSE: "midi:bluetoothSelectionChoose",
+  /** BLE MIDI: cancel the active native request */
+  BLUETOOTH_SELECTION_CANCEL: "midi:bluetoothSelectionCancel",
   /** Song library: list all built-in songs */
   LIST_BUILTIN_SONGS: "library:listBuiltinSongs",
   /** Song library: load a specific built-in song by ID */
@@ -117,6 +123,27 @@ export interface MidiDeviceInfo {
   type: "input" | "output";
   /** Current connection state */
   state: "connected" | "disconnected";
+}
+
+/** A device Electron has offered for the active Web Bluetooth request. */
+export interface BluetoothDeviceCandidate {
+  deviceId: string;
+  deviceName: string;
+}
+
+/** Complete accumulated device snapshot for one native chooser request. */
+export interface BluetoothDeviceSelectionUpdate {
+  requestId: string;
+  devices: BluetoothDeviceCandidate[];
+}
+
+export interface BluetoothDeviceSelectionChooseCommand {
+  requestId: string;
+  deviceId: string;
+}
+
+export interface BluetoothDeviceSelectionCancelCommand {
+  requestId: string;
 }
 
 // ─── Phase 6: Practice Mode ─────────────────────────────────────────

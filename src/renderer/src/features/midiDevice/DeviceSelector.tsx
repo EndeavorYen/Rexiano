@@ -7,14 +7,20 @@ import { ConnectionStatus } from "./ConnectionStatus";
 import { sendTestNote, type TestButtonState } from "./midiTestUtils";
 import { useTranslation } from "@renderer/i18n/useTranslation";
 import { getMidiErrorGuidance } from "./midiErrorGuidance";
+import { getBluetoothConnectedLabel } from "./bluetoothDeviceDisplay";
 
-export function DeviceSelector(): React.JSX.Element {
+interface DeviceSelectorProps {
+  onBeforeBluetoothConnect?: () => void;
+}
+
+export function DeviceSelector({
+  onBeforeBluetoothConnect,
+}: DeviceSelectorProps = {}): React.JSX.Element {
   const { t } = useTranslation();
   const inputs = useMidiDeviceStore((s) => s.inputs);
   const outputs = useMidiDeviceStore((s) => s.outputs);
   const selectedInputId = useMidiDeviceStore((s) => s.selectedInputId);
   const selectedOutputId = useMidiDeviceStore((s) => s.selectedOutputId);
-  const isConnected = useMidiDeviceStore((s) => s.isConnected);
   const connectionError = useMidiDeviceStore((s) => s.connectionError);
   const connect = useMidiDeviceStore((s) => s.connect);
   const disconnect = useMidiDeviceStore((s) => s.disconnect);
@@ -90,6 +96,18 @@ export function DeviceSelector(): React.JSX.Element {
       (action) =>
         action.id !== "connect-bluetooth-midi" || bleStatus !== "connected",
     ) ?? [];
+
+  const handleBluetoothConnect = useCallback((): void => {
+    onBeforeBluetoothConnect?.();
+    window.requestAnimationFrame(() => {
+      void connectBluetooth();
+    });
+  }, [connectBluetooth, onBeforeBluetoothConnect]);
+  const bluetoothConnectedLabel = getBluetoothConnectedLabel(
+    bleStatus === "connected",
+    bleDeviceName,
+    t("midi.bleConnectedDevice"),
+  );
 
   return (
     <div
@@ -192,7 +210,7 @@ export function DeviceSelector(): React.JSX.Element {
       )}
 
       {/* Connect / Disconnect button */}
-      {isConnected ? (
+      {selectedInputId || selectedOutputId ? (
         <button
           onClick={disconnect}
           className="btn-surface-themed px-2.5 py-1 rounded text-xs font-medium transition-colors cursor-pointer"
@@ -205,22 +223,24 @@ export function DeviceSelector(): React.JSX.Element {
       ) : null}
 
       {/* Bluetooth MIDI connect/disconnect */}
-      {bleStatus === "connected" && bleDeviceName ? (
+      {bluetoothConnectedLabel ? (
         <button
           onClick={disconnectBluetooth}
           className="flex min-h-9 items-center gap-1 px-2.5 py-1 rounded text-xs font-medium transition-colors cursor-pointer btn-primary-themed"
           style={{
-            color: "#fff",
+            color: "var(--color-on-accent)",
           }}
-          title={t("midi.bleDeviceTitle", { name: bleDeviceName })}
+          title={t("midi.bleDeviceTitle", {
+            name: bluetoothConnectedLabel,
+          })}
           aria-label={t("midi.bleDisconnect")}
         >
           <Bluetooth size={12} />
-          {bleDeviceName}
+          {bluetoothConnectedLabel}
         </button>
       ) : (
         <button
-          onClick={connectBluetooth}
+          onClick={handleBluetoothConnect}
           disabled={bleStatus === "scanning" || bleStatus === "connecting"}
           className="btn-surface-themed flex min-h-9 items-center gap-1 px-2.5 py-1 rounded text-xs font-medium transition-colors cursor-pointer"
           style={{
@@ -268,7 +288,7 @@ export function DeviceSelector(): React.JSX.Element {
               key={action.id}
               onClick={() => {
                 if (action.id === "connect-bluetooth-midi") {
-                  connectBluetooth();
+                  handleBluetoothConnect();
                   return;
                 }
                 connect();

@@ -24,6 +24,7 @@ export interface TranslationMap {
   "app.importActionRetry": string;
   "app.importActionReimport": string;
   "app.importActionOpenPermissions": string;
+  "app.importRecoveryActionsLabel": string;
   "app.insightsTitle": string;
   "app.startPractice": string;
   "app.openSettings": string;
@@ -219,6 +220,13 @@ export interface TranslationMap {
   "midi.bluetooth": string;
   "midi.bleDisconnect": string;
   "midi.bleDeviceTitle": string;
+  "midi.bleConnectedDevice": string;
+  "midi.blePickerTitle": string;
+  "midi.blePickerDescription": string;
+  "midi.blePickerScanning": string;
+  "midi.blePickerCount": string;
+  "midi.blePickerUnnamed": string;
+  "midi.blePickerCancel": string;
 
   // ── Practice Mode ──────────────────────────────────────────────
   "practice.watch": string;
@@ -366,6 +374,7 @@ export interface TranslationMap {
 
   // ── Insights Panel ─────────────────────────────────────────────
   "insights.title": string;
+  "insights.dialogDescription": string;
   "insights.weakSpots": string;
   "insights.accuracyTrend": string;
   "insights.totalMinutes": string;
@@ -427,6 +436,8 @@ export interface TranslationMap {
   "modeSelect.freeDesc": string;
   "modeSelect.escToSkip": string;
   "modeSelect.mustChoose": string;
+  "modeSelect.currentDefault": string;
+  "modeSelect.backToLibrary": string;
 
   // ── Statistics ─────────────────────────────────────────────────
   "stats.title": string;
