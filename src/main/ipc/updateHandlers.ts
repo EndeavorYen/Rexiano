@@ -208,17 +208,25 @@ export function registerUpdateHandlers(
   const dependencies = { ...getDefaultDependencies(), ...overrides };
   let candidate: TrustedUpdateCandidate | null = null;
   let verifiedPath: string | null = null;
+  let trustedReleaseUrl: string | null = null;
   let downloadInProgress = false;
 
   ipcMain.handle(
     IpcChannels.UPDATE_CHECK,
     async (event): Promise<AppUpdateCheckResult> => {
       const currentVersion = dependencies.currentVersion();
-      candidate = null;
-      verifiedPath = null;
       if (!isTrustedEvent(event)) {
         return toFailedResult(currentVersion, "Untrusted update request.");
       }
+      if (downloadInProgress) {
+        return toFailedResult(
+          currentVersion,
+          "Update download already in progress.",
+        );
+      }
+      candidate = null;
+      verifiedPath = null;
+      trustedReleaseUrl = null;
       if (!dependencies.isPackaged()) {
         return {
           status: "disabled",
@@ -243,6 +251,7 @@ export function registerUpdateHandlers(
           if (!asset) throw new Error("Selected update artifact disappeared.");
           validatedAssetUrl(asset);
           candidate = { result, asset };
+          trustedReleaseUrl = result.releaseUrl;
         }
         return result;
       } catch (error) {
@@ -304,22 +313,11 @@ export function registerUpdateHandlers(
     },
   );
 
-  ipcMain.handle(
-    IpcChannels.UPDATE_OPEN_RELEASE,
-    async (event, releaseUrl: string) => {
-      if (!isTrustedEvent(event)) return false;
-      const url = new URL(releaseUrl);
-      if (
-        url.protocol !== "https:" ||
-        url.origin !== "https://github.com" ||
-        !url.pathname.startsWith("/EndeavorYen/Rexiano/releases/")
-      ) {
-        return false;
-      }
-      await shell.openExternal(url.href);
-      return true;
-    },
-  );
+  ipcMain.handle(IpcChannels.UPDATE_OPEN_RELEASE, async (event) => {
+    if (!isTrustedEvent(event) || !trustedReleaseUrl) return false;
+    await shell.openExternal(trustedReleaseUrl);
+    return true;
+  });
 
   ipcMain.handle(IpcChannels.UPDATE_OPEN_DOWNLOADED, async (event) => {
     if (!isTrustedEvent(event) || !verifiedPath) return false;

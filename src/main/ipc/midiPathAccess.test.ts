@@ -98,6 +98,21 @@ describe("midiPathAccess", () => {
     await expect(isApprovedMidiFilePath(filePath)).resolves.toBe(false);
   });
 
+  test("does not authorize files after the approved folder is replaced at the same path", async () => {
+    await approveMidiFolderPath(musicPath);
+    rmSync(musicPath, { recursive: true });
+    mkdirSync(join(musicPath, "Sub"), { recursive: true });
+    writeFileSync(join(musicPath, "Scale.mid"), "replacement");
+    writeFileSync(join(musicPath, "Sub", "Etude.kar"), "replacement");
+
+    await expect(
+      isApprovedMidiFilePath(join(musicPath, "Scale.mid")),
+    ).resolves.toBe(false);
+    await expect(
+      isApprovedMidiFilePath(join(musicPath, "Sub", "Etude.kar")),
+    ).resolves.toBe(false);
+  });
+
   test("rejects non-MIDI paths and traversal-adjacent prefixes", async () => {
     const adjacentFolder = join(tempUserDataPath, "MusicEvil");
     mkdirSync(adjacentFolder);

@@ -135,3 +135,7 @@ The contract itself is covered by:
 ```bash
 pnpm vitest run scripts/releaseWorkflow.test.ts
 ```
+
+Issue #187 stays open until a real production run with maintainer secrets
+produces the evidence above. Missing credentials must fail the workflow; they
+do not close the issue.

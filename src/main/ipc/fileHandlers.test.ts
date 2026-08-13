@@ -11,6 +11,7 @@ const mockAppPath = "/mock/app";
 const mockResourcesPath = "/mock/resources";
 let mockIsPackaged = false;
 let mockFileContents: Record<string, Buffer> = {};
+const mockFdReads: string[] = [];
 
 vi.mock("electron", () => ({
   ipcMain: {
@@ -38,6 +39,32 @@ vi.mock("fs/promises", () => ({
     const contents = mockFileContents[normalized];
     if (!contents) throw new Error("ENOENT");
     return contents;
+  }),
+  open: vi.fn(async (path: string) => {
+    const normalized = path.replace(/\\/g, "/");
+    const contents = mockFileContents[normalized];
+    if (!contents) {
+      throw Object.assign(new Error("ENOENT"), { code: "ENOENT" });
+    }
+    return {
+      stat: async () => ({
+        size: contents.byteLength,
+        isFile: () => true,
+      }),
+      read: async (
+        buffer: Buffer,
+        offset: number,
+        length: number,
+        position: number,
+      ) => {
+        mockFdReads.push(normalized);
+        const start = position ?? 0;
+        const bytesRead = Math.min(length, contents.byteLength - start);
+        contents.copy(buffer, offset, start, start + bytesRead);
+        return { bytesRead };
+      },
+      close: async () => undefined,
+    };
   }),
   writeFile: vi.fn(async () => {}),
   realpath: vi.fn(async (path: string) => {
@@ -81,6 +108,7 @@ describe("fileHandlers", () => {
   beforeEach(() => {
     mockIsPackaged = false;
     mockFileContents = {};
+    mockFdReads.length = 0;
     clearApprovedMidiPathAccessForTests();
     vi.clearAllMocks();
     Object.defineProperty(process, "resourcesPath", {
@@ -132,12 +160,11 @@ describe("fileHandlers", () => {
     const path = "/Users/rex/Music/Huge.mid";
     mockFileContents[path] = Buffer.alloc(MAX_MIDI_FILE_BYTES + 1);
     await approveMidiFilePath(path);
-    vi.mocked(readFile).mockClear();
 
     await expect(
       handlers[IpcChannels.LOAD_MIDI_PATH](trustedEvent, path),
     ).rejects.toMatchObject({ reason: "too-large" });
-    expect(readFile).not.toHaveBeenCalledWith(path);
+    expect(mockFdReads).not.toContain(path);
   });
 
   test("EXPORT_MIDI_FILE writes selected MIDI bytes to a user-selected path", async () => {

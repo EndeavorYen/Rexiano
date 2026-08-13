@@ -161,6 +161,60 @@ describe("updateHandlers", () => {
     ).resolves.toMatchObject({ status: "failed" });
   });
 
+  test("opens only the last trusted release URL and ignores renderer-supplied addresses", async () => {
+    registerUpdateHandlers({
+      isPackaged: () => true,
+      currentVersion: () => "1.0.0",
+      fetchLatestRelease: async () => release,
+      platform: "darwin",
+      arch: "arm64",
+    });
+
+    await expect(
+      handlers[IpcChannels.UPDATE_OPEN_RELEASE](
+        event,
+        "https://github.com/EndeavorYen/Rexiano/releases/download/v1.1.0/rexiano-1.1.0-arm64.dmg",
+      ),
+    ).resolves.toBe(false);
+    expect(shell.openExternal).not.toHaveBeenCalled();
+
+    await handlers[IpcChannels.UPDATE_CHECK](event);
+    await expect(
+      handlers[IpcChannels.UPDATE_OPEN_RELEASE](
+        event,
+        "https://github.com/EndeavorYen/Rexiano/releases/download/v1.1.0/rexiano-1.1.0-arm64.dmg",
+      ),
+    ).resolves.toBe(true);
+    expect(shell.openExternal).toHaveBeenCalledWith(release.html_url);
+  });
+
+  test("untrusted update checks cannot clear a verified download", async () => {
+    registerUpdateHandlers({
+      isPackaged: () => true,
+      currentVersion: () => "1.0.0",
+      fetchLatestRelease: async () => release,
+      platform: "darwin",
+      arch: "arm64",
+      downloadArtifact: async () =>
+        "/mock/userData/updates/rexiano-1.1.0-arm64.dmg",
+    });
+    await handlers[IpcChannels.UPDATE_CHECK](event);
+    await handlers[IpcChannels.UPDATE_DOWNLOAD](event, "123");
+
+    await expect(
+      handlers[IpcChannels.UPDATE_CHECK]({
+        ...event,
+        senderFrame: { url: "https://attacker.invalid" },
+      }),
+    ).resolves.toMatchObject({ status: "failed" });
+    await expect(
+      handlers[IpcChannels.UPDATE_OPEN_DOWNLOADED](event),
+    ).resolves.toBe(true);
+    expect(shell.openPath).toHaveBeenCalledWith(
+      "/mock/userData/updates/rexiano-1.1.0-arm64.dmg",
+    );
+  });
+
   test("opens only the last verified artifact and consumes its authority", async () => {
     registerUpdateHandlers({
       isPackaged: () => true,

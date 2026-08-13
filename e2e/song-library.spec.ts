@@ -1,5 +1,5 @@
-import { writeFileSync } from "fs";
-import { dirname, join, resolve } from "path";
+import { realpathSync, statSync, writeFileSync } from "fs";
+import { join, resolve } from "path";
 import type { Locator } from "@playwright/test";
 import { createImportedSongId } from "../src/renderer/src/features/songLibrary/importedSongMetadata";
 import { test, expect } from "./fixtures/electronApp";
@@ -238,27 +238,40 @@ test.describe("Song library selection workflow", () => {
     appPage,
     electronApp,
   }) => {
-    const sourcePath = resolve("resources/midi/c-major-scale.mid");
-    const watchedFolder = dirname(sourcePath);
+    const sourcePath = realpathSync(
+      resolve("resources/midi/c-major-scale.mid"),
+    );
     const importedSongId = createImportedSongId(sourcePath);
+    const fileStats = statSync(sourcePath);
     const userDataPath = await electronApp.evaluate(({ app }) =>
       app.getPath("userData"),
     );
     writeFileSync(
       join(userDataPath, "midi-path-access.json"),
-      JSON.stringify({ files: [], folders: [watchedFolder] }, null, 2),
+      JSON.stringify(
+        {
+          files: [
+            {
+              path: sourcePath,
+              identity: `${fileStats.dev}:${fileStats.ino}`,
+            },
+          ],
+        },
+        null,
+        2,
+      ),
       "utf-8",
     );
 
     await appPage.evaluate(
-      ({ importedSongId, sourcePath, watchedFolder }) => {
+      ({ importedSongId, sourcePath }) => {
         localStorage.setItem(
           "rexiano-song-library",
           JSON.stringify({
             viewMode: "list",
             sortMode: "recent",
             favoriteSongIds: [],
-            watchedFolders: [watchedFolder],
+            watchedFolders: [],
             importedSongs: [
               {
                 id: importedSongId,
@@ -274,7 +287,7 @@ test.describe("Song library selection workflow", () => {
           }),
         );
       },
-      { importedSongId, sourcePath, watchedFolder },
+      { importedSongId, sourcePath },
     );
     await appPage.reload();
     await gotoLibrary(appPage);

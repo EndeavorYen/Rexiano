@@ -134,8 +134,8 @@ const api = {
     ipcRenderer.invoke(IpcChannels.UPDATE_CHECK),
   downloadUpdate: (artifactId: string): Promise<AppUpdateDownloadResult> =>
     ipcRenderer.invoke(IpcChannels.UPDATE_DOWNLOAD, artifactId),
-  openUpdateRelease: (releaseUrl: string): Promise<boolean> =>
-    ipcRenderer.invoke(IpcChannels.UPDATE_OPEN_RELEASE, releaseUrl),
+  openUpdateRelease: (): Promise<boolean> =>
+    ipcRenderer.invoke(IpcChannels.UPDATE_OPEN_RELEASE),
   openDownloadedUpdate: (): Promise<boolean> =>
     ipcRenderer.invoke(IpcChannels.UPDATE_OPEN_DOWNLOADED),
   onUpdateProgress: (

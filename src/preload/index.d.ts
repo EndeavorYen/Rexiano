@@ -105,7 +105,7 @@ declare global {
       /** Release pipeline: download an available update artifact */
       downloadUpdate: (artifactId: string) => Promise<AppUpdateDownloadResult>;
       /** Release pipeline: open a GitHub Releases page */
-      openUpdateRelease: (releaseUrl: string) => Promise<boolean>;
+      openUpdateRelease: () => Promise<boolean>;
       /** Release pipeline: open the downloaded installer */
       openDownloadedUpdate: () => Promise<boolean>;
       /** Release pipeline: subscribe to update download progress */
