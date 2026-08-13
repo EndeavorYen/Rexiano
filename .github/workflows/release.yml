@@ -30,7 +30,7 @@ jobs:
       tag: ${{ steps.resolve.outputs.tag }}
       sha: ${{ steps.resolve.outputs.sha }}
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
         with:
           fetch-depth: 0
           persist-credentials: false
@@ -104,7 +104,7 @@ jobs:
     needs: resolve-release-ref
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
         with:
           ref: ${{ needs.resolve-release-ref.outputs.sha }}
           persist-credentials: false
@@ -117,9 +117,9 @@ jobs:
           set -euo pipefail
           [[ "$(git rev-parse HEAD)" == "$EXPECTED_SHA" ]]
 
-      - uses: pnpm/action-setup@v6
+      - uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6
 
-      - uses: actions/setup-node@v6
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
         with:
           node-version: 22
           cache: pnpm
@@ -141,7 +141,7 @@ jobs:
     needs: resolve-release-ref
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
         with:
           ref: ${{ needs.resolve-release-ref.outputs.sha }}
           persist-credentials: false
@@ -156,9 +156,9 @@ jobs:
             throw "Checkout SHA does not match the resolved release SHA."
           }
 
-      - uses: pnpm/action-setup@v6
+      - uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6
 
-      - uses: actions/setup-node@v6
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
         with:
           node-version: 22
           cache: pnpm
@@ -176,7 +176,7 @@ jobs:
     needs: [resolve-release-ref, preflight]
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
         with:
           ref: ${{ needs.resolve-release-ref.outputs.sha }}
           persist-credentials: false
@@ -191,9 +191,9 @@ jobs:
             throw "Checkout SHA does not match the resolved release SHA."
           }
 
-      - uses: pnpm/action-setup@v6
+      - uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6
 
-      - uses: actions/setup-node@v6
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
         with:
           node-version: 22
           cache: pnpm
@@ -290,7 +290,7 @@ jobs:
           }
 
       - name: Upload verified Windows artifacts
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: release-windows
           path: |
@@ -305,7 +305,7 @@ jobs:
     needs: [resolve-release-ref, preflight]
     runs-on: macos-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
         with:
           ref: ${{ needs.resolve-release-ref.outputs.sha }}
           persist-credentials: false
@@ -318,9 +318,9 @@ jobs:
           set -euo pipefail
           [[ "$(git rev-parse HEAD)" == "$EXPECTED_SHA" ]]
 
-      - uses: pnpm/action-setup@v6
+      - uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6
 
-      - uses: actions/setup-node@v6
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
         with:
           node-version: 22
           cache: pnpm
@@ -499,7 +499,7 @@ jobs:
           done
 
       - name: Upload verified macOS artifacts
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: release-macos
           path: |
@@ -513,7 +513,7 @@ jobs:
     needs: [resolve-release-ref, preflight]
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
         with:
           ref: ${{ needs.resolve-release-ref.outputs.sha }}
           persist-credentials: false
@@ -526,9 +526,9 @@ jobs:
           set -euo pipefail
           [[ "$(git rev-parse HEAD)" == "$EXPECTED_SHA" ]]
 
-      - uses: pnpm/action-setup@v6
+      - uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6
 
-      - uses: actions/setup-node@v6
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
         with:
           node-version: 22
           cache: pnpm
@@ -565,7 +565,7 @@ jobs:
           done
 
       - name: Upload verified Linux artifacts
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: release-linux
           path: |
@@ -587,7 +587,7 @@ jobs:
     permissions:
       contents: write
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
         with:
           ref: ${{ needs.resolve-release-ref.outputs.sha }}
           fetch-depth: 0
@@ -646,7 +646,7 @@ jobs:
           fi
 
       - name: Download verified artifacts
-        uses: actions/download-artifact@v8
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
         with:
           path: artifacts
           merge-multiple: true
@@ -692,7 +692,7 @@ jobs:
           )
 
       - name: Publish verified release
-        uses: softprops/action-gh-release@v3
+        uses: softprops/action-gh-release@3d0d9888cb7fd7b750713d6e236d1fcb99157228 # v3
         with:
           tag_name: ${{ needs.resolve-release-ref.outputs.tag }}
           target_commitish: ${{ needs.resolve-release-ref.outputs.sha }}
