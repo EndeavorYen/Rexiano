@@ -259,7 +259,7 @@ export function usePracticeLifecycle(
     return unsub;
   }, []);
 
-  // ── Loop seek → AudioScheduler sync + WaitMode reset ──
+  // ── Loop discontinuity → WaitMode reset ──
   useEffect(() => {
     const unsub = usePlaybackStore.subscribe((state, prev) => {
       const { loopController, waitMode } = getPracticeEngines();
@@ -270,9 +270,8 @@ export function usePracticeLifecycle(
         state.currentTime < prev.currentTime &&
         Math.abs(state.currentTime - loopController.getLoopStart()) < 0.1
       ) {
-        audioRef.current.scheduler?.seek(state.currentTime);
-
-        // Reset WaitMode so notes are re-judged on the next loop pass
+        // TransportClock already committed the single scheduler/output seek.
+        // Reset WaitMode so notes are re-judged on the next loop pass.
         if (usePracticeStore.getState().mode === "wait" && waitMode) {
           waitMode.reset();
           waitMode.start();
@@ -280,7 +279,7 @@ export function usePracticeLifecycle(
       }
     });
     return unsub;
-  }, [audioRef]);
+  }, []);
 
   return { noteRendererRef, handleNoteRendererReady };
 }

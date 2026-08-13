@@ -17,6 +17,10 @@ import { getAudioStatusGuidance } from "@renderer/features/audio/audioStatusGuid
 import { MetronomePulse } from "@renderer/features/metronome/MetronomePulse";
 import { useMetronomeBeat } from "@renderer/hooks/useMetronomeBeat";
 import { useTranslation } from "@renderer/i18n/useTranslation";
+import {
+  resetPlayback,
+  seekPlayback,
+} from "@renderer/engines/transport/playbackDiscontinuity";
 
 // eslint-disable-next-line react-refresh/only-export-components
 export function formatTime(seconds: number): string {
@@ -80,8 +84,6 @@ export function TransportBar({
   const isPlaying = usePlaybackStore((s) => s.isPlaying);
   const volume = usePlaybackStore((s) => s.volume);
   const setPlaying = usePlaybackStore((s) => s.setPlaying);
-  const setCurrentTime = usePlaybackStore((s) => s.setCurrentTime);
-  const reset = usePlaybackStore((s) => s.reset);
   const audioStatus = usePlaybackStore((s) => s.audioStatus);
   const audioRecoveryState = usePlaybackStore((s) => s.audioRecoveryState);
   const audioRecoveryAttempt = usePlaybackStore((s) => s.audioRecoveryAttempt);
@@ -183,7 +185,7 @@ export function TransportBar({
           </button>
 
           <button
-            onClick={reset}
+            onClick={resetPlayback}
             disabled={!song}
             className="btn-surface-themed flex items-center justify-center rounded-lg disabled:opacity-40 cursor-pointer"
             style={{
@@ -365,7 +367,7 @@ export function TransportBar({
               max={duration || 1}
               step={0.1}
               value={currentTime}
-              onChange={(e) => setCurrentTime(parseFloat(e.target.value))}
+              onChange={(e) => seekPlayback(parseFloat(e.target.value))}
               disabled={!song}
               className="seek-slider-input w-full relative z-10"
               style={{ accentColor: "var(--color-accent)" }}

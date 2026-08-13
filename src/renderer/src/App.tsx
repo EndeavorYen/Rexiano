@@ -57,6 +57,7 @@ import { DisplayModeToggle } from "./features/sheetMusic/DisplayModeToggle";
 import { convertSongToNotation } from "./features/sheetMusic/MidiToNotation";
 import { TempoMap } from "./engines/midi/TempoMap";
 import { TransportClock } from "./engines/transport/TransportClock";
+import { registerPlaybackDiscontinuityHandler } from "./engines/transport/playbackDiscontinuity";
 import type { NotationData } from "./features/sheetMusic/types";
 import {
   getSheetMusicVisualFixture,
@@ -884,8 +885,6 @@ function App(): React.JSX.Element {
   }, [attemptPendingPlaybackStart, song, rebuildAudioStack]);
 
   // Sync playback state → AudioScheduler
-  const seekTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
   useEffect(() => {
     const unsub = usePlaybackStore.subscribe((state, prev) => {
       const { engine, scheduler } = audioRef.current;
@@ -912,30 +911,14 @@ function App(): React.JSX.Element {
         scheduler.stop();
       }
 
-      // Seek detection while playing (user dragged slider → large time jump)
-      // Only check forward time movement — backward jumps are intentional (loop/seek)
-      if (
-        state.isPlaying &&
-        prev.isPlaying &&
-        state.currentTime >= prev.currentTime
-      ) {
-        const audioTime = scheduler.getCurrentTime();
-        if (
-          audioTime !== null &&
-          Math.abs(state.currentTime - audioTime) > 0.5
-        ) {
-          if (seekTimeoutRef.current) clearTimeout(seekTimeoutRef.current);
-          seekTimeoutRef.current = setTimeout(() => {
-            scheduler.seek(usePlaybackStore.getState().currentTime);
-            seekTimeoutRef.current = null;
-          }, 50);
-        }
-      }
     });
-    return () => {
-      unsub();
-      if (seekTimeoutRef.current) clearTimeout(seekTimeoutRef.current);
-    };
+    return unsub;
+  }, []);
+
+  useEffect(() => {
+    return registerPlaybackDiscontinuityHandler(({ targetTime }) => {
+      audioRef.current.scheduler?.seek(targetTime);
+    });
   }, []);
 
   // Cleanup audio on unmount
