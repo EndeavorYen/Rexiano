@@ -1020,13 +1020,15 @@ stores/useEditorStore.ts
 
 ## 12. Phase 9 — 打包與發佈
 
-**狀態**: ✅ 基礎發佈管線完成；簽章/公證在憑證 secrets 存在時自動啟用
+**狀態**: ✅ 發佈管線採 fail closed；真實 production 憑證驗證仍由 #187 追蹤
 
 ### 目前狀態
 
 `electron-builder.yml` 已配置基本的 Win / Mac / Linux 打包設定；
-`.github/workflows/release.yml` 會在 tag push 時建置多平台 artifacts，並在
-maintainer secrets 存在時進行 Windows/macOS 簽章與 macOS notarization。
+`.github/workflows/release.yml` 會在 tag push 或 Release Please dispatch 時先把
+tag 解析為 `origin/main` 上不可變的完整 commit SHA，再從該 SHA 建置多平台
+artifacts。官方 production 發佈採 fail closed：Windows/macOS 簽章、macOS
+notarization、測試、平台驗證或 checksum 任一失敗，都不會公開 draft release。
 
 ### 已完成項目
 
@@ -1034,12 +1036,14 @@ maintainer secrets 存在時進行 Windows/macOS 簽章與 macOS notarization。
 
 ```yaml
 # .github/workflows/release.yml 概念
-trigger: tag push (v*)
+trigger: tag push (v*) / main 上的 Release Please dispatch(tag + expected SHA)
 jobs:
-  - build-windows: pnpm build:win   → .exe
-  - build-mac: pnpm build:mac   → .dmg
-  - build-linux: electron-builder --linux AppImage deb  → .AppImage / .deb
-  - create-release: 上傳 artifacts 到 GitHub Release
+  - resolve-release-ref: 驗證 tag、main ancestry 與 package version
+  - preflight / windows-e2e: lint + typecheck + unit + 玩家流程
+  - build-windows: checked build + signed .exe / zip + Authenticode 驗證
+  - build-mac: checked build + signed/notarized .dmg + Gatekeeper 驗證
+  - build-linux: checked build + .AppImage / .deb
+  - publish: 重驗 tag 與七個 artifacts/checksums 後公開既有 draft
 ```
 
 #### 12.2 自動更新
@@ -1057,10 +1061,11 @@ jobs:
 | macOS   | Apple Developer 帳號 + notarization                  |
 | Linux   | 無強制要求                                           |
 
-> Release workflow 使用 optional secrets：Windows 讀取 `WINDOWS_CSC_LINK` /
-> `WINDOWS_CSC_KEY_PASSWORD`，macOS 讀取 `MACOS_CSC_LINK` /
-> `MACOS_CSC_KEY_PASSWORD` 與 Apple notarization credentials。缺少 secrets 時，
-> workflow 明確走 unsigned fallback；詳細流程見
+> 官方 Release workflow 強制要求 `WINDOWS_CSC_LINK` /
+> `WINDOWS_CSC_KEY_PASSWORD`、`MACOS_CSC_LINK` /
+> `MACOS_CSC_KEY_PASSWORD`，以及恰好一組完整 Apple notarization credentials；
+> 缺少、不完整或同時提供兩組都會停止發佈。未簽章設定只保留給 local / fork
+> builds。真實憑證發行證據與安裝 smoke 由 #187 追蹤；詳細流程見
 > [`docs/release-signing.md`](./release-signing.md)。
 
 #### 12.4 安裝體驗

@@ -7,24 +7,154 @@ on:
   workflow_dispatch:
     inputs:
       tag:
-        description: "Release tag to build, for example v1.1.0"
+        description: "Release tag to build, for example v1.4.1"
+        required: true
+        type: string
+      expected_sha:
+        description: "Full commit SHA that the tag must resolve to"
         required: true
         type: string
 
 permissions:
-  contents: write
+  contents: read
 
-env:
-  RELEASE_TAG: ${{ github.event.inputs.tag || github.ref_name }}
+concurrency:
+  group: release-${{ github.event.inputs.tag || github.ref_name }}
+  cancel-in-progress: false
 
 jobs:
-  build-windows:
-    name: Build Windows
+  resolve-release-ref:
+    name: Resolve trusted release ref
+    runs-on: ubuntu-latest
+    outputs:
+      tag: ${{ steps.resolve.outputs.tag }}
+      sha: ${{ steps.resolve.outputs.sha }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Resolve and validate release tag
+        id: resolve
+        shell: bash
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          WORKFLOW_REF: ${{ github.workflow_ref }}
+          DISPATCH_TAG: ${{ github.event.inputs.tag }}
+          EXPECTED_SHA: ${{ github.event.inputs.expected_sha }}
+          PUSH_TAG: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+
+          if [[ "$EVENT_NAME" == "workflow_dispatch" ]]; then
+            expected_workflow_ref="$GITHUB_REPOSITORY/.github/workflows/release.yml@refs/heads/main"
+            if [[ "$WORKFLOW_REF" != "$expected_workflow_ref" ]]; then
+              echo "Release dispatches must run from refs/heads/main." >&2
+              exit 1
+            fi
+            release_tag="$DISPATCH_TAG"
+          else
+            release_tag="$PUSH_TAG"
+          fi
+
+          if [[ ! "$release_tag" =~ ^v(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$ ]]; then
+            echo "Release tag must be a strict vMAJOR.MINOR.PATCH value." >&2
+            exit 1
+          fi
+
+          git fetch --force --prune --prune-tags --tags origin "refs/heads/main:refs/remotes/origin/main"
+          if ! git show-ref --verify --quiet "refs/tags/$release_tag"; then
+            echo "Release tag does not exist on origin." >&2
+            exit 1
+          fi
+
+          release_sha="$(git rev-parse "refs/tags/$release_tag^{commit}")"
+          if [[ "$EVENT_NAME" == "workflow_dispatch" ]]; then
+            if [[ ! "$EXPECTED_SHA" =~ ^[0-9a-f]{40}$ ]]; then
+              echo "expected_sha must be a full lowercase commit SHA." >&2
+              exit 1
+            fi
+            if [[ "$release_sha" != "$EXPECTED_SHA" ]]; then
+              echo "Release tag no longer resolves to expected_sha." >&2
+              exit 1
+            fi
+          fi
+
+          if ! git merge-base --is-ancestor "$release_sha" origin/main; then
+            echo "Release commit must be reachable from origin/main." >&2
+            exit 1
+          fi
+
+          package_json="$(git show "$release_sha:package.json")"
+          package_version="$(
+            printf '%s' "$package_json" |
+              node -e 'let data = ""; process.stdin.setEncoding("utf8"); process.stdin.on("data", (chunk) => { data += chunk; }); process.stdin.on("end", () => { process.stdout.write(JSON.parse(data).version); });'
+          )"
+          if [[ "v$package_version" != "$release_tag" ]]; then
+            echo "package.json version does not match the release tag." >&2
+            exit 1
+          fi
+
+          echo "tag=$release_tag" >> "$GITHUB_OUTPUT"
+          echo "sha=$release_sha" >> "$GITHUB_OUTPUT"
+
+  preflight:
+    name: Lint, typecheck, and unit tests
+    needs: resolve-release-ref
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ needs.resolve-release-ref.outputs.sha }}
+          persist-credentials: false
+
+      - name: Assert checked out release SHA
+        shell: bash
+        env:
+          EXPECTED_SHA: ${{ needs.resolve-release-ref.outputs.sha }}
+        run: |
+          set -euo pipefail
+          [[ "$(git rev-parse HEAD)" == "$EXPECTED_SHA" ]]
+
+      - uses: pnpm/action-setup@v6
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Typecheck
+        run: pnpm typecheck
+
+      - name: Unit tests
+        run: pnpm test
+
+  windows-e2e:
+    name: Windows player flow
+    needs: resolve-release-ref
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v6
         with:
-          ref: ${{ env.RELEASE_TAG }}
+          ref: ${{ needs.resolve-release-ref.outputs.sha }}
+          persist-credentials: false
+
+      - name: Assert checked out release SHA
+        shell: pwsh
+        env:
+          EXPECTED_SHA: ${{ needs.resolve-release-ref.outputs.sha }}
+        run: |
+          $actualSha = (git rev-parse HEAD).Trim()
+          if ($actualSha -ne $env:EXPECTED_SHA) {
+            throw "Checkout SHA does not match the resolved release SHA."
+          }
 
       - uses: pnpm/action-setup@v6
 
@@ -36,41 +166,157 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Build Windows installer
+      - name: Run player E2E suite
+        run: pnpm test:e2e
+        env:
+          ELECTRON_RUN_AS_NODE: ""
+
+  build-windows:
+    name: Build and verify Windows
+    needs: [resolve-release-ref, preflight]
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ needs.resolve-release-ref.outputs.sha }}
+          persist-credentials: false
+
+      - name: Assert checked out release SHA
         shell: pwsh
+        env:
+          EXPECTED_SHA: ${{ needs.resolve-release-ref.outputs.sha }}
         run: |
-          if ($env:WIN_CSC_LINK -and $env:WIN_CSC_KEY_PASSWORD) {
-            $env:CSC_IDENTITY_AUTO_DISCOVERY = "true"
-          } else {
-            Write-Host "Windows signing secrets are incomplete; building unsigned installer."
-            Remove-Item Env:\WIN_CSC_LINK -ErrorAction SilentlyContinue
-            Remove-Item Env:\WIN_CSC_KEY_PASSWORD -ErrorAction SilentlyContinue
-            $env:CSC_IDENTITY_AUTO_DISCOVERY = "false"
+          $actualSha = (git rev-parse HEAD).Trim()
+          if ($actualSha -ne $env:EXPECTED_SHA) {
+            throw "Checkout SHA does not match the resolved release SHA."
           }
 
-          pnpm build:win
+      - uses: pnpm/action-setup@v6
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Require Windows signing credentials
+        shell: pwsh
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           WIN_CSC_LINK: ${{ secrets.WINDOWS_CSC_LINK }}
           WIN_CSC_KEY_PASSWORD: ${{ secrets.WINDOWS_CSC_KEY_PASSWORD }}
+        run: |
+          if (
+            [string]::IsNullOrWhiteSpace($env:WIN_CSC_LINK) -or
+            [string]::IsNullOrWhiteSpace($env:WIN_CSC_KEY_PASSWORD)
+          ) {
+            throw "Official Windows releases require both signing secrets."
+          }
 
-      - name: Upload Windows artifacts
+      - name: Build application
+        run: pnpm build
+
+      - name: Package signed Windows artifacts
+        shell: pwsh
+        env:
+          WIN_CSC_LINK: ${{ secrets.WINDOWS_CSC_LINK }}
+          WIN_CSC_KEY_PASSWORD: ${{ secrets.WINDOWS_CSC_KEY_PASSWORD }}
+          CSC_IDENTITY_AUTO_DISCOVERY: "true"
+        run: pnpm exec electron-builder --win -c.forceCodeSigning=true --publish never
+
+      - name: Verify Windows artifact inventory and signatures
+        shell: pwsh
+        run: |
+          $version = (Get-Content package.json -Raw | ConvertFrom-Json).version
+          $expectedNames = @(
+            "rexiano-$version-setup.exe",
+            "rexiano-$version-portable.exe",
+            "rexiano-$version-win-x64.zip"
+          )
+          $actualNames = @(
+            Get-ChildItem dist -File |
+              Where-Object { $_.Extension -in @(".exe", ".zip") } |
+              ForEach-Object { $_.Name }
+          )
+          $difference = @(
+            Compare-Object -ReferenceObject ($expectedNames | Sort-Object) -DifferenceObject ($actualNames | Sort-Object)
+          )
+          if ($difference.Count -ne 0) {
+            throw "Windows artifact inventory differs from the required setup, portable, and zip files."
+          }
+
+          $signToolCommand = Get-Command signtool.exe -ErrorAction SilentlyContinue
+          if ($signToolCommand) {
+            $signTool = $signToolCommand.Source
+          } else {
+            $signTool = Get-ChildItem "${env:ProgramFiles(x86)}\Windows Kits\10\bin\*\x64\signtool.exe" |
+              Sort-Object FullName -Descending |
+              Select-Object -First 1 -ExpandProperty FullName
+          }
+          if (-not $signTool) {
+            throw "signtool.exe is unavailable."
+          }
+
+          function Assert-SignedExecutable([string]$executable) {
+            $signature = Get-AuthenticodeSignature $executable
+            if ($signature.Status -ne "Valid") {
+              throw "Authenticode signature is not Valid: $executable"
+            }
+            & $signTool verify /pa /tw /v $executable
+            if ($LASTEXITCODE -ne 0) {
+              throw "signtool verification failed: $executable"
+            }
+          }
+
+          Assert-SignedExecutable "dist/rexiano-$version-setup.exe"
+          Assert-SignedExecutable "dist/rexiano-$version-portable.exe"
+
+          $zipPath = "dist/rexiano-$version-win-x64.zip"
+          $extractPath = Join-Path $env:RUNNER_TEMP "rexiano-zip-$([guid]::NewGuid())"
+          try {
+            Expand-Archive -LiteralPath $zipPath -DestinationPath $extractPath
+            $zippedExecutables = @(
+              Get-ChildItem $extractPath -Recurse -File -Filter "Rexiano.exe"
+            )
+            if ($zippedExecutables.Count -ne 1) {
+              throw "Portable zip must contain exactly one Rexiano.exe."
+            }
+            Assert-SignedExecutable $zippedExecutables[0].FullName
+          } finally {
+            if (Test-Path $extractPath) {
+              Remove-Item $extractPath -Recurse -Force
+            }
+          }
+
+      - name: Upload verified Windows artifacts
         uses: actions/upload-artifact@v7
         with:
           name: release-windows
           path: |
-            dist/*.exe
-            dist/*.zip
+            dist/*-setup.exe
+            dist/*-portable.exe
+            dist/*-win-x64.zip
           if-no-files-found: error
           retention-days: 5
 
   build-mac:
-    name: Build macOS
+    name: Build and verify macOS
+    needs: [resolve-release-ref, preflight]
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v6
         with:
-          ref: ${{ env.RELEASE_TAG }}
+          ref: ${{ needs.resolve-release-ref.outputs.sha }}
+          persist-credentials: false
+
+      - name: Assert checked out release SHA
+        shell: bash
+        env:
+          EXPECTED_SHA: ${{ needs.resolve-release-ref.outputs.sha }}
+        run: |
+          set -euo pipefail
+          [[ "$(git rev-parse HEAD)" == "$EXPECTED_SHA" ]]
 
       - uses: pnpm/action-setup@v6
 
@@ -82,77 +328,203 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Prepare Apple API key
+      - name: Build application
+        run: pnpm build
+
+      - name: Package signed and notarized macOS artifacts
         shell: bash
-        run: |
-          if [[ -z "$APPLE_API_KEY_BASE64" || -z "$APPLE_API_KEY_ID" ]]; then
-            echo "Apple API key secrets are incomplete; Apple ID notarization credentials may still be used."
-            exit 0
-          fi
-
-          mkdir -p "$RUNNER_TEMP/apple-api-key"
-          api_key_path="$RUNNER_TEMP/apple-api-key/AuthKey_${APPLE_API_KEY_ID}.p8"
-          if ! printf '%s' "$APPLE_API_KEY_BASE64" | base64 --decode > "$api_key_path"; then
-            printf '%s' "$APPLE_API_KEY_BASE64" | base64 -D > "$api_key_path" || {
-              echo "Failed to decode APPLE_API_KEY_BASE64." >&2
-              exit 1
-            }
-          fi
-          chmod 600 "$api_key_path"
         env:
-          APPLE_API_KEY_BASE64: ${{ secrets.APPLE_API_KEY_BASE64 }}
-          APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
-
-      - name: Build macOS DMG
-        shell: bash
-        run: |
-          pnpm exec electron-vite build
-
-          unset APPLE_API_KEY
-          has_notarization_credentials=false
-          if [[ -f "$APPLE_API_KEY_PATH" && -n "$APPLE_API_KEY_ID" && -n "$APPLE_API_ISSUER" ]]; then
-            export APPLE_API_KEY="$APPLE_API_KEY_PATH"
-            has_notarization_credentials=true
-          elif [[ -n "$APPLE_ID" && -n "$APPLE_APP_SPECIFIC_PASSWORD" && -n "$APPLE_TEAM_ID" ]]; then
-            has_notarization_credentials=true
-          fi
-
-          if [[ -n "$CSC_LINK" && -n "$CSC_KEY_PASSWORD" && "$has_notarization_credentials" == "true" ]]; then
-            export CSC_IDENTITY_AUTO_DISCOVERY=true
-            pnpm exec electron-builder --mac -c.mac.notarize=true
-          else
-            echo "macOS signing/notarization secrets are incomplete; building unsigned DMGs."
-            unset CSC_LINK CSC_KEY_PASSWORD
-            export CSC_IDENTITY_AUTO_DISCOVERY=false
-            pnpm exec electron-builder --mac -c.mac.identity=null -c.mac.notarize=false
-          fi
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           CSC_LINK: ${{ secrets.MACOS_CSC_LINK }}
           CSC_KEY_PASSWORD: ${{ secrets.MACOS_CSC_KEY_PASSWORD }}
-          APPLE_API_KEY_PATH: ${{ runner.temp }}/apple-api-key/AuthKey_${{ secrets.APPLE_API_KEY_ID }}.p8
+          APPLE_API_KEY_BASE64: ${{ secrets.APPLE_API_KEY_BASE64 }}
           APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
           APPLE_API_ISSUER: ${{ secrets.APPLE_API_ISSUER }}
           APPLE_ID: ${{ secrets.APPLE_ID }}
           APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: |
+          set -euo pipefail
+          umask 077
 
-      - name: Upload macOS artifacts
+          certificate_count=0
+          [[ -n "$CSC_LINK" ]] && certificate_count=$((certificate_count + 1))
+          [[ -n "$CSC_KEY_PASSWORD" ]] && certificate_count=$((certificate_count + 1))
+          if [[ "$certificate_count" -ne 2 ]]; then
+            echo "Official macOS releases require both certificate secrets." >&2
+            exit 1
+          fi
+
+          api_count=0
+          [[ -n "$APPLE_API_KEY_BASE64" ]] && api_count=$((api_count + 1))
+          [[ -n "$APPLE_API_KEY_ID" ]] && api_count=$((api_count + 1))
+          [[ -n "$APPLE_API_ISSUER" ]] && api_count=$((api_count + 1))
+          apple_id_count=0
+          [[ -n "$APPLE_ID" ]] && apple_id_count=$((apple_id_count + 1))
+          [[ -n "$APPLE_APP_SPECIFIC_PASSWORD" ]] && apple_id_count=$((apple_id_count + 1))
+          [[ -n "$APPLE_TEAM_ID" ]] && apple_id_count=$((apple_id_count + 1))
+
+          if [[ "$api_count" -ne 0 && "$api_count" -ne 3 ]] ||
+            [[ "$apple_id_count" -ne 0 && "$apple_id_count" -ne 3 ]]; then
+            echo "Notarization sets must be complete." >&2
+            exit 1
+          fi
+          if [[ "$api_count" -eq 3 && "$apple_id_count" -eq 3 ]] ||
+            [[ "$api_count" -eq 0 && "$apple_id_count" -eq 0 ]]; then
+            echo "Provide exactly one notarization credential set." >&2
+            exit 1
+          fi
+
+          credentials_dir=""
+          cleanup_credentials() {
+            if [[ -n "$credentials_dir" && -d "$credentials_dir" ]]; then
+              rm -rf -- "$credentials_dir"
+            fi
+          }
+          trap cleanup_credentials EXIT
+
+          if [[ "$api_count" -eq 3 ]]; then
+            credentials_dir="$(mktemp -d "$RUNNER_TEMP/rexiano-notarization.XXXXXX")"
+            api_key_path="$credentials_dir/AuthKey_$APPLE_API_KEY_ID.p8"
+            if ! printf '%s' "$APPLE_API_KEY_BASE64" | base64 -D > "$api_key_path"; then
+              echo "Failed to decode APPLE_API_KEY_BASE64." >&2
+              exit 1
+            fi
+            if [[ ! -s "$api_key_path" ]]; then
+              echo "Decoded Apple API key is empty." >&2
+              exit 1
+            fi
+            chmod 600 "$api_key_path"
+            export APPLE_API_KEY="$api_key_path"
+          fi
+
+          export CSC_IDENTITY_AUTO_DISCOVERY=true
+          pnpm exec electron-builder --mac -c.forceCodeSigning=true -c.mac.notarize=true --publish never
+
+      - name: Verify macOS artifact inventory, signatures, and notarization
+        shell: bash
+        env:
+          EXPECTED_APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: |
+          set -euo pipefail
+
+          version="$(node -p "require('./package.json').version")"
+          expected_apps=("dist/mac/Rexiano.app" "dist/mac-arm64/Rexiano.app")
+          expected_dmgs=(
+            "dist/rexiano-$version-x64.dmg"
+            "dist/rexiano-$version-arm64.dmg"
+          )
+          shopt -s nullglob
+          actual_dmgs=(dist/*.dmg)
+          if [[ "${#actual_dmgs[@]}" -ne 2 ]]; then
+            echo "Expected exactly two macOS DMGs." >&2
+            exit 1
+          fi
+          for expected_path in "${expected_apps[@]}" "${expected_dmgs[@]}"; do
+            if [[ ! -e "$expected_path" ]]; then
+              echo "Missing required macOS artifact: $expected_path" >&2
+              exit 1
+            fi
+          done
+
+          verified_team=""
+          verify_app() {
+            app_path="$1"
+            if ! codesign --verify --deep --strict --verbose=2 "$app_path"; then
+              echo "codesign verification failed: $app_path" >&2
+              return 1
+            fi
+
+            if ! signature_details="$(codesign -dv --verbose=4 "$app_path" 2>&1)"; then
+              echo "Unable to inspect code-signing metadata: $app_path" >&2
+              return 1
+            fi
+            if ! printf '%s\n' "$signature_details" |
+              grep -q '^Authority=Developer ID Application:'; then
+              echo "Authority=Developer ID Application: was not found for $app_path" >&2
+              return 1
+            fi
+            app_team="$(
+              printf '%s\n' "$signature_details" |
+                sed -n 's/^TeamIdentifier=//p' |
+                head -n 1
+            )"
+            if [[ ! "$app_team" =~ ^[A-Z0-9]{10}$ ]]; then
+              echo "TeamIdentifier= is missing or invalid for $app_path" >&2
+              return 1
+            fi
+            if [[ -n "$EXPECTED_APPLE_TEAM_ID" && "$app_team" != "$EXPECTED_APPLE_TEAM_ID" ]]; then
+              echo "Signed application TeamIdentifier does not match APPLE_TEAM_ID." >&2
+              return 1
+            fi
+            if [[ -n "$verified_team" && "$app_team" != "$verified_team" ]]; then
+              echo "macOS artifacts were signed by different teams." >&2
+              return 1
+            fi
+            verified_team="$app_team"
+
+            if ! spctl --assess --type execute --verbose=4 "$app_path"; then
+              echo "Gatekeeper assessment failed: $app_path" >&2
+              return 1
+            fi
+            if ! xcrun stapler validate "$app_path"; then
+              echo "Stapled notarization ticket is invalid: $app_path" >&2
+              return 1
+            fi
+          }
+
+          for app_path in "${expected_apps[@]}"; do
+            verify_app "$app_path"
+          done
+
+          for dmg_path in "${expected_dmgs[@]}"; do
+            mount_path="$(mktemp -d "$RUNNER_TEMP/rexiano-dmg.XXXXXX")"
+            mounted=false
+            verification_status=0
+
+            if hdiutil attach "$dmg_path" -nobrowse -readonly -mountpoint "$mount_path" >/dev/null; then
+              mounted=true
+              verify_app "$mount_path/Rexiano.app" || verification_status=$?
+            else
+              verification_status=1
+            fi
+
+            if [[ "$mounted" == "true" ]]; then
+              hdiutil detach "$mount_path" >/dev/null || verification_status=1
+            fi
+            rm -rf -- "$mount_path"
+            if [[ "$verification_status" -ne 0 ]]; then
+              echo "Mounted DMG verification failed: $dmg_path" >&2
+              exit "$verification_status"
+            fi
+          done
+
+      - name: Upload verified macOS artifacts
         uses: actions/upload-artifact@v7
         with:
           name: release-macos
           path: |
-            dist/*.dmg
+            dist/*-x64.dmg
+            dist/*-arm64.dmg
           if-no-files-found: error
           retention-days: 5
 
   build-linux:
-    name: Build Linux
+    name: Build and verify Linux
+    needs: [resolve-release-ref, preflight]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
         with:
-          ref: ${{ env.RELEASE_TAG }}
+          ref: ${{ needs.resolve-release-ref.outputs.sha }}
+          persist-credentials: false
+
+      - name: Assert checked out release SHA
+        shell: bash
+        env:
+          EXPECTED_SHA: ${{ needs.resolve-release-ref.outputs.sha }}
+        run: |
+          set -euo pipefail
+          [[ "$(git rev-parse HEAD)" == "$EXPECTED_SHA" ]]
 
       - uses: pnpm/action-setup@v6
 
@@ -164,58 +536,178 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      # Build AppImage + deb only (snap requires snapcraft login)
-      - name: Build Linux packages
-        run: pnpm exec electron-vite build && pnpm exec electron-builder --linux AppImage deb
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Build application
+        run: pnpm build
 
-      - name: Upload Linux artifacts
+      - name: Package Linux artifacts
+        run: pnpm exec electron-builder --linux AppImage deb --publish never
+
+      - name: Verify Linux artifact inventory
+        shell: bash
+        run: |
+          set -euo pipefail
+          version="$(node -p "require('./package.json').version")"
+          expected_packages=(
+            "dist/rexiano-$version-x86_64.AppImage"
+            "dist/rexiano-$version-amd64.deb"
+          )
+          shopt -s nullglob
+          actual_packages=(dist/*.AppImage dist/*.deb)
+          if [[ "${#actual_packages[@]}" -ne 2 ]]; then
+            echo "Expected exactly two Linux release packages." >&2
+            exit 1
+          fi
+          for expected_path in "${expected_packages[@]}"; do
+            if [[ ! -f "$expected_path" ]]; then
+              echo "Missing required Linux artifact: $expected_path" >&2
+              exit 1
+            fi
+          done
+
+      - name: Upload verified Linux artifacts
         uses: actions/upload-artifact@v7
         with:
           name: release-linux
           path: |
-            dist/*.AppImage
-            dist/*.deb
+            dist/*-x86_64.AppImage
+            dist/*-amd64.deb
           if-no-files-found: error
           retention-days: 5
 
-  create-release:
-    name: Create GitHub Release
-    needs: [build-windows, build-mac, build-linux]
+  publish:
+    name: Publish verified GitHub release
+    needs:
+      - resolve-release-ref
+      - preflight
+      - windows-e2e
+      - build-windows
+      - build-mac
+      - build-linux
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@v6
         with:
-          ref: ${{ env.RELEASE_TAG }}
+          ref: ${{ needs.resolve-release-ref.outputs.sha }}
+          fetch-depth: 0
+          persist-credentials: false
 
-      - name: Download all artifacts
+      - name: Assert checked out release SHA
+        shell: bash
+        env:
+          EXPECTED_SHA: ${{ needs.resolve-release-ref.outputs.sha }}
+        run: |
+          set -euo pipefail
+          [[ "$(git rev-parse HEAD)" == "$EXPECTED_SHA" ]]
+
+      - name: Revalidate immutable tag and draft state
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ needs.resolve-release-ref.outputs.tag }}
+          EXPECTED_SHA: ${{ needs.resolve-release-ref.outputs.sha }}
+        run: |
+          set -euo pipefail
+
+          git fetch --force --prune --prune-tags --tags origin "refs/heads/main:refs/remotes/origin/main"
+          if ! git show-ref --verify --quiet "refs/tags/$RELEASE_TAG"; then
+            echo "Release tag disappeared before publication." >&2
+            exit 1
+          fi
+          current_sha="$(git rev-parse "refs/tags/$RELEASE_TAG^{commit}")"
+          if [[ "$current_sha" != "$EXPECTED_SHA" ]]; then
+            echo "Release tag moved after validation." >&2
+            exit 1
+          fi
+          if ! git merge-base --is-ancestor "$current_sha" origin/main; then
+            echo "Release commit is no longer reachable from origin/main." >&2
+            exit 1
+          fi
+
+          release_rows="$RUNNER_TEMP/rexiano-releases.tsv"
+          gh api --paginate "repos/$GITHUB_REPOSITORY/releases?per_page=100" \
+            --jq '.[] | [.id, .tag_name, .draft] | @tsv' > "$release_rows"
+          release_count="$(
+            awk -F '\t' -v tag="$RELEASE_TAG" \
+              '$2 == tag { count += 1 } END { print count + 0 }' \
+              "$release_rows"
+          )"
+          if [[ "$release_count" -gt 1 ]]; then
+            echo "Duplicate releases found for $RELEASE_TAG." >&2
+            exit 1
+          fi
+          if [[ "$release_count" -eq 1 ]]; then
+            release_is_draft="$(
+              awk -F '\t' -v tag="$RELEASE_TAG" '$2 == tag { print $3 }' "$release_rows"
+            )"
+            if [[ "$release_is_draft" != "true" ]]; then
+              echo "Release is already public; refusing duplicate publication." >&2
+              exit 1
+            fi
+          fi
+
+      - name: Download verified artifacts
         uses: actions/download-artifact@v8
         with:
           path: artifacts
           merge-multiple: true
 
-      - name: Generate checksums
+      - name: Verify inventory and generate deterministic checksums
+        shell: bash
         run: |
-          cd artifacts
-          sha256sum *.exe *.zip *.dmg *.AppImage *.deb > SHA256SUMS.txt
-          echo "## SHA256 Checksums" > checksums.md
-          echo '```' >> checksums.md
-          cat SHA256SUMS.txt >> checksums.md
-          echo '```' >> checksums.md
-          cat SHA256SUMS.txt
+          set -euo pipefail
 
-      - name: Create GitHub Release
+          version="$(node -p "require('./package.json').version")"
+          expected_files=(
+            "rexiano-$version-setup.exe"
+            "rexiano-$version-portable.exe"
+            "rexiano-$version-win-x64.zip"
+            "rexiano-$version-x64.dmg"
+            "rexiano-$version-arm64.dmg"
+            "rexiano-$version-x86_64.AppImage"
+            "rexiano-$version-amd64.deb"
+          )
+          actual_count="$(find artifacts -maxdepth 1 -type f | wc -l | tr -d ' ')"
+          if [[ "$actual_count" -ne 7 ]]; then
+            echo "Expected exactly 7 release packages; found $actual_count." >&2
+            exit 1
+          fi
+          for artifact_name in "${expected_files[@]}"; do
+            if [[ ! -f "artifacts/$artifact_name" ]]; then
+              echo "Missing required release package: $artifact_name" >&2
+              exit 1
+            fi
+          done
+
+          (
+            cd artifacts
+            for artifact_name in "${expected_files[@]}"; do
+              sha256sum "$artifact_name"
+            done | LC_ALL=C sort -k2,2 > SHA256SUMS.txt
+            sha256sum --check SHA256SUMS.txt
+            {
+              echo "## SHA256 Checksums"
+              echo
+              sed 's/^/    /' SHA256SUMS.txt
+            } > checksums.md
+          )
+
+      - name: Publish verified release
         uses: softprops/action-gh-release@v3
         with:
-          generate_release_notes: true
+          tag_name: ${{ needs.resolve-release-ref.outputs.tag }}
+          target_commitish: ${{ needs.resolve-release-ref.outputs.sha }}
+          draft: false
           append_body: true
-          tag_name: ${{ env.RELEASE_TAG }}
+          fail_on_unmatched_files: true
           body_path: artifacts/checksums.md
           files: |
-            artifacts/*.exe
-            artifacts/*.zip
-            artifacts/*.dmg
-            artifacts/*.AppImage
-            artifacts/*.deb
+            artifacts/rexiano-*-setup.exe
+            artifacts/rexiano-*-portable.exe
+            artifacts/rexiano-*-win-x64.zip
+            artifacts/rexiano-*-x64.dmg
+            artifacts/rexiano-*-arm64.dmg
+            artifacts/rexiano-*-x86_64.AppImage
+            artifacts/rexiano-*-amd64.deb
             artifacts/SHA256SUMS.txt

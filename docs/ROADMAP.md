@@ -449,10 +449,11 @@
   - [x] GitHub Releases update checker（自管 IPC helper，見 `docs/update-flow.md`）
   - [x] 應用內更新提示
   - [x] 發佈到 GitHub Releases
-- [x] 程式碼簽章（憑證就緒時自動啟用，無憑證時保留 unsigned fallback）
-  - [x] Windows: EV/OV Code Signing Certificate secrets wiring（`WINDOWS_CSC_LINK` / `WINDOWS_CSC_KEY_PASSWORD`）
-  - [x] macOS: Apple Developer signing + notarization secrets wiring
-  - [x] 簽章/公證憑證需求與 unsigned build policy 文件（`docs/release-signing.md`）
+- [x] 官方 release 簽章管線採 fail closed（缺少憑證、驗證失敗時不公開 release）
+  - [x] Windows: 強制 EV/OV signing 並驗證 setup、portable 與 zip 內執行檔
+  - [x] macOS: 強制 Developer ID signing + notarization，驗證雙架構 DMG
+  - [x] 簽章/公證 secrets、local/fork unsigned 邊界與 evidence checklist 文件（`docs/release-signing.md`）
+  - [ ] 使用 production secrets 完成真實三平台簽章發行與安裝 smoke 證據（#187）
 - [x] 檔案關聯
   - [x] `.mid` 檔案雙擊以 Rexiano 開啟（electron-builder.yml fileAssociations）
   - [x] 各平台的 MIME type 註冊（Linux mimeTypes: audio/midi, audio/x-midi）
