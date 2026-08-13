@@ -23,7 +23,7 @@ const mockManager = {
   connectOutput: vi.fn(() => true),
   disconnectOutput: vi.fn(),
   getActiveInput: vi.fn(() => null),
-  getActiveOutput: vi.fn(() => null),
+  getActiveOutput: vi.fn((): MIDIOutput | null => null),
   onDeviceListChange: vi.fn(),
   onActiveInputChange: vi.fn(),
   onActiveOutputChange: vi.fn(),
@@ -205,10 +205,12 @@ describe("useMidiDeviceStore", () => {
     mockManager.init.mockImplementation(async () => {
       mockManager.status = "ready";
     });
-    let onOutputChange: ((device: unknown) => void) | null = null;
-    mockManager.onActiveOutputChange.mockImplementation((callback) => {
-      onOutputChange = callback;
-    });
+    let onOutputChange: ((device: { id: string } | null) => void) | undefined;
+    mockManager.onActiveOutputChange.mockImplementation(
+      (callback: (device: { id: string } | null) => void) => {
+        onOutputChange = callback;
+      },
+    );
 
     await useMidiDeviceStore.getState().connect();
     onOutputChange?.({ id: "out-1" });

@@ -23,7 +23,7 @@ export const CC = {
 } as const;
 
 export class MidiOutputSender {
-  private _output: MIDIOutput | null = null;
+  private _output: (MIDIOutput & { clear?: () => void }) | null = null;
   private _channel: number = 0;
 
   // ─── Attach / Detach ────────────────────────────
@@ -101,7 +101,7 @@ export class MidiOutputSender {
   /** Cancel future Web MIDI messages, then silence anything already sounding. */
   clearScheduled(): void {
     if (!this._output) return;
-    this._output.clear();
+    this._output.clear?.();
     this.allNotesOff();
   }
 

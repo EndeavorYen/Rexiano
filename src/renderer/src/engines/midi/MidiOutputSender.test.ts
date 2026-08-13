@@ -4,7 +4,9 @@ import type { ParsedNote } from "./types";
 
 // ─── Mock MIDIOutput ────────────────────────────
 
-function createMockMIDIOutput(): MIDIOutput {
+function createMockMIDIOutput(): MIDIOutput & {
+  clear: ReturnType<typeof vi.fn>;
+} {
   return {
     id: "output-1",
     name: "Test Output",
@@ -22,14 +24,14 @@ function createMockMIDIOutput(): MIDIOutput {
     addEventListener: vi.fn(),
     removeEventListener: vi.fn(),
     dispatchEvent: vi.fn().mockReturnValue(true),
-  } as unknown as MIDIOutput;
+  } as unknown as MIDIOutput & { clear: ReturnType<typeof vi.fn> };
 }
 
 // ─── Tests ───────────────────────────────────────
 
 describe("MidiOutputSender", () => {
   let sender: MidiOutputSender;
-  let mockOutput: MIDIOutput;
+  let mockOutput: MIDIOutput & { clear: ReturnType<typeof vi.fn> };
 
   beforeEach(() => {
     sender = new MidiOutputSender();

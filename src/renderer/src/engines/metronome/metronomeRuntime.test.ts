@@ -1,9 +1,11 @@
 import { describe, expect, test, vi } from "vitest";
 import type { ParsedSong } from "@renderer/engines/midi/types";
+import type { MetronomeStartAlignment } from "./MetronomeEngine";
 import {
   beginMetronomePlayback,
   rebaseMetronomeDiscontinuity,
   syncMetronomeToPlayback,
+  type MetronomeRuntimeEngine,
 } from "./metronomeRuntime";
 
 const song: ParsedSong = {
@@ -17,11 +19,28 @@ const song: ParsedSong = {
 };
 
 interface MetronomeHarness {
-  runtime: {
-    setEnabled: ReturnType<typeof vi.fn>;
-    start: ReturnType<typeof vi.fn>;
-    startCountIn: ReturnType<typeof vi.fn>;
-    stop: ReturnType<typeof vi.fn>;
+  runtime: MetronomeRuntimeEngine & {
+    setEnabled: ReturnType<typeof vi.fn<(enabled: boolean) => void>>;
+    start: ReturnType<
+      typeof vi.fn<
+        (
+          bpm: number,
+          beatsPerMeasure: number,
+          alignment?: MetronomeStartAlignment,
+        ) => void
+      >
+    >;
+    startCountIn: ReturnType<
+      typeof vi.fn<
+        (
+          beats: number,
+          bpm: number,
+          beatsPerMeasure: number,
+          onComplete: () => void,
+        ) => void
+      >
+    >;
+    stop: ReturnType<typeof vi.fn<() => void>>;
   };
   completeCountIn: () => void;
 }
@@ -30,8 +49,14 @@ function engine(): MetronomeHarness {
   let onCountInComplete: (() => void) | null = null;
   return {
     runtime: {
-      setEnabled: vi.fn(),
-      start: vi.fn(),
+      setEnabled: vi.fn((_enabled: boolean) => undefined),
+      start: vi.fn(
+        (
+          _bpm: number,
+          _beatsPerMeasure: number,
+          _alignment?: MetronomeStartAlignment,
+        ) => undefined,
+      ),
       startCountIn: vi.fn(
         (
           _beats: number,
@@ -42,7 +67,7 @@ function engine(): MetronomeHarness {
           onCountInComplete = onComplete;
         },
       ),
-      stop: vi.fn(),
+      stop: vi.fn(() => undefined),
     },
     completeCountIn: (): void => onCountInComplete?.(),
   };
