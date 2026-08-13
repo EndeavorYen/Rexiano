@@ -454,6 +454,8 @@ export const zhTW: TranslationMap = {
   "modeSelect.freeDesc": "自由彈奏，不受引導",
   "modeSelect.escToSkip": "按 Esc 跳過",
   "modeSelect.mustChoose": "請先選擇模式，才能開始彈奏",
+  "modeSelect.currentDefault": "目前預設",
+  "modeSelect.backToLibrary": "返回曲庫",
 
   // ── Statistics ─────────────────────────────────────────────────
   "stats.title": "練習統計",

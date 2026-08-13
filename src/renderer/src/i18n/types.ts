@@ -434,6 +434,8 @@ export interface TranslationMap {
   "modeSelect.freeDesc": string;
   "modeSelect.escToSkip": string;
   "modeSelect.mustChoose": string;
+  "modeSelect.currentDefault": string;
+  "modeSelect.backToLibrary": string;
 
   // ── Statistics ─────────────────────────────────────────────────
   "stats.title": string;

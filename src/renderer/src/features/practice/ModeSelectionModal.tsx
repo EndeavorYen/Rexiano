@@ -1,58 +1,53 @@
 import { useRef } from "react";
-import { Hand, Music } from "lucide-react";
+import { ArrowLeft, Eye, Hand, Music } from "lucide-react";
 import type { PracticeMode } from "@shared/types";
 import { useTranslation } from "@renderer/i18n/useTranslation";
 import { useDialogFocus } from "@renderer/hooks/useDialogFocus";
+import { getModeSelectionOptions } from "./modeSelectionOptions";
 
-interface ModeSelectionModalProps {
+export interface ModeSelectionModalProps {
+  defaultMode: PracticeMode;
   onSelect: (mode: PracticeMode) => void;
+  onDismiss: () => void;
 }
 
-interface ModeOption {
-  mode: PracticeMode;
-  icon: React.ReactNode;
-  titleKey: "practice.wait" | "practice.free";
-  descKey: "modeSelect.waitDesc" | "modeSelect.freeDesc";
-  accentStyle: React.CSSProperties;
+function ModeIcon({ mode }: { mode: PracticeMode }): React.JSX.Element {
+  if (mode === "watch") return <Eye size={28} />;
+  if (mode === "wait") return <Hand size={28} />;
+  return <Music size={28} />;
 }
-
-const MODE_OPTIONS: ModeOption[] = [
-  {
-    mode: "wait",
-    icon: <Hand size={28} />,
-    titleKey: "practice.wait",
-    descKey: "modeSelect.waitDesc",
-    accentStyle: { color: "var(--color-accent)" },
-  },
-  {
-    mode: "free",
-    icon: <Music size={28} />,
-    titleKey: "practice.free",
-    descKey: "modeSelect.freeDesc",
-    accentStyle: { color: "var(--color-accent)" },
-  },
-];
 
 /**
  * Synthesia-style mode selection modal shown before playback begins.
- * User picks Wait / Free to configure how the session will run.
+ * User picks Watch / Wait / Free to configure how the session will run.
  */
 export function ModeSelectionModal({
+  defaultMode,
   onSelect,
+  onDismiss,
 }: ModeSelectionModalProps): React.JSX.Element {
   const { t } = useTranslation();
   const dialogRef = useRef<HTMLDivElement>(null);
+  const defaultButtonRef = useRef<HTMLButtonElement>(null);
+  const options = getModeSelectionOptions(defaultMode);
   useDialogFocus({
     active: true,
     containerRef: dialogRef,
-    initialFocusRef: dialogRef,
+    initialFocusRef: defaultButtonRef,
+    onDismiss,
   });
 
   return (
-    <div className="fixed inset-0 z-[200] flex items-start justify-center overflow-y-auto overscroll-contain p-4 modal-backdrop-cinematic">
+    <div
+      className="fixed inset-0 z-[200] flex items-start justify-center overflow-y-auto overscroll-contain p-4 modal-backdrop-cinematic"
+      onClick={(event) => {
+        if (event.target === event.currentTarget) onDismiss();
+      }}
+      data-testid="mode-selection-backdrop"
+    >
       <div
         ref={dialogRef}
-        className="max-h-[calc(100vh-2rem)] w-full max-w-[560px] overflow-y-auto rounded-2xl shadow-2xl modal-card-cinematic p-4 sm:w-[92vw] sm:p-6"
+        className="max-h-[calc(100vh-2rem)] w-full max-w-[680px] overflow-y-auto rounded-2xl shadow-2xl modal-card-cinematic p-4 sm:w-[92vw] sm:p-6"
         style={{
           background:
             "color-mix(in srgb, var(--color-surface) 90%, transparent)",
@@ -81,31 +76,50 @@ export function ModeSelectionModal({
         </p>
 
         {/* Mode cards */}
-        <div className="grid grid-cols-2 gap-3">
-          {MODE_OPTIONS.map((opt, idx) => (
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+          {options.map((opt, idx) => (
             <button
               key={opt.mode}
+              ref={opt.isDefault ? defaultButtonRef : undefined}
               onClick={() => onSelect(opt.mode)}
-              className="card-hover animate-page-enter flex flex-col items-center gap-2 rounded-xl cursor-pointer transition-all min-h-[132px] p-3 sm:min-h-[170px] sm:gap-3 sm:p-4"
+              className="card-hover animate-page-enter relative flex min-h-[120px] cursor-pointer flex-col items-center gap-2 rounded-xl p-3 transition-all sm:min-h-[170px] sm:gap-3 sm:p-4"
               style={{
                 background:
                   "color-mix(in srgb, var(--color-surface-alt) 80%, var(--color-surface))",
-                border: "1px solid var(--color-border)",
+                border: opt.isDefault
+                  ? "2px solid var(--color-accent)"
+                  : "1px solid var(--color-border)",
                 animationDelay: `${idx * 70}ms`,
               }}
+              aria-label={`${t(opt.titleKey)}${
+                opt.isDefault ? `, ${t("modeSelect.currentDefault")}` : ""
+              }`}
               data-testid={`mode-select-${opt.mode}`}
             >
+              {opt.isDefault && (
+                <span
+                  className="absolute right-2 top-2 rounded-full px-2 py-0.5 text-[9px] font-body font-bold uppercase tracking-wide"
+                  style={{
+                    color: "var(--color-accent)",
+                    background:
+                      "color-mix(in srgb, var(--color-accent) 12%, var(--color-surface))",
+                  }}
+                  data-testid="mode-select-current-default"
+                >
+                  {t("modeSelect.currentDefault")}
+                </span>
+              )}
               <div
                 className="w-11 h-11 rounded-full flex items-center justify-center"
                 style={{
-                  ...opt.accentStyle,
+                  color: "var(--color-accent)",
                   background:
                     "color-mix(in srgb, var(--color-accent) 12%, var(--color-surface))",
                   border:
                     "1px solid color-mix(in srgb, var(--color-accent) 24%, var(--color-border))",
                 }}
               >
-                {opt.icon}
+                <ModeIcon mode={opt.mode} />
               </div>
               <span
                 className="text-sm font-display font-bold"
@@ -129,6 +143,17 @@ export function ModeSelectionModal({
         >
           {t("modeSelect.mustChoose")}
         </p>
+        <div className="mt-3 flex justify-center">
+          <button
+            type="button"
+            onClick={onDismiss}
+            className="btn-surface-themed flex min-h-10 items-center gap-2 rounded-xl px-4 py-2 text-sm font-body font-semibold cursor-pointer"
+            data-testid="mode-select-back"
+          >
+            <ArrowLeft size={15} aria-hidden="true" />
+            {t("modeSelect.backToLibrary")}
+          </button>
+        </div>
       </div>
     </div>
   );

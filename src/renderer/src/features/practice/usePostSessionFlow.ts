@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { ParsedSong } from "@renderer/engines/midi/types";
 import type { PracticeMode, PracticeScore } from "@shared/types";
+import type { AudioEngineStatus } from "@renderer/engines/audio/types";
+import { getPracticeEngines } from "@renderer/engines/practice/practiceManager";
 import { usePlaybackStore } from "@renderer/stores/usePlaybackStore";
 import { usePracticeStore } from "@renderer/stores/usePracticeStore";
 import { useSongStore } from "@renderer/stores/useSongStore";
@@ -26,6 +28,8 @@ interface UsePostSessionFlowOptions {
   speed: number;
   score: PracticeScore;
   onChooseSongRoute: () => void;
+  onRequestPlaybackStart: (song: ParsedSong) => void;
+  onCancelPendingPlaybackStart: () => void;
 }
 
 interface ModeSelectionInput {
@@ -40,6 +44,7 @@ export interface PostSessionFlowState {
   completedSessionScore: PracticeScore | null;
   displayScore: PracticeScore;
   handleModeSelect: (mode: PracticeMode) => void;
+  handleModeDismiss: () => void;
   handlePracticeAgain: () => void;
   handleChooseSong: () => void;
   handleViewStats: () => void;
@@ -69,6 +74,61 @@ export function shouldShowModeSelectionModal({
   return nextHasSong && shouldPromptForPracticeMode(intent);
 }
 
+interface RequestedPlaybackInput<T> {
+  requestedSong: T | null;
+  currentSong: T | null;
+  readySong: T | null;
+  audioStatus: AudioEngineStatus;
+}
+
+export function canStartRequestedPlayback<T>({
+  requestedSong,
+  currentSong,
+  readySong,
+  audioStatus,
+}: RequestedPlaybackInput<T>): boolean {
+  return (
+    requestedSong !== null &&
+    requestedSong === currentSong &&
+    requestedSong === readySong &&
+    audioStatus === "ready"
+  );
+}
+
+interface PracticeDismissalActions {
+  cancelPendingPlaybackStart: () => void;
+  hidePostSession: () => void;
+  resetPlayback: () => void;
+  clearSong: () => void;
+  routeToLibrary: () => void;
+}
+
+export function runPracticeDismissal(actions: PracticeDismissalActions): void {
+  actions.cancelPendingPlaybackStart();
+  actions.hidePostSession();
+  actions.resetPlayback();
+  actions.clearSong();
+  actions.routeToLibrary();
+}
+
+interface PracticeRetryActions {
+  hidePostSession: () => void;
+  resetPlayback: () => void;
+  resetWaitMode: () => void;
+  resetScoreCalculator: () => void;
+  resetPracticeScore: () => void;
+  requestPlaybackStart: () => void;
+}
+
+export function runPracticeRetry(actions: PracticeRetryActions): void {
+  actions.hidePostSession();
+  actions.resetPlayback();
+  actions.resetWaitMode();
+  actions.resetScoreCalculator();
+  actions.resetPracticeScore();
+  actions.requestPlaybackStart();
+}
+
 export function usePostSessionFlow({
   song,
   sessionIntent,
@@ -77,6 +137,8 @@ export function usePostSessionFlow({
   speed,
   score,
   onChooseSongRoute,
+  onRequestPlaybackStart,
+  onCancelPendingPlaybackStart,
 }: UsePostSessionFlowOptions): PostSessionFlowState {
   const sessionIntentRef = useRef(sessionIntent);
   const getSessionIntentRef = useRef(getSessionIntent);
@@ -140,6 +202,13 @@ export function usePostSessionFlow({
     return () => clearTimeout(timer);
   }, [showCelebration]);
 
+  const resetPostSessionState = useCallback(() => {
+    setShowModeModal(false);
+    setShowCelebration(false);
+    setShowStats(false);
+    setCompletedSessionScore(null);
+  }, []);
+
   const handleModeSelect = useCallback(
     (mode: PracticeMode) => {
       applyPracticeModeChangeForSong(
@@ -152,41 +221,47 @@ export function usePostSessionFlow({
         mode,
       );
       setShowModeModal(false);
-      setTimeout(() => {
-        usePlaybackStore.getState().setPlaying(true);
-      }, 150);
+      const selectedSong = useSongStore.getState().song;
+      if (selectedSong) {
+        onRequestPlaybackStart(selectedSong);
+      }
     },
-    [activeTracks, song, speed],
+    [activeTracks, onRequestPlaybackStart, song, speed],
   );
 
   const handlePracticeAgain = useCallback(() => {
-    setShowCelebration(false);
-    setShowStats(false);
-    setCompletedSessionScore(null);
-    usePlaybackStore.getState().reset();
-    usePracticeStore.getState().resetScore();
-  }, []);
+    const retrySong = useSongStore.getState().song;
+    const { waitMode, scoreCalculator } = getPracticeEngines();
+    runPracticeRetry({
+      hidePostSession: resetPostSessionState,
+      resetPlayback: usePlaybackStore.getState().reset,
+      resetWaitMode: () => waitMode?.reset(),
+      resetScoreCalculator: () => scoreCalculator?.reset(),
+      resetPracticeScore: usePracticeStore.getState().resetScore,
+      requestPlaybackStart: () => {
+        if (retrySong) onRequestPlaybackStart(retrySong);
+      },
+    });
+  }, [onRequestPlaybackStart, resetPostSessionState]);
 
-  const handleChooseSong = useCallback(() => {
-    setShowCelebration(false);
-    setShowStats(false);
-    setCompletedSessionScore(null);
-    useSongStore.getState().clearSong();
-    usePlaybackStore.getState().reset();
-    onChooseSongRoute();
-  }, [onChooseSongRoute]);
+  const dismissToLibrary = useCallback(() => {
+    runPracticeDismissal({
+      cancelPendingPlaybackStart: onCancelPendingPlaybackStart,
+      hidePostSession: resetPostSessionState,
+      resetPlayback: usePlaybackStore.getState().reset,
+      clearSong: useSongStore.getState().clearSong,
+      routeToLibrary: onChooseSongRoute,
+    });
+  }, [onCancelPendingPlaybackStart, onChooseSongRoute, resetPostSessionState]);
+
+  const handleChooseSong = dismissToLibrary;
 
   const handleViewStats = useCallback(() => {
     setShowCelebration(false);
     setShowStats(true);
   }, []);
 
-  const hidePostSessionFlow = useCallback(() => {
-    setShowModeModal(false);
-    setShowCelebration(false);
-    setShowStats(false);
-    setCompletedSessionScore(null);
-  }, []);
+  const hidePostSessionFlow = resetPostSessionState;
 
   const showCelebrationForScore = useCallback((score: PracticeScore) => {
     setCompletedSessionScore(score);
@@ -202,6 +277,7 @@ export function usePostSessionFlow({
     completedSessionScore,
     displayScore,
     handleModeSelect,
+    handleModeDismiss: dismissToLibrary,
     handlePracticeAgain,
     handleChooseSong,
     handleViewStats,

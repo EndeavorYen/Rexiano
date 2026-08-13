@@ -1,7 +1,7 @@
 import type { Locator, Page } from "@playwright/test";
 import { expect } from "../fixtures/electronApp";
 
-type PracticeModeChoice = "wait" | "free";
+type PracticeModeChoice = "watch" | "wait" | "free";
 
 export async function gotoLibrary(page: Page): Promise<void> {
   await page.evaluate(() => {

@@ -61,7 +61,11 @@ import { CelebrationOverlay } from "./features/practice/CelebrationOverlay";
 import { PianoRollEditor } from "./features/editor/PianoRollEditor";
 import { selectNextPracticeAction } from "./features/practice/nextPracticeAction";
 import { getFocusModeExitDecision } from "./features/practice/focusModeExitGuard";
-import { usePostSessionFlow } from "./features/practice/usePostSessionFlow";
+import {
+  canStartRequestedPlayback,
+  usePostSessionFlow,
+} from "./features/practice/usePostSessionFlow";
+import { getPracticeEngines } from "./engines/practice/practiceManager";
 import {
   mapSessionIntentToMode,
   type PracticeSessionIntent,
@@ -195,12 +199,53 @@ function App(): React.JSX.Element {
   const speed = usePracticeStore((s) => s.speed);
   const activeTracks = usePracticeStore((s) => s.activeTracks);
   const score = usePracticeStore((s) => s.score);
+  const pendingPlaybackStartSongRef = useRef<NonNullable<typeof song> | null>(
+    null,
+  );
+  const audioReadySongRef = useRef<NonNullable<typeof song> | null>(null);
+  const attemptPendingPlaybackStart = useCallback((): boolean => {
+    const requestedSong = pendingPlaybackStartSongRef.current;
+    if (
+      !canStartRequestedPlayback({
+        requestedSong,
+        currentSong: useSongStore.getState().song,
+        readySong: audioReadySongRef.current,
+        audioStatus: usePlaybackStore.getState().audioStatus,
+      })
+    ) {
+      return false;
+    }
+
+    pendingPlaybackStartSongRef.current = null;
+    usePlaybackStore.getState().setPlaying(true);
+    return true;
+  }, []);
+  const requestPlaybackStart = useCallback(
+    (requestedSong: NonNullable<typeof song>): void => {
+      pendingPlaybackStartSongRef.current = requestedSong;
+      attemptPendingPlaybackStart();
+    },
+    [attemptPendingPlaybackStart],
+  );
+  const cancelPendingPlaybackStart = useCallback((): void => {
+    pendingPlaybackStartSongRef.current = null;
+    audioReadySongRef.current = null;
+  }, []);
+  const getCurrentSessionIntent = useCallback(
+    () => sessionIntentRef.current,
+    [],
+  );
+  const handleChooseSongRoute = useCallback(() => {
+    setSessionIntent("practice");
+    applyRoute("library");
+  }, [applyRoute, setSessionIntent]);
   const {
     showModeModal,
     showCelebration,
     showStats,
     displayScore,
     handleModeSelect,
+    handleModeDismiss,
     handlePracticeAgain,
     handleChooseSong,
     handleViewStats,
@@ -209,15 +254,34 @@ function App(): React.JSX.Element {
   } = usePostSessionFlow({
     song,
     sessionIntent,
-    getSessionIntent: () => sessionIntentRef.current,
+    getSessionIntent: getCurrentSessionIntent,
     activeTracks,
     speed,
     score,
-    onChooseSongRoute: () => {
-      setSessionIntent("practice");
-      applyRoute("library");
-    },
+    onChooseSongRoute: handleChooseSongRoute,
+    onRequestPlaybackStart: requestPlaybackStart,
+    onCancelPendingPlaybackStart: cancelPendingPlaybackStart,
   });
+
+  useEffect(() => {
+    return useSongStore.subscribe((state, previousState) => {
+      if (state.song !== previousState.song) {
+        cancelPendingPlaybackStart();
+      }
+    });
+  }, [cancelPendingPlaybackStart]);
+
+  const modeSelectionDefault = useMemo((): PracticeMode => {
+    if (!song) return mode;
+    const { defaultMode, defaultSpeed } = useSettingsStore.getState();
+    return mapSessionIntentToMode(
+      sessionIntent,
+      resolveSongPracticeSetupForSong(song, {
+        defaultMode,
+        defaultSpeed,
+      }).defaultMode,
+    );
+  }, [mode, sessionIntent, song]);
   // ─── End mode/celebration/stats flow ──────────────────
 
   const resetAppViewportScroll = useCallback((): void => {
@@ -324,10 +388,23 @@ function App(): React.JSX.Element {
         speed?: number;
       }) => void;
       __rexianoForcePlaybackState?: (state: { isPlaying?: boolean }) => void;
+      __rexianoPrimePracticeSessionFixture?: () => boolean;
+      __rexianoGetPracticeSessionFixtureSnapshot?: () => {
+        mode: PracticeMode;
+        isPlaying: boolean;
+        currentTime: number;
+        waitState: string | null;
+        waitResultCount: number;
+        waitTargetCount: number;
+        engineScoreTotal: number;
+        storeScoreTotal: number;
+        storeResultCount: number;
+      } | null;
     };
 
     e2eWindow.__rexianoLoadSheetMusicFixture = (fixtureName) => {
       const fixture = getSheetMusicVisualFixture(fixtureName);
+      cancelPendingPlaybackStart();
       reset();
       usePracticeStore.getState().setDisplayMode("sheet");
       usePracticeStore.getState().setMode("watch");
@@ -340,6 +417,7 @@ function App(): React.JSX.Element {
 
     e2eWindow.__rexianoShowCelebrationFixture = (celebrationFixture) => {
       const fixture = getSheetMusicVisualFixture("dense-sparse");
+      cancelPendingPlaybackStart();
       reset();
       setSheetFixtureNotationData(fixture.notationData);
       loadSong(fixture.song);
@@ -362,14 +440,52 @@ function App(): React.JSX.Element {
         playback.isPlaying = state.isPlaying;
       }
     };
+    e2eWindow.__rexianoPrimePracticeSessionFixture = () => {
+      const currentSong = useSongStore.getState().song;
+      const { waitMode, scoreCalculator } = getPracticeEngines();
+      const firstNote = currentSong?.tracks[0]?.notes[0];
+      if (!currentSong || !waitMode || !scoreCalculator || !firstNote) {
+        return false;
+      }
+
+      usePracticeStore.getState().setMode("wait");
+      waitMode.reset();
+      waitMode.start();
+      waitMode.tick(currentSong.duration + 1);
+      scoreCalculator.reset();
+      scoreCalculator.noteHit(firstNote.midi, firstNote.time);
+      usePracticeStore.getState().resetScore();
+      usePracticeStore.getState().recordHit("__e2e_practice_fixture__");
+      return true;
+    };
+    e2eWindow.__rexianoGetPracticeSessionFixtureSnapshot = () => {
+      const { waitMode, scoreCalculator } = getPracticeEngines();
+      if (!waitMode || !scoreCalculator) return null;
+      const practice = usePracticeStore.getState();
+      const playback = usePlaybackStore.getState();
+      return {
+        mode: practice.mode,
+        isPlaying: playback.isPlaying,
+        currentTime: playback.currentTime,
+        waitState: waitMode.state,
+        waitResultCount: waitMode.noteResults.size,
+        waitTargetCount: waitMode.targetNotes.size,
+        engineScoreTotal: scoreCalculator.getScore().totalNotes,
+        storeScoreTotal: practice.score.totalNotes,
+        storeResultCount: practice.noteResults.size,
+      };
+    };
 
     return () => {
       delete e2eWindow.__rexianoLoadSheetMusicFixture;
       delete e2eWindow.__rexianoShowCelebrationFixture;
       delete e2eWindow.__rexianoForcePlaybackState;
+      delete e2eWindow.__rexianoPrimePracticeSessionFixture;
+      delete e2eWindow.__rexianoGetPracticeSessionFixtureSnapshot;
     };
   }, [
     applyRoute,
+    cancelPendingPlaybackStart,
     hidePostSessionFlow,
     loadSong,
     reset,
@@ -436,6 +552,7 @@ function App(): React.JSX.Element {
 
   const rebuildAudioStack = useCallback(
     async (targetSong: NonNullable<typeof song>): Promise<void> => {
+      audioReadySongRef.current = null;
       audioRef.current.engine?.setRuntimeErrorHandler(null);
       audioRef.current.scheduler?.dispose();
       audioRef.current.engine?.dispose();
@@ -467,10 +584,12 @@ function App(): React.JSX.Element {
       scheduler.setMutedTracks(
         getMutedTrackIndices(usePracticeStore.getState().trackPreferences),
       );
+      audioReadySongRef.current = targetSong;
       usePlaybackStore.getState().setAudioStatus("ready");
       usePlaybackStore.getState().clearAudioRecovery();
+      attemptPendingPlaybackStart();
     },
-    [],
+    [attemptPendingPlaybackStart],
   );
 
   const recoverAudio = useCallback(
@@ -640,7 +759,9 @@ function App(): React.JSX.Element {
         scheduler.setMutedTracks(
           getMutedTrackIndices(usePracticeStore.getState().trackPreferences),
         );
+        audioReadySongRef.current = song;
         usePlaybackStore.getState().setAudioStatus("ready");
+        attemptPendingPlaybackStart();
         return;
       }
 
@@ -676,7 +797,7 @@ function App(): React.JSX.Element {
     return () => {
       cancelled = true;
     };
-  }, [song, rebuildAudioStack]);
+  }, [attemptPendingPlaybackStart, song, rebuildAudioStack]);
 
   // Sync playback state → AudioScheduler
   const seekTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -745,6 +866,8 @@ function App(): React.JSX.Element {
       }
       disposeMetronome();
       triggerRecoveryRef.current = () => {};
+      pendingPlaybackStartSongRef.current = null;
+      audioReadySongRef.current = null;
     };
   }, []);
 
@@ -1402,7 +1525,11 @@ function App(): React.JSX.Element {
 
       {/* Mode selection modal (shown when a song first loads). */}
       {song && showModeModal && (
-        <ModeSelectionModal onSelect={handleModeSelect} />
+        <ModeSelectionModal
+          defaultMode={modeSelectionDefault}
+          onSelect={handleModeSelect}
+          onDismiss={handleModeDismiss}
+        />
       )}
 
       {/* Celebration overlay (shown when song ends).

@@ -470,6 +470,8 @@ export const en: TranslationMap = {
   "modeSelect.freeDesc": "Play freely without guidance",
   "modeSelect.escToSkip": "Press Esc to skip",
   "modeSelect.mustChoose": "Choose a mode to start playing",
+  "modeSelect.currentDefault": "Current default",
+  "modeSelect.backToLibrary": "Back to library",
 
   // ── Statistics ─────────────────────────────────────────────────
   "stats.title": "Session Stats",
