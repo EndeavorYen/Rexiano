@@ -279,6 +279,7 @@ export interface TranslationMap {
   "settings.language": string;
   "settings.showFingering": string;
   "settings.theme": string;
+  "settings.changeTheme": string;
   "settings.tab.theme": string;
   "settings.tab.display": string;
   "settings.tab.audio": string;

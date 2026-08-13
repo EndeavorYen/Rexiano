@@ -285,6 +285,7 @@ export const zhTW: TranslationMap = {
   "settings.language": "語言",
   "settings.showFingering": "顯示指法數字",
   "settings.theme": "主題",
+  "settings.changeTheme": "切換主題",
   "settings.tab.theme": "主題",
   "settings.tab.display": "顯示",
   "settings.tab.audio": "音訊",

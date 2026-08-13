@@ -296,6 +296,7 @@ export const en: TranslationMap = {
   "settings.language": "Language",
   "settings.showFingering": "Show fingering numbers",
   "settings.theme": "Theme",
+  "settings.changeTheme": "Change theme",
   "settings.tab.theme": "Theme",
   "settings.tab.display": "Display",
   "settings.tab.audio": "Audio",
