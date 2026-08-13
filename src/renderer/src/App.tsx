@@ -27,6 +27,7 @@ import {
   extractAudioOutputIds,
   hasAudioOutputChanged,
 } from "./engines/audio/recoveryUtils";
+import { recoverLatestPlaybackIntent } from "./engines/audio/audioRecoveryIntent";
 import {
   AudioInitializationOwner,
   runOwnedAudioInitialization,
@@ -139,10 +140,6 @@ function App(): React.JSX.Element {
   const song = useSongStore((s) => s.song);
   const loadSong = useSongStore((s) => s.loadSong);
   const reset = usePlaybackStore((s) => s.reset);
-  const prepareAssociatedMidiOpen = useCallback((): void => {
-    setSessionIntent("practice");
-  }, [setSessionIntent]);
-
   const {
     recentFiles,
     refresh: refreshRecentFiles,
@@ -657,6 +654,7 @@ function App(): React.JSX.Element {
     null,
   );
   const audioOutputSnapshotRef = useRef<string[] | null>(null);
+  const e2eAudioRecoveryDelayMsRef = useRef(0);
   const triggerRecoveryRef = useRef<(reason: string, error?: unknown) => void>(
     () => {},
   );
@@ -704,7 +702,12 @@ function App(): React.JSX.Element {
           audioRef.current = stack;
           usePlaybackStore.getState().setAudioStatus("loading");
         },
-        initialize: () => engine.init(),
+        initialize: async () => {
+          await engine.init();
+          if (e2eAudioRecoveryDelayMsRef.current > 0) {
+            await delay(e2eAudioRecoveryDelayMsRef.current);
+          }
+        },
         commit: () => {
           const { muted } = useSettingsStore.getState();
           engine.setVolume(muted ? 0 : usePlaybackStore.getState().volume);
@@ -767,17 +770,20 @@ function App(): React.JSX.Element {
               return;
             }
 
-            const { isPlaying, currentTime } = usePlaybackStore.getState();
-            const outcome = await rebuildAudioStack(liveSong);
+            const outcome = await recoverLatestPlaybackIntent({
+              targetSong: liveSong,
+              rebuild: rebuildAudioStack,
+              getCurrentSong: () => useSongStore.getState().song,
+              getPlaybackIntent: () => {
+                const { isPlaying, currentTime } = usePlaybackStore.getState();
+                return { isPlaying, currentTime };
+              },
+              getRuntime: () => {
+                const { engine, scheduler } = audioRef.current;
+                return engine && scheduler ? { engine, scheduler } : null;
+              },
+            });
             if (outcome === "stale") return;
-
-            if (isPlaying) {
-              const { engine, scheduler } = audioRef.current;
-              if (engine && scheduler) {
-                scheduler.start(currentTime);
-                await engine.resume();
-              }
-            }
             usePlaybackStore.getState().setAudioRecoverySucceeded();
             return;
           } catch (err) {
@@ -811,6 +817,20 @@ function App(): React.JSX.Element {
   useEffect(() => {
     triggerRecoveryRef.current = recoverAudio;
   }, [recoverAudio]);
+
+  useEffect(() => {
+    if (typeof window === "undefined" || !window.api.isE2eTestMode) return;
+    const e2eWindow = window as typeof window & {
+      __rexianoSetAudioRecoveryDelayFixture?: (delayMs: number) => void;
+    };
+    e2eWindow.__rexianoSetAudioRecoveryDelayFixture = (delayMs) => {
+      e2eAudioRecoveryDelayMsRef.current = Math.max(0, delayMs);
+    };
+    return () => {
+      e2eAudioRecoveryDelayMsRef.current = 0;
+      delete e2eWindow.__rexianoSetAudioRecoveryDelayFixture;
+    };
+  }, []);
 
   // Manual retry from UI (TransportBar "Retry" button)
   useEffect(() => {
