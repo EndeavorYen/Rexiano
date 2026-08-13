@@ -4,7 +4,7 @@ import {
   loadFirstBuiltInSong,
   openLibraryDrawer,
 } from "./helpers/appHarness";
-import { readFileSync, writeFileSync } from "fs";
+import { mkdirSync, readFileSync, rmSync, writeFileSync } from "fs";
 import { join, resolve } from "path";
 import type { Page } from "@playwright/test";
 
@@ -195,6 +195,108 @@ test.describe("Error recovery", () => {
       appPage.getByRole("button", { name: "Start Playing" }),
     ).toBeFocused();
     expect(JSON.parse(readFileSync(recentsPath, "utf-8"))).toEqual([]);
+  });
+
+  test("library recovery removes the stale recent from the main menu too", async ({
+    electronApp,
+    appPage,
+  }) => {
+    const userDataPath = await electronApp.evaluate(({ app }) =>
+      app.getPath("userData"),
+    );
+    const recentsPath = join(userDataPath, "recents.json");
+    const stalePath = join(userDataPath, "library-moved-away.mid");
+    writeFileSync(
+      recentsPath,
+      JSON.stringify([
+        {
+          path: stalePath,
+          name: "library-moved-away.mid",
+          timestamp: Date.now(),
+        },
+      ]),
+      "utf-8",
+    );
+    await appPage.reload();
+    await appPage.waitForLoadState("domcontentloaded");
+    await gotoLibrary(appPage);
+
+    const continueRecent = appPage.getByTestId("song-library-continue");
+    await expect(continueRecent).toContainText("library-moved-away.mid");
+    await continueRecent.getByRole("button").click();
+    const recovery = appPage.getByTestId("recent-file-recovery");
+    await expect(recovery).toBeVisible();
+    await recovery.getByTestId("recent-file-remove-stale").click();
+
+    await expect(continueRecent).toBeHidden();
+    await appPage.getByRole("button", { name: "Close / Back" }).click();
+    await expect(appPage.getByTitle("library-moved-away.mid")).toBeHidden();
+    expect(JSON.parse(readFileSync(recentsPath, "utf-8"))).toEqual([]);
+  });
+
+  test("failed removal keeps recovery and stale cards available in both views", async ({
+    electronApp,
+    appPage,
+  }) => {
+    const userDataPath = await electronApp.evaluate(({ app }) =>
+      app.getPath("userData"),
+    );
+    const recentsPath = join(userDataPath, "recents.json");
+    const stalePath = join(userDataPath, "read-only-recent.mid");
+    writeFileSync(
+      recentsPath,
+      JSON.stringify([
+        {
+          path: stalePath,
+          name: "read-only-recent.mid",
+          timestamp: Date.now(),
+        },
+      ]),
+      "utf-8",
+    );
+    await appPage.reload();
+    await appPage.waitForLoadState("domcontentloaded");
+    await gotoLibrary(appPage);
+
+    const continueRecent = appPage.getByTestId("song-library-continue");
+    await continueRecent.getByRole("button").click();
+    const libraryRecovery = appPage.getByTestId("recent-file-recovery");
+    await expect(libraryRecovery).toBeVisible();
+
+    rmSync(recentsPath);
+    mkdirSync(recentsPath);
+    const libraryFailure = appPage.waitForEvent(
+      "console",
+      (message) =>
+        message.type() === "error" &&
+        message.text().includes("Failed to remove recent MIDI file"),
+    );
+    await libraryRecovery.getByTestId("recent-file-remove-stale").click();
+    await libraryFailure;
+    await expect(libraryRecovery).toBeVisible();
+    await expect(continueRecent).toContainText("read-only-recent.mid");
+
+    await appPage.getByRole("button", { name: "Close / Back" }).click();
+    const mainMenuCard = appPage.getByRole("button", {
+      name: /^read-only-recent\.mid/,
+    });
+    await expect(mainMenuCard).toBeVisible();
+    await mainMenuCard.click();
+    const mainMenuRecovery = appPage.getByRole("alert");
+    await expect(mainMenuRecovery).toBeVisible();
+    const mainMenuFailure = appPage.waitForEvent(
+      "console",
+      (message) =>
+        message.type() === "error" &&
+        message.text().includes("Failed to remove recent MIDI file"),
+    );
+    await mainMenuRecovery
+      .getByRole("button", { name: "Remove from recents" })
+      .click();
+    await mainMenuFailure;
+
+    await expect(mainMenuRecovery).toBeVisible();
+    await expect(mainMenuCard).toBeVisible();
   });
 
   test("Space activates import recovery without toggling background playback", async ({

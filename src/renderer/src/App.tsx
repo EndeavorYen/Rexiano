@@ -1263,6 +1263,9 @@ function App(): React.JSX.Element {
           className="flex-1 min-h-0 flex flex-col animate-page-enter"
         >
           <SongLibrary
+            recentFiles={recentFiles}
+            onRefreshRecentFiles={refreshRecentFiles}
+            onRemoveRecentFile={removeRecentFile}
             onOpenFile={() => {
               setSessionIntent("practice");
               return handleOpenFile();
