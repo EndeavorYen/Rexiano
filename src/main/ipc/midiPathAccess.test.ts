@@ -1,5 +1,12 @@
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
-import { mkdirSync, mkdtempSync, rmSync, symlinkSync, writeFileSync } from "fs";
+import {
+  mkdirSync,
+  mkdtempSync,
+  renameSync,
+  rmSync,
+  symlinkSync,
+  writeFileSync,
+} from "fs";
 import { tmpdir } from "os";
 import { join } from "path";
 
@@ -91,19 +98,24 @@ describe("midiPathAccess", () => {
 
   test("does not transfer one-file approval to a replaced filesystem object", async () => {
     const filePath = join(musicPath, "Scale.mid");
+    const replacementPath = join(outsidePath, "Private.mid");
     await approveMidiFilePath(filePath);
     rmSync(filePath);
-    writeFileSync(filePath, "replacement");
+    // Rename a live inode onto the path. Unlink+create can reuse inodes on Linux.
+    renameSync(replacementPath, filePath);
 
     await expect(isApprovedMidiFilePath(filePath)).resolves.toBe(false);
   });
 
   test("does not authorize files after the approved folder is replaced at the same path", async () => {
+    const replacementFolder = join(tempUserDataPath, "MusicReplacement");
+    mkdirSync(join(replacementFolder, "Sub"), { recursive: true });
+    writeFileSync(join(replacementFolder, "Scale.mid"), "replacement");
+    writeFileSync(join(replacementFolder, "Sub", "Etude.kar"), "replacement");
+
     await approveMidiFolderPath(musicPath);
     rmSync(musicPath, { recursive: true });
-    mkdirSync(join(musicPath, "Sub"), { recursive: true });
-    writeFileSync(join(musicPath, "Scale.mid"), "replacement");
-    writeFileSync(join(musicPath, "Sub", "Etude.kar"), "replacement");
+    renameSync(replacementFolder, musicPath);
 
     await expect(
       isApprovedMidiFilePath(join(musicPath, "Scale.mid")),
