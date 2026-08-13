@@ -23,6 +23,8 @@ import type { NoteRenderer } from "@renderer/engines/fallingNotes/NoteRenderer";
 import type { AudioEngine } from "@renderer/engines/audio/AudioEngine";
 import type { AudioScheduler } from "@renderer/engines/audio/AudioScheduler";
 import type { ParsedSong } from "@renderer/engines/midi/types";
+import type { WaitMode } from "@renderer/engines/practice/WaitMode";
+import type { PracticeMode } from "@shared/types";
 
 interface AudioRef {
   engine: AudioEngine | null;
@@ -71,6 +73,91 @@ export function recordWrongPracticeInput(
   const key = `wrong:${sequence}:${midi}`;
   usePracticeStore.getState().recordMiss(key);
   return key;
+}
+
+interface WaitPlaybackTransition {
+  state: string;
+  pause(): void;
+  start(): void;
+  stop(): void;
+}
+
+export function applyPracticePlaybackTransition({
+  waitMode,
+  isPlaying,
+  wasPlaying,
+}: {
+  waitMode: WaitPlaybackTransition;
+  isPlaying: boolean;
+  wasPlaying: boolean;
+}): void {
+  if (isPlaying && !wasPlaying) waitMode.start();
+  if (!isPlaying && wasPlaying) waitMode.pause();
+}
+
+export function shouldStartPracticeScheduler({
+  mode,
+  waitState,
+}: {
+  mode: PracticeMode;
+  waitState: string | null;
+}): boolean {
+  return mode !== "wait" || waitState !== "waiting";
+}
+
+export function applyPracticeModeTransition({
+  waitMode,
+  nextMode,
+  isPlaying,
+  resumeScheduler,
+}: {
+  waitMode: Pick<WaitPlaybackTransition, "state" | "stop">;
+  nextMode: PracticeMode;
+  isPlaying: boolean;
+  resumeScheduler: () => void;
+}): void {
+  const wasWaiting = waitMode.state === "waiting";
+  if (nextMode !== "wait") {
+    waitMode.stop();
+    if (wasWaiting && isPlaying) resumeScheduler();
+  }
+}
+
+export function applyPracticeActiveTrackTransition({
+  waitMode,
+  tracks,
+  activeTracks,
+  isPlaying,
+  mode,
+  resumeScheduler,
+}: {
+  waitMode: Pick<WaitMode, "state" | "init" | "start">;
+  tracks: ParsedSong["tracks"];
+  activeTracks: Set<number>;
+  isPlaying: boolean;
+  mode: PracticeMode;
+  resumeScheduler: () => void;
+}): void {
+  const wasWaiting = waitMode.state === "waiting";
+  waitMode.init(tracks, activeTracks);
+  if (mode === "wait" && isPlaying) {
+    waitMode.start();
+    if (wasWaiting) resumeScheduler();
+  }
+}
+
+export function resetPracticeSession({
+  resetWaitMode,
+  resetScoreCalculator,
+  resetPracticeScore,
+}: {
+  resetWaitMode: () => void;
+  resetScoreCalculator: () => void;
+  resetPracticeScore: () => void;
+}): void {
+  resetWaitMode();
+  resetScoreCalculator();
+  resetPracticeScore();
 }
 
 /**
@@ -201,7 +288,29 @@ export function usePracticeLifecycle(
             waitMode.start();
           }
         } else {
-          waitMode.stop();
+          applyPracticeModeTransition({
+            waitMode,
+            nextMode: state.mode,
+            isPlaying: usePlaybackStore.getState().isPlaying,
+            resumeScheduler: () => {
+              const scheduler = audioRef.current.scheduler;
+              const engine = audioRef.current.engine;
+              if (!scheduler || !engine) return;
+              void engine
+                .resume()
+                .then(() => {
+                  if (
+                    usePracticeStore.getState().mode !== "wait" &&
+                    usePlaybackStore.getState().isPlaying
+                  ) {
+                    scheduler.resume(usePlaybackStore.getState().currentTime);
+                  }
+                })
+                .catch((err) => {
+                  console.error("Practice mode audio resume failed:", err);
+                });
+            },
+          });
         }
         scoreCalculator?.reset();
         usePracticeStore.getState().resetScore();
@@ -223,11 +332,35 @@ export function usePracticeLifecycle(
 
       // Active tracks change
       if (state.activeTracks !== prev.activeTracks && waitMode && currentSong) {
-        waitMode.init(currentSong.tracks, state.activeTracks);
+        applyPracticeActiveTrackTransition({
+          waitMode,
+          tracks: currentSong.tracks,
+          activeTracks: state.activeTracks,
+          isPlaying: usePlaybackStore.getState().isPlaying,
+          mode: state.mode,
+          resumeScheduler: () => {
+            const scheduler = audioRef.current.scheduler;
+            const engine = audioRef.current.engine;
+            if (!scheduler || !engine) return;
+            void engine
+              .resume()
+              .then(() => {
+                if (
+                  usePracticeStore.getState().mode === "wait" &&
+                  usePlaybackStore.getState().isPlaying
+                ) {
+                  scheduler.resume(usePlaybackStore.getState().currentTime);
+                }
+              })
+              .catch((err) => {
+                console.error("Practice track audio resume failed:", err);
+              });
+          },
+        });
       }
     });
     return unsub;
-  }, []);
+  }, [audioRef]);
 
   // ── Wire MIDI input → WaitMode.checkInput() ──
   useEffect(() => {
@@ -249,12 +382,11 @@ export function usePracticeLifecycle(
       const { waitMode } = getPracticeEngines();
       const practiceMode = usePracticeStore.getState().mode;
       if (!waitMode || practiceMode !== "wait") return;
-
-      if (state.isPlaying && !prev.isPlaying) {
-        waitMode.start();
-      } else if (!state.isPlaying && prev.isPlaying) {
-        waitMode.stop();
-      }
+      applyPracticePlaybackTransition({
+        waitMode,
+        isPlaying: state.isPlaying,
+        wasPlaying: prev.isPlaying,
+      });
     });
     return unsub;
   }, []);

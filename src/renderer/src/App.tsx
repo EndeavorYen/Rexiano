@@ -46,7 +46,11 @@ import {
   getMidiPlaybackOutputSender,
   useMidiDeviceStore,
 } from "./stores/useMidiDeviceStore";
-import { usePracticeLifecycle } from "./features/practice/usePracticeLifecycle";
+import {
+  resetPracticeSession,
+  shouldStartPracticeScheduler,
+  usePracticeLifecycle,
+} from "./features/practice/usePracticeLifecycle";
 import { PracticeToolbar } from "./features/practice/PracticeToolbar";
 import { ScoreOverlay } from "./features/practice/ScoreOverlay";
 import { useDialogFocus } from "./hooks/useDialogFocus";
@@ -57,7 +61,10 @@ import { DisplayModeToggle } from "./features/sheetMusic/DisplayModeToggle";
 import { convertSongToNotation } from "./features/sheetMusic/MidiToNotation";
 import { TempoMap } from "./engines/midi/TempoMap";
 import { TransportClock } from "./engines/transport/TransportClock";
-import { registerPlaybackDiscontinuityHandler } from "./engines/transport/playbackDiscontinuity";
+import {
+  registerPlaybackDiscontinuityHandler,
+  seekPlayback,
+} from "./engines/transport/playbackDiscontinuity";
 import type { NotationData } from "./features/sheetMusic/types";
 import {
   getSheetMusicVisualFixture,
@@ -132,6 +139,10 @@ function App(): React.JSX.Element {
   const song = useSongStore((s) => s.song);
   const loadSong = useSongStore((s) => s.loadSong);
   const reset = usePlaybackStore((s) => s.reset);
+  const prepareAssociatedMidiOpen = useCallback((): void => {
+    setSessionIntent("practice");
+  }, [setSessionIntent]);
+
   const {
     recentFiles,
     refresh: refreshRecentFiles,
@@ -424,6 +435,13 @@ function App(): React.JSX.Element {
       }) => void;
       __rexianoForcePlaybackState?: (state: { isPlaying?: boolean }) => void;
       __rexianoPrimePracticeSessionFixture?: () => boolean;
+      __rexianoPrepareWaitTargetFixture?: () => Promise<number[] | null>;
+      __rexianoSendMidiNoteFixture?: (midi: number) => void;
+      __rexianoSetPracticeLifecycleFixtureState?: (state: {
+        isPlaying?: boolean;
+        mode?: PracticeMode;
+        activeTracks?: number[];
+      }) => void;
       __rexianoGetPracticeSessionFixtureSnapshot?: () => {
         mode: PracticeMode;
         isPlaying: boolean;
@@ -431,6 +449,7 @@ function App(): React.JSX.Element {
         waitState: string | null;
         waitResultCount: number;
         waitTargetCount: number;
+        waitTargets: number[];
         engineScoreTotal: number;
         storeScoreTotal: number;
         storeResultCount: number;
@@ -493,6 +512,46 @@ function App(): React.JSX.Element {
       usePracticeStore.getState().recordHit("__e2e_practice_fixture__");
       return true;
     };
+    e2eWindow.__rexianoPrepareWaitTargetFixture = async () => {
+      const currentSong = useSongStore.getState().song;
+      const { waitMode, scoreCalculator } = getPracticeEngines();
+      const firstNote = currentSong?.tracks[0]?.notes[0];
+      if (!currentSong || !waitMode || !scoreCalculator || !firstNote) {
+        return null;
+      }
+
+      usePlaybackStore.getState().setPlaying(false);
+      usePracticeStore.getState().setMode("wait");
+      usePracticeStore.getState().setActiveTracks(new Set([0]));
+      resetPracticeSession({
+        resetWaitMode: () => waitMode.reset(),
+        resetScoreCalculator: () => scoreCalculator.reset(),
+        resetPracticeScore: usePracticeStore.getState().resetScore,
+      });
+      seekPlayback(firstNote.time);
+      usePlaybackStore.getState().setPlaying(true);
+      await new Promise<void>((resolve) => setTimeout(resolve, 50));
+      waitMode.start();
+      waitMode.tick(firstNote.time);
+      return [...waitMode.targetNotes];
+    };
+    e2eWindow.__rexianoSendMidiNoteFixture = (midi) => {
+      useMidiDeviceStore.setState({ activeNotes: new Set([midi]) });
+      useMidiDeviceStore.setState({ activeNotes: new Set() });
+    };
+    e2eWindow.__rexianoSetPracticeLifecycleFixtureState = (state) => {
+      if (typeof state.isPlaying === "boolean") {
+        usePlaybackStore.getState().setPlaying(state.isPlaying);
+      }
+      if (state.mode) {
+        usePracticeStore.getState().setMode(state.mode);
+      }
+      if (state.activeTracks) {
+        usePracticeStore
+          .getState()
+          .setActiveTracks(new Set(state.activeTracks));
+      }
+    };
     e2eWindow.__rexianoGetPracticeSessionFixtureSnapshot = () => {
       const { waitMode, scoreCalculator } = getPracticeEngines();
       if (!waitMode || !scoreCalculator) return null;
@@ -505,6 +564,7 @@ function App(): React.JSX.Element {
         waitState: waitMode.state,
         waitResultCount: waitMode.noteResults.size,
         waitTargetCount: waitMode.targetNotes.size,
+        waitTargets: [...waitMode.targetNotes],
         engineScoreTotal: scoreCalculator.getScore().totalNotes,
         storeScoreTotal: practice.score.totalNotes,
         storeResultCount: practice.noteResults.size,
@@ -516,6 +576,9 @@ function App(): React.JSX.Element {
       delete e2eWindow.__rexianoShowCelebrationFixture;
       delete e2eWindow.__rexianoForcePlaybackState;
       delete e2eWindow.__rexianoPrimePracticeSessionFixture;
+      delete e2eWindow.__rexianoPrepareWaitTargetFixture;
+      delete e2eWindow.__rexianoSendMidiNoteFixture;
+      delete e2eWindow.__rexianoSetPracticeLifecycleFixtureState;
       delete e2eWindow.__rexianoGetPracticeSessionFixtureSnapshot;
     };
   }, [
@@ -897,6 +960,15 @@ function App(): React.JSX.Element {
 
       // Play / pause
       if (state.isPlaying && !prev.isPlaying) {
+        const { waitMode } = getPracticeEngines();
+        if (
+          !shouldStartPracticeScheduler({
+            mode: usePracticeStore.getState().mode,
+            waitState: waitMode?.state ?? null,
+          })
+        ) {
+          return;
+        }
         // Start scheduler synchronously so the ticker loop gets valid
         // audioTime immediately. AudioContext.resume() can happen in the
         // background — ctx.currentTime is valid (just frozen) while
@@ -910,14 +982,21 @@ function App(): React.JSX.Element {
       } else if (!state.isPlaying && prev.isPlaying) {
         scheduler.stop();
       }
-
     });
     return unsub;
   }, []);
 
   useEffect(() => {
-    return registerPlaybackDiscontinuityHandler(({ targetTime }) => {
+    return registerPlaybackDiscontinuityHandler(({ targetTime, reason }) => {
       audioRef.current.scheduler?.seek(targetTime);
+      if (reason === "manual-reset") {
+        const { waitMode, scoreCalculator } = getPracticeEngines();
+        resetPracticeSession({
+          resetWaitMode: () => waitMode?.reset(),
+          resetScoreCalculator: () => scoreCalculator?.reset(),
+          resetPracticeScore: usePracticeStore.getState().resetScore,
+        });
+      }
     });
   }, []);
 
@@ -1054,6 +1133,7 @@ function App(): React.JSX.Element {
     resetPlayback: reset,
     removeRecentFile,
     refreshRecentFiles,
+    prepareAssociatedMidiOpen,
   });
 
   useEffect(() => {

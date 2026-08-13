@@ -322,6 +322,20 @@ describe("WaitMode", () => {
     expect(wm.state).toBe("idle");
   });
 
+  it("pause and resume preserve the same pending target", () => {
+    wm.init(makeTracks([{ midi: 60, time: 1 }]), new Set([0]));
+    wm.start();
+    wm.tick(1);
+    expect(wm.state).toBe("waiting");
+
+    wm.pause();
+    wm.start();
+
+    expect(wm.state).toBe("waiting");
+    expect(wm.targetNotes).toEqual(new Set([60]));
+    expect(wm.checkInput(new Set([60]))).toBe(true);
+  });
+
   it("clearCallbacks() prevents callbacks from firing after disposal", () => {
     const onWait = vi.fn();
     const onMiss = vi.fn();

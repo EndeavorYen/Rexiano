@@ -1,7 +1,12 @@
-import { describe, expect, test } from "vitest";
+import { describe, expect, test, vi } from "vitest";
 import {
+  applyPracticeActiveTrackTransition,
+  applyPracticeModeTransition,
+  applyPracticePlaybackTransition,
+  resetPracticeSession,
   recordWrongPracticeInput,
   resolveInitialPracticeActiveTracks,
+  shouldStartPracticeScheduler,
 } from "./usePracticeLifecycle";
 import { usePracticeStore } from "@renderer/stores/usePracticeStore";
 
@@ -46,5 +51,98 @@ describe("recordWrongPracticeInput", () => {
       missedNotes: 1,
       accuracy: 0,
     });
+  });
+});
+
+describe("practice lifecycle transitions", () => {
+  test("ordinary pause preserves the pending Wait target and resume continues it", () => {
+    const waitMode = {
+      state: "waiting",
+      pause: vi.fn(),
+      start: vi.fn(),
+      stop: vi.fn(),
+    };
+
+    applyPracticePlaybackTransition({
+      waitMode,
+      isPlaying: false,
+      wasPlaying: true,
+    });
+    applyPracticePlaybackTransition({
+      waitMode,
+      isPlaying: true,
+      wasPlaying: false,
+    });
+
+    expect(waitMode.pause).toHaveBeenCalledOnce();
+    expect(waitMode.start).toHaveBeenCalledOnce();
+    expect(waitMode.stop).not.toHaveBeenCalled();
+  });
+
+  test("resuming a player pause does not restart audio past a pending Wait target", () => {
+    expect(
+      shouldStartPracticeScheduler({ mode: "wait", waitState: "waiting" }),
+    ).toBe(false);
+    expect(
+      shouldStartPracticeScheduler({ mode: "wait", waitState: "playing" }),
+    ).toBe(true);
+    expect(
+      shouldStartPracticeScheduler({ mode: "watch", waitState: "waiting" }),
+    ).toBe(true);
+  });
+
+  test("leaving Wait resumes a frozen scheduler exactly once", () => {
+    const waitMode = { state: "waiting", stop: vi.fn() };
+    const resumeScheduler = vi.fn();
+
+    applyPracticeModeTransition({
+      waitMode,
+      nextMode: "watch",
+      isPlaying: true,
+      resumeScheduler,
+    });
+
+    expect(resumeScheduler).toHaveBeenCalledOnce();
+    expect(waitMode.stop).toHaveBeenCalledOnce();
+  });
+
+  test("track changes reinitialize Wait and restore the playing state", () => {
+    const waitMode = {
+      state: "waiting" as const,
+      init: vi.fn(),
+      start: vi.fn(),
+    };
+    const tracks = [{ notes: [] }] as never;
+    const activeTracks = new Set([1]);
+    const resumeScheduler = vi.fn();
+
+    applyPracticeActiveTrackTransition({
+      waitMode,
+      tracks,
+      activeTracks,
+      isPlaying: true,
+      mode: "wait",
+      resumeScheduler,
+    });
+
+    expect(waitMode.init).toHaveBeenCalledWith(tracks, activeTracks);
+    expect(waitMode.start).toHaveBeenCalledOnce();
+    expect(resumeScheduler).toHaveBeenCalledOnce();
+  });
+
+  test("manual reset clears every practice accumulator", () => {
+    const resetWaitMode = vi.fn();
+    const resetScoreCalculator = vi.fn();
+    const resetPracticeScore = vi.fn();
+
+    resetPracticeSession({
+      resetWaitMode,
+      resetScoreCalculator,
+      resetPracticeScore,
+    });
+
+    expect(resetWaitMode).toHaveBeenCalledOnce();
+    expect(resetScoreCalculator).toHaveBeenCalledOnce();
+    expect(resetPracticeScore).toHaveBeenCalledOnce();
   });
 });

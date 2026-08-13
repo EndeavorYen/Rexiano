@@ -116,6 +116,9 @@ export class WaitMode {
 
   /** Start wait mode (called when user presses play) */
   start(): void {
+    // An ordinary player pause does not clear a pending target. Resuming the
+    // transport must keep waiting for that exact chord.
+    if (this._state === "waiting") return;
     this._state = "playing";
   }
 
@@ -123,6 +126,11 @@ export class WaitMode {
   stop(): void {
     this._state = "idle";
     this._targetNotes.clear();
+  }
+
+  /** Pause the lifecycle without losing a pending target or judgments. */
+  pause(): void {
+    if (this._state === "playing") this._state = "idle";
   }
 
   /**
