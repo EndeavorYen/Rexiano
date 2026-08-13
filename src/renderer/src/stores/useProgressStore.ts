@@ -66,8 +66,17 @@ export const useProgressStore = create<ProgressState>()((set, get) => ({
 
 // ─── Auto-save integration ───────────────────────────────────────────
 
-/** Timestamp when the current practice session started (playing → true) */
-let _sessionStartTime: number | null = null;
+interface ActivePracticeSession {
+  id: string;
+  songId: string;
+  songTitle: string;
+  timestamp: number;
+  accumulatedMs: number;
+  activeSegmentStartedAt: number | null;
+}
+
+/** One in-memory lifecycle survives any number of ordinary pauses. */
+let _activeSession: ActivePracticeSession | null = null;
 
 /** Unsubscribe function for the playback subscription, if active */
 let _autoSaveUnsub: (() => void) | null = null;
@@ -82,45 +91,90 @@ export function initAutoSave(): () => void {
   // Prevent duplicate subscriptions — check for non-null (still active) ref
   if (_autoSaveUnsub) return _autoSaveUnsub;
 
-  const rawUnsub = usePlaybackStore.subscribe((state, prev) => {
-    // Track when playback starts
-    if (state.isPlaying && !prev.isPlaying) {
-      _sessionStartTime = Date.now();
+  const finishActiveSegment = (now: number): void => {
+    if (!_activeSession || _activeSession.activeSegmentStartedAt === null) {
+      return;
     }
+    _activeSession.accumulatedMs +=
+      now - _activeSession.activeSegmentStartedAt;
+    _activeSession.activeSegmentStartedAt = null;
+  };
 
-    // When transitioning from playing to stopped, save session
-    if (!state.isPlaying && prev.isPlaying && _sessionStartTime !== null) {
-      const practiceState = usePracticeStore.getState();
-      const songState = useSongStore.getState();
+  const finalizeSession = (): void => {
+    const session = _activeSession;
+    if (!session) return;
+    finishActiveSegment(Date.now());
+    _activeSession = null; // Clear before IPC so every terminal event is idempotent.
 
-      // Only save if there's actual score data
-      if (practiceState.score.totalNotes > 0 && songState.song) {
-        const durationSeconds = (Date.now() - _sessionStartTime) / 1000;
-        const song = songState.song;
+    const practiceState = usePracticeStore.getState();
+    if (practiceState.score.totalNotes <= 0) return;
 
-        const record: SessionRecord = {
+    const record: SessionRecord = {
+      id: session.id,
+      songId: session.songId,
+      songTitle: session.songTitle,
+      timestamp: session.timestamp,
+      mode: practiceState.mode,
+      speed: practiceState.speed,
+      score: { ...practiceState.score },
+      durationSeconds: Math.round(session.accumulatedMs / 1000),
+      tracksPlayed: Array.from(practiceState.activeTracks),
+      noteResults: Array.from(practiceState.noteResults.entries()),
+    };
+    void useProgressStore.getState().addSession(record);
+  };
+
+  const rawUnsub = usePlaybackStore.subscribe((state, prev) => {
+    const now = Date.now();
+
+    if (state.isPlaying && !prev.isPlaying) {
+      const song = useSongStore.getState().song;
+      if (!song) return;
+      if (!_activeSession || _activeSession.songId !== song.fileName) {
+        _activeSession = {
           id: crypto.randomUUID(),
           songId: song.fileName,
           songTitle: song.fileName,
-          timestamp: Date.now(),
-          mode: practiceState.mode,
-          speed: practiceState.speed,
-          score: { ...practiceState.score },
-          durationSeconds: Math.round(durationSeconds),
-          tracksPlayed: Array.from(practiceState.activeTracks),
-          noteResults: Array.from(practiceState.noteResults.entries()),
+          timestamp: now,
+          accumulatedMs: 0,
+          activeSegmentStartedAt: now,
         };
-
-        void useProgressStore.getState().addSession(record);
+      } else {
+        _activeSession.activeSegmentStartedAt = now;
       }
-
-      _sessionStartTime = null;
     }
+
+    if (!state.isPlaying && prev.isPlaying) {
+      finishActiveSegment(now);
+      const song = useSongStore.getState().song;
+      const reachedEnd =
+        song !== null && state.currentTime >= Math.max(0, song.duration - 0.01);
+      if (reachedEnd) finalizeSession();
+    }
+
+    if (state.resetSignal !== prev.resetSignal) finalizeSession();
   });
+
+  const songUnsub = useSongStore.subscribe((state, prev) => {
+    if (state.song !== prev.song) finalizeSession();
+  });
+
+  // Browser/Electron cannot guarantee async IPC completion after a crash. A
+  // graceful page hide is best-effort; an abrupt crash deliberately discards
+  // the unfinished in-memory session instead of duplicating partial records.
+  const handlePageHide = (): void => finalizeSession();
+  if (typeof window.addEventListener === "function") {
+    window.addEventListener("pagehide", handlePageHide);
+  }
 
   // Wrap unsubscribe to also clear the guard ref, allowing re-initialization
   _autoSaveUnsub = () => {
     rawUnsub();
+    songUnsub();
+    if (typeof window.removeEventListener === "function") {
+      window.removeEventListener("pagehide", handlePageHide);
+    }
+    _activeSession = null;
     _autoSaveUnsub = null;
   };
 

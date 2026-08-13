@@ -1,4 +1,4 @@
-import { describe, test, expect, beforeEach, vi } from "vitest";
+import { afterEach, describe, test, expect, beforeEach, vi } from "vitest";
 import { useProgressStore, initAutoSave } from "./useProgressStore";
 import { usePlaybackStore } from "./usePlaybackStore";
 import { usePracticeStore } from "./usePracticeStore";
@@ -207,6 +207,8 @@ describe("useProgressStore", () => {
 // ─── initAutoSave() integration ─────────────────────────
 describe("initAutoSave()", () => {
   beforeEach(() => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-08-13T00:00:00.000Z"));
     vi.clearAllMocks();
     useProgressStore.setState({ sessions: [], isLoaded: true });
     usePlaybackStore.setState({ isPlaying: false, currentTime: 0 });
@@ -227,7 +229,11 @@ describe("initAutoSave()", () => {
     useSongStore.setState({ song: null });
   });
 
-  test("saves session when playback stops with score > 0", async () => {
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  test("persists one accumulated record after repeated pause and resume", async () => {
     const unsub = initAutoSave();
 
     useSongStore.getState().loadSong(fakeSong);
@@ -238,8 +244,16 @@ describe("initAutoSave()", () => {
 
     // Start playing
     usePlaybackStore.getState().setPlaying(true);
+    vi.advanceTimersByTime(2_000);
 
-    // Stop playing — should trigger auto-save
+    // Ordinary pause is not a terminal session event.
+    usePlaybackStore.getState().setPlaying(false);
+    expect(window.api.saveSession).not.toHaveBeenCalled();
+
+    vi.advanceTimersByTime(10_000);
+    usePlaybackStore.getState().setPlaying(true);
+    vi.advanceTimersByTime(3_000);
+    usePlaybackStore.getState().setCurrentTime(fakeSong.duration);
     usePlaybackStore.getState().setPlaying(false);
 
     // Give the async addSession a tick to complete
@@ -251,6 +265,7 @@ describe("initAutoSave()", () => {
     expect(savedRecord.songTitle).toBe("test-song.mid");
     expect(savedRecord.score.totalNotes).toBe(2);
     expect(savedRecord.mode).toBe("wait");
+    expect(savedRecord.durationSeconds).toBe(5);
 
     unsub();
   });
@@ -263,6 +278,7 @@ describe("initAutoSave()", () => {
     usePracticeStore.getState().recordHit("60:2000");
 
     usePlaybackStore.getState().setPlaying(true);
+    usePlaybackStore.getState().setCurrentTime(fakeSong.duration);
     usePlaybackStore.getState().setPlaying(false);
 
     await vi.waitFor(() => {
@@ -284,6 +300,7 @@ describe("initAutoSave()", () => {
     useSongStore.getState().loadSong(fakeSong);
 
     usePlaybackStore.getState().setPlaying(true);
+    usePlaybackStore.getState().setCurrentTime(fakeSong.duration);
     usePlaybackStore.getState().setPlaying(false);
 
     expect(window.api.saveSession).not.toHaveBeenCalled();
@@ -301,6 +318,44 @@ describe("initAutoSave()", () => {
 
     expect(window.api.saveSession).not.toHaveBeenCalled();
 
+    unsub();
+  });
+
+  test("finalizes once when the song is exited while paused", async () => {
+    const unsub = initAutoSave();
+    useSongStore.getState().loadSong(fakeSong);
+    usePracticeStore.getState().recordHit("n1");
+    usePlaybackStore.getState().setPlaying(true);
+    vi.advanceTimersByTime(1_500);
+    usePlaybackStore.getState().setPlaying(false);
+
+    useSongStore.getState().clearSong();
+
+    await vi.waitFor(() => {
+      expect(window.api.saveSession).toHaveBeenCalledTimes(1);
+    });
+    expect(vi.mocked(window.api.saveSession).mock.calls[0][0]).toMatchObject({
+      songId: "test-song.mid",
+      durationSeconds: 2,
+    });
+    unsub();
+  });
+
+  test("finalizes once when a paused session is reset to the beginning", async () => {
+    const unsub = initAutoSave();
+    useSongStore.getState().loadSong(fakeSong);
+    usePracticeStore.getState().recordHit("n1");
+    usePlaybackStore.setState({ currentTime: 12 });
+    usePlaybackStore.getState().setPlaying(true);
+    vi.advanceTimersByTime(1_000);
+    usePlaybackStore.getState().setPlaying(false);
+    expect(window.api.saveSession).not.toHaveBeenCalled();
+
+    usePlaybackStore.getState().reset();
+
+    await vi.waitFor(() => {
+      expect(window.api.saveSession).toHaveBeenCalledTimes(1);
+    });
     unsub();
   });
 });

@@ -26,6 +26,8 @@ interface PlaybackState {
   audioRecoverySuccessVisible: boolean;
   /** Monotonic trigger value for user-initiated recovery */
   audioRecoverySignal: number;
+  /** Monotonic marker that distinguishes Reset from an ordinary pause/seek. */
+  resetSignal: number;
 
   setCurrentTime: (time: number) => void;
   setPlaying: (playing: boolean) => void;
@@ -56,6 +58,7 @@ export const usePlaybackStore = create<PlaybackState>()((set) => ({
   audioRecoveryMaxAttempts: 0,
   audioRecoverySuccessVisible: false,
   audioRecoverySignal: 0,
+  resetSignal: 0,
 
   setCurrentTime: (time) => set({ currentTime: time }),
   setPlaying: (playing) => set({ isPlaying: playing }),
@@ -99,13 +102,14 @@ export const usePlaybackStore = create<PlaybackState>()((set) => ({
       clearTimeout(recoverySuccessTimer);
       recoverySuccessTimer = null;
     }
-    set({
+    set((state) => ({
       currentTime: 0,
       isPlaying: false,
       audioRecoveryState: "idle",
       audioRecoveryAttempt: 0,
       audioRecoveryMaxAttempts: 0,
       audioRecoverySuccessVisible: false,
-    });
+      resetSignal: state.resetSignal + 1,
+    }));
   },
 }));
