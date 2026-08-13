@@ -63,6 +63,16 @@ export function resolveInitialPracticeActiveTracks({
   };
 }
 
+/** Record a non-target NoteOn with a durable, non-colour session key. */
+export function recordWrongPracticeInput(
+  midi: number,
+  sequence: number,
+): string {
+  const key = `wrong:${sequence}:${midi}`;
+  usePracticeStore.getState().recordMiss(key);
+  return key;
+}
+
 /**
  * Manages the full Phase 6 practice engine lifecycle for a loaded song.
  *
@@ -74,8 +84,10 @@ export function resolveInitialPracticeActiveTracks({
 export function usePracticeLifecycle(
   song: ParsedSong | null,
   audioRef: React.MutableRefObject<AudioRef>,
+  onWrongInput?: (midi: number) => void,
 ): PracticeLifecycleResult {
   const noteRendererRef = useRef<NoteRenderer | null>(null);
+  const wrongInputSequenceRef = useRef(0);
 
   const handleNoteRendererReady = useCallback((renderer: NoteRenderer) => {
     noteRendererRef.current = renderer;
@@ -142,6 +154,11 @@ export function usePracticeLifecycle(
           }
         }
       },
+      onWrongInput: (midi) => {
+        wrongInputSequenceRef.current += 1;
+        recordWrongPracticeInput(midi, wrongInputSequenceRef.current);
+        onWrongInput?.(midi);
+      },
       onWait: () => {
         // Freeze audio while waiting for input. pause() leaves notes that are
         // already sounding to ring out, where stop() would cut sustained notes
@@ -167,7 +184,7 @@ export function usePracticeLifecycle(
     return () => {
       disposePracticeEngines();
     };
-  }, [song, audioRef]);
+  }, [song, audioRef, onWrongInput]);
 
   // ── Sync practice store → engine singletons (permanent subscriber) ──
   useEffect(() => {

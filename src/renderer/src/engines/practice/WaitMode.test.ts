@@ -96,6 +96,56 @@ describe("WaitMode", () => {
     expect(wm.state).toBe("waiting");
   });
 
+  it("reports each wrong physical NoteOn once while waiting", () => {
+    const onWrongInput = vi.fn();
+    wm.setCallbacks({ onWrongInput });
+    wm.init(makeTracks([{ midi: 60, time: 1 }]), new Set([0]));
+    wm.start();
+    wm.tick(1);
+
+    expect(wm.checkInput(new Set([61]))).toBe(false);
+    expect(wm.checkInput(new Set([61]))).toBe(false);
+    expect(onWrongInput).toHaveBeenCalledTimes(1);
+    expect(onWrongInput).toHaveBeenCalledWith(61);
+
+    wm.checkInput(new Set());
+    wm.checkInput(new Set([61]));
+    expect(onWrongInput).toHaveBeenCalledTimes(2);
+  });
+
+  it("records an extra note before accepting a corrected target", () => {
+    const onWrongInput = vi.fn();
+    const onHit = vi.fn();
+    wm.setCallbacks({ onWrongInput, onHit });
+    wm.init(makeTracks([{ midi: 64, time: 1 }]), new Set([0]));
+    wm.start();
+    wm.tick(1);
+
+    expect(wm.checkInput(new Set([61]))).toBe(false);
+    expect(wm.checkInput(new Set([61, 64]))).toBe(true);
+    expect(onWrongInput).toHaveBeenCalledTimes(1);
+    expect(onHit).toHaveBeenCalledTimes(1);
+  });
+
+  it("does not penalize incomplete legitimate chords", () => {
+    const onWrongInput = vi.fn();
+    wm.setCallbacks({ onWrongInput });
+    wm.init(
+      makeTracks([
+        { midi: 60, time: 1, ticks: 480 },
+        { midi: 64, time: 1, ticks: 480 },
+      ]),
+      new Set([0]),
+    );
+    wm.start();
+    wm.tick(1);
+
+    expect(wm.checkInput(new Set([60]))).toBe(false);
+    expect(onWrongInput).not.toHaveBeenCalled();
+    expect(wm.checkInput(new Set([60, 64]))).toBe(true);
+    expect(onWrongInput).not.toHaveBeenCalled();
+  });
+
   it("handles chords — all notes must be pressed", () => {
     const tracks: ParsedTrack[] = [
       {

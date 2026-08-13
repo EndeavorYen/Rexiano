@@ -11,6 +11,8 @@ export interface WaitModeCallbacks {
   onResume?: () => void;
   onHit?: (midi: number, time: number) => void;
   onMiss?: (midi: number, time: number) => void;
+  /** Fired once for each non-target physical NoteOn while waiting. */
+  onWrongInput?: (midi: number) => void;
 }
 
 /** Structured info for a note awaiting user input */
@@ -66,6 +68,8 @@ export class WaitMode {
   private _pendingNoteDetails: PendingNoteInfo[] = [];
   /** Notes inside the input window before selecting the earliest onset. */
   private _candidateNoteDetails: PendingNoteInfo[] = [];
+  /** Previous MIDI snapshot, used to distinguish NoteOn from held notes. */
+  private _activeInputNotes = new Set<number>();
 
   /**
    * @param toleranceMs Time window (±ms) around the hit line for accepting input.
@@ -106,6 +110,7 @@ export class WaitMode {
     this._trackCursors.clear();
     this._pendingNoteDetails.length = 0;
     this._candidateNoteDetails.length = 0;
+    this._activeInputNotes.clear();
     this._state = "idle";
   }
 
@@ -223,8 +228,20 @@ export class WaitMode {
    * @returns true if all target notes were matched (resume playback)
    */
   checkInput(activeNotes: Set<number>): boolean {
+    const newlyPressed: number[] = [];
+    for (const midi of activeNotes) {
+      if (!this._activeInputNotes.has(midi)) newlyPressed.push(midi);
+    }
+    this._activeInputNotes = new Set(activeNotes);
+
     if (this._state !== "waiting") return false;
     if (this._targetNotes.size === 0) return false;
+
+    for (const midi of newlyPressed) {
+      if (!this._targetNotes.has(midi)) {
+        this._callbacks.onWrongInput?.(midi);
+      }
+    }
 
     // Check if all target notes are pressed
     for (const midi of this._targetNotes) {
@@ -258,6 +275,7 @@ export class WaitMode {
     this._trackCursors.clear();
     this._pendingNoteDetails.length = 0;
     this._candidateNoteDetails.length = 0;
+    this._activeInputNotes.clear();
     this._state = "idle";
   }
 }

@@ -1,5 +1,9 @@
 import { describe, expect, test } from "vitest";
-import { resolveInitialPracticeActiveTracks } from "./usePracticeLifecycle";
+import {
+  recordWrongPracticeInput,
+  resolveInitialPracticeActiveTracks,
+} from "./usePracticeLifecycle";
+import { usePracticeStore } from "@renderer/stores/usePracticeStore";
 
 describe("resolveInitialPracticeActiveTracks", () => {
   test("defaults uninitialized empty selections to every track", () => {
@@ -25,6 +29,22 @@ describe("resolveInitialPracticeActiveTracks", () => {
     ).toEqual({
       activeTracks: new Set(),
       shouldStoreDefault: false,
+    });
+  });
+});
+
+describe("recordWrongPracticeInput", () => {
+  test("records a miss under a durable wrong-input key", () => {
+    usePracticeStore.getState().resetScore();
+
+    const key = recordWrongPracticeInput(61, 3);
+
+    expect(key).toBe("wrong:3:61");
+    expect(usePracticeStore.getState().noteResults.get(key)).toBe("miss");
+    expect(usePracticeStore.getState().score).toMatchObject({
+      totalNotes: 1,
+      missedNotes: 1,
+      accuracy: 0,
     });
   });
 });

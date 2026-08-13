@@ -527,6 +527,10 @@ function App(): React.JSX.Element {
 
   const [activeNotes, setActiveNotes] = useState<Set<number>>(new Set());
   const midiActiveNotes = useMidiDeviceStore((s) => s.activeNotes);
+  const [wrongNotes, setWrongNotes] = useState<Set<number>>(new Set());
+  const wrongNoteTimersRef = useRef(
+    new Map<number, ReturnType<typeof setTimeout>>(),
+  );
   const [viewportSize, setViewportSize] = useState(() =>
     typeof window !== "undefined"
       ? { width: window.innerWidth, height: window.innerHeight }
@@ -538,6 +542,30 @@ function App(): React.JSX.Element {
 
   const handleActiveNotesChange = useCallback((notes: Set<number>) => {
     setActiveNotes(notes);
+  }, []);
+
+  const handleWrongPracticeInput = useCallback((midi: number): void => {
+    const existingTimer = wrongNoteTimersRef.current.get(midi);
+    if (existingTimer) clearTimeout(existingTimer);
+    setWrongNotes((notes) => new Set(notes).add(midi));
+    const timer = setTimeout(() => {
+      setWrongNotes((notes) => {
+        const next = new Set(notes);
+        next.delete(midi);
+        return next;
+      });
+      wrongNoteTimersRef.current.delete(midi);
+    }, 420);
+    wrongNoteTimersRef.current.set(midi, timer);
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      for (const timer of wrongNoteTimersRef.current.values()) {
+        clearTimeout(timer);
+      }
+      wrongNoteTimersRef.current.clear();
+    };
   }, []);
 
   useEffect(() => {
@@ -972,6 +1000,7 @@ function App(): React.JSX.Element {
   const { handleNoteRendererReady, noteRendererRef } = usePracticeLifecycle(
     song,
     audioRef,
+    handleWrongPracticeInput,
   );
 
   const handleFallingNoteRendererReady = useCallback(
@@ -1546,6 +1575,7 @@ function App(): React.JSX.Element {
             <PianoKeyboard
               activeNotes={activeNotes}
               midiActiveNotes={midiActiveNotes}
+              missedNotes={wrongNotes}
               height={keyboardHeight}
               compactLabels={compactKeyLabels}
             />
