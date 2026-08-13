@@ -1,4 +1,4 @@
-import { open as fsOpen } from "fs/promises";
+import { open as fsOpen, realpath as fsRealpath } from "fs/promises";
 import {
   MAX_MIDI_FILE_BYTES,
   MIDI_FILE_TOO_LARGE_DIAGNOSTIC,
@@ -22,12 +22,14 @@ export class MidiFileReadError extends Error {
 
 interface FileStats {
   size: number;
+  identity: string;
   isFile(): boolean;
 }
 
 export interface MidiFileHandle {
   stat(): Promise<FileStats>;
   read(maxBytes: number): Promise<Buffer>;
+  realpath(): Promise<string>;
   close(): Promise<void>;
 }
 
@@ -38,15 +40,23 @@ export interface MidiFileReadOperations {
 const defaultOperations: MidiFileReadOperations = {
   async open(path: string): Promise<MidiFileHandle> {
     const file = await fsOpen(path, "r");
+    const openedPath = await fsRealpath(path);
     return {
       async stat() {
         const stats = await file.stat();
-        return { size: stats.size, isFile: () => stats.isFile() };
+        return {
+          size: stats.size,
+          identity: `${stats.dev}:${stats.ino}`,
+          isFile: () => stats.isFile(),
+        };
       },
       async read(maxBytes: number) {
         const buffer = Buffer.alloc(maxBytes);
         const { bytesRead } = await file.read(buffer, 0, maxBytes, 0);
         return buffer.subarray(0, bytesRead);
+      },
+      async realpath() {
+        return openedPath;
       },
       async close() {
         await file.close();
@@ -54,6 +64,8 @@ const defaultOperations: MidiFileReadOperations = {
     };
   },
 };
+
+export { defaultOperations as midiFileReadOperations };
 
 export async function readBoundedMidiFile(
   filePath: string,

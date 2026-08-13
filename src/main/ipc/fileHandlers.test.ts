@@ -12,6 +12,8 @@ const mockResourcesPath = "/mock/resources";
 let mockIsPackaged = false;
 let mockFileContents: Record<string, Buffer> = {};
 const mockFdReads: string[] = [];
+const mockPathIdentity = { dev: 1, ino: 10 };
+const mockOpenIdentity = { dev: 1, ino: 10 };
 
 vi.mock("electron", () => ({
   ipcMain: {
@@ -50,6 +52,8 @@ vi.mock("fs/promises", () => ({
       stat: async () => ({
         size: contents.byteLength,
         isFile: () => true,
+        dev: mockOpenIdentity.dev,
+        ino: mockOpenIdentity.ino,
       }),
       read: async (
         buffer: Buffer,
@@ -64,6 +68,7 @@ vi.mock("fs/promises", () => ({
         return { bytesRead };
       },
       close: async () => undefined,
+      realpath: async () => normalized,
     };
   }),
   writeFile: vi.fn(async () => {}),
@@ -76,8 +81,8 @@ vi.mock("fs/promises", () => ({
   }),
   stat: vi.fn(async (path: string) => ({
     size: mockFileContents[path.replace(/\\/g, "/")]?.byteLength ?? 0,
-    dev: 1,
-    ino: path.length,
+    dev: mockPathIdentity.dev,
+    ino: mockPathIdentity.ino,
     isFile: () => path.replace(/\\/g, "/") in mockFileContents,
     isDirectory: () => false,
   })),
@@ -109,6 +114,10 @@ describe("fileHandlers", () => {
     mockIsPackaged = false;
     mockFileContents = {};
     mockFdReads.length = 0;
+    mockPathIdentity.dev = 1;
+    mockPathIdentity.ino = 10;
+    mockOpenIdentity.dev = 1;
+    mockOpenIdentity.ino = 10;
     clearApprovedMidiPathAccessForTests();
     vi.clearAllMocks();
     Object.defineProperty(process, "resourcesPath", {
@@ -154,6 +163,18 @@ describe("fileHandlers", () => {
       data: [1, 2, 3],
       path: "/Users/rex/Music/Scale.mid",
     });
+  });
+
+  test("LOAD_MIDI_PATH rejects when the opened fd is a different inode than the grant", async () => {
+    const path = "/Users/rex/Music/Scale.mid";
+    mockFileContents[path] = Buffer.from([1, 2, 3]);
+    await approveMidiFilePath(path);
+    mockOpenIdentity.ino = 99;
+
+    await expect(
+      handlers[IpcChannels.LOAD_MIDI_PATH](trustedEvent, path),
+    ).resolves.toBeNull();
+    expect(mockFdReads).not.toContain(path);
   });
 
   test("LOAD_MIDI_PATH rejects an oversized approved file before read", async () => {
