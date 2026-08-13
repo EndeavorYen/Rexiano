@@ -11,7 +11,6 @@ import type {
   UserDataRendererSnapshot,
   WatchedMidiFolder,
   WatchedMidiFoldersScanResult,
-  AppUpdateAvailable,
   AppUpdateCheckResult,
   AppUpdateDownloadResult,
   AppUpdateStatus,
@@ -122,14 +121,12 @@ const api = {
   getAppInfo: (): Promise<AppInfo> => ipcRenderer.invoke("app:getAppInfo"),
   checkForUpdates: (): Promise<AppUpdateCheckResult> =>
     ipcRenderer.invoke(IpcChannels.UPDATE_CHECK),
-  downloadUpdate: (
-    update: AppUpdateAvailable,
-  ): Promise<AppUpdateDownloadResult> =>
-    ipcRenderer.invoke(IpcChannels.UPDATE_DOWNLOAD, update),
+  downloadUpdate: (artifactId: string): Promise<AppUpdateDownloadResult> =>
+    ipcRenderer.invoke(IpcChannels.UPDATE_DOWNLOAD, artifactId),
   openUpdateRelease: (releaseUrl: string): Promise<boolean> =>
     ipcRenderer.invoke(IpcChannels.UPDATE_OPEN_RELEASE, releaseUrl),
-  openDownloadedUpdate: (downloadedPath: string): Promise<boolean> =>
-    ipcRenderer.invoke(IpcChannels.UPDATE_OPEN_DOWNLOADED, downloadedPath),
+  openDownloadedUpdate: (): Promise<boolean> =>
+    ipcRenderer.invoke(IpcChannels.UPDATE_OPEN_DOWNLOADED),
   onUpdateProgress: (
     callback: (status: AppUpdateStatus) => void,
   ): (() => void) => {

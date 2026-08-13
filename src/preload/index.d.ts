@@ -13,7 +13,6 @@ import type {
   UserDataRendererSnapshot,
   WatchedMidiFolder,
   WatchedMidiFoldersScanResult,
-  AppUpdateAvailable,
   AppUpdateCheckResult,
   AppUpdateDownloadResult,
   AppUpdateStatus,
@@ -100,13 +99,11 @@ declare global {
       /** Release pipeline: check GitHub Releases for packaged updates */
       checkForUpdates: () => Promise<AppUpdateCheckResult>;
       /** Release pipeline: download an available update artifact */
-      downloadUpdate: (
-        update: AppUpdateAvailable,
-      ) => Promise<AppUpdateDownloadResult>;
+      downloadUpdate: (artifactId: string) => Promise<AppUpdateDownloadResult>;
       /** Release pipeline: open a GitHub Releases page */
       openUpdateRelease: (releaseUrl: string) => Promise<boolean>;
       /** Release pipeline: open the downloaded installer */
-      openDownloadedUpdate: (downloadedPath: string) => Promise<boolean>;
+      openDownloadedUpdate: () => Promise<boolean>;
       /** Release pipeline: subscribe to update download progress */
       onUpdateProgress: (
         callback: (status: AppUpdateStatus) => void,

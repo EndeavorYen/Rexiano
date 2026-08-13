@@ -240,8 +240,9 @@ export interface AppUpdateAvailable {
   latestVersion: string;
   releaseName: string;
   releaseUrl: string;
+  /** Opaque GitHub asset identity; main retains all trusted download metadata. */
+  artifactId: string;
   artifactName: string;
-  artifactUrl: string;
   artifactSize: number;
 }
 

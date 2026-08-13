@@ -11,9 +11,8 @@ const availableUpdate = {
   latestVersion: "1.1.0",
   releaseName: "Rexiano 1.1.0",
   releaseUrl: "https://github.com/EndeavorYen/Rexiano/releases/tag/v1.1.0",
+  artifactId: "123",
   artifactName: "rexiano-1.1.0-arm64.dmg",
-  artifactUrl:
-    "https://github.com/EndeavorYen/Rexiano/releases/download/v1.1.0/rexiano-1.1.0-arm64.dmg",
   artifactSize: 100,
 } satisfies AppUpdateStatus;
 

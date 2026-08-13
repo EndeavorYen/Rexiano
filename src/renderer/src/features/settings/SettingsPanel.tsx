@@ -456,7 +456,9 @@ export function SettingsPanel({
       },
     });
     try {
-      setUpdateStatus(await window.api.downloadUpdate(availableUpdate));
+      setUpdateStatus(
+        await window.api.downloadUpdate(availableUpdate.artifactId),
+      );
     } catch (error) {
       setUpdateStatus({
         status: "failed",
@@ -472,7 +474,7 @@ export function SettingsPanel({
   }, [updateReleaseUrl]);
 
   const handleOpenDownloaded = useCallback(() => {
-    if (downloadedPath) void window.api.openDownloadedUpdate(downloadedPath);
+    if (downloadedPath) void window.api.openDownloadedUpdate();
   }, [downloadedPath]);
 
   return (
