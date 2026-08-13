@@ -12,9 +12,6 @@
 const BLE_MIDI_SERVICE = "03b80e5a-ede8-4b33-a751-6ce34ec4c700";
 const BLE_MIDI_CHARACTERISTIC = "7772e5db-3868-4112-a1a9-f2669d106bf3";
 
-/** Timeout for BLE device scanning (ms) */
-const SCAN_TIMEOUT_MS = 30_000;
-
 export interface BleMidiCallbacks {
   onNoteOn?: (note: number, velocity: number) => void;
   onNoteOff?: (note: number, velocity: number) => void;
@@ -79,16 +76,10 @@ export class BleMidiManager {
       // advertise the BLE MIDI service UUID (common when the device is already
       // paired for Bluetooth Audio). We request BLE MIDI as an optionalService
       // so we can access it after connecting.
-      const device = await Promise.race([
-        navigator.bluetooth.requestDevice({
-          acceptAllDevices: true,
-          optionalServices: [BLE_MIDI_SERVICE],
-        }),
-        this._timeout(
-          SCAN_TIMEOUT_MS,
-          "Bluetooth scan timed out — no device selected",
-        ),
-      ]);
+      const device = await navigator.bluetooth.requestDevice({
+        acceptAllDevices: true,
+        optionalServices: [BLE_MIDI_SERVICE],
+      });
 
       this._device = device;
       this._status = "connecting";
@@ -113,10 +104,15 @@ export class BleMidiManager {
       this._status = "connected";
       this._error = null;
     } catch (err) {
+      this._cleanupConnection();
       // User cancelled the picker or connection failed
       const msg = err instanceof Error ? err.message : "Connection failed";
       console.warn(`[BLE MIDI] Error: ${msg}`);
-      if (msg.includes("cancelled") || msg.includes("canceled")) {
+      if (
+        (err instanceof DOMException &&
+          (err.name === "NotFoundError" || err.name === "AbortError")) ||
+        /cancelled|canceled/i.test(msg)
+      ) {
         // User cancelled — go back to idle, not error
         this._status = "idle";
         this._error = null;
@@ -127,14 +123,14 @@ export class BleMidiManager {
     }
   }
 
-  private _timeout(ms: number, message: string): Promise<never> {
-    return new Promise((_resolve, reject) => {
-      setTimeout(() => reject(new Error(message)), ms);
-    });
-  }
-
   /** Disconnect from the BLE MIDI device */
   disconnect(): void {
+    this._cleanupConnection();
+    this._status = "idle";
+    this._error = null;
+  }
+
+  private _cleanupConnection(): void {
     if (this._characteristic) {
       this._characteristic.removeEventListener(
         "characteristicvaluechanged",
@@ -152,14 +148,12 @@ export class BleMidiManager {
       }
       this._device = null;
     }
-    this._status = "idle";
-    this._error = null;
   }
 
   // ─── Private ──────────────────────────────────────────
 
   private _onDisconnect = (): void => {
-    this._characteristic = null;
+    this._cleanupConnection();
     this._status = "idle";
     this._error = null;
   };

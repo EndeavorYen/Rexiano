@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { afterEach, describe, it, expect, vi, beforeEach } from "vitest";
 import { BleMidiManager } from "./BleMidiManager";
 
 describe("BleMidiManager", () => {
@@ -6,6 +6,11 @@ describe("BleMidiManager", () => {
 
   beforeEach(() => {
     manager = new BleMidiManager();
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+    Reflect.deleteProperty(navigator, "bluetooth");
   });
 
   describe("_parseBlePacket", () => {
@@ -160,6 +165,64 @@ describe("BleMidiManager", () => {
       expect(manager.status).toBe("idle");
       expect(manager.error).toBeNull();
       expect(manager.deviceName).toBeNull();
+    });
+
+    it("maps picker cancellation to idle without a renderer-owned timeout", async () => {
+      const requestDevice = vi
+        .fn()
+        .mockRejectedValue(
+          new DOMException(
+            "User cancelled the requestDevice() chooser",
+            "NotFoundError",
+          ),
+        );
+      Object.defineProperty(navigator, "bluetooth", {
+        configurable: true,
+        value: { requestDevice },
+      });
+
+      await manager.connect();
+
+      expect(requestDevice).toHaveBeenCalledWith({
+        acceptAllDevices: true,
+        optionalServices: ["03b80e5a-ede8-4b33-a751-6ce34ec4c700"],
+      });
+      expect(manager.status).toBe("idle");
+      expect(manager.error).toBeNull();
+    });
+
+    it("disconnects and removes listeners when GATT setup fails partway", async () => {
+      const removeEventListener = vi.fn();
+      const disconnect = vi.fn();
+      const device = {
+        name: undefined,
+        addEventListener: vi.fn(),
+        removeEventListener,
+        gatt: {
+          connected: true,
+          connect: vi.fn().mockResolvedValue({
+            getPrimaryService: vi
+              .fn()
+              .mockRejectedValue(new Error("No MIDI service")),
+          }),
+          disconnect,
+        },
+      } as unknown as BluetoothDevice;
+      Object.defineProperty(navigator, "bluetooth", {
+        configurable: true,
+        value: { requestDevice: vi.fn().mockResolvedValue(device) },
+      });
+
+      await manager.connect();
+
+      expect(removeEventListener).toHaveBeenCalledWith(
+        "gattserverdisconnected",
+        expect.any(Function),
+      );
+      expect(disconnect).toHaveBeenCalledOnce();
+      expect(manager.deviceName).toBeNull();
+      expect(manager.status).toBe("error");
+      expect(manager.error).toBe("No MIDI service");
     });
   });
 });

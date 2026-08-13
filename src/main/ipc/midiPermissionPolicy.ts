@@ -11,7 +11,7 @@ interface DevicePermissionRequest {
   origin?: string;
 }
 
-function isTrustedRendererUrl(candidate: string | undefined): boolean {
+export function isTrustedRendererUrl(candidate: string | undefined): boolean {
   if (!candidate) return false;
 
   try {

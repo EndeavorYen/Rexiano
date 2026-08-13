@@ -225,6 +225,13 @@ export const zhTW: TranslationMap = {
   "midi.bluetooth": "藍牙",
   "midi.bleDisconnect": "中斷藍牙 MIDI",
   "midi.bleDeviceTitle": "藍牙：{name}（點擊中斷連線）",
+  "midi.bleConnectedDevice": "藍牙 MIDI 裝置",
+  "midi.blePickerTitle": "選擇藍牙 MIDI 裝置",
+  "midi.blePickerDescription": "請選擇要連線的鋼琴或 MIDI 控制器。",
+  "midi.blePickerScanning": "正在搜尋附近的藍牙裝置…",
+  "midi.blePickerCount": "找到 {count} 個藍牙裝置",
+  "midi.blePickerUnnamed": "未命名的藍牙裝置",
+  "midi.blePickerCancel": "取消",
 
   // ── Practice Mode ──────────────────────────────────────────────
   "practice.watch": "觀看",

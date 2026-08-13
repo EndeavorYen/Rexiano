@@ -32,6 +32,7 @@ import { TransportBar } from "./features/fallingNotes/TransportBar";
 import { SettingsPanel } from "./features/settings/SettingsPanel";
 import { SongLibrary } from "./features/songLibrary/SongLibrary";
 import { DeviceSelector } from "./features/midiDevice/DeviceSelector";
+import { BluetoothDeviceSelectionDialog } from "./features/midiDevice/BluetoothDeviceSelectionDialog";
 import { InsightsPanel } from "./features/insights/InsightsPanel";
 import { WeakSpotAnalyzer } from "./features/insights/WeakSpotAnalyzer";
 import { buildSessionSummariesForSong } from "./features/insights/sessionSummary";
@@ -992,6 +993,7 @@ function App(): React.JSX.Element {
     >
       {showSceneCurtain && <div className="scene-curtain" />}
       <OnboardingGuide />
+      <BluetoothDeviceSelectionDialog />
 
       {/* Drag-and-drop overlay */}
       {isDragging && (
@@ -1249,7 +1251,9 @@ function App(): React.JSX.Element {
                     <DisplayModeToggle />
                   </section>
                   <section className="app-side-section">
-                    <DeviceSelector />
+                    <DeviceSelector
+                      onBeforeBluetoothConnect={closePlaybackDrawer}
+                    />
                   </section>
                   <section className="app-side-section flex items-center gap-2">
                     <button

@@ -234,6 +234,14 @@ export const en: TranslationMap = {
   "midi.bluetooth": "Bluetooth",
   "midi.bleDisconnect": "Disconnect Bluetooth MIDI",
   "midi.bleDeviceTitle": "Bluetooth: {name} (click to disconnect)",
+  "midi.bleConnectedDevice": "Bluetooth MIDI device",
+  "midi.blePickerTitle": "Choose a Bluetooth MIDI device",
+  "midi.blePickerDescription":
+    "Select the piano or MIDI controller you want to connect.",
+  "midi.blePickerScanning": "Looking for nearby Bluetooth devices…",
+  "midi.blePickerCount": "Bluetooth devices found: {count}",
+  "midi.blePickerUnnamed": "Unnamed Bluetooth device",
+  "midi.blePickerCancel": "Cancel",
 
   // ── Practice Mode ──────────────────────────────────────────────
   "practice.watch": "Watch",

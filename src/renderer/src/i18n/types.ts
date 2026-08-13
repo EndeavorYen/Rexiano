@@ -219,6 +219,13 @@ export interface TranslationMap {
   "midi.bluetooth": string;
   "midi.bleDisconnect": string;
   "midi.bleDeviceTitle": string;
+  "midi.bleConnectedDevice": string;
+  "midi.blePickerTitle": string;
+  "midi.blePickerDescription": string;
+  "midi.blePickerScanning": string;
+  "midi.blePickerCount": string;
+  "midi.blePickerUnnamed": string;
+  "midi.blePickerCancel": string;
 
   // ── Practice Mode ──────────────────────────────────────────────
   "practice.watch": string;

@@ -15,6 +15,9 @@ import type {
   AppUpdateStatus,
   MidiExportRequest,
   MidiExportResult,
+  BluetoothDeviceSelectionUpdate,
+  BluetoothDeviceSelectionChooseCommand,
+  BluetoothDeviceSelectionCancelCommand,
 } from "../shared/types";
 
 const api = {
@@ -24,6 +27,28 @@ const api = {
     ipcRenderer.invoke(IpcChannels.LOAD_SOUNDFONT, fileName),
   requestMidiAccess: () => ipcRenderer.invoke(IpcChannels.MIDI_REQUEST_ACCESS),
   listMidiDevices: () => ipcRenderer.invoke(IpcChannels.MIDI_DEVICE_LIST),
+  onBluetoothSelectionUpdate: (
+    callback: (update: BluetoothDeviceSelectionUpdate | null) => void,
+  ): (() => void) => {
+    const listener = (
+      _event: Electron.IpcRendererEvent,
+      update: BluetoothDeviceSelectionUpdate | null,
+    ): void => callback(update);
+    ipcRenderer.on(IpcChannels.BLUETOOTH_SELECTION_UPDATE, listener);
+    return () =>
+      ipcRenderer.removeListener(
+        IpcChannels.BLUETOOTH_SELECTION_UPDATE,
+        listener,
+      );
+  },
+  chooseBluetoothDevice: (
+    command: BluetoothDeviceSelectionChooseCommand,
+  ): Promise<boolean> =>
+    ipcRenderer.invoke(IpcChannels.BLUETOOTH_SELECTION_CHOOSE, command),
+  cancelBluetoothSelection: (
+    command: BluetoothDeviceSelectionCancelCommand,
+  ): Promise<boolean> =>
+    ipcRenderer.invoke(IpcChannels.BLUETOOTH_SELECTION_CANCEL, command),
   listBuiltinSongs: () => ipcRenderer.invoke(IpcChannels.LIST_BUILTIN_SONGS),
   loadBuiltinSong: (songId: string) =>
     ipcRenderer.invoke(IpcChannels.LOAD_BUILTIN_SONG, songId),

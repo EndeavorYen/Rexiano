@@ -1572,7 +1572,9 @@ export function SongLibrary({
               </div>
               <div className="app-side-drawer-body">
                 <section className="app-side-section">
-                  <DeviceSelector />
+                  <DeviceSelector
+                    onBeforeBluetoothConnect={closeDeviceDrawer}
+                  />
                 </section>
               </div>
             </aside>

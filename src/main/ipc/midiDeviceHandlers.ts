@@ -4,6 +4,10 @@ import {
   isAllowedBluetoothDevicePermission,
   isAllowedMidiPermissionRequest,
 } from "./midiPermissionPolicy";
+import {
+  bluetoothDeviceSelectionRegistry,
+  type BluetoothSelectionCommandEvent,
+} from "./bluetoothDeviceSelection";
 
 export function registerMidiDeviceHandlers(): void {
   // Auto-approve MIDI permission requests from Rexiano renderer pages.
@@ -59,5 +63,23 @@ export function registerMidiDeviceHandlers(): void {
     async (): Promise<MidiDeviceInfo[]> => {
       return [];
     },
+  );
+
+  ipcMain.handle(
+    IpcChannels.BLUETOOTH_SELECTION_CHOOSE,
+    (event, command): boolean =>
+      bluetoothDeviceSelectionRegistry.choose(
+        event as unknown as BluetoothSelectionCommandEvent,
+        command,
+      ),
+  );
+
+  ipcMain.handle(
+    IpcChannels.BLUETOOTH_SELECTION_CANCEL,
+    (event, command): boolean =>
+      bluetoothDeviceSelectionRegistry.cancel(
+        event as unknown as BluetoothSelectionCommandEvent,
+        command,
+      ),
   );
 }
