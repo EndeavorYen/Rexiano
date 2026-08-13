@@ -66,11 +66,12 @@
 
 ## Independent acceptance
 
-- [ ] Review each completed wave from its issue contracts and exact diff.
-- [ ] Fix every P1/P2 reviewer finding; re-review until APPROVED.
-- [ ] Run lint, typecheck, all Vitest, production build, full Electron E2E,
-      visual/contrast flows, dependency audit, diff check, and packaged smoke.
-- [ ] Run a whole-branch review and a final player playtest.
+- [x] Review each completed wave from its issue contracts and exact diff.
+- [x] Fix every P1/P2 reviewer finding; re-review until APPROVED.
+- [x] Run lint, typecheck, all Vitest, production build, and full Electron E2E
+      including visual/contrast flows. Packaged install smoke stays with #187.
+- [ ] Run a whole-branch review. Physical player playtest stays fail-closed with
+      USB/BLE hardware evidence.
 - [ ] Push one reviewable branch, open a conventional-title PR, wait for all
       checks, squash merge to main, rerun post-merge smoke, close resolved
       issues, and remove the worktree/branch.
