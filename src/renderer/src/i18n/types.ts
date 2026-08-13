@@ -13,6 +13,8 @@ export interface TranslationMap {
   "app.failedRead": string;
   "app.importErrorUnsupportedTitle": string;
   "app.importErrorUnsupportedGuidance": string;
+  "app.importErrorOversizedTitle": string;
+  "app.importErrorOversizedGuidance": string;
   "app.importErrorParseTitle": string;
   "app.importErrorParseGuidance": string;
   "app.importErrorMissingTitle": string;

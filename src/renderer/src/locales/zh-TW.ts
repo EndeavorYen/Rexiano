@@ -12,6 +12,9 @@ export const zhTW: TranslationMap = {
   "app.importErrorUnsupportedTitle": "不支援的檔案類型",
   "app.importErrorUnsupportedGuidance":
     "只能匯入 .mid 與 .midi 檔案；目前檔案是 {ext}。",
+  "app.importErrorOversizedTitle": "MIDI 檔案過大",
+  "app.importErrorOversizedGuidance":
+    "{fileName} 超過 8 MiB 安全上限，請改選較小的 MIDI 檔案。",
   "app.importErrorParseTitle": "無法解析 MIDI 檔案",
   "app.importErrorParseGuidance":
     "請確認 {fileName} 是有效的 MIDI 檔案，然後重新匯入。",

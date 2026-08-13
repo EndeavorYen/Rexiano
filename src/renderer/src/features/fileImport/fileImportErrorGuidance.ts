@@ -4,6 +4,7 @@ type Translate = (key: TranslationKey, params?: InterpolationParams) => string;
 
 export type FileImportErrorKind =
   | "unsupported-type"
+  | "oversized"
   | "read-failed"
   | "parse-failed"
   | "missing-recent";
@@ -70,6 +71,21 @@ export function getFileImportErrorGuidance(
         title: t("app.importErrorUnsupportedTitle"),
         guidance: t("app.importErrorUnsupportedGuidance", {
           ext: error.ext ?? "",
+        }),
+        diagnostic: diagnosticToString(error),
+        actions: [
+          {
+            id: "choose-midi-file",
+            label: t("app.importActionChooseMidi"),
+            emphasis: "primary",
+          },
+        ],
+      };
+    case "oversized":
+      return {
+        title: t("app.importErrorOversizedTitle"),
+        guidance: t("app.importErrorOversizedGuidance", {
+          fileName: error.fileName ?? t("app.importErrorUnknownFile"),
         }),
         diagnostic: diagnosticToString(error),
         actions: [

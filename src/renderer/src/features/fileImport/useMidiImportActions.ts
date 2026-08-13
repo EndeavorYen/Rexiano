@@ -1,4 +1,10 @@
-import { useCallback, useRef, useState, type DragEvent } from "react";
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type DragEvent,
+} from "react";
 import { parseMidiFile } from "@renderer/engines/midi/MidiFileParser";
 import type { ParsedSong } from "@renderer/engines/midi/types";
 import {
@@ -7,6 +13,11 @@ import {
   type FileImportErrorInput,
   type FileImportRecoveryActionId,
 } from "./fileImportErrorGuidance";
+import {
+  MAX_MIDI_FILE_BYTES,
+  MIDI_FILE_TOO_LARGE_DIAGNOSTIC,
+} from "@shared/midiFileLimits";
+import { subscribeToAssociatedMidiImports } from "./associatedMidiImport";
 
 export const MIDI_EXTENSIONS = [".mid", ".midi"] as const;
 
@@ -39,6 +50,7 @@ interface UseMidiImportActionsOptions {
   resetPlayback: () => void;
   removeRecentFile: (filePath: string) => Promise<boolean>;
   refreshRecentFiles: () => void;
+  prepareAssociatedMidiOpen: () => void;
 }
 
 export interface MidiImportActions {
@@ -73,6 +85,33 @@ export function getUnsupportedMidiDropError(
     : { kind: "unsupported-type", ext, fileName };
 }
 
+export function getOversizedMidiImportError(file: {
+  name: string;
+  size: number;
+}): FileImportErrorInput | null {
+  return file.size > MAX_MIDI_FILE_BYTES
+    ? { kind: "oversized", fileName: file.name }
+    : null;
+}
+
+function diagnosticMessage(diagnostic: unknown): string {
+  return diagnostic instanceof Error
+    ? diagnostic.message
+    : typeof diagnostic === "string"
+      ? diagnostic
+      : "";
+}
+
+export function getMidiReadFailureError(
+  diagnostic: unknown,
+  fileName?: string,
+  path?: string,
+): FileImportErrorInput {
+  return diagnosticMessage(diagnostic).includes(MIDI_FILE_TOO_LARGE_DIAGNOSTIC)
+    ? { kind: "oversized", fileName, path, diagnostic }
+    : { kind: "read-failed", fileName, path, diagnostic };
+}
+
 export function getFileNameFromPath(filePath: string): string | undefined {
   return filePath.split(/[\\/]/).pop() || undefined;
 }
@@ -101,6 +140,7 @@ export function useMidiImportActions({
   resetPlayback,
   removeRecentFile,
   refreshRecentFiles,
+  prepareAssociatedMidiOpen,
 }: UseMidiImportActionsOptions): MidiImportActions {
   const [importError, setImportError] = useState<ImportErrorState | null>(null);
   const [isDragging, setIsDragging] = useState(false);
@@ -166,7 +206,7 @@ export function useMidiImportActions({
       }
     } catch (error) {
       console.error("Failed to read MIDI file:", error);
-      showImportError({ kind: "read-failed", diagnostic: error });
+      showImportError(getMidiReadFailureError(error));
     }
   }, [loadParsedSong, refreshRecentFiles, showImportError]);
 
@@ -193,19 +233,51 @@ export function useMidiImportActions({
             path: filePath,
             diagnostic: error,
           });
+          return;
         }
+
+        void window.api
+          .saveRecentFile({
+            path: result.path ?? filePath,
+            name: result.fileName,
+            timestamp: Date.now(),
+          })
+          .then(refreshRecentFiles)
+          .catch((error: unknown) => {
+            console.error("Failed to save recent MIDI file:", error);
+          });
       } catch (error) {
         console.error("Failed to load MIDI from path:", error);
-        showImportError({
-          kind: "read-failed",
-          fileName: getFileNameFromPath(filePath),
-          path: filePath,
-          diagnostic: error,
-        });
+        showImportError(
+          getMidiReadFailureError(
+            error,
+            getFileNameFromPath(filePath),
+            filePath,
+          ),
+        );
       }
     },
-    [loadParsedSong, showImportError],
+    [loadParsedSong, refreshRecentFiles, showImportError],
   );
+
+  useEffect(() => {
+    if (
+      typeof window.api.takePendingAssociatedMidiFile !== "function" ||
+      typeof window.api.onAssociatedMidiFilePending !== "function"
+    ) {
+      return;
+    }
+
+    return subscribeToAssociatedMidiImports({
+      takePending: window.api.takePendingAssociatedMidiFile,
+      subscribe: window.api.onAssociatedMidiFilePending,
+      preparePractice: prepareAssociatedMidiOpen,
+      loadMidiPath: handleLoadMidiPath,
+      onError: (error) => {
+        console.error("Failed to receive associated MIDI file:", error);
+      },
+    });
+  }, [handleLoadMidiPath, prepareAssociatedMidiOpen]);
 
   const dismissImportError = useCallback((): void => {
     setImportError((current) => reduceImportErrorForEvent(current, "dismiss"));
@@ -297,11 +369,20 @@ export function useMidiImportActions({
         showImportError(unsupportedError);
         return;
       }
+      const oversizedError = getOversizedMidiImportError(file);
+      if (oversizedError) {
+        showImportError(oversizedError);
+        return;
+      }
 
       const reader = new FileReader();
       reader.onload = () => {
         try {
           const arrayBuffer = reader.result as ArrayBuffer;
+          if (arrayBuffer.byteLength > MAX_MIDI_FILE_BYTES) {
+            showImportError({ kind: "oversized", fileName: file.name });
+            return;
+          }
           const data = Array.from(new Uint8Array(arrayBuffer));
           loadParsedSong(file.name, data);
         } catch (error) {

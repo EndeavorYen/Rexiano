@@ -13,6 +13,9 @@ export const en: TranslationMap = {
   "app.importErrorUnsupportedTitle": "Unsupported file type",
   "app.importErrorUnsupportedGuidance":
     "Only .mid and .midi files can be imported. This file was {ext}.",
+  "app.importErrorOversizedTitle": "MIDI file is too large",
+  "app.importErrorOversizedGuidance":
+    "{fileName} is larger than the 8 MiB safety limit. Choose a smaller MIDI file.",
   "app.importErrorParseTitle": "MIDI file could not be parsed",
   "app.importErrorParseGuidance":
     "Check that {fileName} is a valid MIDI file, then try importing it again.",

@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, test, vi } from "vitest";
 import { IpcChannels } from "../../shared/types";
+import { MAX_MIDI_FILE_BYTES } from "../../shared/midiFileLimits";
 import {
   approveMidiFilePath,
   clearApprovedMidiPathAccessForTests,
@@ -118,6 +119,17 @@ describe("fileHandlers", () => {
     });
   });
 
+  test("LOAD_MIDI_PATH rejects an oversized approved file before read", async () => {
+    const path = "/Users/rex/Music/Huge.mid";
+    mockFileContents[path] = Buffer.alloc(MAX_MIDI_FILE_BYTES + 1);
+    await approveMidiFilePath(path);
+    vi.mocked(readFile).mockClear();
+
+    await expect(
+      handlers[IpcChannels.LOAD_MIDI_PATH](null, path),
+    ).rejects.toMatchObject({ reason: "too-large" });
+    expect(readFile).not.toHaveBeenCalledWith(path);
+  });
 
   test("EXPORT_MIDI_FILE writes selected MIDI bytes to a user-selected path", async () => {
     vi.mocked(dialog.showSaveDialog).mockResolvedValue({

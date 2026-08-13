@@ -14,6 +14,7 @@ import {
   approveMidiFilePath,
   resolveApprovedMidiFilePath,
 } from "./midiPathAccess";
+import { readBoundedMidiFile } from "./midiFileReader";
 
 function resolveBundledResourcesDir(): string {
   return app.isPackaged
@@ -39,7 +40,7 @@ export function registerFileHandlers(): void {
       const filePath = result.filePaths[0];
       const canonicalPath = await approveMidiFilePath(filePath);
       if (!canonicalPath) return null;
-      const buffer = await readFile(canonicalPath);
+      const buffer = await readBoundedMidiFile(canonicalPath);
 
       return {
         fileName: basename(canonicalPath),
@@ -173,7 +174,7 @@ export function registerFileHandlers(): void {
       if (midiRel.startsWith("..") || isAbsolute(midiRel)) return null;
       if (!existsSync(filePath)) return null;
 
-      const buffer = await readFile(filePath);
+      const buffer = await readBoundedMidiFile(filePath);
       return {
         fileName: entry.title,
         data: Array.from(buffer),
