@@ -41,6 +41,9 @@ const completedScore = {
 async function showWaitCelebration(
   appPage: import("@playwright/test").Page,
 ): Promise<PracticeFixtureSnapshot> {
+  await appPage.clock.install();
+  await appPage.clock.pauseAt(new Date("2030-01-01T00:00:00Z"));
+
   const shown = await appPage.evaluate((score) => {
     const e2eWindow = window as PracticeFixtureWindow;
     if (!e2eWindow.__rexianoShowCelebrationFixture) return false;
@@ -158,6 +161,7 @@ test.describe("Post-session next action", () => {
     const before = await showWaitCelebration(appPage);
 
     await appPage.getByTestId("celebration-again").click();
+    await appPage.clock.resume();
     await expect(appPage.getByTestId("celebration-overlay")).toHaveCount(0);
     await expectFreshWaitRetry(appPage, before);
   });
@@ -170,6 +174,7 @@ test.describe("Post-session next action", () => {
     await expect(appPage.getByTestId("statistics-page")).toBeVisible();
 
     await appPage.getByTestId("stats-play-again").click();
+    await appPage.clock.resume();
     await expect(appPage.getByTestId("statistics-page")).toHaveCount(0);
     await expectFreshWaitRetry(appPage, before);
   });
