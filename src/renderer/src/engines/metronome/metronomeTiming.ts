@@ -74,6 +74,21 @@ export function shouldRunPlaybackCountIn({
   );
 }
 
+export function canArmPlaybackCountIn({
+  hasMetronomeEngine,
+  currentTime,
+  countInBeats,
+}: {
+  hasMetronomeEngine: boolean;
+  currentTime: number;
+  countInBeats: number;
+}): boolean {
+  return (
+    hasMetronomeEngine &&
+    shouldRunPlaybackCountIn({ currentTime, countInBeats })
+  );
+}
+
 /** Stable key for detecting continuous tempo, meter, or speed boundaries. */
 export function resolveMetronomeSegmentKey(
   song: ParsedSong,

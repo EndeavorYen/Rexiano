@@ -10,10 +10,7 @@ import {
   type SoundFontResult,
   type BuiltinSongMeta,
 } from "../../shared/types";
-import {
-  approveMidiFilePath,
-  resolveApprovedMidiFilePath,
-} from "./midiPathAccess";
+import { approveMidiFilePath, readApprovedMidiFile } from "./midiPathAccess";
 import { readBoundedMidiFile } from "./midiFileReader";
 import { requireTrustedMainFrame } from "./trustedIpc";
 
@@ -42,12 +39,13 @@ export function registerFileHandlers(): void {
       const filePath = result.filePaths[0];
       const canonicalPath = await approveMidiFilePath(filePath);
       if (!canonicalPath) return null;
-      const buffer = await readBoundedMidiFile(canonicalPath);
+      const approved = await readApprovedMidiFile(canonicalPath);
+      if (!approved) return null;
 
       return {
-        fileName: basename(canonicalPath),
-        data: Array.from(buffer),
-        path: canonicalPath,
+        fileName: basename(approved.path),
+        data: Array.from(approved.buffer),
+        path: approved.path,
       };
     },
   );
@@ -92,14 +90,13 @@ export function registerFileHandlers(): void {
     async (_event, filePath: string): Promise<MidiFileResult | null> => {
       requireTrustedMainFrame(_event);
       if (typeof filePath !== "string" || filePath.length === 0) return null;
-      const canonicalPath = await resolveApprovedMidiFilePath(filePath);
-      if (!canonicalPath) return null;
+      const approved = await readApprovedMidiFile(filePath);
+      if (!approved) return null;
 
-      const buffer = await readBoundedMidiFile(canonicalPath);
       return {
-        fileName: basename(canonicalPath),
-        data: Array.from(buffer),
-        path: canonicalPath,
+        fileName: basename(approved.path),
+        data: Array.from(approved.buffer),
+        path: approved.path,
       };
     },
   );

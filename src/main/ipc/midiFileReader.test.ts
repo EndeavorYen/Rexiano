@@ -13,8 +13,13 @@ function operationsFor(
   regular = true,
 ): MidiFileReadOperations & { handle: MidiFileHandle } {
   const handle: MidiFileHandle = {
-    stat: vi.fn(async () => ({ size, isFile: () => regular })),
+    stat: vi.fn(async () => ({
+      size,
+      identity: "1:1",
+      isFile: () => regular,
+    })),
     read: vi.fn(async () => data),
+    realpath: vi.fn(async () => "/approved/song.mid"),
     close: vi.fn(async () => undefined),
   };
   return {
