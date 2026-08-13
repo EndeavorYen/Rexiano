@@ -26,6 +26,11 @@ import {
   extractAudioOutputIds,
   hasAudioOutputChanged,
 } from "./engines/audio/recoveryUtils";
+import {
+  AudioInitializationOwner,
+  runOwnedAudioInitialization,
+  type AudioInitializationOutcome,
+} from "./engines/audio/audioInitializationOwnership";
 import { FallingNotesCanvas } from "./features/fallingNotes/FallingNotesCanvas";
 import { PianoKeyboard } from "./features/fallingNotes/PianoKeyboard";
 import { TransportBar } from "./features/fallingNotes/TransportBar";
@@ -203,6 +208,12 @@ function App(): React.JSX.Element {
     null,
   );
   const audioReadySongRef = useRef<NonNullable<typeof song> | null>(null);
+  const audioInitializationOwnerRef = useRef<AudioInitializationOwner | null>(
+    null,
+  );
+  if (!audioInitializationOwnerRef.current) {
+    audioInitializationOwnerRef.current = new AudioInitializationOwner();
+  }
   const attemptPendingPlaybackStart = useCallback((): boolean => {
     const requestedSong = pendingPlaybackStartSongRef.current;
     if (
@@ -230,6 +241,7 @@ function App(): React.JSX.Element {
   const cancelPendingPlaybackStart = useCallback((): void => {
     pendingPlaybackStartSongRef.current = null;
     audioReadySongRef.current = null;
+    audioInitializationOwnerRef.current?.invalidate();
   }, []);
   const getCurrentSessionIntent = useCallback(
     () => sessionIntentRef.current,
@@ -551,12 +563,9 @@ function App(): React.JSX.Element {
   }, []);
 
   const rebuildAudioStack = useCallback(
-    async (targetSong: NonNullable<typeof song>): Promise<void> => {
-      audioReadySongRef.current = null;
-      audioRef.current.engine?.setRuntimeErrorHandler(null);
-      audioRef.current.scheduler?.dispose();
-      audioRef.current.engine?.dispose();
-
+    async (
+      targetSong: NonNullable<typeof song>,
+    ): Promise<AudioInitializationOutcome> => {
       const { audioCompatibilityMode } = useSettingsStore.getState();
       const engine = new AudioEngine({
         latencyHint: audioCompatibilityMode ? "playback" : "interactive",
@@ -565,29 +574,51 @@ function App(): React.JSX.Element {
         },
       });
       const scheduler = new AudioScheduler(engine);
-      audioRef.current = { engine, scheduler };
-
-      usePlaybackStore.getState().setAudioStatus("loading");
-      await engine.init();
-
-      const { muted } = useSettingsStore.getState();
-      engine.setVolume(muted ? 0 : usePlaybackStore.getState().volume);
-
-      // Rebind metronome to the latest live AudioContext after recovery/rebuild.
-      disposeMetronome();
-      if (engine.audioContext) {
-        initMetronome(engine.audioContext);
+      const stack = { engine, scheduler };
+      const owner = audioInitializationOwnerRef.current;
+      if (!owner) {
+        throw new Error("Audio initialization owner is unavailable");
       }
 
-      scheduler.setSong(targetSong);
-      scheduler.setSpeed(usePracticeStore.getState().speed);
-      scheduler.setMutedTracks(
-        getMutedTrackIndices(usePracticeStore.getState().trackPreferences),
-      );
-      audioReadySongRef.current = targetSong;
-      usePlaybackStore.getState().setAudioStatus("ready");
-      usePlaybackStore.getState().clearAudioRecovery();
-      attemptPendingPlaybackStart();
+      return runOwnedAudioInitialization(owner, {
+        activate: () => {
+          audioReadySongRef.current = null;
+          audioRef.current.engine?.setRuntimeErrorHandler(null);
+          audioRef.current.scheduler?.dispose();
+          audioRef.current.engine?.dispose();
+          audioRef.current = stack;
+          usePlaybackStore.getState().setAudioStatus("loading");
+        },
+        initialize: () => engine.init(),
+        commit: () => {
+          const { muted } = useSettingsStore.getState();
+          engine.setVolume(muted ? 0 : usePlaybackStore.getState().volume);
+
+          // Rebind metronome only after this stack still owns initialization.
+          disposeMetronome();
+          if (engine.audioContext) {
+            initMetronome(engine.audioContext);
+          }
+
+          scheduler.setSong(targetSong);
+          scheduler.setSpeed(usePracticeStore.getState().speed);
+          scheduler.setMutedTracks(
+            getMutedTrackIndices(usePracticeStore.getState().trackPreferences),
+          );
+          audioReadySongRef.current = targetSong;
+          usePlaybackStore.getState().setAudioStatus("ready");
+          usePlaybackStore.getState().clearAudioRecovery();
+          attemptPendingPlaybackStart();
+        },
+        cleanupStale: () => {
+          engine.setRuntimeErrorHandler(null);
+          scheduler.dispose();
+          engine.dispose();
+          if (audioRef.current === stack) {
+            audioRef.current = { engine: null, scheduler: null };
+          }
+        },
+      });
     },
     [attemptPendingPlaybackStart],
   );
@@ -622,7 +653,8 @@ function App(): React.JSX.Element {
             }
 
             const { isPlaying, currentTime } = usePlaybackStore.getState();
-            await rebuildAudioStack(liveSong);
+            const outcome = await rebuildAudioStack(liveSong);
+            if (outcome === "stale") return;
 
             if (isPlaying) {
               const { engine, scheduler } = audioRef.current;
@@ -766,7 +798,8 @@ function App(): React.JSX.Element {
       }
 
       try {
-        await rebuildAudioStack(song);
+        const outcome = await rebuildAudioStack(song);
+        if (outcome === "stale") return;
       } catch (err) {
         if (cancelled) return;
         console.error("Audio init failed:", err);
@@ -857,6 +890,7 @@ function App(): React.JSX.Element {
   // Cleanup audio on unmount
   useEffect(() => {
     return () => {
+      audioInitializationOwnerRef.current?.invalidate();
       audioRef.current.engine?.setRuntimeErrorHandler(null);
       audioRef.current.scheduler?.dispose();
       audioRef.current.engine?.dispose();
