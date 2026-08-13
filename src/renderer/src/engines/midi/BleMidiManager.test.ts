@@ -224,5 +224,74 @@ describe("BleMidiManager", () => {
       expect(manager.status).toBe("error");
       expect(manager.error).toBe("No MIDI service");
     });
+
+    it("reports an AbortError after device selection as a connection error", async () => {
+      const removeEventListener = vi.fn();
+      const device = {
+        name: "Stage Piano",
+        addEventListener: vi.fn(),
+        removeEventListener,
+        gatt: {
+          connected: false,
+          connect: vi
+            .fn()
+            .mockRejectedValue(new DOMException("", "AbortError")),
+          disconnect: vi.fn(),
+        },
+      } as unknown as BluetoothDevice;
+      Object.defineProperty(navigator, "bluetooth", {
+        configurable: true,
+        value: { requestDevice: vi.fn().mockResolvedValue(device) },
+      });
+
+      await manager.connect();
+
+      expect(removeEventListener).toHaveBeenCalledWith(
+        "gattserverdisconnected",
+        expect.any(Function),
+      );
+      expect(manager.deviceName).toBeNull();
+      expect(manager.status).toBe("error");
+      expect(manager.error).toBe("Connection failed");
+    });
+
+    it("reports a missing MIDI service after device selection as a connection error", async () => {
+      const removeEventListener = vi.fn();
+      const disconnect = vi.fn();
+      const device = {
+        name: "Stage Piano",
+        addEventListener: vi.fn(),
+        removeEventListener,
+        gatt: {
+          connected: true,
+          connect: vi.fn().mockResolvedValue({
+            getPrimaryService: vi
+              .fn()
+              .mockRejectedValue(
+                new DOMException(
+                  "BLE MIDI service was not found",
+                  "NotFoundError",
+                ),
+              ),
+          }),
+          disconnect,
+        },
+      } as unknown as BluetoothDevice;
+      Object.defineProperty(navigator, "bluetooth", {
+        configurable: true,
+        value: { requestDevice: vi.fn().mockResolvedValue(device) },
+      });
+
+      await manager.connect();
+
+      expect(removeEventListener).toHaveBeenCalledWith(
+        "gattserverdisconnected",
+        expect.any(Function),
+      );
+      expect(disconnect).toHaveBeenCalledOnce();
+      expect(manager.deviceName).toBeNull();
+      expect(manager.status).toBe("error");
+      expect(manager.error).toBe("BLE MIDI service was not found");
+    });
   });
 });

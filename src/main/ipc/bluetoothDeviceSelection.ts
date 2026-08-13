@@ -82,14 +82,7 @@ function toCandidates(candidate: unknown): BluetoothDeviceCandidate[] {
 }
 
 function isTrustedBluetoothSelectionUrl(candidate: string): boolean {
-  if (!isTrustedRendererUrl(candidate)) return false;
-  try {
-    const url = new URL(candidate);
-    if (url.protocol !== "file:") return true;
-    return url.pathname.endsWith("/out/renderer/index.html");
-  } catch {
-    return false;
-  }
+  return isTrustedRendererUrl(candidate);
 }
 
 /** Per-window registry and trust boundary for the native Bluetooth chooser. */

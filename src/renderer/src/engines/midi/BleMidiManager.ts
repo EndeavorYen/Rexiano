@@ -12,6 +12,12 @@
 const BLE_MIDI_SERVICE = "03b80e5a-ede8-4b33-a751-6ce34ec4c700";
 const BLE_MIDI_CHARACTERISTIC = "7772e5db-3868-4112-a1a9-f2669d106bf3";
 
+function getConnectionErrorMessage(error: unknown): string {
+  return error instanceof Error && error.message.trim().length > 0
+    ? error.message
+    : "Connection failed";
+}
+
 export interface BleMidiCallbacks {
   onNoteOn?: (note: number, velocity: number) => void;
   onNoteOff?: (note: number, velocity: number) => void;
@@ -68,22 +74,42 @@ export class BleMidiManager {
       return;
     }
 
-    try {
-      this._status = "scanning";
-      this._error = null;
+    this._status = "scanning";
+    this._error = null;
 
+    let device: BluetoothDevice;
+    try {
       // Use acceptAllDevices so the scan finds devices even if they don't
       // advertise the BLE MIDI service UUID (common when the device is already
       // paired for Bluetooth Audio). We request BLE MIDI as an optionalService
       // so we can access it after connecting.
-      const device = await navigator.bluetooth.requestDevice({
+      device = await navigator.bluetooth.requestDevice({
         acceptAllDevices: true,
         optionalServices: [BLE_MIDI_SERVICE],
       });
+    } catch (err) {
+      this._cleanupConnection();
+      const msg = getConnectionErrorMessage(err);
+      console.warn(`[BLE MIDI] Error: ${msg}`);
+      if (
+        (err instanceof DOMException &&
+          (err.name === "NotFoundError" || err.name === "AbortError")) ||
+        /cancelled|canceled/i.test(msg)
+      ) {
+        // User cancelled — go back to idle, not error
+        this._status = "idle";
+        this._error = null;
+      } else {
+        this._status = "error";
+        this._error = msg;
+      }
+      return;
+    }
 
-      this._device = device;
-      this._status = "connecting";
+    this._device = device;
+    this._status = "connecting";
 
+    try {
       // Listen for disconnection
       device.addEventListener("gattserverdisconnected", this._onDisconnect);
 
@@ -105,21 +131,10 @@ export class BleMidiManager {
       this._error = null;
     } catch (err) {
       this._cleanupConnection();
-      // User cancelled the picker or connection failed
-      const msg = err instanceof Error ? err.message : "Connection failed";
+      const msg = getConnectionErrorMessage(err);
       console.warn(`[BLE MIDI] Error: ${msg}`);
-      if (
-        (err instanceof DOMException &&
-          (err.name === "NotFoundError" || err.name === "AbortError")) ||
-        /cancelled|canceled/i.test(msg)
-      ) {
-        // User cancelled — go back to idle, not error
-        this._status = "idle";
-        this._error = null;
-      } else {
-        this._status = "error";
-        this._error = msg;
-      }
+      this._status = "error";
+      this._error = msg;
     }
   }
 

@@ -1,5 +1,6 @@
 import { app, shell, BrowserWindow } from "electron";
 import { join } from "path";
+import { pathToFileURL } from "url";
 import icon from "../../docs/figure/Rexiano_icon.png?asset";
 import { registerFileHandlers } from "./ipc/fileHandlers";
 import { registerMidiDeviceHandlers } from "./ipc/midiDeviceHandlers";
@@ -11,6 +12,7 @@ import { registerWatchedFolderHandlers } from "./ipc/watchedFolderHandlers";
 import { registerUpdateHandlers } from "./ipc/updateHandlers";
 import { normalizeExternalUrl } from "./externalUrlPolicy";
 import { bluetoothDeviceSelectionRegistry } from "./ipc/bluetoothDeviceSelection";
+import { configureTrustedRendererUrl } from "./ipc/midiPermissionPolicy";
 
 // WSL2 doesn't forward Windows display scaling to X11/Wayland,
 // so Electron defaults to devicePixelRatio=1. Force the correct factor.
@@ -23,6 +25,14 @@ if (process.env.REXIANO_USER_DATA_DIR) {
 }
 
 function createWindow(): void {
+  const rendererEntryPath = join(__dirname, "../renderer/index.html");
+  const developmentRendererUrl = process.env["ELECTRON_RENDERER_URL"];
+  const rendererUrl =
+    !app.isPackaged && developmentRendererUrl
+      ? developmentRendererUrl
+      : pathToFileURL(rendererEntryPath).href;
+  configureTrustedRendererUrl(rendererUrl);
+
   const mainWindow = new BrowserWindow({
     width: 1280,
     height: 800,
@@ -52,10 +62,10 @@ function createWindow(): void {
   bluetoothDeviceSelectionRegistry.attachWindow(mainWindow);
 
   // HMR for renderer based on electron-vite cli
-  if (!app.isPackaged && process.env["ELECTRON_RENDERER_URL"]) {
-    mainWindow.loadURL(process.env["ELECTRON_RENDERER_URL"]);
+  if (!app.isPackaged && developmentRendererUrl) {
+    mainWindow.loadURL(rendererUrl);
   } else {
-    mainWindow.loadFile(join(__dirname, "../renderer/index.html"));
+    mainWindow.loadFile(rendererEntryPath);
   }
 }
 

@@ -2,6 +2,7 @@ import { EventEmitter } from "node:events";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import { IpcChannels } from "../../shared/types";
 import { BluetoothDeviceSelectionRegistry } from "./bluetoothDeviceSelection";
+import { configureTrustedRendererUrl } from "./midiPermissionPolicy";
 
 class FakeWebContents extends EventEmitter {
   id = 17;
@@ -23,6 +24,9 @@ describe("BluetoothDeviceSelectionRegistry", () => {
 
   beforeEach(() => {
     vi.useFakeTimers();
+    configureTrustedRendererUrl(
+      "file:///Applications/Rexiano.app/Contents/Resources/app.asar/out/renderer/index.html",
+    );
     registry = new BluetoothDeviceSelectionRegistry();
     window = new FakeWindow();
     registry.attachWindow(window);
@@ -135,6 +139,34 @@ describe("BluetoothDeviceSelectionRegistry", () => {
     ).toBe(true);
     expect(callback).toHaveBeenCalledWith("kawai");
   });
+
+  test.each(["file:///tmp/out/renderer/index.html", "http://localhost:9999/"])(
+    "rejects a renderer URL outside the configured app entry: %s",
+    (url) => {
+      const callback = vi.fn();
+      window.webContents.emit(
+        "select-bluetooth-device",
+        { preventDefault: vi.fn() },
+        [{ deviceId: "piano", deviceName: "Stage Piano" }],
+        callback,
+      );
+      const update = window.webContents.send.mock.calls[0][1] as {
+        requestId: string;
+      };
+      window.webContents.mainFrame.url = url;
+
+      expect(
+        registry.choose(
+          {
+            sender: window.webContents,
+            senderFrame: window.webContents.mainFrame,
+          },
+          { requestId: update.requestId, deviceId: "piano" },
+        ),
+      ).toBe(false);
+      expect(callback).not.toHaveBeenCalled();
+    },
+  );
 
   test.each(["did-start-navigation", "render-process-gone", "destroyed"])(
     "cancels a pending request on %s",
