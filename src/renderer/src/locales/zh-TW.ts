@@ -25,6 +25,7 @@ export const zhTW: TranslationMap = {
   "app.importActionRetry": "再試一次",
   "app.importActionReimport": "重新匯入",
   "app.importActionOpenPermissions": "檢查檔案權限",
+  "app.importRecoveryActionsLabel": "匯入復原操作",
   "app.insightsTitle": "練習洞察",
   "app.startPractice": "開始彈琴",
   "app.openSettings": "設定",
@@ -387,6 +388,7 @@ export const zhTW: TranslationMap = {
 
   // ── Insights Panel ─────────────────────────────────────────────
   "insights.title": "練習洞察",
+  "insights.dialogDescription": "檢視練習進度、準確率趨勢與建議的下一步。",
   "insights.weakSpots": "弱點分析",
   "insights.accuracyTrend": "準確率趨勢",
   "insights.totalMinutes": "總練習時間",

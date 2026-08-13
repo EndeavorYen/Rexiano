@@ -24,6 +24,7 @@ export interface TranslationMap {
   "app.importActionRetry": string;
   "app.importActionReimport": string;
   "app.importActionOpenPermissions": string;
+  "app.importRecoveryActionsLabel": string;
   "app.insightsTitle": string;
   "app.startPractice": string;
   "app.openSettings": string;
@@ -373,6 +374,7 @@ export interface TranslationMap {
 
   // ── Insights Panel ─────────────────────────────────────────────
   "insights.title": string;
+  "insights.dialogDescription": string;
   "insights.weakSpots": string;
   "insights.accuracyTrend": string;
   "insights.totalMinutes": string;

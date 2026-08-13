@@ -1,10 +1,4 @@
-import {
-  useCallback,
-  useEffect,
-  useRef,
-  useState,
-  type DragEvent,
-} from "react";
+import { useCallback, useRef, useState, type DragEvent } from "react";
 import { parseMidiFile } from "@renderer/engines/midi/MidiFileParser";
 import type { ParsedSong } from "@renderer/engines/midi/types";
 import {
@@ -72,35 +66,17 @@ export function useMidiImportActions({
 }: UseMidiImportActionsOptions): MidiImportActions {
   const [importError, setImportError] = useState<ImportErrorState | null>(null);
   const [isDragging, setIsDragging] = useState(false);
-  const importErrorTimerRef = useRef<ReturnType<typeof setTimeout> | null>(
-    null,
-  );
   const dragCountRef = useRef(0);
 
   const showImportError = useCallback(
     (error: FileImportErrorInput): void => {
-      if (importErrorTimerRef.current) {
-        clearTimeout(importErrorTimerRef.current);
-      }
       setImportError({
         input: error,
         guidance: getFileImportErrorGuidance(error, t),
       });
-      importErrorTimerRef.current = setTimeout(() => {
-        setImportError(null);
-        importErrorTimerRef.current = null;
-      }, 4000);
     },
     [t],
   );
-
-  useEffect(() => {
-    return () => {
-      if (importErrorTimerRef.current) {
-        clearTimeout(importErrorTimerRef.current);
-      }
-    };
-  }, []);
 
   const loadParsedSong = useCallback(
     (fileName: string, data: number[]): void => {
@@ -180,10 +156,6 @@ export function useMidiImportActions({
   );
 
   const dismissImportError = useCallback((): void => {
-    if (importErrorTimerRef.current) {
-      clearTimeout(importErrorTimerRef.current);
-      importErrorTimerRef.current = null;
-    }
     setImportError(null);
   }, []);
 

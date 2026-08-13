@@ -1,4 +1,5 @@
 import { useState, useCallback, useRef, useEffect, useMemo } from "react";
+import { createPortal } from "react-dom";
 import {
   AlertTriangle,
   ArrowLeft,
@@ -88,6 +89,7 @@ import {
   type AppRoute,
 } from "./features/routing/appRoute";
 import { useMidiImportActions } from "./features/fileImport/useMidiImportActions";
+import { FileImportErrorAlert } from "./features/fileImport/FileImportErrorAlert";
 import { buildMidiDiagnosticNotice } from "./features/midiDiagnostics/midiDiagnosticNotice";
 import { OnboardingGuide } from "./features/onboarding/OnboardingGuide";
 import { shouldExposeE2eFixtures } from "./e2eFixtureAccess";
@@ -320,6 +322,17 @@ function App(): React.JSX.Element {
 
   // ─── Phase 6.5 Sprint 5: Insights Panel ──────────────
   const [showInsights, setShowInsights] = useState(false);
+  const insightsDialogRef = useRef<HTMLDivElement>(null);
+  const insightsCloseButtonRef = useRef<HTMLButtonElement>(null);
+  const insightsTriggerRef = useRef<HTMLButtonElement>(null);
+  const closeInsights = useCallback(() => setShowInsights(false), []);
+  useDialogFocus({
+    active: showInsights,
+    containerRef: insightsDialogRef,
+    initialFocusRef: insightsCloseButtonRef,
+    returnFocusRef: insightsTriggerRef,
+    onDismiss: closeInsights,
+  });
   const sessions = useProgressStore((s) => s.sessions);
   const songId = song?.fileName ?? "";
 
@@ -1007,6 +1020,7 @@ function App(): React.JSX.Element {
     isDragging,
     handleOpenFile,
     handleLoadMidiPath,
+    dismissImportError,
     handleImportRecoveryAction,
     handleDragEnter,
     handleDragLeave,
@@ -1017,6 +1031,25 @@ function App(): React.JSX.Element {
     loadSong,
     resetPlayback: reset,
   });
+
+  useEffect(() => {
+    if (
+      typeof window === "undefined" ||
+      !shouldExposeE2eFixtures({
+        isE2eTestMode: window.api.isE2eTestMode,
+      })
+    ) {
+      return;
+    }
+
+    const e2eWindow = window as typeof window & {
+      __rexianoTriggerMissingMidiImport?: (path: string) => Promise<void>;
+    };
+    e2eWindow.__rexianoTriggerMissingMidiImport = handleLoadMidiPath;
+    return () => {
+      delete e2eWindow.__rexianoTriggerMissingMidiImport;
+    };
+  }, [handleLoadMidiPath]);
 
   // ─── Phase 6.5: Mute toggle ────────────────────────────
   const muteRef = useRef({ prevVolume: 0.8 });
@@ -1143,6 +1176,8 @@ function App(): React.JSX.Element {
       ref={appShellRef}
       className="app-root-shell app-shell flex h-screen flex-col"
       style={{ color: "var(--color-text)" }}
+      inert={showInsights ? true : undefined}
+      aria-hidden={showInsights ? "true" : undefined}
       onDragEnter={handleDragEnter}
       onDragLeave={handleDragLeave}
       onDragOver={handleDragOver}
@@ -1185,48 +1220,14 @@ function App(): React.JSX.Element {
         </div>
       )}
 
-      {/* Drag error toast */}
+      {/* Import errors are announced but never steal keyboard focus. */}
       {importError && (
-        <div
-          className="fixed top-4 left-1/2 -translate-x-1/2 z-50 max-w-[420px] rounded-lg px-4 py-3 text-sm font-body subtle-shadow"
-          style={{
-            background: "#dc2626",
-            color: "#ffffff",
-          }}
-          title={importError.guidance.diagnostic || undefined}
-          data-testid="file-import-error-toast"
-        >
-          <div className="font-semibold">{importError.guidance.title}</div>
-          <div className="mt-0.5 text-xs leading-snug">
-            {importError.guidance.guidance}
-          </div>
-          {importError.guidance.actions.length > 0 && (
-            <div className="mt-2 flex flex-wrap gap-1.5">
-              {importError.guidance.actions.map((action) => (
-                <button
-                  key={action.id}
-                  type="button"
-                  onClick={() =>
-                    handleImportRecoveryAction(action.id, importError.input)
-                  }
-                  className="rounded px-2 py-1 text-[11px] font-body font-semibold cursor-pointer"
-                  style={{
-                    color:
-                      action.emphasis === "primary" ? "#991b1b" : "#ffffff",
-                    background:
-                      action.emphasis === "primary"
-                        ? "#ffffff"
-                        : "rgba(255, 255, 255, 0.14)",
-                    border: "1px solid rgba(255, 255, 255, 0.45)",
-                  }}
-                  data-import-recovery-action={action.id}
-                >
-                  {action.label}
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
+        <FileImportErrorAlert
+          input={importError.input}
+          guidance={importError.guidance}
+          onAction={handleImportRecoveryAction}
+          onDismiss={dismissImportError}
+        />
       )}
 
       {/* View: Main Menu */}
@@ -1326,6 +1327,21 @@ function App(): React.JSX.Element {
                 className="flex items-center gap-1 shrink-0"
                 data-testid="playback-header-actions"
               >
+                <button
+                  ref={insightsTriggerRef}
+                  type="button"
+                  onClick={() => setShowInsights(true)}
+                  className="btn-surface-themed flex min-h-9 min-w-9 items-center justify-center rounded-lg cursor-pointer"
+                  title={t("app.insightsTitle")}
+                  aria-label={t("app.insightsTitle")}
+                  data-testid="insights-trigger"
+                >
+                  <BarChart3
+                    size={15}
+                    style={{ color: "var(--color-text)" }}
+                    aria-hidden="true"
+                  />
+                </button>
                 <button
                   ref={playbackDrawerTriggerRef}
                   onClick={() => setShowPlaybackDrawer(true)}
@@ -1431,20 +1447,6 @@ function App(): React.JSX.Element {
                         style={{ color: "var(--color-text)" }}
                       />
                     </button>
-                    <button
-                      onClick={() => {
-                        setShowPlaybackDrawer(false);
-                        setShowInsights(true);
-                      }}
-                      className="btn-surface-themed w-9 h-9 flex items-center justify-center rounded-full cursor-pointer"
-                      title={t("app.insightsTitle")}
-                      data-testid="insights-trigger"
-                    >
-                      <BarChart3
-                        size={16}
-                        style={{ color: "var(--color-text)" }}
-                      />
-                    </button>
                     <SettingsPanel />
                   </section>
                 </div>
@@ -1521,24 +1523,6 @@ function App(): React.JSX.Element {
             )}
           </div>
 
-          {/* Insights modal */}
-          {showInsights && (
-            <div
-              className="fixed inset-0 z-[100] flex items-center justify-center modal-backdrop-cinematic"
-              onClick={() => setShowInsights(false)}
-            >
-              <div
-                className="w-[92vw] max-w-[460px] max-h-[85vh] overflow-y-auto modal-card-cinematic subtle-shadow-md"
-                onClick={(e) => e.stopPropagation()}
-              >
-                <InsightsPanel
-                  insight={insight}
-                  onClose={() => setShowInsights(false)}
-                />
-              </div>
-            </div>
-          )}
-
           {/* Transport bar */}
           {showTransportBar && <TransportBar compact={compactPlaybackChrome} />}
 
@@ -1591,6 +1575,42 @@ function App(): React.JSX.Element {
           onChooseSong={handleChooseSong}
         />
       )}
+      {showInsights &&
+        typeof document !== "undefined" &&
+        createPortal(
+          <div
+            className="fixed inset-0 z-[200] flex items-center justify-center p-4 modal-backdrop-cinematic"
+            onClick={(event) => {
+              if (event.target === event.currentTarget) closeInsights();
+            }}
+            data-testid="insights-backdrop"
+          >
+            <div
+              ref={insightsDialogRef}
+              className="w-[min(92vw,460px)] max-h-[85vh] overflow-y-auto rounded-2xl modal-card-cinematic subtle-shadow-md"
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="practice-insights-dialog-title"
+              aria-describedby="practice-insights-dialog-description"
+              tabIndex={-1}
+              data-testid="insights-dialog"
+              onClick={(event) => event.stopPropagation()}
+            >
+              <h2 id="practice-insights-dialog-title" className="sr-only">
+                {t("insights.title")}
+              </h2>
+              <p id="practice-insights-dialog-description" className="sr-only">
+                {t("insights.dialogDescription")}
+              </p>
+              <InsightsPanel
+                insight={insight}
+                onClose={closeInsights}
+                closeButtonRef={insightsCloseButtonRef}
+              />
+            </div>
+          </div>,
+          document.body,
+        )}
     </div>
   );
 }

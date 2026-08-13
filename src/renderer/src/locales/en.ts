@@ -27,6 +27,7 @@ export const en: TranslationMap = {
   "app.importActionRetry": "Try again",
   "app.importActionReimport": "Import again",
   "app.importActionOpenPermissions": "Check file permissions",
+  "app.importRecoveryActionsLabel": "Import recovery actions",
   "app.insightsTitle": "Practice Insights",
   "app.startPractice": "Start Playing",
   "app.openSettings": "Settings",
@@ -402,6 +403,8 @@ export const en: TranslationMap = {
 
   // ── Insights Panel ─────────────────────────────────────────────
   "insights.title": "Practice Insights",
+  "insights.dialogDescription":
+    "Review practice progress, accuracy trends, and suggested next steps.",
   "insights.weakSpots": "Weak Spots",
   "insights.accuracyTrend": "Accuracy Trend",
   "insights.totalMinutes": "Total practice time",
