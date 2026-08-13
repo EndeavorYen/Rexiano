@@ -458,7 +458,7 @@
   - [x] 簽章/公證 secrets、local/fork unsigned 邊界與 evidence checklist 文件（`docs/release-signing.md`）
   - [ ] 使用 production secrets 完成真實三平台簽章發行與安裝 smoke 證據（#187）
 - [x] 檔案關聯
-  - [x] `.mid` 檔案雙擊以 Rexiano 開啟（electron-builder.yml fileAssociations）
+  - [x] `.mid` 檔案雙擊以 Rexiano 開啟（electron-builder.yml fileAssociations + 冷啟動／已開啟實例路由，#192）
   - [x] 各平台的 MIME type 註冊（Linux mimeTypes: audio/midi, audio/x-midi）
 - [x] 安裝體驗優化
   - [x] Windows: 桌面捷徑、開始選單（nsis createDesktopShortcut + createStartMenuShortcut）

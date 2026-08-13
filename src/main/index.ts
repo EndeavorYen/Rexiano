@@ -1,4 +1,4 @@
-import { app, shell, BrowserWindow } from "electron";
+import { app, shell, BrowserWindow, ipcMain } from "electron";
 import { join } from "path";
 import { pathToFileURL } from "url";
 import icon from "../../docs/figure/Rexiano_icon.png?asset";
@@ -13,6 +13,12 @@ import { registerUpdateHandlers } from "./ipc/updateHandlers";
 import { normalizeExternalUrl } from "./externalUrlPolicy";
 import { bluetoothDeviceSelectionRegistry } from "./ipc/bluetoothDeviceSelection";
 import { configureTrustedRendererUrl } from "./ipc/midiPermissionPolicy";
+import { IpcChannels } from "../shared/types";
+import { approveMidiFilePath } from "./ipc/midiPathAccess";
+import {
+  AssociatedMidiFileOpenQueue,
+  findAssociatedMidiArgument,
+} from "./associatedMidiFileOpen";
 
 // WSL2 doesn't forward Windows display scaling to X11/Wayland,
 // so Electron defaults to devicePixelRatio=1. Force the correct factor.
@@ -24,7 +30,30 @@ if (process.env.REXIANO_USER_DATA_DIR) {
   app.setPath("userData", process.env.REXIANO_USER_DATA_DIR);
 }
 
-function createWindow(): void {
+let mainWindow: BrowserWindow | null = null;
+
+const associatedMidiFiles = new AssociatedMidiFileOpenQueue(
+  async (candidate) => {
+    await app.whenReady();
+    return approveMidiFilePath(candidate);
+  },
+);
+
+async function queueAssociatedMidiFile(candidate: string): Promise<void> {
+  if (!(await associatedMidiFiles.enqueue(candidate))) return;
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    mainWindow.webContents.send(IpcChannels.ASSOCIATED_MIDI_FILE_PENDING);
+  }
+}
+
+function focusMainWindow(): void {
+  if (!mainWindow || mainWindow.isDestroyed()) return;
+  if (mainWindow.isMinimized()) mainWindow.restore();
+  mainWindow.show();
+  mainWindow.focus();
+}
+
+function createWindow(): BrowserWindow {
   const rendererEntryPath = join(__dirname, "../renderer/index.html");
   const developmentRendererUrl = process.env["ELECTRON_RENDERER_URL"];
   const rendererUrl =
@@ -33,7 +62,7 @@ function createWindow(): void {
       : pathToFileURL(rendererEntryPath).href;
   configureTrustedRendererUrl(rendererUrl);
 
-  const mainWindow = new BrowserWindow({
+  const createdWindow = new BrowserWindow({
     width: 1280,
     height: 800,
     minWidth: 960,
@@ -47,11 +76,17 @@ function createWindow(): void {
     },
   });
 
-  mainWindow.on("ready-to-show", () => {
-    mainWindow.show();
+  mainWindow = createdWindow;
+
+  createdWindow.on("ready-to-show", () => {
+    createdWindow.show();
   });
 
-  mainWindow.webContents.setWindowOpenHandler((details) => {
+  createdWindow.on("closed", () => {
+    if (mainWindow === createdWindow) mainWindow = null;
+  });
+
+  createdWindow.webContents.setWindowOpenHandler((details) => {
     const externalUrl = normalizeExternalUrl(details.url);
     if (externalUrl) {
       void shell.openExternal(externalUrl);
@@ -59,37 +94,60 @@ function createWindow(): void {
     return { action: "deny" };
   });
 
-  bluetoothDeviceSelectionRegistry.attachWindow(mainWindow);
+  bluetoothDeviceSelectionRegistry.attachWindow(createdWindow);
 
   // HMR for renderer based on electron-vite cli
   if (!app.isPackaged && developmentRendererUrl) {
-    mainWindow.loadURL(rendererUrl);
+    void createdWindow.loadURL(rendererUrl);
   } else {
-    mainWindow.loadFile(rendererEntryPath);
+    void createdWindow.loadFile(rendererEntryPath);
   }
+  return createdWindow;
 }
 
-app.whenReady().then(() => {
-  app.setAppUserModelId("com.rexiano");
+const hasSingleInstanceLock = app.requestSingleInstanceLock();
 
-  registerFileHandlers();
-  registerMidiDeviceHandlers();
-  registerProgressHandlers();
-  registerRecentFilesHandlers();
-  registerUserDataBackupHandlers();
-  registerWatchedFolderHandlers();
-  registerAppInfoHandlers();
-  registerUpdateHandlers();
-
-  createWindow();
-
-  app.on("activate", () => {
-    if (BrowserWindow.getAllWindows().length === 0) createWindow();
+if (!hasSingleInstanceLock) {
+  app.quit();
+} else {
+  app.on("open-file", (event, filePath) => {
+    event.preventDefault();
+    void queueAssociatedMidiFile(filePath);
   });
-});
 
-app.on("window-all-closed", () => {
-  if (process.platform !== "darwin") {
-    app.quit();
-  }
-});
+  app.on("second-instance", (_event, commandLine) => {
+    focusMainWindow();
+    const filePath = findAssociatedMidiArgument(commandLine);
+    if (filePath) void queueAssociatedMidiFile(filePath);
+  });
+
+  void app.whenReady().then(() => {
+    app.setAppUserModelId("com.rexiano");
+
+    registerFileHandlers();
+    registerMidiDeviceHandlers();
+    registerProgressHandlers();
+    registerRecentFilesHandlers();
+    registerUserDataBackupHandlers();
+    registerWatchedFolderHandlers();
+    registerAppInfoHandlers();
+    registerUpdateHandlers();
+    ipcMain.handle(IpcChannels.TAKE_PENDING_ASSOCIATED_MIDI_FILE, () =>
+      associatedMidiFiles.take(),
+    );
+
+    createWindow();
+    const coldStartFilePath = findAssociatedMidiArgument(process.argv);
+    if (coldStartFilePath) void queueAssociatedMidiFile(coldStartFilePath);
+
+    app.on("activate", () => {
+      if (BrowserWindow.getAllWindows().length === 0) createWindow();
+    });
+  });
+
+  app.on("window-all-closed", () => {
+    if (process.platform !== "darwin") {
+      app.quit();
+    }
+  });
+}

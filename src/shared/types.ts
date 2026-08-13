@@ -11,6 +11,10 @@ export interface MidiFileResult {
 /** IPC channel names — single source of truth */
 export const IpcChannels = {
   OPEN_MIDI_FILE: "dialog:openMidiFile",
+  /** OS file association: renderer atomically takes the latest pending MIDI path */
+  TAKE_PENDING_ASSOCIATED_MIDI_FILE: "app:takePendingAssociatedMidiFile",
+  /** OS file association: main notifies renderer that a path is ready to pull */
+  ASSOCIATED_MIDI_FILE_PENDING: "app:associatedMidiFilePending",
   /** Phase 4: Load SoundFont file from resources/ directory */
   LOAD_SOUNDFONT: "audio:loadSoundFont",
   /** Phase 5: Grant MIDI device access permission */

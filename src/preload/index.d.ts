@@ -92,6 +92,10 @@ declare global {
       ) => Promise<WatchedMidiFoldersScanResult>;
       /** Phase 6.5: Load a MIDI file by absolute path (for recent files) */
       loadMidiPath: (filePath: string) => Promise<MidiFileResult | null>;
+      /** OS file association: take the latest approved pending MIDI path once */
+      takePendingAssociatedMidiFile: () => Promise<string | null>;
+      /** OS file association: subscribe to pending-path notifications */
+      onAssociatedMidiFilePending: (callback: () => void) => () => void;
       /** Editor: export generated MIDI bytes with a save dialog */
       exportMidiFile: (request: MidiExportRequest) => Promise<MidiExportResult>;
       /** Release pipeline: get app version and changelog */

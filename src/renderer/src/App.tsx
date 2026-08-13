@@ -1116,6 +1116,10 @@ function App(): React.JSX.Element {
   }, [showFallingNoteLabels, noteRendererRef]);
   // ─── End Phase 6.5 ───────────────────────────────────
 
+  const prepareAssociatedMidiOpen = useCallback((): void => {
+    setSessionIntent("practice");
+  }, [setSessionIntent]);
+
   const {
     importError,
     isDragging,

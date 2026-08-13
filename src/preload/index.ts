@@ -114,6 +114,17 @@ const api = {
   // Phase 6.5: Load MIDI file by path (for recent files direct loading)
   loadMidiPath: (filePath: string) =>
     ipcRenderer.invoke(IpcChannels.LOAD_MIDI_PATH, filePath),
+  takePendingAssociatedMidiFile: (): Promise<string | null> =>
+    ipcRenderer.invoke(IpcChannels.TAKE_PENDING_ASSOCIATED_MIDI_FILE),
+  onAssociatedMidiFilePending: (callback: () => void): (() => void) => {
+    const listener = (): void => callback();
+    ipcRenderer.on(IpcChannels.ASSOCIATED_MIDI_FILE_PENDING, listener);
+    return () =>
+      ipcRenderer.removeListener(
+        IpcChannels.ASSOCIATED_MIDI_FILE_PENDING,
+        listener,
+      );
+  },
   exportMidiFile: (request: MidiExportRequest): Promise<MidiExportResult> =>
     ipcRenderer.invoke(IpcChannels.EXPORT_MIDI_FILE, request),
 
