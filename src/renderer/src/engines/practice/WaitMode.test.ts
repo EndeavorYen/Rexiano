@@ -21,7 +21,7 @@ vi.mock("@renderer/stores/useSettingsStore", () => ({
 }));
 
 function makeTracks(
-  notes: Array<{ midi: number; time: number }>,
+  notes: Array<{ midi: number; time: number; ticks?: number }>,
 ): ParsedTrack[] {
   return [
     {
@@ -34,6 +34,7 @@ function makeTracks(
         time: n.time,
         duration: 0.5,
         velocity: 80,
+        ticks: n.ticks,
       })),
     },
   ];
@@ -120,6 +121,80 @@ describe("WaitMode", () => {
     // All 3 notes pressed
     expect(wm.checkInput(new Set([60, 64, 67]))).toBe(true);
     expect(wm.state).toBe("playing");
+  });
+
+  it("does not group a fast 113ms sequence into one chord", () => {
+    wm.init(
+      makeTracks([
+        { midi: 71, time: 0, ticks: 0 },
+        { midi: 72, time: 0.1136, ticks: 120 },
+        { midi: 74, time: 0.2273, ticks: 240 },
+      ]),
+      new Set([0]),
+    );
+    wm.start();
+
+    wm.tick(0);
+
+    expect(wm.targetNotes).toEqual(new Set([71]));
+  });
+
+  it("groups genuine same-onset notes across tracks by exact tick", () => {
+    const tracks: ParsedTrack[] = [
+      {
+        name: "RH",
+        instrument: "Piano",
+        channel: 0,
+        notes: [
+          {
+            midi: 64,
+            name: "E4",
+            time: 1,
+            duration: 0.5,
+            velocity: 80,
+            ticks: 480,
+          },
+        ],
+      },
+      {
+        name: "LH",
+        instrument: "Piano",
+        channel: 1,
+        notes: [
+          {
+            midi: 48,
+            name: "C3",
+            time: 1.001,
+            duration: 0.5,
+            velocity: 80,
+            ticks: 480,
+          },
+        ],
+      },
+    ];
+    wm.init(tracks, new Set([0, 1]));
+    wm.start();
+
+    wm.tick(1);
+
+    expect(wm.targetNotes).toEqual(new Set([48, 64]));
+  });
+
+  it("uses a small deterministic epsilon only when tick metadata is missing", () => {
+    wm.init(
+      makeTracks([
+        { midi: 60, time: 1 },
+        { midi: 64, time: 1.009 },
+        { midi: 67, time: 1.011 },
+      ]),
+      new Set([0]),
+    );
+    wm.start();
+
+    wm.tick(1);
+
+    expect(wm.targetNotes).toEqual(new Set([60, 64]));
+    expect(wm.targetNotes.has(67)).toBe(false);
   });
 
   it("marks notes as miss when passed beyond tolerance", () => {

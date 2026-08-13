@@ -19,6 +19,25 @@ interface PendingNoteInfo {
   noteIndex: number;
   midi: number;
   time: number;
+  ticks?: number;
+}
+
+/**
+ * Maximum onset difference used only for synthetic notes without MIDI ticks.
+ * Player input tolerance is deliberately wider and must not define chords.
+ */
+export const WAIT_CHORD_ONSET_EPSILON_SECONDS = 0.01;
+
+function hasSameMusicalOnset(
+  left: PendingNoteInfo,
+  right: PendingNoteInfo,
+): boolean {
+  if (left.ticks !== undefined && right.ticks !== undefined) {
+    return left.ticks === right.ticks;
+  }
+  return (
+    Math.abs(left.time - right.time) <= WAIT_CHORD_ONSET_EPSILON_SECONDS
+  );
 }
 
 /**
@@ -45,6 +64,8 @@ export class WaitMode {
   private _pendingMidis = new Set<number>();
   /** Structured info for currently pending notes (avoids string parsing) */
   private _pendingNoteDetails: PendingNoteInfo[] = [];
+  /** Notes inside the input window before selecting the earliest onset. */
+  private _candidateNoteDetails: PendingNoteInfo[] = [];
 
   /**
    * @param toleranceMs Time window (±ms) around the hit line for accepting input.
@@ -84,6 +105,7 @@ export class WaitMode {
     this._targetNotes.clear();
     this._trackCursors.clear();
     this._pendingNoteDetails.length = 0;
+    this._candidateNoteDetails.length = 0;
     this._state = "idle";
   }
 
@@ -119,6 +141,7 @@ export class WaitMode {
     const pendingMidis = this._pendingMidis;
     pendingMidis.clear();
     this._pendingNoteDetails.length = 0;
+    this._candidateNoteDetails.length = 0;
 
     for (const trackIndex of this._activeTracks) {
       const track = this._tracks[trackIndex];
@@ -140,15 +163,16 @@ export class WaitMode {
           continue;
         }
 
-        // Note within tolerance window → pending
+        // Notes inside the player timing window are only candidates. The
+        // earliest musical onset is selected after scanning every track, so a
+        // fast melody is never mistaken for one large chord.
         if (note.time >= adjustedTime - toleranceSec) {
-          pendingMidis.add(note.midi);
-          this._noteResults.set(key, "pending");
-          this._pendingNoteDetails.push({
+          this._candidateNoteDetails.push({
             trackIndex,
             noteIndex: ni,
             midi: note.midi,
             time: note.time,
+            ticks: note.ticks,
           });
         } else {
           // Past tolerance window → missed
@@ -159,6 +183,25 @@ export class WaitMode {
       }
 
       this._trackCursors.set(trackIndex, cursor);
+    }
+
+    let onsetAnchor: PendingNoteInfo | null = null;
+    for (const candidate of this._candidateNoteDetails) {
+      if (!onsetAnchor || candidate.time < onsetAnchor.time) {
+        onsetAnchor = candidate;
+      }
+    }
+
+    if (onsetAnchor) {
+      for (const candidate of this._candidateNoteDetails) {
+        if (!hasSameMusicalOnset(onsetAnchor, candidate)) continue;
+        pendingMidis.add(candidate.midi);
+        this._noteResults.set(
+          `${candidate.trackIndex}:${candidate.noteIndex}`,
+          "pending",
+        );
+        this._pendingNoteDetails.push(candidate);
+      }
     }
 
     // If there are pending notes, pause and wait for input
@@ -214,6 +257,7 @@ export class WaitMode {
     this._targetNotes.clear();
     this._trackCursors.clear();
     this._pendingNoteDetails.length = 0;
+    this._candidateNoteDetails.length = 0;
     this._state = "idle";
   }
 }
