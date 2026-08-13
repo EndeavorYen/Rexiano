@@ -36,6 +36,7 @@ function createMockAudioBufferSourceNode() {
     buffer: null,
     playbackRate: { value: 1.0 },
     connect: vi.fn(),
+    disconnect: vi.fn(),
     start: vi.fn(),
     stop: vi.fn(),
     onended: null as (() => void) | null,
@@ -286,6 +287,35 @@ describe("AudioEngine", () => {
       expect(mockSource.stop).toHaveBeenCalled();
     });
 
+    test("noteOff keeps overlapping notes releasable in oldest-first order", async () => {
+      const { mockCtx } = stubGlobalAudioContext();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const loader = (engine as any)._soundFontLoader;
+      loader.getSample.mockReturnValue({
+        midi: 60,
+        buffer: {} as AudioBuffer,
+        sampleRate: 44100,
+        basePitch: 60,
+      });
+
+      await engine.init();
+
+      const firstSource = createMockAudioBufferSourceNode();
+      const secondSource = createMockAudioBufferSourceNode();
+      mockCtx.createBufferSource
+        .mockReturnValueOnce(firstSource)
+        .mockReturnValueOnce(secondSource);
+      mockCtx.createGain.mockReturnValue(createMockGainNode());
+
+      engine.noteOn(60, 100, 0);
+      engine.noteOn(60, 100, 0.5);
+      engine.noteOff(60, 1);
+      engine.noteOff(60, 1.5);
+
+      expect(firstSource.stop).toHaveBeenCalledWith(1.16);
+      expect(secondSource.stop).toHaveBeenCalledWith(1.66);
+    });
+
     test("noteOn returns early if sample not found for midi", async () => {
       const { mockCtx } = stubGlobalAudioContext();
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -330,6 +360,35 @@ describe("AudioEngine", () => {
       expect(() => engine.noteOn(60, 100, 0)).not.toThrow();
       expect(engine.status).toBe("error");
       expect(onRuntimeError).toHaveBeenCalledWith(runtimeError);
+    });
+  });
+
+  describe("releaseScheduledAfter", () => {
+    test("cancels a future source after its noteOff has already been scheduled", async () => {
+      const { mockCtx } = stubGlobalAudioContext();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const loader = (engine as any)._soundFontLoader;
+      loader.getSample.mockReturnValue({
+        midi: 60,
+        buffer: {} as AudioBuffer,
+        sampleRate: 44100,
+        basePitch: 60,
+      });
+
+      await engine.init();
+
+      const futureSource = createMockAudioBufferSourceNode();
+      const futureGain = createMockGainNode();
+      mockCtx.createBufferSource.mockReturnValue(futureSource);
+      mockCtx.createGain.mockReturnValue(futureGain);
+
+      engine.noteOn(60, 100, 5);
+      engine.noteOff(60, 6);
+      engine.releaseScheduledAfter(2);
+
+      expect(futureSource.stop).toHaveBeenCalledWith(2);
+      expect(futureSource.disconnect).toHaveBeenCalledTimes(1);
+      expect(futureGain.disconnect).toHaveBeenCalledTimes(1);
     });
   });
 

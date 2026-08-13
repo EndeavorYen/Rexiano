@@ -21,6 +21,8 @@ interface ActiveNote {
   gain: GainNode;
   /** AudioContext time this note is scheduled to start sounding */
   startTime: number;
+  /** Whether noteOff has already scheduled this source to stop. */
+  released: boolean;
 }
 
 /** Release time in seconds for noteOff envelope */
@@ -139,6 +141,7 @@ export class AudioEngine implements IAudioEngine {
         source,
         gain: velocityGain,
         startTime: time,
+        released: false,
       };
       const existing = this._activeNotes.get(midi);
       if (existing) {
@@ -170,9 +173,12 @@ export class AudioEngine implements IAudioEngine {
       const notes = this._activeNotes.get(midi);
       if (!notes || notes.length === 0) return;
 
-      // Release the oldest active note for this MIDI key
-      const activeNote = notes.shift()!;
-      if (notes.length === 0) this._activeNotes.delete(midi);
+      // Release the oldest note for this MIDI key that has not already been
+      // assigned a noteOff. Keep it tracked until onended so a future source
+      // remains cancellable by releaseScheduledAfter().
+      const activeNote = notes.find((note) => !note.released);
+      if (!activeNote) return;
+      activeNote.released = true;
 
       const { source, gain } = activeNote;
 
