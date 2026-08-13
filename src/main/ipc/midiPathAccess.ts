@@ -216,6 +216,15 @@ async function isIdentityGrantedForOpenedPath(
   return false;
 }
 
+function isMissingPathError(error: unknown): boolean {
+  return (
+    typeof error === "object" &&
+    error !== null &&
+    "code" in error &&
+    (error as { code?: string }).code === "ENOENT"
+  );
+}
+
 export async function readApprovedMidiFile(
   candidate: unknown,
   operations: MidiFileReadOperations = midiFileReadOperations,
@@ -225,29 +234,34 @@ export async function readApprovedMidiFile(
   const normalized = normalizeAbsolutePath(candidate);
   if (!normalized || !isMidiPath(normalized)) return null;
 
-  const handle = await operations.open(normalized);
   try {
-    const fileStats = await handle.stat();
-    if (!fileStats.isFile()) return null;
-    if (fileStats.size > MAX_MIDI_FILE_BYTES) {
-      throw new MidiFileReadError("too-large");
-    }
+    const handle = await operations.open(normalized);
+    try {
+      const fileStats = await handle.stat();
+      if (!fileStats.isFile()) return null;
+      if (fileStats.size > MAX_MIDI_FILE_BYTES) {
+        throw new MidiFileReadError("too-large");
+      }
 
-    const openedPath = await handle.realpath();
-    if (!isMidiPath(openedPath)) return null;
-    if (
-      !(await isIdentityGrantedForOpenedPath(openedPath, fileStats.identity))
-    ) {
-      return null;
-    }
+      const openedPath = await handle.realpath();
+      if (!isMidiPath(openedPath)) return null;
+      if (
+        !(await isIdentityGrantedForOpenedPath(openedPath, fileStats.identity))
+      ) {
+        return null;
+      }
 
-    const buffer = await handle.read(fileStats.size);
-    if (buffer.byteLength > MAX_MIDI_FILE_BYTES) {
-      throw new MidiFileReadError("too-large");
+      const buffer = await handle.read(fileStats.size);
+      if (buffer.byteLength > MAX_MIDI_FILE_BYTES) {
+        throw new MidiFileReadError("too-large");
+      }
+      return { path: openedPath, buffer };
+    } finally {
+      await handle.close();
     }
-    return { path: openedPath, buffer };
-  } finally {
-    await handle.close();
+  } catch (error) {
+    if (isMissingPathError(error)) return null;
+    throw error;
   }
 }
 

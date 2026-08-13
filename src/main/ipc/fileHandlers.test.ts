@@ -177,6 +177,17 @@ describe("fileHandlers", () => {
     expect(mockFdReads).not.toContain(path);
   });
 
+  test("LOAD_MIDI_PATH returns null when an approved path no longer exists", async () => {
+    const path = "/Users/rex/Music/Gone.mid";
+    mockFileContents[path] = Buffer.from([1, 2, 3]);
+    await approveMidiFilePath(path);
+    delete mockFileContents[path];
+
+    await expect(
+      handlers[IpcChannels.LOAD_MIDI_PATH](trustedEvent, path),
+    ).resolves.toBeNull();
+  });
+
   test("LOAD_MIDI_PATH rejects an oversized approved file before read", async () => {
     const path = "/Users/rex/Music/Huge.mid";
     mockFileContents[path] = Buffer.alloc(MAX_MIDI_FILE_BYTES + 1);
