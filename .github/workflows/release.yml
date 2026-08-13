@@ -1,9 +1,6 @@
 name: Release
 
 on:
-  push:
-    tags:
-      - "v*"
   workflow_dispatch:
     inputs:
       tag:
@@ -43,20 +40,19 @@ jobs:
           WORKFLOW_REF: ${{ github.workflow_ref }}
           DISPATCH_TAG: ${{ github.event.inputs.tag }}
           EXPECTED_SHA: ${{ github.event.inputs.expected_sha }}
-          PUSH_TAG: ${{ github.ref_name }}
         run: |
           set -euo pipefail
 
-          if [[ "$EVENT_NAME" == "workflow_dispatch" ]]; then
-            expected_workflow_ref="$GITHUB_REPOSITORY/.github/workflows/release.yml@refs/heads/main"
-            if [[ "$WORKFLOW_REF" != "$expected_workflow_ref" ]]; then
-              echo "Release dispatches must run from refs/heads/main." >&2
-              exit 1
-            fi
-            release_tag="$DISPATCH_TAG"
-          else
-            release_tag="$PUSH_TAG"
+          if [[ "$EVENT_NAME" != "workflow_dispatch" ]]; then
+            echo "Release artifacts require an explicit immutable-SHA dispatch." >&2
+            exit 1
           fi
+          expected_workflow_ref="$GITHUB_REPOSITORY/.github/workflows/release.yml@refs/heads/main"
+          if [[ "$WORKFLOW_REF" != "$expected_workflow_ref" ]]; then
+            echo "Release dispatches must run from refs/heads/main." >&2
+            exit 1
+          fi
+          release_tag="$DISPATCH_TAG"
 
           if [[ ! "$release_tag" =~ ^v(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$ ]]; then
             echo "Release tag must be a strict vMAJOR.MINOR.PATCH value." >&2
@@ -70,15 +66,13 @@ jobs:
           fi
 
           release_sha="$(git rev-parse "refs/tags/$release_tag^{commit}")"
-          if [[ "$EVENT_NAME" == "workflow_dispatch" ]]; then
-            if [[ ! "$EXPECTED_SHA" =~ ^[0-9a-f]{40}$ ]]; then
-              echo "expected_sha must be a full lowercase commit SHA." >&2
-              exit 1
-            fi
-            if [[ "$release_sha" != "$EXPECTED_SHA" ]]; then
-              echo "Release tag no longer resolves to expected_sha." >&2
-              exit 1
-            fi
+          if [[ ! "$EXPECTED_SHA" =~ ^[0-9a-f]{40}$ ]]; then
+            echo "expected_sha must be a full lowercase commit SHA." >&2
+            exit 1
+          fi
+          if [[ "$release_sha" != "$EXPECTED_SHA" ]]; then
+            echo "Release tag no longer resolves to expected_sha." >&2
+            exit 1
           fi
 
           if ! git merge-base --is-ancestor "$release_sha" origin/main; then

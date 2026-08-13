@@ -20,6 +20,15 @@ from `origin/main`, and checks that `package.json` contains the same version.
 Release Please dispatches the workflow from `main` with both the tag and expected
 SHA. Every later job checks out and verifies that exact SHA.
 
+Release Please also dispatches CI and Windows Playwright for the exact commit of
+every generated or updated release pull request. This explicit dispatch avoids
+GitHub's `GITHUB_TOKEN` recursion suppression without storing a maintainer PAT.
+Main branch protection requires `Lint`, `Typecheck`, `Test`, and
+`Playwright (Windows)` from the GitHub Actions app, so a release pull request
+cannot merge when those jobs are absent, stale, or failing. The artifact workflow
+has a single authoritative release trigger: Release Please dispatches it from
+`main` with the immutable tag commit; a tag push does not start a second build.
+
 Before packaging, CI must pass the frozen install, lint, typecheck, and unit test
 gate. A Windows runner also executes the real Playwright player-flow suite. The
 release stays in draft state until all three platform packages have passed their
@@ -93,8 +102,8 @@ electron-builder signing/notarization invocation.
   Gatekeeper, stapler, or checksum failure prevents publication.
 - A tag that moves after initial resolution is rejected again by the publish
   job.
-- Tag-push and workflow-dispatch runs must find exactly one matching draft;
-  neither trigger creates a missing release as a fallback.
+- The explicit workflow-dispatch run must find exactly one matching draft; it
+  never creates a missing release as a fallback.
 - A failed run may leave the Release Please draft available for diagnosis, but
   it cannot turn that draft into a public release.
 - Pull-request CI does not need private signing secrets because it verifies the

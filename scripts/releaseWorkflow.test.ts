@@ -108,8 +108,54 @@ describe("release workflow", () => {
     );
   });
 
+  test("dispatches required checks for token-created release pull requests", () => {
+    expect(releasePleaseWorkflow).toContain(
+      "if: ${{ steps.release.outputs.prs_created == 'true' }}",
+    );
+    expect(releasePleaseWorkflow).toContain(
+      "RELEASE_PRS: ${{ steps.release.outputs.prs }}",
+    );
+    expect(releasePleaseWorkflow).toContain(
+      'jq -er \'length == 1 and .[0].baseBranchName == "main"',
+    );
+    expect(releasePleaseWorkflow).toContain(
+      'git/ref/heads/$release_branch" --jq .object.sha',
+    );
+    expect(releasePleaseWorkflow).toContain(
+      '.github/workflows/ci.yml --repo "$GITHUB_REPOSITORY" --ref "$release_branch"',
+    );
+    expect(releasePleaseWorkflow).toContain(
+      '.github/workflows/playwright.yml --repo "$GITHUB_REPOSITORY" --ref "$release_branch"',
+    );
+    expect(releasePleaseWorkflow).toContain(
+      '--field expected_sha="$release_sha"',
+    );
+
+    for (const workflowPath of [
+      ".github/workflows/ci.yml",
+      ".github/workflows/playwright.yml",
+    ]) {
+      const workflow = readRepoFile(workflowPath);
+      expect(workflow).toContain("workflow_dispatch:");
+      expect(workflow).toContain("expected_sha:");
+      expect(workflow).toContain("Assert dispatched commit SHA");
+      expect(workflow).toContain(
+        "if: ${{ github.event_name == 'workflow_dispatch' }}",
+      );
+      expect(workflow).toContain(
+        '[[ "$(git rev-parse HEAD)" == "$EXPECTED_SHA" ]]',
+      );
+    }
+  });
+
   test("uses read-only defaults, exact release inputs, and per-tag serialization", () => {
-    expect(releaseWorkflow).toContain('      - "v*"');
+    const eventBlock = releaseWorkflow.slice(
+      releaseWorkflow.indexOf("on:"),
+      releaseWorkflow.indexOf("permissions:"),
+    );
+
+    expect(eventBlock).not.toContain("push:");
+    expect(eventBlock).toContain("workflow_dispatch:");
     expect(releaseWorkflow).toContain("expected_sha:");
     expect(releaseWorkflow).toContain("required: true");
     expect(releaseWorkflow).toContain("permissions:\n  contents: read");
@@ -343,11 +389,13 @@ describe("release workflow", () => {
     expect(signingDocs).toContain("MACOS_CSC_LINK");
     expect(signingDocs).toContain("Exactly one");
     expect(signingDocs).toContain("Issue #187");
+    expect(signingDocs).toContain("single authoritative release trigger");
+    expect(signingDocs).toContain("Playwright (Windows)");
     expect(signingDocs).toContain("Authenticode");
     expect(signingDocs).toContain("Gatekeeper");
     expect(signingDocs).toContain("SHA256SUMS.txt");
     expect(signingDocs).toContain(
-      "Tag-push and workflow-dispatch runs must find exactly one matching draft",
+      "explicit workflow-dispatch run must find exactly one matching draft",
     );
     expect(design).toContain("fail closed");
     expect(design).toContain("恰好一個 matching draft");
