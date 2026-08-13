@@ -5,7 +5,7 @@
  * No DOM environment needed: we call the handler directly with
  * minimal KeyboardEvent-like objects.
  */
-import { describe, test, expect, vi, beforeEach } from "vitest";
+import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 
 // Mock Zustand stores before importing
 vi.mock("@renderer/stores/usePlaybackStore", () => {
@@ -105,8 +105,10 @@ function setupHandler(deps: KeyboardShortcutDeps = {}): void {
 function fireKey(
   code: string,
   opts: Parameters<typeof makeKeyEvent>[1] = {},
-): void {
-  handler(makeKeyEvent(code, opts));
+): KeyboardEvent {
+  const event = makeKeyEvent(code, opts);
+  handler(event);
+  return event;
 }
 
 describe("useKeyboardShortcuts", () => {
@@ -119,6 +121,10 @@ describe("useKeyboardShortcuts", () => {
       usePracticeStore.getState() as { loopRange: [number, number] | null }
     ).loopRange = null;
     setupHandler();
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
   });
 
   // ─── isTextInput ────────────────────────────────────────
@@ -148,6 +154,64 @@ describe("useKeyboardShortcuts", () => {
         false,
       );
     });
+
+    test.each([
+      "button",
+      "a",
+      "input",
+      "select",
+      "textarea",
+      "[contenteditable]:not([contenteditable='false'])",
+      "[role='button']",
+      "[role='link']",
+      "[role='checkbox']",
+      "[role='radio']",
+      "[role='switch']",
+      "[role='tab']",
+      "[role='menuitem']",
+      "[role='slider']",
+    ])("leaves Space activation to interactive target %s", (match) => {
+      const target = {
+        closest: (selector: string) =>
+          selector.split(",").includes(match) ? ({} as Element) : null,
+      };
+      const event = fireKey("Space", { target });
+
+      expect(usePlaybackStore.getState().setPlaying).not.toHaveBeenCalled();
+      expect(event.preventDefault).not.toHaveBeenCalled();
+    });
+
+    test("does not run background shortcuts while an aria-modal dialog is active", () => {
+      vi.stubGlobal("document", {
+        querySelector: vi.fn(() => ({ role: "dialog" })),
+      });
+      const event = fireKey("Space");
+
+      expect(usePlaybackStore.getState().setPlaying).not.toHaveBeenCalled();
+      expect(event.preventDefault).not.toHaveBeenCalled();
+    });
+
+    test.each(["BODY", "CANVAS"])(
+      "keeps %s Space shortcuts available",
+      (tagName) => {
+        class NonInteractiveSurface {
+          tagName = tagName;
+          isContentEditable = false;
+          closest(): null {
+            return null;
+          }
+        }
+        vi.stubGlobal("HTMLElement", NonInteractiveSurface);
+        const event = fireKey("Space", {
+          target: new NonInteractiveSurface(),
+        });
+
+        expect(usePlaybackStore.getState().setPlaying).toHaveBeenCalledWith(
+          true,
+        );
+        expect(event.preventDefault).toHaveBeenCalled();
+      },
+    );
   });
 
   // ─── R — Reset ──────────────────────────────────────────

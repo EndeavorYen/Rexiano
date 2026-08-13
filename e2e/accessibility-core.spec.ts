@@ -121,6 +121,11 @@ test.describe("Core accessibility guardrails", () => {
     await waitForUiSettled(appPage);
 
     const launcher = appPage.getByTestId("insights-trigger");
+    const playbackControl = appPage
+      .getByTestId("transport-strip")
+      .getByRole("button", { name: /Play \(Space\)|Pause \(Space\)/ });
+    const playbackNameBeforeSpace =
+      await playbackControl.getAttribute("aria-label");
     await expect(launcher).toBeVisible();
     await launcher.focus();
     await expect(launcher).toBeFocused();
@@ -160,8 +165,12 @@ test.describe("Core accessibility guardrails", () => {
 
     await appPage.keyboard.press("Enter");
     await expect(close).toBeFocused();
-    await appPage.keyboard.press("Enter");
+    await appPage.keyboard.press("Space");
     await expect(dialog).toBeHidden();
     await expect(launcher).toBeFocused();
+    await expect(playbackControl).toHaveAttribute(
+      "aria-label",
+      playbackNameBeforeSpace ?? "",
+    );
   });
 });

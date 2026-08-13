@@ -10,6 +10,22 @@ import {
 
 export const MIDI_EXTENSIONS = [".mid", ".midi"] as const;
 
+export type ImportErrorLifecycleEvent<T> =
+  | "drag-enter"
+  | "drag-leave"
+  | "dismiss"
+  | "recovery-start"
+  | "import-succeeded"
+  | { type: "show"; error: T };
+
+export function reduceImportErrorForEvent<T>(
+  current: T | null,
+  event: ImportErrorLifecycleEvent<T>,
+): T | null {
+  if (typeof event !== "string") return event.error;
+  return event === "drag-enter" || event === "drag-leave" ? current : null;
+}
+
 type Translate = Parameters<typeof getFileImportErrorGuidance>[1];
 
 interface ImportErrorState {
@@ -70,10 +86,16 @@ export function useMidiImportActions({
 
   const showImportError = useCallback(
     (error: FileImportErrorInput): void => {
-      setImportError({
+      const nextError = {
         input: error,
         guidance: getFileImportErrorGuidance(error, t),
-      });
+      };
+      setImportError((current) =>
+        reduceImportErrorForEvent(current, {
+          type: "show",
+          error: nextError,
+        }),
+      );
     },
     [t],
   );
@@ -83,6 +105,9 @@ export function useMidiImportActions({
       const parsed = parseMidiFile(fileName, data);
       loadSong(parsed);
       resetPlayback();
+      setImportError((current) =>
+        reduceImportErrorForEvent(current, "import-succeeded"),
+      );
     },
     [loadSong, resetPlayback],
   );
@@ -156,12 +181,14 @@ export function useMidiImportActions({
   );
 
   const dismissImportError = useCallback((): void => {
-    setImportError(null);
+    setImportError((current) => reduceImportErrorForEvent(current, "dismiss"));
   }, []);
 
   const handleImportRecoveryAction = useCallback(
     (actionId: FileImportRecoveryActionId, input: FileImportErrorInput) => {
-      dismissImportError();
+      setImportError((current) =>
+        reduceImportErrorForEvent(current, "recovery-start"),
+      );
 
       if (actionId === "remove-recent") {
         if (input.path) void window.api.removeRecentFile(input.path);
@@ -175,7 +202,7 @@ export function useMidiImportActions({
 
       void handleOpenFile();
     },
-    [dismissImportError, handleLoadMidiPath, handleOpenFile],
+    [handleLoadMidiPath, handleOpenFile],
   );
 
   const handleDragEnter = useCallback((event: DragEvent) => {
@@ -183,7 +210,9 @@ export function useMidiImportActions({
     event.stopPropagation();
     dragCountRef.current += 1;
     setIsDragging(true);
-    setImportError(null);
+    setImportError((current) =>
+      reduceImportErrorForEvent(current, "drag-enter"),
+    );
   }, []);
 
   const handleDragLeave = useCallback((event: DragEvent) => {
@@ -193,7 +222,9 @@ export function useMidiImportActions({
     if (dragCountRef.current <= 0) {
       dragCountRef.current = 0;
       setIsDragging(false);
-      setImportError(null);
+      setImportError((current) =>
+        reduceImportErrorForEvent(current, "drag-leave"),
+      );
     }
   }, []);
 
