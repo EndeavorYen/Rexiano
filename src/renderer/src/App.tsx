@@ -23,10 +23,7 @@ import {
   rebaseMetronomeDiscontinuity,
   syncMetronomeToPlayback,
 } from "./engines/metronome/metronomeRuntime";
-import {
-  resolveMetronomeSegmentKey,
-  shouldRunPlaybackCountIn,
-} from "./engines/metronome/metronomeTiming";
+import { resolveMetronomeSegmentKey } from "./engines/metronome/metronomeTiming";
 import { AudioEngine } from "./engines/audio/AudioEngine";
 import { AudioScheduler } from "./engines/audio/AudioScheduler";
 import {
@@ -806,17 +803,6 @@ function App(): React.JSX.Element {
           countInBeats: settings.countInBeats,
         };
       }
-      return;
-    }
-
-    if (
-      currentSong &&
-      shouldRunPlaybackCountIn({
-        currentTime: playback.currentTime,
-        countInBeats: useSettingsStore.getState().countInBeats,
-      })
-    ) {
-      playback.setCountInActive(true);
       return;
     }
 
