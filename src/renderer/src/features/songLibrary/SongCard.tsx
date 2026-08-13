@@ -10,7 +10,7 @@ import {
 
 interface SongCardProps {
   song: BuiltinSongMeta;
-  onSelect: (songId: string) => void;
+  onSelect: (songId: string, viaKeyboard: boolean) => void;
   colorIndex: number;
 }
 
@@ -56,9 +56,12 @@ export function SongCard({
 
   const bestScore = useProgressStore((s) => s.getBestScore(song.id));
 
-  const handleClick = useCallback(() => {
-    onSelect(song.id);
-  }, [song.id, onSelect]);
+  const handleClick = useCallback(
+    (event: React.MouseEvent<HTMLButtonElement>) => {
+      onSelect(song.id, event.detail === 0);
+    },
+    [song.id, onSelect],
+  );
 
   const difficultyDescription = difficultyDescriptions[song.difficulty];
   const dots = difficultyDots[song.difficulty];
@@ -73,6 +76,7 @@ export function SongCard({
   return (
     <button
       onClick={handleClick}
+      data-testid={`song-select-${song.id}`}
       className="group card-hover text-left rounded-xl overflow-hidden cursor-pointer w-full"
       style={{
         background: "color-mix(in srgb, var(--color-surface) 88%, transparent)",

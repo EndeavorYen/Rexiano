@@ -96,6 +96,22 @@ const emptyActivity: SongActivity = {
   bestAccuracy: null,
 };
 
+const LIBRARY_RETURN_FOCUS_KEY = "rexiano-library-return-focus";
+
+function rememberLibraryReturnFocus(testId: string): void {
+  try {
+    sessionStorage.setItem(LIBRARY_RETURN_FOCUS_KEY, testId);
+  } catch {
+    // Session storage is optional; the visible workflow still remains usable.
+  }
+}
+
+function previewSourceTestId(preview: SongSelectionPreviewModel): string {
+  return preview.kind === "builtin"
+    ? `song-select-${preview.song.id}`
+    : `imported-song-select-${preview.importedSong.id}`;
+}
+
 function previewTrackCountKey(
   kind: "builtin" | "imported",
   sourceId: string,
@@ -251,6 +267,7 @@ export function SongLibrary({
   const [selectedImportedSongId, setSelectedImportedSongId] = useState<
     string | null
   >(null);
+  const [focusPreviewPrimary, setFocusPreviewPrimary] = useState(false);
   const [previewTrackCounts, setPreviewTrackCounts] = useState<
     Record<string, number>
   >({});
@@ -310,6 +327,54 @@ export function SongLibrary({
   useEffect(() => {
     fetchSongs();
   }, [fetchSongs]);
+
+  useEffect(() => {
+    let returnFocusTestId: string | null = null;
+    try {
+      returnFocusTestId = sessionStorage.getItem(LIBRARY_RETURN_FOCUS_KEY);
+    } catch {
+      return;
+    }
+    if (!returnFocusTestId) return;
+
+    let frameId = 0;
+    let attempts = 0;
+    let stableFrames = 0;
+    const restoreFocus = (): void => {
+      const target = Array.from(
+        document.querySelectorAll<HTMLElement>("[data-testid]"),
+      ).find((element) => element.dataset.testid === returnFocusTestId);
+      attempts += 1;
+
+      if (target) {
+        if (document.activeElement !== target) {
+          // A dismissed dialog may briefly restore its removed trigger. Keep
+          // the request alive until the library target owns focus for two
+          // consecutive frames.
+          target.focus({ preventScroll: true });
+          stableFrames = 0;
+        } else {
+          stableFrames += 1;
+        }
+
+        if (stableFrames >= 2) {
+          target.scrollIntoView({ block: "nearest", inline: "nearest" });
+          try {
+            sessionStorage.removeItem(LIBRARY_RETURN_FOCUS_KEY);
+          } catch {
+            // The focus restoration itself already succeeded.
+          }
+          return;
+        }
+      }
+
+      if (attempts < 600) frameId = window.requestAnimationFrame(restoreFocus);
+    };
+    frameId = window.requestAnimationFrame(restoreFocus);
+    return () => {
+      window.cancelAnimationFrame(frameId);
+    };
+  }, []);
 
   useEffect(() => {
     void refreshWatchedFolders();
@@ -523,11 +588,15 @@ export function SongLibrary({
     [loadSong, onSessionIntentSelected, reset, refreshRecents, t],
   );
 
-  const handlePreviewSong = useCallback((songId: string) => {
-    setError(null);
-    setSelectedSongId(songId);
-    setSelectedImportedSongId(null);
-  }, []);
+  const handlePreviewSong = useCallback(
+    (songId: string, viaKeyboard: boolean) => {
+      setError(null);
+      setFocusPreviewPrimary(viaKeyboard);
+      setSelectedSongId(songId);
+      setSelectedImportedSongId(null);
+    },
+    [],
+  );
 
   /** Max recent files shown in the quick-access strip */
   const RECENT_DISPLAY_LIMIT = 5;
@@ -621,13 +690,14 @@ export function SongLibrary({
   }, [addWatchedFolder, t]);
 
   const handlePreviewImportedSong = useCallback(
-    (record: ImportedSongRecord) => {
+    (record: ImportedSongRecord, viaKeyboard: boolean) => {
       if (record.missing) {
         setError(t("library.importedMissing"));
         return;
       }
 
       setError(null);
+      setFocusPreviewPrimary(viaKeyboard);
       setSelectedSongId(null);
       setSelectedImportedSongId(record.id);
     },
@@ -675,6 +745,7 @@ export function SongLibrary({
 
   const handleStartPreviewSession = useCallback(
     (preview: SongSelectionPreviewModel, intent: PracticeSessionIntent) => {
+      rememberLibraryReturnFocus(previewSourceTestId(preview));
       stopAudioPreview();
       if (preview.kind === "builtin") {
         void handleSelectSong(preview.song.id, intent);
@@ -959,7 +1030,10 @@ export function SongLibrary({
           <section className="surface-elevated mb-5 p-4 animate-page-enter">
             <button
               type="button"
-              onClick={() => handleSelectSong(practiceRecommendation.song.id)}
+              onClick={() => {
+                rememberLibraryReturnFocus("song-library-recommendation");
+                void handleSelectSong(practiceRecommendation.song.id);
+              }}
               disabled={loadingId === practiceRecommendation.song.id}
               className="group flex w-full items-center justify-between gap-4 rounded-xl px-4 py-3 text-left cursor-pointer transition-all duration-150 disabled:opacity-60 disabled:cursor-wait"
               style={{
@@ -1061,7 +1135,10 @@ export function SongLibrary({
               {nextLesson && (
                 <button
                   type="button"
-                  onClick={() => handleSelectSong(nextLesson.song.id)}
+                  onClick={() => {
+                    rememberLibraryReturnFocus("lesson-progression-next");
+                    void handleSelectSong(nextLesson.song.id);
+                  }}
                   disabled={loadingId === nextLesson.song.id}
                   className="group flex min-w-0 items-center gap-3 rounded-xl px-3 py-3 text-left cursor-pointer transition-all disabled:cursor-wait disabled:opacity-60"
                   style={{
@@ -1174,6 +1251,7 @@ export function SongLibrary({
         {selectedSongPreview && (
           <SongSelectionPreviewPanel
             preview={selectedSongPreview}
+            focusPrimaryAction={focusPreviewPrimary}
             isLoading={selectedPreviewIsLoading}
             audioStatus={selectedPreviewAudioStatus}
             onStartSession={handleStartPreviewSession}
@@ -1187,7 +1265,10 @@ export function SongLibrary({
             data-testid="song-library-continue"
           >
             <button
-              onClick={() => handleSelectRecent(continueRecent)}
+              onClick={() => {
+                rememberLibraryReturnFocus("song-library-continue-action");
+                void handleSelectRecent(continueRecent);
+              }}
               disabled={loadingRecentPath === continueRecent.path}
               className="group flex w-full items-center justify-between gap-4 rounded-xl px-4 py-3 text-left cursor-pointer transition-all duration-150 disabled:opacity-60 disabled:cursor-wait"
               style={{
@@ -1197,6 +1278,7 @@ export function SongLibrary({
                   "1px solid color-mix(in srgb, var(--color-accent) 20%, var(--color-border))",
               }}
               title={continueRecent.path}
+              data-testid="song-library-continue-action"
             >
               <div className="flex min-w-0 items-center gap-3">
                 <span
@@ -1598,12 +1680,14 @@ function formatSongDuration(seconds: number): string {
 
 function SongSelectionPreviewPanel({
   preview,
+  focusPrimaryAction,
   isLoading,
   audioStatus,
   onStartSession,
   onToggleAudioPreview,
 }: {
   preview: SongSelectionPreviewModel;
+  focusPrimaryAction: boolean;
   isLoading: boolean;
   audioStatus: PreviewAudioStatus;
   onStartSession: (
@@ -1614,6 +1698,7 @@ function SongSelectionPreviewPanel({
 }): React.JSX.Element {
   const { t } = useTranslation();
   const sectionRef = useRef<HTMLElement | null>(null);
+  const primaryActionRef = useRef<HTMLButtonElement | null>(null);
   const previewKey =
     preview.kind === "builtin"
       ? `builtin:${preview.song.id}`
@@ -1639,7 +1724,8 @@ function SongSelectionPreviewPanel({
       inline: "nearest",
       behavior: "auto",
     });
-  }, [previewKey]);
+    if (focusPrimaryAction) primaryActionRef.current?.focus();
+  }, [focusPrimaryAction, previewKey]);
 
   return (
     <section
@@ -1691,6 +1777,7 @@ function SongSelectionPreviewPanel({
           {sessionActions.map((action) => (
             <button
               key={action.intent}
+              ref={action.emphasis === "primary" ? primaryActionRef : undefined}
               type="button"
               onClick={() => onStartSession(preview, action.intent)}
               disabled={isLoading}
@@ -1808,7 +1895,7 @@ function ImportedSongRow({
   record: ImportedSongRecord;
   isLoading: boolean;
   isEditing: boolean;
-  onSelect: (record: ImportedSongRecord) => void;
+  onSelect: (record: ImportedSongRecord, viaKeyboard: boolean) => void;
   onEdit: (record: ImportedSongRecord) => void;
   animationDelay: number;
 }): React.JSX.Element {
@@ -1830,7 +1917,7 @@ function ImportedSongRow({
     >
       <button
         type="button"
-        onClick={() => onSelect(record)}
+        onClick={(event) => onSelect(record, event.detail === 0)}
         disabled={record.missing || isLoading}
         className="grid min-w-0 flex-1 grid-cols-1 gap-2 px-3 py-2.5 text-left cursor-pointer disabled:cursor-not-allowed disabled:opacity-60 md:grid-cols-[minmax(0,1.5fr)_auto_auto]"
         data-testid={`imported-song-select-${record.id}`}
@@ -2061,7 +2148,7 @@ function SongListRow({
   activity: SongActivity;
   isLoading: boolean;
   isSelected: boolean;
-  onSelect: (songId: string) => void;
+  onSelect: (songId: string, viaKeyboard: boolean) => void;
   onToggleFavorite: (songId: string) => void;
   animationDelay: number;
 }): React.JSX.Element {
@@ -2091,7 +2178,7 @@ function SongListRow({
     >
       <button
         data-testid={`song-select-${song.id}`}
-        onClick={() => onSelect(song.id)}
+        onClick={(event) => onSelect(song.id, event.detail === 0)}
         disabled={isLoading}
         className="grid min-w-0 flex-1 grid-cols-1 gap-2 px-3 py-2.5 text-left cursor-pointer disabled:cursor-wait disabled:opacity-60 md:grid-cols-[minmax(0,1.5fr)_auto_auto_auto]"
       >
