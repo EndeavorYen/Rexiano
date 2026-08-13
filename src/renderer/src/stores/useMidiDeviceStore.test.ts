@@ -49,6 +49,8 @@ describe("useMidiDeviceStore", () => {
       isConnected: false,
       connectionError: null,
       activeNotes: new Set(),
+      bleStatus: "idle",
+      bleDeviceName: null,
     });
 
     // Reset mock state
@@ -256,5 +258,25 @@ describe("useMidiDeviceStore", () => {
 
     expect(useMidiDeviceStore.getState().inputs).toEqual(inputs);
     expect(useMidiDeviceStore.getState().outputs).toEqual(outputs);
+  });
+
+  test("unexpected BLE loss clears held notes but preserves ordinary MIDI connection", () => {
+    useMidiDeviceStore.setState({
+      selectedInputId: "in-1",
+      isConnected: true,
+      bleStatus: "connected",
+      bleDeviceName: "Stage Piano",
+      activeNotes: new Set([60, 64]),
+    });
+
+    useMidiDeviceStore.getState().handleBluetoothDeviceLoss();
+
+    expect(useMidiDeviceStore.getState()).toMatchObject({
+      selectedInputId: "in-1",
+      isConnected: true,
+      bleStatus: "idle",
+      bleDeviceName: null,
+    });
+    expect(useMidiDeviceStore.getState().activeNotes).toEqual(new Set());
   });
 });

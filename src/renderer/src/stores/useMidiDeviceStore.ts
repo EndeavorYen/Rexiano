@@ -48,6 +48,8 @@ interface MidiDeviceState {
   connectBluetooth: () => Promise<void>;
   /** Disconnect BLE MIDI device */
   disconnectBluetooth: () => void;
+  /** Reconcile renderer state after an established BLE link is lost. */
+  handleBluetoothDeviceLoss: () => void;
 }
 
 /** Module-level parser instance — one per app, managed by the store */
@@ -230,6 +232,16 @@ export const useMidiDeviceStore = create<MidiDeviceState>()((set, get) => ({
     _bleManager.setCallbacks({
       onNoteOn: (note) => get().onNoteOn(note),
       onNoteOff: (note) => get().onNoteOff(note),
+      onStatusChange: (bleStatus, bleDeviceName, connectionError) => {
+        set({
+          bleStatus,
+          bleDeviceName,
+          connectionError,
+          isConnected:
+            bleStatus === "connected" || get().selectedInputId !== null,
+        });
+      },
+      onDisconnect: () => get().handleBluetoothDeviceLoss(),
     });
 
     set({ bleStatus: "scanning", connectionError: null });
@@ -253,6 +265,16 @@ export const useMidiDeviceStore = create<MidiDeviceState>()((set, get) => ({
     set({
       bleStatus: "idle",
       bleDeviceName: null,
+      isConnected: get().selectedInputId !== null,
+      activeNotes: new Set(),
+    });
+  },
+
+  handleBluetoothDeviceLoss: () => {
+    set({
+      bleStatus: "idle",
+      bleDeviceName: null,
+      connectionError: null,
       isConnected: get().selectedInputId !== null,
       activeNotes: new Set(),
     });
