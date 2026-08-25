@@ -83,11 +83,37 @@ const FLAT_KEY_ORDER = ["b", "e", "a", "d", "g", "c", "f"];
 
 type Clef = "treble" | "bass";
 
+const HAND_STAFF_PATTERN =
+  /\b(right|left|r\.?h\.?|l\.?h\.?|treble|bass|右手|左手)\b/i;
+
+function inferStaffFromTrackName(name: string): Clef | undefined {
+  const match = HAND_STAFF_PATTERN.exec(name);
+  if (!match) return undefined;
+
+  const token = match[1].toLowerCase();
+  if (
+    token === "left" ||
+    token === "lh" ||
+    token === "l.h" ||
+    token === "l.h." ||
+    token === "bass" ||
+    token === "左手"
+  ) {
+    return "bass";
+  }
+  return "treble";
+}
+
+function staffForMidi(midi: number, staffHint?: Clef): Clef {
+  return staffHint ?? (midi >= MIDDLE_C ? "treble" : "bass");
+}
+
 /** A note already resolved to musical time, before quantization. */
 interface MusicalNote {
   midi: number;
   rawStartTicks: number;
   rawDurationTicks: number;
+  staffHint?: Clef;
 }
 
 interface QuantizedNote {
@@ -97,6 +123,7 @@ interface QuantizedNote {
   standardStartTick: number;
   standardEndTick: number;
   rawDurationTicks: number;
+  staff: Clef;
   tupletCandidate?: {
     durationTicks: number;
   };
@@ -114,6 +141,7 @@ interface NoteSegment {
   durationTicks: number;
   vexKey: string;
   accidental: string | null;
+  staff: Clef;
   tuplet?: NotationTuplet;
   rhythmApproximation?: NotationRhythmApproximation;
   voiceIndex?: number;
@@ -379,7 +407,7 @@ function assignSupportedTuplets(
     const tripletPosition = getTripletPosition(note, ticksPerQuarter);
     if (!tripletPosition) continue;
 
-    const staff = note.midi >= MIDDLE_C ? "treble" : "bass";
+    const staff = note.staff;
     const key = [staff, note.voiceIndex ?? 0, tripletPosition.anchorTick].join(
       ":",
     );
@@ -636,8 +664,8 @@ function assignQuantizedNotesToVoices(notes: QuantizedNote[]): QuantizedNote[] {
     });
   };
 
-  assignStaff(notes.filter((note) => note.midi >= MIDDLE_C));
-  assignStaff(notes.filter((note) => note.midi < MIDDLE_C));
+  assignStaff(notes.filter((note) => note.staff === "treble"));
+  assignStaff(notes.filter((note) => note.staff === "bass"));
 
   return notes;
 }
@@ -920,6 +948,7 @@ function buildNotation(
       standardStartTick,
       standardEndTick,
       rawDurationTicks: note.rawDurationTicks,
+      staff: staffForMidi(note.midi, note.staffHint),
       tupletCandidate: tripletCandidate,
       vexKey: midiToNotationKey(note.midi, keySignature),
       accidental: getDisplayAccidental(
@@ -968,6 +997,7 @@ function buildNotation(
           durationTicks: segmentEnd - segmentStart,
           vexKey: n.vexKey,
           accidental: n.accidental,
+          staff: n.staff,
           tuplet: n.tuplet,
           rhythmApproximation: n.rhythmApproximation,
           voiceIndex: n.voiceIndex,
@@ -977,8 +1007,8 @@ function buildNotation(
         };
       });
 
-    const trebleSegments = measureSegments.filter((n) => n.midi >= MIDDLE_C);
-    const bassSegments = measureSegments.filter((n) => n.midi < MIDDLE_C);
+    const trebleSegments = measureSegments.filter((n) => n.staff === "treble");
+    const bassSegments = measureSegments.filter((n) => n.staff === "bass");
 
     const trebleNotes = buildVoiceEvents(
       trebleSegments,
@@ -1056,9 +1086,13 @@ export function convertSongToNotation(
   );
   const ticksPerQuarter = tempoMap.ppq;
 
-  const musicalNotes: MusicalNote[] = song.tracks
-    .flatMap((track) => track.notes)
-    .map((note) => toMusicalNote(note, tempoMap));
+  const musicalNotes: MusicalNote[] = song.tracks.flatMap((track) => {
+    const staffHint = inferStaffFromTrackName(track.name);
+    return track.notes.map((note) => ({
+      ...toMusicalNote(note, tempoMap),
+      staffHint,
+    }));
+  });
 
   const maxTick = musicalNotes.reduce(
     (max, note) => Math.max(max, note.rawStartTicks + note.rawDurationTicks),
