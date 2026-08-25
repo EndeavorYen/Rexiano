@@ -111,9 +111,9 @@ export interface NotationMeasure {
   timeSignatureBottom: number;
   /** Key signature (number of sharps/flats, negative = flats) */
   keySignature: number;
-  /** Notes in the treble clef (MIDI >= 60) */
+  /** Notes on the treble staff (right-hand tracks, or MIDI >= 60) */
   trebleNotes: NotationNote[];
-  /** Notes in the bass clef (MIDI < 60) */
+  /** Notes on the bass staff (left-hand tracks, or MIDI < 60) */
   bassNotes: NotationNote[];
 }
 
