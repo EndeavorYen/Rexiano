@@ -489,6 +489,12 @@ export const en: TranslationMap = {
   "celebration.great.subtitle": "You're getting better every time!",
   "celebration.encourage.title": "Great effort!",
   "celebration.encourage.subtitle": "Every practice makes you stronger!",
+  "celebration.listen.title": "Nice listen!",
+  "celebration.listen.subtitle":
+    "Ready to hear it again, or pick another song?",
+  "celebration.listen.nextTitle": "Try Wait next",
+  "celebration.listen.nextBody":
+    "The song will pause and wait while you play along.",
   "celebration.newRecord": "New Record!",
   "celebration.playAgain": "Play Again!",
   "celebration.oneMoreTime": "One More Time!",
