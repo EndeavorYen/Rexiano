@@ -3,6 +3,7 @@ import {
   canStartRequestedPlayback,
   runPracticeDismissal,
   runPracticeRetry,
+  shouldAdvanceCelebrationToStats,
   shouldShowCompletionCelebration,
   shouldShowModeSelectionModal,
 } from "./usePostSessionFlow";
@@ -48,6 +49,50 @@ describe("shouldShowCompletionCelebration", () => {
         totalNotes: 8,
       }),
     ).toBe(false);
+  });
+
+  test("shows a listen-through completion when Watch ends with no scored notes", () => {
+    expect(
+      shouldShowCompletionCelebration({
+        wasPlaying: true,
+        isPlaying: false,
+        currentTime: 19.8,
+        songDuration: 20,
+        totalNotes: 0,
+        mode: "watch",
+      }),
+    ).toBe(true);
+  });
+
+  test("still ignores an empty Wait or Free score at the end", () => {
+    expect(
+      shouldShowCompletionCelebration({
+        wasPlaying: true,
+        isPlaying: false,
+        currentTime: 19.8,
+        songDuration: 20,
+        totalNotes: 0,
+        mode: "wait",
+      }),
+    ).toBe(false);
+    expect(
+      shouldShowCompletionCelebration({
+        wasPlaying: true,
+        isPlaying: false,
+        currentTime: 19.8,
+        songDuration: 20,
+        totalNotes: 0,
+        mode: "free",
+      }),
+    ).toBe(false);
+  });
+});
+
+describe("shouldAdvanceCelebrationToStats", () => {
+  test("keeps Watch listen-through on the next-action card", () => {
+    expect(shouldAdvanceCelebrationToStats("watch")).toBe(false);
+    expect(shouldAdvanceCelebrationToStats("wait")).toBe(true);
+    expect(shouldAdvanceCelebrationToStats("free")).toBe(true);
   });
 });
 
