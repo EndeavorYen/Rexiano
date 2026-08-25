@@ -263,7 +263,7 @@ test.describe("Sheet music visual fixtures", () => {
       // Melody-only songs omit the empty bass staff, so the left-system
       // clef/meter cluster is smaller than a grand-staff piece. Poll because
       // the previous song's SVG can still be visible after the switch.
-      const melodyOnly = songId === "hot-cross-buns";
+      const melodyOnly = songId === "hot-cross-buns" || songId === "fur-elise";
       await expect
         .poll(async () => {
           const stats = await readSheetSvgStats(appPage);

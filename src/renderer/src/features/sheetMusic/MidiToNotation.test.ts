@@ -546,7 +546,11 @@ describe("MidiToNotation", () => {
       expect(shouldRenderBassStaff(result.measures)).toBe(true);
     });
 
-    it.each(["au-clair-de-la-lune.mid", "ode-to-joy.mid"] as const)(
+    it.each([
+      "au-clair-de-la-lune.mid",
+      "ode-to-joy.mid",
+      "fur-elise.mid",
+    ] as const)(
       "omits a sounding bass staff for melody-only built-in %s",
       async (fileName) => {
         const { readFileSync } = await import("node:fs");
