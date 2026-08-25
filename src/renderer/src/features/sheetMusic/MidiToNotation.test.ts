@@ -543,6 +543,7 @@ describe("MidiToNotation", () => {
           measure.bassNotes.filter((event) => event.midi === 60),
         ).length,
       ).toBeGreaterThan(0);
+      expect(shouldRenderBassStaff(result.measures)).toBe(true);
     });
 
     it.each(["au-clair-de-la-lune.mid", "ode-to-joy.mid"] as const)(
