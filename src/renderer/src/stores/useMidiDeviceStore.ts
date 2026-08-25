@@ -7,11 +7,12 @@ import {
   type BleMidiStatus,
 } from "@renderer/engines/midi/BleMidiManager";
 import { MidiOutputSender } from "@renderer/engines/midi/MidiOutputSender";
+import { MIDI_CONNECTION_ERROR } from "@renderer/features/midiDevice/midiConnectionErrors";
 
 interface MidiDeviceState {
-  /** Available MIDI input devices */
+  /** Available MIDI inputs */
   inputs: MidiDeviceInfo[];
-  /** Available MIDI output devices */
+  /** Available MIDI outputs */
   outputs: MidiDeviceInfo[];
   /** Currently selected input device ID */
   selectedInputId: string | null;
@@ -78,7 +79,7 @@ function getParser(store: {
   return _parser;
 }
 
-/** Attach the parser to the currently active MIDI input device */
+/** Attach the parser to the currently active MIDI input */
 function syncParserToActiveInput(store: {
   onNoteOn: (midi: number) => void;
   onNoteOff: (midi: number) => void;
@@ -138,16 +139,16 @@ export const useMidiDeviceStore = create<MidiDeviceState>()((set, get) => ({
 
       if (manager.status === "unsupported") {
         set({
-          connectionError: "Web MIDI API is not supported in this browser",
+          connectionError: MIDI_CONNECTION_ERROR.unsupported,
         });
         return;
       }
       if (manager.status === "denied") {
-        set({ connectionError: "MIDI access was denied" });
+        set({ connectionError: MIDI_CONNECTION_ERROR.denied });
         return;
       }
       if (manager.status !== "ready") {
-        set({ connectionError: "MIDI access is not available" });
+        set({ connectionError: MIDI_CONNECTION_ERROR.unavailable });
         return;
       }
 
@@ -158,7 +159,7 @@ export const useMidiDeviceStore = create<MidiDeviceState>()((set, get) => ({
         connectionError: null,
       });
     } catch {
-      set({ connectionError: "Failed to initialize MIDI access" });
+      set({ connectionError: MIDI_CONNECTION_ERROR.initFailed });
     }
   },
 
@@ -191,7 +192,7 @@ export const useMidiDeviceStore = create<MidiDeviceState>()((set, get) => ({
     if (deviceId) {
       const ok = manager.connectInput(deviceId);
       if (!ok) {
-        set({ connectionError: "Failed to connect to input device" });
+        set({ connectionError: MIDI_CONNECTION_ERROR.inputFailed });
       } else {
         syncParserToActiveInput(get());
       }
@@ -206,7 +207,7 @@ export const useMidiDeviceStore = create<MidiDeviceState>()((set, get) => ({
     if (deviceId) {
       const ok = manager.connectOutput(deviceId);
       if (!ok) {
-        set({ connectionError: "Failed to connect to output device" });
+        set({ connectionError: MIDI_CONNECTION_ERROR.outputFailed });
       }
     } else {
       manager.disconnectOutput();
@@ -232,7 +233,7 @@ export const useMidiDeviceStore = create<MidiDeviceState>()((set, get) => ({
   connectBluetooth: async () => {
     if (!BleMidiManager.isSupported) {
       set({
-        connectionError: "Bluetooth not supported in this environment",
+        connectionError: MIDI_CONNECTION_ERROR.bluetoothUnsupported,
         bleStatus: "error",
       });
       return;

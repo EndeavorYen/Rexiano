@@ -143,6 +143,7 @@ export const zhTW: TranslationMap = {
   "library.neverPracticed": "尚未練習",
   "library.noSongsYet": "還沒有曲子",
   "library.noSongsHint": "匯入 MIDI 檔案開始練習吧！",
+  "library.emptyRecentHint": "從曲庫選一首內建曲子開始吧！",
   "library.noMatchSearch": "沒有符合搜尋的曲子",
   "library.noMatchHint": "試試其他關鍵字或清除篩選",
   "library.difficultyDescription.beginner": "簡單旋律、單手、慢速",
@@ -326,6 +327,7 @@ export const zhTW: TranslationMap = {
   "settings.title": "設定",
   "settings.close": "關閉",
   "settings.language": "語言",
+  "settings.languageSwitcherAria": "介面語言",
   "settings.showFingering": "顯示指法數字",
   "settings.theme": "主題",
   "settings.themeName.lavender": "薰衣草",
@@ -603,4 +605,13 @@ export const zhTW: TranslationMap = {
   "general.close": "關閉",
   "general.save": "儲存",
   "general.cancel": "取消",
+
+  // ── Relative time ──────────────────────────────────────────────
+  "time.justNow": "剛剛",
+  "time.minutesAgo": "{count} 分鐘前",
+  "time.hoursAgo": "{count} 小時前",
+  "time.previousDay": "昨天",
+  "time.daysAgo": "{count} 天前",
+  "time.monthsAgo": "{count} 個月前",
+  "time.longAgo": "很久以前",
 };

@@ -41,7 +41,7 @@ export function ConnectionStatus(): React.JSX.Element {
   return (
     <span
       className="inline-flex items-center gap-1.5 text-xs font-body"
-      title={connectionError ?? label}
+      title={label}
       aria-label={label}
     >
       <span

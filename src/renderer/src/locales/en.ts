@@ -146,6 +146,7 @@ export const en: TranslationMap = {
   "library.neverPracticed": "Not practiced",
   "library.noSongsYet": "No songs here yet",
   "library.noSongsHint": "Import a MIDI file below to get started!",
+  "library.emptyRecentHint": "Pick a song from the library to get started!",
   "library.noMatchSearch": "No songs match your search",
   "library.noMatchHint": "Try a different keyword or clear the filter",
   "library.difficultyDescription.beginner":
@@ -347,6 +348,7 @@ export const en: TranslationMap = {
   "settings.title": "Settings",
   "settings.close": "Close",
   "settings.language": "Language",
+  "settings.languageSwitcherAria": "App language",
   "settings.showFingering": "Show fingering numbers",
   "settings.theme": "Theme",
   "settings.themeName.lavender": "Lavender",
@@ -639,4 +641,13 @@ export const en: TranslationMap = {
   "general.close": "Close",
   "general.save": "Save",
   "general.cancel": "Cancel",
+
+  // ── Relative time ──────────────────────────────────────────────
+  "time.justNow": "just now",
+  "time.minutesAgo": "{count}m ago",
+  "time.hoursAgo": "{count}h ago",
+  "time.previousDay": "yesterday",
+  "time.daysAgo": "{count}d ago",
+  "time.monthsAgo": "{count}mo ago",
+  "time.longAgo": "long ago",
 };

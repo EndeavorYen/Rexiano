@@ -19,6 +19,7 @@ import {
   type ParentPracticeConsistencyLevel,
   type ParentPracticeReport,
 } from "@renderer/features/statistics/practiceCalendar";
+import { LanguageSwitcher } from "@renderer/features/settings/LanguageSwitcher";
 import { formatRelativeTime } from "@renderer/utils/relativeTime";
 import type { RecentFile } from "@shared/types";
 
@@ -155,6 +156,7 @@ export function MainMenu({
                   <SlidersHorizontal size={16} />
                   {t("app.openSettings")}
                 </button>
+                <LanguageSwitcher compact />
               </div>
 
               <div
@@ -221,23 +223,26 @@ export function MainMenu({
                           className="text-[11px] mt-0.5"
                           style={{ color: "var(--color-text-muted)" }}
                         >
-                          {formatRelativeTime(file.timestamp)}
+                          {formatRelativeTime(file.timestamp, t)}
                         </p>
                       </button>
                     ))}
                   </div>
                 ) : (
-                  <div
-                    className="rounded-lg px-3.5 py-4 text-sm"
+                  <button
+                    type="button"
+                    onClick={onStartPractice}
+                    className="rounded-lg px-3.5 py-4 text-sm text-left w-full cursor-pointer"
                     style={{
                       color: "var(--color-text-muted)",
                       background:
                         "color-mix(in srgb, var(--color-surface) 74%, transparent)",
                       border: "1px dashed var(--color-border)",
                     }}
+                    data-testid="main-menu-empty-recent"
                   >
-                    {t("library.noSongsHint")}
-                  </div>
+                    {t("library.emptyRecentHint")}
+                  </button>
                 )}
               </aside>
             </div>
