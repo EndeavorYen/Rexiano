@@ -121,16 +121,23 @@ export class WaitMode {
   }
 
   /**
-   * Advance cursors past notes at or before `time` without judging them.
+   * Advance cursors past notes `tick(time)` would immediately treat as
+   * wait candidates (tolerance + latency lookahead), without judging them.
    * Used after a re-init so the frozen onset does not immediately re-wait.
    */
   advancePast(time: number): void {
+    const latencyMs = useSettingsStore.getState().latencyCompensation;
+    const skipThrough = time - latencyMs / 1000 + this._toleranceMs / 1000;
+
     for (const trackIndex of this._activeTracks) {
       const track = this._tracks[trackIndex];
       if (!track) continue;
 
       let cursor = this._trackCursors.get(trackIndex) ?? 0;
-      while (cursor < track.notes.length && track.notes[cursor].time <= time) {
+      while (
+        cursor < track.notes.length &&
+        track.notes[cursor].time <= skipThrough
+      ) {
         cursor += 1;
       }
       this._trackCursors.set(trackIndex, cursor);

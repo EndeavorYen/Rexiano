@@ -199,6 +199,41 @@ describe("practice lifecycle transitions", () => {
     expect(waitMode.targetNotes.size).toBe(0);
   });
 
+  test("track changes skip a live wait-window onset instead of immediately re-waiting", () => {
+    const waitMode = new WaitMode(200);
+    const tracks = [
+      {
+        name: "Right Hand",
+        instrument: "Piano",
+        channel: 0,
+        notes: [
+          { midi: 60, name: "C4", time: 1, duration: 0.5, velocity: 80 },
+          { midi: 62, name: "D4", time: 2, duration: 0.5, velocity: 80 },
+        ],
+      },
+    ];
+    waitMode.init(tracks, new Set([0]));
+    waitMode.start();
+    waitMode.tick(0.8);
+    expect(waitMode.state).toBe("waiting");
+    expect(waitMode.targetNotes).toEqual(new Set([60]));
+
+    applyPracticeActiveTrackTransition({
+      waitMode,
+      tracks,
+      activeTracks: new Set([0]),
+      isPlaying: true,
+      mode: "wait",
+      currentTime: 0.8,
+      resumeScheduler: vi.fn(),
+    });
+
+    expect(waitMode.state).toBe("playing");
+    expect(waitMode.tick(0.8)).toBe(true);
+    expect(waitMode.state).toBe("playing");
+    expect(waitMode.targetNotes.size).toBe(0);
+  });
+
   test("manual reset clears every practice accumulator", () => {
     const resetWaitMode = vi.fn();
     const resetScoreCalculator = vi.fn();
