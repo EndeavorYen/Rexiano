@@ -1,17 +1,74 @@
 import { describe, expect, it } from "vitest";
 import { Midi } from "@tonejs/midi";
-import { readFileSync } from "fs";
+import { existsSync, readFileSync } from "fs";
 import { dirname, join } from "path";
 import { fileURLToPath } from "url";
 import { parseMidiFile } from "@renderer/engines/midi/MidiFileParser";
 import type { ParsedSong } from "@renderer/engines/midi/types";
 import { buildMidiDiagnosticNotice } from "@renderer/features/midiDiagnostics/midiDiagnosticNotice";
+import type { BuiltinSongMeta } from "@shared/types";
+import { filterSongsForLibrary } from "@renderer/features/songLibrary/songLibrarySelectors";
+import { buildGeneratedSongArtifacts } from "./generate-songs";
 
 type SongMeta = {
   id: string;
   file: string;
+  title?: string;
+  composer?: string;
+  grade?: number;
   tags: string[];
 };
+
+const PUBLIC_DOMAIN_EXPANSION = [
+  {
+    id: "lightly-row",
+    title: "Lightly Row",
+    composer: "Traditional",
+    grade: 1,
+  },
+  {
+    id: "old-macdonald",
+    title: "Old MacDonald",
+    composer: "Traditional",
+    grade: 2,
+  },
+  {
+    id: "this-old-man",
+    title: "This Old Man",
+    composer: "Traditional",
+    grade: 2,
+  },
+  {
+    id: "alouette",
+    title: "Alouette",
+    composer: "Traditional (French)",
+    grade: 2,
+  },
+  {
+    id: "go-tell-aunt-rhody",
+    title: "Go Tell Aunt Rhody",
+    composer: "Traditional",
+    grade: 3,
+  },
+  {
+    id: "when-the-saints",
+    title: "When the Saints Go Marching In",
+    composer: "Traditional",
+    grade: 3,
+  },
+  {
+    id: "oh-susanna",
+    title: "Oh! Susanna",
+    composer: "Stephen Foster",
+    grade: 4,
+  },
+  {
+    id: "silent-night",
+    title: "Silent Night",
+    composer: "Franz Xaver Gruber",
+    grade: 4,
+  },
+] as const;
 
 type ExpectedKeySignature = {
   key: string;
@@ -189,5 +246,49 @@ describe("generated built-in MIDI resources", () => {
     );
 
     expect(offGridDurations).toEqual([]);
+  });
+
+  it("generates public-domain expansion songs with title, composer, and grade", () => {
+    const { midiFiles, songsMeta } = buildGeneratedSongArtifacts([]);
+
+    for (const expected of PUBLIC_DOMAIN_EXPANSION) {
+      expect(songsMeta.find((song) => song.id === expected.id)).toMatchObject(
+        expected,
+      );
+      expect(midiFiles.some((file) => file.id === expected.id)).toBe(true);
+    }
+  });
+
+  it("ships searchable expansion songs with MIDI files and catalog metadata", () => {
+    const catalog = manifest as BuiltinSongMeta[];
+
+    for (const expected of PUBLIC_DOMAIN_EXPANSION) {
+      const song = catalog.find((entry) => entry.id === expected.id);
+      expect(song).toMatchObject(expected);
+      expect(song?.file).toBeTruthy();
+      expect(existsSync(join(resourcesDir, song!.file))).toBe(true);
+    }
+
+    expect(
+      filterSongsForLibrary(catalog, {
+        difficultyFilter: "all",
+        gradeFilter: "all",
+        searchQuery: "aunt rhody",
+      }).map((song) => song.id),
+    ).toContain("go-tell-aunt-rhody");
+    expect(
+      filterSongsForLibrary(catalog, {
+        difficultyFilter: "all",
+        gradeFilter: "all",
+        searchQuery: "stephen foster",
+      }).map((song) => song.id),
+    ).toContain("oh-susanna");
+    expect(
+      filterSongsForLibrary(catalog, {
+        difficultyFilter: "all",
+        gradeFilter: 4,
+        searchQuery: "",
+      }).map((song) => song.id),
+    ).toEqual(expect.arrayContaining(["oh-susanna", "silent-night"]));
   });
 });

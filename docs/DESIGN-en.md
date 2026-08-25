@@ -333,7 +333,7 @@ Phase 6.5 focuses on making Rexiano accessible to children aged 6–10 (Rex's ag
 | Note labels          | Display note names (C4, F#5) on falling note rectangles           |
 | Piano key labels     | Display key names on white keys with octave numbers on C keys     |
 | Onboarding guide     | 4-step interactive guide for first-time users                     |
-| Song library         | Browse 26 built-in songs with grade filters and best-score badges |
+| Song library         | Browse 34 built-in songs with grade filters and best-score badges |
 | Recent files         | Quick access to the 10 most recently opened MIDI files            |
 | Celebration overlay  | Full-screen celebration animation at ≥90% accuracy                |
 | Metronome            | Visual beat pulse + audio click with count-in support             |
@@ -450,7 +450,7 @@ network errors. See [`docs/update-flow.md`](./update-flow.md) for verification.
 | Split-hand practice | ✅        | ✅                    |
 | Sheet music view    | ✅        | ✅                    |
 | Score editor        | ✅        | ✅ Piano Roll editor  |
-| Song library        | Paid      | ✅ Free (26 built-in) |
+| Song library        | Paid      | ✅ Free (34 built-in) |
 | Price               | $39/year  | Free & Open Source    |
 | Source available    | ❌        | ✅ GPL-3.0            |
 
