@@ -10,6 +10,7 @@ import {
   shouldStartPracticeScheduler,
 } from "./usePracticeLifecycle";
 import { usePracticeStore } from "@renderer/stores/usePracticeStore";
+import { WaitMode } from "@renderer/engines/practice/WaitMode";
 
 describe("resolveInitialPracticeActiveTracks", () => {
   test("defaults uninitialized empty selections to every track", () => {
@@ -143,6 +144,7 @@ describe("practice lifecycle transitions", () => {
       state: "waiting" as const,
       init: vi.fn(),
       start: vi.fn(),
+      advancePast: vi.fn(),
     };
     const tracks = [{ notes: [] }] as never;
     const activeTracks = new Set([1]);
@@ -154,12 +156,82 @@ describe("practice lifecycle transitions", () => {
       activeTracks,
       isPlaying: true,
       mode: "wait",
+      currentTime: 1.25,
       resumeScheduler,
     });
 
     expect(waitMode.init).toHaveBeenCalledWith(tracks, activeTracks);
     expect(waitMode.start).toHaveBeenCalledOnce();
+    expect(waitMode.advancePast).toHaveBeenCalledWith(1.25);
     expect(resumeScheduler).toHaveBeenCalledOnce();
+  });
+
+  test("track changes skip the frozen onset instead of immediately re-waiting", () => {
+    const waitMode = new WaitMode(200);
+    const tracks = [
+      {
+        name: "Right Hand",
+        instrument: "Piano",
+        channel: 0,
+        notes: [
+          { midi: 60, name: "C4", time: 1, duration: 0.5, velocity: 80 },
+          { midi: 62, name: "D4", time: 2, duration: 0.5, velocity: 80 },
+        ],
+      },
+    ];
+    waitMode.init(tracks, new Set([0]));
+    waitMode.start();
+    waitMode.tick(1);
+    expect(waitMode.state).toBe("waiting");
+
+    applyPracticeActiveTrackTransition({
+      waitMode,
+      tracks,
+      activeTracks: new Set([0]),
+      isPlaying: true,
+      mode: "wait",
+      currentTime: 1,
+      resumeScheduler: vi.fn(),
+    });
+
+    expect(waitMode.state).toBe("playing");
+    expect(waitMode.tick(1)).toBe(true);
+    expect(waitMode.targetNotes.size).toBe(0);
+  });
+
+  test("track changes skip a live wait-window onset instead of immediately re-waiting", () => {
+    const waitMode = new WaitMode(200);
+    const tracks = [
+      {
+        name: "Right Hand",
+        instrument: "Piano",
+        channel: 0,
+        notes: [
+          { midi: 60, name: "C4", time: 1, duration: 0.5, velocity: 80 },
+          { midi: 62, name: "D4", time: 2, duration: 0.5, velocity: 80 },
+        ],
+      },
+    ];
+    waitMode.init(tracks, new Set([0]));
+    waitMode.start();
+    waitMode.tick(0.8);
+    expect(waitMode.state).toBe("waiting");
+    expect(waitMode.targetNotes).toEqual(new Set([60]));
+
+    applyPracticeActiveTrackTransition({
+      waitMode,
+      tracks,
+      activeTracks: new Set([0]),
+      isPlaying: true,
+      mode: "wait",
+      currentTime: 0.8,
+      resumeScheduler: vi.fn(),
+    });
+
+    expect(waitMode.state).toBe("playing");
+    expect(waitMode.tick(0.8)).toBe(true);
+    expect(waitMode.state).toBe("playing");
+    expect(waitMode.targetNotes.size).toBe(0);
   });
 
   test("manual reset clears every practice accumulator", () => {

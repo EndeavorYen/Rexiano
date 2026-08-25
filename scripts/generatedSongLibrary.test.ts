@@ -3,6 +3,7 @@ import { Midi } from "@tonejs/midi";
 import {
   addNotesFromBeats,
   applyInferredHandTrackNames,
+  createSongMetaFromDefinition,
   encodeMidiWithNotationHeaderMetadata,
   mergeGeneratedSongMetadata,
   type SongMeta,
@@ -75,6 +76,35 @@ describe("generated song library helpers", () => {
 
     expect(high.name).toBe("Right Hand");
     expect(low.name).toBe("Left Hand");
+  });
+
+  it("copies optional grade from a song definition", () => {
+    const midi = new Midi();
+    midi.header.setTempo(100);
+    const track = midi.addTrack();
+    addNotesFromBeats(track, [[60, 0, 1]], 100);
+
+    const meta = createSongMetaFromDefinition(
+      {
+        id: "lightly-row",
+        file: "lightly-row.mid",
+        title: "Lightly Row",
+        composer: "Traditional",
+        difficulty: "beginner",
+        category: "popular",
+        tags: ["traditional", "melody", "c-major", "4-4", "level-1"],
+        bpm: 100,
+        grade: 1,
+      },
+      midi,
+    );
+
+    expect(meta).toMatchObject({
+      id: "lightly-row",
+      title: "Lightly Row",
+      composer: "Traditional",
+      grade: 1,
+    });
   });
 
   it("preserves curated manifest grade, level tags, and existing-only songs", () => {

@@ -341,9 +341,9 @@ flowchart LR
 - [x] 新手引導教學
   - [x] `features/onboarding/OnboardingGuide.tsx` — 4 步驟卡片導覽（開啟歌曲 → 播放 → 練習 → 連接鍵盤）
   - [x] 首次啟動自動顯示（localStorage 記憶），`resetOnboarding()` 可重播
-- [x] 擴充內建曲庫（26 首）
-  - [x] Beginner: C Major Scale, Mary Had a Little Lamb, Hot Cross Buns, Twinkle Twinkle, Happy Birthday, London Bridge, Row Row Row Your Boat, Au Clair de la Lune, Chopsticks, Lavender's Blue, Jingle Bells
-  - [x] Intermediate: Ode to Joy, Für Elise (simplified), Minuet in G, Prelude in C, Canon in D (simplified)
+- [x] 擴充內建曲庫（34 首）
+  - [x] Beginner: C Major Scale, Mary Had a Little Lamb, Hot Cross Buns, Twinkle Twinkle, Happy Birthday, London Bridge, Row Row Row Your Boat, Au Clair de la Lune, Chopsticks, Lavender's Blue, Jingle Bells, Lightly Row, Old MacDonald, This Old Man, Alouette
+  - [x] Intermediate: Ode to Joy, Für Elise (simplified), Minuet in G, Prelude in C, Canon in D (simplified), Go Tell Aunt Rhody, When the Saints, Oh! Susanna, Silent Night
   - [x] Advanced: Moonlight Sonata (1st mvt), Turkish March
   - [x] SongLibrary 分類顯示（category 欄位 + `groupSongsByCategory()` section headers）
 - [x] L0–L8 分級系統（參考 RCM / ABRSM / Faber 標準）
