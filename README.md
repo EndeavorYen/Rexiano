@@ -1,12 +1,32 @@
-<img src="docs/figure/Rexiano_icon.png" alt="Rexiano icon" width="120" align="right">
+<p align="center">
+  <img src="docs/figure/Rexiano_icon.png" alt="Rexiano" width="88">
+</p>
 
-# Rexiano
+<h1 align="center">Rexiano</h1>
 
-Free, open-source piano practice for falling notes, sheet music, MIDI keyboards, and focused practice -- built by a dad for Rex and shared with learners.
+<p align="center">
+  Free, offline piano practice — falling notes, sheet music, and MIDI.<br>
+  Built by a dad for Rex, and shared with anyone learning piano.
+</p>
 
-[繁體中文](README-zh.md) | **English**
+<p align="center">
+  <a href="README-zh.md">繁體中文</a> · <strong>English</strong>
+</p>
 
-> **TL;DR** -- Rexiano runs offline on Windows, macOS, and Linux. Load a built-in or imported MIDI song, then practice with falling notes, sheet music, Watch/Wait/Free modes, loops, scoring, and USB/Bluetooth MIDI keyboard feedback. Current app version: `1.3.0`.
+<p align="center">
+  Unlike <strong>Synthesia</strong>, Rexiano is free, open source, and fully offline, with Watch and Wait practice modes.
+</p>
+
+<p align="center">
+  <a href="https://github.com/EndeavorYen/Rexiano/releases/latest"><strong>Download Rexiano 1.4.0</strong></a><br>
+  <sub>Windows · macOS · Linux · current app version <code>1.4.0</code></sub>
+</p>
+
+<p align="center">
+  <img src="docs/assets/marketing/piano-sheet-hero.png" alt="A piano and open sheet music by a window — Rexiano atmosphere, not a product screenshot" width="100%">
+</p>
+
+<p align="center"><sub>Atmosphere photo — not the app. Real screenshots are just below.</sub></p>
 
 <table>
   <tr>
@@ -27,23 +47,12 @@ Free, open-source piano practice for falling notes, sheet music, MIDI keyboards,
 
 ## Start Practicing
 
-1. Download the latest build from [GitHub Releases](https://github.com/EndeavorYen/Rexiano/releases).
+1. Download the latest build from [GitHub Releases](https://github.com/EndeavorYen/Rexiano/releases/latest).
 2. Open Rexiano and choose a built-in song, or drag in your own `.mid` / `.midi` file.
 3. Start with **Watch** mode, then switch to **Wait** mode when you want Rexiano to pause until you play the right notes.
 4. Connect a USB or Bluetooth MIDI keyboard when you want live key feedback and scoring.
 
 No keyboard is required for listening and visual study. Wait mode and scored practice need MIDI input.
-
-## Highlights
-
-| Area            | What Rexiano Helps With                                                                                                    |
-| --------------- | -------------------------------------------------------------------------------------------------------------------------- |
-| Visual learning | 60 FPS falling notes, 88-key highlighting, note labels, and per-track colors for left/right hand separation.               |
-| Sheet music     | Split, sheet-only, and falling-notes display modes for switching between notation and piano-roll practice.                 |
-| Practice focus  | Watch, Wait, and Free modes, plus speed control, A-B loop, split-hand practice, metronome, count-in, and progress history. |
-| MIDI keyboards  | USB and Bluetooth MIDI input/output, hot-plug detection, auto-reconnect, and sustain pedal support.                        |
-| Sound           | Bundled FreePats Upright Piano KW SoundFont with Web Audio playback and a synthesizer fallback.                            |
-| Files           | Built-in song library plus drag-and-drop import for your own MIDI files.                                                   |
 
 ## Install
 
@@ -56,6 +65,17 @@ No keyboard is required for listening and visual study. Wait mode and scored pra
 Public builds are currently unsigned/not notarized, so Windows SmartScreen or macOS Gatekeeper may ask for confirmation on first launch. See the [Installation Guide](docs/installation-en.md) and [release signing notes](docs/release-signing.md) for details.
 
 Each release includes `SHA256SUMS.txt` for checksum verification. Rexiano can also check GitHub Releases from Settings > About.
+
+## Highlights
+
+| Area            | What Rexiano Helps With                                                                                                    |
+| --------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| Visual learning | 60 FPS falling notes, 88-key highlighting, note labels, and per-track colors for left/right hand separation.               |
+| Sheet music     | Split, sheet-only, and falling-notes display modes for switching between notation and piano-roll practice.                 |
+| Practice focus  | Watch, Wait, and Free modes, plus speed control, A-B loop, split-hand practice, metronome, count-in, and progress history. |
+| MIDI keyboards  | USB and Bluetooth MIDI input/output, hot-plug detection, auto-reconnect, and sustain pedal support.                        |
+| Sound           | Bundled FreePats Upright Piano KW SoundFont with Web Audio playback and a synthesizer fallback.                            |
+| Files           | Built-in song library plus drag-and-drop import for your own MIDI files.                                                   |
 
 ## Bluetooth MIDI
 
