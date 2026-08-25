@@ -3,6 +3,7 @@ import {
   calcMeasureSlotLayout,
   calcMeasureWidths,
   calcSheetRenderWidth,
+  shouldRenderBassStaff,
 } from "./sheetMusicUtils";
 import { groupNotesIntoStaffVoices } from "./sheetMusicRenderUtils";
 import type { NotationMeasure, NotationNote } from "./types";
@@ -224,5 +225,61 @@ describe("groupNotesIntoStaffVoices", () => {
 
     expect(voices[0][0].tuplet).toEqual(tuplet);
     expect(voices[0][1].tuplet).toEqual(tuplet);
+  });
+});
+
+describe("shouldRenderBassStaff", () => {
+  it("omits the bass staff when every bar is only a whole-measure rest", () => {
+    const measures = [
+      {
+        ...makeMeasure(0, 4),
+        bassNotes: [
+          makeNote(0, 48, {
+            isRest: true,
+            midi: null,
+            durationTicks: 1920,
+            vexDuration: "w",
+            vexKey: "d/3",
+          }),
+        ],
+      },
+      {
+        ...makeMeasure(1, 4),
+        bassNotes: [
+          makeNote(0, 48, {
+            isRest: true,
+            midi: null,
+            durationTicks: 1920,
+            vexDuration: "w",
+            vexKey: "d/3",
+          }),
+        ],
+      },
+    ];
+
+    expect(shouldRenderBassStaff(measures)).toBe(false);
+  });
+
+  it("keeps the grand staff when any bar has a sounding bass note", () => {
+    const measures = [
+      {
+        ...makeMeasure(0, 4),
+        bassNotes: [
+          makeNote(0, 48, {
+            isRest: true,
+            midi: null,
+            durationTicks: 1920,
+            vexDuration: "w",
+            vexKey: "d/3",
+          }),
+        ],
+      },
+      {
+        ...makeMeasure(1, 2),
+        bassNotes: [makeNote(0, 48, { vexKey: "c/3", vexDuration: "w" })],
+      },
+    ];
+
+    expect(shouldRenderBassStaff(measures)).toBe(true);
   });
 });

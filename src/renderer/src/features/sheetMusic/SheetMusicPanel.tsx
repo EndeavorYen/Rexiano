@@ -18,6 +18,7 @@ import {
   MIN_MEASURE_WIDTH,
   calcMeasureSlotLayout,
   calcSheetRenderWidth,
+  shouldRenderBassStaff,
 } from "./sheetMusicUtils";
 import {
   groupNotesIntoStaffVoices,
@@ -365,6 +366,7 @@ function renderMeasure(
   width: number,
   isFirst: boolean,
   showTimeSignature: boolean,
+  showBassStaff: boolean,
 ): RenderedMeasure {
   const { Stave, Voice, Formatter, StaveConnector } = VF;
   const timeSignature = `${measure.timeSignatureTop}/${measure.timeSignatureBottom}`;
@@ -380,27 +382,31 @@ function renderMeasure(
   }
   treble.setContext(context).draw();
 
-  const bass = new Stave(x, y + STAVE_HEIGHT + SYSTEM_GAP, width);
-  if (isFirst) {
-    bass
-      .addClef("bass")
-      .addKeySignature(keySignatureToVexKey(measure.keySignature));
-  }
-  if (showTimeSignature) {
-    bass.addTimeSignature(timeSignature);
-  }
-  bass.setContext(context).draw();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let bass: any = null;
+  if (showBassStaff) {
+    bass = new Stave(x, y + STAVE_HEIGHT + SYSTEM_GAP, width);
+    if (isFirst) {
+      bass
+        .addClef("bass")
+        .addKeySignature(keySignatureToVexKey(measure.keySignature));
+    }
+    if (showTimeSignature) {
+      bass.addTimeSignature(timeSignature);
+    }
+    bass.setContext(context).draw();
 
-  if (isFirst) {
+    if (isFirst) {
+      new StaveConnector(treble, bass)
+        .setType("brace")
+        .setContext(context)
+        .draw();
+    }
     new StaveConnector(treble, bass)
-      .setType("brace")
+      .setType("singleRight")
       .setContext(context)
       .draw();
   }
-  new StaveConnector(treble, bass)
-    .setType("singleRight")
-    .setContext(context)
-    .draw();
 
   const trebleVoices = groupNotesIntoStaffVoices(measure.trebleNotes).map(
     (groups): RenderedVoice => {
@@ -416,17 +422,26 @@ function renderMeasure(
     },
   );
 
-  const bassVoices = groupNotesIntoStaffVoices(measure.bassNotes).map(
-    (groups): RenderedVoice => {
-      const vexNotes = groups.map((chord) => makeStaveNote(VF, chord, "bass"));
-      return {
-        voiceIndex: groups[0]?.voiceIndex ?? 0,
-        groups,
-        vexNotes,
-        tuplets: makeTuplets(VF, groups, vexNotes, groups[0]?.stemDirection),
-      };
-    },
-  );
+  const bassVoices = showBassStaff
+    ? groupNotesIntoStaffVoices(measure.bassNotes).map(
+        (groups): RenderedVoice => {
+          const vexNotes = groups.map((chord) =>
+            makeStaveNote(VF, chord, "bass"),
+          );
+          return {
+            voiceIndex: groups[0]?.voiceIndex ?? 0,
+            groups,
+            vexNotes,
+            tuplets: makeTuplets(
+              VF,
+              groups,
+              vexNotes,
+              groups[0]?.stemDirection,
+            ),
+          };
+        },
+      )
+    : [];
 
   const trebleVexVoices = trebleVoices.map((renderedVoice) => {
     const voice = new Voice({
@@ -462,7 +477,9 @@ function renderMeasure(
   );
 
   trebleVexVoices.forEach((voice) => voice.draw(context, treble));
-  bassVexVoices.forEach((voice) => voice.draw(context, bass));
+  if (bass) {
+    bassVexVoices.forEach((voice) => voice.draw(context, bass));
+  }
   trebleVoices.forEach((voice) => {
     drawBeams(VF, context, voice.groups, voice.vexNotes);
     drawTies(VF, context, voice.groups, voice.vexNotes);
@@ -493,6 +510,7 @@ function renderEmptyMeasure(
   y: number,
   width: number,
   isFirst: boolean,
+  showBassStaff: boolean,
 ): void {
   const { Stave, StaveConnector } = VF;
   const treble = new Stave(x, y, width);
@@ -500,6 +518,8 @@ function renderEmptyMeasure(
     treble.addClef("treble").addTimeSignature("4/4");
   }
   treble.setContext(context).draw();
+
+  if (!showBassStaff) return;
 
   const bass = new Stave(x, y + STAVE_HEIGHT + SYSTEM_GAP, width);
   if (isFirst) {
@@ -569,7 +589,11 @@ export function SheetMusicPanel({
       DISPLAY_MEASURE_COUNT,
     );
   }, [notationData, visibleMeasures, renderWidth]);
-  const totalHeight = SYSTEM_HEIGHT + TOP_MARGIN * 2 + 16;
+  const showBassStaff = notationData
+    ? shouldRenderBassStaff(notationData.measures)
+    : true;
+  const systemHeight = showBassStaff ? SYSTEM_HEIGHT : STAVE_HEIGHT;
+  const totalHeight = systemHeight + TOP_MARGIN * 2 + 16;
   const activeSlotIndex =
     cursorPosition && visibleMeasures.length > 0
       ? visibleMeasures.indexOf(cursorPosition.measureIndex)
@@ -637,7 +661,15 @@ export function SheetMusicPanel({
           const isFirst = slot === 0;
 
           if (measureIndex === undefined) {
-            renderEmptyMeasure(VF, context, x, y, width, isFirst);
+            renderEmptyMeasure(
+              VF,
+              context,
+              x,
+              y,
+              width,
+              isFirst,
+              showBassStaff,
+            );
             continue;
           }
 
@@ -660,6 +692,7 @@ export function SheetMusicPanel({
                 width,
                 isFirst,
                 isFirst || meterChanged,
+                showBassStaff,
               ),
             );
           } catch (e) {
@@ -697,6 +730,7 @@ export function SheetMusicPanel({
     totalHeight,
     visibleMeasures,
     measureSlotLayout,
+    showBassStaff,
   ]);
 
   if (hidden) return null;
@@ -731,7 +765,7 @@ export function SheetMusicPanel({
               left: activeMeasureLeft,
               width: activeMeasureWidth,
               top: TOP_MARGIN,
-              height: SYSTEM_HEIGHT,
+              height: systemHeight,
               background: "rgba(30, 110, 114, 0.06)",
               borderRadius: 3,
               transition: "left 120ms ease-out, width 120ms ease-out",
@@ -744,7 +778,7 @@ export function SheetMusicPanel({
               left: cursorLeft,
               width: 2,
               top: TOP_MARGIN + 4,
-              height: SYSTEM_HEIGHT - 8,
+              height: systemHeight - 8,
               background:
                 "linear-gradient(180deg, rgba(30, 110, 114, 0.75), rgba(30, 110, 114, 0.4))",
               borderRadius: 999,

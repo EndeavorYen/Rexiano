@@ -260,9 +260,24 @@ test.describe("Sheet music visual fixtures", () => {
         "No time signature metadata was found.",
       );
 
-      const stats = await readSheetSvgStats(appPage);
-      expect(stats).not.toBeNull();
-      expect(stats?.leftSystemGlyphCount).toBeGreaterThanOrEqual(12);
+      // Melody-only songs omit the empty bass staff, so the left-system
+      // clef/meter cluster is smaller than a grand-staff piece. Poll because
+      // the previous song's SVG can still be visible after the switch.
+      const melodyOnly = songId === "hot-cross-buns" || songId === "fur-elise";
+      await expect
+        .poll(async () => {
+          const stats = await readSheetSvgStats(appPage);
+          return stats?.leftSystemGlyphCount ?? 0;
+        })
+        .toBeGreaterThanOrEqual(melodyOnly ? 6 : 12);
+      if (melodyOnly) {
+        await expect
+          .poll(async () => {
+            const stats = await readSheetSvgStats(appPage);
+            return stats?.leftSystemGlyphCount ?? 99;
+          })
+          .toBeLessThan(12);
+      }
     }
   });
 
