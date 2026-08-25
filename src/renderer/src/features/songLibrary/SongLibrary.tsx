@@ -23,6 +23,8 @@ import { parseMidiFile } from "../../engines/midi/MidiFileParser";
 import { AudioEngine } from "../../engines/audio/AudioEngine";
 import { useSongStore } from "../../stores/useSongStore";
 import { usePlaybackStore } from "../../stores/usePlaybackStore";
+import { usePracticeStore } from "../../stores/usePracticeStore";
+import { preferredDisplayModeForSource } from "../../engines/score/builtinScoreSource";
 import { useSettingsStore } from "../../stores/useSettingsStore";
 import { useSongLibraryStore } from "../../stores/useSongLibraryStore";
 import { useProgressStore } from "../../stores/useProgressStore";
@@ -569,6 +571,11 @@ export function SongLibrary({
         if (result) {
           const parsed = parseMidiFile(result.fileName, result.data);
           loadSong(parsed);
+          const origin =
+            songs.find((entry) => entry.id === songId)?.origin ?? "midi";
+          usePracticeStore
+            .getState()
+            .setDisplayMode(preferredDisplayModeForSource(origin));
           reset();
           await window.api.saveRecentFile({
             path: `builtin:${songId}`,
@@ -585,7 +592,7 @@ export function SongLibrary({
         setLoadingId(null);
       }
     },
-    [loadSong, onSessionIntentSelected, reset, refreshRecents, t],
+    [loadSong, onSessionIntentSelected, reset, refreshRecents, songs, t],
   );
 
   const handlePreviewSong = useCallback(
@@ -640,6 +647,14 @@ export function SongLibrary({
           return;
         }
         loadSong(parsed);
+        if (file.path.startsWith("builtin:")) {
+          const songId = file.path.slice("builtin:".length);
+          const origin =
+            songs.find((entry) => entry.id === songId)?.origin ?? "midi";
+          usePracticeStore
+            .getState()
+            .setDisplayMode(preferredDisplayModeForSource(origin));
+        }
         reset();
         await window.api.saveRecentFile({
           path: file.path,
@@ -660,7 +675,7 @@ export function SongLibrary({
         setLoadingRecentPath(null);
       }
     },
-    [loadSong, onSessionIntentSelected, reset, refreshRecents, t],
+    [loadSong, onSessionIntentSelected, reset, refreshRecents, songs, t],
   );
 
   const handleRemoveRecent = useCallback(

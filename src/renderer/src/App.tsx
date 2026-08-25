@@ -66,6 +66,7 @@ import { useKeyboardShortcuts } from "./hooks/useKeyboardShortcuts";
 import { useTranslation } from "./i18n/useTranslation";
 import { SheetMusicPanel } from "./features/sheetMusic/SheetMusicPanel";
 import { DisplayModeToggle } from "./features/sheetMusic/DisplayModeToggle";
+import { sheetFidelityLabelKey } from "./engines/score/builtinScoreSource";
 import { convertSongToNotation } from "./features/sheetMusic/MidiToNotation";
 import { TempoMap } from "./engines/midi/TempoMap";
 import { TransportClock } from "./engines/transport/TransportClock";
@@ -146,6 +147,7 @@ const analyzer = new WeakSpotAnalyzer();
 function App(): React.JSX.Element {
   const { t } = useTranslation();
   const song = useSongStore((s) => s.song);
+  const catalogSongs = useSongLibraryStore((s) => s.songs);
   const loadSong = useSongStore((s) => s.loadSong);
   const reset = usePlaybackStore((s) => s.reset);
   const {
@@ -1644,6 +1646,21 @@ function App(): React.JSX.Element {
                   <span className="control-chip playback-header-chip shrink-0">
                     {song.noteCount} {t("song.notes")}
                   </span>
+                  {catalogSongs.find((entry) => entry.file === song.fileName)
+                    ?.origin && (
+                    <span
+                      className="control-chip playback-header-chip shrink-0"
+                      data-testid="playback-sheet-fidelity"
+                    >
+                      {t(
+                        sheetFidelityLabelKey(
+                          catalogSongs.find(
+                            (entry) => entry.file === song.fileName,
+                          )!.origin!,
+                        ),
+                      )}
+                    </span>
+                  )}
                   <span className="control-chip playback-header-chip shrink-0">
                     {sessionIntent === "play-along"
                       ? t("playback.session.playAlong")
@@ -1661,10 +1678,11 @@ function App(): React.JSX.Element {
               </div>
 
               <div
-                className="flex items-center gap-1 shrink-0"
-                data-testid="playback-header-actions"
+              className="flex items-center gap-1 shrink-0"
+              data-testid="playback-header-actions"
               >
-                <button
+              <DisplayModeToggle />
+              <button
                   ref={insightsTriggerRef}
                   type="button"
                   onClick={() => setShowInsights(true)}
@@ -1758,7 +1776,7 @@ function App(): React.JSX.Element {
                 </div>
                 <div className="app-side-drawer-body">
                   <section className="app-side-section">
-                    <DisplayModeToggle />
+                    <DisplayModeToggle testIdPrefix="drawer-display-mode" />
                   </section>
                   <section className="app-side-section">
                     <DeviceSelector

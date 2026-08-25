@@ -36,6 +36,7 @@ flowchart LR
 > 目標：從譜進來也能練；從 MIDI 進來也還能練。兩條路都是一等入口。
 
 - [x] 第一刀：內建曲若有 `resources/scores/<id>.musicxml`，譜為真相，build 產出 MIDI（Au Clair 落地）；沒有 XML 的舊曲維持現況
+- [x] 曲庫卡片標出「從譜來／從 MIDI 來」（僅來源可見；其餘內建曲仍待補譜）
 - [ ] 譜（優先 MusicXML；其他標準樂譜格式若做，必須落到同一條「譜 → 演奏資料」管線）可轉成可練習的 MIDI / `ParsedSong`
 - [ ] 轉出的曲目進入既有練習迴路：Watch / Wait / Free、下落音符、評分、分手、A-B
 - [ ] 匯入 `.mid` / `.midi` 仍可直接練習，不被譜入口取代或藏起來

@@ -208,4 +208,14 @@ describe("buildGeneratedSongArtifacts score-first contract", () => {
 
     expect(noteKeys(packaged)).toEqual(noteKeys(fromScore));
   });
+
+  test("records score vs MIDI origin on generated catalog metadata", () => {
+    const { songsMeta } = buildGeneratedSongArtifacts([]);
+    expect(songsMeta.find((song) => song.id === "au-clair-de-la-lune")?.origin).toBe(
+      "score",
+    );
+    expect(songsMeta.find((song) => song.id === "hot-cross-buns")?.origin).toBe(
+      "midi",
+    );
+  });
 });

@@ -1754,7 +1754,14 @@ export function buildGeneratedSongArtifacts(
   const generatedDrafts = songDefs.map((def) => {
     const midiObj = buildMidiForDefinition(def, scoresDir);
     applyInferredHandTrackNames(midiObj);
-    const meta = createSongMetaFromDefinition(def, midiObj);
+    const source = resolveBuiltinSongSource({
+      songId: def.id,
+      scorePresent: existsSync(join(scoresDir, builtinScoreFileName(def.id))),
+    });
+    const meta = {
+      ...createSongMetaFromDefinition(def, midiObj),
+      origin: source,
+    };
     return { def, midiObj, meta };
   });
   const generatedMeta = generatedDrafts.map((draft) => draft.meta);

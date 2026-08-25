@@ -68,6 +68,8 @@ export interface TranslationMap {
   "library.saveImportedMetadata": string;
   "library.cancelImportedMetadata": string;
   "library.difficulty.all": string;
+  "library.origin.score": string;
+  "library.origin.midi": string;
   "library.difficulty.beginner": string;
   "library.difficulty.intermediate": string;
   "library.difficulty.advanced": string;
@@ -515,6 +517,8 @@ export interface TranslationMap {
   // ── Sheet Music ────────────────────────────────────────────────
   "sheetMusic.loadSong": string;
   "sheetMusic.modeFalling": string;
+  "sheetMusic.fidelity.score": string;
+  "sheetMusic.fidelity.approximate": string;
   "sheetMusic.modeSheet": string;
   "sheetMusic.modeSplit": string;
   "sheetMusic.displayMode": string;

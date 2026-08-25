@@ -9,6 +9,10 @@ import {
 } from "./songCardUtils";
 import { useTranslation } from "@renderer/i18n/useTranslation";
 import type { TranslationKey } from "@renderer/i18n/types";
+import {
+  builtinOriginLabelKey,
+  type BuiltinSongSource,
+} from "@renderer/engines/score/builtinScoreSource";
 
 interface SongCardProps {
   song: BuiltinSongMeta;
@@ -112,6 +116,15 @@ export function SongCard({
             >
               {song.composer}
             </p>
+            {song.origin && (
+              <p
+                className="text-[10px] mt-1 font-medium"
+                style={{ color: "var(--color-text-muted)" }}
+                data-testid={`song-origin-${song.id}`}
+              >
+                {t(builtinOriginLabelKey(song.origin as BuiltinSongSource))}
+              </p>
+            )}
           </div>
 
           {bestScore && (

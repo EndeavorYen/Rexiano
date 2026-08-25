@@ -921,6 +921,7 @@ test.describe("Playback UI polish guardrails", () => {
     await appPage.setViewportSize({ width: 390, height: 320 });
     await gotoLibrary(appPage);
     await loadFirstBuiltInSong(appPage);
+    await expect(appPage.getByTestId("display-mode-sheet")).toBeInViewport();
     await openPlaybackDrawer(appPage);
 
     const drawer = appPage.getByTestId("playback-settings-drawer");
@@ -928,7 +929,7 @@ test.describe("Playback UI polish guardrails", () => {
     await expectLocatorFitsInsideViewport(appPage, drawer);
 
     const body = drawer.locator(".app-side-drawer-body");
-    await expect(appPage.getByTestId("display-mode-sheet")).toBeInViewport();
+    await expect(appPage.getByTestId("drawer-display-mode-sheet")).toBeVisible();
 
     await scrollLocatorIfOverflowing(body, "y");
     await appPage.getByTestId("open-editor").scrollIntoViewIfNeeded();

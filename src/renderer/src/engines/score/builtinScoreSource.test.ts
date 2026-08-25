@@ -1,7 +1,10 @@
 import { describe, expect, test } from "vitest";
 import {
+  builtinOriginLabelKey,
   builtinScoreFileName,
+  preferredDisplayModeForSource,
   resolveBuiltinSongSource,
+  sheetFidelityLabelKey,
 } from "./builtinScoreSource";
 
 describe("builtinScoreSource", () => {
@@ -27,5 +30,17 @@ describe("builtinScoreSource", () => {
         scorePresent: false,
       }),
     ).toBe("midi");
+  });
+
+  test("score-backed songs open in split so the score is visible", () => {
+    expect(preferredDisplayModeForSource("score")).toBe("split");
+    expect(preferredDisplayModeForSource("midi")).toBe("falling");
+  });
+
+  test("labels score-backed songs as score and MIDI-backed sheet as approximate", () => {
+    expect(builtinOriginLabelKey("score")).toBe("library.origin.score");
+    expect(builtinOriginLabelKey("midi")).toBe("library.origin.midi");
+    expect(sheetFidelityLabelKey("score")).toBe("sheetMusic.fidelity.score");
+    expect(sheetFidelityLabelKey("midi")).toBe("sheetMusic.fidelity.approximate");
   });
 });

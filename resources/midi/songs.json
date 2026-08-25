@@ -1,6 +1,7 @@
 [
   {
     "id": "hot-cross-buns",
+    "origin": "midi",
     "file": "hot-cross-buns.mid",
     "title": "Hot Cross Buns",
     "composer": "Traditional",
@@ -12,6 +13,7 @@
   },
   {
     "id": "au-clair-de-la-lune",
+    "origin": "score",
     "file": "au-clair-de-la-lune.mid",
     "title": "Au Clair de la Lune",
     "composer": "Traditional (French)",
@@ -23,6 +25,7 @@
   },
   {
     "id": "c-major-scale",
+    "origin": "midi",
     "file": "c-major-scale.mid",
     "title": "C Major Scale",
     "composer": "Exercise",
@@ -34,6 +37,7 @@
   },
   {
     "id": "mary-had-a-little-lamb",
+    "origin": "midi",
     "file": "mary-had-a-little-lamb.mid",
     "title": "Mary Had a Little Lamb",
     "composer": "Traditional",
@@ -45,6 +49,7 @@
   },
   {
     "id": "london-bridge",
+    "origin": "midi",
     "file": "london-bridge.mid",
     "title": "London Bridge",
     "composer": "Traditional",
@@ -56,6 +61,7 @@
   },
   {
     "id": "jingle-bells",
+    "origin": "midi",
     "file": "jingle-bells.mid",
     "title": "Jingle Bells",
     "composer": "James Lord Pierpont",
@@ -67,6 +73,7 @@
   },
   {
     "id": "ode-to-joy",
+    "origin": "midi",
     "file": "ode-to-joy.mid",
     "title": "Ode to Joy",
     "composer": "Ludwig van Beethoven",
@@ -78,6 +85,7 @@
   },
   {
     "id": "happy-birthday",
+    "origin": "midi",
     "file": "happy-birthday.mid",
     "title": "Happy Birthday",
     "composer": "Traditional",
@@ -89,6 +97,7 @@
   },
   {
     "id": "row-row-row",
+    "origin": "midi",
     "file": "row-row-row.mid",
     "title": "Row Row Row Your Boat",
     "composer": "Traditional",
@@ -100,6 +109,7 @@
   },
   {
     "id": "lavender-blue",
+    "origin": "midi",
     "file": "lavender-blue.mid",
     "title": "Lavender's Blue",
     "composer": "Traditional (English)",
@@ -111,6 +121,7 @@
   },
   {
     "id": "twinkle-twinkle",
+    "origin": "midi",
     "file": "twinkle-twinkle.mid",
     "title": "Twinkle Twinkle Little Star",
     "composer": "Traditional",
@@ -122,6 +133,7 @@
   },
   {
     "id": "chopsticks",
+    "origin": "midi",
     "file": "chopsticks.mid",
     "title": "Chopsticks",
     "composer": "Euphemia Allen",
@@ -141,6 +153,7 @@
   },
   {
     "id": "frere-jacques",
+    "origin": "midi",
     "file": "frere-jacques.mid",
     "title": "Frère Jacques",
     "composer": "Traditional (French)",
@@ -152,6 +165,7 @@
   },
   {
     "id": "brahms-lullaby",
+    "origin": "midi",
     "file": "brahms-lullaby.mid",
     "title": "Brahms Lullaby",
     "composer": "Johannes Brahms",
@@ -163,6 +177,7 @@
   },
   {
     "id": "yankee-doodle",
+    "origin": "midi",
     "file": "yankee-doodle.mid",
     "title": "Yankee Doodle",
     "composer": "Traditional",
@@ -181,6 +196,7 @@
   },
   {
     "id": "amazing-grace",
+    "origin": "midi",
     "file": "amazing-grace.mid",
     "title": "Amazing Grace",
     "composer": "Traditional",
@@ -192,6 +208,7 @@
   },
   {
     "id": "scarborough-fair",
+    "origin": "midi",
     "file": "scarborough-fair.mid",
     "title": "Scarborough Fair",
     "composer": "Traditional (English)",
@@ -203,6 +220,7 @@
   },
   {
     "id": "long-long-ago",
+    "origin": "midi",
     "file": "long-long-ago.mid",
     "title": "Long Long Ago",
     "composer": "Thomas Haynes Bayly",
@@ -214,6 +232,7 @@
   },
   {
     "id": "fur-elise",
+    "origin": "midi",
     "file": "fur-elise.mid",
     "title": "Für Elise",
     "composer": "Ludwig van Beethoven",
@@ -225,6 +244,7 @@
   },
   {
     "id": "minuet-in-g",
+    "origin": "midi",
     "file": "minuet-in-g.mid",
     "title": "Minuet in G Major",
     "composer": "J.S. Bach",
@@ -236,6 +256,7 @@
   },
   {
     "id": "canon-in-d",
+    "origin": "midi",
     "file": "canon-in-d.mid",
     "title": "Canon in D",
     "composer": "Johann Pachelbel",
@@ -247,6 +268,7 @@
   },
   {
     "id": "prelude-in-c",
+    "origin": "midi",
     "file": "prelude-in-c.mid",
     "title": "Prelude in C Major (BWV 846)",
     "composer": "J.S. Bach",
@@ -266,6 +288,7 @@
   },
   {
     "id": "clementi-sonatina",
+    "origin": "midi",
     "file": "clementi-sonatina.mid",
     "title": "Sonatina in C Major (Op. 36 No. 1)",
     "composer": "Muzio Clementi",
@@ -285,6 +308,7 @@
   },
   {
     "id": "german-dance",
+    "origin": "midi",
     "file": "german-dance.mid",
     "title": "German Dance (WoO 8 No. 1)",
     "composer": "Ludwig van Beethoven",
@@ -296,6 +320,7 @@
   },
   {
     "id": "moonlight-sonata",
+    "origin": "midi",
     "file": "moonlight-sonata.mid",
     "title": "Moonlight Sonata (1st mvt)",
     "composer": "Ludwig van Beethoven",
@@ -307,6 +332,7 @@
   },
   {
     "id": "turkish-march",
+    "origin": "midi",
     "file": "turkish-march.mid",
     "title": "Turkish March",
     "composer": "W.A. Mozart",
@@ -318,6 +344,7 @@
   },
   {
     "id": "lightly-row",
+    "origin": "midi",
     "file": "lightly-row.mid",
     "title": "Lightly Row",
     "composer": "Traditional",
@@ -329,6 +356,7 @@
   },
   {
     "id": "old-macdonald",
+    "origin": "midi",
     "file": "old-macdonald.mid",
     "title": "Old MacDonald",
     "composer": "Traditional",
@@ -340,6 +368,7 @@
   },
   {
     "id": "this-old-man",
+    "origin": "midi",
     "file": "this-old-man.mid",
     "title": "This Old Man",
     "composer": "Traditional",
@@ -351,6 +380,7 @@
   },
   {
     "id": "alouette",
+    "origin": "midi",
     "file": "alouette.mid",
     "title": "Alouette",
     "composer": "Traditional (French)",
@@ -362,6 +392,7 @@
   },
   {
     "id": "go-tell-aunt-rhody",
+    "origin": "midi",
     "file": "go-tell-aunt-rhody.mid",
     "title": "Go Tell Aunt Rhody",
     "composer": "Traditional",
@@ -373,6 +404,7 @@
   },
   {
     "id": "when-the-saints",
+    "origin": "midi",
     "file": "when-the-saints.mid",
     "title": "When the Saints Go Marching In",
     "composer": "Traditional",
@@ -384,6 +416,7 @@
   },
   {
     "id": "oh-susanna",
+    "origin": "midi",
     "file": "oh-susanna.mid",
     "title": "Oh! Susanna",
     "composer": "Stephen Foster",
@@ -402,6 +435,7 @@
   },
   {
     "id": "silent-night",
+    "origin": "midi",
     "file": "silent-night.mid",
     "title": "Silent Night",
     "composer": "Franz Xaver Gruber",

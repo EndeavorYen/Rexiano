@@ -117,6 +117,8 @@ export interface BuiltinSongMeta {
    * See docs/midi-level-guide.md for full criteria.
    */
   grade?: 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8;
+  /** How the built-in was produced: MusicXML score vs programmatic MIDI. */
+  origin?: "score" | "midi";
 }
 
 // ─── Phase 5: MIDI Device Connection ─────────────────────────────────

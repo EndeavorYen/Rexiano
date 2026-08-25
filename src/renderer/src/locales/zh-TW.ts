@@ -74,6 +74,8 @@ export const zhTW: TranslationMap = {
   "library.saveImportedMetadata": "儲存 metadata",
   "library.cancelImportedMetadata": "取消 metadata 編輯",
   "library.difficulty.all": "全部",
+  "library.origin.score": "從譜來",
+  "library.origin.midi": "從 MIDI 來",
   "library.difficulty.beginner": "初級",
   "library.difficulty.intermediate": "中級",
   "library.difficulty.advanced": "高級",
@@ -538,6 +540,8 @@ export const zhTW: TranslationMap = {
   // ── Sheet Music ────────────────────────────────────────────────
   "sheetMusic.loadSong": "載入曲子以檢視樂譜",
   "sheetMusic.modeFalling": "音符",
+  "sheetMusic.fidelity.score": "譜",
+  "sheetMusic.fidelity.approximate": "近似譜",
   "sheetMusic.modeSheet": "樂譜",
   "sheetMusic.modeSplit": "雙顯示",
   "sheetMusic.displayMode": "顯示模式",

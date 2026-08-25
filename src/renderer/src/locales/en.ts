@@ -76,6 +76,8 @@ export const en: TranslationMap = {
   "library.saveImportedMetadata": "Save metadata",
   "library.cancelImportedMetadata": "Cancel metadata edit",
   "library.difficulty.all": "All",
+  "library.origin.score": "From score",
+  "library.origin.midi": "From MIDI",
   "library.difficulty.beginner": "Beginner",
   "library.difficulty.intermediate": "Intermediate",
   "library.difficulty.advanced": "Advanced",
@@ -570,6 +572,8 @@ export const en: TranslationMap = {
   // ── Sheet Music ────────────────────────────────────────────────
   "sheetMusic.loadSong": "Load a song to see sheet music",
   "sheetMusic.modeFalling": "Notes",
+  "sheetMusic.fidelity.score": "Score",
+  "sheetMusic.fidelity.approximate": "Approximate sheet",
   "sheetMusic.modeSheet": "Sheet",
   "sheetMusic.modeSplit": "Both",
   "sheetMusic.displayMode": "Display mode",
