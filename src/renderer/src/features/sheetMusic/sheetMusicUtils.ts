@@ -70,6 +70,13 @@ export function countRenderableNotes(
   ).length;
 }
 
+/** True when any measure has a sounding bass note; empty whole-measure rests do not count. */
+export function shouldRenderBassStaff(measures: NotationMeasure[]): boolean {
+  return measures.some((measure) =>
+    measure.bassNotes.some((note) => !note.isRest),
+  );
+}
+
 function calcMeasureSpacingWeight(
   measure: NotationMeasure | undefined,
 ): number {

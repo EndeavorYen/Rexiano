@@ -6,6 +6,7 @@ import {
   convertToNotation,
   convertSongToNotation,
 } from "./MidiToNotation";
+import { shouldRenderBassStaff } from "./sheetMusicUtils";
 import type { ParsedNote, ParsedSong } from "@renderer/engines/midi/types";
 
 describe("MidiToNotation", () => {
@@ -122,6 +123,23 @@ describe("MidiToNotation", () => {
       expect(bassNotes).toHaveLength(1);
       expect(trebleNotes[0].midi).toBe(72);
       expect(bassNotes[0].midi).toBe(48);
+    });
+
+    it("does not invent sounding bass notes for a melody-only phrase", () => {
+      const notes = [
+        { midi: 60, name: "C4", time: 0, duration: 0.5, velocity: 80 },
+        { midi: 60, name: "C4", time: 0.5, duration: 0.5, velocity: 80 },
+        { midi: 60, name: "C4", time: 1.0, duration: 0.5, velocity: 80 },
+        { midi: 62, name: "D4", time: 1.5, duration: 0.5, velocity: 80 },
+      ];
+      const result = convertToNotation(notes, 120, 480, 4, 4);
+
+      expect(
+        result.measures
+          .flatMap((measure) => measure.bassNotes)
+          .every((note) => note.isRest),
+      ).toBe(true);
+      expect(shouldRenderBassStaff(result.measures)).toBe(false);
     });
 
     it("generates valid VexFlow keys", () => {
@@ -526,5 +544,30 @@ describe("MidiToNotation", () => {
         ).length,
       ).toBeGreaterThan(0);
     });
+
+    it.each(["au-clair-de-la-lune.mid", "ode-to-joy.mid"] as const)(
+      "omits a sounding bass staff for melody-only built-in %s",
+      async (fileName) => {
+        const { readFileSync } = await import("node:fs");
+        const { join } = await import("node:path");
+        const { parseMidiFile } =
+          await import("@renderer/engines/midi/MidiFileParser");
+        const { parseBuiltinNotationMetadata } =
+          await import("./builtinNotationMetadata");
+
+        const parsed = parseMidiFile(
+          fileName,
+          Array.from(
+            readFileSync(join(process.cwd(), "resources/midi", fileName)),
+          ),
+        );
+        const result = convertSongToNotation(parsed, {
+          ...parseBuiltinNotationMetadata(["c-major", "4-4"]),
+        });
+
+        expect(result.measures.length).toBeGreaterThan(0);
+        expect(shouldRenderBassStaff(result.measures)).toBe(false);
+      },
+    );
   });
 });
