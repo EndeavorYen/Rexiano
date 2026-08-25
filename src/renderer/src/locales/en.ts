@@ -146,6 +146,7 @@ export const en: TranslationMap = {
   "library.neverPracticed": "Not practiced",
   "library.noSongsYet": "No songs here yet",
   "library.noSongsHint": "Import a MIDI file below to get started!",
+  "library.emptyRecentHint": "Pick a song from the library to get started!",
   "library.noMatchSearch": "No songs match your search",
   "library.noMatchHint": "Try a different keyword or clear the filter",
   "library.difficultyDescription.beginner":
@@ -487,6 +488,12 @@ export const en: TranslationMap = {
   "celebration.great.subtitle": "You're getting better every time!",
   "celebration.encourage.title": "Great effort!",
   "celebration.encourage.subtitle": "Every practice makes you stronger!",
+  "celebration.listen.title": "Nice listen!",
+  "celebration.listen.subtitle":
+    "Ready to hear it again, or pick another song?",
+  "celebration.listen.nextTitle": "Try Wait next",
+  "celebration.listen.nextBody":
+    "The song will pause and wait while you play along.",
   "celebration.newRecord": "New Record!",
   "celebration.playAgain": "Play Again!",
   "celebration.oneMoreTime": "One More Time!",

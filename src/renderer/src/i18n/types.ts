@@ -136,6 +136,7 @@ export interface TranslationMap {
   "library.neverPracticed": string;
   "library.noSongsYet": string;
   "library.noSongsHint": string;
+  "library.emptyRecentHint": string;
   "library.noMatchSearch": string;
   "library.noMatchHint": string;
   "library.difficultyDescription.beginner": string;
@@ -444,6 +445,10 @@ export interface TranslationMap {
   "celebration.great.subtitle": string;
   "celebration.encourage.title": string;
   "celebration.encourage.subtitle": string;
+  "celebration.listen.title": string;
+  "celebration.listen.subtitle": string;
+  "celebration.listen.nextTitle": string;
+  "celebration.listen.nextBody": string;
   "celebration.newRecord": string;
   "celebration.playAgain": string;
   "celebration.oneMoreTime": string;

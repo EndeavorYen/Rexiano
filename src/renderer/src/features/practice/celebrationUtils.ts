@@ -1,4 +1,35 @@
+import type { PracticeMode } from "@shared/types";
+
 export type CelebrationTier = "amazing" | "great" | "encourage";
+export type CelebrationVariant = "scored" | "listen";
+
+export interface CelebrationPresentation {
+  variant: CelebrationVariant;
+  showScore: boolean;
+  chooseSongGoesToStats: boolean;
+}
+
+export function getCelebrationPresentation({
+  mode,
+  totalNotes,
+}: {
+  mode: PracticeMode;
+  totalNotes: number;
+}): CelebrationPresentation {
+  if (mode === "watch" && totalNotes <= 0) {
+    return {
+      variant: "listen",
+      showScore: false,
+      chooseSongGoesToStats: false,
+    };
+  }
+
+  return {
+    variant: "scored",
+    showScore: totalNotes > 0,
+    chooseSongGoesToStats: true,
+  };
+}
 
 export function getTier(accuracy: number): CelebrationTier {
   if (accuracy >= 90) return "amazing";
