@@ -120,6 +120,23 @@ export class WaitMode {
     this._state = "playing";
   }
 
+  /**
+   * Advance cursors past notes at or before `time` without judging them.
+   * Used after a re-init so the frozen onset does not immediately re-wait.
+   */
+  advancePast(time: number): void {
+    for (const trackIndex of this._activeTracks) {
+      const track = this._tracks[trackIndex];
+      if (!track) continue;
+
+      let cursor = this._trackCursors.get(trackIndex) ?? 0;
+      while (cursor < track.notes.length && track.notes[cursor].time <= time) {
+        cursor += 1;
+      }
+      this._trackCursors.set(trackIndex, cursor);
+    }
+  }
+
   /** Stop wait mode */
   stop(): void {
     this._state = "idle";
