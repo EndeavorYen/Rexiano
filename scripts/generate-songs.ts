@@ -534,11 +534,11 @@ function buildMinuetInG(): Midi {
   rh.name = "Right Hand";
   rh.channel = 0;
 
-  // Bach Minuet in G Major (first 8 bars, simplified)
+  // Petzold Minuet in G, BWV Anh.114 first strain (public domain).
   // 3/4 time, durations in quarter beats
   const rhMelody: [number, number][] = [
-    // Bar 1: D5 (quarter), G4 A4 B4 C5 (eighths), D5 (quarter)
-    [D5, 2],
+    // Bar 1: D5 (quarter), G4 A4 B4 C5 (eighths)
+    [D5, 1],
     [G4, 0.5],
     [A4, 0.5],
     [B4, 0.5],
@@ -547,8 +547,8 @@ function buildMinuetInG(): Midi {
     [D5, 1],
     [G4, 1],
     [G4, 1],
-    // Bar 3: E5, C5 D5 E5 F#5 (eighths), G5
-    [E5, 2],
+    // Bar 3: E5 (quarter), C5 D5 E5 F#5 (eighths)
+    [E5, 1],
     [C5, 0.5],
     [D5, 0.5],
     [E5, 0.5],
