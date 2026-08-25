@@ -3,13 +3,13 @@ import { realpath, stat } from "fs/promises";
 import { app } from "electron";
 import { dirname, isAbsolute, relative, resolve } from "path";
 import { MAX_MIDI_FILE_BYTES } from "../../shared/midiFileLimits";
+import { isPracticeImportPath } from "../../shared/practiceImportFile";
 import {
   MidiFileReadError,
   midiFileReadOperations,
   type MidiFileReadOperations,
 } from "./midiFileReader";
 
-const MIDI_PATH_PATTERN = /\.(mid|midi|kar)$/i;
 const MIDI_PATH_ACCESS_FILE = "midi-path-access.json";
 
 const approvedMidiFiles = new Map<string, string>();
@@ -35,7 +35,7 @@ function normalizeAbsolutePath(candidate: string): string | null {
 }
 
 function isMidiPath(candidate: string): boolean {
-  return MIDI_PATH_PATTERN.test(candidate);
+  return isPracticeImportPath(candidate);
 }
 
 function isPathInsideFolder(filePath: string, folderPath: string): boolean {
