@@ -1843,6 +1843,10 @@ function formatSongMeta(song: SongMeta): string {
     lines.push(`    "grade": ${song.grade},`);
   }
 
+  if (song.origin) {
+    lines.push(`    "origin": ${jsonValue(song.origin)},`);
+  }
+
   lines.push(`    "durationSeconds": ${song.durationSeconds},`);
   const tagLines = formatTags(song.tags);
   lines.push(...tagLines);

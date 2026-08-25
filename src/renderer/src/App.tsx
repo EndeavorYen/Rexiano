@@ -1571,6 +1571,10 @@ function App(): React.JSX.Element {
           <MainMenu
             onStartPractice={() => applyRoute("library")}
             onOpenSettings={() => setShowMenuSettings(true)}
+            onOpenFile={() => {
+              setSessionIntent("practice");
+              void handleOpenFile();
+            }}
             recentFiles={recentFiles}
             onSelectRecent={(file) => {
               setSessionIntent("practice");

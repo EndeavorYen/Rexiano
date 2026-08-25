@@ -178,16 +178,16 @@ describe("buildGeneratedSongArtifacts score-first contract", () => {
     const { midiFiles } = buildGeneratedSongArtifacts([], {
       scoresDir: mkdtempSync(join(tmpdir(), "rexiano-empty-scores-")),
     });
-    const hotCross = midiFiles.find((file) => file.id === "hot-cross-buns");
-    expect(hotCross).toBeDefined();
+    const twinkle = midiFiles.find((file) => file.id === "twinkle-twinkle");
+    expect(twinkle).toBeDefined();
 
     const generated = parseMidiFile(
-      hotCross!.file,
-      Array.from(hotCross!.bytes),
+      twinkle!.file,
+      Array.from(twinkle!.bytes),
     );
     const committed = parseMidiFile(
-      "hot-cross-buns.mid",
-      Array.from(readFileSync(join(midiDir, "hot-cross-buns.mid"))),
+      "twinkle-twinkle.mid",
+      Array.from(readFileSync(join(midiDir, "twinkle-twinkle.mid"))),
     );
 
     expect(generated.noteCount).toBeGreaterThan(0);
@@ -215,7 +215,24 @@ describe("buildGeneratedSongArtifacts score-first contract", () => {
       "score",
     );
     expect(songsMeta.find((song) => song.id === "hot-cross-buns")?.origin).toBe(
-      "midi",
+      "score",
     );
+  });
+
+  test("keeps the packaged Hot Cross Buns MIDI aligned with the repo MusicXML", () => {
+    const fromScore = parseMidiFile(
+      "hot-cross-from-score.mid",
+      Array.from(
+        musicXmlToMidi(
+          readFileSync(join(resourcesRoot, "scores", "hot-cross-buns.musicxml"), "utf8"),
+        ).toArray(),
+      ),
+    );
+    const packaged = parseMidiFile(
+      "hot-cross-buns.mid",
+      Array.from(readFileSync(join(midiDir, "hot-cross-buns.mid"))),
+    );
+
+    expect(noteKeys(packaged)).toEqual(noteKeys(fromScore));
   });
 });

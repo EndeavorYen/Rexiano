@@ -29,8 +29,13 @@ export function registerFileHandlers(): void {
       if (!window) return null;
 
       const result = await dialog.showOpenDialog(window, {
-        title: "Open MIDI File",
-        filters: [{ name: "MIDI Files", extensions: ["mid", "midi"] }],
+        title: "Open score or MIDI",
+        filters: [
+          {
+            name: "Practice files",
+            extensions: ["mid", "midi", "kar", "musicxml", "xml"],
+          },
+        ],
         properties: ["openFile"],
       });
 

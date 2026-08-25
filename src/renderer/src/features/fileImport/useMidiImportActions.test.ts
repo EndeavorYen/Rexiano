@@ -48,6 +48,7 @@ describe("useMidiImportActions helpers", () => {
       fileName: "notes.txt",
     });
     expect(getUnsupportedMidiDropError("song.mid")).toBeNull();
+    expect(getUnsupportedMidiDropError("au-clair.musicxml")).toBeNull();
   });
 
   test("rejects oversized drops before FileReader allocation", () => {

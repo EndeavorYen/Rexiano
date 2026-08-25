@@ -6,7 +6,7 @@ import type {
   SessionRecord,
 } from "../../shared/types";
 
-const MIDI_PATH_PATTERN = /\.(mid|midi|kar)$/i;
+import { isPracticeImportPath } from "../../shared/practiceImportFile";
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
@@ -35,7 +35,7 @@ function isNoteResult(value: unknown): value is NoteResult {
 function isMidiOrBuiltinPath(value: string): boolean {
   return (
     (value.startsWith("builtin:") && value.length > "builtin:".length) ||
-    MIDI_PATH_PATTERN.test(value)
+    isPracticeImportPath(value)
   );
 }
 

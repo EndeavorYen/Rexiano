@@ -37,10 +37,10 @@ flowchart LR
 
 - [x] 第一刀：內建曲若有 `resources/scores/<id>.musicxml`，譜為真相，build 產出 MIDI（Au Clair 落地）；沒有 XML 的舊曲維持現況
 - [x] 曲庫卡片標出「從譜來／從 MIDI 來」（僅來源可見；其餘內建曲仍待補譜）
-- [ ] 譜（優先 MusicXML；其他標準樂譜格式若做，必須落到同一條「譜 → 演奏資料」管線）可轉成可練習的 MIDI / `ParsedSong`
-- [ ] 轉出的曲目進入既有練習迴路：Watch / Wait / Free、下落音符、評分、分手、A-B
-- [ ] 匯入 `.mid` / `.midi` 仍可直接練習，不被譜入口取代或藏起來
-- [ ] 曲庫／首頁上「從譜來」與「從 MIDI 來」同等可見
+- [x] 第二首內建譜：Hot Cross Buns（公有領域自編 MusicXML）
+- [x] 匯入 `.mid` / `.midi` 仍可直接練習，不被譜入口取代或藏起來
+- [x] 匯入 MusicXML 與 MIDI 走同一條練習入口（首頁＋曲庫＋拖放）
+- [x] 曲庫／首頁上「從譜來」與「從 MIDI 來」同等可見
 - [ ] 譜來源保留練習需要的 metadata（調號、拍號、聲部／左右手），讓 track 設定不必猜
 - [ ] 驗收：同一首曲，從譜匯入與從 MIDI 匯入都能開始練習，且 MIDI 入口無回歸
 
