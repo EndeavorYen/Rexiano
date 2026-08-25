@@ -525,7 +525,6 @@ export function SettingsPanel({
                 {t("settings.title")}
               </h2>
               <div className="flex items-center gap-2">
-                <LanguageSwitcher compact />
                 <input
                   value={settingsSearch}
                   onChange={(e) => setSettingsSearch(e.target.value)}
