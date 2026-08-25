@@ -1215,6 +1215,13 @@ graph TD
 
 譜 → 演奏資料是獨立管線，不是「先畫五線譜再倒推 MIDI」。歷史 Phase 8 的 Piano Roll 與 MusicXML 邊界評估（[`editor-export.md`](./editor-export.md)）仍是編輯器範圍，不能拿來假裝譜入口已經存在。
 
+**檔案契約（第一刀）：**
+
+- `resources/scores/<song-id>.musicxml` 存在時，那份譜是真相；`pnpm generate:songs` 從譜產出 `resources/midi/<song-id>.mid`
+- 沒有 MusicXML 的內建曲仍走既有 MIDI builder
+- 執行期播放／練習仍讀 MIDI，走既有 `MidiFileParser`；使用者匯入 `.mid` 不變
+- 第一刀不是 MusicXML 編輯器，也不在曲庫 UI 另開譜入口
+
 ### 15.2 產品階段 2 — UIUX 壓過競品
 
 體驗目標是 Synthesia 級手感再壓過去：漂亮、簡潔、優雅。一次只強調一個主要動作。裝置連線與設定不得打斷練習流。功能對照表打平不算過關。

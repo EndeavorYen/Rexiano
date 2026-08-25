@@ -5,12 +5,19 @@
  *
  * Produces generated MIDI files in resources/midi/ and updates songs.json.
  * Existing curated songs.json fields such as grade and level tags are preserved.
+ * Built-ins with resources/scores/<id>.musicxml treat that score as source of
+ * truth; songs without a score keep their programmatic MIDI builders.
  * Uses @tonejs/midi for MIDI file creation.
  */
 import { Midi } from "@tonejs/midi";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "fs";
 import { join, dirname } from "path";
 import { fileURLToPath } from "url";
+import {
+  builtinScoreFileName,
+  resolveBuiltinSongSource,
+} from "../src/renderer/src/engines/score/builtinScoreSource";
+import { musicXmlToMidi } from "../src/renderer/src/engines/score/musicXmlToMidi";
 import {
   addNotesFromBeats,
   applyInferredHandTrackNames,
@@ -25,6 +32,7 @@ import {
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const outDir = join(__dirname, "..", "resources", "midi");
+const defaultScoresDir = join(__dirname, "..", "resources", "scores");
 
 // ─── MIDI note constants ─────────────────────────────────────────────
 
@@ -1723,11 +1731,28 @@ function readExistingManifest(): SongMeta[] {
   return JSON.parse(readFileSync(songsJsonPath, "utf8")) as SongMeta[];
 }
 
+export interface BuildGeneratedSongOptions {
+  scoresDir?: string;
+}
+
+function buildMidiForDefinition(def: SongDef, scoresDir: string): Midi {
+  const scorePath = join(scoresDir, builtinScoreFileName(def.id));
+  const source = resolveBuiltinSongSource({
+    songId: def.id,
+    scorePresent: existsSync(scorePath),
+  });
+  return source === "score"
+    ? musicXmlToMidi(readFileSync(scorePath, "utf8"))
+    : def.build();
+}
+
 export function buildGeneratedSongArtifacts(
   existingManifest: readonly SongMeta[] = [],
+  options: BuildGeneratedSongOptions = {},
 ): GeneratedSongArtifacts {
+  const scoresDir = options.scoresDir ?? defaultScoresDir;
   const generatedDrafts = songDefs.map((def) => {
-    const midiObj = def.build();
+    const midiObj = buildMidiForDefinition(def, scoresDir);
     applyInferredHandTrackNames(midiObj);
     const meta = createSongMetaFromDefinition(def, midiObj);
     return { def, midiObj, meta };
