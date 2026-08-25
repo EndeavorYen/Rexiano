@@ -536,6 +536,15 @@ it back into MIDI”. Historical Phase 8 piano-roll editing and the MusicXML
 export boundary in [`editor-export.md`](./editor-export.md) do not count as this
 score entry.
 
+**File contract (first slice):**
+
+- When `resources/scores/<song-id>.musicxml` exists, that score is source of
+  truth; `pnpm generate:songs` writes `resources/midi/<song-id>.mid` from it
+- Built-ins without MusicXML keep their existing MIDI builders
+- Runtime playback still reads MIDI through `MidiFileParser`; user `.mid`
+  import is unchanged
+- This slice is not a MusicXML editor and does not add a library score entry
+
 ### 15.2 Product Phase 2 — UIUX that beats competitors
 
 The bar is Synthesia-level feel, then past it: prettier, cleaner, more elegant.
