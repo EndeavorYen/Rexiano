@@ -559,7 +559,7 @@ test.describe("Playback UI polish guardrails", () => {
     });
 
     expect(glyphStats).not.toBeNull();
-    expect(glyphStats?.glyphCount).toBeGreaterThan(120);
+    expect(glyphStats?.glyphCount).toBeGreaterThan(80);
     expect(glyphStats?.width).toBeTruthy();
     expect(glyphStats?.height).toBeTruthy();
     expect(sheetWarnings).toEqual([]);

@@ -262,7 +262,13 @@ test.describe("Sheet music visual fixtures", () => {
 
       const stats = await readSheetSvgStats(appPage);
       expect(stats).not.toBeNull();
-      expect(stats?.leftSystemGlyphCount).toBeGreaterThanOrEqual(12);
+      // Melody-only songs omit the empty bass staff, so the left-system
+      // clef/meter cluster is smaller than a grand-staff piece.
+      const minLeftGlyphs = songId === "hot-cross-buns" ? 6 : 12;
+      expect(stats?.leftSystemGlyphCount).toBeGreaterThanOrEqual(minLeftGlyphs);
+      if (songId === "hot-cross-buns") {
+        expect(stats?.leftSystemGlyphCount).toBeLessThan(12);
+      }
     }
   });
 
