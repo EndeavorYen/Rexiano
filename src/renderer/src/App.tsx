@@ -83,6 +83,7 @@ import { usePracticeStore } from "./stores/usePracticeStore";
 import { MainMenu } from "./features/mainMenu/MainMenu";
 import { ModeSelectionModal } from "./features/practice/ModeSelectionModal";
 import { CelebrationOverlay } from "./features/practice/CelebrationOverlay";
+import { getCelebrationPresentation } from "./features/practice/celebrationUtils";
 import { PianoRollEditor } from "./features/editor/PianoRollEditor";
 import { selectNextPracticeAction } from "./features/practice/nextPracticeAction";
 import { getFocusModeExitDecision } from "./features/practice/focusModeExitGuard";
@@ -387,6 +388,15 @@ function App(): React.JSX.Element {
       mode,
       speed,
     ],
+  );
+
+  const celebrationPresentation = useMemo(
+    () =>
+      getCelebrationPresentation({
+        mode,
+        totalNotes: displayScore.totalNotes,
+      }),
+    [displayScore.totalNotes, mode],
   );
 
   // ─── Phase 7: Sheet Music ──────────────────────────────
@@ -1879,15 +1889,21 @@ function App(): React.JSX.Element {
       )}
 
       {/* Celebration overlay (shown when song ends).
-          "Pick Song" leads to StatisticsPage instead of directly back. */}
+          Scored practice "Pick Song" goes to statistics first.
+          Watch listen-through goes straight back to the library. */}
       {song && showCelebration && (
         <CelebrationOverlay
           score={displayScore}
           visible={showCelebration}
           onPracticeAgain={handlePracticeAgain}
-          onChooseSong={handleViewStats}
+          onChooseSong={
+            celebrationPresentation.chooseSongGoesToStats
+              ? handleViewStats
+              : handleChooseSong
+          }
           songId={songId}
           nextAction={nextPracticeAction}
+          mode={mode}
         />
       )}
 

@@ -18,6 +18,7 @@ interface CompletionCelebrationInput {
   currentTime: number;
   songDuration: number;
   totalNotes: number;
+  mode?: PracticeMode;
 }
 
 interface UsePostSessionFlowOptions {
@@ -58,13 +59,20 @@ export function shouldShowCompletionCelebration({
   currentTime,
   songDuration,
   totalNotes,
+  mode,
 }: CompletionCelebrationInput): boolean {
-  return (
+  const endedNearClose =
     wasPlaying &&
     !isPlaying &&
-    totalNotes > 0 &&
-    currentTime >= songDuration - 1
-  );
+    songDuration > 0 &&
+    currentTime >= songDuration - 1;
+  if (!endedNearClose) return false;
+  if (mode === "watch") return true;
+  return totalNotes > 0;
+}
+
+export function shouldAdvanceCelebrationToStats(mode: PracticeMode): boolean {
+  return mode !== "watch";
 }
 
 export function shouldShowModeSelectionModal({
@@ -184,6 +192,7 @@ export function usePostSessionFlow({
           currentTime: state.currentTime,
           songDuration: currentSong.duration,
           totalNotes: currentScore.totalNotes,
+          mode: usePracticeStore.getState().mode,
         })
       ) {
         setCompletedSessionScore(currentScore);
@@ -195,6 +204,9 @@ export function usePostSessionFlow({
 
   useEffect(() => {
     if (!showCelebration) return;
+    if (!shouldAdvanceCelebrationToStats(usePracticeStore.getState().mode)) {
+      return;
+    }
     const timer = setTimeout(() => {
       setShowCelebration(false);
       setShowStats(true);
