@@ -1,4 +1,5 @@
 import type { TranslationKey, InterpolationParams } from "@renderer/i18n/types";
+import { MIDI_CONNECTION_ERROR } from "./midiConnectionErrors";
 
 type Translate = (key: TranslationKey, params?: InterpolationParams) => string;
 
@@ -32,6 +33,62 @@ export interface MidiErrorGuidance {
 }
 
 const ERROR_RULES: MidiErrorRule[] = [
+  {
+    match: (message) => message === MIDI_CONNECTION_ERROR.unsupported,
+    titleKey: "midi.errorUnsupported",
+    guidanceKey: "midi.errorUnsupportedGuidance",
+    canRetry: false,
+    canUseBluetooth: false,
+    canOpenSettings: false,
+  },
+  {
+    match: (message) => message === MIDI_CONNECTION_ERROR.denied,
+    titleKey: "midi.errorDenied",
+    guidanceKey: "midi.errorDeniedGuidance",
+    canRetry: true,
+    canUseBluetooth: false,
+    canOpenSettings: true,
+  },
+  {
+    match: (message) => message === MIDI_CONNECTION_ERROR.unavailable,
+    titleKey: "midi.errorUnavailable",
+    guidanceKey: "midi.errorUnavailableGuidance",
+    canRetry: true,
+    canUseBluetooth: false,
+    canOpenSettings: false,
+  },
+  {
+    match: (message) => message === MIDI_CONNECTION_ERROR.inputFailed,
+    titleKey: "midi.errorInput",
+    guidanceKey: "midi.errorInputGuidance",
+    canRetry: true,
+    canUseBluetooth: true,
+    canOpenSettings: false,
+  },
+  {
+    match: (message) => message === MIDI_CONNECTION_ERROR.outputFailed,
+    titleKey: "midi.errorOutput",
+    guidanceKey: "midi.errorOutputGuidance",
+    canRetry: true,
+    canUseBluetooth: true,
+    canOpenSettings: false,
+  },
+  {
+    match: (message) => message === MIDI_CONNECTION_ERROR.bluetoothUnsupported,
+    titleKey: "midi.errorBluetoothUnsupported",
+    guidanceKey: "midi.errorBluetoothUnsupportedGuidance",
+    canRetry: false,
+    canUseBluetooth: false,
+    canOpenSettings: false,
+  },
+  {
+    match: (message) => message === MIDI_CONNECTION_ERROR.initFailed,
+    titleKey: "midi.errorGeneric",
+    guidanceKey: "midi.errorGenericGuidance",
+    canRetry: true,
+    canUseBluetooth: true,
+    canOpenSettings: false,
+  },
   {
     match: (message) => message.includes("not supported"),
     titleKey: "midi.errorUnsupported",

@@ -277,7 +277,7 @@ export function DeviceSelector({
           }}
           data-testid="midi-error-guidance"
         >
-          <span className="min-w-0" title={errorGuidance.diagnostic}>
+          <span className="min-w-0" title={errorGuidance.title}>
             <span className="block text-xs font-semibold truncate">
               {errorGuidance.title}
             </span>

@@ -19,10 +19,9 @@ import {
 } from "lucide-react";
 import { useThemeStore } from "@renderer/stores/useThemeStore";
 import { useSettingsStore } from "@renderer/stores/useSettingsStore";
-import type { Language } from "@renderer/stores/useSettingsStore";
 import { themes, type ThemeId } from "@renderer/themes/tokens";
 import { themeNameKeys } from "./themeNameKeys";
-import { getAvailableLanguages } from "@renderer/i18n";
+import { LanguageSwitcher } from "./LanguageSwitcher";
 import { useTranslation } from "@renderer/i18n/useTranslation";
 import { useDialogFocus } from "@renderer/hooks/useDialogFocus";
 import type {
@@ -147,7 +146,6 @@ export function SettingsPanel({
   );
   const showFingering = useSettingsStore((s) => s.showFingering);
   const compactKeyLabels = useSettingsStore((s) => s.compactKeyLabels);
-  const language = useSettingsStore((s) => s.language);
   const volume = useSettingsStore((s) => s.volume);
   const muted = useSettingsStore((s) => s.muted);
   const defaultSpeed = useSettingsStore((s) => s.defaultSpeed);
@@ -166,7 +164,6 @@ export function SettingsPanel({
   );
   const setShowFingering = useSettingsStore((s) => s.setShowFingering);
   const setCompactKeyLabels = useSettingsStore((s) => s.setCompactKeyLabels);
-  const setLanguage = useSettingsStore((s) => s.setLanguage);
   const setVolume = useSettingsStore((s) => s.setVolume);
   const setMuted = useSettingsStore((s) => s.setMuted);
   const setDefaultSpeed = useSettingsStore((s) => s.setDefaultSpeed);
@@ -528,6 +525,7 @@ export function SettingsPanel({
                 {t("settings.title")}
               </h2>
               <div className="flex items-center gap-2">
+                <LanguageSwitcher compact />
                 <input
                   value={settingsSearch}
                   onChange={(e) => setSettingsSearch(e.target.value)}
@@ -1032,55 +1030,7 @@ export function SettingsPanel({
               {resolvedActiveTab === "language" && (
                 <TabContent>
                   <SectionTitle>{t("settings.language")}</SectionTitle>
-                  <div className="flex flex-col gap-2 mt-3">
-                    {getAvailableLanguages().map((lang) => (
-                      <button
-                        key={lang.code}
-                        onClick={() => setLanguage(lang.code as Language)}
-                        className="flex items-center gap-3 px-4 py-3 rounded-xl cursor-pointer transition-colors text-left"
-                        style={{
-                          background:
-                            language === lang.code
-                              ? "color-mix(in srgb, var(--color-accent) 12%, var(--color-surface))"
-                              : "var(--color-surface-alt)",
-                          border:
-                            language === lang.code
-                              ? "1.5px solid var(--color-accent)"
-                              : "1.5px solid transparent",
-                        }}
-                        data-testid={`lang-btn-${lang.code}`}
-                      >
-                        <span
-                          className="text-sm font-body font-medium"
-                          style={{
-                            color:
-                              language === lang.code
-                                ? "var(--color-accent-text)"
-                                : "var(--color-text)",
-                          }}
-                        >
-                          {lang.label}
-                        </span>
-                        {language === lang.code && (
-                          <svg
-                            width="14"
-                            height="14"
-                            viewBox="0 0 14 14"
-                            fill="none"
-                            className="ml-auto"
-                          >
-                            <path
-                              d="M3 7L6 10L11 4"
-                              stroke="var(--color-accent)"
-                              strokeWidth="2"
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                            />
-                          </svg>
-                        )}
-                      </button>
-                    ))}
-                  </div>
+                  <LanguageSwitcher />
                   <p
                     className="text-[10px] font-body mt-3"
                     style={{ color: "var(--color-text-muted)" }}
