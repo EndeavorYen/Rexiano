@@ -998,6 +998,394 @@ function buildLavenderBlue(): Midi {
   return midi;
 }
 
+function buildLightlyRow(): Midi {
+  const midi = new Midi();
+  midi.header.setTempo(100);
+  const track = midi.addTrack();
+  track.name = "Piano";
+  track.channel = 0;
+
+  // Public-domain Hänschen klein / Lightly Row melody, C major, self-arranged.
+  const melody: [number, number][] = [
+    [G4, 1],
+    [E4, 1],
+    [E4, 2],
+    [F4, 1],
+    [D4, 1],
+    [D4, 2],
+    [C4, 1],
+    [D4, 1],
+    [E4, 1],
+    [F4, 1],
+    [G4, 1],
+    [G4, 1],
+    [G4, 2],
+    [G4, 1],
+    [E4, 1],
+    [E4, 2],
+    [F4, 1],
+    [D4, 1],
+    [D4, 2],
+    [C4, 1],
+    [E4, 1],
+    [G4, 1],
+    [G4, 1],
+    [C4, 4],
+  ];
+
+  addNotesFromBeats(track, sequentialNotes(melody), 100, 0.7);
+  return midi;
+}
+
+function buildOldMacDonald(): Midi {
+  const midi = new Midi();
+  midi.header.setTempo(108);
+  const track = midi.addTrack();
+  track.name = "Piano";
+  track.channel = 0;
+
+  const phrase: [number, number][] = [
+    [C5, 1],
+    [C5, 1],
+    [C5, 1],
+    [G4, 1],
+    [A4, 1],
+    [A4, 1],
+    [G4, 2],
+    [E4, 1],
+    [E4, 1],
+    [D4, 1],
+    [D4, 1],
+    [C4, 4],
+  ];
+  const eieio: [number, number][] = [
+    [G4, 1],
+    [G4, 1],
+    [C5, 1],
+    [C5, 1],
+    [C5, 2],
+    [G4, 1],
+    [G4, 1],
+    [C5, 1],
+    [C5, 1],
+    [C5, 2],
+  ];
+  const melody = [...phrase, ...phrase, ...eieio, ...phrase];
+
+  addNotesFromBeats(track, sequentialNotes(melody), 108, 0.7);
+  return midi;
+}
+
+function buildThisOldMan(): Midi {
+  const midi = new Midi();
+  midi.header.setTempo(110);
+  const track = midi.addTrack();
+  track.name = "Piano";
+  track.channel = 0;
+
+  const melody: [number, number][] = [
+    [C4, 1],
+    [C4, 1],
+    [D4, 1],
+    [E4, 1],
+    [C4, 1],
+    [E4, 1],
+    [D4, 2],
+    [G4, 1],
+    [G4, 1],
+    [G4, 1],
+    [E4, 1],
+    [C4, 1],
+    [D4, 1],
+    [C4, 2],
+    [C4, 1],
+    [C4, 1],
+    [D4, 1],
+    [E4, 1],
+    [C4, 1],
+    [E4, 1],
+    [D4, 2],
+    [G4, 1],
+    [E4, 1],
+    [C4, 1],
+    [D4, 1],
+    [C4, 4],
+  ];
+
+  addNotesFromBeats(track, sequentialNotes(melody), 110, 0.7);
+  return midi;
+}
+
+function buildAlouette(): Midi {
+  const midi = new Midi();
+  midi.header.setTempo(112);
+  const track = midi.addTrack();
+  track.name = "Piano";
+  track.channel = 0;
+
+  const melody: [number, number][] = [
+    [C4, 1],
+    [D4, 1],
+    [E4, 1],
+    [C4, 1],
+    [C4, 1],
+    [D4, 1],
+    [E4, 1],
+    [C4, 1],
+    [E4, 1],
+    [F4, 1],
+    [G4, 2],
+    [E4, 1],
+    [F4, 1],
+    [G4, 2],
+    [G4, 0.5],
+    [A4, 0.5],
+    [G4, 0.5],
+    [F4, 0.5],
+    [E4, 1],
+    [C4, 1],
+    [G4, 0.5],
+    [A4, 0.5],
+    [G4, 0.5],
+    [F4, 0.5],
+    [E4, 1],
+    [C4, 1],
+    [C4, 1],
+    [G4, 1],
+    [C4, 2],
+  ];
+
+  addNotesFromBeats(track, sequentialNotes(melody), 112, 0.7);
+  return midi;
+}
+
+function buildGoTellAuntRhody(): Midi {
+  const midi = new Midi();
+  midi.header.setTempo(96);
+
+  const rh = midi.addTrack();
+  rh.name = "Right Hand";
+  rh.channel = 0;
+  const lh = midi.addTrack();
+  lh.name = "Left Hand";
+  lh.channel = 1;
+
+  const rhMelody: [number, number][] = [
+    [E4, 1],
+    [E4, 1],
+    [G4, 1],
+    [G4, 1],
+    [E4, 1],
+    [C4, 1],
+    [C4, 2],
+    [D4, 1],
+    [D4, 1],
+    [F4, 1],
+    [F4, 1],
+    [D4, 1],
+    [D4, 1],
+    [D4, 2],
+    [C4, 1],
+    [D4, 1],
+    [E4, 1],
+    [F4, 1],
+    [G4, 1],
+    [G4, 1],
+    [G4, 2],
+    [E4, 1],
+    [D4, 1],
+    [C4, 2],
+    [C4, 2],
+  ];
+  const lhMelody: [number, number][] = [
+    [C3, 8],
+    [G3, 8],
+    [C3, 8],
+    [C3, 6],
+  ];
+
+  addNotesFromBeats(rh, sequentialNotes(rhMelody), 96, 0.7);
+  addNotesFromBeats(lh, sequentialNotes(lhMelody), 96, 0.55);
+  return midi;
+}
+
+function buildWhenTheSaints(): Midi {
+  const midi = new Midi();
+  midi.header.setTempo(108);
+  const track = midi.addTrack();
+  track.name = "Piano";
+  track.channel = 0;
+
+  const melody: [number, number][] = [
+    [C4, 1],
+    [E4, 1],
+    [F4, 1],
+    [G4, 2],
+    [C4, 1],
+    [E4, 1],
+    [F4, 1],
+    [G4, 2],
+    [C4, 1],
+    [E4, 1],
+    [F4, 1],
+    [G4, 1],
+    [E4, 1],
+    [C4, 1],
+    [E4, 1],
+    [D4, 2],
+    [E4, 1],
+    [E4, 1],
+    [D4, 1],
+    [C4, 1],
+    [C4, 1],
+    [E4, 1],
+    [G4, 1],
+    [G4, 1],
+    [F4, 2],
+    [E4, 1],
+    [F4, 1],
+    [G4, 1],
+    [E4, 1],
+    [C4, 1],
+    [D4, 1],
+    [C4, 2],
+  ];
+
+  addNotesFromBeats(track, sequentialNotes(melody), 108, 0.7);
+  return midi;
+}
+
+function buildOhSusanna(): Midi {
+  const midi = new Midi();
+  midi.header.setTempo(112);
+
+  const rh = midi.addTrack();
+  rh.name = "Right Hand";
+  rh.channel = 0;
+  const lh = midi.addTrack();
+  lh.name = "Left Hand";
+  lh.channel = 1;
+
+  const verse: [number, number][] = [
+    [C4, 1],
+    [D4, 1],
+    [E4, 1],
+    [G4, 1],
+    [G4, 1],
+    [A4, 1],
+    [G4, 1],
+    [E4, 1],
+    [C4, 1],
+    [D4, 1],
+    [E4, 1],
+    [E4, 1],
+    [D4, 1],
+    [C4, 1],
+    [D4, 2],
+  ];
+  const verseEnd: [number, number][] = [
+    [C4, 1],
+    [D4, 1],
+    [E4, 1],
+    [G4, 1],
+    [G4, 1],
+    [A4, 1],
+    [G4, 1],
+    [E4, 1],
+    [C4, 1],
+    [D4, 1],
+    [E4, 1],
+    [E4, 1],
+    [D4, 1],
+    [D4, 1],
+    [C4, 2],
+  ];
+  const chorus: [number, number][] = [
+    [E4, 1],
+    [E4, 1],
+    [D4, 1],
+    [C4, 1],
+    [D4, 1],
+    [E4, 1],
+    [D4, 2],
+  ];
+  const rhMelody = [...verse, ...verseEnd, ...chorus, ...verseEnd];
+  const lhMelody: [number, number][] = Array.from({ length: 28 }, (_, i) => [
+    i % 2 === 0 ? C3 : G3,
+    2,
+  ]);
+
+  addNotesFromBeats(rh, sequentialNotes(rhMelody), 112, 0.7);
+  addNotesFromBeats(lh, sequentialNotes(lhMelody), 112, 0.55);
+  return midi;
+}
+
+function buildSilentNight(): Midi {
+  const midi = new Midi();
+  midi.header.setTempo(84);
+
+  const rh = midi.addTrack();
+  rh.name = "Right Hand";
+  rh.channel = 0;
+  const lh = midi.addTrack();
+  lh.name = "Left Hand";
+  lh.channel = 1;
+
+  const rhMelody: [number, number][] = [
+    [G4, 1.5],
+    [A4, 0.5],
+    [G4, 1],
+    [E4, 3],
+    [G4, 1.5],
+    [A4, 0.5],
+    [G4, 1],
+    [E4, 3],
+    [C5, 2],
+    [C5, 1],
+    [G4, 3],
+    [A4, 2],
+    [A4, 1],
+    [F4, 3],
+    [A4, 2],
+    [A4, 1],
+    [C5, 1.5],
+    [B4, 0.5],
+    [A4, 1],
+    [G4, 1.5],
+    [A4, 0.5],
+    [G4, 1],
+    [E4, 3],
+    [C5, 2],
+    [C5, 1],
+    [E5, 1.5],
+    [C5, 0.5],
+    [G4, 1],
+    [G4, 1],
+    [E4, 1],
+    [C4, 1],
+    [G4, 1.5],
+    [F4, 0.5],
+    [D4, 1],
+    [C4, 3],
+  ];
+  const lhMelody: [number, number][] = [
+    [C3, 6],
+    [C3, 6],
+    [G3, 6],
+    [F3, 6],
+    [F3, 3],
+    [C3, 3],
+    [C3, 6],
+    [C3, 6],
+    [G3, 3],
+    [C3, 6],
+  ];
+
+  addNotesFromBeats(rh, sequentialNotes(rhMelody), 84, 0.7);
+  addNotesFromBeats(lh, sequentialNotes(lhMelody), 84, 0.55);
+  return midi;
+}
+
 // ─── Song definitions ────────────────────────────────────────────────
 
 const songDefs: SongDef[] = [
@@ -1114,6 +1502,90 @@ const songDefs: SongDef[] = [
     bpm: 100,
     build: buildLavenderBlue,
   },
+  {
+    id: "lightly-row",
+    file: "lightly-row.mid",
+    title: "Lightly Row",
+    composer: "Traditional",
+    difficulty: "beginner",
+    category: "popular",
+    tags: ["traditional", "melody", "beginner", "c-major", "4-4", "level-1"],
+    bpm: 100,
+    grade: 1,
+    build: buildLightlyRow,
+  },
+  {
+    id: "old-macdonald",
+    file: "old-macdonald.mid",
+    title: "Old MacDonald",
+    composer: "Traditional",
+    difficulty: "beginner",
+    category: "popular",
+    tags: ["traditional", "melody", "beginner", "c-major", "4-4", "level-2"],
+    bpm: 108,
+    grade: 2,
+    build: buildOldMacDonald,
+  },
+  {
+    id: "this-old-man",
+    file: "this-old-man.mid",
+    title: "This Old Man",
+    composer: "Traditional",
+    difficulty: "beginner",
+    category: "popular",
+    tags: ["traditional", "melody", "c-major", "4-4", "level-2"],
+    bpm: 110,
+    grade: 2,
+    build: buildThisOldMan,
+  },
+  {
+    id: "alouette",
+    file: "alouette.mid",
+    title: "Alouette",
+    composer: "Traditional (French)",
+    difficulty: "beginner",
+    category: "popular",
+    tags: ["traditional", "melody", "french", "c-major", "4-4", "level-2"],
+    bpm: 112,
+    grade: 2,
+    build: buildAlouette,
+  },
+  {
+    id: "go-tell-aunt-rhody",
+    file: "go-tell-aunt-rhody.mid",
+    title: "Go Tell Aunt Rhody",
+    composer: "Traditional",
+    difficulty: "beginner",
+    category: "popular",
+    tags: ["traditional", "melody", "c-major", "4-4", "two-hands", "level-3"],
+    bpm: 96,
+    grade: 3,
+    build: buildGoTellAuntRhody,
+  },
+  {
+    id: "when-the-saints",
+    file: "when-the-saints.mid",
+    title: "When the Saints Go Marching In",
+    composer: "Traditional",
+    difficulty: "beginner",
+    category: "popular",
+    tags: ["traditional", "melody", "c-major", "4-4", "level-3"],
+    bpm: 108,
+    grade: 3,
+    build: buildWhenTheSaints,
+  },
+  {
+    id: "oh-susanna",
+    file: "oh-susanna.mid",
+    title: "Oh! Susanna",
+    composer: "Stephen Foster",
+    difficulty: "intermediate",
+    category: "popular",
+    tags: ["traditional", "american", "c-major", "4-4", "two-hands", "level-4"],
+    bpm: 112,
+    grade: 4,
+    build: buildOhSusanna,
+  },
 
   // ── Holiday ──
   {
@@ -1126,6 +1598,18 @@ const songDefs: SongDef[] = [
     tags: ["holiday", "christmas", "melody", "c-major", "4-4"],
     bpm: 120,
     build: buildJingleBells,
+  },
+  {
+    id: "silent-night",
+    file: "silent-night.mid",
+    title: "Silent Night",
+    composer: "Franz Xaver Gruber",
+    difficulty: "intermediate",
+    category: "holiday",
+    tags: ["holiday", "christmas", "c-major", "3-4", "two-hands", "level-4"],
+    bpm: 84,
+    grade: 4,
+    build: buildSilentNight,
   },
 
   // ── Classical (Intermediate) ──

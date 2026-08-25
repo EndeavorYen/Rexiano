@@ -62,6 +62,24 @@ describe("getMidiErrorGuidance", () => {
     });
   });
 
+  test("maps stable MIDI error codes without depending on English sentences", () => {
+    expect(getMidiErrorGuidance("midi.unsupported", t)).toMatchObject({
+      title: "midi.errorUnsupported",
+      guidance: "midi.errorUnsupportedGuidance",
+      canRetry: false,
+      canUseBluetooth: false,
+    });
+    expect(getMidiErrorGuidance("midi.denied", t)).toMatchObject({
+      title: "midi.errorDenied",
+      guidance: "midi.errorDeniedGuidance",
+    });
+    expect(getMidiErrorGuidance("midi.outputFailed", t)).toMatchObject({
+      title: "midi.errorOutput",
+      guidance: "midi.errorOutputGuidance",
+      canUseBluetooth: true,
+    });
+  });
+
   test("keeps unknown details as diagnostics while showing generic guidance", () => {
     expect(getMidiErrorGuidance("Unexpected MIDI transport fault", t)).toEqual({
       title: "midi.errorGeneric",

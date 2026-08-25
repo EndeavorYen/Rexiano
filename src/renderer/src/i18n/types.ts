@@ -136,6 +136,7 @@ export interface TranslationMap {
   "library.neverPracticed": string;
   "library.noSongsYet": string;
   "library.noSongsHint": string;
+  "library.emptyRecentHint": string;
   "library.noMatchSearch": string;
   "library.noMatchHint": string;
   "library.difficultyDescription.beginner": string;
@@ -317,6 +318,7 @@ export interface TranslationMap {
   "settings.title": string;
   "settings.close": string;
   "settings.language": string;
+  "settings.languageSwitcherAria": string;
   "settings.showFingering": string;
   "settings.theme": string;
   "settings.themeName.lavender": string;
@@ -444,6 +446,10 @@ export interface TranslationMap {
   "celebration.great.subtitle": string;
   "celebration.encourage.title": string;
   "celebration.encourage.subtitle": string;
+  "celebration.listen.title": string;
+  "celebration.listen.subtitle": string;
+  "celebration.listen.nextTitle": string;
+  "celebration.listen.nextBody": string;
   "celebration.newRecord": string;
   "celebration.playAgain": string;
   "celebration.oneMoreTime": string;
@@ -579,6 +585,15 @@ export interface TranslationMap {
   "general.close": string;
   "general.save": string;
   "general.cancel": string;
+
+  // ── Relative time ──────────────────────────────────────────────
+  "time.justNow": string;
+  "time.minutesAgo": string;
+  "time.hoursAgo": string;
+  "time.previousDay": string;
+  "time.daysAgo": string;
+  "time.monthsAgo": string;
+  "time.longAgo": string;
 }
 
 /**

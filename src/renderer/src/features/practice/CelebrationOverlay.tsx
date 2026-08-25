@@ -1,7 +1,12 @@
 import { useMemo } from "react";
-import type { PracticeScore } from "@shared/types";
+import type { PracticeMode, PracticeScore } from "@shared/types";
 import { useProgressStore } from "../../stores/useProgressStore";
-import { getTier, isNewRecord, type CelebrationTier } from "./celebrationUtils";
+import {
+  getCelebrationPresentation,
+  getTier,
+  isNewRecord,
+  type CelebrationTier,
+} from "./celebrationUtils";
 import { useTranslation } from "@renderer/i18n/useTranslation";
 import type { TranslationKey } from "@renderer/i18n/types";
 import type { NextPracticeAction } from "./nextPracticeAction";
@@ -14,6 +19,7 @@ interface CelebrationOverlayProps {
   /** Song identifier used to look up previous best score for "New Record!" detection */
   songId?: string;
   nextAction?: NextPracticeAction;
+  mode?: PracticeMode;
 }
 
 /** Emoji animation name per tier — not translated */
@@ -169,9 +175,15 @@ export function CelebrationOverlay({
   onChooseSong,
   songId,
   nextAction,
+  mode = "wait",
 }: CelebrationOverlayProps): React.JSX.Element {
   const { t } = useTranslation();
-  const tier = getTier(score.accuracy);
+  const presentation = getCelebrationPresentation({
+    mode,
+    totalNotes: score.totalNotes,
+  });
+  const isListenThrough = presentation.variant === "listen";
+  const tier = isListenThrough ? "great" : getTier(score.accuracy);
   const count = PARTICLE_COUNT[tier];
 
   const previousBest = useProgressStore((s) =>
@@ -249,17 +261,21 @@ export function CelebrationOverlay({
           className="text-3xl font-display font-bold celebration-title"
           style={{ color: "var(--color-accent-text)" }}
         >
-          {t(TIER_TITLE_KEYS[tier])}
+          {isListenThrough
+            ? t("celebration.listen.title")
+            : t(TIER_TITLE_KEYS[tier])}
         </h2>
         <p
           className="text-sm font-body -mt-2"
           style={{ color: "var(--color-text-muted)" }}
         >
-          {t(TIER_SUBTITLE_KEYS[tier])}
+          {isListenThrough
+            ? t("celebration.listen.subtitle")
+            : t(TIER_SUBTITLE_KEYS[tier])}
         </p>
 
         {/* Star display instead of raw accuracy number */}
-        <StarDisplay accuracy={score.accuracy} />
+        {presentation.showScore && <StarDisplay accuracy={score.accuracy} />}
 
         {/* New Record indicator */}
         {showNewRecord && (
@@ -273,32 +289,66 @@ export function CelebrationOverlay({
         )}
 
         {/* Score breakdown — compact and secondary */}
-        <div
-          className="flex gap-6 px-4 py-3 rounded-xl"
-          style={{
-            background: "var(--color-surface-alt)",
-            border: "1px solid var(--color-border)",
-          }}
-        >
-          <ScoreStat
-            label={t("celebration.accuracy")}
-            value={`${score.accuracy.toFixed(1)}%`}
-          />
-          <ScoreStat
-            label={t("celebration.hits")}
-            value={String(score.hitNotes)}
-          />
-          <ScoreStat
-            label={t("celebration.missed")}
-            value={String(score.missedNotes)}
-          />
-          <ScoreStat
-            label={t("celebration.bestStreak")}
-            value={String(score.bestStreak)}
-          />
-        </div>
+        {presentation.showScore && (
+          <div
+            className="flex gap-6 px-4 py-3 rounded-xl"
+            style={{
+              background: "var(--color-surface-alt)",
+              border: "1px solid var(--color-border)",
+            }}
+          >
+            <ScoreStat
+              label={t("celebration.accuracy")}
+              value={`${score.accuracy.toFixed(1)}%`}
+            />
+            <ScoreStat
+              label={t("celebration.hits")}
+              value={String(score.hitNotes)}
+            />
+            <ScoreStat
+              label={t("celebration.missed")}
+              value={String(score.missedNotes)}
+            />
+            <ScoreStat
+              label={t("celebration.bestStreak")}
+              value={String(score.bestStreak)}
+            />
+          </div>
+        )}
 
-        {nextAction && (
+        {isListenThrough && (
+          <div
+            className="w-full rounded-xl px-4 py-3 text-left"
+            style={{
+              background:
+                "color-mix(in srgb, var(--color-accent) 8%, var(--color-surface-alt))",
+              border:
+                "1px solid color-mix(in srgb, var(--color-accent) 20%, var(--color-border))",
+            }}
+            data-testid="celebration-next-action"
+          >
+            <span
+              className="text-[10px] font-body font-semibold uppercase tracking-wider"
+              style={{ color: "var(--color-text-muted)" }}
+            >
+              {t("celebration.nextAction.label")}
+            </span>
+            <p
+              className="mt-1 text-sm font-display font-bold"
+              style={{ color: "var(--color-text)" }}
+            >
+              {t("celebration.listen.nextTitle")}
+            </p>
+            <p
+              className="mt-0.5 text-xs font-body"
+              style={{ color: "var(--color-text-muted)" }}
+            >
+              {t("celebration.listen.nextBody")}
+            </p>
+          </div>
+        )}
+
+        {nextAction && !isListenThrough && (
           <div
             className="w-full rounded-xl px-4 py-3 text-left"
             style={{
@@ -347,7 +397,9 @@ export function CelebrationOverlay({
             }}
             data-testid="celebration-again"
           >
-            {t(TIER_PLAY_AGAIN_KEYS[tier])}
+            {isListenThrough
+              ? t("celebration.playAgain")
+              : t(TIER_PLAY_AGAIN_KEYS[tier])}
           </button>
           <button
             onClick={onChooseSong}

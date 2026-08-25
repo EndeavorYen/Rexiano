@@ -1323,7 +1323,7 @@ export function SongLibrary({
                     style={{ color: "var(--color-text-muted)" }}
                   >
                     {t("library.continueHint")} ·{" "}
-                    {formatRelativeTime(continueRecent.timestamp)}
+                    {formatRelativeTime(continueRecent.timestamp, t)}
                   </span>
                 </span>
               </div>
@@ -1362,7 +1362,7 @@ export function SongLibrary({
                       className="shrink-0 opacity-70 font-mono tabular-nums text-[11px]"
                       style={{ color: "var(--color-text-muted)" }}
                     >
-                      {formatRelativeTime(file.timestamp)}
+                      {formatRelativeTime(file.timestamp, t)}
                     </span>
                   </button>
                 ))}

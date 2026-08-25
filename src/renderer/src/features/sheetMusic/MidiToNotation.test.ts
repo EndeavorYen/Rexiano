@@ -4,7 +4,9 @@ import {
   quantizeToGrid,
   ticksToVexDuration,
   convertToNotation,
+  convertSongToNotation,
 } from "./MidiToNotation";
+import type { ParsedNote, ParsedSong } from "@renderer/engines/midi/types";
 
 describe("MidiToNotation", () => {
   describe("midiToVexKey", () => {
@@ -421,6 +423,108 @@ describe("MidiToNotation", () => {
         originalDurationTicks: 160,
         approximatedDurationTicks: 120,
       });
+    });
+  });
+
+  describe("convertSongToNotation staff assignment", () => {
+    const PPQ = 480;
+
+    function note(
+      midi: number,
+      name: string,
+      ticks: number,
+      durationTicks: number,
+    ): ParsedNote {
+      return {
+        midi,
+        name,
+        time: ticks / PPQ / 2,
+        duration: durationTicks / PPQ / 2,
+        velocity: 80,
+        ticks,
+        durationTicks,
+      };
+    }
+
+    function song(tracks: ParsedSong["tracks"]): ParsedSong {
+      return {
+        fileName: "minuet-in-g.mid",
+        duration: 1.5,
+        tracks,
+        tempos: [{ time: 0, ticks: 0, bpm: 120 }],
+        timeSignatures: [{ time: 0, ticks: 0, numerator: 3, denominator: 4 }],
+        noteCount: tracks.reduce((sum, track) => sum + track.notes.length, 0),
+        ppq: PPQ,
+      };
+    }
+
+    it("keeps a left-hand middle C on the bass staff", () => {
+      const result = convertSongToNotation(
+        song([
+          {
+            name: "Right Hand",
+            instrument: "Piano",
+            channel: 0,
+            notes: [note(76, "E5", 0, PPQ * 2)],
+          },
+          {
+            name: "Left Hand",
+            instrument: "Piano",
+            channel: 1,
+            notes: [note(60, "C4", 0, PPQ * 3)],
+          },
+        ]),
+      );
+
+      const measure = result.measures[0];
+      expect(
+        measure.trebleNotes.filter((n) => !n.isRest).map((n) => n.midi),
+      ).toEqual([76]);
+      expect(
+        measure.bassNotes.filter((n) => !n.isRest).map((n) => n.midi),
+      ).toEqual([60]);
+      expect(result.measureIssues).toEqual([]);
+    });
+
+    it("keeps Minuet in G left-hand C4 off the treble staff", async () => {
+      const { readFileSync } = await import("node:fs");
+      const { join } = await import("node:path");
+      const { parseMidiFile } =
+        await import("@renderer/engines/midi/MidiFileParser");
+      const { parseBuiltinNotationMetadata } =
+        await import("./builtinNotationMetadata");
+
+      const parsed = parseMidiFile(
+        "minuet-in-g.mid",
+        Array.from(
+          readFileSync(join(process.cwd(), "resources/midi/minuet-in-g.mid")),
+        ),
+      );
+      expect(parsed.tracks.map((track) => track.name)).toEqual([
+        "Right Hand",
+        "Left Hand",
+      ]);
+
+      const result = convertSongToNotation(parsed, {
+        ...parseBuiltinNotationMetadata(["g-major", "3-4"]),
+      });
+      const withC4 = result.measures.filter((measure) =>
+        [...measure.trebleNotes, ...measure.bassNotes].some(
+          (event) => event.midi === 60,
+        ),
+      );
+
+      expect(withC4.length).toBeGreaterThan(0);
+      expect(
+        withC4.flatMap((measure) =>
+          measure.trebleNotes.filter((event) => event.midi === 60),
+        ),
+      ).toEqual([]);
+      expect(
+        withC4.flatMap((measure) =>
+          measure.bassNotes.filter((event) => event.midi === 60),
+        ).length,
+      ).toBeGreaterThan(0);
     });
   });
 });

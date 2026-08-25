@@ -1,8 +1,8 @@
 # Rexiano — System Design Document
 
-> **Version**: 1.2
-> **Date**: 2026-05-31
-> **Status**: Phase 1–9 implementation status synced
+> **Version**: 1.3
+> **Date**: 2026-08-25
+> **Status**: Historical phases 1–9 synced; product next is three phases (score → MIDI / experience / musician-grade MIDI → score)
 >
 > Other languages: [繁體中文](./DESIGN.md)
 
@@ -19,17 +19,26 @@
 7. [Phase 5 — MIDI Device Connection ✅](#7-phase-5--midi-device-connection)
 8. [Phase 6 — Practice Mode ✅](#8-phase-6--practice-mode)
 9. [Phase 6.5 — Children's Usability Enhancements ✅](#9-phase-65--childrens-usability-enhancements)
-10. [Phase 7 — Sheet Music Display ✅](#10-phase-7--sheet-music-display)
+10. [Phase 7 — Sheet Music Display ✅ (display only)](#10-phase-7--sheet-music-display)
 11. [Phase 8 — Score Editor (Extra) ✅](#11-phase-8--score-editor-extra)
 12. [Phase 9 — Packaging & Distribution ✅](#12-phase-9--packaging--distribution)
 13. [Synthesia Feature Comparison](#13-synthesia-feature-comparison)
 14. [Cross-Cutting Concerns](#14-cross-cutting-concerns)
+15. [Product Next (three phases)](#15-product-next-three-phases)
 
 ---
 
 ## 1. Project Vision
 
 Rexiano (Rex + Piano) is an open-source, cross-platform piano practice application aiming to be a free alternative to Synthesia. The project was born for my son Rex, and is open-sourced for all piano learners.
+
+Historical implementation phases 1–9 already shipped playback, MIDI devices, practice mode, and sheet **display**. Product direction from here is three unfinished phases. Details: [§15](#15-product-next-three-phases) and [ROADMAP.md](./ROADMAP.md).
+
+| Phase | Goal | Explicitly not |
+| ----- | ---- | -------------- |
+| Product 1 | Score → MIDI, and imported MIDI is still practiceable (both entries stay) | Not removing MIDI import |
+| Product 2 | Cleaner, more beautiful, more elegant UIUX that beats Synthesia feel | Not another feature pile |
+| Product 3 | Strong MIDI → score, close to what a musician would write | Not audio-to-score; historical Phase 7 ✅ ≠ the score is correct |
 
 ### Six Core Features
 
@@ -333,7 +342,7 @@ Phase 6.5 focuses on making Rexiano accessible to children aged 6–10 (Rex's ag
 | Note labels          | Display note names (C4, F#5) on falling note rectangles           |
 | Piano key labels     | Display key names on white keys with octave numbers on C keys     |
 | Onboarding guide     | 4-step interactive guide for first-time users                     |
-| Song library         | Browse 26 built-in songs with grade filters and best-score badges |
+| Song library         | Browse 34 built-in songs with grade filters and best-score badges |
 | Recent files         | Quick access to the 10 most recently opened MIDI files            |
 | Celebration overlay  | Full-screen celebration animation at ≥90% accuracy                |
 | Metronome            | Visual beat pulse + audio click with count-in support             |
@@ -347,12 +356,18 @@ Phase 6.5 focuses on making Rexiano accessible to children aged 6–10 (Rex's ag
 
 ## 10. Phase 7 — Sheet Music Display
 
-**Status**: ✅ Complete | **Included in**: v0.5.0
+**Status**: ✅ Display complete; notation correctness is not (see Product Phase 3) | **Included in**: v0.5.0
 
 ### Overview
 
 Add a scrolling sheet music panel alongside or in place of the falling notes
 view, using **VexFlow** with a custom MIDI-to-notation converter.
+
+> **What the checkmark means**: the VexFlow panel, cursor sync, and heuristic
+> `MidiToNotation` converter shipped. **It does not mean the score is correct.**
+> Quantization, clef assignment, and duration inference remain heuristics.
+> Musician-grade MIDI → score is Product Phase 3. This section does not change
+> `MidiToNotation` behavior.
 
 ### Display Modes
 
@@ -448,11 +463,14 @@ network errors. See [`docs/update-flow.md`](./update-flow.md) for verification.
 | Speed control       | ✅        | ✅                    |
 | A-B loop            | ✅        | ✅                    |
 | Split-hand practice | ✅        | ✅                    |
-| Sheet music view    | ✅        | ✅                    |
+| Sheet music view    | ✅        | ✅ Panel exists; score not yet correct |
 | Score editor        | ✅        | ✅ Piano Roll editor  |
-| Song library        | Paid      | ✅ Free (26 built-in) |
+| Song library        | Paid      | ✅ Free (34 built-in) |
 | Price               | $39/year  | Free & Open Source    |
 | Source available    | ❌        | ✅ GPL-3.0            |
+
+Historical Phase 7 shipping a sheet panel is not the same as Product Phase 3
+(musician-grade MIDI → score). Audio-to-score is out of scope.
 
 ---
 
@@ -493,3 +511,45 @@ pnpm lint && pnpm typecheck && pnpm test
 
 _For implementation details, see [architecture.md](./architecture.md) (engine catalog, store catalog, data flows)._
 _For the development task checklist, see [ROADMAP.md](./ROADMAP.md)._
+
+---
+
+## 15. Product Next (three phases)
+
+> Checklists live in [ROADMAP.md](./ROADMAP.md) and stay unchecked until done.
+> This section is design boundary only. Do not rewrite the engine here. Do not
+> change `MidiToNotation` behavior.
+
+### 15.1 Product Phase 1 — Score → MIDI (both entries stay)
+
+Turn a standard score (MusicXML first) into practiceable MIDI / `ParsedSong` and
+feed the existing Watch / Wait / Free loop.
+
+All of these must remain true:
+
+- Score is a first-class entry
+- Importing `.mid` stays a first-class entry and remains practiceable
+- Both entries stay equally visible in the library / home
+
+Score → performance data is its own pipeline, not “render notation then reverse
+it back into MIDI”. Historical Phase 8 piano-roll editing and the MusicXML
+export boundary in [`editor-export.md`](./editor-export.md) do not count as this
+score entry.
+
+### 15.2 Product Phase 2 — UIUX that beats competitors
+
+The bar is Synthesia-level feel, then past it: prettier, cleaner, more elegant.
+One primary action at a time. Device connection and settings must not break the
+practice flow. A tied feature matrix is not acceptance.
+
+### 15.3 Product Phase 3 — Musician-grade MIDI → score
+
+Turn performed MIDI into notation close to what a musician would write (meter,
+voices, clefs, ties, accidentals).
+
+**Out of scope:** audio-to-score.
+
+**Relation to historical Phase 7:** the display layer can consume better
+notation. Having a panel is not the same as a correct score. Correctness gets
+its own implementation card; do not change `MidiToNotation` before then.
+

@@ -1,5 +1,9 @@
 import { describe, test, expect } from "vitest";
-import { getTier, isNewRecord } from "./celebrationUtils";
+import {
+  getCelebrationPresentation,
+  getTier,
+  isNewRecord,
+} from "./celebrationUtils";
 import type { CelebrationTier } from "./celebrationUtils";
 
 describe("CelebrationOverlay — getTier()", () => {
@@ -68,5 +72,43 @@ describe("CelebrationOverlay — isNewRecord()", () => {
   test("handles edge case: accuracy just barely exceeds previous best", () => {
     expect(isNewRecord(85.01, 20, "song-1", 85)).toBe(true);
     expect(isNewRecord(85.001, 20, "song-1", 85)).toBe(true);
+  });
+});
+
+describe("getCelebrationPresentation", () => {
+  test("Watch listen-through hides score and stays on next-action buttons", () => {
+    expect(
+      getCelebrationPresentation({
+        mode: "watch",
+        totalNotes: 0,
+      }),
+    ).toEqual({
+      variant: "listen",
+      showScore: false,
+      chooseSongGoesToStats: false,
+    });
+  });
+
+  test("scored Wait and Free keep the existing celebration layout", () => {
+    expect(
+      getCelebrationPresentation({
+        mode: "wait",
+        totalNotes: 8,
+      }),
+    ).toEqual({
+      variant: "scored",
+      showScore: true,
+      chooseSongGoesToStats: true,
+    });
+    expect(
+      getCelebrationPresentation({
+        mode: "free",
+        totalNotes: 8,
+      }),
+    ).toEqual({
+      variant: "scored",
+      showScore: true,
+      chooseSongGoesToStats: true,
+    });
   });
 });

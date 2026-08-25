@@ -1,8 +1,73 @@
 # Rexiano — 開發路線圖與追蹤清單
 
-> **最後更新**: 2026-06-07
+> **最後更新**: 2026-08-25
 >
 > 詳細設計請參考 [DESIGN.md](./DESIGN.md)
+>
+> **讀法**：下方「版本規劃」與「歷史實作階段 Phase 1–9」是已經做完的工程追蹤。
+> **產品下一程**才是現在的產品方向。歷史 Phase 7 勾完只代表「有五線譜顯示」，
+> **不代表譜已經正確**。音樂家級 MIDI → 譜是產品階段 3，且**不是** audio-to-score。
+
+---
+
+## 產品下一程（三階段）
+
+> 這三個階段都還沒做完。清單維持未勾選。本卡只改文件，不重寫引擎、
+> 不改 `MidiToNotation` 行為。
+
+| 階段 | 一句話 | 不是什麼 |
+| ---- | ------ | -------- |
+| **產品階段 1** | 譜 → MIDI，且匯入 MIDI 仍可練習 | 不是拿掉 MIDI 入口 |
+| **產品階段 2** | 更漂亮、簡潔、優雅的 UIUX，體感壓過 Synthesia | 不是再堆一排功能開關 |
+| **產品階段 3** | 厲害的 MIDI → 譜（接近音樂家會寫的譜） | 不是 audio-to-score；也不是「有顯示＝譜正確」 |
+
+```mermaid
+flowchart LR
+    Score["譜（MusicXML / 標準樂譜）"] --> P1["產品階段 1<br/>譜 → 可練習 MIDI"]
+    MidiIn["匯入 .mid"] --> Practice["既有練習迴路"]
+    P1 --> Practice
+    Practice --> P2["產品階段 2<br/>體驗壓過競品"]
+    MidiIn --> P3["產品階段 3<br/>MIDI → 音樂家級譜"]
+    P3 -.->|"吃更好的 notation，不改現況行為"| Display["歷史 Phase 7 顯示層"]
+```
+
+### 產品階段 1 — 譜 → MIDI（雙入口都在）
+
+> 目標：從譜進來也能練；從 MIDI 進來也還能練。兩條路都是一等入口。
+
+- [ ] 譜（優先 MusicXML；其他標準樂譜格式若做，必須落到同一條「譜 → 演奏資料」管線）可轉成可練習的 MIDI / `ParsedSong`
+- [ ] 轉出的曲目進入既有練習迴路：Watch / Wait / Free、下落音符、評分、分手、A-B
+- [ ] 匯入 `.mid` / `.midi` 仍可直接練習，不被譜入口取代或藏起來
+- [ ] 曲庫／首頁上「從譜來」與「從 MIDI 來」同等可見
+- [ ] 譜來源保留練習需要的 metadata（調號、拍號、聲部／左右手），讓 track 設定不必猜
+- [ ] 驗收：同一首曲，從譜匯入與從 MIDI 匯入都能開始練習，且 MIDI 入口無回歸
+
+### 產品階段 2 — UIUX 壓過競品
+
+> 目標：體感要壓過 Synthesia 級手感。漂亮、簡潔、優雅，不是功能對照表打勾。
+
+- [ ] 主路徑（開曲 → 練習 → 結束 → 下一首）一次只強調一個主要動作
+- [ ] 畫面密度下降：次要控制讓路，主畫面讀得懂、點得到
+- [ ] 下落音符、命中回饋、鍵盤高亮的延遲與可讀性對齊或超過競品
+- [ ] 裝置連線與設定不再打斷練習流
+- [ ] 動效／間距／字級服務「優雅」，不服務功能堆疊
+- [ ] 驗收：對照 Synthesia 的開曲與 Wait 手感，寫下可重複的視覺／操作清單並過關
+
+### 產品階段 3 — 音樂家級 MIDI → 譜
+
+> 目標：MIDI 轉出來的譜，接近音樂家會寫的譜。
+>
+> **排除**：audio-to-score（從錄音認譜）不在範圍。
+>
+> **與歷史 Phase 7 的界線**：Phase 7 ✅ ＝ 五線譜面板、游標同步、啟發式 `MidiToNotation` 已上線。
+> 那**不是**「譜已正確」。量化、譜號、時值、聲部仍是啟發式。本階段才追正確譜。
+> 實作另開卡；在此之前**不改** `MidiToNotation` 行為。
+
+- [ ] MIDI → 譜輸出在拍子、聲部、譜號、連音、臨時記號上接近人手寫譜
+- [ ] 明確排除 audio-to-score
+- [ ] 歷史 Phase 7 顯示層可以吃更好的 notation，但不把「有顯示」當成「譜正確」
+- [ ] 內建／公有領域曲目有可對照的正確譜驗收（不是只看 VexFlow 沒崩潰）
+- [ ] 行為變更另開實作卡；本文件不重寫轉換引擎
 
 ---
 
@@ -24,8 +89,16 @@
 | **v1.1.3** | Audit 修補       | esbuild 0.28.1 override、發佈檔案 ✅       |
 | **v1.2.0** | Windows portable | Windows 免安裝 `.exe` 發佈檔 ✅            |
 | **v1.2.1** | 發佈資源修補     | 內建曲庫/SoundFont packaged 路徑、portable `.zip` |
+| **下一程** | 譜 → MIDI 雙入口 | 產品階段 1（未開始）                               |
+| **下一程** | 體驗壓過競品     | 產品階段 2（未開始）                               |
+| **下一程** | 音樂家級 MIDI → 譜 | 產品階段 3（未開始）                             |
 
 ---
+
+## 歷史實作階段 Phase 1–9
+
+> 以下 checkbox 記錄已經做完的工程切片。不要把它們讀成「產品已經做完」。
+> 尤其是 **Phase 7 ✅ ≠ 譜已正確**。
 
 ## Phase 1 — 專案骨架與 MIDI 解析 ✅
 
@@ -268,9 +341,9 @@
 - [x] 新手引導教學
   - [x] `features/onboarding/OnboardingGuide.tsx` — 4 步驟卡片導覽（開啟歌曲 → 播放 → 練習 → 連接鍵盤）
   - [x] 首次啟動自動顯示（localStorage 記憶），`resetOnboarding()` 可重播
-- [x] 擴充內建曲庫（26 首）
-  - [x] Beginner: C Major Scale, Mary Had a Little Lamb, Hot Cross Buns, Twinkle Twinkle, Happy Birthday, London Bridge, Row Row Row Your Boat, Au Clair de la Lune, Chopsticks, Lavender's Blue, Jingle Bells
-  - [x] Intermediate: Ode to Joy, Für Elise (simplified), Minuet in G, Prelude in C, Canon in D (simplified)
+- [x] 擴充內建曲庫（34 首）
+  - [x] Beginner: C Major Scale, Mary Had a Little Lamb, Hot Cross Buns, Twinkle Twinkle, Happy Birthday, London Bridge, Row Row Row Your Boat, Au Clair de la Lune, Chopsticks, Lavender's Blue, Jingle Bells, Lightly Row, Old MacDonald, This Old Man, Alouette
+  - [x] Intermediate: Ode to Joy, Für Elise (simplified), Minuet in G, Prelude in C, Canon in D (simplified), Go Tell Aunt Rhody, When the Saints, Oh! Susanna, Silent Night
   - [x] Advanced: Moonlight Sonata (1st mvt), Turkish March
   - [x] SongLibrary 分類顯示（category 欄位 + `groupSongsByCategory()` section headers）
 - [x] L0–L8 分級系統（參考 RCM / ABRSM / Faber 標準）
@@ -316,7 +389,7 @@
 | 節拍器           | ✅        | ✅ Sprint 4                          | 平手   |
 | 成績追蹤         | ✅        | ✅ Sprint 3                          | 平手   |
 | 新手引導         | ✅        | ✅ Sprint 4                          | 平手   |
-| **五線譜顯示**   | ❌        | ✅ Phase 7                           | **勝** |
+| **五線譜顯示**   | ❌        | ✅ Phase 7 有面板；譜尚未正確 | **顯示勝；正確譜＝產品階段 3** |
 | **練習洞察分析** | ❌        | ✅ Sprint 5                          | **勝** |
 | **多主題**       | ❌ 僅一種 | ✅ 4 套                              | **勝** |
 | **開源免費**     | ❌ $39    | ✅ 永遠免費                          | **勝** |
@@ -329,6 +402,9 @@
 > 目標版本：v0.5.0
 >
 > 前置：Phase 4 ✅（需要播放同步）
+>
+> **完成的含義**：五線譜面板、游標同步、啟發式 MIDI → 譜轉換已上線。
+> **不是**：輸出已經是正確樂譜。正確譜是產品階段 3。
 
 - [x] 方案選型確認（VexFlow vs OSMD）— VexFlow 5.0 已安裝
 - [x] `engines/midi/TempoMap.ts` — 秒 ↔ tick 精確換算 + 小節表
@@ -508,8 +584,8 @@ Phase 1 ✅ -→ Phase 2 ✅ -→ Phase 3 ✅
           +------+------+
           |      |      |
           ▼      |      ▼
-      Phase 5 ✅ |   Phase 7
-      (MIDI)     |   (樂譜顯示)
+      Phase 5 ✅ |   Phase 7 ✅
+      (MIDI)     |   (樂譜顯示 ≠ 譜已正確)
           |      |      |
           ▼      |      ▼
       Phase 6 ✅ |   Phase 8 ✅

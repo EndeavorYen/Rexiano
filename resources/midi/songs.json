@@ -315,5 +315,100 @@
     "grade": 7,
     "durationSeconds": 7,
     "tags": ["classical", "fast", "a-minor", "2-4", "level-7"]
+  },
+  {
+    "id": "lightly-row",
+    "file": "lightly-row.mid",
+    "title": "Lightly Row",
+    "composer": "Traditional",
+    "difficulty": "beginner",
+    "category": "popular",
+    "grade": 1,
+    "durationSeconds": 20,
+    "tags": ["traditional", "melody", "beginner", "c-major", "4-4", "level-1"]
+  },
+  {
+    "id": "old-macdonald",
+    "file": "old-macdonald.mid",
+    "title": "Old MacDonald",
+    "composer": "Traditional",
+    "difficulty": "beginner",
+    "category": "popular",
+    "grade": 2,
+    "durationSeconds": 34,
+    "tags": ["traditional", "melody", "beginner", "c-major", "4-4", "level-2"]
+  },
+  {
+    "id": "this-old-man",
+    "file": "this-old-man.mid",
+    "title": "This Old Man",
+    "composer": "Traditional",
+    "difficulty": "beginner",
+    "category": "popular",
+    "grade": 2,
+    "durationSeconds": 18,
+    "tags": ["traditional", "melody", "c-major", "4-4", "level-2"]
+  },
+  {
+    "id": "alouette",
+    "file": "alouette.mid",
+    "title": "Alouette",
+    "composer": "Traditional (French)",
+    "difficulty": "beginner",
+    "category": "popular",
+    "grade": 2,
+    "durationSeconds": 15,
+    "tags": ["traditional", "melody", "french", "c-major", "4-4", "level-2"]
+  },
+  {
+    "id": "go-tell-aunt-rhody",
+    "file": "go-tell-aunt-rhody.mid",
+    "title": "Go Tell Aunt Rhody",
+    "composer": "Traditional",
+    "difficulty": "beginner",
+    "category": "popular",
+    "grade": 3,
+    "durationSeconds": 19,
+    "tags": ["traditional", "melody", "c-major", "4-4", "two-hands", "level-3"]
+  },
+  {
+    "id": "when-the-saints",
+    "file": "when-the-saints.mid",
+    "title": "When the Saints Go Marching In",
+    "composer": "Traditional",
+    "difficulty": "beginner",
+    "category": "popular",
+    "grade": 3,
+    "durationSeconds": 21,
+    "tags": ["traditional", "melody", "c-major", "4-4", "level-3"]
+  },
+  {
+    "id": "oh-susanna",
+    "file": "oh-susanna.mid",
+    "title": "Oh! Susanna",
+    "composer": "Stephen Foster",
+    "difficulty": "intermediate",
+    "category": "popular",
+    "grade": 4,
+    "durationSeconds": 30,
+    "tags": [
+      "traditional",
+      "american",
+      "c-major",
+      "4-4",
+      "two-hands",
+      "level-4"
+    ]
+  },
+  {
+    "id": "silent-night",
+    "file": "silent-night.mid",
+    "title": "Silent Night",
+    "composer": "Franz Xaver Gruber",
+    "difficulty": "intermediate",
+    "category": "holiday",
+    "grade": 4,
+    "durationSeconds": 37,
+    "tags": ["holiday", "christmas", "c-major", "3-4", "two-hands", "level-4"]
   }
 ]

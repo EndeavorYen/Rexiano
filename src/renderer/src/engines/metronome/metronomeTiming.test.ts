@@ -1,6 +1,7 @@
 import { describe, expect, test } from "vitest";
 import type { ParsedSong } from "@renderer/engines/midi/types";
 import {
+  canArmPlaybackCountIn,
   resolveMetronomeSegmentKey,
   resolveMetronomeTiming,
   shouldRunPlaybackCountIn,
@@ -77,5 +78,27 @@ describe("shouldRunPlaybackCountIn", () => {
     [{ currentTime: 0, countInBeats: 0 }, false],
   ])("evaluates %o", (input, expected) => {
     expect(shouldRunPlaybackCountIn(input)).toBe(expected);
+  });
+});
+
+describe("canArmPlaybackCountIn", () => {
+  test("never arms count-in when the metronome engine is missing", () => {
+    expect(
+      canArmPlaybackCountIn({
+        hasMetronomeEngine: false,
+        currentTime: 0,
+        countInBeats: 4,
+      }),
+    ).toBe(false);
+  });
+
+  test("arms count-in only when the metronome engine can complete it", () => {
+    expect(
+      canArmPlaybackCountIn({
+        hasMetronomeEngine: true,
+        currentTime: 0,
+        countInBeats: 4,
+      }),
+    ).toBe(true);
   });
 });

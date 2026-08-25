@@ -351,6 +351,56 @@ describe("WaitMode", () => {
     expect(wm.checkInput(new Set([60]))).toBe(true);
   });
 
+  it("advancing past the frozen onset does not immediately re-wait after reinit", () => {
+    const tracks = makeTracks([
+      { midi: 60, time: 1.0 },
+      { midi: 62, time: 2.0 },
+    ]);
+    wm.init(tracks, new Set([0]));
+    wm.start();
+    wm.tick(1.0);
+    expect(wm.state).toBe("waiting");
+    expect(wm.targetNotes).toEqual(new Set([60]));
+
+    wm.init(tracks, new Set([0]));
+    wm.start();
+    wm.advancePast(1.0);
+
+    expect(wm.state).toBe("playing");
+    expect(wm.tick(1.0)).toBe(true);
+    expect(wm.state).toBe("playing");
+    expect(wm.targetNotes.size).toBe(0);
+
+    expect(wm.tick(2.0)).toBe(false);
+    expect(wm.state).toBe("waiting");
+    expect(wm.targetNotes).toEqual(new Set([62]));
+  });
+
+  it("advancing past a live wait-window entry does not immediately re-wait after reinit", () => {
+    const tracks = makeTracks([
+      { midi: 60, time: 1.0 },
+      { midi: 62, time: 2.0 },
+    ]);
+    wm.init(tracks, new Set([0]));
+    wm.start();
+    wm.tick(0.8);
+    expect(wm.state).toBe("waiting");
+    expect(wm.targetNotes).toEqual(new Set([60]));
+
+    wm.init(tracks, new Set([0]));
+    wm.start();
+    wm.advancePast(0.8);
+
+    expect(wm.state).toBe("playing");
+    expect(wm.tick(0.8)).toBe(true);
+    expect(wm.state).toBe("playing");
+    expect(wm.targetNotes.size).toBe(0);
+
+    expect(wm.tick(2.0)).toBe(false);
+    expect(wm.state).toBe("waiting");
+    expect(wm.targetNotes).toEqual(new Set([62]));
+  });
+
   it("clearCallbacks() prevents callbacks from firing after disposal", () => {
     const onWait = vi.fn();
     const onMiss = vi.fn();

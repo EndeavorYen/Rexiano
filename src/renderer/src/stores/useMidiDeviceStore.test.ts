@@ -122,7 +122,7 @@ describe("useMidiDeviceStore", () => {
     await useMidiDeviceStore.getState().connect();
 
     expect(useMidiDeviceStore.getState().connectionError).toBe(
-      "Web MIDI API is not supported in this browser",
+      "midi.unsupported",
     );
   });
 
@@ -133,9 +133,7 @@ describe("useMidiDeviceStore", () => {
 
     await useMidiDeviceStore.getState().connect();
 
-    expect(useMidiDeviceStore.getState().connectionError).toBe(
-      "MIDI access was denied",
-    );
+    expect(useMidiDeviceStore.getState().connectionError).toBe("midi.denied");
   });
 
   test("connect() sets error when init throws", async () => {
@@ -144,7 +142,7 @@ describe("useMidiDeviceStore", () => {
     await useMidiDeviceStore.getState().connect();
 
     expect(useMidiDeviceStore.getState().connectionError).toBe(
-      "Failed to initialize MIDI access",
+      "midi.initFailed",
     );
   });
 
@@ -187,7 +185,7 @@ describe("useMidiDeviceStore", () => {
     mockManager.connectInput.mockReturnValueOnce(false);
     useMidiDeviceStore.getState().selectInput("bad-id");
     expect(useMidiDeviceStore.getState().connectionError).toBe(
-      "Failed to connect to input device",
+      "midi.inputFailed",
     );
   });
 
@@ -227,7 +225,7 @@ describe("useMidiDeviceStore", () => {
     mockManager.connectOutput.mockReturnValueOnce(false);
     useMidiDeviceStore.getState().selectOutput("bad-id");
     expect(useMidiDeviceStore.getState().connectionError).toBe(
-      "Failed to connect to output device",
+      "midi.outputFailed",
     );
   });
 

@@ -1,12 +1,32 @@
-<img src="docs/figure/Rexiano_icon.png" alt="Rexiano icon" width="120" align="right">
+<p align="center">
+  <img src="docs/figure/Rexiano_icon.png" alt="Rexiano" width="88">
+</p>
 
-# Rexiano
+<h1 align="center">Rexiano</h1>
 
-免費、開源的鋼琴練習應用程式，支援下落音符、五線譜、MIDI 鍵盤與聚焦練習。一位爸爸為 Rex 打造，並分享給所有學琴的人。
+<p align="center">
+  免費、離線的鋼琴練習 — 下落音符、五線譜與 MIDI。<br>
+  一位爸爸為 Rex 打造，並分享給所有學琴的人。
+</p>
 
-**繁體中文** | [English](README.md)
+<p align="center">
+  <strong>繁體中文</strong> · <a href="README.md">English</a>
+</p>
 
-> **TL;DR** — Rexiano 安裝後可在 Windows、macOS、Linux 離線使用。載入內建或匯入的 MIDI 後，可以用下落音符、五線譜、Watch/Wait/Free 模式、循環、評分，以及 USB/藍牙 MIDI 鍵盤回饋一起練習。目前 app 版本：`1.3.0`。
+<p align="center">
+  和 <strong>Synthesia</strong> 不同：Rexiano 免費、開源、完全離線，並提供 Watch 與 Wait 練習模式。
+</p>
+
+<p align="center">
+  <a href="https://github.com/EndeavorYen/Rexiano/releases/latest"><strong>下載 Rexiano 1.4.0</strong></a><br>
+  <sub>Windows · macOS · Linux · 目前 app 版本 <code>1.4.0</code></sub>
+</p>
+
+<p align="center">
+  <img src="docs/assets/marketing/piano-sheet-hero.png" alt="窗邊鋼琴與攤開的樂譜 — Rexiano 氣氛圖，不是產品截圖" width="100%">
+</p>
+
+<p align="center"><sub>氣氛照片，不是 app 畫面。真實截圖在下方。</sub></p>
 
 <table>
   <tr>
@@ -27,23 +47,12 @@
 
 ## 開始練習
 
-1. 從 [GitHub Releases](https://github.com/EndeavorYen/Rexiano/releases) 下載最新 build。
+1. 從 [GitHub Releases](https://github.com/EndeavorYen/Rexiano/releases/latest) 下載最新 build。
 2. 開啟 Rexiano，選擇內建曲目，或拖入自己的 `.mid` / `.midi` 檔案。
 3. 先用 **Watch** 模式聽與看，再切到 **Wait** 模式，讓 Rexiano 等你彈對音符才繼續。
 4. 想要即時琴鍵回饋與評分時，連接 USB 或藍牙 MIDI 鍵盤。
 
 只聽音樂與看視覺化不需要外接鍵盤。Wait 模式與評分練習需要 MIDI 輸入。
-
-## 特色
-
-| 面向      | Rexiano 幫你做到                                                                       |
-| --------- | -------------------------------------------------------------------------------------- |
-| 視覺學習  | 60 FPS 下落音符、88 鍵高亮、音名標籤，以及左右手分色。                                 |
-| 五線譜    | 可切換分割、純五線譜、純下落音符模式，在樂譜與 piano-roll 練習間轉換。                 |
-| 聚焦練習  | Watch、Wait、Free 模式，加上速度控制、A-B 循環、分手練習、節拍器、預備拍與歷史進度。   |
-| MIDI 鍵盤 | USB 與藍牙 MIDI 輸入/輸出、熱插拔、自動重連與延音踏板支援。                            |
-| 音色      | 內建 FreePats Upright Piano KW SoundFont，透過 Web Audio 播放，並保留合成器 fallback。 |
-| 檔案      | 內建曲庫，也可拖放匯入自己的 MIDI 檔。                                                 |
 
 ## 安裝
 
@@ -56,6 +65,17 @@
 目前公開 build 尚未簽章/公證，因此 Windows SmartScreen 或 macOS Gatekeeper 第一次啟動時可能要求確認。細節請看[安裝指南](docs/installation.md)與[簽章說明](docs/release-signing.md)。
 
 每個 release 都會附上 `SHA256SUMS.txt` 供 checksum 驗證。Rexiano 也可以從「設定 > 關於」檢查 GitHub Releases 上的新版本。
+
+## 特色
+
+| 面向      | Rexiano 幫你做到                                                                       |
+| --------- | -------------------------------------------------------------------------------------- |
+| 視覺學習  | 60 FPS 下落音符、88 鍵高亮、音名標籤，以及左右手分色。                                 |
+| 五線譜    | 可切換分割、純五線譜、純下落音符模式，在樂譜與 piano-roll 練習間轉換。                 |
+| 聚焦練習  | Watch、Wait、Free 模式，加上速度控制、A-B 循環、分手練習、節拍器、預備拍與歷史進度。   |
+| MIDI 鍵盤 | USB 與藍牙 MIDI 輸入/輸出、熱插拔、自動重連與延音踏板支援。                            |
+| 音色      | 內建 FreePats Upright Piano KW SoundFont，透過 Web Audio 播放，並保留合成器 fallback。 |
+| 檔案      | 內建曲庫，也可拖放匯入自己的 MIDI 檔。                                                 |
 
 ## 藍牙 MIDI
 

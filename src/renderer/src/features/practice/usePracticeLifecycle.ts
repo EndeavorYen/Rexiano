@@ -159,19 +159,22 @@ export function applyPracticeActiveTrackTransition({
   activeTracks,
   isPlaying,
   mode,
+  currentTime,
   resumeScheduler,
 }: {
-  waitMode: Pick<WaitMode, "state" | "init" | "start">;
+  waitMode: Pick<WaitMode, "state" | "init" | "start" | "advancePast">;
   tracks: ParsedSong["tracks"];
   activeTracks: Set<number>;
   isPlaying: boolean;
   mode: PracticeMode;
+  currentTime: number;
   resumeScheduler: () => void;
 }): void {
   const wasWaiting = waitMode.state === "waiting";
   waitMode.init(tracks, activeTracks);
   if (mode === "wait" && isPlaying) {
     waitMode.start();
+    waitMode.advancePast(currentTime);
     if (wasWaiting) resumeScheduler();
   }
 }
@@ -375,6 +378,7 @@ export function usePracticeLifecycle(
           activeTracks: state.activeTracks,
           isPlaying: usePlaybackStore.getState().isPlaying,
           mode: state.mode,
+          currentTime: usePlaybackStore.getState().currentTime,
           resumeScheduler: () => {
             const scheduler = audioRef.current.scheduler;
             const engine = audioRef.current.engine;

@@ -20,6 +20,7 @@ export interface SongDef {
   category: Category;
   tags: string[];
   bpm: number;
+  grade?: Grade;
   /** Build the MIDI object for this song. */
   build: () => Midi;
 }
@@ -314,6 +315,7 @@ export function createSongMetaFromDefinition(
     composer: def.composer,
     difficulty: def.difficulty,
     category: def.category,
+    grade: def.grade,
     durationSeconds: computeMidiDurationSeconds(midi),
     tags: [...def.tags],
   };
