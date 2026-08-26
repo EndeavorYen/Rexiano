@@ -1,4 +1,4 @@
-import { isScoreImportPath } from "@shared/practiceImportFile";
+import { isScoreImportPath } from "../../../../shared/practiceImportFile";
 
 export function builtinScoreFileName(songId: string): string {
   return `${songId}.musicxml`;

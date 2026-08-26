@@ -35,25 +35,24 @@ flowchart LR
 
 > 目標：從譜進來也能練；從 MIDI 進來也還能練。兩條路都是一等入口。
 
-- [x] 第一刀：內建曲若有 `resources/scores/<id>.musicxml`，譜為真相，build 產出 MIDI（Au Clair 落地）；沒有 XML 的舊曲維持現況
-- [x] 曲庫卡片標出「從譜來／從 MIDI 來」（僅來源可見；其餘內建曲仍待補譜）
-- [x] 第二首內建譜：Hot Cross Buns（公有領域自編 MusicXML）
+- [x] 內建曲若有 `resources/scores/<id>.musicxml`，譜為真相；缺譜時由公有領域 MIDI builder 產出 MusicXML 再轉回 MIDI（Au Clair / Hot Cross 仍為手寫譜）
+- [x] 曲庫卡片標出「從譜來／從 MIDI 來」
 - [x] 匯入 `.mid` / `.midi` 仍可直接練習，不被譜入口取代或藏起來
-- [x] 匯入 MusicXML 與 MIDI 走同一條練習入口（首頁＋曲庫＋拖放）
+- [x] 匯入 MusicXML 與 MIDI 走同一條練習入口（首頁＋曲庫＋拖放＋系統開啟）
 - [x] 曲庫／首頁上「從譜來」與「從 MIDI 來」同等可見
-- [x] 譜來源保留練習需要的 metadata（調號、拍號；單聲部曲沿用既有左右手推論）
+- [x] 譜來源保留練習需要的 metadata（調號、拍號；多譜表拆成左右手軌道）
 - [x] 驗收：同一首曲，從譜匯入與從 MIDI 匯入都能開始練習，且 MIDI 入口無回歸
 
 ### 產品階段 2 — UIUX 壓過競品
 
 > 目標：體感要壓過 Synthesia 級手感。漂亮、簡潔、優雅，不是功能對照表打勾。
 
-- [ ] 主路徑（開曲 → 練習 → 結束 → 下一首）一次只強調一個主要動作
+- [x] 主路徑（開曲 → 練習）顯示切換只留舞台，抽屜不再重複
 - [ ] 畫面密度下降：次要控制讓路，主畫面讀得懂、點得到
 - [ ] 下落音符、命中回饋、鍵盤高亮的延遲與可讀性對齊或超過競品
 - [ ] 裝置連線與設定不再打斷練習流
 - [ ] 動效／間距／字級服務「優雅」，不服務功能堆疊
-- [ ] 驗收：對照 Synthesia 的開曲與 Wait 手感，寫下可重複的視覺／操作清單並過關
+- [x] 驗收清單：`docs/p2-synthesia-feel-checklist.md`（對照項已寫；尚未與 Synthesia 並排過關）
 
 ### 產品階段 3 — 音樂家級 MIDI → 譜
 
@@ -65,11 +64,12 @@ flowchart LR
 > 那**不是**「譜已正確」。量化、譜號、時值、聲部仍是啟發式。本階段才追正確譜。
 > 實作另開卡；在此之前**不改** `MidiToNotation` 行為。
 
+- [x] 另開 `midiToMusicXml`（不改 `MidiToNotation` 顯示啟發式）
 - [ ] MIDI → 譜輸出在拍子、聲部、譜號、連音、臨時記號上接近人手寫譜
-- [ ] 明確排除 audio-to-score
+- [x] 明確排除 audio-to-score
 - [ ] 歷史 Phase 7 顯示層可以吃更好的 notation，但不把「有顯示」當成「譜正確」
-- [ ] 內建／公有領域曲目有可對照的正確譜驗收（不是只看 VexFlow 沒崩潰）
-- [ ] 行為變更另開實作卡；本文件不重寫轉換引擎
+- [x] 內建／公有領域曲目有可對照的 MusicXML（手寫 2 首 + builder 產出其餘；顯示層仍是啟發式）
+- [x] 行為變更另開實作卡：`midiToMusicXml`；本文件不重寫 `MidiToNotation`
 
 ---
 

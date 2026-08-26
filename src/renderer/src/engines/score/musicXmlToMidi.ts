@@ -21,25 +21,96 @@ interface ScoreNote {
   midi: number;
   startBeats: number;
   durationBeats: number;
+  staff: number;
 }
 
 /**
  * Convert a MusicXML partwise score into a Tone.js MIDI object.
  *
- * This is a first-slice reader: pitched notes, rests, chords, backup/forward,
- * divisions, and a single tempo. It is not a MusicXML editor.
+ * Reads every part and staff. Staff 1 becomes Right Hand, staff 2 Left Hand
+ * when a part has more than one staff.
  */
 export function musicXmlToMidi(xml: string): Midi {
   const root = parseXmlDocument(xml);
-  const part =
-    findFirst(root, "part") ??
-    findFirst(root, "score-partwise")?.children.find(
-      (child) => child.name === "part",
-    );
-  if (!part) {
+  const score =
+    findFirst(root, "score-partwise") ??
+    (root.name === "score-partwise" ? root : undefined);
+  const parts = score
+    ? collect(score, "part")
+    : collect(root, "part");
+  if (parts.length === 0) {
     throw new Error("MusicXML score has no part.");
   }
 
+  const midi = new Midi();
+  midi.header.setTempo(120);
+  let tempoBpm = 120;
+  let timeSignature: [number, number] = [4, 4];
+  let keyAccidentals = 0;
+  let keyScale: "major" | "minor" = "major";
+  const partNames = new Map<string, string>();
+  for (const scorePart of collect(
+    findFirst(root, "part-list") ?? root,
+    "score-part",
+  )) {
+    partNames.set(scorePart.attrs.id ?? "", childText(scorePart, "part-name"));
+  }
+  const parsedParts = parts.map((part) => ({
+    part,
+    parsed: readPart(part),
+  }));
+  tempoBpm = parsedParts[0]?.parsed.tempoBpm ?? 120;
+  timeSignature = parsedParts[0]?.parsed.timeSignature ?? [4, 4];
+  keyAccidentals = parsedParts[0]?.parsed.keyAccidentals ?? 0;
+  keyScale = parsedParts[0]?.parsed.keyScale ?? "major";
+  midi.header.setTempo(tempoBpm);
+
+  for (const { part, parsed } of parsedParts) {
+    const partName = partNames.get(part.attrs.id ?? "") || "Piano";
+    const staffIds = [...new Set(parsed.notes.map((note) => note.staff))].sort(
+      (a, b) => a - b,
+    );
+    const splitHands = staffIds.length > 1;
+    for (const staff of staffIds.length > 0 ? staffIds : [1]) {
+      const track = midi.addTrack();
+      track.channel = 0;
+      track.name = splitHands
+        ? staff === 1
+          ? "Right Hand"
+          : "Left Hand"
+        : partName;
+      const secondsPerBeat = 60 / parsed.tempoBpm;
+      for (const note of parsed.notes.filter((entry) => entry.staff === staff)) {
+        if (note.durationBeats <= 0) continue;
+        track.addNote({
+          midi: note.midi,
+          time: note.startBeats * secondsPerBeat,
+          duration: note.durationBeats * secondsPerBeat,
+          velocity: 0.7,
+        });
+      }
+    }
+  }
+  midi.header.timeSignatures = [
+    { ticks: 0, timeSignature, measures: 0 },
+  ];
+  midi.header.keySignatures = [
+    {
+      ticks: 0,
+      key: keyNameFromFifths(keyAccidentals),
+      scale: keyScale,
+    },
+  ];
+  return midi;
+}
+
+function readPart(part: XmlNode): {
+  notes: ScoreNote[];
+  tempoBpm: number;
+  timeSignature: [number, number];
+  keyAccidentals: number;
+  keyScale: "major" | "minor";
+} {
   let divisions = 1;
   let tempoBpm = 120;
   let cursorDivisions = 0;
@@ -113,46 +184,17 @@ export function musicXmlToMidi(xml: string): Midi {
       const pitch = findFirst(child, "pitch");
       if (!pitch) continue;
 
+      const staffRaw = Number(childText(child, "staff"));
       notes.push({
         midi: pitchToMidi(pitch),
         startBeats: startDivisions / divisions,
         durationBeats: durationDivisions / divisions,
+        staff: Number.isInteger(staffRaw) && staffRaw > 0 ? staffRaw : 1,
       });
     }
   }
 
-  const midi = new Midi();
-  midi.header.setTempo(tempoBpm);
-  midi.header.timeSignatures = [
-    { ticks: 0, timeSignature, measures: 0 },
-  ];
-  midi.header.keySignatures = [
-    {
-      ticks: 0,
-      key: keyNameFromFifths(keyAccidentals),
-      scale: keyScale,
-    },
-  ];
-  const track = midi.addTrack();
-  const partName = childText(
-    findFirst(root, "score-part") ?? root,
-    "part-name",
-  );
-  track.name = partName || "Piano";
-  track.channel = 0;
-
-  const secondsPerBeat = 60 / tempoBpm;
-  for (const note of notes) {
-    if (note.durationBeats <= 0) continue;
-    track.addNote({
-      midi: note.midi,
-      time: note.startBeats * secondsPerBeat,
-      duration: note.durationBeats * secondsPerBeat,
-      velocity: 0.7,
-    });
-  }
-
-  return midi;
+  return { notes, tempoBpm, timeSignature, keyAccidentals, keyScale };
 }
 
 const KEY_NAMES_BY_FIFTHS = [

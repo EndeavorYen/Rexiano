@@ -1780,9 +1780,6 @@ function App(): React.JSX.Element {
                 </div>
                 <div className="app-side-drawer-body">
                   <section className="app-side-section">
-                    <DisplayModeToggle testIdPrefix="drawer-display-mode" />
-                  </section>
-                  <section className="app-side-section">
                     <DeviceSelector
                       onBeforeBluetoothConnect={closePlaybackDrawer}
                     />

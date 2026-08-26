@@ -928,9 +928,9 @@ test.describe("Playback UI polish guardrails", () => {
     await expect(drawer).toBeVisible();
     await expectLocatorFitsInsideViewport(appPage, drawer);
 
-    const body = drawer.locator(".app-side-drawer-body");
-    await expect(appPage.getByTestId("drawer-display-mode-sheet")).toBeVisible();
+    await expect(appPage.getByTestId("drawer-display-mode-sheet")).toHaveCount(0);
 
+    const body = drawer.locator(".app-side-drawer-body");
     await scrollLocatorIfOverflowing(body, "y");
     await appPage.getByTestId("open-editor").scrollIntoViewIfNeeded();
     await expect(appPage.getByTestId("open-editor")).toBeInViewport();

@@ -6,7 +6,8 @@
  * Produces generated MIDI files in resources/midi/ and updates songs.json.
  * Existing curated songs.json fields such as grade and level tags are preserved.
  * Built-ins with resources/scores/<id>.musicxml treat that score as source of
- * truth; songs without a score keep their programmatic MIDI builders.
+ * truth. Missing scores are materialized from public-domain builders or the
+ * packaged MIDI, then the build writes MIDI from the score.
  * Uses @tonejs/midi for MIDI file creation.
  */
 import { Midi } from "@tonejs/midi";
@@ -18,9 +19,11 @@ import {
   resolveBuiltinSongSource,
 } from "../src/renderer/src/engines/score/builtinScoreSource";
 import { musicXmlToMidi } from "../src/renderer/src/engines/score/musicXmlToMidi";
+import { midiToMusicXml } from "../src/renderer/src/engines/score/midiToMusicXml";
 import {
   addNotesFromBeats,
   applyInferredHandTrackNames,
+  applyNotationHeaderMetadata,
   createSongMetaFromDefinition,
   encodeMidiWithNotationHeaderMetadata,
   mergeGeneratedSongMetadata,
@@ -1735,6 +1738,27 @@ export interface BuildGeneratedSongOptions {
   scoresDir?: string;
 }
 
+export function materializeMissingBuiltinScores(
+  scoresDir: string,
+  defs: readonly SongDef[] = songDefs,
+): string[] {
+  mkdirSync(scoresDir, { recursive: true });
+  const written: string[] = [];
+  for (const def of defs) {
+    const scorePath = join(scoresDir, builtinScoreFileName(def.id));
+    if (existsSync(scorePath)) continue;
+    const midi = def.build();
+    applyInferredHandTrackNames(midi);
+    applyNotationHeaderMetadata(midi, def.tags);
+    writeFileSync(
+      scorePath,
+      midiToMusicXml(midi, { title: def.title, composer: def.composer }),
+    );
+    written.push(def.id);
+  }
+  return written;
+}
+
 function buildMidiForDefinition(def: SongDef, scoresDir: string): Midi {
   const scorePath = join(scoresDir, builtinScoreFileName(def.id));
   const source = resolveBuiltinSongSource({
@@ -1786,7 +1810,7 @@ export function buildGeneratedSongArtifacts(
 }
 
 function updateExistingOnlyMidiHeaders(
-  songsMeta: readonly SongMeta[],
+  songsMeta: SongMeta[],
   generatedIds: ReadonlySet<string>,
 ): void {
   for (const song of songsMeta) {
@@ -1800,6 +1824,19 @@ function updateExistingOnlyMidiHeaders(
 
     const midiObj = new Midi(readFileSync(filePath));
     applyInferredHandTrackNames(midiObj);
+    applyNotationHeaderMetadata(midiObj, song.tags);
+    const scorePath = join(defaultScoresDir, builtinScoreFileName(song.id));
+    if (!existsSync(scorePath)) {
+      writeFileSync(
+        scorePath,
+        midiToMusicXml(midiObj, {
+          title: song.title,
+          composer: song.composer,
+        }),
+      );
+      console.log(`  [score    ] ${song.title.padEnd(32)} → ${builtinScoreFileName(song.id)}`);
+    }
+    song.origin = "score";
     writeFileSync(
       filePath,
       Buffer.from(encodeMidiWithNotationHeaderMetadata(midiObj, song.tags)),
@@ -1870,6 +1907,12 @@ export function runGenerateSongs(): void {
   );
 
   const existingManifest = readExistingManifest();
+  const materialized = materializeMissingBuiltinScores(defaultScoresDir);
+  if (materialized.length > 0) {
+    console.log(
+      `Materialized ${materialized.length} missing public-domain scores from MIDI builders.`,
+    );
+  }
   const { midiFiles, songsMeta } =
     buildGeneratedSongArtifacts(existingManifest);
   const generatedIds = new Set(midiFiles.map((file) => file.id));

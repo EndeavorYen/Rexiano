@@ -1,4 +1,4 @@
-import { mkdtempSync, readFileSync, writeFileSync } from "node:fs";
+import { mkdtempSync, existsSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -7,7 +7,7 @@ import { describe, expect, it, test } from "vitest";
 import { parseMidiFile } from "@renderer/engines/midi/MidiFileParser";
 import type { ParsedSong } from "../src/renderer/src/engines/midi/types";
 import { musicXmlToMidi } from "../src/renderer/src/engines/score/musicXmlToMidi";
-import { buildGeneratedSongArtifacts } from "./generate-songs";
+import { buildGeneratedSongArtifacts, materializeMissingBuiltinScores } from "./generate-songs";
 
 const D5 = 74;
 const E5 = 76;
@@ -234,5 +234,14 @@ describe("buildGeneratedSongArtifacts score-first contract", () => {
     );
 
     expect(noteKeys(packaged)).toEqual(noteKeys(fromScore));
+  });
+
+  test("materializeMissingBuiltinScores writes MusicXML for songs without a score", () => {
+    const scoresDir = mkdtempSync(join(tmpdir(), "rexiano-scores-"));
+    const written = materializeMissingBuiltinScores(scoresDir);
+    expect(written).toContain("twinkle-twinkle");
+    expect(existsSync(join(scoresDir, "twinkle-twinkle.musicxml"))).toBe(true);
+    const xml = readFileSync(join(scoresDir, "twinkle-twinkle.musicxml"), "utf8");
+    expect(xml).toContain("<work-title>Twinkle Twinkle Little Star</work-title>");
   });
 });
