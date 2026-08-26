@@ -54,7 +54,7 @@ export function DisplayModeToggle({
             data-testid={`${testIdPrefix}-${value}`}
           >
             <Icon size={12} />
-            {t(labelKey)}
+            <span className="hidden sm:inline">{t(labelKey)}</span>
           </button>
         );
       })}

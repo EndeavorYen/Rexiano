@@ -52,6 +52,16 @@ describe("inferTrackHandAssignments", () => {
     expect(assignments.every((assignment) => assignment.active)).toBe(true);
   });
 
+  test("treats a single piano track as usable without setup", () => {
+    const assignments = inferTrackHandAssignments([
+      track("Piano", [60, 64, 67]),
+    ]);
+
+    expect(assignments).toEqual([
+      { trackIndex: 0, hand: "both", active: true, confidence: "medium" },
+    ]);
+  });
+
   test("marks percussion and non-piano tracks as background", () => {
     const assignments = inferTrackHandAssignments([
       track("Drums", [36, 38, 42], {

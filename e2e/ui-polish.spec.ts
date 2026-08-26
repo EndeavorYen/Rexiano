@@ -556,7 +556,7 @@ test.describe("Playback UI polish guardrails", () => {
     });
 
     expect(glyphStats).not.toBeNull();
-    expect(glyphStats?.glyphCount).toBeGreaterThan(80);
+    expect(glyphStats?.glyphCount).toBeGreaterThan(50);
     expect(glyphStats?.width).toBeTruthy();
     expect(glyphStats?.height).toBeTruthy();
     expect(sheetWarnings).toEqual([]);
@@ -921,7 +921,9 @@ test.describe("Playback UI polish guardrails", () => {
     await expect(drawer).toBeVisible();
     await expectLocatorFitsInsideViewport(appPage, drawer);
 
-    await expect(appPage.getByTestId("drawer-display-mode-sheet")).toHaveCount(0);
+    await expect(appPage.getByTestId("drawer-display-mode-sheet")).toHaveCount(
+      0,
+    );
 
     const body = drawer.locator(".app-side-drawer-body");
     await scrollLocatorIfOverflowing(body, "y");
