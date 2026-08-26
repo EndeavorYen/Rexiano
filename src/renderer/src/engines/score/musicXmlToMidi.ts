@@ -44,6 +44,9 @@ export function musicXmlToMidi(xml: string): Midi {
   let tempoBpm = 120;
   let cursorDivisions = 0;
   let lastNoteStart = 0;
+  let timeSignature: [number, number] = [4, 4];
+  let keyAccidentals = 0;
+  let keyScale: "major" | "minor" = "major";
   const notes: ScoreNote[] = [];
 
   for (const measure of collect(part, "measure")) {
@@ -52,6 +55,20 @@ export function musicXmlToMidi(xml: string): Midi {
         const rawDivisions = Number(childText(child, "divisions"));
         if (Number.isFinite(rawDivisions) && rawDivisions > 0) {
           divisions = rawDivisions;
+        }
+        const fifths = Number(childText(findFirst(child, "key"), "fifths"));
+        if (Number.isFinite(fifths)) keyAccidentals = fifths;
+        const mode = childText(findFirst(child, "key"), "mode").toLowerCase();
+        if (mode === "minor" || mode === "major") keyScale = mode;
+        const beats = Number(childText(findFirst(child, "time"), "beats"));
+        const beatType = Number(childText(findFirst(child, "time"), "beat-type"));
+        if (
+          Number.isInteger(beats) &&
+          beats > 0 &&
+          Number.isInteger(beatType) &&
+          beatType > 0
+        ) {
+          timeSignature = [beats, beatType];
         }
         continue;
       }
@@ -106,6 +123,16 @@ export function musicXmlToMidi(xml: string): Midi {
 
   const midi = new Midi();
   midi.header.setTempo(tempoBpm);
+  midi.header.timeSignatures = [
+    { ticks: 0, timeSignature, measures: 0 },
+  ];
+  midi.header.keySignatures = [
+    {
+      ticks: 0,
+      key: keyNameFromFifths(keyAccidentals),
+      scale: keyScale,
+    },
+  ];
   const track = midi.addTrack();
   const partName = childText(
     findFirst(root, "score-part") ?? root,
@@ -126,6 +153,29 @@ export function musicXmlToMidi(xml: string): Midi {
   }
 
   return midi;
+}
+
+const KEY_NAMES_BY_FIFTHS = [
+  "Cb",
+  "Gb",
+  "Db",
+  "Ab",
+  "Eb",
+  "Bb",
+  "F",
+  "C",
+  "G",
+  "D",
+  "A",
+  "E",
+  "B",
+  "F#",
+  "C#",
+] as const;
+
+function keyNameFromFifths(fifths: number): string {
+  const clamped = Math.max(-7, Math.min(7, Math.round(fifths)));
+  return KEY_NAMES_BY_FIFTHS[clamped + 7] ?? "C";
 }
 
 function pitchToMidi(pitch: XmlNode): number {

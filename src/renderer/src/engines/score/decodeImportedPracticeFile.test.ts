@@ -2,6 +2,7 @@ import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, test } from "vitest";
+import { parseMidiFile } from "../midi/MidiFileParser";
 import { decodeImportedPracticeFile } from "./decodeImportedPracticeFile";
 
 const scorePath = join(
@@ -23,5 +24,32 @@ describe("decodeImportedPracticeFile", () => {
     expect(
       decodeImportedPracticeFile("song.mid", [1, 2, 3]),
     ).toEqual([1, 2, 3]);
+  });
+
+  test("MusicXML import yields the same pitches as the packaged MIDI", () => {
+    const fromScore = parseMidiFile(
+      "hot-cross-buns.musicxml",
+      decodeImportedPracticeFile(
+        "hot-cross-buns.musicxml",
+        Array.from(readFileSync(scorePath)),
+      ),
+    );
+    const fromMidi = parseMidiFile(
+      "hot-cross-buns.mid",
+      Array.from(
+        readFileSync(
+          join(dirname(fileURLToPath(import.meta.url)), "../../../../../resources/midi/hot-cross-buns.mid"),
+        ),
+      ),
+    );
+    expect(
+      fromScore.tracks.flatMap((track) =>
+        track.notes.map((note) => [note.midi, note.ticks, note.durationTicks]),
+      ),
+    ).toEqual(
+      fromMidi.tracks.flatMap((track) =>
+        track.notes.map((note) => [note.midi, note.ticks, note.durationTicks]),
+      ),
+    );
   });
 });

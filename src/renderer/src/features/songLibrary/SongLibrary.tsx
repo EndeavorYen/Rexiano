@@ -19,7 +19,7 @@ import {
   Square,
   Loader2,
 } from "lucide-react";
-import { parseMidiFile } from "../../engines/midi/MidiFileParser";
+import { parseImportedPracticeFile } from "../../engines/score/decodeImportedPracticeFile";
 import { AudioEngine } from "../../engines/audio/AudioEngine";
 import { useSongStore } from "../../stores/useSongStore";
 import { usePlaybackStore } from "../../stores/usePlaybackStore";
@@ -505,7 +505,7 @@ export function SongLibrary({
       try {
         const result = await source.load();
         if (!result || cancelled) return;
-        const parsed = parseMidiFile(result.fileName, result.data);
+        const parsed = parseImportedPracticeFile(result.fileName, result.data);
         if (cancelled) return;
         setPreviewTrackCounts((current) =>
           current[key] !== undefined
@@ -569,7 +569,7 @@ export function SongLibrary({
       try {
         const result = await window.api.loadBuiltinSong(songId);
         if (result) {
-          const parsed = parseMidiFile(result.fileName, result.data);
+          const parsed = parseImportedPracticeFile(result.fileName, result.data);
           loadSong(parsed);
           const origin =
             songs.find((entry) => entry.id === songId)?.origin ?? "midi";
@@ -634,7 +634,7 @@ export function SongLibrary({
         }
         let parsed;
         try {
-          parsed = parseMidiFile(result.fileName, result.data);
+          parsed = parseImportedPracticeFile(result.fileName, result.data);
         } catch (e) {
           setRecentRecovery(
             getRecentFileRecovery(
@@ -738,7 +738,7 @@ export function SongLibrary({
           setError(t("library.importedMissing"));
           return;
         }
-        const parsed = parseMidiFile(result.fileName, result.data);
+        const parsed = parseImportedPracticeFile(result.fileName, result.data);
         loadSong(parsed);
         reset();
         await window.api.saveRecentFile({
@@ -813,7 +813,7 @@ export function SongLibrary({
           return;
         }
 
-        const parsed = parseMidiFile(result.fileName, result.data);
+        const parsed = parseImportedPracticeFile(result.fileName, result.data);
         const { muted } = useSettingsStore.getState();
         const volume = muted ? 0 : usePlaybackStore.getState().volume;
 
@@ -933,6 +933,7 @@ export function SongLibrary({
             <div className="flex items-center gap-2.5">
               <button
                 onClick={onOpenFile}
+                data-testid="library-import-file"
                 className="btn-primary-themed flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium cursor-pointer"
               >
                 <Upload size={15} />

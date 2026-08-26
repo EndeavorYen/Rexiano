@@ -10,9 +10,9 @@ import {
   approveMidiFolderPath,
   resolveApprovedMidiFolderPath,
 } from "./midiPathAccess";
+import { isPracticeImportPath } from "../../shared/practiceImportFile";
 import { requireTrustedMainFrame } from "./trustedIpc";
 
-const MIDI_FILE_PATTERN = /\.(mid|midi|kar)$/i;
 const DEFAULT_MAX_DEPTH = 8;
 const DEFAULT_MAX_MIDI_FILES = 500;
 
@@ -22,7 +22,7 @@ interface FolderDiscoveryOptions {
 }
 
 function isMidiFile(fileName: string): boolean {
-  return MIDI_FILE_PATTERN.test(fileName);
+  return isPracticeImportPath(fileName);
 }
 
 function shouldSkipEntry(entryName: string): boolean {

@@ -4,6 +4,7 @@ import {
   gotoLibrary,
   loadFirstBuiltInSong,
   openPlaybackDrawer,
+  setDisplayMode,
 } from "./helpers/appHarness";
 
 test.describe("Sheet-only Wait Mode", () => {
@@ -14,7 +15,7 @@ test.describe("Sheet-only Wait Mode", () => {
     await loadFirstBuiltInSong(appPage);
 
     await openPlaybackDrawer(appPage);
-    await appPage.getByTestId("display-mode-sheet").click();
+    await setDisplayMode(appPage, "sheet");
     await closeTopDrawer(appPage);
     await waitForUiSettled(appPage);
 

@@ -4,6 +4,7 @@ import {
   closeTopDrawer,
   gotoLibrary,
   openPlaybackDrawer,
+  setDisplayMode,
   startBuiltInSongFromLibrary,
 } from "./helpers/appHarness";
 
@@ -77,7 +78,7 @@ async function loadBuiltInSongSheet(
   });
 
   await openPlaybackDrawer(appPage);
-  await appPage.getByTestId("display-mode-sheet").click();
+  await setDisplayMode(appPage, "sheet");
   await closeTopDrawer(appPage);
 
   await waitForUiSettled(appPage);

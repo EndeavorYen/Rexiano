@@ -35,6 +35,18 @@ export async function openPlaybackDrawer(page: Page): Promise<Locator> {
   return drawer;
 }
 
+export async function setDisplayMode(
+  page: Page,
+  mode: "falling" | "sheet" | "split",
+): Promise<void> {
+  const drawerButton = page.getByTestId(`drawer-display-mode-${mode}`);
+  if ((await drawerButton.count()) > 0 && (await drawerButton.isVisible())) {
+    await drawerButton.click();
+    return;
+  }
+  await page.getByTestId(`display-mode-${mode}`).click();
+}
+
 export async function closeTopDrawer(page: Page): Promise<void> {
   const closeButton = page.locator(".app-side-drawer-header button").first();
   await expect(closeButton).toBeVisible();
