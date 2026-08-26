@@ -1682,7 +1682,7 @@ function App(): React.JSX.Element {
               </div>
 
               <div
-              className="flex items-center gap-1 shrink-0"
+              className="flex flex-wrap items-center justify-end gap-1 shrink-0 max-w-full"
               data-testid="playback-header-actions"
               >
               <DisplayModeToggle />
@@ -1706,16 +1706,18 @@ function App(): React.JSX.Element {
                   onClick={() => setShowPlaybackDrawer(true)}
                   className="btn-surface-themed flex min-h-9 items-center gap-1 rounded-lg font-body cursor-pointer px-2 py-[3px] text-[10px]"
                   data-testid="playback-drawer-trigger"
+                  aria-label={t("settings.title")}
                 >
                   <PanelRightOpen size={13} />
-                  {t("settings.title")}
+                  <span className="hidden sm:inline">{t("settings.title")}</span>
                 </button>
                 <button
                   onClick={handleExitPlayback}
                   className="btn-surface-themed flex min-h-9 items-center gap-1 rounded-lg font-body cursor-pointer px-2 py-[3px] text-[10px]"
+                  aria-label={t("song.backToLibrary")}
                 >
                   <ArrowLeft size={13} />
-                  {t("song.backToLibrary")}
+                  <span className="hidden sm:inline">{t("song.backToLibrary")}</span>
                 </button>
               </div>
             </div>

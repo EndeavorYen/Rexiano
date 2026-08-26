@@ -160,10 +160,13 @@ test.describe("Per-song practice setup", () => {
     });
     await appPage.getByTestId("mode-select-wait").click();
 
-    await appPage
-      .getByRole("button", { name: /Show advanced controls/i })
-      .click();
-    await appPage.getByRole("button", { name: "Mute All" }).click();
+    const muteAll = appPage.getByRole("button", { name: "Mute All" });
+    if (!(await muteAll.isVisible())) {
+      await appPage
+        .getByRole("button", { name: /advanced controls/i })
+        .click();
+    }
+    await muteAll.click();
 
     const savedSetup = await appPage.evaluate(() => {
       const raw = localStorage.getItem("rexiano-song-practice-setup");
