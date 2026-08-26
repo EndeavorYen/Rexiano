@@ -36,7 +36,7 @@ export const zhTW: TranslationMap = {
   "onboarding.dialogLabel": "歡迎導覽",
   "onboarding.step.start.title": "開始彈琴",
   "onboarding.step.start.description":
-    "使用「開始彈琴」開啟曲庫，選一首內建曲目，或匯入自己的 MIDI 檔案。",
+    "使用「開始彈琴」開啟曲庫，選一首內建曲目，或匯入自己的樂譜或 MIDI。",
   "onboarding.step.choose.title": "選擇曲目",
   "onboarding.step.choose.description":
     "先預覽曲目，準備好時按下「開始練習」。",
@@ -144,7 +144,7 @@ export const zhTW: TranslationMap = {
   "library.practicedTimes": "{count} 次",
   "library.neverPracticed": "尚未練習",
   "library.noSongsYet": "還沒有曲子",
-  "library.noSongsHint": "匯入 MIDI 檔案開始練習吧！",
+  "library.noSongsHint": "匯入樂譜或 MIDI 開始練習吧！",
   "library.emptyRecentHint": "從曲庫選一首內建曲子開始吧！",
   "library.noMatchSearch": "沒有符合搜尋的曲子",
   "library.noMatchHint": "試試其他關鍵字或清除篩選",

@@ -38,7 +38,7 @@ export const en: TranslationMap = {
   "onboarding.dialogLabel": "Welcome guide",
   "onboarding.step.start.title": "Start Playing",
   "onboarding.step.start.description":
-    "Use Start Playing to open the song library and pick a built-in song or import your own MIDI file.",
+    "Use Start Playing to open the song library and pick a built-in song or import a score or MIDI file.",
   "onboarding.step.choose.title": "Choose a Song",
   "onboarding.step.choose.description":
     "Preview a song, then press Practice when you are ready to play.",
@@ -147,7 +147,7 @@ export const en: TranslationMap = {
   "library.practicedTimes": "{count}x",
   "library.neverPracticed": "Not practiced",
   "library.noSongsYet": "No songs here yet",
-  "library.noSongsHint": "Import a MIDI file below to get started!",
+  "library.noSongsHint": "Import a score or MIDI file below to get started!",
   "library.emptyRecentHint": "Pick a song from the library to get started!",
   "library.noMatchSearch": "No songs match your search",
   "library.noMatchHint": "Try a different keyword or clear the filter",
