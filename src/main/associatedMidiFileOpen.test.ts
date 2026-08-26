@@ -24,6 +24,18 @@ describe("associated MIDI file-open lifecycle", () => {
     },
   );
 
+  test("parses a MusicXML path from macOS argv", () => {
+    expect(
+      findAssociatedMidiArgument(
+        [
+          "/Applications/Rexiano.app",
+          "/Users/rex/Music/hot-cross-buns.musicxml",
+        ],
+        "darwin",
+      ),
+    ).toBe("/Users/rex/Music/hot-cross-buns.musicxml");
+  });
+
   test("ignores nonexistent, non-regular, and unrelated candidates", async () => {
     const authorize = vi.fn(async (candidate: string) =>
       candidate === "/music/valid.mid" ? candidate : null,
@@ -34,6 +46,16 @@ describe("associated MIDI file-open lifecycle", () => {
     await expect(queue.enqueue("/music/missing.mid")).resolves.toBe(false);
     await expect(queue.enqueue("/music/valid.mid")).resolves.toBe(true);
     expect(queue.take()).toBe("/music/valid.mid");
+  });
+
+  test("accepts MusicXML as an associated practice file", async () => {
+    const authorize = vi.fn(async (candidate: string) =>
+      candidate.endsWith(".musicxml") ? candidate : null,
+    );
+    const queue = new AssociatedMidiFileOpenQueue(authorize);
+
+    await expect(queue.enqueue("/music/tune.musicxml")).resolves.toBe(true);
+    expect(queue.take()).toBe("/music/tune.musicxml");
   });
 
   test("serializes validation and routes only the latest valid pending file once", async () => {

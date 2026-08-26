@@ -24,7 +24,7 @@ import { AudioEngine } from "../../engines/audio/AudioEngine";
 import { useSongStore } from "../../stores/useSongStore";
 import { usePlaybackStore } from "../../stores/usePlaybackStore";
 import { usePracticeStore } from "../../stores/usePracticeStore";
-import { preferredDisplayModeForSource } from "../../engines/score/builtinScoreSource";
+import { preferredDisplayModeForSource, practiceSourceFromFileName } from "../../engines/score/builtinScoreSource";
 import { useSettingsStore } from "../../stores/useSettingsStore";
 import { useSongLibraryStore } from "../../stores/useSongLibraryStore";
 import { useProgressStore } from "../../stores/useProgressStore";
@@ -654,6 +654,14 @@ export function SongLibrary({
           usePracticeStore
             .getState()
             .setDisplayMode(preferredDisplayModeForSource(origin));
+        } else {
+          usePracticeStore
+            .getState()
+            .setDisplayMode(
+              preferredDisplayModeForSource(
+                practiceSourceFromFileName(result.fileName),
+              ),
+            );
         }
         reset();
         await window.api.saveRecentFile({
@@ -740,6 +748,13 @@ export function SongLibrary({
         }
         const parsed = parseImportedPracticeFile(result.fileName, result.data);
         loadSong(parsed);
+        usePracticeStore
+          .getState()
+          .setDisplayMode(
+            preferredDisplayModeForSource(
+              practiceSourceFromFileName(result.fileName),
+            ),
+          );
         reset();
         await window.api.saveRecentFile({
           path: record.sourcePath,

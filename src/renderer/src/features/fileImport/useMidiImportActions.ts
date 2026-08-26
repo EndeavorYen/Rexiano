@@ -8,8 +8,11 @@ import {
 import { parseMidiFile } from "@renderer/engines/midi/MidiFileParser";
 import { decodeImportedPracticeFile } from "@renderer/engines/score/decodeImportedPracticeFile";
 import {
-  isPracticeImportPath,
-} from "@shared/practiceImportFile";
+  practiceSourceFromFileName,
+  preferredDisplayModeForSource,
+} from "@renderer/engines/score/builtinScoreSource";
+import { isPracticeImportPath } from "@shared/practiceImportFile";
+import { usePracticeStore } from "@renderer/stores/usePracticeStore";
 import type { ParsedSong } from "@renderer/engines/midi/types";
 import {
   getFileImportErrorGuidance,
@@ -179,6 +182,11 @@ export function useMidiImportActions({
         decodeImportedPracticeFile(fileName, data),
       );
       loadSong(parsed);
+      usePracticeStore
+        .getState()
+        .setDisplayMode(
+          preferredDisplayModeForSource(practiceSourceFromFileName(fileName)),
+        );
       resetPlayback();
       setImportError((current) =>
         reduceImportErrorForEvent(current, "import-succeeded"),

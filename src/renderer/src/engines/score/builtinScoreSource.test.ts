@@ -2,6 +2,7 @@ import { describe, expect, test } from "vitest";
 import {
   builtinOriginLabelKey,
   builtinScoreFileName,
+  practiceSourceFromFileName,
   preferredDisplayModeForSource,
   resolveBuiltinSongSource,
   sheetFidelityLabelKey,
@@ -42,5 +43,15 @@ describe("builtinScoreSource", () => {
     expect(builtinOriginLabelKey("midi")).toBe("library.origin.midi");
     expect(sheetFidelityLabelKey("score")).toBe("sheetMusic.fidelity.score");
     expect(sheetFidelityLabelKey("midi")).toBe("sheetMusic.fidelity.approximate");
+  });
+
+  test("imported MusicXML is treated as a score source", () => {
+    expect(practiceSourceFromFileName("hot-cross-buns.musicxml")).toBe("score");
+    expect(practiceSourceFromFileName("lesson.mid")).toBe("midi");
+    expect(
+      preferredDisplayModeForSource(
+        practiceSourceFromFileName("au-clair.musicxml"),
+      ),
+    ).toBe("split");
   });
 });

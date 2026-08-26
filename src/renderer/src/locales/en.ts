@@ -4,21 +4,21 @@ export const en: TranslationMap = {
   // ── App Shell ──────────────────────────────────────────────────
   "app.title": "Rexiano",
   "app.subtitle": "Piano Practice",
-  "app.dropMidi": "Drop .mid file here",
-  "app.supportedFormats": "Supported formats: .mid, .midi",
+  "app.dropMidi": "Drop a score or MIDI file here",
+  "app.supportedFormats": "Supported: .musicxml, .mid, .midi",
   "app.invalidFileType":
-    "Invalid file type: {ext}. Only .mid and .midi files are accepted.",
-  "app.failedParse": "Failed to parse MIDI file.",
+    "Invalid file type: {ext}. Import .musicxml, .mid, or .midi.",
+  "app.failedParse": "Failed to parse the practice file.",
   "app.failedRead": "Failed to read file.",
   "app.importErrorUnsupportedTitle": "Unsupported file type",
   "app.importErrorUnsupportedGuidance":
-    "Only .mid and .midi files can be imported. This file was {ext}.",
-  "app.importErrorOversizedTitle": "MIDI file is too large",
+    "Import a MusicXML score or MIDI file. This file was {ext}.",
+  "app.importErrorOversizedTitle": "File is too large",
   "app.importErrorOversizedGuidance":
-    "{fileName} is larger than the 8 MiB safety limit. Choose a smaller MIDI file.",
-  "app.importErrorParseTitle": "MIDI file could not be parsed",
+    "{fileName} is larger than the 8 MiB safety limit. Choose a smaller file.",
+  "app.importErrorParseTitle": "File could not be parsed",
   "app.importErrorParseGuidance":
-    "Check that {fileName} is a valid MIDI file, then try importing it again.",
+    "Check that {fileName} is a valid MusicXML or MIDI file, then try importing it again.",
   "app.importErrorMissingTitle": "Recent file is no longer available",
   "app.importErrorMissingGuidance":
     "{fileName} may have moved or become unreadable. Import it again from its current location.",
@@ -26,7 +26,7 @@ export const en: TranslationMap = {
   "app.importErrorReadGuidance":
     "Check file permissions for {fileName}, then try again.",
   "app.importErrorUnknownFile": "this file",
-  "app.importActionChooseMidi": "Choose a MIDI file",
+  "app.importActionChooseMidi": "Choose a score or MIDI file",
   "app.importActionRetry": "Try again",
   "app.importActionReimport": "Import again",
   "app.importActionOpenPermissions": "Check file permissions",

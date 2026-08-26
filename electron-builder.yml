@@ -15,7 +15,7 @@ extraResources:
   - from: CHANGELOG.md
     to: CHANGELOG.md
 
-# --- File associations: open .mid / .midi files with Rexiano ---
+# --- File associations: open scores and MIDI with Rexiano ---
 fileAssociations:
   - ext: mid
     name: MIDI File
@@ -26,6 +26,11 @@ fileAssociations:
     name: MIDI File
     description: Standard MIDI file
     mimeType: audio/midi
+    role: Viewer
+  - ext: musicxml
+    name: MusicXML Score
+    description: MusicXML score
+    mimeType: application/vnd.recordare.musicxml+xml
     role: Viewer
 
 # --- Windows ---
@@ -102,6 +107,7 @@ linux:
   mimeTypes:
     - audio/midi
     - audio/x-midi
+    - application/vnd.recordare.musicxml+xml
 appImage:
   artifactName: ${name}-${version}-${arch}.${ext}
 deb:
