@@ -14,6 +14,7 @@ import {
   gotoLibrary,
   loadFirstBuiltInSong,
   openPlaybackDrawer,
+  setDisplayMode,
   startBuiltInSongFromLibrary,
 } from "./helpers/appHarness";
 
@@ -363,8 +364,7 @@ test("all themes render semantic selected, danger, boundary, and focus colors", 
       fullSpeed,
       `${themeId} practice speed`,
     );
-    await appPage.getByTestId("playback-drawer-trigger").click();
-    await appPage.getByTestId("display-mode-falling").click();
+    await setDisplayMode(appPage, "falling");
     await expectSemanticFilledControl(
       appPage,
       appPage.getByTestId("display-mode-falling"),

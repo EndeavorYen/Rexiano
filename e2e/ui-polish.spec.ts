@@ -4,6 +4,7 @@ import {
   gotoLibrary,
   loadFirstBuiltInSong,
   openPlaybackDrawer,
+  setDisplayMode,
   startBuiltInSongFromLibrary,
 } from "./helpers/appHarness";
 
@@ -421,8 +422,7 @@ test.describe("Playback UI polish guardrails", () => {
     await loadFirstBuiltInSong(appPage);
     await waitForUiSettled(appPage);
 
-    await appPage.getByTestId("playback-drawer-trigger").click();
-    await appPage.getByTestId("display-mode-split").click();
+    await setDisplayMode(appPage, "split");
     await waitForUiSettled(appPage);
     await appPage.keyboard.press("1");
 
@@ -472,14 +472,12 @@ test.describe("Playback UI polish guardrails", () => {
     await loadFirstBuiltInSong(appPage);
     await waitForUiSettled(appPage);
 
-    await appPage.getByTestId("playback-drawer-trigger").click();
-
-    await appPage.getByTestId("display-mode-sheet").click();
+    await setDisplayMode(appPage, "sheet");
     await waitForUiSettled(appPage);
     await expect(appPage.getByTestId("sheet-music-panel")).toBeVisible();
     await expect(appPage.getByTestId("falling-notes-panel")).toBeHidden();
 
-    await appPage.getByTestId("display-mode-split").click();
+    await setDisplayMode(appPage, "split");
     await waitForUiSettled(appPage);
     await expect(appPage.getByTestId("sheet-music-panel")).toBeVisible();
     await expect(appPage.getByTestId("falling-notes-panel")).toBeVisible();
@@ -533,8 +531,7 @@ test.describe("Playback UI polish guardrails", () => {
     await loadFirstBuiltInSong(appPage);
     await waitForUiSettled(appPage);
 
-    await appPage.getByTestId("playback-drawer-trigger").click();
-    await appPage.getByTestId("display-mode-split").click();
+    await setDisplayMode(appPage, "split");
     await waitForUiSettled(appPage);
 
     const host = appPage.getByTestId("sheet-music-svg-host");
@@ -573,8 +570,7 @@ test.describe("Playback UI polish guardrails", () => {
     await loadFirstBuiltInSong(appPage);
     await waitForUiSettled(appPage);
 
-    await appPage.getByTestId("playback-drawer-trigger").click();
-    await appPage.getByTestId("display-mode-split").click();
+    await setDisplayMode(appPage, "split");
     await waitForUiSettled(appPage);
 
     const transport = appPage.getByTestId("transport-strip");
@@ -658,8 +654,7 @@ test.describe("Playback UI polish guardrails", () => {
     await loadFirstBuiltInSong(appPage);
     await waitForUiSettled(appPage);
 
-    await appPage.getByTestId("playback-drawer-trigger").click();
-    await appPage.getByTestId("display-mode-split").click();
+    await setDisplayMode(appPage, "split");
     await waitForUiSettled(appPage);
 
     const bpmTextCount = await appPage.getByText(/BPM/i).count();
@@ -694,8 +689,7 @@ test.describe("Playback UI polish guardrails", () => {
     }
 
     await loadFirstBuiltInSong(appPage);
-    await appPage.getByTestId("playback-drawer-trigger").click();
-    await appPage.getByTestId("display-mode-sheet").click();
+    await setDisplayMode(appPage, "sheet");
     await waitForUiSettled(appPage);
     await appPage.keyboard.press("Escape");
     await waitForUiSettled(appPage);
@@ -743,8 +737,7 @@ test.describe("Playback UI polish guardrails", () => {
     await appPage.setViewportSize({ width: 390, height: 844 });
     await gotoLibrary(appPage);
     await loadFirstBuiltInSong(appPage);
-    await appPage.getByTestId("playback-drawer-trigger").click();
-    await appPage.getByTestId("display-mode-sheet").click();
+    await setDisplayMode(appPage, "sheet");
     await waitForUiSettled(appPage);
     await appPage.keyboard.press("Escape");
     await waitForUiSettled(appPage);

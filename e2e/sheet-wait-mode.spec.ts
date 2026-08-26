@@ -1,9 +1,7 @@
 import { test, expect, waitForUiSettled } from "./fixtures/electronApp";
 import {
-  closeTopDrawer,
   gotoLibrary,
   loadFirstBuiltInSong,
-  openPlaybackDrawer,
   setDisplayMode,
 } from "./helpers/appHarness";
 
@@ -14,9 +12,7 @@ test.describe("Sheet-only Wait Mode", () => {
     await gotoLibrary(appPage);
     await loadFirstBuiltInSong(appPage);
 
-    await openPlaybackDrawer(appPage);
     await setDisplayMode(appPage, "sheet");
-    await closeTopDrawer(appPage);
     await waitForUiSettled(appPage);
 
     await expect(appPage.getByTestId("sheet-music-panel")).toBeVisible();
