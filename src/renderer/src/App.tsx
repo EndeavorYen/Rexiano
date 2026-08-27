@@ -39,8 +39,6 @@ import { SettingsPanel } from "./features/settings/SettingsPanel";
 import { SongLibrary } from "./features/songLibrary/SongLibrary";
 import { DeviceSelector } from "./features/midiDevice/DeviceSelector";
 import { BluetoothDeviceSelectionDialog } from "./features/midiDevice/BluetoothDeviceSelectionDialog";
-import { WeakSpotAnalyzer } from "./features/insights/WeakSpotAnalyzer";
-import { buildSessionSummariesForSong } from "./features/insights/sessionSummary";
 import {
   getMidiPlaybackOutputSender,
   useMidiDeviceStore,
@@ -128,8 +126,6 @@ function getMutedTrackIndices(
   }
   return mutedTracks;
 }
-
-const analyzer = new WeakSpotAnalyzer();
 
 function App(): React.JSX.Element {
   const { t } = useTranslation();
@@ -332,14 +328,7 @@ function App(): React.JSX.Element {
     };
   }, [resetAppViewportScroll, showModeModal, song, view]);
 
-  const sessions = useProgressStore((s) => s.sessions);
   const songId = song?.fileName ?? "";
-
-  const insight = useMemo(() => {
-    if (!songId || sessions.length === 0) return null;
-    const summaries = buildSessionSummariesForSong(songId, sessions, song);
-    return analyzer.analyze(songId, summaries);
-  }, [song, songId, sessions]);
 
   const nextPracticeAction = useMemo(
     () =>
@@ -347,18 +336,8 @@ function App(): React.JSX.Element {
         score: displayScore,
         mode,
         speed,
-        tracksPlayed: Array.from(activeTracks),
-        weakSpots: insight?.weakSpots,
-        weakSections: insight?.weakSections,
       }),
-    [
-      activeTracks,
-      displayScore,
-      insight?.weakSections,
-      insight?.weakSpots,
-      mode,
-      speed,
-    ],
+    [displayScore, mode, speed],
   );
 
   // ─── Phase 7: Sheet Music ──────────────────────────────

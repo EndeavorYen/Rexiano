@@ -81,32 +81,26 @@ describe("selectNextPracticeAction", () => {
     });
   });
 
-  test("suggests trying the left hand after a strong right-hand pass", () => {
+  test("repeats the same live pass instead of coaching the other hand", () => {
     expect(
       selectNextPracticeAction({
         score: score({ accuracy: 90, missedNotes: 4 }),
         mode: "wait",
         speed: 1,
-        tracksPlayed: [0],
-        handAssignments: { 0: "right", 1: "left" },
       }),
     ).toMatchObject({
-      kind: "try-other-hand",
-      priority: "medium",
-      targetTracks: [1],
+      kind: "repeat-once",
+      priority: "low",
       targetMode: "wait",
-      reason: "other-hand-ready",
     });
   });
 
-  test("keeps slow-down as the first action for low-accuracy one-hand practice", () => {
+  test("keeps slow-down as the first action for a low-accuracy pass", () => {
     expect(
       selectNextPracticeAction({
         score: score({ accuracy: 58, missedNotes: 18 }),
         mode: "wait",
         speed: 1,
-        tracksPlayed: [0],
-        handAssignments: { 0: "right", 1: "left" },
       }),
     ).toMatchObject({
       kind: "slow-down",
@@ -114,66 +108,40 @@ describe("selectNextPracticeAction", () => {
     });
   });
 
-  test("suggests the weakest note after a solid session with weak-spot data", () => {
+  test("repeats a solid session instead of coaching a weak note", () => {
     expect(
       selectNextPracticeAction({
         score: score({ accuracy: 86, missedNotes: 5 }),
         mode: "wait",
         speed: 1,
-        weakSpots: [
-          { midi: 64, noteName: "E4", missRate: 0.4, totalAttempts: 5 },
-          { midi: 60, noteName: "C4", missRate: 0.75, totalAttempts: 8 },
-        ],
       }),
     ).toMatchObject({
-      kind: "practice-weak-note",
-      priority: "medium",
-      targetMidi: 60,
+      kind: "repeat-once",
+      priority: "low",
       targetMode: "wait",
-      reason: "weak-note-ready",
     });
   });
 
-  test("suggests looping the weakest measure after a solid session with weak-section data", () => {
+  test("repeats a solid session instead of looping a weak measure", () => {
     expect(
       selectNextPracticeAction({
         score: score({ accuracy: 88, missedNotes: 4 }),
         mode: "wait",
         speed: 1,
-        weakSections: [
-          {
-            measureIndex: 1,
-            measureNumber: 2,
-            missRate: 0.4,
-            totalAttempts: 5,
-          },
-          {
-            measureIndex: 3,
-            measureNumber: 4,
-            missRate: 0.75,
-            totalAttempts: 8,
-          },
-        ],
       }),
     ).toMatchObject({
-      kind: "practice-weak-section",
-      priority: "medium",
-      targetMeasureIndex: 3,
-      targetMeasureNumber: 4,
+      kind: "repeat-once",
+      priority: "low",
       targetMode: "wait",
-      reason: "weak-section-ready",
     });
   });
 
-  test("keeps slow-down ahead of weak-note suggestions for low accuracy", () => {
+  test("keeps slow-down ahead of a solid-pass suggestion for low accuracy", () => {
     expect(
       selectNextPracticeAction({
         score: score({ accuracy: 62, missedNotes: 15 }),
         mode: "wait",
         speed: 1,
-        weakSpots: [
-          { midi: 60, noteName: "C4", missRate: 0.75, totalAttempts: 8 },
-        ],
       }),
     ).toMatchObject({
       kind: "slow-down",

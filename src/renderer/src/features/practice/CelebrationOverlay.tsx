@@ -56,9 +56,6 @@ const NEXT_ACTION_TITLE_KEYS: Record<
   "slow-down": "celebration.nextAction.slowDown.title",
   "raise-speed": "celebration.nextAction.raiseSpeed.title",
   "repeat-once": "celebration.nextAction.repeatOnce.title",
-  "try-other-hand": "celebration.nextAction.tryOtherHand.title",
-  "practice-weak-note": "celebration.nextAction.practiceWeakNote.title",
-  "practice-weak-section": "celebration.nextAction.practiceWeakSection.title",
   "next-song": "celebration.nextAction.nextSong.title",
 };
 
@@ -69,9 +66,6 @@ const NEXT_ACTION_BODY_KEYS: Record<
   "slow-down": "celebration.nextAction.slowDown.body",
   "raise-speed": "celebration.nextAction.raiseSpeed.body",
   "repeat-once": "celebration.nextAction.repeatOnce.body",
-  "try-other-hand": "celebration.nextAction.tryOtherHand.body",
-  "practice-weak-note": "celebration.nextAction.practiceWeakNote.body",
-  "practice-weak-section": "celebration.nextAction.practiceWeakSection.body",
   "next-song": "celebration.nextAction.nextSong.body",
 };
 
@@ -377,8 +371,6 @@ export function CelebrationOverlay({
             >
               {t(NEXT_ACTION_BODY_KEYS[nextAction.kind], {
                 speed: formatSpeed(nextAction.targetSpeed),
-                measure: nextAction.targetMeasureNumber ?? "",
-                note: nextAction.targetMidi ?? "",
               })}
             </p>
           </div>
