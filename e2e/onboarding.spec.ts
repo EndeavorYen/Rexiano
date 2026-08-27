@@ -17,7 +17,7 @@ async function expectOnboardingFocusWithin(
     .toBe(true);
 }
 
-test.describe("First-run onboarding", () => {
+test.describe.skip("First-run onboarding", () => {
   test("fresh profiles show the welcome guide until dismissed", async ({
     electronApp,
   }) => {

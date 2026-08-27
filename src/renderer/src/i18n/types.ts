@@ -21,6 +21,8 @@ export interface TranslationMap {
   "app.importErrorMissingGuidance": string;
   "app.importErrorReadTitle": string;
   "app.importErrorReadGuidance": string;
+  "app.importErrorEmptyTitle": string;
+  "app.importErrorEmptyGuidance": string;
   "app.importErrorUnknownFile": string;
   "app.importActionChooseMidi": string;
   "app.importActionRetry": string;
@@ -31,6 +33,8 @@ export interface TranslationMap {
   "app.startPractice": string;
   "app.openSettings": string;
   "app.menuGreeting": string;
+  "progress.saveFailed": string;
+  "progress.retrySave": string;
   "onboarding.dialogLabel": string;
   "onboarding.step.start.title": string;
   "onboarding.step.start.description": string;

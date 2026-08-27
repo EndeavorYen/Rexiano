@@ -59,6 +59,26 @@ describe("getFileImportErrorGuidance", () => {
     });
   });
 
+  test("maps empty MIDI files to a choose-another-file recovery", () => {
+    expect(
+      getFileImportErrorGuidance(
+        { kind: "empty-song", fileName: "silence.mid" },
+        t,
+      ),
+    ).toEqual({
+      title: "app.importErrorEmptyTitle",
+      guidance: "app.importErrorEmptyGuidance:fileName=silence.mid",
+      diagnostic: "silence.mid",
+      actions: [
+        {
+          id: "choose-midi-file",
+          label: "app.importActionChooseMidi",
+          emphasis: "primary",
+        },
+      ],
+    });
+  });
+
   test("maps oversized files to a localized choose-another-file recovery", () => {
     expect(
       getFileImportErrorGuidance(

@@ -25,6 +25,9 @@ export const en: TranslationMap = {
   "app.importErrorReadTitle": "File could not be read",
   "app.importErrorReadGuidance":
     "Check file permissions for {fileName}, then try again.",
+  "app.importErrorEmptyTitle": "MIDI file has no playable notes",
+  "app.importErrorEmptyGuidance":
+    "{fileName} has no notes to practice. Choose a MIDI file that includes playable notes.",
   "app.importErrorUnknownFile": "this file",
   "app.importActionChooseMidi": "Choose a MIDI file",
   "app.importActionRetry": "Try again",
@@ -35,6 +38,8 @@ export const en: TranslationMap = {
   "app.startPractice": "Start Playing",
   "app.openSettings": "Settings",
   "app.menuGreeting": "What shall we play today?",
+  "progress.saveFailed": "Practice progress could not be saved.",
+  "progress.retrySave": "Retry save",
   "onboarding.dialogLabel": "Welcome guide",
   "onboarding.step.start.title": "Start Playing",
   "onboarding.step.start.description":
@@ -228,7 +233,7 @@ export const en: TranslationMap = {
   // ── Falling Notes ──────────────────────────────────────────────
   "fallingNotes.renderFailureTitle": "Falling notes could not start",
   "fallingNotes.renderFailureGuidance":
-    "Try Sheet view, update your graphics drivers, or restart Rexiano.",
+    "Update your graphics drivers, or restart Rexiano.",
 
   // ── Song Header ────────────────────────────────────────────────
   "song.tracks": "tracks",

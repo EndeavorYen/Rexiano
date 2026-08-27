@@ -7,6 +7,11 @@ import {
   startBuiltInSongFromLibrary,
 } from "./helpers/appHarness";
 
+test.skip(
+  true,
+  "Audio compatibility toggle left the live settings surface (#241)",
+);
+
 interface AudioRecoveryFixtureWindow extends Window {
   __rexianoSetAudioRecoveryDelayFixture?: (delayMs: number) => void;
 }

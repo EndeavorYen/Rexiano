@@ -426,17 +426,12 @@ describe("buildSongSelectionPreviewModel", () => {
 });
 
 describe("buildSongPreviewSessionActions", () => {
-  test("offers practice first and play along second for new practice sessions", () => {
+  test("offers a single practice action and does not resurrect play-along/Free", () => {
     expect(buildSongPreviewSessionActions("practice")).toEqual([
       {
         intent: "practice",
         labelKey: "library.recommendation.cta",
         emphasis: "primary",
-      },
-      {
-        intent: "play-along",
-        labelKey: "library.preview.playAlong",
-        emphasis: "secondary",
       },
     ]);
   });

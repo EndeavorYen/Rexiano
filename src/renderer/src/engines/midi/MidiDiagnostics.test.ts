@@ -3,6 +3,7 @@ import type { ParsedNote, ParsedSong, ParsedTrack } from "./types";
 import {
   buildMidiAuthoringChecklist,
   diagnoseParsedSong,
+  isParsedSongPracticeReady,
   summarizeMidiDiagnostics,
 } from "./MidiDiagnostics";
 
@@ -220,6 +221,10 @@ describe("summarizeMidiDiagnostics", () => {
       errorCount: 1,
       codes: ["empty-song"],
     });
+    expect(isParsedSongPracticeReady(song({ tracks: [], noteCount: 0 }))).toBe(
+      false,
+    );
+    expect(isParsedSongPracticeReady(song())).toBe(true);
   });
 });
 

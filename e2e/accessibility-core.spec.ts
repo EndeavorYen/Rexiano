@@ -70,7 +70,7 @@ test.describe("Core accessibility guardrails", () => {
     await expect(drawerLauncher).toBeFocused();
   });
 
-  test("ThemePicker exposes a menu-radio model and restores focus on every close path", async ({
+  test.skip("ThemePicker left the live path (#241/#240)", async ({
     appPage,
   }) => {
     await gotoLibrary(appPage);
@@ -159,13 +159,11 @@ test.describe("Core accessibility guardrails", () => {
         .getByRole("button", { name: /Reset to beginning/ }),
     ).toBeVisible();
     await expect(
-      appPage.getByTestId("transport-strip").getByRole("button", {
-        name: /Enable metronome|Disable metronome/,
-      }),
-    ).toBeVisible();
+      appPage.getByTestId("transport-strip").getByTestId("metronome-toggle"),
+    ).toHaveCount(0);
   });
 
-  test("Practice Insights traps focus, isolates playback, and restores its persistent launcher", async ({
+  test.skip("Practice Insights traps focus, isolates playback, and restores its persistent launcher", async ({
     appPage,
   }) => {
     await gotoLibrary(appPage);

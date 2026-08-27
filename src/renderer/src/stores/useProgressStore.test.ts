@@ -64,6 +64,8 @@ describe("useProgressStore", () => {
     useProgressStore.setState({
       sessions: [],
       isLoaded: false,
+      saveError: false,
+      unsavedSession: null,
     });
   });
 
@@ -72,6 +74,8 @@ describe("useProgressStore", () => {
     const s = useProgressStore.getState();
     expect(s.sessions).toEqual([]);
     expect(s.isLoaded).toBe(false);
+    expect(s.saveError).toBe(false);
+    expect(s.unsavedSession).toBeNull();
   });
 
   // ─── loadSessions() ──────────────────────────────────
@@ -120,6 +124,24 @@ describe("useProgressStore", () => {
     // Session should NOT be added to local state on error
     const s = useProgressStore.getState();
     expect(s.sessions).toHaveLength(0);
+    expect(s.saveError).toBe(true);
+    expect(s.unsavedSession).toEqual(session);
+  });
+
+  test("retryFailedSave() persists the unsaved session after a failure", async () => {
+    vi.mocked(window.api.saveSession)
+      .mockRejectedValueOnce(new Error("disk full"))
+      .mockResolvedValueOnce(undefined);
+
+    const session = makeSession();
+    await useProgressStore.getState().addSession(session);
+    await useProgressStore.getState().retryFailedSave();
+
+    expect(window.api.saveSession).toHaveBeenCalledTimes(2);
+    const s = useProgressStore.getState();
+    expect(s.saveError).toBe(false);
+    expect(s.unsavedSession).toBeNull();
+    expect(s.sessions).toEqual([session]);
   });
 
   // ─── getSessionsBySong() ─────────────────────────────

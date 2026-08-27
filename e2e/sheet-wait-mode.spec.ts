@@ -6,7 +6,7 @@ import {
   openPlaybackDrawer,
 } from "./helpers/appHarness";
 
-test.describe("Sheet-only Wait Mode", () => {
+test.describe.skip("Sheet-only Wait Mode", () => {
   test("keeps playback gated with no falling-notes renderer mounted", async ({
     appPage,
   }) => {

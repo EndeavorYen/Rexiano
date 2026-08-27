@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo } from "react";
 import {
   Play,
   Clock3,
@@ -6,24 +6,14 @@ import {
   Flame,
   SlidersHorizontal,
   ArrowUpRight,
-  CalendarDays,
-  TrendingUp,
 } from "lucide-react";
 import appIcon from "../../../../../docs/figure/Rexiano_icon.png";
 import { useTranslation } from "@renderer/i18n/useTranslation";
 import { useProgressStore } from "@renderer/stores/useProgressStore";
 import { useSettingsStore } from "@renderer/stores/useSettingsStore";
-import {
-  buildParentPracticeReport,
-  type ParentPracticeAccuracyLevel,
-  type ParentPracticeConsistencyLevel,
-  type ParentPracticeReport,
-} from "@renderer/features/statistics/practiceCalendar";
 import { LanguageSwitcher } from "@renderer/features/settings/LanguageSwitcher";
 import { formatRelativeTime } from "@renderer/utils/relativeTime";
 import type { RecentFile } from "@shared/types";
-
-const MS_PER_DAY = 86_400_000;
 
 interface MainMenuProps {
   onStartPractice: () => void;
@@ -45,7 +35,6 @@ export function MainMenu({
   const defaultMode = useSettingsStore((s) => s.defaultMode);
   const defaultSpeed = useSettingsStore((s) => s.defaultSpeed);
   const recentFiles = allRecents.slice(0, 5);
-  const [reportNow] = useState(() => Date.now());
 
   useEffect(() => {
     if (!isProgressLoaded) {
@@ -55,7 +44,6 @@ export function MainMenu({
 
   const defaultModeLabel = useMemo(() => {
     if (defaultMode === "wait") return t("practice.wait");
-    if (defaultMode === "free") return t("practice.free");
     return t("practice.watch");
   }, [defaultMode, t]);
 
@@ -68,21 +56,6 @@ export function MainMenu({
 
   const totalSessions = sessions.length;
   const practicedSongs = new Set(sessions.map((s) => s.songId)).size;
-  const { weeklyReport, monthlyReport } = useMemo(() => {
-    const now = reportNow;
-    const endTimestamp = now + 1;
-
-    return {
-      weeklyReport: buildParentPracticeReport(sessions, {
-        startTimestamp: now - 7 * MS_PER_DAY,
-        endTimestamp,
-      }),
-      monthlyReport: buildParentPracticeReport(sessions, {
-        startTimestamp: now - 30 * MS_PER_DAY,
-        endTimestamp,
-      }),
-    };
-  }, [reportNow, sessions]);
 
   return (
     <div className="flex-1 min-h-0 app-shell overflow-y-auto px-6 py-8">
@@ -180,12 +153,6 @@ export function MainMenu({
             </section>
 
             <div className="space-y-4">
-              <ParentPracticeReportCard
-                report={weeklyReport}
-                monthlyReport={monthlyReport}
-                onStartPractice={onStartPractice}
-              />
-
               <aside className="surface-elevated p-4 sm:p-5 space-y-3">
                 <div
                   className="flex items-center gap-2 text-[11px] font-mono uppercase tracking-[0.16em]"
@@ -251,188 +218,6 @@ export function MainMenu({
       </div>
     </div>
   );
-}
-
-function ParentPracticeReportCard({
-  report,
-  monthlyReport,
-  onStartPractice,
-}: {
-  report: ParentPracticeReport;
-  monthlyReport: ParentPracticeReport;
-  onStartPractice: () => void;
-}): React.JSX.Element {
-  const { t } = useTranslation();
-  const hasPractice = report.summary.sessionCount > 0;
-
-  return (
-    <aside
-      className="surface-elevated p-4 sm:p-5 space-y-3"
-      data-testid="parent-practice-report"
-    >
-      <div
-        className="flex items-center gap-2 text-[11px] font-mono uppercase tracking-[0.16em]"
-        style={{ color: "var(--color-text-muted)" }}
-      >
-        <CalendarDays size={13} />
-        {t("parentReport.title")}
-      </div>
-
-      <div className="grid grid-cols-2 gap-2">
-        <ReportMetric
-          label={t("parentReport.week")}
-          value={formatReportMinutes(report.summary.totalMinutes, t)}
-        />
-        <ReportMetric
-          label={t("parentReport.activeDays")}
-          value={t("parentReport.activeDaysValue", {
-            count: report.summary.activeDayCount,
-          })}
-        />
-      </div>
-
-      {hasPractice ? (
-        <div className="space-y-2">
-          <ReportStatusRow
-            label={t("parentReport.consistency")}
-            value={consistencyLabel(report.consistencyLevel, t)}
-            testId="parent-report-consistency"
-          />
-          <ReportStatusRow
-            label={t("parentReport.accuracy")}
-            value={accuracyLabel(report.accuracyLevel, t)}
-            testId="parent-report-accuracy"
-          />
-          <button
-            type="button"
-            onClick={onStartPractice}
-            className="card-hover w-full rounded-lg px-3.5 py-2.5 text-left cursor-pointer"
-            style={{
-              background:
-                "color-mix(in srgb, var(--color-accent) 9%, var(--color-surface))",
-              border:
-                "1px solid color-mix(in srgb, var(--color-accent) 26%, var(--color-border))",
-            }}
-            data-testid="parent-report-next-focus"
-          >
-            <span
-              className="flex items-center gap-2 text-xs font-body font-medium"
-              style={{ color: "var(--color-text)" }}
-            >
-              <TrendingUp size={13} style={{ color: "var(--color-accent)" }} />
-              {report.nextFocusSong
-                ? t("parentReport.nextFocusValue", {
-                    songTitle: report.nextFocusSong.songTitle,
-                  })
-                : t("parentReport.noFocus")}
-            </span>
-          </button>
-          {report.bestImprovement ? (
-            <p
-              className="text-[11px]"
-              style={{ color: "var(--color-text-muted)" }}
-            >
-              {t("parentReport.bestImprovementValue", {
-                songTitle: report.bestImprovement.songTitle,
-                delta: report.bestImprovement.accuracyDelta,
-              })}
-            </p>
-          ) : null}
-        </div>
-      ) : (
-        <p className="text-sm" style={{ color: "var(--color-text-muted)" }}>
-          {t("parentReport.empty")}
-        </p>
-      )}
-
-      <p
-        className="text-[11px] font-body"
-        style={{ color: "var(--color-text-muted)" }}
-        data-testid="parent-report-monthly"
-      >
-        {t("parentReport.month")} ·{" "}
-        {formatReportMinutes(monthlyReport.summary.totalMinutes, t)}
-      </p>
-    </aside>
-  );
-}
-
-function ReportMetric({
-  label,
-  value,
-}: {
-  label: string;
-  value: string;
-}): React.JSX.Element {
-  return (
-    <div
-      className="rounded-lg px-3 py-2"
-      style={{
-        background: "color-mix(in srgb, var(--color-surface) 78%, transparent)",
-        border: "1px solid var(--color-border)",
-      }}
-    >
-      <p
-        className="text-[10px] font-mono uppercase tracking-[0.12em]"
-        style={{ color: "var(--color-text-muted)" }}
-      >
-        {label}
-      </p>
-      <p className="text-lg font-display font-semibold leading-tight">
-        {value}
-      </p>
-    </div>
-  );
-}
-
-function ReportStatusRow({
-  label,
-  value,
-  testId,
-}: {
-  label: string;
-  value: string;
-  testId: string;
-}): React.JSX.Element {
-  return (
-    <div
-      className="flex items-center justify-between gap-3 text-xs"
-      data-testid={testId}
-    >
-      <span style={{ color: "var(--color-text-muted)" }}>{label}</span>
-      <span className="font-body font-semibold">{value}</span>
-    </div>
-  );
-}
-
-function formatReportMinutes(
-  minutes: number,
-  t: ReturnType<typeof useTranslation>["t"],
-): string {
-  const count = Number.isInteger(minutes) ? `${minutes}` : minutes.toFixed(1);
-  return t("parentReport.minutes", { count });
-}
-
-function consistencyLabel(
-  level: ParentPracticeConsistencyLevel,
-  t: ReturnType<typeof useTranslation>["t"],
-): string {
-  if (level === "strong") return t("parentReport.consistency.strong");
-  if (level === "steady") return t("parentReport.consistency.steady");
-  if (level === "light") return t("parentReport.consistency.light");
-  return t("parentReport.consistency.empty");
-}
-
-function accuracyLabel(
-  level: ParentPracticeAccuracyLevel,
-  t: ReturnType<typeof useTranslation>["t"],
-): string {
-  if (level === "confident") return t("parentReport.accuracy.confident");
-  if (level === "building") return t("parentReport.accuracy.building");
-  if (level === "needs-support") {
-    return t("parentReport.accuracy.needsSupport");
-  }
-  return t("parentReport.accuracy.empty");
 }
 
 function MetaPill({

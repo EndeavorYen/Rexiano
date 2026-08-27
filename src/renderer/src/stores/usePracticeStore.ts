@@ -83,7 +83,8 @@ export const usePracticeStore = create<PracticeState>()((set) => ({
 
   setLoopRange: (range) => set({ loopRange: range }),
 
-  setDisplayMode: (displayMode) => set({ displayMode }),
+  setDisplayMode: (displayMode) =>
+    set({ displayMode: displayMode === "sheet" ? "falling" : displayMode }),
 
   setActiveTracks: (tracks) =>
     set({ activeTracks: tracks, activeTracksInitialized: true }),

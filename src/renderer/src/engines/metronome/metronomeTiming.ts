@@ -62,11 +62,14 @@ export function resolveMetronomeTiming(
 export function shouldRunPlaybackCountIn({
   currentTime,
   countInBeats,
+  metronomeEnabled,
 }: {
   currentTime: number;
   countInBeats: number;
+  metronomeEnabled: boolean;
 }): boolean {
   return (
+    metronomeEnabled === true &&
     Number.isFinite(currentTime) &&
     currentTime <= POSITION_EPSILON_SECONDS &&
     Number.isFinite(countInBeats) &&
@@ -78,14 +81,16 @@ export function canArmPlaybackCountIn({
   hasMetronomeEngine,
   currentTime,
   countInBeats,
+  metronomeEnabled,
 }: {
   hasMetronomeEngine: boolean;
   currentTime: number;
   countInBeats: number;
+  metronomeEnabled: boolean;
 }): boolean {
   return (
     hasMetronomeEngine &&
-    shouldRunPlaybackCountIn({ currentTime, countInBeats })
+    shouldRunPlaybackCountIn({ currentTime, countInBeats, metronomeEnabled })
   );
 }
 

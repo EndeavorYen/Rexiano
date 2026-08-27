@@ -1,8 +1,16 @@
+import { join, resolve } from "path";
 import { beforeEach, describe, expect, test, vi } from "vitest";
 import type { RecentFile, SessionRecord } from "../../shared/types";
 
+const mocks = vi.hoisted(() => ({
+  mockFileContents: {} as Record<string, string>,
+  fsKey: (p: string): string => p.replace(/\\/g, "/"),
+}));
+
+mocks.fsKey = (p: string): string => resolve(p).replace(/\\/g, "/");
+
 const mockUserDataPath = "/mock/userData";
-let mockFileContents: Record<string, string> = {};
+const { mockFileContents, fsKey } = mocks;
 
 vi.mock("electron", () => ({
   ipcMain: {
@@ -15,33 +23,34 @@ vi.mock("electron", () => ({
 
 vi.mock("fs/promises", () => ({
   readFile: vi.fn(async (path: string) => {
-    const n = path.replace(/\\/g, "/");
-    if (mockFileContents[n] !== undefined) return mockFileContents[n];
+    const n = mocks.fsKey(path);
+    if (mocks.mockFileContents[n] !== undefined)
+      return mocks.mockFileContents[n];
     throw Object.assign(new Error("ENOENT"), { code: "ENOENT" });
   }),
   writeFile: vi.fn(async (path: string, data: string | Buffer) => {
-    mockFileContents[path.replace(/\\/g, "/")] =
+    mocks.mockFileContents[mocks.fsKey(path)] =
       typeof data === "string" ? data : data.toString("utf-8");
   }),
   mkdir: vi.fn(async () => {}),
   rename: vi.fn(async (from: string, to: string) => {
-    const source = from.replace(/\\/g, "/");
-    const target = to.replace(/\\/g, "/");
-    mockFileContents[target] = mockFileContents[source];
-    delete mockFileContents[source];
+    const source = mocks.fsKey(from);
+    const target = mocks.fsKey(to);
+    mocks.mockFileContents[target] = mocks.mockFileContents[source];
+    delete mocks.mockFileContents[source];
   }),
   unlink: vi.fn(async (path: string) => {
-    const normalized = path.replace(/\\/g, "/");
-    if (!(normalized in mockFileContents)) {
+    const normalized = mocks.fsKey(path);
+    if (!(normalized in mocks.mockFileContents)) {
       throw Object.assign(new Error("ENOENT"), { code: "ENOENT" });
     }
-    delete mockFileContents[normalized];
+    delete mocks.mockFileContents[normalized];
   }),
 }));
 
 vi.mock("fs", () => ({
   existsSync: vi.fn(
-    (path: string) => path.replace(/\\/g, "/") in mockFileContents,
+    (path: string) => mocks.fsKey(path) in mocks.mockFileContents,
   ),
 }));
 
@@ -95,7 +104,9 @@ describe("userDataBackupHandlers", () => {
   let handlers: Record<string, (...args: any[]) => Promise<any>>;
 
   beforeEach(() => {
-    mockFileContents = {};
+    for (const key of Object.keys(mockFileContents)) {
+      delete mockFileContents[key];
+    }
     vi.clearAllMocks();
 
     handlers = {};
@@ -111,9 +122,9 @@ describe("userDataBackupHandlers", () => {
   test("exports progress and recents from userData files", async () => {
     const sessions = [session()];
     const recents = [recent()];
-    mockFileContents[`${mockUserDataPath}/progress.json`] =
+    mockFileContents[fsKey(join(mockUserDataPath, "progress.json"))] =
       JSON.stringify(sessions);
-    mockFileContents[`${mockUserDataPath}/recents.json`] =
+    mockFileContents[fsKey(join(mockUserDataPath, "recents.json"))] =
       JSON.stringify(recents);
 
     await expect(exportUserDataFiles(["progress", "recents"])).resolves.toEqual(
@@ -145,12 +156,12 @@ describe("userDataBackupHandlers", () => {
       scopes: ["progress", "recents"],
     });
 
-    expect(mockFileContents[`${mockUserDataPath}/progress.json`]).toBe(
-      JSON.stringify(normalizedSessions, null, 2),
-    );
-    expect(mockFileContents[`${mockUserDataPath}/recents.json`]).toBe(
-      JSON.stringify(normalizedRecents, null, 2),
-    );
+    expect(
+      mockFileContents[fsKey(join(mockUserDataPath, "progress.json"))],
+    ).toBe(JSON.stringify(normalizedSessions, null, 2));
+    expect(
+      mockFileContents[fsKey(join(mockUserDataPath, "recents.json"))],
+    ).toBe(JSON.stringify(normalizedRecents, null, 2));
   });
 
   test("rejects an invalid progress record without writing any scope", async () => {
@@ -186,7 +197,8 @@ describe("userDataBackupHandlers", () => {
   });
 
   test("reports corrupt userData files before export", async () => {
-    mockFileContents[`${mockUserDataPath}/progress.json`] = "{broken";
+    mockFileContents[fsKey(join(mockUserDataPath, "progress.json"))] =
+      "{broken";
 
     await expect(exportUserDataFiles(["progress"])).resolves.toEqual({
       ok: false,
@@ -195,10 +207,8 @@ describe("userDataBackupHandlers", () => {
   });
 
   test("rejects invalid stored records before export", async () => {
-    mockFileContents[`${mockUserDataPath}/progress.json`] = JSON.stringify([
-      session(),
-      { ...session(), score: { totalNotes: -1 } },
-    ]);
+    mockFileContents[fsKey(join(mockUserDataPath, "progress.json"))] =
+      JSON.stringify([session(), { ...session(), score: { totalNotes: -1 } }]);
 
     await expect(exportUserDataFiles(["progress"])).resolves.toEqual({
       ok: false,
@@ -212,9 +222,11 @@ describe("userDataBackupHandlers", () => {
       scopes: ["progress"],
     });
 
-    expect(mockFileContents[`${mockUserDataPath}/progress.json`]).toBe("[]");
     expect(
-      mockFileContents[`${mockUserDataPath}/recents.json`],
+      mockFileContents[fsKey(join(mockUserDataPath, "progress.json"))],
+    ).toBe("[]");
+    expect(
+      mockFileContents[fsKey(join(mockUserDataPath, "recents.json"))],
     ).toBeUndefined();
   });
 

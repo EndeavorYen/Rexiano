@@ -78,6 +78,35 @@ function engine(): MetronomeHarness {
 }
 
 describe("metronome playback runtime", () => {
+  test("does not arm count-in when metronome chrome is off", () => {
+    const metronome = engine();
+    const setCountInActive = vi.fn();
+    const startTransport = vi.fn();
+
+    const result = beginMetronomePlayback({
+      engine: metronome.runtime,
+      song,
+      currentTime: 0,
+      speed: 1,
+      metronomeEnabled: false,
+      countInBeats: 4,
+      setCountInActive,
+      startTransport,
+      getLiveState: () => ({
+        song,
+        isPlaying: true,
+        countInActive: false,
+        currentTime: 0,
+        speed: 1,
+        metronomeEnabled: false,
+      }),
+    });
+
+    expect(result).toBe("started");
+    expect(metronome.runtime.startCountIn).not.toHaveBeenCalled();
+    expect(startTransport).toHaveBeenCalledWith(0);
+  });
+
   test("count-in gates transport until all configured beats complete", () => {
     const metronome = engine();
     const setCountInActive = vi.fn();
@@ -88,7 +117,7 @@ describe("metronome playback runtime", () => {
       countInActive: true,
       currentTime: 0,
       speed: 1,
-      metronomeEnabled: false,
+      metronomeEnabled: true,
     };
 
     const result = beginMetronomePlayback({
@@ -96,7 +125,7 @@ describe("metronome playback runtime", () => {
       song,
       currentTime: 0,
       speed: 1,
-      metronomeEnabled: false,
+      metronomeEnabled: true,
       countInBeats: 4,
       setCountInActive,
       startTransport,
@@ -129,14 +158,14 @@ describe("metronome playback runtime", () => {
       countInActive: true,
       currentTime: 0,
       speed: 1,
-      metronomeEnabled: false,
+      metronomeEnabled: true,
     };
     beginMetronomePlayback({
       engine: metronome.runtime,
       song,
       currentTime: 0,
       speed: 1,
-      metronomeEnabled: false,
+      metronomeEnabled: true,
       countInBeats: 2,
       setCountInActive,
       startTransport,

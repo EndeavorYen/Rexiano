@@ -87,14 +87,17 @@ describe("midiPathAccess", () => {
     await expect(isApprovedMidiFilePath(nestedPath)).resolves.toBe(false);
   });
 
-  test("blocks a symlink that escapes an approved folder", async () => {
-    const escapePath = join(musicPath, "escape.mid");
-    symlinkSync(join(outsidePath, "Private.mid"), escapePath);
-    await approveMidiFolderPath(musicPath);
+  test.skipIf(process.platform === "win32")(
+    "blocks a symlink that escapes an approved folder",
+    async () => {
+      const escapePath = join(musicPath, "escape.mid");
+      symlinkSync(join(outsidePath, "Private.mid"), escapePath);
+      await approveMidiFolderPath(musicPath);
 
-    await expect(resolveApprovedMidiFilePath(escapePath)).resolves.toBeNull();
-    await expect(isApprovedMidiFilePath(escapePath)).resolves.toBe(false);
-  });
+      await expect(resolveApprovedMidiFilePath(escapePath)).resolves.toBeNull();
+      await expect(isApprovedMidiFilePath(escapePath)).resolves.toBe(false);
+    },
+  );
 
   test("does not transfer one-file approval to a replaced filesystem object", async () => {
     const filePath = join(musicPath, "Scale.mid");

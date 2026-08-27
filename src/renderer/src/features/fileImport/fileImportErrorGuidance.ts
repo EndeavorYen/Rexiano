@@ -7,6 +7,7 @@ export type FileImportErrorKind =
   | "oversized"
   | "read-failed"
   | "parse-failed"
+  | "empty-song"
   | "missing-recent";
 
 export interface FileImportErrorInput {
@@ -107,6 +108,21 @@ export function getFileImportErrorGuidance(
           {
             id: "reimport-file",
             label: t("app.importActionReimport"),
+            emphasis: "primary",
+          },
+        ],
+      };
+    case "empty-song":
+      return {
+        title: t("app.importErrorEmptyTitle"),
+        guidance: t("app.importErrorEmptyGuidance", {
+          fileName: error.fileName ?? t("app.importErrorUnknownFile"),
+        }),
+        diagnostic: diagnosticToString(error),
+        actions: [
+          {
+            id: "choose-midi-file",
+            label: t("app.importActionChooseMidi"),
             emphasis: "primary",
           },
         ],

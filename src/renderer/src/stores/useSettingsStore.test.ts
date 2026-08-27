@@ -66,9 +66,9 @@ describe("useSettingsStore", () => {
       expect(store.getState().metronomeEnabled).toBe(false);
     });
 
-    test("countInBeats defaults to 4", async () => {
+    test("countInBeats defaults to 0", async () => {
       const store = await getStore();
-      expect(store.getState().countInBeats).toBe(4);
+      expect(store.getState().countInBeats).toBe(0);
     });
 
     test("latencyCompensation defaults to 0", async () => {
@@ -84,6 +84,16 @@ describe("useSettingsStore", () => {
     test("childFocusMode defaults to false", async () => {
       const store = await getStore();
       expect(store.getState().childFocusMode).toBe(false);
+    });
+
+    test("showFingering defaults to off", async () => {
+      const store = await getStore();
+      expect(store.getState().showFingering).toBe(false);
+    });
+
+    test("language defaults to zh-TW", async () => {
+      const store = await getStore();
+      expect(store.getState().language).toBe("zh-TW");
     });
   });
 
@@ -275,7 +285,37 @@ describe("useSettingsStore", () => {
       expect(store2.getState().volume).toBe(42);
       expect(store2.getState().defaultMode).toBe("wait");
       expect(store2.getState().showNoteLabels).toBe(false);
-      expect(store2.getState().childFocusMode).toBe(true);
+      expect(store2.getState().childFocusMode).toBe(false);
+    });
+
+    test("ignores persisted count-in and child-focus leftovers", async () => {
+      storage.set(
+        STORAGE_KEY,
+        JSON.stringify({
+          countInBeats: 4,
+          childFocusMode: true,
+        }),
+      );
+
+      const store = await getStore();
+      expect(store.getState().countInBeats).toBe(0);
+      expect(store.getState().childFocusMode).toBe(false);
+    });
+
+    test("ignores persisted fingering, metronome, and leftover Free mode", async () => {
+      storage.set(
+        STORAGE_KEY,
+        JSON.stringify({
+          showFingering: true,
+          metronomeEnabled: true,
+          defaultMode: "free",
+        }),
+      );
+
+      const store = await getStore();
+      expect(store.getState().showFingering).toBe(false);
+      expect(store.getState().metronomeEnabled).toBe(false);
+      expect(store.getState().defaultMode).toBe("watch");
     });
 
     test("clamped values are persisted (not original)", async () => {
@@ -314,7 +354,7 @@ describe("useSettingsStore", () => {
 
       const store = await getStore();
       expect(store.getState().showNoteLabels).toBe(true);
-      expect(store.getState().language).toBe("en");
+      expect(store.getState().language).toBe("zh-TW");
       expect(store.getState().defaultMode).toBe("watch");
       expect(store.getState().muted).toBe(false);
     });
@@ -333,7 +373,7 @@ describe("useSettingsStore", () => {
       const store = await getStore();
       expect(store.getState().volume).toBe(100);
       expect(store.getState().defaultSpeed).toBe(0.25);
-      expect(store.getState().countInBeats).toBe(3);
+      expect(store.getState().countInBeats).toBe(0);
       expect(store.getState().latencyCompensation).toBe(0);
     });
   });

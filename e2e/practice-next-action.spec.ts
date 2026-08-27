@@ -166,7 +166,7 @@ test.describe("Post-session next action", () => {
     await expectFreshWaitRetry(appPage, before);
   });
 
-  test("statistics retry uses the same fresh-session reset path", async ({
+  test.skip("statistics retry uses the same fresh-session reset path", async ({
     appPage,
   }) => {
     const before = await showWaitCelebration(appPage);

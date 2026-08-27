@@ -6,6 +6,7 @@ import {
   type DragEvent,
 } from "react";
 import { parseMidiFile } from "@renderer/engines/midi/MidiFileParser";
+import { isParsedSongPracticeReady } from "@renderer/engines/midi/MidiDiagnostics";
 import type { ParsedSong } from "@renderer/engines/midi/types";
 import {
   getFileImportErrorGuidance,
@@ -116,6 +117,15 @@ export function getFileNameFromPath(filePath: string): string | undefined {
   return filePath.split(/[\\/]/).pop() || undefined;
 }
 
+export function getEmptyMidiImportError(
+  song: ParsedSong,
+  fileName?: string,
+): FileImportErrorInput | null {
+  return isParsedSongPracticeReady(song)
+    ? null
+    : { kind: "empty-song", fileName: fileName ?? song.fileName };
+}
+
 export type RecentRemovalRecoveryResult =
   | { ok: true }
   | { ok: false; diagnostic?: unknown };
@@ -165,13 +175,18 @@ export function useMidiImportActions({
   const loadParsedSong = useCallback(
     (fileName: string, data: number[]): void => {
       const parsed = parseMidiFile(fileName, data);
+      const emptyError = getEmptyMidiImportError(parsed, fileName);
+      if (emptyError) {
+        showImportError(emptyError);
+        return;
+      }
       loadSong(parsed);
       resetPlayback();
       setImportError((current) =>
         reduceImportErrorForEvent(current, "import-succeeded"),
       );
     },
-    [loadSong, resetPlayback],
+    [loadSong, resetPlayback, showImportError],
   );
 
   const handleOpenFile = useCallback(async (): Promise<void> => {

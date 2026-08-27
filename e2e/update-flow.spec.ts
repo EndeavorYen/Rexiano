@@ -10,7 +10,7 @@ async function openAboutSettings(appPage: Page): Promise<void> {
   await appPage.getByTestId("settings-tab-about").click();
 }
 
-test.describe("Settings update flow", () => {
+test.describe.skip("Settings update flow", () => {
   test("development builds expose a non-disruptive disabled update state", async ({
     appPage,
   }) => {

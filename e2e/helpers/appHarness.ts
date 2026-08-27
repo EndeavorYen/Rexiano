@@ -49,10 +49,6 @@ export async function startBuiltInSongFromLibrary(
   const songButton = page.getByTestId(`song-select-${songId}`);
   await expect(songButton).toBeVisible({ timeout: 20_000 });
   await songButton.click();
-
-  const previewPractice = page.getByTestId("song-selection-preview-practice");
-  await expect(previewPractice).toBeVisible({ timeout: 20_000 });
-  await previewPractice.click();
 }
 
 export async function choosePracticeMode(

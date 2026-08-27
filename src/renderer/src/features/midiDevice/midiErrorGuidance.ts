@@ -9,12 +9,10 @@ interface MidiErrorRule {
   guidanceKey: TranslationKey;
   canRetry: boolean;
   canUseBluetooth: boolean;
-  canOpenSettings: boolean;
 }
 
 export type MidiRecoveryActionId =
   | "retry-midi-access"
-  | "open-midi-settings"
   | "connect-bluetooth-midi";
 
 export interface MidiRecoveryAction {
@@ -39,7 +37,6 @@ const ERROR_RULES: MidiErrorRule[] = [
     guidanceKey: "midi.errorUnsupportedGuidance",
     canRetry: false,
     canUseBluetooth: false,
-    canOpenSettings: false,
   },
   {
     match: (message) => message === MIDI_CONNECTION_ERROR.denied,
@@ -47,7 +44,6 @@ const ERROR_RULES: MidiErrorRule[] = [
     guidanceKey: "midi.errorDeniedGuidance",
     canRetry: true,
     canUseBluetooth: false,
-    canOpenSettings: true,
   },
   {
     match: (message) => message === MIDI_CONNECTION_ERROR.unavailable,
@@ -55,7 +51,6 @@ const ERROR_RULES: MidiErrorRule[] = [
     guidanceKey: "midi.errorUnavailableGuidance",
     canRetry: true,
     canUseBluetooth: false,
-    canOpenSettings: false,
   },
   {
     match: (message) => message === MIDI_CONNECTION_ERROR.inputFailed,
@@ -63,7 +58,6 @@ const ERROR_RULES: MidiErrorRule[] = [
     guidanceKey: "midi.errorInputGuidance",
     canRetry: true,
     canUseBluetooth: true,
-    canOpenSettings: false,
   },
   {
     match: (message) => message === MIDI_CONNECTION_ERROR.outputFailed,
@@ -71,7 +65,6 @@ const ERROR_RULES: MidiErrorRule[] = [
     guidanceKey: "midi.errorOutputGuidance",
     canRetry: true,
     canUseBluetooth: true,
-    canOpenSettings: false,
   },
   {
     match: (message) => message === MIDI_CONNECTION_ERROR.bluetoothUnsupported,
@@ -79,7 +72,6 @@ const ERROR_RULES: MidiErrorRule[] = [
     guidanceKey: "midi.errorBluetoothUnsupportedGuidance",
     canRetry: false,
     canUseBluetooth: false,
-    canOpenSettings: false,
   },
   {
     match: (message) => message === MIDI_CONNECTION_ERROR.initFailed,
@@ -87,7 +79,6 @@ const ERROR_RULES: MidiErrorRule[] = [
     guidanceKey: "midi.errorGenericGuidance",
     canRetry: true,
     canUseBluetooth: true,
-    canOpenSettings: false,
   },
   {
     match: (message) => message.includes("not supported"),
@@ -95,7 +86,6 @@ const ERROR_RULES: MidiErrorRule[] = [
     guidanceKey: "midi.errorUnsupportedGuidance",
     canRetry: false,
     canUseBluetooth: false,
-    canOpenSettings: false,
   },
   {
     match: (message) => message.includes("denied"),
@@ -103,7 +93,6 @@ const ERROR_RULES: MidiErrorRule[] = [
     guidanceKey: "midi.errorDeniedGuidance",
     canRetry: true,
     canUseBluetooth: false,
-    canOpenSettings: true,
   },
   {
     match: (message) => message.includes("not available"),
@@ -111,7 +100,6 @@ const ERROR_RULES: MidiErrorRule[] = [
     guidanceKey: "midi.errorUnavailableGuidance",
     canRetry: true,
     canUseBluetooth: false,
-    canOpenSettings: false,
   },
   {
     match: (message) => message.includes("input device"),
@@ -119,7 +107,6 @@ const ERROR_RULES: MidiErrorRule[] = [
     guidanceKey: "midi.errorInputGuidance",
     canRetry: true,
     canUseBluetooth: true,
-    canOpenSettings: false,
   },
   {
     match: (message) => message.includes("output device"),
@@ -127,7 +114,6 @@ const ERROR_RULES: MidiErrorRule[] = [
     guidanceKey: "midi.errorOutputGuidance",
     canRetry: true,
     canUseBluetooth: true,
-    canOpenSettings: false,
   },
   {
     match: (message) => message.includes("Bluetooth not supported"),
@@ -135,12 +121,11 @@ const ERROR_RULES: MidiErrorRule[] = [
     guidanceKey: "midi.errorBluetoothUnsupportedGuidance",
     canRetry: false,
     canUseBluetooth: false,
-    canOpenSettings: false,
   },
 ];
 
 function buildActions(
-  rule: Pick<MidiErrorRule, "canRetry" | "canUseBluetooth" | "canOpenSettings">,
+  rule: Pick<MidiErrorRule, "canRetry" | "canUseBluetooth">,
   t: Translate,
 ): MidiRecoveryAction[] {
   const actions: MidiRecoveryAction[] = [];
@@ -150,13 +135,6 @@ function buildActions(
       id: "retry-midi-access",
       label: t("audio.retry"),
       emphasis: "primary",
-    });
-  }
-  if (rule.canOpenSettings) {
-    actions.push({
-      id: "open-midi-settings",
-      label: t("midi.openSettings"),
-      emphasis: "secondary",
     });
   }
   if (rule.canUseBluetooth) {
@@ -179,7 +157,6 @@ export function getMidiErrorGuidance(
     guidanceKey: "midi.errorGenericGuidance",
     canRetry: true,
     canUseBluetooth: true,
-    canOpenSettings: false,
   };
 
   return {

@@ -7,7 +7,9 @@ import {
   removeRecentForRecovery,
   getOversizedMidiImportError,
   getMidiReadFailureError,
+  getEmptyMidiImportError,
 } from "./useMidiImportActions";
+import type { ParsedSong } from "@renderer/engines/midi/types";
 import {
   MAX_MIDI_FILE_BYTES,
   MIDI_FILE_TOO_LARGE_DIAGNOSTIC,
@@ -83,6 +85,47 @@ describe("useMidiImportActions helpers", () => {
     expect(
       getMidiReadFailureError(new Error("EACCES"), "locked.mid"),
     ).toMatchObject({ kind: "read-failed", fileName: "locked.mid" });
+  });
+
+  test("blocks empty MIDI from Watch/Wait playback", () => {
+    const emptySong: ParsedSong = {
+      fileName: "empty.mid",
+      duration: 0,
+      tracks: [],
+      noteCount: 0,
+      tempos: [],
+      timeSignatures: [],
+    };
+    expect(getEmptyMidiImportError(emptySong)).toEqual({
+      kind: "empty-song",
+      fileName: "empty.mid",
+    });
+
+    const playableSong: ParsedSong = {
+      ...emptySong,
+      fileName: "scale.mid",
+      duration: 1,
+      noteCount: 1,
+      tracks: [
+        {
+          name: "Piano",
+          instrument: "Piano",
+          channel: 0,
+          notes: [
+            {
+              midi: 60,
+              name: "C4",
+              time: 0,
+              duration: 0.5,
+              velocity: 90,
+            },
+          ],
+        },
+      ],
+      tempos: [{ time: 0, bpm: 120 }],
+      timeSignatures: [{ time: 0, numerator: 4, denominator: 4 }],
+    };
+    expect(getEmptyMidiImportError(playableSong)).toBeNull();
   });
 
   test("extracts filenames from native paths", () => {

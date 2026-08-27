@@ -72,10 +72,11 @@ describe("resolveMetronomeTiming", () => {
 
 describe("shouldRunPlaybackCountIn", () => {
   test.each([
-    [{ currentTime: 0, countInBeats: 4 }, true],
-    [{ currentTime: 0.005, countInBeats: 2 }, true],
-    [{ currentTime: 1, countInBeats: 4 }, false],
-    [{ currentTime: 0, countInBeats: 0 }, false],
+    [{ currentTime: 0, countInBeats: 4, metronomeEnabled: true }, true],
+    [{ currentTime: 0.005, countInBeats: 2, metronomeEnabled: true }, true],
+    [{ currentTime: 0, countInBeats: 4, metronomeEnabled: false }, false],
+    [{ currentTime: 1, countInBeats: 4, metronomeEnabled: true }, false],
+    [{ currentTime: 0, countInBeats: 0, metronomeEnabled: true }, false],
   ])("evaluates %o", (input, expected) => {
     expect(shouldRunPlaybackCountIn(input)).toBe(expected);
   });
@@ -88,6 +89,18 @@ describe("canArmPlaybackCountIn", () => {
         hasMetronomeEngine: false,
         currentTime: 0,
         countInBeats: 4,
+        metronomeEnabled: true,
+      }),
+    ).toBe(false);
+  });
+
+  test("never arms count-in when metronome chrome is off", () => {
+    expect(
+      canArmPlaybackCountIn({
+        hasMetronomeEngine: true,
+        currentTime: 0,
+        countInBeats: 4,
+        metronomeEnabled: false,
       }),
     ).toBe(false);
   });
@@ -98,6 +111,7 @@ describe("canArmPlaybackCountIn", () => {
         hasMetronomeEngine: true,
         currentTime: 0,
         countInBeats: 4,
+        metronomeEnabled: true,
       }),
     ).toBe(true);
   });

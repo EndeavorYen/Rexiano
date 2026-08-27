@@ -212,11 +212,6 @@ export function buildSongPreviewSessionActions(
           : "library.recommendation.cta",
       emphasis: "primary",
     },
-    {
-      intent: "play-along",
-      labelKey: "library.preview.playAlong",
-      emphasis: "secondary",
-    },
   ];
 }
 

@@ -339,6 +339,10 @@ export function summarizeMidiDiagnostics(
   };
 }
 
+export function isParsedSongPracticeReady(song: ParsedSong): boolean {
+  return summarizeMidiDiagnostics(diagnoseParsedSong(song)).isPracticeReady;
+}
+
 export function buildMidiAuthoringChecklist(
   song: ParsedSong,
   options: MidiDiagnosticOptions = {},

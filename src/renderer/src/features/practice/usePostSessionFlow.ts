@@ -72,7 +72,8 @@ export function shouldShowCompletionCelebration({
 }
 
 export function shouldAdvanceCelebrationToStats(mode: PracticeMode): boolean {
-  return mode !== "watch";
+  void mode;
+  return false;
 }
 
 export function shouldShowModeSelectionModal({

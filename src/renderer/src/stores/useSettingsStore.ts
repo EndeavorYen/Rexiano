@@ -6,13 +6,9 @@ export type Language = "en" | "zh-TW";
 
 const STORAGE_KEY = USER_DATA_STORAGE_KEYS.settings;
 
-/** Detect initial language from browser/OS setting */
+/** Live-path default is Traditional Chinese. */
 function detectLanguage(): Language {
-  if (typeof navigator !== "undefined") {
-    const lang = navigator.language;
-    if (lang.startsWith("zh")) return "zh-TW";
-  }
-  return "en";
+  return "zh-TW";
 }
 
 interface SettingsState {
@@ -67,7 +63,7 @@ interface PersistedSettings {
 const defaults: PersistedSettings = {
   showNoteLabels: true,
   showFallingNoteLabels: true,
-  showFingering: true,
+  showFingering: false,
   compactKeyLabels: false,
   language: detectLanguage(),
   volume: 80,
@@ -75,7 +71,7 @@ const defaults: PersistedSettings = {
   defaultSpeed: 1.0,
   defaultMode: "watch",
   metronomeEnabled: false,
-  countInBeats: 4,
+  countInBeats: 0,
   latencyCompensation: 0,
   audioCompatibilityMode: false,
   childFocusMode: false,
@@ -105,9 +101,9 @@ function savedPracticeMode(
   value: unknown,
   fallback: PracticeMode,
 ): PracticeMode {
-  return value === "watch" || value === "wait" || value === "free"
-    ? value
-    : fallback;
+  if (value === "wait") return "wait";
+  if (value === "watch" || value === "free") return "watch";
+  return fallback;
 }
 
 export function normalizePersistedSettings(value: unknown): PersistedSettings {
@@ -122,7 +118,8 @@ export function normalizePersistedSettings(value: unknown): PersistedSettings {
       source.showFallingNoteLabels,
       defaults.showFallingNoteLabels!,
     ),
-    showFingering: savedBoolean(source.showFingering, defaults.showFingering!),
+    // Live path has no fingering control. Ignore leftover persisted values.
+    showFingering: defaults.showFingering!,
     compactKeyLabels: savedBoolean(
       source.compactKeyLabels,
       defaults.compactKeyLabels!,
@@ -136,17 +133,10 @@ export function normalizePersistedSettings(value: unknown): PersistedSettings {
       2,
     ),
     defaultMode: savedPracticeMode(source.defaultMode, defaults.defaultMode!),
-    metronomeEnabled: savedBoolean(
-      source.metronomeEnabled,
-      defaults.metronomeEnabled!,
-    ),
-    countInBeats: Math.round(
-      clampNumber(
-        savedNumber(source.countInBeats, defaults.countInBeats!),
-        0,
-        8,
-      ),
-    ),
+    // Live path has no metronome control. Ignore leftover persisted values.
+    metronomeEnabled: defaults.metronomeEnabled!,
+    // Live path has no count-in control. Ignore leftover persisted values.
+    countInBeats: defaults.countInBeats!,
     latencyCompensation: Math.round(
       clampNumber(
         savedNumber(source.latencyCompensation, defaults.latencyCompensation!),
@@ -158,10 +148,8 @@ export function normalizePersistedSettings(value: unknown): PersistedSettings {
       source.audioCompatibilityMode,
       defaults.audioCompatibilityMode!,
     ),
-    childFocusMode: savedBoolean(
-      source.childFocusMode,
-      defaults.childFocusMode!,
-    ),
+    // Live path has no child-focus control. Ignore leftover persisted values.
+    childFocusMode: defaults.childFocusMode!,
   };
 }
 

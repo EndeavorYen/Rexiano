@@ -30,11 +30,6 @@ describe("getMidiErrorGuidance", () => {
           label: "audio.retry",
           emphasis: "primary",
         },
-        {
-          id: "open-midi-settings",
-          label: "midi.openSettings",
-          emphasis: "secondary",
-        },
       ],
     });
   });
