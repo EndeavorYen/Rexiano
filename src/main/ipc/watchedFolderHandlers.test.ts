@@ -1,3 +1,4 @@
+import { join, resolve } from "path";
 import { beforeEach, describe, expect, test, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({
@@ -10,7 +11,10 @@ const mocks = vi.hoisted(() => ({
     string,
     { name: string; isDirectory(): boolean; isFile(): boolean }[]
   >,
+  fsKey: (p: string): string => p.replace(/\\/g, "/"),
 }));
+
+mocks.fsKey = (p: string): string => resolve(p).replace(/\\/g, "/");
 
 function file(name: string): (typeof mocks.directoryEntries)[string][number] {
   return {
@@ -47,14 +51,15 @@ vi.mock("electron", () => ({
 
 vi.mock("fs/promises", () => ({
   readdir: vi.fn(
-    async (folderPath: string) => mocks.directoryEntries[folderPath] ?? [],
+    async (folderPath: string) =>
+      mocks.directoryEntries[mocks.fsKey(folderPath)] ?? [],
   ),
   realpath: vi.fn(async (path: string) => path),
   stat: vi.fn(async (path: string) => ({
     dev: 1,
     ino: path.length,
-    isDirectory: () => path in mocks.directoryEntries,
-    isFile: () => !(path in mocks.directoryEntries),
+    isDirectory: () => mocks.fsKey(path) in mocks.directoryEntries,
+    isFile: () => !(mocks.fsKey(path) in mocks.directoryEntries),
   })),
 }));
 
@@ -80,64 +85,68 @@ describe("watchedFolderHandlers", () => {
   });
 
   test("discovers MIDI files recursively in deterministic order", async () => {
-    mocks.directoryEntries["/Users/rex/Music"] = [
+    const music = "/Users/rex/Music";
+    mocks.directoryEntries[mocks.fsKey(music)] = [
       file("notes.txt"),
       file("Scale.mid"),
       dir("Sub"),
       file("Etude.MIDI"),
     ];
-    mocks.directoryEntries["/Users/rex/Music/Sub"] = [
+    mocks.directoryEntries[mocks.fsKey(join(music, "Sub"))] = [
       file("Duet.kar"),
       file("Warmup.mid"),
     ];
 
-    await expect(
-      discoverMidiFilesInFolder("/Users/rex/Music"),
-    ).resolves.toEqual([
-      "/Users/rex/Music/Etude.MIDI",
-      "/Users/rex/Music/Scale.mid",
-      "/Users/rex/Music/Sub/Duet.kar",
-      "/Users/rex/Music/Sub/Warmup.mid",
+    await expect(discoverMidiFilesInFolder(music)).resolves.toEqual([
+      join(music, "Etude.MIDI"),
+      join(music, "Scale.mid"),
+      join(music, "Sub", "Duet.kar"),
+      join(music, "Sub", "Warmup.mid"),
     ]);
   });
 
   test("skips hidden directories during recursive discovery", async () => {
-    mocks.directoryEntries["/Users/rex/Music"] = [
+    const music = "/Users/rex/Music";
+    mocks.directoryEntries[mocks.fsKey(music)] = [
       dir(".git"),
       dir("Visible"),
       file("Root.mid"),
     ];
-    mocks.directoryEntries["/Users/rex/Music/.git"] = [file("Secret.mid")];
-    mocks.directoryEntries["/Users/rex/Music/Visible"] = [file("Scale.mid")];
+    mocks.directoryEntries[mocks.fsKey(join(music, ".git"))] = [
+      file("Secret.mid"),
+    ];
+    mocks.directoryEntries[mocks.fsKey(join(music, "Visible"))] = [
+      file("Scale.mid"),
+    ];
 
-    await expect(
-      discoverMidiFilesInFolder("/Users/rex/Music"),
-    ).resolves.toEqual([
-      "/Users/rex/Music/Root.mid",
-      "/Users/rex/Music/Visible/Scale.mid",
+    await expect(discoverMidiFilesInFolder(music)).resolves.toEqual([
+      join(music, "Root.mid"),
+      join(music, "Visible", "Scale.mid"),
     ]);
   });
 
   test("caps discovered MIDI files to avoid unbounded scans", async () => {
-    mocks.directoryEntries["/Users/rex/Music"] = Array.from(
+    const music = "/Users/rex/Music";
+    mocks.directoryEntries[mocks.fsKey(music)] = Array.from(
       { length: 25 },
       (_, i) => file(`Song-${String(i).padStart(2, "0")}.mid`),
     );
 
-    const result = await discoverMidiFilesInFolder("/Users/rex/Music", {
+    const result = await discoverMidiFilesInFolder(music, {
       maxMidiFiles: 10,
     });
 
     expect(result).toHaveLength(10);
-    expect(result[0]).toBe("/Users/rex/Music/Song-00.mid");
-    expect(result[9]).toBe("/Users/rex/Music/Song-09.mid");
+    expect(result[0]).toBe(join(music, "Song-00.mid"));
+    expect(result[9]).toBe(join(music, "Song-09.mid"));
   });
 
   test("registers folder selection and refresh IPC handlers", async () => {
-    mocks.directoryEntries["/Users/rex/Music"] = [file("Scale.mid")];
+    const music = "/Users/rex/Music";
+    mocks.directoryEntries[mocks.fsKey(music)] = [file("Scale.mid")];
     mocks.dialogMock.showOpenDialog.mockResolvedValue({
       canceled: false,
-      filePaths: ["/Users/rex/Music"],
+      filePaths: [music],
     });
 
     registerWatchedFolderHandlers();
@@ -145,18 +154,16 @@ describe("watchedFolderHandlers", () => {
     await expect(
       mocks.handlers["library:selectWatchedMidiFolder"](trustedEvent),
     ).resolves.toEqual({
-      folderPath: "/Users/rex/Music",
-      midiFilePaths: ["/Users/rex/Music/Scale.mid"],
+      folderPath: resolve(music),
+      midiFilePaths: [join(resolve(music), "Scale.mid")],
     });
     await expect(
-      mocks.handlers["library:scanWatchedMidiFolders"](trustedEvent, [
-        "/Users/rex/Music",
-      ]),
+      mocks.handlers["library:scanWatchedMidiFolders"](trustedEvent, [music]),
     ).resolves.toEqual({
       folders: [
         {
-          folderPath: "/Users/rex/Music",
-          midiFilePaths: ["/Users/rex/Music/Scale.mid"],
+          folderPath: resolve(music),
+          midiFilePaths: [join(resolve(music), "Scale.mid")],
         },
       ],
       errors: [],

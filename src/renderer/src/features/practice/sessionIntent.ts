@@ -6,7 +6,8 @@ export function mapSessionIntentToMode(
   intent: PracticeSessionIntent,
   savedMode: PracticeMode,
 ): PracticeMode {
-  return intent === "play-along" ? "free" : savedMode;
+  void intent;
+  return savedMode === "wait" ? "wait" : "watch";
 }
 
 export function shouldPromptForPracticeMode(

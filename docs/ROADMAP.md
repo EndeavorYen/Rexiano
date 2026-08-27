@@ -1,73 +1,82 @@
 # Rexiano — 開發路線圖與追蹤清單
 
-> **最後更新**: 2026-08-25
+> **最後更新**: 2026-08-28
+>
+> **本檔是進度單一真實來源**，不是 `CLAUDE.md` 的快照。
 >
 > 詳細設計請參考 [DESIGN.md](./DESIGN.md)
 >
 > **讀法**：下方「版本規劃」與「歷史實作階段 Phase 1–9」是已經做完的工程追蹤。
-> **產品下一程**才是現在的產品方向。歷史 Phase 7 勾完只代表「有五線譜顯示」，
-> **不代表譜已經正確**。音樂家級 MIDI → 譜是產品階段 3，且**不是** audio-to-score。
+> 歷史勾選 **不是** 要重建的 live chrome。Synthesia 對照表 **不是 backlog**。
+> 歷史 Phase 7 勾完只代表「有五線譜顯示」，**不代表譜已經正確**。
+>
+> **公開發佈檔是 unsigned**（live fact）。不要把 fail-closed 簽章寫成現況，也不要實作 #187。
+> 主畫面樂譜渲染器是 **VexFlow**。不要合併 OSMD / 第二套 notation engine。
+> `site/` 不是產品需求。
+
+---
+
+## Live path（Musk）
+
+Rex 看得到的按鈕 / tab / chip 只留：MIDI 匯入、下落音符、鋼琴鍵盤、聲音、Watch、Wait、速度、zh-TW、內建曲、Windows。
+
+**已離開 live surface**（leftover 模組可留在磁碟，不要加回 chrome）：Insights、編輯器入口、sheet-only、Free、L0–L8 chips、備份 tab、更新檢查、指法預設開、兒童專注模式、家長報告、MIDI output / 測試鈕。
+
+不要因為歷史 Phase 6.5 / 7.5 / 8 勾了就重建那些按鈕。
 
 ---
 
 ## 產品下一程（三階段）
 
-> 這三個階段都還沒做完。產品階段 1 只勾了譜→MIDI 第一刀；其餘維持未勾選。
-> 不要改 `MidiToNotation` 行為。
+> 這三個階段都還沒做完。產品階段 1 只勾了具名曲 MusicXML 第一刀。
+> 不要改 `MidiToNotation` 行為。不要從這張表長出通用匯入器、Synthesia 功能清單、或音樂家級轉換器。
 
 | 階段 | 一句話 | 不是什麼 |
 | ---- | ------ | -------- |
-| **產品階段 1** | 譜 → MIDI，且匯入 MIDI 仍可練習 | 不是拿掉 MIDI 入口 |
-| **產品階段 2** | 更漂亮、簡潔、優雅的 UIUX，體感壓過 Synthesia | 不是再堆一排功能開關 |
-| **產品階段 3** | 厲害的 MIDI → 譜（接近音樂家會寫的譜） | 不是 audio-to-score；也不是「有顯示＝譜正確」 |
+| **產品階段 1** | 具名內建曲若已有 MusicXML 就用譜當真相；匯入 MIDI 仍可練 | 不是通用譜匯入器；不是拿掉 MIDI 入口 |
+| **產品階段 2** | 讓 Rex 現在看得到的開曲 → Watch/Wait → 彈 更不笨 | 不是打贏 Synthesia 的功能清單；不是把已刪 chrome 加回來 |
+| **產品階段 3** | 只有當某一首**具名曲**的譜不可用時，才修那首歌 | 不是音樂家級通用轉換器；不是 audio-to-score；也不是「有顯示＝譜正確」 |
 
 ```mermaid
 flowchart LR
-    Score["譜（MusicXML / 標準樂譜）"] --> P1["產品階段 1<br/>譜 → 可練習 MIDI"]
-    MidiIn["匯入 .mid"] --> Practice["既有練習迴路"]
+    Named["具名內建曲若已有 MusicXML"] --> P1["產品階段 1<br/>那首歌可用"]
+    MidiIn["匯入 .mid"] --> Practice["Watch / Wait + 下落音符"]
     P1 --> Practice
-    Practice --> P2["產品階段 2<br/>體驗壓過競品"]
-    MidiIn --> P3["產品階段 3<br/>MIDI → 音樂家級譜"]
-    P3 -.->|"吃更好的 notation，不改現況行為"| Display["歷史 Phase 7 顯示層"]
+    Practice --> P2["產品階段 2<br/>這條路更不笨"]
+    Named -.->|"只有譜不可用才開卡"| P3["產品階段 3<br/>修那一首"]
 ```
 
-### 產品階段 1 — 譜 → MIDI（雙入口都在）
+### 產品階段 1 — 具名曲可用，MIDI 入口仍在
 
-> 目標：從譜進來也能練；從 MIDI 進來也還能練。兩條路都是一等入口。
+> 目標：已經有 MusicXML 的具名內建曲用譜當真相。匯入 `.mid` 仍可練。
+> **不要**做通用譜匯入器、格式管線、或「從譜來／從 MIDI 來」對等入口。
 
 - [x] 第一刀：內建曲若有 `resources/scores/<id>.musicxml`，譜為真相，build 產出 MIDI（Au Clair 落地）；沒有 XML 的舊曲維持現況
-- [ ] 譜（優先 MusicXML；其他標準樂譜格式若做，必須落到同一條「譜 → 演奏資料」管線）可轉成可練習的 MIDI / `ParsedSong`
-- [ ] 轉出的曲目進入既有練習迴路：Watch / Wait / Free、下落音符、評分、分手、A-B
-- [ ] 匯入 `.mid` / `.midi` 仍可直接練習，不被譜入口取代或藏起來
-- [ ] 曲庫／首頁上「從譜來」與「從 MIDI 來」同等可見
-- [ ] 譜來源保留練習需要的 metadata（調號、拍號、聲部／左右手），讓 track 設定不必猜
-- [ ] 驗收：同一首曲，從譜匯入與從 MIDI 匯入都能開始練習，且 MIDI 入口無回歸
+- [x] 匯入 `.mid` / `.midi` 仍可直接練習
+- [ ] 只有當某一首**具名**內建曲無法練習時，才為那首歌補譜→演奏資料
+- [ ] 驗收：具名曲能練，且 MIDI 匯入無回歸。沒有具名故障就不要開通用匯入卡
 
-### 產品階段 2 — UIUX 壓過競品
+### 產品階段 2 — 現有主路徑更不笨
 
-> 目標：體感要壓過 Synthesia 級手感。漂亮、簡潔、優雅，不是功能對照表打勾。
+> 目標：開曲 → Watch / Wait → 彈，這條 live path 讀得懂、點得到。
+> **不是**對照 Synthesia 打勾，也不是把 Insights / 編輯器 / Free / L0–L8 / 備份 / 更新檢查加回來。
 
-- [ ] 主路徑（開曲 → 練習 → 結束 → 下一首）一次只強調一個主要動作
-- [ ] 畫面密度下降：次要控制讓路，主畫面讀得懂、點得到
-- [ ] 下落音符、命中回饋、鍵盤高亮的延遲與可讀性對齊或超過競品
-- [ ] 裝置連線與設定不再打斷練習流
-- [ ] 動效／間距／字級服務「優雅」，不服務功能堆疊
-- [ ] 驗收：對照 Synthesia 的開曲與 Wait 手感，寫下可重複的視覺／操作清單並過關
+- [ ] 主路徑一次只強調一個主要動作
+- [ ] 已刪 chrome 保持刪除
+- [ ] 驗收：Rex 能匯入或選曲、Watch/Wait、調速度、聽到聲音、看到下落音符與鍵盤。不要交一份競品功能清單
 
-### 產品階段 3 — 音樂家級 MIDI → 譜
+### 產品階段 3 — 具名曲譜不可用才修
 
-> 目標：MIDI 轉出來的譜，接近音樂家會寫的譜。
+> 目標：某一首具名曲的譜「不能用」時，才修那首歌。
 >
-> **排除**：audio-to-score（從錄音認譜）不在範圍。
+> **排除**：audio-to-score；通用音樂家級 MIDI→譜轉換器；合併 OSMD。
 >
-> **與歷史 Phase 7 的界線**：Phase 7 ✅ ＝ 五線譜面板、游標同步、啟發式 `MidiToNotation` 已上線。
-> 那**不是**「譜已正確」。量化、譜號、時值、聲部仍是啟發式。本階段才追正確譜。
-> 實作另開卡；在此之前**不改** `MidiToNotation` 行為。
+> **與歷史 Phase 7 的界線**：Phase 7 ✅ ＝ VexFlow 五線譜面板、游標同步、啟發式 `MidiToNotation` 已上線。
+> 那**不是**「譜已正確」。在具名曲不可用之前**不改** `MidiToNotation` 行為。
 
-- [ ] MIDI → 譜輸出在拍子、聲部、譜號、連音、臨時記號上接近人手寫譜
-- [ ] 明確排除 audio-to-score
-- [ ] 歷史 Phase 7 顯示層可以吃更好的 notation，但不把「有顯示」當成「譜正確」
-- [ ] 內建／公有領域曲目有可對照的正確譜驗收（不是只看 VexFlow 沒崩潰）
+- [ ] 先指出哪一首具名曲的譜不可用，再開卡
+- [ ] 明確排除 audio-to-score 與通用轉換器
+- [ ] 歷史 Phase 7 顯示層維持 VexFlow；兩套 notation engine 不在範圍
 - [ ] 行為變更另開實作卡；本文件不重寫轉換引擎
 
 ---
@@ -90,9 +99,9 @@ flowchart LR
 | **v1.1.3** | Audit 修補       | esbuild 0.28.1 override、發佈檔案 ✅       |
 | **v1.2.0** | Windows portable | Windows 免安裝 `.exe` 發佈檔 ✅            |
 | **v1.2.1** | 發佈資源修補     | 內建曲庫/SoundFont packaged 路徑、portable `.zip` |
-| **下一程** | 譜 → MIDI 雙入口 | 產品階段 1（第一刀已落地）                               |
-| **下一程** | 體驗壓過競品     | 產品階段 2（未開始）                               |
-| **下一程** | 音樂家級 MIDI → 譜 | 產品階段 3（未開始）                             |
+| **下一程** | 具名曲可用、MIDI 仍可練 | 產品階段 1（Au Clair 第一刀已落地；非通用匯入器） |
+| **下一程** | 現有 Watch/Wait 主路徑更不笨 | 產品階段 2（不是 Synthesia 清單） |
+| **下一程** | 具名曲譜不可用才修 | 產品階段 3（不是音樂家級轉換器） |
 
 ---
 
@@ -374,6 +383,8 @@ flowchart LR
 
 ### Synthesia 對照表
 
+> **歷史對照，不是待辦。** 不要從這張表長出 backlog，也不要因為某一格寫「勝／平手」就重建 Phase 6.5 chrome、Insights、指法、節拍器、或家長報告。產品階段 2 不是把這張表打勾。
+
 | 功能             | Synthesia | Rexiano Phase 6.5 後                 | 超越？ |
 | ---------------- | --------- | ------------------------------------ | ------ |
 | Falling notes    | ✅        | ✅ Phase 2                           | 平手   |
@@ -407,7 +418,8 @@ flowchart LR
 > **完成的含義**：五線譜面板、游標同步、啟發式 MIDI → 譜轉換已上線。
 > **不是**：輸出已經是正確樂譜。正確譜是產品階段 3。
 
-- [x] 方案選型確認（VexFlow vs OSMD）— VexFlow 5.0 已安裝
+- [x] 方案選型確認（VexFlow vs OSMD）— VexFlow 5.0 已安裝。**Live renderer 維持 VexFlow**；不要合併 `feature/osmd-native-cursor`，兩套 notation engine 不在範圍
+- [x] 顯示模式：sheet-only 已離開 live path；預設下落音符 + 鍵盤；split 可當輔助
 - [x] `engines/midi/TempoMap.ts` — 秒 ↔ tick 精確換算 + 小節表
   - [x] 跨速度變化（含漸快 / 漸慢）的分段線性換算
   - [x] 依拍號事件產生小節表（支援中途變拍）
@@ -426,9 +438,9 @@ flowchart LR
   - [x] currentTime → 譜面位置映射
   - [x] 自動翻頁 / 平滑捲動
   - [x] 當前小節高亮
-- [x] 顯示模式切換（`DisplayModeToggle.tsx` 三段選擇器）
-  - [x] 模式 A：上半五線譜 + 下半下落音符（split）
-  - [x] 模式 B：僅五線譜（sheet）
+- [x] 顯示模式切換（歷史曾有三段選擇器）。**Live path**：sheet-only 已刪；預設 falling + 鍵盤；split 可當輔助。不要把 sheet-only 加回。
+  - [x] 模式 A：split（譜 + 下落，輔助）
+  - [x] 模式 B：僅五線譜（sheet）— 已離開 live path
   - [x] 模式 C：僅下落音符（falling，預設）
 - [x] 基本符號支援
   - [x] 音符 + 休止符
@@ -525,15 +537,10 @@ flowchart LR
   - [x] 自動建立 GitHub Release + 上傳 artifacts
   - [x] Release Please 自動化版本管理與 CHANGELOG（release-please.yml）
   - [x] CHANGELOG.md 打包進發佈包（electron-builder.yml extraResources）
-- [x] 自動更新
-  - [x] GitHub Releases update checker（自管 IPC helper，見 `docs/update-flow.md`）
-  - [x] 應用內更新提示
-  - [x] 發佈到 GitHub Releases
-- [x] 官方 release 簽章管線採 fail closed（缺少憑證、驗證失敗時不公開 release）
-  - [x] Windows: 強制 EV/OV signing 並驗證 setup、portable 與 zip 內執行檔
-  - [x] macOS: 強制 Developer ID signing + notarization，驗證雙架構 DMG
-  - [x] 簽章/公證 secrets、local/fork unsigned 邊界與 evidence checklist 文件（`docs/release-signing.md`）
-  - [ ] 使用 production secrets 完成真實三平台簽章發行與安裝 smoke 證據（#187）
+- [x] 自動更新 helper 與文件存在（`docs/update-flow.md`）。**Live settings 不放更新檢查。**
+- 簽章：**公開 GitHub Releases 是 unsigned**（live fact）。`docs/release-signing.md` 是歷史準備，不是現況。不要把 fail-closed signing 寫成 live path，也不要在此實作 #187。
+  - [x] 簽章／公證文件與 CI 草稿（歷史）
+  - [ ] #187 真實三平台簽章 — **不是 live work；不要實作**
 - [x] 檔案關聯
   - [x] `.mid` 檔案雙擊以 Rexiano 開啟（electron-builder.yml fileAssociations + 冷啟動／已開啟實例路由，#192）
   - [x] 各平台的 MIME type 註冊（Linux mimeTypes: audio/midi, audio/x-midi）

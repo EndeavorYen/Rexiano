@@ -36,6 +36,14 @@ describe("usePracticeStore", () => {
     expect(s.score.totalNotes).toBe(0);
     expect(s.score.accuracy).toBe(0);
     expect(s.noteResults.size).toBe(0);
+    expect(s.displayMode).toBe("falling");
+  });
+
+  test("setDisplayMode() refuses sheet-only and stays on falling", () => {
+    usePracticeStore.getState().setDisplayMode("split");
+    expect(usePracticeStore.getState().displayMode).toBe("split");
+    usePracticeStore.getState().setDisplayMode("sheet");
+    expect(usePracticeStore.getState().displayMode).toBe("falling");
   });
 
   // ─── setMode() ────────────────────────────────────────

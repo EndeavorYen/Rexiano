@@ -17,6 +17,11 @@ import {
   startBuiltInSongFromLibrary,
 } from "./helpers/appHarness";
 
+test.skip(
+  true,
+  "Theme picker, Insights, backup, and onboarding left the live path",
+);
+
 const MINIMUM_TEXT_CONTRAST = 4.5;
 const MINIMUM_CONTROL_CONTRAST = 3;
 

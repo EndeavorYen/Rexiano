@@ -115,21 +115,21 @@ describe("computeLoopHighlight", () => {
 // ─── Child Focus Mode Visibility ───────────────────────
 
 describe("getTransportControlVisibility", () => {
-  test("shows all controls when child focus mode is disabled", () => {
+  test("keeps play/timeline/volume and hides metronome chrome", () => {
     expect(getTransportControlVisibility({ childFocusMode: false })).toEqual({
       showPrimaryControls: true,
       showTimeline: true,
-      showMetronomeControls: true,
+      showMetronomeControls: false,
       showVolumeControls: true,
     });
   });
 
-  test("hides secondary controls while preserving essentials in child focus mode", () => {
+  test("does not resurrect metronome chrome in child focus mode", () => {
     expect(getTransportControlVisibility({ childFocusMode: true })).toEqual({
       showPrimaryControls: true,
       showTimeline: true,
       showMetronomeControls: false,
-      showVolumeControls: false,
+      showVolumeControls: true,
     });
   });
 });

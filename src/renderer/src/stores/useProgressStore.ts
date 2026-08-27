@@ -9,11 +9,19 @@ interface ProgressState {
   sessions: SessionRecord[];
   /** Whether the initial load from disk has completed */
   isLoaded: boolean;
+  /** True when the latest session save failed and can be retried. */
+  saveError: boolean;
+  /** Session that failed to persist, if any. */
+  unsavedSession: SessionRecord | null;
 
   /** Load sessions from main process via IPC */
   loadSessions: () => Promise<void>;
   /** Persist a new session record via IPC and add to local state */
   addSession: (record: SessionRecord) => Promise<void>;
+  /** Retry the last failed session save */
+  retryFailedSave: () => Promise<void>;
+  /** Dismiss the save-error notice without retrying */
+  clearSaveError: () => void;
   /** Get all sessions for a given song ID */
   getSessionsBySong: (songId: string) => SessionRecord[];
   /** Get the N most recent sessions across all songs */
@@ -25,6 +33,8 @@ interface ProgressState {
 export const useProgressStore = create<ProgressState>()((set, get) => ({
   sessions: [],
   isLoaded: false,
+  saveError: false,
+  unsavedSession: null,
 
   loadSessions: async () => {
     try {
@@ -39,11 +49,24 @@ export const useProgressStore = create<ProgressState>()((set, get) => ({
   addSession: async (record) => {
     try {
       await window.api.saveSession(record);
-      set((state) => ({ sessions: [...state.sessions, record] }));
+      set((state) => ({
+        sessions: [...state.sessions, record],
+        saveError: false,
+        unsavedSession: null,
+      }));
     } catch (err) {
       console.error("Failed to save session:", err);
+      set({ saveError: true, unsavedSession: record });
     }
   },
+
+  retryFailedSave: async () => {
+    const pending = get().unsavedSession;
+    if (!pending) return;
+    await get().addSession(pending);
+  },
+
+  clearSaveError: () => set({ saveError: false }),
 
   getSessionsBySong: (songId) => {
     return get().sessions.filter((s) => s.songId === songId);

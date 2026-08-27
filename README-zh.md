@@ -5,7 +5,7 @@
 <h1 align="center">Rexiano</h1>
 
 <p align="center">
-  免費、離線的鋼琴練習 — 下落音符、五線譜與 MIDI。<br>
+  免費、離線的鋼琴練習 — 下落音符、鋼琴鍵盤與 MIDI。<br>
   一位爸爸為 Rex 打造，並分享給所有學琴的人。
 </p>
 
@@ -32,15 +32,15 @@
   <tr>
     <td width="33%" align="center">
       <img src="docs/assets/screenshots/rexiano-library.png" alt="Rexiano 曲庫與內建曲目" width="100%"><br>
-      <sub>曲庫：內建曲目、篩選、收藏與最近檔案。</sub>
+      <sub>曲庫：內建曲目與 MIDI 匯入。</sub>
     </td>
     <td width="33%" align="center">
       <img src="docs/assets/screenshots/rexiano-practice.png" alt="Rexiano 下落音符練習畫面" width="100%"><br>
-      <sub>練習畫面：下落音符、鍵盤回饋、評分、循環與速度控制。</sub>
+      <sub>練習畫面：下落音符、鍵盤、Watch/Wait 與速度控制。</sub>
     </td>
     <td width="33%" align="center">
       <img src="docs/assets/screenshots/rexiano-split-sheet.png" alt="Rexiano 五線譜與下落音符分割畫面" width="100%"><br>
-      <sub>分割樂譜：五線譜與下落音符同步顯示。</sub>
+      <sub>可選分割畫面：五線譜可顯示在下落音符上方。</sub>
     </td>
   </tr>
 </table>
@@ -64,16 +64,15 @@
 
 目前公開 build 尚未簽章/公證，因此 Windows SmartScreen 或 macOS Gatekeeper 第一次啟動時可能要求確認。細節請看[安裝指南](docs/installation.md)與[簽章說明](docs/release-signing.md)。
 
-每個 release 都會附上 `SHA256SUMS.txt` 供 checksum 驗證。Rexiano 也可以從「設定 > 關於」檢查 GitHub Releases 上的新版本。
+每個 release 都會附上 `SHA256SUMS.txt` 供 checksum 驗證。
 
 ## 特色
 
 | 面向      | Rexiano 幫你做到                                                                       |
 | --------- | -------------------------------------------------------------------------------------- |
-| 視覺學習  | 60 FPS 下落音符、88 鍵高亮、音名標籤，以及左右手分色。                                 |
-| 五線譜    | 可切換分割、純五線譜、純下落音符模式，在樂譜與 piano-roll 練習間轉換。                 |
-| 聚焦練習  | Watch、Wait、Free 模式，加上速度控制、A-B 循環、分手練習、節拍器、預備拍與歷史進度。   |
-| MIDI 鍵盤 | USB 與藍牙 MIDI 輸入/輸出、熱插拔、自動重連與延音踏板支援。                            |
+| 視覺學習  | 60 FPS 下落音符、88 鍵高亮與音名標籤。                                                 |
+| 聚焦練習  | Watch 與 Wait 模式，加上速度控制。可選分割畫面讓五線譜顯示在下落音符上方。             |
+| MIDI 鍵盤 | USB 與藍牙 MIDI 輸入、熱插拔、自動重連與延音踏板支援。                                 |
 | 音色      | 內建 FreePats Upright Piano KW SoundFont，透過 Web Audio 播放，並保留合成器 fallback。 |
 | 檔案      | 內建曲庫，也可拖放匯入自己的 MIDI 檔。                                                 |
 

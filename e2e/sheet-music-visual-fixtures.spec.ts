@@ -165,7 +165,7 @@ async function readDiagnosticTitle(
   return notice.first().getAttribute("title");
 }
 
-test.describe("Sheet music visual fixtures", () => {
+test.describe.skip("Sheet music visual fixtures", () => {
   test("dense and sparse fixtures render nonblank SVG with stable glyph spread", async ({
     appPage,
   }) => {

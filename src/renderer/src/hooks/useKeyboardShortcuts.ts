@@ -41,11 +41,10 @@ export function getShowHelp(): boolean {
   return _showHelp;
 }
 
-/** Mode map: number key → PracticeMode */
+/** Mode map: number key → live PracticeMode (Watch / Wait only) */
 const MODE_MAP: Record<string, PracticeMode> = {
   "1": "watch",
   "2": "wait",
-  "3": "free",
 };
 
 const INTERACTIVE_TARGET_SELECTOR = [
@@ -196,26 +195,6 @@ export function createKeyboardHandler(
         break;
       }
 
-      // ── Loop A/B point setting ───────────────────────
-      case "KeyA": {
-        if (!hasSong) return;
-        const songA = useSongStore.getState().song;
-        const timeA = usePlaybackStore.getState().currentTime;
-        const loopA = usePracticeStore.getState().loopRange;
-        usePracticeStore
-          .getState()
-          .setLoopRange([timeA, loopA?.[1] ?? songA?.duration ?? timeA + 1]);
-        break;
-      }
-
-      case "KeyB": {
-        if (!hasSong) return;
-        const timeB = usePlaybackStore.getState().currentTime;
-        const loopB = usePracticeStore.getState().loopRange;
-        usePracticeStore.getState().setLoopRange([loopB?.[0] ?? 0, timeB]);
-        break;
-      }
-
       // ── Stop / close ─────────────────────────────────
       case "Escape": {
         if (!hasSong) return;
@@ -223,17 +202,6 @@ export function createKeyboardHandler(
         if (pb.isPlaying) {
           pb.setPlaying(false);
         }
-        break;
-      }
-
-      // ── Loop toggle ─────────────────────────────────
-      case "KeyL": {
-        if (!hasSong) return;
-        const ps = usePracticeStore.getState();
-        if (ps.loopRange) {
-          ps.setLoopRange(null);
-        }
-        // When no loop is active, L is a no-op (loop points must be set via A/B keys or UI)
         break;
       }
 

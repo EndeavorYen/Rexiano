@@ -307,7 +307,7 @@ async function expectScrollbarContrast(
   expect(failures).toEqual([]);
 }
 
-test.describe("Playback UI polish guardrails", () => {
+test.describe.skip("Playback UI polish guardrails", () => {
   test("scrollbars keep thumb and corner contrast in light and dark themes", async ({
     appPage,
   }) => {

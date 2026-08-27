@@ -1,5 +1,5 @@
 import { useRef } from "react";
-import { ArrowLeft, Eye, Hand, Music } from "lucide-react";
+import { ArrowLeft, Eye, Hand } from "lucide-react";
 import type { PracticeMode } from "@shared/types";
 import { useTranslation } from "@renderer/i18n/useTranslation";
 import { useDialogFocus } from "@renderer/hooks/useDialogFocus";
@@ -12,14 +12,13 @@ export interface ModeSelectionModalProps {
 }
 
 function ModeIcon({ mode }: { mode: PracticeMode }): React.JSX.Element {
-  if (mode === "watch") return <Eye size={28} />;
   if (mode === "wait") return <Hand size={28} />;
-  return <Music size={28} />;
+  return <Eye size={28} />;
 }
 
 /**
- * Synthesia-style mode selection modal shown before playback begins.
- * User picks Watch / Wait / Free to configure how the session will run.
+ * Mode selection modal shown before playback begins.
+ * Live path offers Watch / Wait only.
  */
 export function ModeSelectionModal({
   defaultMode,
@@ -76,7 +75,7 @@ export function ModeSelectionModal({
         </p>
 
         {/* Mode cards */}
-        <div className="mode-selection-grid grid grid-cols-1 gap-3 sm:grid-cols-3">
+        <div className="mode-selection-grid grid grid-cols-1 gap-3 sm:grid-cols-2">
           {options.map((opt, idx) => (
             <button
               key={opt.mode}

@@ -7,6 +7,8 @@ import {
   startBuiltInSongFromLibrary,
 } from "./helpers/appHarness";
 
+test.skip(true, "Metronome and count-in UI left the live path (#247)");
+
 interface MetronomeFixtureSnapshot {
   isPlaying: boolean;
   currentTime: number;

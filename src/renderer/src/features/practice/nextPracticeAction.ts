@@ -1,46 +1,23 @@
 import type { PracticeMode, PracticeScore, SessionRecord } from "@shared/types";
-import type { TrackHandAssignment } from "@renderer/engines/midi/TrackHandAssignment";
-import type {
-  WeakSection,
-  WeakSpot,
-} from "@renderer/features/insights/WeakSpotAnalyzer";
 
 export type NextPracticeActionKind =
   | "slow-down"
   | "raise-speed"
   | "repeat-once"
-  | "try-other-hand"
-  | "practice-weak-note"
-  | "practice-weak-section"
   | "next-song";
 
 export interface NextPracticeAction {
   kind: NextPracticeActionKind;
   priority: "high" | "medium" | "low";
   targetSpeed?: number;
-  targetTracks?: number[];
-  targetMidi?: number;
-  targetMeasureIndex?: number;
-  targetMeasureNumber?: number;
   targetMode: PracticeMode;
-  reason:
-    | "accuracy-low"
-    | "strong-pass"
-    | "steady-progress"
-    | "other-hand-ready"
-    | "weak-note-ready"
-    | "weak-section-ready"
-    | "song-mastered";
+  reason: "accuracy-low" | "strong-pass" | "steady-progress" | "song-mastered";
 }
 
 export interface NextPracticeActionInput {
   score: PracticeScore;
   mode: PracticeMode;
   speed: number;
-  tracksPlayed?: number[];
-  handAssignments?: Record<number, TrackHandAssignment>;
-  weakSpots?: WeakSpot[];
-  weakSections?: WeakSection[];
 }
 
 export interface DailyGoalProgress {
@@ -81,50 +58,6 @@ function roundTo(value: number, digits: number): number {
   return Math.round(value * factor) / factor;
 }
 
-function findOtherHandTracks(input: NextPracticeActionInput): number[] {
-  if (!input.tracksPlayed || !input.handAssignments) return [];
-
-  const playedHands = new Set<TrackHandAssignment>();
-  for (const trackIndex of input.tracksPlayed) {
-    const hand = input.handAssignments[trackIndex];
-    if (hand === "left" || hand === "right") {
-      playedHands.add(hand);
-    }
-  }
-  if (playedHands.size !== 1) return [];
-
-  const [playedHand] = Array.from(playedHands);
-  const nextHand = playedHand === "right" ? "left" : "right";
-
-  return Object.entries(input.handAssignments)
-    .filter(([, hand]) => hand === nextHand)
-    .map(([trackIndex]) => Number(trackIndex))
-    .filter((trackIndex) => Number.isInteger(trackIndex) && trackIndex >= 0)
-    .sort((a, b) => a - b);
-}
-
-function findWeakestNote(input: NextPracticeActionInput): WeakSpot | null {
-  if (!input.weakSpots || input.weakSpots.length === 0) return null;
-  return [...input.weakSpots].sort(
-    (a, b) =>
-      b.missRate - a.missRate ||
-      b.totalAttempts - a.totalAttempts ||
-      a.midi - b.midi,
-  )[0];
-}
-
-function findWeakestSection(
-  input: NextPracticeActionInput,
-): WeakSection | null {
-  if (!input.weakSections || input.weakSections.length === 0) return null;
-  return [...input.weakSections].sort(
-    (a, b) =>
-      b.missRate - a.missRate ||
-      b.totalAttempts - a.totalAttempts ||
-      a.measureIndex - b.measureIndex,
-  )[0];
-}
-
 export function selectNextPracticeAction(
   input: NextPracticeActionInput,
 ): NextPracticeAction {
@@ -146,42 +79,6 @@ export function selectNextPracticeAction(
       targetMode: input.mode,
       reason: "strong-pass",
     };
-  }
-
-  if (input.score.accuracy >= 85) {
-    const weakSection = findWeakestSection(input);
-    if (weakSection) {
-      return {
-        kind: "practice-weak-section",
-        priority: "medium",
-        targetMeasureIndex: weakSection.measureIndex,
-        targetMeasureNumber: weakSection.measureNumber,
-        targetMode: input.mode,
-        reason: "weak-section-ready",
-      };
-    }
-
-    const weakSpot = findWeakestNote(input);
-    if (weakSpot) {
-      return {
-        kind: "practice-weak-note",
-        priority: "medium",
-        targetMidi: weakSpot.midi,
-        targetMode: input.mode,
-        reason: "weak-note-ready",
-      };
-    }
-
-    const targetTracks = findOtherHandTracks(input);
-    if (targetTracks.length > 0) {
-      return {
-        kind: "try-other-hand",
-        priority: "medium",
-        targetTracks,
-        targetMode: input.mode,
-        reason: "other-hand-ready",
-      };
-    }
   }
 
   if (

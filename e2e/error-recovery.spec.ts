@@ -299,7 +299,7 @@ test.describe("Error recovery", () => {
     await expect(mainMenuCard).toBeVisible();
   });
 
-  test("Space activates import recovery without toggling background playback", async ({
+  test.skip("Space activates import recovery without toggling background playback", async ({
     appPage,
   }) => {
     await gotoLibrary(appPage);

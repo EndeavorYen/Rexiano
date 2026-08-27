@@ -3,19 +3,14 @@ import {
   Play,
   Pause,
   SkipBack,
-  Timer,
   Loader2,
   AlertCircle,
   RotateCcw,
 } from "lucide-react";
 import { usePlaybackStore } from "@renderer/stores/usePlaybackStore";
 import { useSongStore } from "@renderer/stores/useSongStore";
-import { usePracticeStore } from "@renderer/stores/usePracticeStore";
-import { useSettingsStore } from "@renderer/stores/useSettingsStore";
 import { VolumeControl } from "@renderer/features/audio/VolumeControl";
 import { getAudioStatusGuidance } from "@renderer/features/audio/audioStatusGuidance";
-import { MetronomePulse } from "@renderer/features/metronome/MetronomePulse";
-import { useMetronomeBeat } from "@renderer/hooks/useMetronomeBeat";
 import { useTranslation } from "@renderer/i18n/useTranslation";
 import {
   resetPlayback,
@@ -60,14 +55,15 @@ export interface TransportControlVisibility {
 }
 
 // eslint-disable-next-line react-refresh/only-export-components
-export function getTransportControlVisibility({
-  childFocusMode,
-}: TransportControlVisibilityInput): TransportControlVisibility {
+export function getTransportControlVisibility(
+  input?: TransportControlVisibilityInput,
+): TransportControlVisibility {
+  void input;
   return {
     showPrimaryControls: true,
     showTimeline: true,
-    showMetronomeControls: !childFocusMode,
-    showVolumeControls: !childFocusMode,
+    showMetronomeControls: false,
+    showVolumeControls: true,
   };
 }
 
@@ -95,16 +91,7 @@ export function TransportBar({
   );
   const requestAudioRecovery = usePlaybackStore((s) => s.requestAudioRecovery);
 
-  const loopRange = usePracticeStore((s) => s.loopRange);
-
-  const metronomeEnabled = useSettingsStore((s) => s.metronomeEnabled);
-  const setMetronomeEnabled = useSettingsStore((s) => s.setMetronomeEnabled);
-  const childFocusMode = useSettingsStore((s) => s.childFocusMode);
-
-  const metronomeBeat = useMetronomeBeat();
-
   const duration = song?.duration ?? 0;
-  const loopHighlight = computeLoopHighlight(loopRange, duration);
   const volumePercent = Math.round(volume * 100);
   const audioGuidance = getAudioStatusGuidance(
     {
@@ -127,7 +114,7 @@ export function TransportBar({
   const primaryButtonSize = compact ? 36 : 40;
   const iconSize = compact ? 16 : 18;
   const utilityButtonSize = 36;
-  const controlVisibility = getTransportControlVisibility({ childFocusMode });
+  const controlVisibility = getTransportControlVisibility();
 
   return (
     <div
@@ -199,50 +186,6 @@ export function TransportBar({
           >
             <SkipBack size={compact ? 13 : 14} fill="currentColor" />
           </button>
-
-          {controlVisibility.showMetronomeControls && (
-            <>
-              <button
-                onClick={() => setMetronomeEnabled(!metronomeEnabled)}
-                className="flex items-center justify-center rounded-lg cursor-pointer transition-colors"
-                style={{
-                  width: utilityButtonSize,
-                  height: utilityButtonSize,
-                  background: metronomeEnabled
-                    ? "color-mix(in srgb, var(--color-accent) 15%, transparent)"
-                    : "var(--color-surface-alt)",
-                  color: metronomeEnabled
-                    ? "var(--color-accent)"
-                    : "var(--color-text-muted)",
-                  border: metronomeEnabled
-                    ? "1px solid color-mix(in srgb, var(--color-accent) 30%, transparent)"
-                    : "1px solid transparent",
-                  transition: "all 0.15s ease",
-                }}
-                title={
-                  metronomeEnabled
-                    ? t("transport.disableMetronome")
-                    : t("transport.enableMetronome")
-                }
-                aria-label={
-                  metronomeEnabled
-                    ? t("transport.disableMetronome")
-                    : t("transport.enableMetronome")
-                }
-                data-testid="metronome-toggle"
-              >
-                <Timer size={compact ? 13 : 14} />
-              </button>
-
-              <div className="hidden md:block">
-                <MetronomePulse
-                  isPlaying={metronomeBeat.isRunning}
-                  currentBeat={metronomeBeat.currentBeat}
-                  beatsPerMeasure={metronomeBeat.beatsPerMeasure}
-                />
-              </div>
-            </>
-          )}
 
           {audioStatus === "loading" && audioRecoveryState !== "recovering" && (
             <span
@@ -346,22 +289,6 @@ export function TransportBar({
             className="relative flex-1 flex items-center"
             style={{ height: 36 }}
           >
-            {loopHighlight && (
-              <div
-                className="absolute rounded-full pointer-events-none"
-                style={{
-                  left: `${loopHighlight.left}%`,
-                  width: `${loopHighlight.width}%`,
-                  top: "50%",
-                  height: 5,
-                  transform: "translateY(-50%)",
-                  background: `linear-gradient(90deg, color-mix(in srgb, var(--color-accent) 40%, transparent), var(--color-accent), color-mix(in srgb, var(--color-accent) 40%, transparent))`,
-                  borderRadius: 3,
-                }}
-                data-testid="loop-highlight"
-                aria-label={t("practice.abLoopRange")}
-              />
-            )}
             <input
               type="range"
               min={0}

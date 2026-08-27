@@ -211,12 +211,12 @@ describe("Keyboard shortcut constants", () => {
     expect(SPEED_STEP).toBeLessThanOrEqual(1);
   });
 
-  test("MODE_MAP covers all practice modes", async () => {
+  test("MODE_MAP covers live Watch and Wait only", async () => {
     const { MODE_MAP } = await import("./hooks/useKeyboardShortcuts");
     const modes = Object.values(MODE_MAP);
     expect(modes).toContain("watch");
     expect(modes).toContain("wait");
-    expect(modes).toContain("free");
+    expect(modes).not.toContain("free");
   });
 });
 

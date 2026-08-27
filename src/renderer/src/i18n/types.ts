@@ -21,6 +21,8 @@ export interface TranslationMap {
   "app.importErrorMissingGuidance": string;
   "app.importErrorReadTitle": string;
   "app.importErrorReadGuidance": string;
+  "app.importErrorEmptyTitle": string;
+  "app.importErrorEmptyGuidance": string;
   "app.importErrorUnknownFile": string;
   "app.importActionChooseMidi": string;
   "app.importActionRetry": string;
@@ -31,6 +33,8 @@ export interface TranslationMap {
   "app.startPractice": string;
   "app.openSettings": string;
   "app.menuGreeting": string;
+  "progress.saveFailed": string;
+  "progress.retrySave": string;
   "onboarding.dialogLabel": string;
   "onboarding.step.start.title": string;
   "onboarding.step.start.description": string;
@@ -466,12 +470,6 @@ export interface TranslationMap {
   "celebration.nextAction.raiseSpeed.body": string;
   "celebration.nextAction.repeatOnce.title": string;
   "celebration.nextAction.repeatOnce.body": string;
-  "celebration.nextAction.tryOtherHand.title": string;
-  "celebration.nextAction.tryOtherHand.body": string;
-  "celebration.nextAction.practiceWeakNote.title": string;
-  "celebration.nextAction.practiceWeakNote.body": string;
-  "celebration.nextAction.practiceWeakSection.title": string;
-  "celebration.nextAction.practiceWeakSection.body": string;
   "celebration.nextAction.nextSong.title": string;
   "celebration.nextAction.nextSong.body": string;
   "celebration.starRating": string;

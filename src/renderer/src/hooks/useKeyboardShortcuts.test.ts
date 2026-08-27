@@ -294,26 +294,21 @@ describe("useKeyboardShortcuts", () => {
     });
   });
 
-  // ─── L — Loop toggle ───────────────────────────────────
-  describe("L — Loop toggle", () => {
-    test("clears loop when loop is active", () => {
+  // ─── A/B/L — leftover A-B loop is not a live shortcut ───
+  describe("A/B/L — leftover A-B loop", () => {
+    test("does not set or clear loop range", () => {
       (
         usePracticeStore.getState() as { loopRange: [number, number] | null }
       ).loopRange = [10, 20];
-      fireKey("KeyL");
-      expect(usePracticeStore.getState().setLoopRange).toHaveBeenCalledWith(
-        null,
-      );
-    });
-
-    test("does nothing when no loop is active", () => {
+      fireKey("KeyA");
+      fireKey("KeyB");
       fireKey("KeyL");
       expect(usePracticeStore.getState().setLoopRange).not.toHaveBeenCalled();
     });
   });
 
-  // ─── 1/2/3 — Mode switching ────────────────────────────
-  describe("1/2/3 — Mode switching", () => {
+  // ─── 1/2 — Mode switching ────────────────────────────
+  describe("1/2 — Mode switching", () => {
     test("1 switches to watch mode", () => {
       fireKey("Digit1");
       expect(usePracticeStore.getState().setMode).toHaveBeenCalledWith("watch");
@@ -324,9 +319,9 @@ describe("useKeyboardShortcuts", () => {
       expect(usePracticeStore.getState().setMode).toHaveBeenCalledWith("wait");
     });
 
-    test("3 switches to free mode", () => {
+    test("3 does not switch to leftover Free mode", () => {
       fireKey("Digit3");
-      expect(usePracticeStore.getState().setMode).toHaveBeenCalledWith("free");
+      expect(usePracticeStore.getState().setMode).not.toHaveBeenCalled();
     });
   });
 

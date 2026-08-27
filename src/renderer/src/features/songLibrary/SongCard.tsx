@@ -1,12 +1,7 @@
 import { useCallback } from "react";
 import type { BuiltinSongMeta } from "../../../../shared/types";
 import { useProgressStore } from "@renderer/stores/useProgressStore";
-import {
-  difficultyDescriptionKeys,
-  gradeLabelShort,
-  gradeDescriptionKeys,
-  getGradeColor,
-} from "./songCardUtils";
+import { difficultyDescriptionKeys } from "./songCardUtils";
 import { useTranslation } from "@renderer/i18n/useTranslation";
 import type { TranslationKey } from "@renderer/i18n/types";
 
@@ -73,12 +68,6 @@ export function SongCard({
   const difficultyLabel = t(difficultyLabelKeys[song.difficulty]);
   const dots = difficultyDots[song.difficulty];
   const stars = bestScore ? accuracyToStars(bestScore.score.accuracy) : 0;
-  const gradeLabel =
-    song.grade !== undefined ? gradeLabelShort[song.grade] : null;
-  const gradeDesc =
-    song.grade !== undefined ? t(gradeDescriptionKeys[song.grade]) : null;
-  const gradeColor =
-    song.grade !== undefined ? getGradeColor(song.grade) : null;
 
   return (
     <button
@@ -192,19 +181,6 @@ export function SongCard({
           </div>
 
           <div className="flex items-center gap-1.5 shrink-0">
-            {gradeLabel && gradeColor && (
-              <span
-                className="text-[10px] font-mono font-semibold px-1.5 py-0.5 rounded-md"
-                style={{
-                  color: gradeColor,
-                  background: `color-mix(in srgb, ${gradeColor} 12%, transparent)`,
-                  border: `1px solid color-mix(in srgb, ${gradeColor} 30%, transparent)`,
-                }}
-                title={gradeDesc ?? undefined}
-              >
-                {gradeLabel}
-              </span>
-            )}
             <span
               className="text-[11px] font-mono tabular-nums"
               style={{ color: "var(--color-text-muted)" }}

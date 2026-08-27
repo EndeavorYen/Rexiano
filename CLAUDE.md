@@ -4,40 +4,42 @@
 
 開發前請先閱讀以下文件，了解專案全貌與當前進度：
 
-- **[docs/DESIGN.md](docs/DESIGN.md)** — 系統設計文件（Phase 1~9 完整架構、資料模型、技術決策）
-- **[docs/ROADMAP.md](docs/ROADMAP.md)** — 開發路線圖與任務追蹤（checkbox 清單，標示已完成 / 未完成）
+- **[docs/ROADMAP.md](docs/ROADMAP.md)** — **進度單一真實來源**（歷史 Phase 勾選 + 產品下一程 + live path）。不要用本檔快照當 backlog。
+- **[docs/DESIGN.md](docs/DESIGN.md)** — 系統設計文件（歷史 Phase 1~9 架構、資料模型、技術決策）。歷史寫過的 chrome 不代表還在 live path。
 - **[docs/init.md](docs/init.md)** — 原始需求文件（六大核心功能）
 
 ## 開發工作流程（必遵守）
 
 每次開發新功能或修復 bug，遵循以下流程：
 
-1. **開發前**：先查閱 DESIGN.md 中對應 Phase 的架構設計，確認檔案結構、資料模型、API 介面
-2. **實作時**：按照 DESIGN.md 定義的架構與慣例實現，不自行發明新模式
-3. **完成後**：更新 ROADMAP.md 對應任務的 checkbox（`[ ]` → `[x]`），包含子項目
+1. **開發前**：先查 ROADMAP.md 的 live path 與產品下一程，再查 DESIGN.md 對應架構。不要從本檔快照或 Synthesia 對照表開新工作。
+2. **實作時**：按照 DESIGN.md 定義的架構與慣例實現，不自行發明新模式。引擎層保持純邏輯（無 React）。
+3. **完成後**：若完成 ROADMAP.md 中的任務，更新對應 checkbox（`[ ]` → `[x]`），包含子項目。不要把歷史已勾項目當成「要重建」。
 4. **驗證**：執行 `pnpm lint && pnpm typecheck && pnpm test` 確認無回歸
 
-> **重要**：ROADMAP.md 的 checkbox 是專案進度的單一真實來源，必須保持準確。完成一項就勾一項，不要等到全部做完才更新。
+> **重要**：`docs/ROADMAP.md` 才是進度單一真實來源。本檔的表格會過期，不要用它決定下一步。
 
-## 當前進度快照
+## Live path（Musk）
 
-| Phase | 狀態      | 說明                                                                  |
-| ----- | --------- | --------------------------------------------------------------------- |
-| 1~3   | ✅ 完成   | 專案骨架、下落音符引擎、主題系統                                      |
-| 4     | ✅ 完成   | 音頻播放（合成音色 fallback，`resources/piano.sf2` 已存在）           |
-| 5     | ✅ 完成   | MIDI 裝置連接（Input/Output/Store/UI）                                |
-| 6     | ✅ 完成   | 練習模式（引擎 + Store + UI + 整合：tickerLoop / App.tsx / 視覺回饋） |
-| 6.5+  | 🔲 未開始 | 兒童可用性增強、樂譜顯示、打包發佈                                    |
+Rex 看得到的按鈕 / tab / chip 只留：MIDI 匯入、下落音符、鋼琴鍵盤、聲音、Watch、Wait、速度、zh-TW、內建曲、Windows。
+
+**不要重建**已離開 live surface 的 chrome（磁碟 leftover 模組可留）：Insights、編輯器入口、sheet-only、Free、L0–L8 chips、備份 tab、更新檢查、指法預設開、兒童專注模式、家長報告、MIDI output / 測試鈕。
+
+**不要做**：合併 OSMD / 第二套 notation engine；通用譜匯入器；音樂家級 MIDI→譜轉換器（直到某一首具名曲不可用）；#187 簽章當 live path；把 `site/` 當產品需求。公開發佈檔是 **unsigned**。
+
+## 當前進度（指向 ROADMAP，不是本檔）
+
+歷史 Phase 1–9（含 6.5 兒童可用性、7 五線譜顯示、8 編輯器、9 打包）已在 ROADMAP 勾完。那是工程史，**不是**「6.5+ 還沒開始、要去堆 chrome」。產品下一程是 ROADMAP 裡較不笨的三階段，不是 Synthesia 功能對照表。
 
 ## 技術堆疊速查
 
 - **框架**: Electron 39 + React 19 + TypeScript 5.9
 - **建置**: electron-vite 5 + Vite 7 + Tailwind CSS 4
-- **渲染**: PixiJS 8（下落音符）、CSS（鍵盤 / UI）
-- **狀態**: Zustand 5（6 個 store，見下方列表）
-- **測試**: Vitest 4（25 個測試檔案，343 tests）
+- **渲染**: PixiJS 8（下落音符）、CSS（鍵盤 / UI）；樂譜 live renderer 是 **VexFlow**（不要上 OSMD）
+- **狀態**: Zustand 5（store 見下方列表；數量以原始檔為準，不要抄本檔舊數字）
+- **測試**: Vitest 4（測試放模組旁邊 `*.test.ts`）。測試數量以 `pnpm test` 為準，不要抄過期的「343 tests」。
 - **套件管理**: pnpm
-- **音頻**: Web Audio API + SoundFont（`resources/piano.sf2`, 6MB）
+- **音頻**: Web Audio API + SoundFont（`resources/piano.sf2`）
 
 ## 前端美學守則
 
@@ -75,10 +77,12 @@ Interpret creatively and make unexpected choices that feel genuinely designed fo
 | --------------------- | ------------------------------- | --------------------------------------------------------------- |
 | `useSongStore`        | `stores/useSongStore.ts`        | 當前載入的歌曲（ParsedSong）                                    |
 | `usePlaybackStore`    | `stores/usePlaybackStore.ts`    | 播放狀態（currentTime, isPlaying, pixelsPerSecond）             |
-| `useThemeStore`       | `stores/useThemeStore.ts`       | 主題選擇 + localStorage 持久化                                  |
-| `useMidiDeviceStore`  | `stores/useMidiDeviceStore.ts`  | MIDI 裝置連接狀態                                               |
+| `useThemeStore`       | `stores/useThemeStore.ts`       | 主題選擇 + localStorage 持久化（主題 picker 已離開 live chrome） |
+| `useMidiDeviceStore`  | `stores/useMidiDeviceStore.ts`  | MIDI 裝置連接狀態（live chrome 只留 input）                     |
 | `useSongLibraryStore` | `stores/useSongLibraryStore.ts` | 曲庫元資料                                                      |
-| `usePracticeStore`    | `stores/usePracticeStore.ts`    | 練習模式狀態（mode / speed / loopRange / activeTracks / score） |
+| `usePracticeStore`    | `stores/usePracticeStore.ts`    | 練習狀態（live：Watch / Wait / speed；displayMode 不可為 sheet） |
+| `useProgressStore`    | `stores/useProgressStore.ts`    | 練習成績持久化                                                  |
+| `useSettingsStore`    | `stores/useSettingsStore.ts`    | 設定持久化（live 面板：語言 + 音量；預設語言 zh-TW）            |
 
 ## 開發慣例
 
@@ -95,24 +99,23 @@ Interpret creatively and make unexpected choices that feel genuinely designed fo
 
 ## Practice Mode 慣例（Phase 6）
 
+Live chrome 只有 **Watch / Wait + 速度**。Free、A-B、分手、Insights、兒童專注進階面板已離開 live surface；leftover 模組可留在 `features/`，不要加回按鈕。
+
 ### 架構分層
 
 ```
 engines/practice/        ← 純邏輯層（無 React 依賴）
   WaitMode.ts           ← 等待模式狀態機（playing → waiting → idle）
   SpeedController.ts    ← 速度控制（0.25x ~ 2.0x，含 clamping）
-  LoopController.ts     ← A-B 段落循環邏輯
-  ScoreCalculator.ts    ← 評分累加器（hit/miss/streak/accuracy）
+  LoopController.ts     ← leftover A-B 邏輯（不是 live chrome）
+  ScoreCalculator.ts    ← 評分累加器
   practiceManager.ts    ← 模組級單例管理（init / get / dispose）
 stores/
-  usePracticeStore.ts   ← Zustand store（mode / speed / loopRange / activeTracks / score）
+  usePracticeStore.ts   ← Zustand store（live：mode Watch/Wait、speed；displayMode 拒絕 sheet）
 features/practice/       ← React UI 元件
-  PracticeModeSelector  ← Watch / Wait / Free 模式切換
-  SpeedSlider           ← 速度預設按鈕 + 連續滑桿
-  ABLoopSelector        ← A-B 循環起止點設定
-  TrackSelector         ← 分手練習 track 勾選
-  ScoreOverlay          ← 即時分數 HUD（右上角浮動）
-  PracticeToolbar       ← 組合元件（嵌入 App 佈局，TransportBar 下方）
+  PracticeModeSelector  ← Watch / Wait
+  SpeedSlider           ← 速度預設 + 滑桿
+  PracticeToolbar       ← 組合 Watch/Wait + 速度
 ```
 
 ### 關鍵設計決策
@@ -121,9 +124,12 @@ features/practice/       ← React UI 元件
 - **和弦判定**：WaitMode 收集 ±200ms 時間窗口內的所有音符為一組和弦，需全部按下才繼續
 - **引擎類別為純函式型**：SpeedController / LoopController / ScoreCalculator 使用 getter/setter + 驗證，可獨立測試
 - **practiceManager.ts 單例模式**：引擎實例以 module-level 變數管理（`initPracticeEngines` / `getPracticeEngines` / `disposePracticeEngines`），tickerLoop 和 App.tsx 透過 import 存取
-- **整合已完成**：tickerLoop 中 WaitMode 閘控 + 速度乘數 + 循環偵測；App.tsx 中引擎生命週期 + 回調接線 + MIDI 路由 + UI 嵌入
+- **整合已完成**：tickerLoop 中 WaitMode 閘控 + 速度乘數；App.tsx 中引擎生命週期 + 回調接線 + MIDI 輸入路由 + UI 嵌入
+- **顯示模式**：預設下落音符 + 鍵盤。Split（譜 + 下落）可當輔助。Sheet-only 不可進入。Live 樂譜引擎是 VexFlow。
 
 ## MIDI Device 慣例（Phase 5）
+
+Live chrome 只有 **MIDI input**（含藍牙）。Output 下拉與測試鈕已離開 live surface；`MidiOutputSender` leftover 可留，不要加回按鈕。
 
 ### 架構分層
 
@@ -131,11 +137,11 @@ features/practice/       ← React UI 元件
 engines/midi/          ← 純邏輯層（無 React 依賴）
   MidiDeviceManager.ts ← Singleton，管理 Web MIDI API 存取與裝置列表
   MidiInputParser.ts   ← 解析 MIDI 訊息（Note On/Off/CC），callback-based
-  MidiOutputSender.ts  ← 發送 MIDI 訊息到輸出裝置
+  MidiOutputSender.ts  ← leftover 輸出發送（不是 live chrome）
 stores/
   useMidiDeviceStore.ts ← Zustand store，橋接 engine → React
 features/midiDevice/   ← React UI 元件
-  DeviceSelector.tsx   ← 裝置選擇下拉選單（嵌入 TransportBar）
+  DeviceSelector.tsx   ← 輸入裝置選擇（live）
   ConnectionStatus.tsx ← 連線狀態指示燈
 ```
 

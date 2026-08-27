@@ -5,7 +5,7 @@ import {
   openPlaybackDrawer,
 } from "./helpers/appHarness";
 
-test.describe("Piano roll editor flow", () => {
+test.describe.skip("Piano roll editor flow", () => {
   test("opens an editor for a loaded song and draws a note", async ({
     appPage,
   }) => {

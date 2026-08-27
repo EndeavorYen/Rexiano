@@ -81,7 +81,13 @@ export function beginMetronomePlayback({
 }): "count-in" | "started" {
   engine.setEnabled(metronomeEnabled);
 
-  if (shouldRunPlaybackCountIn({ currentTime, countInBeats })) {
+  if (
+    shouldRunPlaybackCountIn({
+      currentTime,
+      countInBeats,
+      metronomeEnabled,
+    })
+  ) {
     const timing = resolveMetronomeTiming(song, currentTime, speed);
     setCountInActive(true);
     engine.startCountIn(

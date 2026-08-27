@@ -1,3 +1,4 @@
+import { join } from "path";
 import { describe, expect, test } from "vitest";
 import { createE2eUserDataPath } from "./e2eUserData";
 
@@ -11,7 +12,13 @@ describe("e2eUserData", () => {
         testId: "song-library shows continue practice",
       }),
     ).toBe(
-      "/repo/test-results/electron-user-data/chromium/worker-2/song-library-shows-continue-practice",
+      join(
+        "/repo/test-results",
+        "electron-user-data",
+        "chromium",
+        "worker-2",
+        "song-library-shows-continue-practice",
+      ),
     );
   });
 
@@ -24,7 +31,13 @@ describe("e2eUserData", () => {
         testId: "loads: Hot Cross Buns?",
       }),
     ).toBe(
-      "/repo/test-results/electron-user-data/electron-windows/worker-0/loads-hot-cross-buns",
+      join(
+        "/repo/test-results",
+        "electron-user-data",
+        "electron-windows",
+        "worker-0",
+        "loads-hot-cross-buns",
+      ),
     );
   });
 });

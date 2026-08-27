@@ -3,15 +3,11 @@ import {
   Upload,
   AlertCircle,
   Music,
-  Trophy,
-  Flame,
   ArrowLeft,
   PanelRightOpen,
   X,
   PlayCircle,
   Star,
-  Target,
-  FolderPlus,
   FolderOpen,
   Pencil,
   Check,
@@ -20,32 +16,24 @@ import {
   Loader2,
 } from "lucide-react";
 import { parseMidiFile } from "../../engines/midi/MidiFileParser";
-import { AudioEngine } from "../../engines/audio/AudioEngine";
+import { isParsedSongPracticeReady } from "../../engines/midi/MidiDiagnostics";
 import { useSongStore } from "../../stores/useSongStore";
 import { usePlaybackStore } from "../../stores/usePlaybackStore";
-import { useSettingsStore } from "../../stores/useSettingsStore";
 import { useSongLibraryStore } from "../../stores/useSongLibraryStore";
 import { useProgressStore } from "../../stores/useProgressStore";
 import { formatRelativeTime } from "../../utils/relativeTime";
 import { SongCard } from "./SongCard";
 import { SongLibraryFilters } from "./SongLibraryFilters";
-import { ThemePicker } from "../settings/ThemePicker";
-import {
-  categoryLabelKeys,
-  getGradeColor,
-  gradeLabelShort,
-  groupSongsByCategory,
-} from "./songCardUtils";
+
+import { categoryLabelKeys, groupSongsByCategory } from "./songCardUtils";
 import {
   buildImportedSongActivity,
   buildImportedSongSelectionPreviewModel,
-  buildPracticeRecommendationModel,
   buildSongPreviewSessionActions,
   buildSongActivity,
   buildSongSelectionPreviewModel,
   filterSongsForLibrary,
   sortSongsForLibrary,
-  type PracticeRecommendationReason,
   type SongActivity,
   type SongSelectionPreviewModel,
 } from "./songLibrarySelectors";
@@ -60,18 +48,12 @@ import {
   type ImportedSongRecord,
 } from "./importedSongMetadata";
 import { SongAudioPreviewPlayer } from "./songPreviewPlayback";
-import {
-  buildLessonProgression,
-  type LessonRecommendationReason,
-} from "./lessonProgression";
 import { DeviceSelector } from "../midiDevice/DeviceSelector";
 import { useTranslation } from "../../i18n/useTranslation";
 import { useDialogFocus } from "../../hooks/useDialogFocus";
-import { buildDailyGoalStatus } from "../practice/nextPracticeAction";
 import type { PracticeSessionIntent } from "../practice/sessionIntent";
 import appIcon from "../../../../../docs/figure/Rexiano_icon.png";
 import type { BuiltinSongMeta, RecentFile } from "../../../../shared/types";
-import type { TranslationKey } from "../../i18n/types";
 
 interface SongLibraryProps {
   onOpenFile: () => Promise<void>;
@@ -106,12 +88,6 @@ function rememberLibraryReturnFocus(testId: string): void {
   }
 }
 
-function previewSourceTestId(preview: SongSelectionPreviewModel): string {
-  return preview.kind === "builtin"
-    ? `song-select-${preview.song.id}`
-    : `imported-song-select-${preview.importedSong.id}`;
-}
-
 function previewTrackCountKey(
   kind: "builtin" | "imported",
   sourceId: string,
@@ -123,46 +99,15 @@ function previewAudioSourceKey(preview: SongSelectionPreviewModel): string {
   return previewTrackCountKey(preview.kind, preview.sourceId);
 }
 
-const recommendationReasonKeys: Record<
-  PracticeRecommendationReason,
-  TranslationKey
-> = {
-  "new-song": "library.recommendation.reason.newSong",
-  "improve-score": "library.recommendation.reason.improveScore",
-  "continue-progress": "library.recommendation.reason.continueProgress",
-};
-
-const lessonRecommendationReasonKeys: Record<
-  LessonRecommendationReason,
-  TranslationKey
-> = {
-  "new-song": "library.recommendation.reason.newSong",
-  "improve-score": "library.recommendation.reason.improveScore",
-  "continue-progress": "library.recommendation.reason.continueProgress",
-};
-
-type ImportedGradeDraft =
-  | ""
-  | "0"
-  | "1"
-  | "2"
-  | "3"
-  | "4"
-  | "5"
-  | "6"
-  | "7"
-  | "8";
 type ImportedCategoryDraft = "" | ImportedSongCategory;
 
 interface ImportedSongMetadataDraft {
   title: string;
   composer: string;
   tags: string;
-  grade: ImportedGradeDraft;
   category: ImportedCategoryDraft;
 }
 
-const importedGradeOptions = [0, 1, 2, 3, 4, 5, 6, 7, 8] as const;
 const importedCategoryOptions = [
   "exercise",
   "popular",
@@ -177,10 +122,6 @@ function createImportedMetadataDraft(
     title: record.title,
     composer: record.composer ?? "",
     tags: record.tags.join(", "),
-    grade:
-      record.grade === undefined
-        ? ""
-        : (`${record.grade}` as ImportedGradeDraft),
     category: record.category ?? "",
   };
 }
@@ -197,10 +138,6 @@ function createImportedMetadataPatch(
     title: draft.title.trim(),
     composer: draft.composer.trim() || undefined,
     tags,
-    grade:
-      draft.grade === ""
-        ? undefined
-        : (Number(draft.grade) as NonNullable<ImportedSongRecord["grade"]>),
     category: draft.category || undefined,
   };
 }
@@ -224,7 +161,6 @@ export function SongLibrary({
   }, [t]);
   const songs = useSongLibraryStore((s) => s.songs);
   const importedSongs = useSongLibraryStore((s) => s.importedSongs);
-  const watchedFolders = useSongLibraryStore((s) => s.watchedFolders);
   const isLoading = useSongLibraryStore((s) => s.isLoading);
   const searchQuery = useSongLibraryStore((s) => s.searchQuery);
   const difficultyFilter = useSongLibraryStore((s) => s.difficultyFilter);
@@ -233,7 +169,6 @@ export function SongLibrary({
   const viewMode = useSongLibraryStore((s) => s.viewMode);
   const favoriteSongIds = useSongLibraryStore((s) => s.favoriteSongIds);
   const fetchSongs = useSongLibraryStore((s) => s.fetchSongs);
-  const addWatchedFolder = useSongLibraryStore((s) => s.addWatchedFolder);
   const refreshWatchedFolders = useSongLibraryStore(
     (s) => s.refreshWatchedFolders,
   );
@@ -259,15 +194,11 @@ export function SongLibrary({
   const [loadingImportedPath, setLoadingImportedPath] = useState<string | null>(
     null,
   );
-  const [isAddingWatchedFolder, setIsAddingWatchedFolder] = useState(false);
   const [editingImportedSongId, setEditingImportedSongId] = useState<
     string | null
   >(null);
-  const [selectedSongId, setSelectedSongId] = useState<string | null>(null);
-  const [selectedImportedSongId, setSelectedImportedSongId] = useState<
-    string | null
-  >(null);
-  const [focusPreviewPrimary, setFocusPreviewPrimary] = useState(false);
+  const selectedSongId: string | null = null;
+  const selectedImportedSongId: string | null = null;
   const [previewTrackCounts, setPreviewTrackCounts] = useState<
     Record<string, number>
   >({});
@@ -287,19 +218,6 @@ export function SongLibrary({
   const previewPlaybackTokenRef = useRef(0);
   const closeDeviceDrawer = useCallback(() => {
     setShowDeviceDrawer(false);
-  }, []);
-
-  const getPreviewPlayer = useCallback(() => {
-    if (!previewPlayerRef.current) {
-      previewPlayerRef.current = new SongAudioPreviewPlayer(
-        new AudioEngine({
-          onRuntimeError: (runtimeError) => {
-            console.error("Song preview audio runtime error:", runtimeError);
-          },
-        }),
-      );
-    }
-    return previewPlayerRef.current;
   }, []);
 
   const stopAudioPreview = useCallback(() => {
@@ -458,10 +376,6 @@ export function SongLibrary({
   const selectedPreviewSourceKey = selectedSongPreview
     ? previewAudioSourceKey(selectedSongPreview)
     : null;
-  const selectedPreviewAudioStatus =
-    previewAudioState.sourceKey === selectedPreviewSourceKey
-      ? previewAudioState.status
-      : "idle";
 
   useEffect(() => {
     if (previewAudioState.status === "idle") return;
@@ -522,42 +436,11 @@ export function SongLibrary({
     };
   }, [previewTrackCounts, selectedImportedSong, selectedSong]);
 
-  const practiceRecommendation = useMemo(
-    () => buildPracticeRecommendationModel(filteredSongs, songActivity),
-    [filteredSongs, songActivity],
-  );
-
-  const lessonProgression = useMemo(
-    () => buildLessonProgression(songs, songActivity),
-    [songs, songActivity],
-  );
-  const nextLesson = lessonProgression.nextLesson;
-
-  const dailyGoalStatus = useMemo(
-    () =>
-      buildDailyGoalStatus(sessions, {
-        dayTimestamp: Date.now(),
-        targetMinutes: 10,
-      }),
-    [sessions],
-  );
-
   /** Songs grouped by category for section display */
   const categoryGroups = useMemo(
     () => groupSongsByCategory(sortedSongs),
     [sortedSongs],
   );
-
-  /** Progress stats derived from sessions */
-  const progressStats = useMemo(() => {
-    const uniqueSongs = new Set(sessions.map((s) => s.songId)).size;
-    const totalSessions = sessions.length;
-    const bestAccuracy =
-      sessions.length > 0
-        ? Math.round(Math.max(...sessions.map((s) => s.score.accuracy)))
-        : 0;
-    return { uniqueSongs, totalSessions, bestAccuracy };
-  }, [sessions]);
 
   const handleSelectSong = useCallback(
     async (songId: string, intent: PracticeSessionIntent = "practice") => {
@@ -568,6 +451,10 @@ export function SongLibrary({
         const result = await window.api.loadBuiltinSong(songId);
         if (result) {
           const parsed = parseMidiFile(result.fileName, result.data);
+          if (!isParsedSongPracticeReady(parsed)) {
+            setError(t("app.importErrorEmptyTitle"));
+            return;
+          }
           loadSong(parsed);
           reset();
           await window.api.saveRecentFile({
@@ -589,13 +476,10 @@ export function SongLibrary({
   );
 
   const handlePreviewSong = useCallback(
-    (songId: string, viaKeyboard: boolean) => {
-      setError(null);
-      setFocusPreviewPrimary(viaKeyboard);
-      setSelectedSongId(songId);
-      setSelectedImportedSongId(null);
+    (songId: string) => {
+      void handleSelectSong(songId, "practice");
     },
-    [],
+    [handleSelectSong],
   );
 
   /** Max recent files shown in the quick-access strip */
@@ -639,6 +523,10 @@ export function SongLibrary({
           console.error("Failed to parse recent file:", e);
           return;
         }
+        if (!isParsedSongPracticeReady(parsed)) {
+          setError(t("app.importErrorEmptyTitle"));
+          return;
+        }
         loadSong(parsed);
         reset();
         await window.api.saveRecentFile({
@@ -675,35 +563,6 @@ export function SongLibrary({
     [removeRecent],
   );
 
-  const handleAddWatchedFolder = useCallback(async () => {
-    setError(null);
-    setIsAddingWatchedFolder(true);
-    try {
-      await addWatchedFolder();
-    } catch (e) {
-      const msg = e instanceof Error ? e.message : t("general.error");
-      setError(msg);
-      console.error("Failed to add watched MIDI folder:", e);
-    } finally {
-      setIsAddingWatchedFolder(false);
-    }
-  }, [addWatchedFolder, t]);
-
-  const handlePreviewImportedSong = useCallback(
-    (record: ImportedSongRecord, viaKeyboard: boolean) => {
-      if (record.missing) {
-        setError(t("library.importedMissing"));
-        return;
-      }
-
-      setError(null);
-      setFocusPreviewPrimary(viaKeyboard);
-      setSelectedSongId(null);
-      setSelectedImportedSongId(record.id);
-    },
-    [t],
-  );
-
   const handlePracticeImportedSong = useCallback(
     async (
       record: ImportedSongRecord,
@@ -724,6 +583,10 @@ export function SongLibrary({
           return;
         }
         const parsed = parseMidiFile(result.fileName, result.data);
+        if (!isParsedSongPracticeReady(parsed)) {
+          setError(t("app.importErrorEmptyTitle"));
+          return;
+        }
         loadSong(parsed);
         reset();
         await window.api.saveRecentFile({
@@ -743,99 +606,12 @@ export function SongLibrary({
     [loadSong, onSessionIntentSelected, refreshRecents, reset, t],
   );
 
-  const handleStartPreviewSession = useCallback(
-    (preview: SongSelectionPreviewModel, intent: PracticeSessionIntent) => {
-      rememberLibraryReturnFocus(previewSourceTestId(preview));
-      stopAudioPreview();
-      if (preview.kind === "builtin") {
-        void handleSelectSong(preview.song.id, intent);
-        return;
-      }
-
-      void handlePracticeImportedSong(preview.importedSong, intent);
+  const handlePreviewImportedSong = useCallback(
+    (record: ImportedSongRecord) => {
+      void handlePracticeImportedSong(record, "practice");
     },
-    [handlePracticeImportedSong, handleSelectSong, stopAudioPreview],
+    [handlePracticeImportedSong],
   );
-
-  const handleToggleAudioPreview = useCallback(
-    async (preview: SongSelectionPreviewModel) => {
-      const sourceKey = previewAudioSourceKey(preview);
-      if (
-        previewAudioState.sourceKey === sourceKey &&
-        previewAudioState.status !== "idle"
-      ) {
-        stopAudioPreview();
-        return;
-      }
-
-      const token = previewPlaybackTokenRef.current + 1;
-      previewPlaybackTokenRef.current = token;
-      previewPlayerRef.current?.stop();
-      setError(null);
-      setPreviewAudioState({ status: "loading", sourceKey });
-
-      try {
-        if (preview.kind === "imported" && preview.importedSong.missing) {
-          setError(t("library.importedMissing"));
-          setPreviewAudioState({ status: "idle", sourceKey: null });
-          return;
-        }
-
-        const result =
-          preview.kind === "builtin"
-            ? await window.api.loadBuiltinSong(preview.song.id)
-            : await window.api.loadMidiPath(preview.importedSong.sourcePath);
-
-        if (previewPlaybackTokenRef.current !== token) return;
-
-        if (!result) {
-          setError(
-            preview.kind === "imported"
-              ? t("library.importedMissing")
-              : t("library.preview.audioPreviewError"),
-          );
-          setPreviewAudioState({ status: "idle", sourceKey: null });
-          return;
-        }
-
-        const parsed = parseMidiFile(result.fileName, result.data);
-        const { muted } = useSettingsStore.getState();
-        const volume = muted ? 0 : usePlaybackStore.getState().volume;
-
-        await getPreviewPlayer().play(parsed, {
-          volume,
-          onEnded: () => {
-            if (previewPlaybackTokenRef.current === token) {
-              setPreviewAudioState({ status: "idle", sourceKey: null });
-            }
-          },
-        });
-
-        if (previewPlaybackTokenRef.current === token) {
-          setPreviewAudioState({ status: "playing", sourceKey });
-        }
-      } catch (e) {
-        if (previewPlaybackTokenRef.current !== token) return;
-        setError(t("library.preview.audioPreviewError"));
-        setPreviewAudioState({ status: "idle", sourceKey: null });
-        console.error("Failed to play song preview:", e);
-      }
-    },
-    [
-      getPreviewPlayer,
-      previewAudioState.sourceKey,
-      previewAudioState.status,
-      stopAudioPreview,
-      t,
-    ],
-  );
-
-  const selectedPreviewIsLoading =
-    selectedSongPreview?.kind === "builtin"
-      ? loadingId === selectedSongPreview.song.id
-      : selectedSongPreview?.kind === "imported"
-        ? loadingImportedPath === selectedSongPreview.importedSong.sourcePath
-        : false;
 
   const handleEditImportedMetadata = useCallback(
     (record: ImportedSongRecord) => {
@@ -923,345 +699,9 @@ export function SongLibrary({
                 <Upload size={15} />
                 {t("library.importMidi")}
               </button>
-              <button
-                onClick={() => void handleAddWatchedFolder()}
-                disabled={isAddingWatchedFolder}
-                className="btn-surface-themed flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium cursor-pointer disabled:cursor-wait disabled:opacity-60"
-                data-testid="library-add-folder"
-              >
-                <FolderPlus size={15} />
-                {t("library.addFolder")}
-              </button>
-              <ThemePicker />
             </div>
-          </div>
-
-          {isProgressLoaded && sessions.length > 0 && (
-            <div
-              className="mt-4 grid gap-3 rounded-xl px-4 py-3 sm:grid-cols-3"
-              style={{
-                background:
-                  "color-mix(in srgb, var(--color-accent) 8%, var(--color-surface))",
-                border:
-                  "1px solid color-mix(in srgb, var(--color-accent) 16%, var(--color-border))",
-              }}
-            >
-              <StatBadge
-                icon={<Music size={14} />}
-                value={progressStats.uniqueSongs}
-                label={
-                  progressStats.uniqueSongs === 1
-                    ? t("library.songPracticed")
-                    : t("library.songsPracticed")
-                }
-              />
-              <StatBadge
-                icon={<Flame size={14} />}
-                value={progressStats.totalSessions}
-                label={
-                  progressStats.totalSessions === 1
-                    ? t("library.session")
-                    : t("library.sessions")
-                }
-              />
-              <StatBadge
-                icon={<Trophy size={14} />}
-                value={`${progressStats.bestAccuracy}%`}
-                label={t("library.bestScore")}
-              />
-            </div>
-          )}
-
-          <div
-            className="mt-4 rounded-xl px-4 py-3"
-            style={{
-              background:
-                "color-mix(in srgb, var(--color-note2) 8%, var(--color-surface))",
-              border:
-                "1px solid color-mix(in srgb, var(--color-note2) 18%, var(--color-border))",
-            }}
-            data-testid="library-daily-goal"
-          >
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <span
-                className="flex items-center gap-2 text-xs font-body font-semibold uppercase tracking-wide"
-                style={{ color: "var(--color-text-muted)" }}
-              >
-                <Target size={14} style={{ color: "var(--color-note2)" }} />
-                {t("library.dailyGoal.label")}
-              </span>
-              <span
-                className="text-xs font-mono tabular-nums"
-                style={{ color: "var(--color-text)" }}
-              >
-                {t("library.dailyGoal.minutes", {
-                  practiced: dailyGoalStatus.practicedMinutes,
-                  target: dailyGoalStatus.targetMinutes,
-                })}
-              </span>
-            </div>
-            <div
-              className="mt-2 h-1.5 overflow-hidden rounded-full"
-              style={{ background: "var(--color-surface-alt)" }}
-              aria-hidden="true"
-            >
-              <div
-                className="h-full rounded-full"
-                style={{
-                  width: `${Math.round(dailyGoalStatus.completionRatio * 100)}%`,
-                  background: "var(--color-note2)",
-                }}
-              />
-            </div>
-            <p
-              className="mt-1.5 text-[11px] font-body"
-              style={{ color: "var(--color-text-muted)" }}
-            >
-              {dailyGoalStatus.isComplete
-                ? t("library.dailyGoal.complete")
-                : t("library.dailyGoal.remaining", {
-                    remaining: dailyGoalStatus.remainingMinutes,
-                  })}
-            </p>
           </div>
         </header>
-
-        {practiceRecommendation && (
-          <section className="surface-elevated mb-5 p-4 animate-page-enter">
-            <button
-              type="button"
-              onClick={() => {
-                rememberLibraryReturnFocus("song-library-recommendation");
-                void handleSelectSong(practiceRecommendation.song.id);
-              }}
-              disabled={loadingId === practiceRecommendation.song.id}
-              className="group flex w-full items-center justify-between gap-4 rounded-xl px-4 py-3 text-left cursor-pointer transition-all duration-150 disabled:opacity-60 disabled:cursor-wait"
-              style={{
-                background:
-                  "color-mix(in srgb, var(--color-note1) 10%, var(--color-surface))",
-                border:
-                  "1px solid color-mix(in srgb, var(--color-note1) 20%, var(--color-border))",
-              }}
-              data-testid="song-library-recommendation"
-            >
-              <span className="flex min-w-0 items-center gap-3">
-                <span
-                  className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full"
-                  style={{
-                    background: "var(--color-accent)",
-                    color: "var(--color-on-accent)",
-                  }}
-                >
-                  {loadingId === practiceRecommendation.song.id ? (
-                    <span
-                      className="h-4 w-4 rounded-full border-2 animate-spin"
-                      style={{
-                        borderColor:
-                          "color-mix(in srgb, var(--color-on-accent) 45%, transparent)",
-                        borderTopColor: "var(--color-on-accent)",
-                      }}
-                    />
-                  ) : (
-                    <PlayCircle size={20} />
-                  )}
-                </span>
-                <span className="min-w-0">
-                  <span
-                    className="block text-xs font-body font-semibold uppercase tracking-wide"
-                    style={{ color: "var(--color-accent-text)" }}
-                  >
-                    {t("library.recommendation.title")}
-                  </span>
-                  <span
-                    className="block truncate text-base font-display font-bold"
-                    style={{ color: "var(--color-text)" }}
-                    data-testid="song-library-recommendation-title"
-                  >
-                    {practiceRecommendation.song.title}
-                  </span>
-                  <span
-                    className="block text-xs font-body"
-                    style={{ color: "var(--color-text-muted)" }}
-                  >
-                    {t(recommendationReasonKeys[practiceRecommendation.reason])}
-                    {" · "}
-                    {practiceRecommendation.bestAccuracy !== null
-                      ? `${Math.round(practiceRecommendation.bestAccuracy)}%`
-                      : t("library.neverPracticed")}
-                  </span>
-                </span>
-              </span>
-              <span
-                className="hidden shrink-0 rounded-lg px-3 py-1.5 text-xs font-body font-semibold sm:inline-flex"
-                style={{
-                  color: "var(--color-on-accent)",
-                  background: "var(--color-accent)",
-                }}
-              >
-                {t("library.recommendation.cta")}
-              </span>
-            </button>
-          </section>
-        )}
-
-        {lessonProgression.groups.length > 0 && (
-          <section
-            className="surface-elevated mb-5 p-4 animate-page-enter"
-            data-testid="lesson-progression-panel"
-          >
-            <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-              <div className="flex items-center gap-2">
-                <Target
-                  size={14}
-                  style={{ color: "var(--color-accent-text)" }}
-                />
-                <span
-                  className="text-xs font-body font-semibold uppercase tracking-wide"
-                  style={{ color: "var(--color-accent-text)" }}
-                >
-                  {t("library.lessonPath.title")}
-                </span>
-              </div>
-              <span
-                className="rounded-full px-2 py-0.5 text-[10px] font-body font-medium"
-                style={{
-                  color: "var(--color-text-muted)",
-                  background:
-                    "color-mix(in srgb, var(--color-surface-alt) 76%, var(--color-surface))",
-                  border: "1px solid var(--color-border)",
-                }}
-              >
-                {t("library.lessonPath.free")}
-              </span>
-            </div>
-
-            <div className="grid gap-3 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1.8fr)]">
-              {nextLesson && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    rememberLibraryReturnFocus("lesson-progression-next");
-                    void handleSelectSong(nextLesson.song.id);
-                  }}
-                  disabled={loadingId === nextLesson.song.id}
-                  className="group flex min-w-0 items-center gap-3 rounded-xl px-3 py-3 text-left cursor-pointer transition-all disabled:cursor-wait disabled:opacity-60"
-                  style={{
-                    background:
-                      "color-mix(in srgb, var(--color-note2) 10%, var(--color-surface))",
-                    border:
-                      "1px solid color-mix(in srgb, var(--color-note2) 24%, var(--color-border))",
-                  }}
-                  data-testid="lesson-progression-next"
-                >
-                  <span
-                    className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full"
-                    style={{
-                      background: "var(--color-accent)",
-                      color: "var(--color-on-accent)",
-                    }}
-                  >
-                    <PlayCircle size={18} />
-                  </span>
-                  <span className="min-w-0">
-                    <span
-                      className="block text-[10px] font-body font-semibold uppercase tracking-wide"
-                      style={{ color: "var(--color-accent-text)" }}
-                    >
-                      {t("library.lessonPath.next")}
-                    </span>
-                    <span
-                      className="block truncate text-sm font-display font-bold"
-                      style={{ color: "var(--color-text)" }}
-                    >
-                      {nextLesson.song.title}
-                    </span>
-                    <span
-                      className="block truncate text-xs font-body"
-                      style={{ color: "var(--color-text-muted)" }}
-                    >
-                      {t(lessonRecommendationReasonKeys[nextLesson.reason])}
-                      {" · "}
-                      {t("library.lessonPath.mastery", {
-                        accuracy: lessonProgression.masteryAccuracy,
-                      })}
-                    </span>
-                  </span>
-                </button>
-              )}
-
-              <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
-                {lessonProgression.groups.map((group) => {
-                  const progressPercent =
-                    group.totalSongCount > 0
-                      ? Math.round(
-                          (group.completedSongCount / group.totalSongCount) *
-                            100,
-                        )
-                      : 0;
-
-                  return (
-                    <div
-                      key={group.id}
-                      className="rounded-xl px-3 py-2.5"
-                      style={{
-                        background:
-                          "color-mix(in srgb, var(--color-surface) 84%, transparent)",
-                        border: "1px solid var(--color-border)",
-                      }}
-                      data-testid={`lesson-group-${group.id}`}
-                    >
-                      <div className="flex items-center justify-between gap-2">
-                        <span
-                          className="truncate text-xs font-body font-semibold"
-                          style={{ color: "var(--color-text)" }}
-                        >
-                          {t(group.titleKey)}
-                        </span>
-                        <span
-                          className="shrink-0 text-[10px] font-mono tabular-nums"
-                          style={{ color: "var(--color-text-muted)" }}
-                        >
-                          {t("library.lessonPath.completed", {
-                            completed: group.completedSongCount,
-                            total: group.totalSongCount,
-                          })}
-                        </span>
-                      </div>
-                      <div
-                        className="mt-2 h-1.5 overflow-hidden rounded-full"
-                        style={{
-                          background:
-                            "color-mix(in srgb, var(--color-border) 70%, transparent)",
-                        }}
-                      >
-                        <div
-                          className="h-full rounded-full"
-                          style={{
-                            width: `${progressPercent}%`,
-                            background: group.completed
-                              ? "var(--color-success-text)"
-                              : "var(--color-accent)",
-                          }}
-                        />
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          </section>
-        )}
-
-        {selectedSongPreview && (
-          <SongSelectionPreviewPanel
-            preview={selectedSongPreview}
-            focusPrimaryAction={focusPreviewPrimary}
-            isLoading={selectedPreviewIsLoading}
-            audioStatus={selectedPreviewAudioStatus}
-            onStartSession={handleStartPreviewSession}
-            onToggleAudioPreview={handleToggleAudioPreview}
-          />
-        )}
 
         {continueRecent && (
           <section
@@ -1416,19 +856,6 @@ export function SongLibrary({
                   {t("library.importedSongs")}
                 </span>
               </div>
-              <span
-                className="rounded-full px-2 py-0.5 text-[10px] font-body font-medium"
-                style={{
-                  color: "var(--color-text-muted)",
-                  background:
-                    "color-mix(in srgb, var(--color-surface-alt) 76%, var(--color-surface))",
-                  border: "1px solid var(--color-border)",
-                }}
-              >
-                {t("library.watchedFolderCount", {
-                  count: watchedFolders.length,
-                })}
-              </span>
             </div>
             <div className="grid gap-2">
               {filteredImportedSongs.map((record, index) => (
@@ -1595,14 +1022,6 @@ export function SongLibrary({
                                 onSelect={handlePreviewSong}
                                 colorIndex={groupIdx * 4 + i}
                               />
-                              <FavoriteButton
-                                song={song}
-                                activity={
-                                  songActivity.get(song.id) ?? emptyActivity
-                                }
-                                onToggleFavorite={toggleFavoriteSong}
-                                className="absolute right-2 top-2"
-                              />
                               {loadingId === song.id && (
                                 <LoadingOverlay radiusClass="rounded-xl" />
                               )}
@@ -1683,7 +1102,7 @@ function formatSongDuration(seconds: number): string {
   return `${m}:${s.toString().padStart(2, "0")}`;
 }
 
-function SongSelectionPreviewPanel({
+export function SongSelectionPreviewPanel({
   preview,
   focusPrimaryAction,
   isLoading,
@@ -1708,8 +1127,6 @@ function SongSelectionPreviewPanel({
     preview.kind === "builtin"
       ? `builtin:${preview.song.id}`
       : `imported:${preview.importedSong.id}`;
-  const grade =
-    preview.grade !== undefined ? gradeLabelShort[preview.grade] : "--";
   const category = preview.category
     ? t(categoryLabelKeys[preview.category])
     : "--";
@@ -1824,7 +1241,6 @@ function SongSelectionPreviewPanel({
               : "--"
           }
         />
-        <PreviewMetric label={t("library.preview.grade")} value={grade} />
         <PreviewMetric label={t("library.preview.category")} value={category} />
         <PreviewMetric
           label={t("library.preview.bestScore")}
@@ -1908,10 +1324,6 @@ function ImportedSongRow({
   animationDelay: number;
 }): React.JSX.Element {
   const { t } = useTranslation();
-  const gradeColor =
-    record.grade !== undefined
-      ? getGradeColor(record.grade)
-      : "var(--color-border)";
 
   return (
     <div
@@ -1947,16 +1359,6 @@ function ImportedSongRow({
         </span>
 
         <span className="flex flex-wrap items-center gap-1.5 md:justify-end">
-          <span
-            className="rounded-md px-1.5 py-0.5 text-[10px] font-mono font-semibold"
-            style={{
-              color: gradeColor,
-              background: `color-mix(in srgb, ${gradeColor} 12%, transparent)`,
-              border: `1px solid color-mix(in srgb, ${gradeColor} 30%, transparent)`,
-            }}
-          >
-            {record.grade !== undefined ? gradeLabelShort[record.grade] : "--"}
-          </span>
           <span
             className="rounded-md px-1.5 py-0.5 text-[10px] font-body font-medium"
             style={{
@@ -2028,7 +1430,7 @@ function ImportedSongMetadataEditor({
 
   return (
     <div
-      className="grid gap-2 rounded-lg px-3 py-3 md:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)_minmax(0,1.1fr)_auto_auto_auto]"
+      className="grid gap-2 rounded-lg px-3 py-3 md:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)_minmax(0,1.1fr)_auto_auto]"
       style={{
         background: "color-mix(in srgb, var(--color-note3) 7%, transparent)",
         border:
@@ -2075,27 +1477,6 @@ function ImportedSongMetadataEditor({
         placeholder={t("library.importedMetadataTags")}
         data-testid="imported-song-tags-input"
       />
-      <select
-        value={draft.grade}
-        onChange={(event) =>
-          onChange({ grade: event.target.value as ImportedGradeDraft })
-        }
-        className="rounded-md px-2 py-1.5 text-xs font-body"
-        style={{
-          color: "var(--color-text)",
-          background: "var(--color-surface)",
-          border: "1px solid var(--color-border)",
-        }}
-        aria-label={t("library.importedMetadataGrade")}
-        data-testid="imported-song-grade-select"
-      >
-        <option value="">--</option>
-        {importedGradeOptions.map((grade) => (
-          <option key={grade} value={`${grade}`}>
-            {gradeLabelShort[grade]}
-          </option>
-        ))}
-      </select>
       <select
         value={draft.category}
         onChange={(event) =>
@@ -2149,7 +1530,6 @@ function SongListRow({
   isLoading,
   isSelected,
   onSelect,
-  onToggleFavorite,
   animationDelay,
 }: {
   song: BuiltinSongMeta;
@@ -2157,14 +1537,10 @@ function SongListRow({
   isLoading: boolean;
   isSelected: boolean;
   onSelect: (songId: string, viaKeyboard: boolean) => void;
-  onToggleFavorite: (songId: string) => void;
+  onToggleFavorite?: (songId: string) => void;
   animationDelay: number;
 }): React.JSX.Element {
   const { t } = useTranslation();
-  const gradeColor =
-    song.grade !== undefined
-      ? getGradeColor(song.grade)
-      : "var(--color-border)";
   const category = song.category ?? "popular";
   const practicedLabel =
     activity.playCount > 0
@@ -2208,16 +1584,6 @@ function SongListRow({
 
         <span className="flex flex-wrap items-center gap-1.5 md:justify-end">
           <span
-            className="rounded-md px-1.5 py-0.5 text-[10px] font-mono font-semibold"
-            style={{
-              color: gradeColor,
-              background: `color-mix(in srgb, ${gradeColor} 12%, transparent)`,
-              border: `1px solid color-mix(in srgb, ${gradeColor} 30%, transparent)`,
-            }}
-          >
-            {song.grade !== undefined ? gradeLabelShort[song.grade] : "--"}
-          </span>
-          <span
             className="rounded-md px-1.5 py-0.5 text-[10px] font-body font-medium"
             style={{
               color: "var(--color-text-muted)",
@@ -2249,19 +1615,12 @@ function SongListRow({
         </span>
       </button>
 
-      <FavoriteButton
-        song={song}
-        activity={activity}
-        onToggleFavorite={onToggleFavorite}
-        className="mr-2 self-center"
-      />
-
       {isLoading && <LoadingOverlay radiusClass="rounded-lg" />}
     </div>
   );
 }
 
-function FavoriteButton({
+export function FavoriteButton({
   song,
   activity,
   onToggleFavorite,
@@ -2324,7 +1683,7 @@ function LoadingOverlay({
   );
 }
 
-function StatBadge({
+export function StatBadge({
   icon,
   value,
   label,

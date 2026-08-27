@@ -23,6 +23,9 @@ export const zhTW: TranslationMap = {
     "{fileName} 可能已被移動或無法讀取，請從目前位置重新匯入。",
   "app.importErrorReadTitle": "無法讀取檔案",
   "app.importErrorReadGuidance": "請確認 {fileName} 的檔案權限，然後再試一次。",
+  "app.importErrorEmptyTitle": "MIDI 檔案沒有可練習的音符",
+  "app.importErrorEmptyGuidance":
+    "{fileName} 沒有可練習的音符。請改選包含音符的 MIDI 檔。",
   "app.importErrorUnknownFile": "此檔案",
   "app.importActionChooseMidi": "選擇 MIDI 檔案",
   "app.importActionRetry": "再試一次",
@@ -33,6 +36,8 @@ export const zhTW: TranslationMap = {
   "app.startPractice": "開始彈琴",
   "app.openSettings": "設定",
   "app.menuGreeting": "今天要彈什麼呢？",
+  "progress.saveFailed": "練習進度無法儲存。",
+  "progress.retrySave": "再試一次",
   "onboarding.dialogLabel": "歡迎導覽",
   "onboarding.step.start.title": "開始彈琴",
   "onboarding.step.start.description":
@@ -215,7 +220,7 @@ export const zhTW: TranslationMap = {
   // ── Falling Notes ──────────────────────────────────────────────
   "fallingNotes.renderFailureTitle": "下落音符無法啟動",
   "fallingNotes.renderFailureGuidance":
-    "可以先切到五線譜模式、更新顯示卡驅動程式，或重新啟動 Rexiano。",
+    "請更新顯示卡驅動程式，或重新啟動 Rexiano。",
 
   // ── Song Header ────────────────────────────────────────────────
   "song.tracks": "軌道",
@@ -485,15 +490,6 @@ export const zhTW: TranslationMap = {
     "試著提高到 {speed}，維持一樣穩的節奏。",
   "celebration.nextAction.repeatOnce.title": "再練一次",
   "celebration.nextAction.repeatOnce.body": "趁手感還在，再完整彈一次。",
-  "celebration.nextAction.tryOtherHand.title": "換另一隻手",
-  "celebration.nextAction.tryOtherHand.body":
-    "下一輪換另一隻手，維持同一個練習模式。",
-  "celebration.nextAction.practiceWeakNote.title": "專心練一個音",
-  "celebration.nextAction.practiceWeakNote.body":
-    "把 MIDI 音 {note} 慢慢、多試幾次。",
-  "celebration.nextAction.practiceWeakSection.title": "循環一個小節",
-  "celebration.nextAction.practiceWeakSection.body":
-    "用 A-B 練習鎖定第 {measure} 小節，慢速再彈幾次。",
   "celebration.nextAction.nextSong.title": "選下一首",
   "celebration.nextAction.nextSong.body":
     "這次已經很穩了，可以選一首同等級的新曲子。",
