@@ -134,6 +134,7 @@ export function PracticeToolbar({
                   : undefined,
               }}
               aria-expanded={expanded}
+              data-testid="practice-more"
               aria-label={
                 expanded
                   ? t("practice.hideAdvanced")

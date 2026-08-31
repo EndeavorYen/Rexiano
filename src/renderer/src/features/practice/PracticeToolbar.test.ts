@@ -46,4 +46,13 @@ describe("getPracticeToolbarInitialExpanded", () => {
       }),
     ).toBe(false);
   });
+
+  test("keeps advanced closed when the song setup does not need a fix", () => {
+    expect(
+      getPracticeToolbarInitialExpanded({
+        childFocusMode: false,
+        needsSongSetupFix: false,
+      }),
+    ).toBe(false);
+  });
 });

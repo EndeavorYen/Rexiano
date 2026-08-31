@@ -742,11 +742,7 @@ test.describe("Playback UI polish guardrails", () => {
     await appPage.keyboard.press("Escape");
     await waitForUiSettled(appPage);
 
-    await appPage
-      .getByTestId("practice-toolbar")
-      .getByRole("button")
-      .filter({ hasText: /More|更多/ })
-      .click();
+    await appPage.getByTestId("practice-more").click();
     await waitForUiSettled(appPage);
 
     const keyboard = appPage.getByTestId("piano-keyboard");
@@ -817,6 +813,13 @@ test.describe("Playback UI polish guardrails", () => {
       "[data-testid='metronome-toggle']",
       "[data-testid='volume-slider']",
       "[data-testid='speed-slider']",
+      "[data-testid='practice-more']",
+    ]);
+
+    await appPage.getByTestId("practice-more").click();
+    await waitForUiSettled(appPage);
+
+    await expectSelectorsMeetHitTarget(appPage, [
       "[data-testid='track-active-toggle']",
       "[data-testid='track-hand-select']",
       "[data-testid='track-sound-toggle']",
