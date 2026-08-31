@@ -1,4 +1,4 @@
-import { mkdtempSync, readFileSync, writeFileSync } from "node:fs";
+import { mkdtempSync, existsSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -7,7 +7,7 @@ import { describe, expect, it, test } from "vitest";
 import { parseMidiFile } from "@renderer/engines/midi/MidiFileParser";
 import type { ParsedSong } from "../src/renderer/src/engines/midi/types";
 import { musicXmlToMidi } from "../src/renderer/src/engines/score/musicXmlToMidi";
-import { buildGeneratedSongArtifacts } from "./generate-songs";
+import { buildGeneratedSongArtifacts, materializeMissingBuiltinScores } from "./generate-songs";
 
 const D5 = 74;
 const E5 = 76;
@@ -178,16 +178,16 @@ describe("buildGeneratedSongArtifacts score-first contract", () => {
     const { midiFiles } = buildGeneratedSongArtifacts([], {
       scoresDir: mkdtempSync(join(tmpdir(), "rexiano-empty-scores-")),
     });
-    const hotCross = midiFiles.find((file) => file.id === "hot-cross-buns");
-    expect(hotCross).toBeDefined();
+    const twinkle = midiFiles.find((file) => file.id === "twinkle-twinkle");
+    expect(twinkle).toBeDefined();
 
     const generated = parseMidiFile(
-      hotCross!.file,
-      Array.from(hotCross!.bytes),
+      twinkle!.file,
+      Array.from(twinkle!.bytes),
     );
     const committed = parseMidiFile(
-      "hot-cross-buns.mid",
-      Array.from(readFileSync(join(midiDir, "hot-cross-buns.mid"))),
+      "twinkle-twinkle.mid",
+      Array.from(readFileSync(join(midiDir, "twinkle-twinkle.mid"))),
     );
 
     expect(generated.noteCount).toBeGreaterThan(0);
@@ -207,5 +207,41 @@ describe("buildGeneratedSongArtifacts score-first contract", () => {
     );
 
     expect(noteKeys(packaged)).toEqual(noteKeys(fromScore));
+  });
+
+  test("records score vs MIDI origin on generated catalog metadata", () => {
+    const { songsMeta } = buildGeneratedSongArtifacts([]);
+    expect(songsMeta.find((song) => song.id === "au-clair-de-la-lune")?.origin).toBe(
+      "score",
+    );
+    expect(songsMeta.find((song) => song.id === "hot-cross-buns")?.origin).toBe(
+      "score",
+    );
+  });
+
+  test("keeps the packaged Hot Cross Buns MIDI aligned with the repo MusicXML", () => {
+    const fromScore = parseMidiFile(
+      "hot-cross-from-score.mid",
+      Array.from(
+        musicXmlToMidi(
+          readFileSync(join(resourcesRoot, "scores", "hot-cross-buns.musicxml"), "utf8"),
+        ).toArray(),
+      ),
+    );
+    const packaged = parseMidiFile(
+      "hot-cross-buns.mid",
+      Array.from(readFileSync(join(midiDir, "hot-cross-buns.mid"))),
+    );
+
+    expect(noteKeys(packaged)).toEqual(noteKeys(fromScore));
+  });
+
+  test("materializeMissingBuiltinScores writes MusicXML for songs without a score", () => {
+    const scoresDir = mkdtempSync(join(tmpdir(), "rexiano-scores-"));
+    const written = materializeMissingBuiltinScores(scoresDir);
+    expect(written).toContain("twinkle-twinkle");
+    expect(existsSync(join(scoresDir, "twinkle-twinkle.musicxml"))).toBe(true);
+    const xml = readFileSync(join(scoresDir, "twinkle-twinkle.musicxml"), "utf8");
+    expect(xml).toContain("<work-title>Twinkle Twinkle Little Star</work-title>");
   });
 });

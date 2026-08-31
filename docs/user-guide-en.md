@@ -4,7 +4,7 @@
 >
 > Other languages: [繁體中文](./user-guide.md)
 >
-> **TL;DR** - Press **Start Playing**, choose or import a MIDI song in the library, preview it, then start **Practice** or **Play Along**. In the player, use falling notes, sheet music, Wait mode, A-B loops, MIDI keyboard feedback, and practice reports to turn each session into a small, doable task.
+> **TL;DR** - Press **Start Playing**, choose or import a score or MIDI song in the library, preview it, then start **Practice** or **Play Along**. In the player, use falling notes, sheet music, Wait mode, A-B loops, MIDI keyboard feedback, and practice reports to turn each session into a small, doable task.
 
 ---
 
@@ -28,7 +28,7 @@ Rexiano's main flow is: Start Playing -> Song Library -> Song Preview -> Practic
 
 1. Open Rexiano. On first launch, follow the short welcome guide or skip it.
 2. On the main menu, press **Start Playing**.
-3. In the library, choose a built-in song or use **Import your own MIDI file** for a `.mid` / `.midi` file.
+3. In the library, choose a built-in song or use **Import a score or MIDI file** for a `.musicxml` / `.mid` / `.midi` file.
 4. In **Song preview**, check length, level, category, best score, and track count. Press **Preview** if you want to listen first.
 5. Press **Practice** for a guided session; press **Play Along** to enter the player directly in free play.
 6. In the player, press **Space** to play or pause. Start with **Watch**, then move to **Wait** for slow practice.
@@ -48,14 +48,14 @@ The library is where you choose songs, organize your own MIDI files, and track p
 | Daily goal                 | Shows today's practiced minutes                        | Treat it as a gentle "sit down and play" cue    |
 | Recommended next           | Suggests a song from your progress                     | Use it when you are not sure what to play       |
 | Lesson path                | Groups built-in songs by level and progress            | Let children move through L0, L1, L2 gradually  |
-| Recent / Continue Practice | Reopens recently used MIDI files                       | Great for new teacher-assigned files            |
+| Recent / Continue Practice | Reopens recently used scores and MIDI files            | Great for new teacher-assigned files            |
 | All Songs                  | Built-in library with search, filters, sort, favorites | Favorite 2-3 songs for the week                 |
-| Imported MIDI              | Shows imported files and watched-folder songs          | Edit title, composer, tags, level, and category |
+| Imported scores & MIDI     | Shows imported files and watched-folder songs          | Edit title, composer, tags, level, and category |
 
-### Import Your Own MIDI
+### Import a Score or MIDI
 
-1. Press **Import your own MIDI file**, or drag a `.mid` / `.midi` file into the Rexiano window.
-2. To manage a whole folder, press **Add folder**. Rexiano lists matching MIDI files under **Imported MIDI**.
+1. Press **Import a score or MIDI file**, or drag a `.musicxml` / `.mid` / `.midi` file into the Rexiano window.
+2. To manage a whole folder, press **Add folder**. Rexiano lists matching scores and MIDI files under **Imported scores & MIDI**.
 3. After import, click the song row. It opens the preview instead of starting playback immediately.
 4. If the title or level is unclear, press the pencil icon to edit metadata for search and grouping.
 
@@ -198,7 +198,7 @@ Shortcuts are ignored while typing in search boxes or metadata fields.
 | `L`                       | Clear A-B loop                                        |
 | `M`                       | Mute / unmute                                         |
 | `Esc`                     | Pause during playback; usually closes focused dialogs |
-| `Ctrl+O` / `Cmd+O`        | Open MIDI file                                        |
+| `Ctrl+O` / `Cmd+O`        | Open a score or MIDI file                             |
 | `?`                       | Show / hide shortcut help                             |
 
 ---

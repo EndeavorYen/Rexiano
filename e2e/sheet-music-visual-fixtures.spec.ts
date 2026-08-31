@@ -1,9 +1,8 @@
 import { test, expect, waitForUiSettled } from "./fixtures/electronApp";
 import {
   choosePracticeModeIfPrompted,
-  closeTopDrawer,
   gotoLibrary,
-  openPlaybackDrawer,
+  setDisplayMode,
   startBuiltInSongFromLibrary,
 } from "./helpers/appHarness";
 
@@ -76,9 +75,7 @@ async function loadBuiltInSongSheet(
     timeout: 20_000,
   });
 
-  await openPlaybackDrawer(appPage);
-  await appPage.getByTestId("display-mode-sheet").click();
-  await closeTopDrawer(appPage);
+  await setDisplayMode(appPage, "sheet");
 
   await waitForUiSettled(appPage);
   await expect(appPage.getByTestId("sheet-music-panel")).toBeVisible();

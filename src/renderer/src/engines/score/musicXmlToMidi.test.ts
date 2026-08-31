@@ -88,4 +88,30 @@ describe("musicXmlToMidi", () => {
       AU_CLAIR_NOTES.map((note) => note.durationBeats * ppq),
     );
   });
+
+  test("copies key and time from MusicXML attributes onto the MIDI header", () => {
+    const xml = `<?xml version="1.0" encoding="UTF-8"?>
+<score-partwise version="3.1">
+  <part id="P1">
+    <measure number="1">
+      <attributes>
+        <divisions>1</divisions>
+        <key><fifths>-1</fifths><mode>major</mode></key>
+        <time><beats>3</beats><beat-type>4</beat-type></time>
+      </attributes>
+      <sound tempo="90"/>
+      <note>
+        <pitch><step>F</step><octave>4</octave></pitch>
+        <duration>1</duration>
+      </note>
+    </measure>
+  </part>
+</score-partwise>`;
+    const midi = musicXmlToMidi(xml);
+    expect(midi.header.timeSignatures[0]?.timeSignature).toEqual([3, 4]);
+    expect(midi.header.keySignatures[0]).toMatchObject({
+      key: "F",
+      scale: "major",
+    });
+  });
 });

@@ -133,6 +133,21 @@ describe("watchedFolderHandlers", () => {
     expect(result[9]).toBe("/Users/rex/Music/Song-09.mid");
   });
 
+  test("discovers MusicXML alongside MIDI in a watched folder", async () => {
+    mocks.directoryEntries["/Users/rex/Music"] = [
+      file("notes.txt"),
+      file("Scale.mid"),
+      file("Tune.musicxml"),
+    ];
+
+    await expect(
+      discoverMidiFilesInFolder("/Users/rex/Music"),
+    ).resolves.toEqual([
+      "/Users/rex/Music/Scale.mid",
+      "/Users/rex/Music/Tune.musicxml",
+    ]);
+  });
+
   test("registers folder selection and refresh IPC handlers", async () => {
     mocks.directoryEntries["/Users/rex/Music"] = [file("Scale.mid")];
     mocks.dialogMock.showOpenDialog.mockResolvedValue({

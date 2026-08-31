@@ -35,6 +35,7 @@ export interface SongMeta {
   grade?: Grade;
   durationSeconds: number;
   tags: string[];
+  origin?: "score" | "midi";
 }
 
 /**

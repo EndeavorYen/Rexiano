@@ -66,6 +66,7 @@ import { useKeyboardShortcuts } from "./hooks/useKeyboardShortcuts";
 import { useTranslation } from "./i18n/useTranslation";
 import { SheetMusicPanel } from "./features/sheetMusic/SheetMusicPanel";
 import { DisplayModeToggle } from "./features/sheetMusic/DisplayModeToggle";
+import { sheetFidelityLabelKey } from "./engines/score/builtinScoreSource";
 import { convertSongToNotation } from "./features/sheetMusic/MidiToNotation";
 import { TempoMap } from "./engines/midi/TempoMap";
 import { TransportClock } from "./engines/transport/TransportClock";
@@ -146,6 +147,7 @@ const analyzer = new WeakSpotAnalyzer();
 function App(): React.JSX.Element {
   const { t } = useTranslation();
   const song = useSongStore((s) => s.song);
+  const catalogSongs = useSongLibraryStore((s) => s.songs);
   const loadSong = useSongStore((s) => s.loadSong);
   const reset = usePlaybackStore((s) => s.reset);
   const {
@@ -1569,6 +1571,10 @@ function App(): React.JSX.Element {
           <MainMenu
             onStartPractice={() => applyRoute("library")}
             onOpenSettings={() => setShowMenuSettings(true)}
+            onOpenFile={() => {
+              setSessionIntent("practice");
+              void handleOpenFile();
+            }}
             recentFiles={recentFiles}
             onSelectRecent={(file) => {
               setSessionIntent("practice");
@@ -1644,6 +1650,21 @@ function App(): React.JSX.Element {
                   <span className="control-chip playback-header-chip shrink-0">
                     {song.noteCount} {t("song.notes")}
                   </span>
+                  {catalogSongs.find((entry) => entry.file === song.fileName)
+                    ?.origin && (
+                    <span
+                      className="control-chip playback-header-chip shrink-0"
+                      data-testid="playback-sheet-fidelity"
+                    >
+                      {t(
+                        sheetFidelityLabelKey(
+                          catalogSongs.find(
+                            (entry) => entry.file === song.fileName,
+                          )!.origin!,
+                        ),
+                      )}
+                    </span>
+                  )}
                   <span className="control-chip playback-header-chip shrink-0">
                     {sessionIntent === "play-along"
                       ? t("playback.session.playAlong")
@@ -1661,10 +1682,11 @@ function App(): React.JSX.Element {
               </div>
 
               <div
-                className="flex items-center gap-1 shrink-0"
-                data-testid="playback-header-actions"
+              className="flex flex-wrap items-center justify-end gap-1 shrink-0 max-w-full"
+              data-testid="playback-header-actions"
               >
-                <button
+              <DisplayModeToggle />
+              <button
                   ref={insightsTriggerRef}
                   type="button"
                   onClick={() => setShowInsights(true)}
@@ -1684,16 +1706,18 @@ function App(): React.JSX.Element {
                   onClick={() => setShowPlaybackDrawer(true)}
                   className="btn-surface-themed flex min-h-9 items-center gap-1 rounded-lg font-body cursor-pointer px-2 py-[3px] text-[10px]"
                   data-testid="playback-drawer-trigger"
+                  aria-label={t("settings.title")}
                 >
                   <PanelRightOpen size={13} />
-                  {t("settings.title")}
+                  <span className="hidden sm:inline">{t("settings.title")}</span>
                 </button>
                 <button
                   onClick={handleExitPlayback}
                   className="btn-surface-themed flex min-h-9 items-center gap-1 rounded-lg font-body cursor-pointer px-2 py-[3px] text-[10px]"
+                  aria-label={t("song.backToLibrary")}
                 >
                   <ArrowLeft size={13} />
-                  {t("song.backToLibrary")}
+                  <span className="hidden sm:inline">{t("song.backToLibrary")}</span>
                 </button>
               </div>
             </div>
@@ -1757,9 +1781,6 @@ function App(): React.JSX.Element {
                   </button>
                 </div>
                 <div className="app-side-drawer-body">
-                  <section className="app-side-section">
-                    <DisplayModeToggle />
-                  </section>
                   <section className="app-side-section">
                     <DeviceSelector
                       onBeforeBluetoothConnect={closePlaybackDrawer}

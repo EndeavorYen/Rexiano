@@ -1,4 +1,5 @@
 import { isAbsolute, win32 } from "path";
+import { isPracticeImportPath } from "../shared/practiceImportFile";
 
 type Platform = NodeJS.Platform;
 
@@ -9,7 +10,7 @@ function isAbsoluteForPlatform(candidate: string, platform: Platform): boolean {
 }
 
 function isAssociatedMidiExtension(candidate: string): boolean {
-  return /\.(mid|midi)$/i.test(candidate);
+  return isPracticeImportPath(candidate);
 }
 
 export function findAssociatedMidiArgument(

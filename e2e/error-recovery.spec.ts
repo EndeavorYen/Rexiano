@@ -120,9 +120,7 @@ test.describe("Error recovery", () => {
     appPage,
   }) => {
     await gotoLibrary(appPage);
-    const importLauncher = appPage.getByRole("button", {
-      name: "Import your own MIDI file",
-    });
+    const importLauncher = appPage.getByTestId("library-import-file");
     await importLauncher.focus();
     await expect(importLauncher).toBeFocused();
 

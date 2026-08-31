@@ -420,6 +420,17 @@ describe("getSongPracticeSetupFixPrompt", () => {
     });
   });
 
+  test("does not request setup for a single unnamed piano track", () => {
+    expect(
+      getSongPracticeSetupFixPrompt(song([track("Piano", [60, 64, 67])])),
+    ).toEqual({
+      needed: false,
+      reasons: [],
+      activeTrackCount: 1,
+      lowConfidenceTrackIndices: [],
+    });
+  });
+
   test("does not request setup for explicit right and left hand tracks", () => {
     expect(
       getSongPracticeSetupFixPrompt(

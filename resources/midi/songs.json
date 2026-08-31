@@ -7,7 +7,8 @@
     "difficulty": "beginner",
     "category": "popular",
     "grade": 0,
-    "durationSeconds": 14,
+    "origin": "score",
+    "durationSeconds": 16,
     "tags": ["traditional", "melody", "beginner", "c-major", "4-4", "level-0"]
   },
   {
@@ -18,6 +19,7 @@
     "difficulty": "beginner",
     "category": "popular",
     "grade": 0,
+    "origin": "score",
     "durationSeconds": 20,
     "tags": ["traditional", "melody", "french", "c-major", "4-4", "level-0"]
   },
@@ -29,6 +31,7 @@
     "difficulty": "beginner",
     "category": "exercise",
     "grade": 1,
+    "origin": "score",
     "durationSeconds": 8,
     "tags": ["exercise", "scale", "c-major", "4-4", "level-1"]
   },
@@ -40,6 +43,7 @@
     "difficulty": "beginner",
     "category": "popular",
     "grade": 1,
+    "origin": "score",
     "durationSeconds": 18,
     "tags": ["traditional", "melody", "beginner", "c-major", "4-4", "level-1"]
   },
@@ -51,6 +55,7 @@
     "difficulty": "beginner",
     "category": "popular",
     "grade": 2,
+    "origin": "score",
     "durationSeconds": 16,
     "tags": ["traditional", "melody", "c-major", "4-4", "level-2"]
   },
@@ -62,6 +67,7 @@
     "difficulty": "beginner",
     "category": "holiday",
     "grade": 2,
+    "origin": "score",
     "durationSeconds": 16,
     "tags": ["holiday", "christmas", "melody", "c-major", "4-4", "level-2"]
   },
@@ -73,6 +79,7 @@
     "difficulty": "beginner",
     "category": "classical",
     "grade": 2,
+    "origin": "score",
     "durationSeconds": 16,
     "tags": ["classical", "melody", "c-major", "4-4", "level-2"]
   },
@@ -84,6 +91,7 @@
     "difficulty": "beginner",
     "category": "popular",
     "grade": 2,
+    "origin": "score",
     "durationSeconds": 15,
     "tags": ["popular", "melody", "f-major", "3-4", "level-2"]
   },
@@ -95,6 +103,7 @@
     "difficulty": "beginner",
     "category": "popular",
     "grade": 2,
+    "origin": "score",
     "durationSeconds": 15,
     "tags": ["traditional", "melody", "c-major", "6-8", "level-2"]
   },
@@ -106,6 +115,7 @@
     "difficulty": "beginner",
     "category": "popular",
     "grade": 2,
+    "origin": "score",
     "durationSeconds": 22,
     "tags": ["traditional", "melody", "folk", "c-major", "3-4", "level-2"]
   },
@@ -117,6 +127,7 @@
     "difficulty": "beginner",
     "category": "popular",
     "grade": 2,
+    "origin": "score",
     "durationSeconds": 29,
     "tags": ["traditional", "melody", "c-major", "4-4", "level-2"]
   },
@@ -128,6 +139,7 @@
     "difficulty": "beginner",
     "category": "popular",
     "grade": 3,
+    "origin": "score",
     "durationSeconds": 12,
     "tags": [
       "popular",
@@ -147,6 +159,7 @@
     "difficulty": "beginner",
     "category": "popular",
     "grade": 3,
+    "origin": "score",
     "durationSeconds": 28,
     "tags": ["traditional", "french", "c-major", "4-4", "two-hands", "level-3"]
   },
@@ -158,6 +171,7 @@
     "difficulty": "beginner",
     "category": "classical",
     "grade": 3,
+    "origin": "score",
     "durationSeconds": 46,
     "tags": ["classical", "lullaby", "3-4", "two-hands", "level-3"]
   },
@@ -169,6 +183,7 @@
     "difficulty": "beginner",
     "category": "popular",
     "grade": 3,
+    "origin": "score",
     "durationSeconds": 30,
     "tags": [
       "traditional",
@@ -187,6 +202,7 @@
     "difficulty": "intermediate",
     "category": "popular",
     "grade": 4,
+    "origin": "score",
     "durationSeconds": 64,
     "tags": ["traditional", "3-4", "g-major", "two-hands", "level-4"]
   },
@@ -198,6 +214,7 @@
     "difficulty": "intermediate",
     "category": "popular",
     "grade": 4,
+    "origin": "score",
     "durationSeconds": 51,
     "tags": ["traditional", "english", "a-minor", "3-4", "two-hands", "level-4"]
   },
@@ -209,6 +226,7 @@
     "difficulty": "intermediate",
     "category": "classical",
     "grade": 4,
+    "origin": "score",
     "durationSeconds": 45,
     "tags": ["classical", "lyrical", "c-major", "4-4", "two-hands", "level-4"]
   },
@@ -220,6 +238,7 @@
     "difficulty": "intermediate",
     "category": "classical",
     "grade": 5,
+    "origin": "score",
     "durationSeconds": 35,
     "tags": ["classical", "romantic", "a-minor", "3-8", "level-5"]
   },
@@ -231,6 +250,7 @@
     "difficulty": "intermediate",
     "category": "classical",
     "grade": 5,
+    "origin": "score",
     "durationSeconds": 14,
     "tags": ["classical", "baroque", "g-major", "3-4", "two-hands", "level-5"]
   },
@@ -242,6 +262,7 @@
     "difficulty": "intermediate",
     "category": "classical",
     "grade": 5,
+    "origin": "score",
     "durationSeconds": 12,
     "tags": ["classical", "baroque", "d-major", "4-4", "two-hands", "level-5"]
   },
@@ -253,6 +274,7 @@
     "difficulty": "intermediate",
     "category": "classical",
     "grade": 6,
+    "origin": "score",
     "durationSeconds": 14,
     "tags": [
       "classical",
@@ -272,6 +294,7 @@
     "difficulty": "intermediate",
     "category": "classical",
     "grade": 6,
+    "origin": "score",
     "durationSeconds": 30,
     "tags": [
       "classical",
@@ -291,6 +314,7 @@
     "difficulty": "intermediate",
     "category": "classical",
     "grade": 6,
+    "origin": "score",
     "durationSeconds": 35,
     "tags": ["classical", "dance", "d-major", "3-4", "two-hands", "level-6"]
   },
@@ -302,6 +326,7 @@
     "difficulty": "advanced",
     "category": "classical",
     "grade": 7,
+    "origin": "score",
     "durationSeconds": 35,
     "tags": ["classical", "romantic", "c#-minor", "2-2", "two-hands", "level-7"]
   },
@@ -313,6 +338,7 @@
     "difficulty": "advanced",
     "category": "classical",
     "grade": 7,
+    "origin": "score",
     "durationSeconds": 7,
     "tags": ["classical", "fast", "a-minor", "2-4", "level-7"]
   },
@@ -324,6 +350,7 @@
     "difficulty": "beginner",
     "category": "popular",
     "grade": 1,
+    "origin": "score",
     "durationSeconds": 20,
     "tags": ["traditional", "melody", "beginner", "c-major", "4-4", "level-1"]
   },
@@ -335,6 +362,7 @@
     "difficulty": "beginner",
     "category": "popular",
     "grade": 2,
+    "origin": "score",
     "durationSeconds": 34,
     "tags": ["traditional", "melody", "beginner", "c-major", "4-4", "level-2"]
   },
@@ -346,6 +374,7 @@
     "difficulty": "beginner",
     "category": "popular",
     "grade": 2,
+    "origin": "score",
     "durationSeconds": 18,
     "tags": ["traditional", "melody", "c-major", "4-4", "level-2"]
   },
@@ -357,6 +386,7 @@
     "difficulty": "beginner",
     "category": "popular",
     "grade": 2,
+    "origin": "score",
     "durationSeconds": 15,
     "tags": ["traditional", "melody", "french", "c-major", "4-4", "level-2"]
   },
@@ -368,6 +398,7 @@
     "difficulty": "beginner",
     "category": "popular",
     "grade": 3,
+    "origin": "score",
     "durationSeconds": 19,
     "tags": ["traditional", "melody", "c-major", "4-4", "two-hands", "level-3"]
   },
@@ -379,6 +410,7 @@
     "difficulty": "beginner",
     "category": "popular",
     "grade": 3,
+    "origin": "score",
     "durationSeconds": 21,
     "tags": ["traditional", "melody", "c-major", "4-4", "level-3"]
   },
@@ -390,6 +422,7 @@
     "difficulty": "intermediate",
     "category": "popular",
     "grade": 4,
+    "origin": "score",
     "durationSeconds": 30,
     "tags": [
       "traditional",
@@ -408,6 +441,7 @@
     "difficulty": "intermediate",
     "category": "holiday",
     "grade": 4,
+    "origin": "score",
     "durationSeconds": 37,
     "tags": ["holiday", "christmas", "c-major", "3-4", "two-hands", "level-4"]
   }

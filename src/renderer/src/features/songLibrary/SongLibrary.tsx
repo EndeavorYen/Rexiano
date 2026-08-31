@@ -19,10 +19,12 @@ import {
   Square,
   Loader2,
 } from "lucide-react";
-import { parseMidiFile } from "../../engines/midi/MidiFileParser";
+import { parseImportedPracticeFile } from "../../engines/score/decodeImportedPracticeFile";
 import { AudioEngine } from "../../engines/audio/AudioEngine";
 import { useSongStore } from "../../stores/useSongStore";
 import { usePlaybackStore } from "../../stores/usePlaybackStore";
+import { usePracticeStore } from "../../stores/usePracticeStore";
+import { preferredDisplayModeForSource, practiceSourceFromFileName } from "../../engines/score/builtinScoreSource";
 import { useSettingsStore } from "../../stores/useSettingsStore";
 import { useSongLibraryStore } from "../../stores/useSongLibraryStore";
 import { useProgressStore } from "../../stores/useProgressStore";
@@ -503,7 +505,7 @@ export function SongLibrary({
       try {
         const result = await source.load();
         if (!result || cancelled) return;
-        const parsed = parseMidiFile(result.fileName, result.data);
+        const parsed = parseImportedPracticeFile(result.fileName, result.data);
         if (cancelled) return;
         setPreviewTrackCounts((current) =>
           current[key] !== undefined
@@ -567,8 +569,13 @@ export function SongLibrary({
       try {
         const result = await window.api.loadBuiltinSong(songId);
         if (result) {
-          const parsed = parseMidiFile(result.fileName, result.data);
+          const parsed = parseImportedPracticeFile(result.fileName, result.data);
           loadSong(parsed);
+          const origin =
+            songs.find((entry) => entry.id === songId)?.origin ?? "midi";
+          usePracticeStore
+            .getState()
+            .setDisplayMode(preferredDisplayModeForSource(origin));
           reset();
           await window.api.saveRecentFile({
             path: `builtin:${songId}`,
@@ -585,7 +592,7 @@ export function SongLibrary({
         setLoadingId(null);
       }
     },
-    [loadSong, onSessionIntentSelected, reset, refreshRecents, t],
+    [loadSong, onSessionIntentSelected, reset, refreshRecents, songs, t],
   );
 
   const handlePreviewSong = useCallback(
@@ -627,7 +634,7 @@ export function SongLibrary({
         }
         let parsed;
         try {
-          parsed = parseMidiFile(result.fileName, result.data);
+          parsed = parseImportedPracticeFile(result.fileName, result.data);
         } catch (e) {
           setRecentRecovery(
             getRecentFileRecovery(
@@ -640,6 +647,22 @@ export function SongLibrary({
           return;
         }
         loadSong(parsed);
+        if (file.path.startsWith("builtin:")) {
+          const songId = file.path.slice("builtin:".length);
+          const origin =
+            songs.find((entry) => entry.id === songId)?.origin ?? "midi";
+          usePracticeStore
+            .getState()
+            .setDisplayMode(preferredDisplayModeForSource(origin));
+        } else {
+          usePracticeStore
+            .getState()
+            .setDisplayMode(
+              preferredDisplayModeForSource(
+                practiceSourceFromFileName(result.fileName),
+              ),
+            );
+        }
         reset();
         await window.api.saveRecentFile({
           path: file.path,
@@ -660,7 +683,7 @@ export function SongLibrary({
         setLoadingRecentPath(null);
       }
     },
-    [loadSong, onSessionIntentSelected, reset, refreshRecents, t],
+    [loadSong, onSessionIntentSelected, reset, refreshRecents, songs, t],
   );
 
   const handleRemoveRecent = useCallback(
@@ -723,8 +746,15 @@ export function SongLibrary({
           setError(t("library.importedMissing"));
           return;
         }
-        const parsed = parseMidiFile(result.fileName, result.data);
+        const parsed = parseImportedPracticeFile(result.fileName, result.data);
         loadSong(parsed);
+        usePracticeStore
+          .getState()
+          .setDisplayMode(
+            preferredDisplayModeForSource(
+              practiceSourceFromFileName(result.fileName),
+            ),
+          );
         reset();
         await window.api.saveRecentFile({
           path: record.sourcePath,
@@ -798,7 +828,7 @@ export function SongLibrary({
           return;
         }
 
-        const parsed = parseMidiFile(result.fileName, result.data);
+        const parsed = parseImportedPracticeFile(result.fileName, result.data);
         const { muted } = useSettingsStore.getState();
         const volume = muted ? 0 : usePlaybackStore.getState().volume;
 
@@ -918,6 +948,7 @@ export function SongLibrary({
             <div className="flex items-center gap-2.5">
               <button
                 onClick={onOpenFile}
+                data-testid="library-import-file"
                 className="btn-primary-themed flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium cursor-pointer"
               >
                 <Upload size={15} />

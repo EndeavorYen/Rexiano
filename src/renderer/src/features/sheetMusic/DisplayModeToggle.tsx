@@ -19,7 +19,11 @@ const modes: {
   { value: "split", labelKey: "sheetMusic.modeSplit", Icon: Layers },
 ];
 
-export function DisplayModeToggle(): React.JSX.Element {
+export function DisplayModeToggle({
+  testIdPrefix = "display-mode",
+}: {
+  testIdPrefix?: string;
+} = {}): React.JSX.Element {
   const { t } = useTranslation();
   const displayMode = usePracticeStore((s) => s.displayMode);
   const setDisplayMode = usePracticeStore((s) => s.setDisplayMode);
@@ -47,10 +51,10 @@ export function DisplayModeToggle(): React.JSX.Element {
             }}
             aria-pressed={isActive}
             aria-label={t(labelKey)}
-            data-testid={`display-mode-${value}`}
+            data-testid={`${testIdPrefix}-${value}`}
           >
             <Icon size={12} />
-            {t(labelKey)}
+            <span className="hidden sm:inline">{t(labelKey)}</span>
           </button>
         );
       })}

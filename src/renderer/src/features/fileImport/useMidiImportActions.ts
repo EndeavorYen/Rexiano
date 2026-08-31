@@ -6,6 +6,13 @@ import {
   type DragEvent,
 } from "react";
 import { parseMidiFile } from "@renderer/engines/midi/MidiFileParser";
+import { decodeImportedPracticeFile } from "@renderer/engines/score/decodeImportedPracticeFile";
+import {
+  practiceSourceFromFileName,
+  preferredDisplayModeForSource,
+} from "@renderer/engines/score/builtinScoreSource";
+import { isPracticeImportPath } from "@shared/practiceImportFile";
+import { usePracticeStore } from "@renderer/stores/usePracticeStore";
 import type { ParsedSong } from "@renderer/engines/midi/types";
 import {
   getFileImportErrorGuidance,
@@ -19,7 +26,13 @@ import {
 } from "@shared/midiFileLimits";
 import { subscribeToAssociatedMidiImports } from "./associatedMidiImport";
 
-export const MIDI_EXTENSIONS = [".mid", ".midi"] as const;
+export const MIDI_EXTENSIONS = [
+  ".mid",
+  ".midi",
+  ".kar",
+  ".musicxml",
+  ".xml",
+] as const;
 
 export type ImportErrorLifecycleEvent<T> =
   | "drag-enter"
@@ -80,7 +93,7 @@ export function getUnsupportedMidiDropError(
   fileName: string,
 ): FileImportErrorInput | null {
   const ext = getMidiFileExtension(fileName);
-  return MIDI_EXTENSIONS.includes(ext as (typeof MIDI_EXTENSIONS)[number])
+  return isPracticeImportPath(fileName)
     ? null
     : { kind: "unsupported-type", ext, fileName };
 }
@@ -164,8 +177,16 @@ export function useMidiImportActions({
 
   const loadParsedSong = useCallback(
     (fileName: string, data: number[]): void => {
-      const parsed = parseMidiFile(fileName, data);
+      const parsed = parseMidiFile(
+        fileName,
+        decodeImportedPracticeFile(fileName, data),
+      );
       loadSong(parsed);
+      usePracticeStore
+        .getState()
+        .setDisplayMode(
+          preferredDisplayModeForSource(practiceSourceFromFileName(fileName)),
+        );
       resetPlayback();
       setImportError((current) =>
         reduceImportErrorForEvent(current, "import-succeeded"),

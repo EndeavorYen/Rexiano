@@ -35,6 +35,23 @@ export async function openPlaybackDrawer(page: Page): Promise<Locator> {
   return drawer;
 }
 
+export async function dismissPlaybackOverlay(page: Page): Promise<void> {
+  const drawer = page.locator(".app-side-drawer");
+  if ((await drawer.count()) === 0 || !(await drawer.first().isVisible())) {
+    return;
+  }
+  await page.keyboard.press("Escape");
+  await expect(drawer.first()).toBeHidden({ timeout: 10_000 });
+}
+
+export async function setDisplayMode(
+  page: Page,
+  mode: "falling" | "sheet" | "split",
+): Promise<void> {
+  await dismissPlaybackOverlay(page);
+  await page.getByTestId(`display-mode-${mode}`).click();
+}
+
 export async function closeTopDrawer(page: Page): Promise<void> {
   const closeButton = page.locator(".app-side-drawer-header button").first();
   await expect(closeButton).toBeVisible();

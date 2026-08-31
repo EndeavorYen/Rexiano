@@ -110,5 +110,21 @@ export function inferTrackHandAssignments(
     }
   }
 
+  const activeAssignments = assignments.filter(
+    (assignment) => assignment.active,
+  );
+  if (
+    activeAssignments.length === 1 &&
+    activeAssignments[0].hand === "both" &&
+    activeAssignments[0].confidence === "low"
+  ) {
+    const loneTrackIndex = activeAssignments[0].trackIndex;
+    return assignments.map((assignment) =>
+      assignment.trackIndex === loneTrackIndex
+        ? { ...assignment, confidence: "medium" }
+        : assignment,
+    );
+  }
+
   return assignments;
 }
