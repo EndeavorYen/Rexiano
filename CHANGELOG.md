@@ -1,5 +1,26 @@
 # Changelog
 
+## [1.5.0](https://github.com/EndeavorYen/Rexiano/compare/v1.4.0...v1.5.0) (2026-08-31)
+
+
+### Features
+
+* add eight public-domain built-in songs ([#227](https://github.com/EndeavorYen/Rexiano/issues/227)) ([0bb443e](https://github.com/EndeavorYen/Rexiano/commit/0bb443e71397bfbeba7a8e05a8cfe6d9e769b64d))
+* label score vs MIDI origins and put display mode on the stage ([#234](https://github.com/EndeavorYen/Rexiano/issues/234)) ([fb7ba09](https://github.com/EndeavorYen/Rexiano/commit/fb7ba09dc2b42577335dde592d0e4a74bafb2457))
+* localize leftover player-facing copy and language switch ([#230](https://github.com/EndeavorYen/Rexiano/issues/230)) ([3525100](https://github.com/EndeavorYen/Rexiano/commit/352510068756e5ed82754be04f832ed85585ad9e))
+* prefer MusicXML as source of truth for built-in Au Clair ([#233](https://github.com/EndeavorYen/Rexiano/issues/233)) ([3ab7be4](https://github.com/EndeavorYen/Rexiano/commit/3ab7be4ecb589977af38c20c820d4b9a6f49a14c))
+
+
+### Bug Fixes
+
+* align Minuet in G first strain with Petzold ([#232](https://github.com/EndeavorYen/Rexiano/issues/232)) ([a247cb0](https://github.com/EndeavorYen/Rexiano/commit/a247cb094e5b4b1a117a137d203d77c30ad5a335)), closes [#224](https://github.com/EndeavorYen/Rexiano/issues/224)
+* complete round-two player, data, and launch hardening ([#215](https://github.com/EndeavorYen/Rexiano/issues/215)) ([886556e](https://github.com/EndeavorYen/Rexiano/commit/886556e9624c6cbf65eb261bd001a170f245e663))
+* first-run home and Watch end no longer dead-end ([#223](https://github.com/EndeavorYen/Rexiano/issues/223)) ([cdd2449](https://github.com/EndeavorYen/Rexiano/commit/cdd2449ba568a9bb6cd5cc32299512e6171182e4))
+* harden player and release readiness ([#188](https://github.com/EndeavorYen/Rexiano/issues/188)) ([fc8d221](https://github.com/EndeavorYen/Rexiano/commit/fc8d221470a67a0d49269f2b598b317efc4e4a0d))
+* keep left-hand middle C on the bass staff ([#226](https://github.com/EndeavorYen/Rexiano/issues/226)) ([6fd910c](https://github.com/EndeavorYen/Rexiano/commit/6fd910c53291f292055bdc94005b01302c3be090))
+* omit empty bass staff on melody-only songs ([#231](https://github.com/EndeavorYen/Rexiano/issues/231)) ([cecb15a](https://github.com/EndeavorYen/Rexiano/commit/cecb15aa73bad4b3c8575531fef9b9b2b9490621)), closes [#225](https://github.com/EndeavorYen/Rexiano/issues/225)
+* skip count-in hang and bind MIDI reads to grant inodes ([#219](https://github.com/EndeavorYen/Rexiano/issues/219)) ([236d575](https://github.com/EndeavorYen/Rexiano/commit/236d575731daa8adffb17d9c407e2479dd0c4844))
+
 ## [1.4.0](https://github.com/EndeavorYen/Rexiano/compare/v1.3.1...v1.4.0) (2026-08-08)
 
 
