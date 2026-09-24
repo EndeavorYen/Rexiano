@@ -35,9 +35,7 @@ export function musicXmlToMidi(xml: string): Midi {
   const score =
     findFirst(root, "score-partwise") ??
     (root.name === "score-partwise" ? root : undefined);
-  const parts = score
-    ? collect(score, "part")
-    : collect(root, "part");
+  const parts = score ? collect(score, "part") : collect(root, "part");
   if (parts.length === 0) {
     throw new Error("MusicXML score has no part.");
   }
@@ -80,7 +78,9 @@ export function musicXmlToMidi(xml: string): Midi {
           : "Left Hand"
         : partName;
       const secondsPerBeat = 60 / parsed.tempoBpm;
-      for (const note of parsed.notes.filter((entry) => entry.staff === staff)) {
+      for (const note of parsed.notes.filter(
+        (entry) => entry.staff === staff,
+      )) {
         if (note.durationBeats <= 0) continue;
         track.addNote({
           midi: note.midi,
@@ -91,9 +91,7 @@ export function musicXmlToMidi(xml: string): Midi {
       }
     }
   }
-  midi.header.timeSignatures = [
-    { ticks: 0, timeSignature, measures: 0 },
-  ];
+  midi.header.timeSignatures = [{ ticks: 0, timeSignature, measures: 0 }];
   midi.header.keySignatures = [
     {
       ticks: 0,
@@ -132,7 +130,9 @@ function readPart(part: XmlNode): {
         const mode = childText(findFirst(child, "key"), "mode").toLowerCase();
         if (mode === "minor" || mode === "major") keyScale = mode;
         const beats = Number(childText(findFirst(child, "time"), "beats"));
-        const beatType = Number(childText(findFirst(child, "time"), "beat-type"));
+        const beatType = Number(
+          childText(findFirst(child, "time"), "beat-type"),
+        );
         if (
           Number.isInteger(beats) &&
           beats > 0 &&

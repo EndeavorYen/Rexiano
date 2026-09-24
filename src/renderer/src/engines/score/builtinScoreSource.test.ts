@@ -42,7 +42,9 @@ describe("builtinScoreSource", () => {
     expect(builtinOriginLabelKey("score")).toBe("library.origin.score");
     expect(builtinOriginLabelKey("midi")).toBe("library.origin.midi");
     expect(sheetFidelityLabelKey("score")).toBe("sheetMusic.fidelity.score");
-    expect(sheetFidelityLabelKey("midi")).toBe("sheetMusic.fidelity.approximate");
+    expect(sheetFidelityLabelKey("midi")).toBe(
+      "sheetMusic.fidelity.approximate",
+    );
   });
 
   test("imported MusicXML is treated as a score source", () => {

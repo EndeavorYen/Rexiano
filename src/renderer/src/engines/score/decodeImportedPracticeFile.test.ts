@@ -21,9 +21,9 @@ describe("decodeImportedPracticeFile", () => {
     expect(midiBytes[1]).toBe(0x54);
     expect(midiBytes[2]).toBe(0x68);
     expect(midiBytes[3]).toBe(0x64);
-    expect(
-      decodeImportedPracticeFile("song.mid", [1, 2, 3]),
-    ).toEqual([1, 2, 3]);
+    expect(decodeImportedPracticeFile("song.mid", [1, 2, 3])).toEqual([
+      1, 2, 3,
+    ]);
   });
 
   test("MusicXML import yields the same pitches as the packaged MIDI", () => {
@@ -38,7 +38,10 @@ describe("decodeImportedPracticeFile", () => {
       "hot-cross-buns.mid",
       Array.from(
         readFileSync(
-          join(dirname(fileURLToPath(import.meta.url)), "../../../../../resources/midi/hot-cross-buns.mid"),
+          join(
+            dirname(fileURLToPath(import.meta.url)),
+            "../../../../../resources/midi/hot-cross-buns.mid",
+          ),
         ),
       ),
     );

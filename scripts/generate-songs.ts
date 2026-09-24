@@ -1834,7 +1834,9 @@ function updateExistingOnlyMidiHeaders(
           composer: song.composer,
         }),
       );
-      console.log(`  [score    ] ${song.title.padEnd(32)} → ${builtinScoreFileName(song.id)}`);
+      console.log(
+        `  [score    ] ${song.title.padEnd(32)} → ${builtinScoreFileName(song.id)}`,
+      );
     }
     song.origin = "score";
     writeFileSync(

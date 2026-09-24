@@ -6,7 +6,8 @@ export const zhTW: TranslationMap = {
   "app.subtitle": "鋼琴練習",
   "app.dropMidi": "拖放樂譜或 MIDI 到此處",
   "app.supportedFormats": "支援：.musicxml、.mid、.midi",
-  "app.invalidFileType": "無效的檔案類型：{ext}。請匯入 .musicxml、.mid 或 .midi。",
+  "app.invalidFileType":
+    "無效的檔案類型：{ext}。請匯入 .musicxml、.mid 或 .midi。",
   "app.failedParse": "無法解析練習檔。",
   "app.failedRead": "無法讀取檔案。",
   "app.importErrorUnsupportedTitle": "不支援的檔案類型",

@@ -162,9 +162,7 @@ test.describe("Per-song practice setup", () => {
 
     const muteAll = appPage.getByRole("button", { name: "Mute All" });
     if (!(await muteAll.isVisible())) {
-      await appPage
-        .getByRole("button", { name: /advanced controls/i })
-        .click();
+      await appPage.getByRole("button", { name: /advanced controls/i }).click();
     }
     await muteAll.click();
 

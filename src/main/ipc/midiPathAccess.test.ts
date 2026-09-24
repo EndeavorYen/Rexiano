@@ -91,13 +91,13 @@ describe("midiPathAccess", () => {
   test.skipIf(!canCreateSymlinks())(
     "blocks a symlink that escapes an approved folder (skipped: OS denies symlink creation)",
     async () => {
-    const escapePath = join(musicPath, "escape.mid");
-    symlinkSync(join(outsidePath, "Private.mid"), escapePath);
-    await approveMidiFolderPath(musicPath);
+      const escapePath = join(musicPath, "escape.mid");
+      symlinkSync(join(outsidePath, "Private.mid"), escapePath);
+      await approveMidiFolderPath(musicPath);
 
-    await expect(resolveApprovedMidiFilePath(escapePath)).resolves.toBeNull();
-    await expect(isApprovedMidiFilePath(escapePath)).resolves.toBe(false);
-  },
+      await expect(resolveApprovedMidiFilePath(escapePath)).resolves.toBeNull();
+      await expect(isApprovedMidiFilePath(escapePath)).resolves.toBe(false);
+    },
   );
 
   test("does not transfer one-file approval to a replaced filesystem object", async () => {

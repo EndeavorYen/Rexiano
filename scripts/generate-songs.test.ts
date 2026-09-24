@@ -7,7 +7,10 @@ import { describe, expect, it, test } from "vitest";
 import { parseMidiFile } from "@renderer/engines/midi/MidiFileParser";
 import type { ParsedSong } from "../src/renderer/src/engines/midi/types";
 import { musicXmlToMidi } from "../src/renderer/src/engines/score/musicXmlToMidi";
-import { buildGeneratedSongArtifacts, materializeMissingBuiltinScores } from "./generate-songs";
+import {
+  buildGeneratedSongArtifacts,
+  materializeMissingBuiltinScores,
+} from "./generate-songs";
 
 const D5 = 74;
 const E5 = 76;
@@ -181,10 +184,7 @@ describe("buildGeneratedSongArtifacts score-first contract", () => {
     const twinkle = midiFiles.find((file) => file.id === "twinkle-twinkle");
     expect(twinkle).toBeDefined();
 
-    const generated = parseMidiFile(
-      twinkle!.file,
-      Array.from(twinkle!.bytes),
-    );
+    const generated = parseMidiFile(twinkle!.file, Array.from(twinkle!.bytes));
     const committed = parseMidiFile(
       "twinkle-twinkle.mid",
       Array.from(readFileSync(join(midiDir, "twinkle-twinkle.mid"))),
@@ -211,9 +211,9 @@ describe("buildGeneratedSongArtifacts score-first contract", () => {
 
   test("records score vs MIDI origin on generated catalog metadata", () => {
     const { songsMeta } = buildGeneratedSongArtifacts([]);
-    expect(songsMeta.find((song) => song.id === "au-clair-de-la-lune")?.origin).toBe(
-      "score",
-    );
+    expect(
+      songsMeta.find((song) => song.id === "au-clair-de-la-lune")?.origin,
+    ).toBe("score");
     expect(songsMeta.find((song) => song.id === "hot-cross-buns")?.origin).toBe(
       "score",
     );
@@ -224,7 +224,10 @@ describe("buildGeneratedSongArtifacts score-first contract", () => {
       "hot-cross-from-score.mid",
       Array.from(
         musicXmlToMidi(
-          readFileSync(join(resourcesRoot, "scores", "hot-cross-buns.musicxml"), "utf8"),
+          readFileSync(
+            join(resourcesRoot, "scores", "hot-cross-buns.musicxml"),
+            "utf8",
+          ),
         ).toArray(),
       ),
     );
@@ -241,7 +244,12 @@ describe("buildGeneratedSongArtifacts score-first contract", () => {
     const written = materializeMissingBuiltinScores(scoresDir);
     expect(written).toContain("twinkle-twinkle");
     expect(existsSync(join(scoresDir, "twinkle-twinkle.musicxml"))).toBe(true);
-    const xml = readFileSync(join(scoresDir, "twinkle-twinkle.musicxml"), "utf8");
-    expect(xml).toContain("<work-title>Twinkle Twinkle Little Star</work-title>");
+    const xml = readFileSync(
+      join(scoresDir, "twinkle-twinkle.musicxml"),
+      "utf8",
+    );
+    expect(xml).toContain(
+      "<work-title>Twinkle Twinkle Little Star</work-title>",
+    );
   });
 });

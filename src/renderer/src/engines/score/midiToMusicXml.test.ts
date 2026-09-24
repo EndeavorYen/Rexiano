@@ -44,10 +44,12 @@ describe("midiToMusicXml", () => {
     );
     const names = parsed.tracks.map((track) => track.name);
     expect(names).toEqual(expect.arrayContaining(["Right Hand", "Left Hand"]));
-    const rightNotes = parsed.tracks.find((track) => track.name === "Right Hand")
-      ?.notes;
-    const leftNotes = parsed.tracks.find((track) => track.name === "Left Hand")
-      ?.notes;
+    const rightNotes = parsed.tracks.find(
+      (track) => track.name === "Right Hand",
+    )?.notes;
+    const leftNotes = parsed.tracks.find(
+      (track) => track.name === "Left Hand",
+    )?.notes;
     expect(rightNotes?.map((note) => note.midi)).toEqual([72]);
     expect(leftNotes?.map((note) => note.midi)).toEqual([48]);
   });
