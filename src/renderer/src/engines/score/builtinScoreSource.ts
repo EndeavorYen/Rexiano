@@ -14,7 +14,9 @@ export function resolveBuiltinSongSource(args: {
   return args.scorePresent ? "score" : "midi";
 }
 
-export function practiceSourceFromFileName(fileName: string): BuiltinSongSource {
+export function practiceSourceFromFileName(
+  fileName: string,
+): BuiltinSongSource {
   return isScoreImportPath(fileName) ? "score" : "midi";
 }
 

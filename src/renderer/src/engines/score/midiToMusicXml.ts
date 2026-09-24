@@ -1,7 +1,20 @@
 import { Midi } from "@tonejs/midi";
 
 const DIVISIONS = 24;
-const STEPS = ["C", "C", "D", "D", "E", "F", "F", "G", "G", "A", "A", "B"] as const;
+const STEPS = [
+  "C",
+  "C",
+  "D",
+  "D",
+  "E",
+  "F",
+  "F",
+  "G",
+  "G",
+  "A",
+  "A",
+  "B",
+] as const;
 const ALTERS = [0, 1, 0, 1, 0, 0, 1, 0, 1, 0, 1, 0] as const;
 const KEY_FIFTHS: Record<string, number> = {
   C: 0,
@@ -59,7 +72,10 @@ export function midiToMusicXml(
     (max, note) => Math.max(max, note.startBeats + note.durationBeats),
     0,
   );
-  const measureCount = Math.max(1, Math.ceil(lastBeat / measureQuarters - 1e-9));
+  const measureCount = Math.max(
+    1,
+    Math.ceil(lastBeat / measureQuarters - 1e-9),
+  );
 
   const measures = Array.from({ length: measureCount }, (_, index) => {
     const start = index * measureQuarters;
@@ -114,13 +130,17 @@ function collectStaffNotes(midi: Midi, secondsPerQuarter: number): TimedNote[] {
       notes.push({
         midi: note.midi,
         startBeats: note.time / secondsPerQuarter,
-        durationBeats: Math.max(note.duration / secondsPerQuarter, 1 / DIVISIONS),
+        durationBeats: Math.max(
+          note.duration / secondsPerQuarter,
+          1 / DIVISIONS,
+        ),
         staff: named ?? (note.midi < 60 ? 2 : 1),
       });
     }
   }
   return notes.sort(
-    (a, b) => a.startBeats - b.startBeats || a.staff - b.staff || a.midi - b.midi,
+    (a, b) =>
+      a.startBeats - b.startBeats || a.staff - b.staff || a.midi - b.midi,
   );
 }
 
@@ -208,10 +228,9 @@ function renderStaffEvents(args: {
     .map((note) => ({
       ...note,
       startBeats: Math.max(note.startBeats, args.start),
-      durationBeats: Math.min(
-        note.startBeats + note.durationBeats,
-        args.end,
-      ) - Math.max(note.startBeats, args.start),
+      durationBeats:
+        Math.min(note.startBeats + note.durationBeats, args.end) -
+        Math.max(note.startBeats, args.start),
     }))
     .filter((note) => note.durationBeats > 1e-6)
     .sort((a, b) => a.startBeats - b.startBeats || a.midi - b.midi);
@@ -249,8 +268,7 @@ function restXml(durationBeats: number, staff: 1 | 2): string {
 function noteXml(note: TimedNote, isChord: boolean): string {
   const duration = Math.max(1, Math.round(note.durationBeats * DIVISIONS));
   const { step, alter, octave } = midiToPitch(note.midi);
-  const alterXml =
-    alter === 0 ? "" : `\n          <alter>${alter}</alter>`;
+  const alterXml = alter === 0 ? "" : `\n          <alter>${alter}</alter>`;
   const chordXml = isChord ? "\n        <chord/>" : "";
   return `      <note>${chordXml}
         <pitch>

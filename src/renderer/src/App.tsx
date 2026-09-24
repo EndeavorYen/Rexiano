@@ -1682,11 +1682,11 @@ function App(): React.JSX.Element {
               </div>
 
               <div
-              className="flex flex-wrap items-center justify-end gap-1 shrink-0 max-w-full"
-              data-testid="playback-header-actions"
+                className="flex flex-wrap items-center justify-end gap-1 shrink-0 max-w-full"
+                data-testid="playback-header-actions"
               >
-              <DisplayModeToggle />
-              <button
+                <DisplayModeToggle />
+                <button
                   ref={insightsTriggerRef}
                   type="button"
                   onClick={() => setShowInsights(true)}
@@ -1709,7 +1709,9 @@ function App(): React.JSX.Element {
                   aria-label={t("settings.title")}
                 >
                   <PanelRightOpen size={13} />
-                  <span className="hidden sm:inline">{t("settings.title")}</span>
+                  <span className="hidden sm:inline">
+                    {t("settings.title")}
+                  </span>
                 </button>
                 <button
                   onClick={handleExitPlayback}
@@ -1717,7 +1719,9 @@ function App(): React.JSX.Element {
                   aria-label={t("song.backToLibrary")}
                 >
                   <ArrowLeft size={13} />
-                  <span className="hidden sm:inline">{t("song.backToLibrary")}</span>
+                  <span className="hidden sm:inline">
+                    {t("song.backToLibrary")}
+                  </span>
                 </button>
               </div>
             </div>

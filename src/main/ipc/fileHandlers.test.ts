@@ -1,3 +1,4 @@
+import { join, resolve } from "path";
 import { beforeEach, describe, expect, test, vi } from "vitest";
 import { IpcChannels } from "../../shared/types";
 import { MAX_MIDI_FILE_BYTES } from "../../shared/midiFileLimits";
@@ -6,9 +7,15 @@ import {
   clearApprovedMidiPathAccessForTests,
 } from "./midiPathAccess";
 
-const mockUserDataPath = "/mock/userData";
-const mockAppPath = "/mock/app";
-const mockResourcesPath = "/mock/resources";
+function pathKey(filePath: string): string {
+  return resolve(filePath);
+}
+
+const mockUserDataPath = resolve("/mock/userData");
+const mockAppPath = resolve("/mock/app");
+const mockResourcesPath = resolve("/mock/resources");
+const music = resolve("/Users/rex/Music");
+const exportsDir = resolve("/Users/rex/Exports");
 let mockIsPackaged = false;
 let mockFileContents: Record<string, Buffer> = {};
 const mockFdReads: string[] = [];
@@ -37,13 +44,13 @@ vi.mock("electron", () => ({
 
 vi.mock("fs/promises", () => ({
   readFile: vi.fn(async (path: string) => {
-    const normalized = path.replace(/\\/g, "/");
+    const normalized = pathKey(path);
     const contents = mockFileContents[normalized];
     if (!contents) throw new Error("ENOENT");
     return contents;
   }),
   open: vi.fn(async (path: string) => {
-    const normalized = path.replace(/\\/g, "/");
+    const normalized = pathKey(path);
     const contents = mockFileContents[normalized];
     if (!contents) {
       throw Object.assign(new Error("ENOENT"), { code: "ENOENT" });
@@ -73,25 +80,23 @@ vi.mock("fs/promises", () => ({
   }),
   writeFile: vi.fn(async () => {}),
   realpath: vi.fn(async (path: string) => {
-    const normalized = path.replace(/\\/g, "/");
+    const normalized = pathKey(path);
     if (!(normalized in mockFileContents)) {
       throw Object.assign(new Error("ENOENT"), { code: "ENOENT" });
     }
     return normalized;
   }),
   stat: vi.fn(async (path: string) => ({
-    size: mockFileContents[path.replace(/\\/g, "/")]?.byteLength ?? 0,
+    size: mockFileContents[pathKey(path)]?.byteLength ?? 0,
     dev: mockPathIdentity.dev,
     ino: mockPathIdentity.ino,
-    isFile: () => path.replace(/\\/g, "/") in mockFileContents,
+    isFile: () => pathKey(path) in mockFileContents,
     isDirectory: () => false,
   })),
 }));
 
 vi.mock("fs", () => ({
-  existsSync: vi.fn(
-    (path: string) => path.replace(/\\/g, "/") in mockFileContents,
-  ),
+  existsSync: vi.fn((path: string) => pathKey(path) in mockFileContents),
   mkdirSync: vi.fn(),
   readFileSync: vi.fn(() => "{}"),
   writeFileSync: vi.fn(),
@@ -138,35 +143,34 @@ describe("fileHandlers", () => {
   });
 
   test("LOAD_MIDI_PATH rejects existing MIDI files that were not user-approved", async () => {
-    mockFileContents["/Users/rex/Music/Secret.mid"] = Buffer.from([1, 2, 3]);
+    const secret = join(music, "Secret.mid");
+    mockFileContents[secret] = Buffer.from([1, 2, 3]);
 
     const result = await handlers[IpcChannels.LOAD_MIDI_PATH](
       trustedEvent,
-      "/Users/rex/Music/Secret.mid",
+      secret,
     );
 
     expect(result).toBeNull();
-    expect(readFile).not.toHaveBeenCalledWith("/Users/rex/Music/Secret.mid");
+    expect(readFile).not.toHaveBeenCalledWith(secret);
   });
 
   test("LOAD_MIDI_PATH loads a user-approved MIDI file", async () => {
-    mockFileContents["/Users/rex/Music/Scale.mid"] = Buffer.from([1, 2, 3]);
-    await approveMidiFilePath("/Users/rex/Music/Scale.mid");
+    const scale = join(music, "Scale.mid");
+    mockFileContents[scale] = Buffer.from([1, 2, 3]);
+    await approveMidiFilePath(scale);
 
     await expect(
-      handlers[IpcChannels.LOAD_MIDI_PATH](
-        trustedEvent,
-        "/Users/rex/Music/Scale.mid",
-      ),
+      handlers[IpcChannels.LOAD_MIDI_PATH](trustedEvent, scale),
     ).resolves.toEqual({
       fileName: "Scale.mid",
       data: [1, 2, 3],
-      path: "/Users/rex/Music/Scale.mid",
+      path: scale,
     });
   });
 
   test("LOAD_MIDI_PATH rejects when the opened fd is a different inode than the grant", async () => {
-    const path = "/Users/rex/Music/Scale.mid";
+    const path = join(music, "Scale.mid");
     mockFileContents[path] = Buffer.from([1, 2, 3]);
     await approveMidiFilePath(path);
     mockOpenIdentity.ino = 99;
@@ -178,7 +182,7 @@ describe("fileHandlers", () => {
   });
 
   test("LOAD_MIDI_PATH returns null when an approved path no longer exists", async () => {
-    const path = "/Users/rex/Music/Gone.mid";
+    const path = join(music, "Gone.mid");
     mockFileContents[path] = Buffer.from([1, 2, 3]);
     await approveMidiFilePath(path);
     delete mockFileContents[path];
@@ -189,7 +193,7 @@ describe("fileHandlers", () => {
   });
 
   test("LOAD_MIDI_PATH rejects an oversized approved file before read", async () => {
-    const path = "/Users/rex/Music/Huge.mid";
+    const path = join(music, "Huge.mid");
     mockFileContents[path] = Buffer.alloc(MAX_MIDI_FILE_BYTES + 1);
     await approveMidiFilePath(path);
 
@@ -202,7 +206,7 @@ describe("fileHandlers", () => {
   test("EXPORT_MIDI_FILE writes selected MIDI bytes to a user-selected path", async () => {
     vi.mocked(dialog.showSaveDialog).mockResolvedValue({
       canceled: false,
-      filePath: "/Users/rex/Exports/Edited.mid",
+      filePath: join(exportsDir, "Edited.mid"),
     });
 
     await expect(
@@ -212,11 +216,11 @@ describe("fileHandlers", () => {
       }),
     ).resolves.toEqual({
       ok: true,
-      path: "/Users/rex/Exports/Edited.mid",
+      path: join(exportsDir, "Edited.mid"),
     });
 
     expect(writeFile).toHaveBeenCalledWith(
-      "/Users/rex/Exports/Edited.mid",
+      join(exportsDir, "Edited.mid"),
       Buffer.from([77, 84, 104, 100]),
     );
   });
@@ -239,8 +243,13 @@ describe("fileHandlers", () => {
 
   test("LIST_BUILTIN_SONGS reads packaged songs from app.asar.unpacked resources", async () => {
     mockIsPackaged = true;
-    const manifestPath =
-      "/mock/resources/app.asar.unpacked/resources/midi/songs.json";
+    const manifestPath = join(
+      mockResourcesPath,
+      "app.asar.unpacked",
+      "resources",
+      "midi",
+      "songs.json",
+    );
     mockFileContents[manifestPath] = Buffer.from(
       JSON.stringify([
         {
@@ -275,8 +284,12 @@ describe("fileHandlers", () => {
 
   test("LOAD_SOUNDFONT reads packaged piano samples from app.asar.unpacked resources", async () => {
     mockIsPackaged = true;
-    const soundFontPath =
-      "/mock/resources/app.asar.unpacked/resources/piano.sf2";
+    const soundFontPath = join(
+      mockResourcesPath,
+      "app.asar.unpacked",
+      "resources",
+      "piano.sf2",
+    );
     mockFileContents[soundFontPath] = Buffer.from([9, 8, 7]);
 
     await expect(

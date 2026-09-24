@@ -24,7 +24,10 @@ import { AudioEngine } from "../../engines/audio/AudioEngine";
 import { useSongStore } from "../../stores/useSongStore";
 import { usePlaybackStore } from "../../stores/usePlaybackStore";
 import { usePracticeStore } from "../../stores/usePracticeStore";
-import { preferredDisplayModeForSource, practiceSourceFromFileName } from "../../engines/score/builtinScoreSource";
+import {
+  preferredDisplayModeForSource,
+  practiceSourceFromFileName,
+} from "../../engines/score/builtinScoreSource";
 import { useSettingsStore } from "../../stores/useSettingsStore";
 import { useSongLibraryStore } from "../../stores/useSongLibraryStore";
 import { useProgressStore } from "../../stores/useProgressStore";
@@ -569,7 +572,10 @@ export function SongLibrary({
       try {
         const result = await window.api.loadBuiltinSong(songId);
         if (result) {
-          const parsed = parseImportedPracticeFile(result.fileName, result.data);
+          const parsed = parseImportedPracticeFile(
+            result.fileName,
+            result.data,
+          );
           loadSong(parsed);
           const origin =
             songs.find((entry) => entry.id === songId)?.origin ?? "midi";

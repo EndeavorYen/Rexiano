@@ -1,4 +1,4 @@
-import { describe, test, expect, beforeEach, vi } from "vitest";
+import { describe, test, expect, beforeEach, afterEach, vi } from "vitest";
 
 // In-memory localStorage mock
 const storage = new Map<string, string>();
@@ -20,8 +20,13 @@ describe("useSettingsStore", () => {
   beforeEach(() => {
     storage.clear();
     vi.clearAllMocks();
+    vi.stubGlobal("navigator", { language: "en-US" });
     // Reset the module so the store is re-created with fresh localStorage
     vi.resetModules();
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
   });
 
   // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
@@ -84,6 +89,13 @@ describe("useSettingsStore", () => {
     test("childFocusMode defaults to false", async () => {
       const store = await getStore();
       expect(store.getState().childFocusMode).toBe(false);
+    });
+
+    test("defaults language to zh-TW when the OS locale is Chinese", async () => {
+      vi.stubGlobal("navigator", { language: "zh-Hant-TW" });
+      vi.resetModules();
+      const store = await getStore();
+      expect(store.getState().language).toBe("zh-TW");
     });
   });
 

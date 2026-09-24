@@ -1,7 +1,12 @@
+import { join, resolve } from "path";
 import { beforeEach, describe, expect, test, vi } from "vitest";
 import type { RecentFile, SessionRecord } from "../../shared/types";
 
-const mockUserDataPath = "/mock/userData";
+function pathKey(filePath: string): string {
+  return resolve(filePath);
+}
+
+const mockUserDataPath = resolve("/mock/userData");
 let mockFileContents: Record<string, string> = {};
 
 vi.mock("electron", () => ({
@@ -15,23 +20,23 @@ vi.mock("electron", () => ({
 
 vi.mock("fs/promises", () => ({
   readFile: vi.fn(async (path: string) => {
-    const n = path.replace(/\\/g, "/");
+    const n = pathKey(path);
     if (mockFileContents[n] !== undefined) return mockFileContents[n];
     throw Object.assign(new Error("ENOENT"), { code: "ENOENT" });
   }),
   writeFile: vi.fn(async (path: string, data: string | Buffer) => {
-    mockFileContents[path.replace(/\\/g, "/")] =
+    mockFileContents[pathKey(path)] =
       typeof data === "string" ? data : data.toString("utf-8");
   }),
   mkdir: vi.fn(async () => {}),
   rename: vi.fn(async (from: string, to: string) => {
-    const source = from.replace(/\\/g, "/");
-    const target = to.replace(/\\/g, "/");
+    const source = pathKey(from);
+    const target = pathKey(to);
     mockFileContents[target] = mockFileContents[source];
     delete mockFileContents[source];
   }),
   unlink: vi.fn(async (path: string) => {
-    const normalized = path.replace(/\\/g, "/");
+    const normalized = pathKey(path);
     if (!(normalized in mockFileContents)) {
       throw Object.assign(new Error("ENOENT"), { code: "ENOENT" });
     }
@@ -40,9 +45,7 @@ vi.mock("fs/promises", () => ({
 }));
 
 vi.mock("fs", () => ({
-  existsSync: vi.fn(
-    (path: string) => path.replace(/\\/g, "/") in mockFileContents,
-  ),
+  existsSync: vi.fn((path: string) => pathKey(path) in mockFileContents),
 }));
 
 import { ipcMain } from "electron";
@@ -111,9 +114,9 @@ describe("userDataBackupHandlers", () => {
   test("exports progress and recents from userData files", async () => {
     const sessions = [session()];
     const recents = [recent()];
-    mockFileContents[`${mockUserDataPath}/progress.json`] =
+    mockFileContents[join(mockUserDataPath, "progress.json")] =
       JSON.stringify(sessions);
-    mockFileContents[`${mockUserDataPath}/recents.json`] =
+    mockFileContents[join(mockUserDataPath, "recents.json")] =
       JSON.stringify(recents);
 
     await expect(exportUserDataFiles(["progress", "recents"])).resolves.toEqual(
@@ -145,10 +148,10 @@ describe("userDataBackupHandlers", () => {
       scopes: ["progress", "recents"],
     });
 
-    expect(mockFileContents[`${mockUserDataPath}/progress.json`]).toBe(
+    expect(mockFileContents[join(mockUserDataPath, "progress.json")]).toBe(
       JSON.stringify(normalizedSessions, null, 2),
     );
-    expect(mockFileContents[`${mockUserDataPath}/recents.json`]).toBe(
+    expect(mockFileContents[join(mockUserDataPath, "recents.json")]).toBe(
       JSON.stringify(normalizedRecents, null, 2),
     );
   });
@@ -186,7 +189,7 @@ describe("userDataBackupHandlers", () => {
   });
 
   test("reports corrupt userData files before export", async () => {
-    mockFileContents[`${mockUserDataPath}/progress.json`] = "{broken";
+    mockFileContents[join(mockUserDataPath, "progress.json")] = "{broken";
 
     await expect(exportUserDataFiles(["progress"])).resolves.toEqual({
       ok: false,
@@ -195,7 +198,7 @@ describe("userDataBackupHandlers", () => {
   });
 
   test("rejects invalid stored records before export", async () => {
-    mockFileContents[`${mockUserDataPath}/progress.json`] = JSON.stringify([
+    mockFileContents[join(mockUserDataPath, "progress.json")] = JSON.stringify([
       session(),
       { ...session(), score: { totalNotes: -1 } },
     ]);
@@ -212,9 +215,11 @@ describe("userDataBackupHandlers", () => {
       scopes: ["progress"],
     });
 
-    expect(mockFileContents[`${mockUserDataPath}/progress.json`]).toBe("[]");
+    expect(mockFileContents[join(mockUserDataPath, "progress.json")]).toBe(
+      "[]",
+    );
     expect(
-      mockFileContents[`${mockUserDataPath}/recents.json`],
+      mockFileContents[join(mockUserDataPath, "recents.json")],
     ).toBeUndefined();
   });
 
