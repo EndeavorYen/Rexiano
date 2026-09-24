@@ -16,6 +16,7 @@ import {
   approveMidiFolderPath,
   clearApprovedMidiPathAccessForTests,
 } from "./midiPathAccess";
+import { canCreateSymlinks } from "./symlinkTestUtils";
 import { scanWatchedMidiFolders } from "./watchedFolderHandlers";
 
 const tempDirs: string[] = [];
@@ -55,7 +56,9 @@ describe("watched-folder canonical authorization", () => {
     ]);
   });
 
-  test("returns only canonical regular MIDI targets inside the approved root", async () => {
+  test.skipIf(!canCreateSymlinks())(
+    "returns only canonical regular MIDI targets inside the approved root (skipped: OS denies symlink creation)",
+    async () => {
     const root = await makeTempDir();
     mocks.userDataPath = join(root, "userData");
     const approved = join(root, "approved");
@@ -86,5 +89,6 @@ describe("watched-folder canonical authorization", () => {
       ],
       errors: [],
     });
-  });
+  },
+  );
 });
