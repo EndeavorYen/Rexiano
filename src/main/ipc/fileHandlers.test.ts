@@ -7,10 +7,9 @@ import {
   clearApprovedMidiPathAccessForTests,
 } from "./midiPathAccess";
 
-const pathKey = vi.hoisted(() => {
-  const { resolve: resolvePath } = require("path") as typeof import("path");
-  return (filePath: string): string => resolvePath(filePath);
-});
+function pathKey(filePath: string): string {
+  return resolve(filePath);
+}
 
 const mockUserDataPath = resolve("/mock/userData");
 const mockAppPath = resolve("/mock/app");

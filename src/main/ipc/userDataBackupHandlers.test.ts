@@ -2,10 +2,9 @@ import { join, resolve } from "path";
 import { beforeEach, describe, expect, test, vi } from "vitest";
 import type { RecentFile, SessionRecord } from "../../shared/types";
 
-const pathKey = vi.hoisted(() => {
-  const { resolve: resolvePath } = require("path") as typeof import("path");
-  return (filePath: string): string => resolvePath(filePath);
-});
+function pathKey(filePath: string): string {
+  return resolve(filePath);
+}
 
 const mockUserDataPath = resolve("/mock/userData");
 let mockFileContents: Record<string, string> = {};

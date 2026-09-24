@@ -4,21 +4,21 @@ import { beforeEach, describe, expect, test, vi } from "vitest";
 const music = resolve("/Users/rex/Music");
 const at = (...parts: string[]): string => join(music, ...parts);
 
-const mocks = vi.hoisted(() => {
-  const { resolve: resolvePath } = require("path") as typeof import("path");
-  return {
-    resolvePath,
-    dialogMock: {
-      showOpenDialog: vi.fn(),
-    },
-    focusedWindow: {},
-    handlers: {} as Record<string, (...args: unknown[]) => Promise<unknown>>,
-    directoryEntries: {} as Record<
-      string,
-      { name: string; isDirectory(): boolean; isFile(): boolean }[]
-    >,
-  };
-});
+function pathKey(filePath: string): string {
+  return resolve(filePath);
+}
+
+const mocks = vi.hoisted(() => ({
+  dialogMock: {
+    showOpenDialog: vi.fn(),
+  },
+  focusedWindow: {},
+  handlers: {} as Record<string, (...args: unknown[]) => Promise<unknown>>,
+  directoryEntries: {} as Record<
+    string,
+    { name: string; isDirectory(): boolean; isFile(): boolean }[]
+  >,
+}));
 
 function file(name: string): (typeof mocks.directoryEntries)[string][number] {
   return {
@@ -56,14 +56,14 @@ vi.mock("electron", () => ({
 vi.mock("fs/promises", () => ({
   readdir: vi.fn(
     async (folderPath: string) =>
-      mocks.directoryEntries[mocks.resolvePath(folderPath)] ?? [],
+      mocks.directoryEntries[pathKey(folderPath)] ?? [],
   ),
-  realpath: vi.fn(async (path: string) => mocks.resolvePath(path)),
+  realpath: vi.fn(async (path: string) => pathKey(path)),
   stat: vi.fn(async (path: string) => ({
     dev: 1,
     ino: path.length,
-    isDirectory: () => mocks.resolvePath(path) in mocks.directoryEntries,
-    isFile: () => !(mocks.resolvePath(path) in mocks.directoryEntries),
+    isDirectory: () => pathKey(path) in mocks.directoryEntries,
+    isFile: () => !(pathKey(path) in mocks.directoryEntries),
   })),
 }));
 
@@ -95,10 +95,7 @@ describe("watchedFolderHandlers", () => {
       dir("Sub"),
       file("Etude.MIDI"),
     ];
-    mocks.directoryEntries[at("Sub")] = [
-      file("Duet.kar"),
-      file("Warmup.mid"),
-    ];
+    mocks.directoryEntries[at("Sub")] = [file("Duet.kar"), file("Warmup.mid")];
 
     await expect(discoverMidiFilesInFolder(music)).resolves.toEqual([
       at("Etude.MIDI"),
