@@ -8,6 +8,11 @@
 - **[docs/ROADMAP.md](docs/ROADMAP.md)** — 開發路線圖與任務追蹤（checkbox 清單，標示已完成 / 未完成）
 - **[docs/init.md](docs/init.md)** — 原始需求文件（六大核心功能）
 
+進度 checkbox 只活在 [docs/ROADMAP.md](docs/ROADMAP.md)。這份文件不記 phase 狀態。DESIGN.md 是架構歷史，不要把它的 Phase 章節、OSMD 對照或簽章描述當成待辦。
+樂譜主渲染器是 VexFlow。不要加入 OSMD，不要做 OSMD native cursor，不要做第二套記譜引擎。
+已公開的安裝檔是未簽章的。fail-closed 簽章不是使用者現在下載到的路徑。不要在這裡做 issue 187。
+`site/` 不是產品需求。不要把它寫進 ROADMAP 的下一程。
+
 ## 開發工作流程（必遵守）
 
 每次開發新功能或修復 bug，遵循以下流程：
@@ -19,23 +24,13 @@
 
 > **重要**：ROADMAP.md 的 checkbox 是專案進度的單一真實來源，必須保持準確。完成一項就勾一項，不要等到全部做完才更新。
 
-## 當前進度快照
-
-| Phase | 狀態      | 說明                                                                  |
-| ----- | --------- | --------------------------------------------------------------------- |
-| 1~3   | ✅ 完成   | 專案骨架、下落音符引擎、主題系統                                      |
-| 4     | ✅ 完成   | 音頻播放（合成音色 fallback，`resources/piano.sf2` 已存在）           |
-| 5     | ✅ 完成   | MIDI 裝置連接（Input/Output/Store/UI）                                |
-| 6     | ✅ 完成   | 練習模式（引擎 + Store + UI + 整合：tickerLoop / App.tsx / 視覺回饋） |
-| 6.5+  | 🔲 未開始 | 兒童可用性增強、樂譜顯示、打包發佈                                    |
-
 ## 技術堆疊速查
 
 - **框架**: Electron 39 + React 19 + TypeScript 5.9
 - **建置**: electron-vite 5 + Vite 7 + Tailwind CSS 4
 - **渲染**: PixiJS 8（下落音符）、CSS（鍵盤 / UI）
-- **狀態**: Zustand 5（6 個 store，見下方列表）
-- **測試**: Vitest 4（25 個測試檔案，343 tests）
+- **狀態**: Zustand 5（store 見下方列表）
+- **測試**: Vitest 4
 - **套件管理**: pnpm
 - **音頻**: Web Audio API + SoundFont（`resources/piano.sf2`, 6MB）
 
@@ -79,6 +74,8 @@ Interpret creatively and make unexpected choices that feel genuinely designed fo
 | `useMidiDeviceStore`  | `stores/useMidiDeviceStore.ts`  | MIDI 裝置連接狀態                                               |
 | `useSongLibraryStore` | `stores/useSongLibraryStore.ts` | 曲庫元資料                                                      |
 | `usePracticeStore`    | `stores/usePracticeStore.ts`    | 練習模式狀態（mode / speed / loopRange / activeTracks / score） |
+| `useSettingsStore`    | `stores/useSettingsStore.ts`    | 顯示、語言、音量、預設速度與練習預設                            |
+| `useProgressStore`    | `stores/useProgressStore.ts`    | 練習 session 紀錄（載入、新增、最佳成績）                       |
 
 ## 開發慣例
 

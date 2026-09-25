@@ -42,16 +42,14 @@ flowchart LR
 - [x] 曲庫／首頁上「從譜來」與「從 MIDI 來」同等可見
 - [x] 譜來源保留練習需要的 metadata（調號、拍號；多譜表拆成左右手軌道）
 - [x] 驗收：同一首曲，從譜匯入與從 MIDI 匯入都能開始練習，且 MIDI 入口無回歸
+- 不要另開通用樂譜匯入器。既有勾選就是範圍。
 
 ### 產品階段 2 — UIUX 壓過競品
 
 > 目標：體感要壓過 Synthesia 級手感。漂亮、簡潔、優雅，不是功能對照表打勾。
 
 - [x] 主路徑（開曲 → 練習）顯示切換只留舞台，抽屜不再重複
-- [ ] 畫面密度下降：次要控制讓路，主畫面讀得懂、點得到
-- [ ] 下落音符、命中回饋、鍵盤高亮的延遲與可讀性對齊或超過競品
-- [ ] 裝置連線與設定不再打斷練習流
-- [ ] 動效／間距／字級服務「優雅」，不服務功能堆疊
+- [ ] 剩下的只對照 `docs/p2-synthesia-feel-checklist.md`：在 falling / split 與 Watch / Wait 上看得到的項。不要為了打贏 Synthesia 另開功能清單。
 - [x] 驗收清單：`docs/p2-synthesia-feel-checklist.md`（對照項已寫；尚未與 Synthesia 並排過關）
 
 ### 產品階段 3 — 音樂家級 MIDI → 譜
@@ -65,9 +63,8 @@ flowchart LR
 > 實作另開卡；在此之前**不改** `MidiToNotation` 行為。
 
 - [x] 另開 `midiToMusicXml`（不改 `MidiToNotation` 顯示啟發式）
-- [ ] MIDI → 譜輸出在拍子、聲部、譜號、連音、臨時記號上接近人手寫譜
+- [ ] 有一首被點名、已經不能練的曲子之前，不做音樂家級 MIDI → 譜轉換，也不改 Phase 7 顯示層去吃更好的 notation。
 - [x] 明確排除 audio-to-score
-- [ ] 歷史 Phase 7 顯示層可以吃更好的 notation，但不把「有顯示」當成「譜正確」
 - [x] 內建／公有領域曲目有可對照的 MusicXML（手寫 2 首 + builder 產出其餘；顯示層仍是啟發式）
 - [x] 行為變更另開實作卡：`midiToMusicXml`；本文件不重寫 `MidiToNotation`
 
@@ -92,8 +89,8 @@ flowchart LR
 | **v1.2.0** | Windows portable | Windows 免安裝 `.exe` 發佈檔 ✅            |
 | **v1.2.1** | 發佈資源修補     | 內建曲庫/SoundFont packaged 路徑、portable `.zip` |
 | **下一程** | 譜 → MIDI 雙入口 | 產品階段 1（第一刀已落地）                               |
-| **下一程** | 體驗壓過競品     | 產品階段 2（未開始）                               |
-| **下一程** | 音樂家級 MIDI → 譜 | 產品階段 3（未開始）                             |
+| **下一程** | 體驗壓過競品     | 產品階段 2（不是功能清單）                               |
+| **下一程** | 音樂家級 MIDI → 譜 | 產品階段 3（點名的曲子不能練之前不做）                             |
 
 ---
 
@@ -373,6 +370,8 @@ flowchart LR
   - [x] Settings 語言切換（Language tab + Globe icon）
   - [x] I18nProvider mounted in main.tsx
 
+> **歷史紀錄，不是待辦。** 這一表只記 Phase 6.5 當時的對照。不要從「平手」或「超越？」開工作。
+
 ### Synthesia 對照表
 
 | 功能             | Synthesia | Rexiano Phase 6.5 後                 | 超越？ |
@@ -409,6 +408,7 @@ flowchart LR
 > **不是**：輸出已經是正確樂譜。正確譜是產品階段 3。
 
 - [x] 方案選型確認（VexFlow vs OSMD）— VexFlow 5.0 已安裝
+  > 主渲染器維持 VexFlow。不要併入 OSMD，不要做 OSMD native cursor。兩套記譜引擎不在範圍。
 - [x] `engines/midi/TempoMap.ts` — 秒 ↔ tick 精確換算 + 小節表
   - [x] 跨速度變化（含漸快 / 漸慢）的分段線性換算
   - [x] 依拍號事件產生小節表（支援中途變拍）
@@ -531,6 +531,7 @@ flowchart LR
   - [x] 應用內更新提示
   - [x] 發佈到 GitHub Releases
 - [x] 官方 release 簽章管線採 fail closed（缺少憑證、驗證失敗時不公開 release）
+  > 已公開的 GitHub Release 安裝檔是未簽章的。上一行的 fail-closed 是 `.github/workflows/release.yml` 的管線合約，不是使用者現在下載到的路徑。#187 不在這張卡，維持未勾。
   - [x] Windows: 強制 EV/OV signing 並驗證 setup、portable 與 zip 內執行檔
   - [x] macOS: 強制 Developer ID signing + notarization，驗證雙架構 DMG
   - [x] 簽章/公證 secrets、local/fork unsigned 邊界與 evidence checklist 文件（`docs/release-signing.md`）
