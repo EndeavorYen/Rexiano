@@ -1,12 +1,4 @@
-import { mkdirSync, writeFileSync } from "fs";
-import { join } from "path";
-import type {
-  ElectronApplication,
-  Locator,
-  Page,
-  TestInfo,
-} from "@playwright/test";
-import type { SessionRecord } from "../src/shared/types";
+import type { Locator, Page, TestInfo } from "@playwright/test";
 import { test, expect, waitForUiSettled } from "./fixtures/electronApp";
 import {
   choosePracticeMode,
@@ -20,43 +12,6 @@ import {
 
 const MINIMUM_TEXT_CONTRAST = 4.5;
 const MINIMUM_CONTROL_CONTRAST = 3;
-
-function makeSessions(accuracies: number[]): SessionRecord[] {
-  const now = Date.now();
-  return accuracies.map((accuracy, index) => ({
-    id: `contrast-${index}-${accuracy}`,
-    songId: "Hot Cross Buns",
-    songTitle: "Hot Cross Buns",
-    timestamp: now - (accuracies.length - index) * 60_000,
-    mode: "wait",
-    speed: 1,
-    score: {
-      totalNotes: 10,
-      hitNotes: Math.round(accuracy / 10),
-      missedNotes: 10 - Math.round(accuracy / 10),
-      accuracy,
-      currentStreak: 0,
-      bestStreak: 4,
-    },
-    durationSeconds: 60,
-    tracksPlayed: [0],
-  }));
-}
-
-async function writeProgressFixture(
-  electronApp: ElectronApplication,
-  accuracies: number[],
-): Promise<void> {
-  const userDataPath = await electronApp.evaluate(({ app }) =>
-    app.getPath("userData"),
-  );
-  mkdirSync(userDataPath, { recursive: true });
-  writeFileSync(
-    join(userDataPath, "progress.json"),
-    JSON.stringify(makeSessions(accuracies), null, 2),
-    "utf-8",
-  );
-}
 
 async function applyTheme(
   page: Page,
@@ -407,30 +362,13 @@ test("all themes keep the current-default badge readable on its actual tint", as
   }
 });
 
-test("Ocean and Midnight keep primary actions and status text readable", async ({
-  electronApp,
+test("Ocean and Midnight keep primary actions readable", async ({
   appPage,
 }, testInfo) => {
   await appPage.setViewportSize({ width: 1440, height: 900 });
 
-  const cases = [
-    {
-      themeId: "ocean" as const,
-      accuracies: [50, 55, 80, 85],
-      improvement: /\+30\.0%/,
-      semanticVariable: "--color-success-text",
-    },
-    {
-      themeId: "midnight" as const,
-      accuracies: [85, 80, 55, 50],
-      improvement: /-30\.0%/,
-      semanticVariable: "--color-danger-text",
-    },
-  ];
-
-  for (const fixture of cases) {
-    await writeProgressFixture(electronApp, fixture.accuracies);
-    await applyTheme(appPage, fixture.themeId);
+  for (const themeId of ["ocean", "midnight"] as const) {
+    await applyTheme(appPage, themeId);
 
     const primaryAction = appPage.getByRole("button", {
       name: "Start Playing",
@@ -444,52 +382,11 @@ test("Ocean and Midnight keep primary actions and status text readable", async (
       expect(ratio).toBeGreaterThanOrEqual(MINIMUM_TEXT_CONTRAST);
     }
 
-    await saveScreenshot(
-      appPage,
-      testInfo,
-      `${fixture.themeId}-primary-action`,
-    );
+    await saveScreenshot(appPage, testInfo, `${themeId}-primary-action`);
 
     await gotoLibrary(appPage);
     await loadFirstBuiltInSong(appPage);
-    await appPage.getByTestId("insights-trigger").click();
-
-    const dialog = appPage.getByRole("dialog", { name: "Practice Insights" });
-    const bestAccuracyValue = dialog.getByText("85.0%", { exact: true });
-    const improvementValue = dialog.getByText(fixture.improvement);
-    await expect(bestAccuracyValue).toBeVisible();
-    await expect(improvementValue).toBeVisible();
-    const accentContrast = await computedContrast(bestAccuracyValue, {
-      backgroundFromParent: true,
-    });
-    const accentTextColor = await computedCssVariable(
-      appPage,
-      "--color-accent-text",
-    );
-    expect(accentContrast.foreground).toBe(accentTextColor);
-    expect(accentContrast.ratios[0]).toBeGreaterThanOrEqual(
-      MINIMUM_TEXT_CONTRAST,
-    );
-
-    const statusCard = improvementValue.locator("..");
-    const statusContrast = await computedContrast(improvementValue, {
-      backgroundFromParent: true,
-    });
-    const semanticColor = await computedCssVariable(
-      appPage,
-      fixture.semanticVariable,
-    );
-
-    expect(statusContrast.foreground).toBe(semanticColor);
-    expect(statusContrast.ratios[0]).toBeGreaterThanOrEqual(
-      MINIMUM_TEXT_CONTRAST,
-    );
-    await expect(statusCard).toHaveCSS(
-      "background-color",
-      fixture.themeId === "ocean" ? "rgb(234, 241, 234)" : "rgb(35, 42, 51)",
-    );
-
-    await saveScreenshot(appPage, testInfo, `${fixture.themeId}-insights`);
+    await expect(appPage.getByTestId("insights-trigger")).toHaveCount(0);
   }
 });
 

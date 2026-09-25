@@ -27,7 +27,6 @@ export interface TranslationMap {
   "app.importActionReimport": string;
   "app.importActionOpenPermissions": string;
   "app.importRecoveryActionsLabel": string;
-  "app.insightsTitle": string;
   "app.startPractice": string;
   "app.openSettings": string;
   "app.menuGreeting": string;

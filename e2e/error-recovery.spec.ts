@@ -303,7 +303,7 @@ test.describe("Error recovery", () => {
     await gotoLibrary(appPage);
     await loadFirstBuiltInSong(appPage);
 
-    const launcher = appPage.getByTestId("insights-trigger");
+    const launcher = appPage.getByTestId("playback-drawer-trigger");
     const playbackControl = appPage
       .getByTestId("transport-strip")
       .getByRole("button", { name: /Play \(Space\)|Pause \(Space\)/ });
@@ -319,6 +319,7 @@ test.describe("Error recovery", () => {
 
     await expect(alert).toBeHidden();
     await expect(launcher).toBeFocused();
+    await expect(appPage.getByTestId("insights-trigger")).toHaveCount(0);
     await expect(playbackControl).toHaveAttribute(
       "aria-label",
       playbackNameBeforeSpace ?? "",
