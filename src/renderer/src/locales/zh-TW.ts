@@ -30,7 +30,6 @@ export const zhTW: TranslationMap = {
   "app.importActionReimport": "重新匯入",
   "app.importActionOpenPermissions": "檢查檔案權限",
   "app.importRecoveryActionsLabel": "匯入復原操作",
-  "app.insightsTitle": "練習洞察",
   "app.startPractice": "開始彈琴",
   "app.openSettings": "設定",
   "app.menuGreeting": "今天要彈什麼呢？",

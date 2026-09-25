@@ -1,9 +1,7 @@
 import { useState, useCallback, useRef, useEffect, useMemo } from "react";
-import { createPortal } from "react-dom";
 import {
   AlertTriangle,
   ArrowLeft,
-  BarChart3,
   PanelRightOpen,
   PencilRuler,
   X,
@@ -47,7 +45,6 @@ import { SettingsPanel } from "./features/settings/SettingsPanel";
 import { SongLibrary } from "./features/songLibrary/SongLibrary";
 import { DeviceSelector } from "./features/midiDevice/DeviceSelector";
 import { BluetoothDeviceSelectionDialog } from "./features/midiDevice/BluetoothDeviceSelectionDialog";
-import { InsightsPanel } from "./features/insights/InsightsPanel";
 import { WeakSpotAnalyzer } from "./features/insights/WeakSpotAnalyzer";
 import { buildSessionSummariesForSong } from "./features/insights/sessionSummary";
 import {
@@ -350,19 +347,6 @@ function App(): React.JSX.Element {
     };
   }, [resetAppViewportScroll, showModeModal, song, view]);
 
-  // ─── Phase 6.5 Sprint 5: Insights Panel ──────────────
-  const [showInsights, setShowInsights] = useState(false);
-  const insightsDialogRef = useRef<HTMLDivElement>(null);
-  const insightsCloseButtonRef = useRef<HTMLButtonElement>(null);
-  const insightsTriggerRef = useRef<HTMLButtonElement>(null);
-  const closeInsights = useCallback(() => setShowInsights(false), []);
-  useDialogFocus({
-    active: showInsights,
-    containerRef: insightsDialogRef,
-    initialFocusRef: insightsCloseButtonRef,
-    returnFocusRef: insightsTriggerRef,
-    onDismiss: closeInsights,
-  });
   const sessions = useProgressStore((s) => s.sessions);
   const songId = song?.fileName ?? "";
 
@@ -494,7 +478,6 @@ function App(): React.JSX.Element {
       setSheetFixtureNotationData(fixture.notationData);
       loadSong(fixture.song);
       hidePostSessionFlow();
-      setShowInsights(false);
       applyRoute("playback");
     };
 
@@ -512,7 +495,6 @@ function App(): React.JSX.Element {
         noteResults: new Map(),
       });
       showCelebrationForScore(celebrationFixture.score);
-      setShowInsights(false);
       applyRoute("playback");
     };
     e2eWindow.__rexianoForcePlaybackState = (state) => {
@@ -1511,8 +1493,6 @@ function App(): React.JSX.Element {
       ref={appShellRef}
       className="app-root-shell app-shell flex h-screen flex-col"
       style={{ color: "var(--color-text)" }}
-      inert={showInsights ? true : undefined}
-      aria-hidden={showInsights ? "true" : undefined}
       onDragEnter={handleDragEnter}
       onDragLeave={handleDragLeave}
       onDragOver={handleDragOver}
@@ -1686,21 +1666,6 @@ function App(): React.JSX.Element {
                 data-testid="playback-header-actions"
               >
                 <DisplayModeToggle />
-                <button
-                  ref={insightsTriggerRef}
-                  type="button"
-                  onClick={() => setShowInsights(true)}
-                  className="btn-surface-themed flex min-h-9 min-w-9 items-center justify-center rounded-lg cursor-pointer"
-                  title={t("app.insightsTitle")}
-                  aria-label={t("app.insightsTitle")}
-                  data-testid="insights-trigger"
-                >
-                  <BarChart3
-                    size={15}
-                    style={{ color: "var(--color-text)" }}
-                    aria-hidden="true"
-                  />
-                </button>
                 <button
                   ref={playbackDrawerTriggerRef}
                   onClick={() => setShowPlaybackDrawer(true)}
@@ -1944,42 +1909,6 @@ function App(): React.JSX.Element {
           onChooseSong={handleChooseSong}
         />
       )}
-      {showInsights &&
-        typeof document !== "undefined" &&
-        createPortal(
-          <div
-            className="fixed inset-0 z-[200] flex items-center justify-center p-4 modal-backdrop-cinematic"
-            onClick={(event) => {
-              if (event.target === event.currentTarget) closeInsights();
-            }}
-            data-testid="insights-backdrop"
-          >
-            <div
-              ref={insightsDialogRef}
-              className="w-[min(92vw,460px)] max-h-[85vh] overflow-y-auto rounded-2xl modal-card-cinematic subtle-shadow-md"
-              role="dialog"
-              aria-modal="true"
-              aria-labelledby="practice-insights-dialog-title"
-              aria-describedby="practice-insights-dialog-description"
-              tabIndex={-1}
-              data-testid="insights-dialog"
-              onClick={(event) => event.stopPropagation()}
-            >
-              <h2 id="practice-insights-dialog-title" className="sr-only">
-                {t("insights.title")}
-              </h2>
-              <p id="practice-insights-dialog-description" className="sr-only">
-                {t("insights.dialogDescription")}
-              </p>
-              <InsightsPanel
-                insight={insight}
-                onClose={closeInsights}
-                closeButtonRef={insightsCloseButtonRef}
-              />
-            </div>
-          </div>,
-          document.body,
-        )}
     </div>
   );
 }

@@ -7,6 +7,12 @@ describe("locale key parity", () => {
     expect(Object.keys(zhTW).sort()).toEqual(Object.keys(en).sort());
   });
 
+  test("Practice Insights launcher key is absent", () => {
+    expect(en).not.toHaveProperty("app.insightsTitle");
+    expect(zhTW).not.toHaveProperty("app.insightsTitle");
+    expect(Object.keys(zhTW).sort()).toEqual(Object.keys(en).sort());
+  });
+
   test.each([
     ["English", en],
     ["Traditional Chinese", zhTW],

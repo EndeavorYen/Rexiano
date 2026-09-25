@@ -165,64 +165,19 @@ test.describe("Core accessibility guardrails", () => {
     ).toBeVisible();
   });
 
-  test("Practice Insights traps focus, isolates playback, and restores its persistent launcher", async ({
-    appPage,
-  }) => {
+  test("playback header has no Insights control", async ({ appPage }) => {
     await gotoLibrary(appPage);
     await loadFirstBuiltInSong(appPage);
     await waitForUiSettled(appPage);
 
-    const launcher = appPage.getByTestId("insights-trigger");
-    const playbackControl = appPage
-      .getByTestId("transport-strip")
-      .getByRole("button", { name: /Play \(Space\)|Pause \(Space\)/ });
-    const playbackNameBeforeSpace =
-      await playbackControl.getAttribute("aria-label");
-    await expect(launcher).toBeVisible();
-    await launcher.focus();
-    await expect(launcher).toBeFocused();
-    await appPage.keyboard.press("Enter");
-
-    const dialog = appPage.getByRole("dialog", {
-      name: "Practice Insights",
-    });
-    const close = dialog.getByRole("button", { name: "Close" });
-    await expect(dialog).toBeVisible();
-    await expect(dialog).toHaveAccessibleDescription(
-      "Review practice progress, accuracy trends, and suggested next steps.",
-    );
-    await expect(close).toBeFocused();
-    await expect(appPage.locator(".app-shell")).toHaveAttribute(
-      "aria-hidden",
-      "true",
-    );
-    await expect(appPage.locator(".app-shell")).toHaveAttribute("inert", "");
-
-    await appPage.keyboard.press("Tab");
-    await expect(close).toBeFocused();
-    await appPage.keyboard.press("Shift+Tab");
-    await expect(close).toBeFocused();
-
-    await appPage.keyboard.press("Escape");
-    await expect(dialog).toBeHidden();
-    await expect(launcher).toBeFocused();
-
-    await appPage.keyboard.press("Enter");
-    await expect(dialog).toBeVisible();
-    await appPage
-      .getByTestId("insights-backdrop")
-      .click({ position: { x: 4, y: 4 } });
-    await expect(dialog).toBeHidden();
-    await expect(launcher).toBeFocused();
-
-    await appPage.keyboard.press("Enter");
-    await expect(close).toBeFocused();
-    await appPage.keyboard.press("Space");
-    await expect(dialog).toBeHidden();
-    await expect(launcher).toBeFocused();
-    await expect(playbackControl).toHaveAttribute(
-      "aria-label",
-      playbackNameBeforeSpace ?? "",
-    );
+    await expect(appPage.getByTestId("playback-header-actions")).toBeVisible();
+    await expect(appPage.getByTestId("insights-trigger")).toHaveCount(0);
+    await expect(appPage.getByTestId("insights-dialog")).toHaveCount(0);
+    await expect(appPage.getByTestId("insights-backdrop")).toHaveCount(0);
+    await expect(
+      appPage.getByRole("dialog", { name: "Practice Insights" }),
+    ).toHaveCount(0);
+    await expect(appPage.getByTestId("playback-drawer-trigger")).toBeVisible();
+    await expect(appPage.locator(".app-shell")).not.toHaveAttribute("inert");
   });
 });

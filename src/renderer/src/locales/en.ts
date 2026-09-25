@@ -31,7 +31,6 @@ export const en: TranslationMap = {
   "app.importActionReimport": "Import again",
   "app.importActionOpenPermissions": "Check file permissions",
   "app.importRecoveryActionsLabel": "Import recovery actions",
-  "app.insightsTitle": "Practice Insights",
   "app.startPractice": "Start Playing",
   "app.openSettings": "Settings",
   "app.menuGreeting": "What shall we play today?",
