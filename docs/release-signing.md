@@ -1,6 +1,8 @@
 # Release Signing and Notarization
 
-Official production releases fail closed. A missing credential, failed test,
+Published GitHub Release assets are unsigned. Fail-closed signing is not the live public path. Issue #187 is a future production-secrets run, not evidence that current downloads are signed.
+
+The release workflow fails closed when signing credentials are required. A missing credential, failed test,
 unexpected artifact, invalid signature, failed notarization check, or changed tag
 stops the workflow before a GitHub Release becomes public. Release Please first
 creates a draft and an immutable tag; the release workflow publishes that draft

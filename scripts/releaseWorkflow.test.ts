@@ -383,7 +383,15 @@ describe("release workflow", () => {
     const design = readRepoFile("docs/DESIGN.md");
     const englishDesign = readRepoFile("docs/DESIGN-en.md");
 
-    expect(signingDocs).toContain("Official production releases fail closed");
+    expect(signingDocs).toContain(
+      "Published GitHub Release assets are unsigned",
+    );
+    expect(signingDocs).toContain(
+      "Fail-closed signing is not the live public path",
+    );
+    expect(signingDocs).not.toContain(
+      "Official production releases fail closed",
+    );
     expect(signingDocs).toContain("Local and fork builds");
     expect(signingDocs).toContain("WINDOWS_CSC_LINK");
     expect(signingDocs).toContain("MACOS_CSC_LINK");

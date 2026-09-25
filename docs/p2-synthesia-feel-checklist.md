@@ -8,11 +8,11 @@ It is an acceptance list, not a claim that Rexiano already beats Synthesia.
 1. Home shows one primary path: start practice / import.
 2. Library card states score vs MIDI origin.
 3. Choosing a song opens preview, then one practice start action.
-4. Mode pick is Watch / Wait / Free only — no extra setup wall.
+4. Mode pick is Watch / Wait only — no extra setup wall.
 
 ## Wait practice
 
-1. Stage shows falling / sheet / split on the playback surface. Drawer does not duplicate it.
+1. Stage shows falling / split on the playback surface. Split is the default for score-backed songs. Drawer does not duplicate it.
 2. Hit line stays readable at 50% and 100% speed.
 3. Wait pauses on the target note until the correct key; next note does not jump the cursor.
 4. Device connect lives in the drawer and must not cover the hit line while waiting.
