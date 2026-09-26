@@ -5,7 +5,7 @@ const FORBIDDEN_ENGLISH_UI =
   /First notes|Right-hand melodies|Exercises|Popular|Holiday|Classical|Change theme|Practice mode|Set speed to|Playback speed percentage|Piano roll editor tools|Add track|MIDI input device|MIDI output device/;
 
 test.describe("Traditional Chinese player flow", () => {
-  test("keeps library, practice, device, and editor UI localized", async ({
+  test("keeps library, practice, and device UI localized", async ({
     appPage,
   }, testInfo) => {
     await appPage.setViewportSize({ width: 1600, height: 900 });
@@ -55,27 +55,13 @@ test.describe("Traditional Chinese player flow", () => {
     ).toBeVisible();
 
     await appPage.getByTestId("playback-drawer-trigger").click();
-    await expect(appPage.getByTestId("open-editor")).toHaveAccessibleName(
-      "開啟鋼琴捲軸編輯器",
-    );
-    await appPage.getByTestId("open-editor").click();
+    await expect(appPage.getByTestId("open-editor")).toHaveCount(0);
+    await expect(appPage.getByTestId("piano-roll-editor")).toHaveCount(0);
 
-    const editor = appPage.getByTestId("piano-roll-editor");
-    await expect(editor).toBeVisible();
-    await expect(
-      editor.getByRole("toolbar", { name: "鋼琴捲軸編輯工具" }),
-    ).toBeVisible();
-    await expect(
-      editor.getByRole("button", { name: "新增軌道" }),
-    ).toBeVisible();
-    await expect(editor).toContainText("未選取音符");
-    const editorAx = await editor.ariaSnapshot();
-    expect(editorAx).not.toMatch(FORBIDDEN_ENGLISH_UI);
-
-    const editorScreenshot = testInfo.outputPath("zh-tw-editor.png");
-    await appPage.screenshot({ path: editorScreenshot, fullPage: true });
-    await testInfo.attach("zh-TW editor", {
-      path: editorScreenshot,
+    const playbackScreenshot = testInfo.outputPath("zh-tw-playback.png");
+    await appPage.screenshot({ path: playbackScreenshot, fullPage: true });
+    await testInfo.attach("zh-TW playback", {
+      path: playbackScreenshot,
       contentType: "image/png",
     });
   });
