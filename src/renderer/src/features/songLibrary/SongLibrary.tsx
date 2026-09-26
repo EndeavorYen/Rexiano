@@ -3,21 +3,15 @@ import {
   Upload,
   AlertCircle,
   Music,
-  Trophy,
-  Flame,
   ArrowLeft,
   PanelRightOpen,
   X,
   PlayCircle,
   Star,
   Target,
-  FolderPlus,
   FolderOpen,
   Pencil,
   Check,
-  Volume2,
-  Square,
-  Loader2,
 } from "lucide-react";
 import { parseImportedPracticeFile } from "../../engines/score/decodeImportedPracticeFile";
 import { AudioEngine } from "../../engines/audio/AudioEngine";
@@ -229,16 +223,13 @@ export function SongLibrary({
   }, [t]);
   const songs = useSongLibraryStore((s) => s.songs);
   const importedSongs = useSongLibraryStore((s) => s.importedSongs);
-  const watchedFolders = useSongLibraryStore((s) => s.watchedFolders);
   const isLoading = useSongLibraryStore((s) => s.isLoading);
   const searchQuery = useSongLibraryStore((s) => s.searchQuery);
   const difficultyFilter = useSongLibraryStore((s) => s.difficultyFilter);
   const gradeFilter = useSongLibraryStore((s) => s.gradeFilter);
   const sortMode = useSongLibraryStore((s) => s.sortMode);
   const viewMode = useSongLibraryStore((s) => s.viewMode);
-  const favoriteSongIds = useSongLibraryStore((s) => s.favoriteSongIds);
   const fetchSongs = useSongLibraryStore((s) => s.fetchSongs);
-  const addWatchedFolder = useSongLibraryStore((s) => s.addWatchedFolder);
   const refreshWatchedFolders = useSongLibraryStore(
     (s) => s.refreshWatchedFolders,
   );
@@ -264,7 +255,6 @@ export function SongLibrary({
   const [loadingImportedPath, setLoadingImportedPath] = useState<string | null>(
     null,
   );
-  const [isAddingWatchedFolder, setIsAddingWatchedFolder] = useState(false);
   const [editingImportedSongId, setEditingImportedSongId] = useState<
     string | null
   >(null);
@@ -407,8 +397,8 @@ export function SongLibrary({
   }, [importedSongs, gradeFilter, searchQuery]);
 
   const songActivity = useMemo(
-    () => buildSongActivity(songs, sessions, recentFiles, favoriteSongIds),
-    [songs, sessions, recentFiles, favoriteSongIds],
+    () => buildSongActivity(songs, sessions, recentFiles, []),
+    [songs, sessions, recentFiles],
   );
 
   const importedSongActivity = useMemo(
@@ -553,17 +543,6 @@ export function SongLibrary({
     [sortedSongs],
   );
 
-  /** Progress stats derived from sessions */
-  const progressStats = useMemo(() => {
-    const uniqueSongs = new Set(sessions.map((s) => s.songId)).size;
-    const totalSessions = sessions.length;
-    const bestAccuracy =
-      sessions.length > 0
-        ? Math.round(Math.max(...sessions.map((s) => s.score.accuracy)))
-        : 0;
-    return { uniqueSongs, totalSessions, bestAccuracy };
-  }, [sessions]);
-
   const handleSelectSong = useCallback(
     async (songId: string, intent: PracticeSessionIntent = "practice") => {
       onSessionIntentSelected?.(intent);
@@ -703,20 +682,6 @@ export function SongLibrary({
     },
     [removeRecent],
   );
-
-  const handleAddWatchedFolder = useCallback(async () => {
-    setError(null);
-    setIsAddingWatchedFolder(true);
-    try {
-      await addWatchedFolder();
-    } catch (e) {
-      const msg = e instanceof Error ? e.message : t("general.error");
-      setError(msg);
-      console.error("Failed to add watched MIDI folder:", e);
-    } finally {
-      setIsAddingWatchedFolder(false);
-    }
-  }, [addWatchedFolder, t]);
 
   const handlePreviewImportedSong = useCallback(
     (record: ImportedSongRecord, viaKeyboard: boolean) => {
@@ -960,54 +925,9 @@ export function SongLibrary({
                 <Upload size={15} />
                 {t("library.importMidi")}
               </button>
-              <button
-                onClick={() => void handleAddWatchedFolder()}
-                disabled={isAddingWatchedFolder}
-                className="btn-surface-themed flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium cursor-pointer disabled:cursor-wait disabled:opacity-60"
-                data-testid="library-add-folder"
-              >
-                <FolderPlus size={15} />
-                {t("library.addFolder")}
-              </button>
               <ThemePicker />
             </div>
           </div>
-
-          {isProgressLoaded && sessions.length > 0 && (
-            <div
-              className="mt-4 grid gap-3 rounded-xl px-4 py-3 sm:grid-cols-3"
-              style={{
-                background:
-                  "color-mix(in srgb, var(--color-accent) 8%, var(--color-surface))",
-                border:
-                  "1px solid color-mix(in srgb, var(--color-accent) 16%, var(--color-border))",
-              }}
-            >
-              <StatBadge
-                icon={<Music size={14} />}
-                value={progressStats.uniqueSongs}
-                label={
-                  progressStats.uniqueSongs === 1
-                    ? t("library.songPracticed")
-                    : t("library.songsPracticed")
-                }
-              />
-              <StatBadge
-                icon={<Flame size={14} />}
-                value={progressStats.totalSessions}
-                label={
-                  progressStats.totalSessions === 1
-                    ? t("library.session")
-                    : t("library.sessions")
-                }
-              />
-              <StatBadge
-                icon={<Trophy size={14} />}
-                value={`${progressStats.bestAccuracy}%`}
-                label={t("library.bestScore")}
-              />
-            </div>
-          )}
 
           <div
             className="mt-4 rounded-xl px-4 py-3"
@@ -1462,9 +1382,7 @@ export function SongLibrary({
                   border: "1px solid var(--color-border)",
                 }}
               >
-                {t("library.watchedFolderCount", {
-                  count: watchedFolders.length,
-                })}
+                {t("library.importedSongs")}
               </span>
             </div>
             <div className="grid gap-2">
@@ -1632,14 +1550,6 @@ export function SongLibrary({
                                 onSelect={handlePreviewSong}
                                 colorIndex={groupIdx * 4 + i}
                               />
-                              <FavoriteButton
-                                song={song}
-                                activity={
-                                  songActivity.get(song.id) ?? emptyActivity
-                                }
-                                onToggleFavorite={toggleFavoriteSong}
-                                className="absolute right-2 top-2"
-                              />
                               {loadingId === song.id && (
                                 <LoadingOverlay radiusClass="rounded-xl" />
                               )}
@@ -1724,9 +1634,9 @@ function SongSelectionPreviewPanel({
   preview,
   focusPrimaryAction,
   isLoading,
-  audioStatus,
+  audioStatus: _audioStatus,
   onStartSession,
-  onToggleAudioPreview,
+  onToggleAudioPreview: _onToggleAudioPreview,
 }: {
   preview: SongSelectionPreviewModel;
   focusPrimaryAction: boolean;
@@ -1755,12 +1665,8 @@ function SongSelectionPreviewPanel({
       ? `${Math.round(preview.bestAccuracy)}%`
       : t("library.neverPracticed");
   const sessionActions = buildSongPreviewSessionActions(preview.primaryCta);
-  const audioPreviewLabel =
-    audioStatus === "loading"
-      ? t("library.preview.audioPreviewLoading")
-      : audioStatus === "playing"
-        ? t("library.preview.audioPreviewStop")
-        : t("library.preview.audioPreview");
+  void _onToggleAudioPreview;
+  void _audioStatus;
 
   useEffect(() => {
     sectionRef.current?.scrollIntoView({
@@ -1802,22 +1708,6 @@ function SongSelectionPreviewPanel({
         </div>
 
         <div className="flex flex-col gap-2 sm:flex-row lg:justify-end">
-          <button
-            type="button"
-            onClick={() => onToggleAudioPreview(preview)}
-            disabled={audioStatus === "loading"}
-            className="btn-surface-themed flex min-h-10 items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-body font-semibold cursor-pointer disabled:cursor-wait disabled:opacity-60"
-            data-testid="song-selection-preview-audio"
-          >
-            {audioStatus === "loading" ? (
-              <Loader2 size={16} className="animate-spin" />
-            ) : audioStatus === "playing" ? (
-              <Square size={15} />
-            ) : (
-              <Volume2 size={16} />
-            )}
-            {audioPreviewLabel}
-          </button>
           {sessionActions.map((action) => (
             <button
               key={action.intent}
@@ -2186,7 +2076,7 @@ function SongListRow({
   isLoading,
   isSelected,
   onSelect,
-  onToggleFavorite,
+  onToggleFavorite: _onToggleFavorite,
   animationDelay,
 }: {
   song: BuiltinSongMeta;
@@ -2198,10 +2088,7 @@ function SongListRow({
   animationDelay: number;
 }): React.JSX.Element {
   const { t } = useTranslation();
-  const gradeColor =
-    song.grade !== undefined
-      ? getGradeColor(song.grade)
-      : "var(--color-border)";
+  void _onToggleFavorite;
   const category = song.category ?? "popular";
   const practicedLabel =
     activity.playCount > 0
@@ -2245,16 +2132,6 @@ function SongListRow({
 
         <span className="flex flex-wrap items-center gap-1.5 md:justify-end">
           <span
-            className="rounded-md px-1.5 py-0.5 text-[10px] font-mono font-semibold"
-            style={{
-              color: gradeColor,
-              background: `color-mix(in srgb, ${gradeColor} 12%, transparent)`,
-              border: `1px solid color-mix(in srgb, ${gradeColor} 30%, transparent)`,
-            }}
-          >
-            {song.grade !== undefined ? gradeLabelShort[song.grade] : "--"}
-          </span>
-          <span
             className="rounded-md px-1.5 py-0.5 text-[10px] font-body font-medium"
             style={{
               color: "var(--color-text-muted)",
@@ -2286,19 +2163,12 @@ function SongListRow({
         </span>
       </button>
 
-      <FavoriteButton
-        song={song}
-        activity={activity}
-        onToggleFavorite={onToggleFavorite}
-        className="mr-2 self-center"
-      />
-
       {isLoading && <LoadingOverlay radiusClass="rounded-lg" />}
     </div>
   );
 }
 
-function FavoriteButton({
+export function FavoriteButton({
   song,
   activity,
   onToggleFavorite,
@@ -2361,7 +2231,7 @@ function LoadingOverlay({
   );
 }
 
-function StatBadge({
+export function StatBadge({
   icon,
   value,
   label,

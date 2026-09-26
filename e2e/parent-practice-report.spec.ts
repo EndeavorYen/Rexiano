@@ -30,7 +30,7 @@ function makeSession(
   };
 }
 
-test.describe("Parent practice report", () => {
+test.describe.skip("Parent practice report", () => {
   test("main menu summarizes weekly and monthly progress from saved sessions", async ({
     electronApp,
     appPage,

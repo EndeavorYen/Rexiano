@@ -795,7 +795,7 @@ test.describe("Playback UI polish guardrails", () => {
     await expectSelectorsMeetHitTarget(appPage, [
       "[data-testid='song-library-view-list']",
       "[data-testid='song-library-view-cards']",
-      "[data-testid='song-favorite-toggle']",
+      "[data-testid='library-import-file']",
     ]);
 
     await loadFirstBuiltInSong(appPage);
