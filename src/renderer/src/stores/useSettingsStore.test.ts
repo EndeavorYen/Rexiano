@@ -91,8 +91,8 @@ describe("useSettingsStore", () => {
       expect(store.getState().childFocusMode).toBe(false);
     });
 
-    test("defaults language to zh-TW when the OS locale is Chinese", async () => {
-      vi.stubGlobal("navigator", { language: "zh-Hant-TW" });
+    test("defaults language to zh-TW even when the OS locale is English", async () => {
+      vi.stubGlobal("navigator", { language: "en-US" });
       vi.resetModules();
       const store = await getStore();
       expect(store.getState().language).toBe("zh-TW");
@@ -328,7 +328,7 @@ describe("useSettingsStore", () => {
 
       const store = await getStore();
       expect(store.getState().showNoteLabels).toBe(true);
-      expect(store.getState().language).toBe("en");
+      expect(store.getState().language).toBe("zh-TW");
       expect(store.getState().defaultMode).toBe("watch");
       expect(store.getState().muted).toBe(false);
     });

@@ -27,7 +27,7 @@ export function getCelebrationPresentation({
   return {
     variant: "scored",
     showScore: totalNotes > 0,
-    chooseSongGoesToStats: true,
+    chooseSongGoesToStats: false,
   };
 }
 

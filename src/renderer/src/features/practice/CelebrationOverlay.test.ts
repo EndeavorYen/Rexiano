@@ -98,7 +98,7 @@ describe("getCelebrationPresentation", () => {
     ).toEqual({
       variant: "scored",
       showScore: true,
-      chooseSongGoesToStats: true,
+      chooseSongGoesToStats: false,
     });
     expect(
       getCelebrationPresentation({
@@ -108,7 +108,7 @@ describe("getCelebrationPresentation", () => {
     ).toEqual({
       variant: "scored",
       showScore: true,
-      chooseSongGoesToStats: true,
+      chooseSongGoesToStats: false,
     });
   });
 });

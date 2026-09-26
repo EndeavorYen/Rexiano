@@ -89,10 +89,10 @@ describe("shouldShowCompletionCelebration", () => {
 });
 
 describe("shouldAdvanceCelebrationToStats", () => {
-  test("keeps Watch listen-through on the next-action card", () => {
+  test("keeps the end card in place for every mode", () => {
     expect(shouldAdvanceCelebrationToStats("watch")).toBe(false);
-    expect(shouldAdvanceCelebrationToStats("wait")).toBe(true);
-    expect(shouldAdvanceCelebrationToStats("free")).toBe(true);
+    expect(shouldAdvanceCelebrationToStats("wait")).toBe(false);
+    expect(shouldAdvanceCelebrationToStats("free")).toBe(false);
   });
 });
 

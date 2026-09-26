@@ -71,8 +71,9 @@ export function shouldShowCompletionCelebration({
   return totalNotes > 0;
 }
 
-export function shouldAdvanceCelebrationToStats(mode: PracticeMode): boolean {
-  return mode !== "watch";
+export function shouldAdvanceCelebrationToStats(_mode: PracticeMode): boolean {
+  void _mode;
+  return false;
 }
 
 export function shouldShowModeSelectionModal({

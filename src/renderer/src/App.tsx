@@ -56,7 +56,6 @@ import { useKeyboardShortcuts } from "./hooks/useKeyboardShortcuts";
 import { useTranslation } from "./i18n/useTranslation";
 import { SheetMusicPanel } from "./features/sheetMusic/SheetMusicPanel";
 import { DisplayModeToggle } from "./features/sheetMusic/DisplayModeToggle";
-import { sheetFidelityLabelKey } from "./engines/score/builtinScoreSource";
 import { convertSongToNotation } from "./features/sheetMusic/MidiToNotation";
 import { TempoMap } from "./engines/midi/TempoMap";
 import { TransportClock } from "./engines/transport/TransportClock";
@@ -74,7 +73,6 @@ import { usePracticeStore } from "./stores/usePracticeStore";
 import { MainMenu } from "./features/mainMenu/MainMenu";
 import { ModeSelectionModal } from "./features/practice/ModeSelectionModal";
 import { CelebrationOverlay } from "./features/practice/CelebrationOverlay";
-import { getCelebrationPresentation } from "./features/practice/celebrationUtils";
 import { selectNextPracticeAction } from "./features/practice/nextPracticeAction";
 import { getFocusModeExitDecision } from "./features/practice/focusModeExitGuard";
 import {
@@ -90,7 +88,7 @@ import {
   resolveSongPracticeSetupForSong,
   type TrackPracticePreferences,
 } from "./features/practice/songPracticeSetup";
-import { StatisticsPage } from "./features/statistics/StatisticsPage";
+
 import type { PracticeMode, PracticeScore } from "@shared/types";
 import {
   parseRouteHash,
@@ -136,7 +134,7 @@ const analyzer = new WeakSpotAnalyzer();
 function App(): React.JSX.Element {
   const { t } = useTranslation();
   const song = useSongStore((s) => s.song);
-  const catalogSongs = useSongLibraryStore((s) => s.songs);
+
   const loadSong = useSongStore((s) => s.loadSong);
   const reset = usePlaybackStore((s) => s.reset);
   const {
@@ -273,13 +271,11 @@ function App(): React.JSX.Element {
   const {
     showModeModal,
     showCelebration,
-    showStats,
     displayScore,
     handleModeSelect,
     handleModeDismiss,
     handlePracticeAgain,
     handleChooseSong,
-    handleViewStats,
     hidePostSessionFlow,
     showCelebrationForScore,
   } = usePostSessionFlow({
@@ -366,19 +362,9 @@ function App(): React.JSX.Element {
     ],
   );
 
-  const celebrationPresentation = useMemo(
-    () =>
-      getCelebrationPresentation({
-        mode,
-        totalNotes: displayScore.totalNotes,
-      }),
-    [displayScore.totalNotes, mode],
-  );
-
   // ─── Phase 7: Sheet Music ──────────────────────────────
   const displayMode = usePracticeStore((s) => s.displayMode);
   const isPlaying = usePlaybackStore((s) => s.isPlaying);
-  const currentTime = usePlaybackStore((s) => s.currentTime);
   const builtinSongs = useSongLibraryStore((s) => s.songs);
   const [sheetFixtureNotationData, setSheetFixtureNotationData] =
     useState<NotationData | null>(null);
@@ -1440,13 +1426,6 @@ function App(): React.JSX.Element {
   const fallingCanvasMinHeight = isSplitMode
     ? (splitFallingMinHeight ?? 0)
     : 200;
-  const speedPercent = Math.round(speed * 100);
-  const baseBpm =
-    song?.tempos && song.tempos.length > 0
-      ? Math.round(song.tempos[0].bpm)
-      : null;
-  const effectiveBpm =
-    baseBpm !== null ? Math.max(1, Math.round(baseBpm * speed)) : null;
   const midiDiagnosticNotice = useMemo(
     () =>
       song
@@ -1605,49 +1584,6 @@ function App(): React.JSX.Element {
                 >
                   {song.fileName}
                 </h2>
-
-                <div
-                  className="flex items-center gap-1 min-w-0 overflow-hidden"
-                  data-testid="playback-header-chips"
-                >
-                  <span className="control-chip playback-header-chip shrink-0">
-                    {song.tracks.length}{" "}
-                    {song.tracks.length > 1
-                      ? t("song.tracks")
-                      : t("song.track")}
-                  </span>
-                  <span className="control-chip playback-header-chip shrink-0">
-                    {song.noteCount} {t("song.notes")}
-                  </span>
-                  {catalogSongs.find((entry) => entry.file === song.fileName)
-                    ?.origin && (
-                    <span
-                      className="control-chip playback-header-chip shrink-0"
-                      data-testid="playback-sheet-fidelity"
-                    >
-                      {t(
-                        sheetFidelityLabelKey(
-                          catalogSongs.find(
-                            (entry) => entry.file === song.fileName,
-                          )!.origin!,
-                        ),
-                      )}
-                    </span>
-                  )}
-                  <span className="control-chip playback-header-chip shrink-0">
-                    {sessionIntent === "play-along"
-                      ? t("playback.session.playAlong")
-                      : t("playback.session.practice")}
-                  </span>
-                  <span className="control-chip playback-header-chip tabular-nums shrink-0">
-                    {speedPercent}%
-                  </span>
-                  {effectiveBpm !== null && (
-                    <span className="control-chip playback-header-chip tabular-nums shrink-0">
-                      {effectiveBpm} BPM
-                    </span>
-                  )}
-                </div>
               </div>
 
               <div
@@ -1830,35 +1766,15 @@ function App(): React.JSX.Element {
         />
       )}
 
-      {/* Celebration overlay (shown when song ends).
-          Scored practice "Pick Song" goes to statistics first.
-          Watch listen-through goes straight back to the library. */}
       {song && showCelebration && (
         <CelebrationOverlay
           score={displayScore}
           visible={showCelebration}
           onPracticeAgain={handlePracticeAgain}
-          onChooseSong={
-            celebrationPresentation.chooseSongGoesToStats
-              ? handleViewStats
-              : handleChooseSong
-          }
+          onChooseSong={handleChooseSong}
           songId={songId}
           nextAction={nextPracticeAction}
           mode={mode}
-        />
-      )}
-
-      {/* Statistics page (shown after celebration). */}
-      {song && showStats && (
-        <StatisticsPage
-          score={displayScore}
-          songName={song.fileName}
-          mode={mode}
-          speed={speed}
-          durationSeconds={Math.round(currentTime)}
-          onPlayAgain={handlePracticeAgain}
-          onChooseSong={handleChooseSong}
         />
       )}
     </div>
