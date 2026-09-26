@@ -9,7 +9,7 @@ const escapeRegExp = (value: string): string =>
   value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
 const officialActionPins: Record<string, string> = {
-  "actions/checkout": "d23441a48e516b6c34aea4fa41551a30e30af803",
+  "actions/checkout": "3d3c42e5aac5ba805825da76410c181273ba90b1",
   "actions/configure-pages": "45bfe0192ca1faeb007ade9deae92b16b8254a0d",
   "actions/deploy-pages": "cd2ce8fcbc39b97be8ca5fce6e763baed58fa128",
   "actions/download-artifact": "3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c",
