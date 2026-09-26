@@ -115,11 +115,11 @@ describe("computeLoopHighlight", () => {
 // ─── Child Focus Mode Visibility ───────────────────────
 
 describe("getTransportControlVisibility", () => {
-  test("shows all controls when child focus mode is disabled", () => {
+  test("keeps playback controls and hides the metronome on the live transport", () => {
     expect(getTransportControlVisibility({ childFocusMode: false })).toEqual({
       showPrimaryControls: true,
       showTimeline: true,
-      showMetronomeControls: true,
+      showMetronomeControls: false,
       showVolumeControls: true,
     });
   });
@@ -129,7 +129,7 @@ describe("getTransportControlVisibility", () => {
       showPrimaryControls: true,
       showTimeline: true,
       showMetronomeControls: false,
-      showVolumeControls: false,
+      showVolumeControls: true,
     });
   });
 });

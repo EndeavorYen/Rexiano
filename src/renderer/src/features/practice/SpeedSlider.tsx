@@ -4,7 +4,7 @@ import { useTranslation } from "@renderer/i18n/useTranslation";
 import { applyPracticeSpeedChangeForSong } from "./practiceSetupControlActions";
 
 /** Primary presets shown as big buttons */
-const mainPresets = [0.5, 0.75, 1.0] as const;
+const mainPresets = [0.5, 1.0] as const;
 
 /** Full range for the continuous slider */
 const SPEED_MIN = 25;

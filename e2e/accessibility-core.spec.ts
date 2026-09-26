@@ -159,10 +159,8 @@ test.describe("Core accessibility guardrails", () => {
         .getByRole("button", { name: /Reset to beginning/ }),
     ).toBeVisible();
     await expect(
-      appPage.getByTestId("transport-strip").getByRole("button", {
-        name: /Enable metronome|Disable metronome/,
-      }),
-    ).toBeVisible();
+      appPage.getByTestId("transport-strip").getByTestId("metronome-toggle"),
+    ).toHaveCount(0);
   });
 
   test("playback header has no Insights control", async ({ appPage }) => {

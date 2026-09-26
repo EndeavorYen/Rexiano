@@ -63,11 +63,12 @@ export interface TransportControlVisibility {
 export function getTransportControlVisibility({
   childFocusMode,
 }: TransportControlVisibilityInput): TransportControlVisibility {
+  void childFocusMode;
   return {
     showPrimaryControls: true,
     showTimeline: true,
-    showMetronomeControls: !childFocusMode,
-    showVolumeControls: !childFocusMode,
+    showMetronomeControls: false,
+    showVolumeControls: true,
   };
 }
 

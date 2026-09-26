@@ -745,8 +745,8 @@ test.describe("Playback UI polish guardrails", () => {
     await appPage.keyboard.press("Escape");
     await waitForUiSettled(appPage);
 
-    await appPage.getByTestId("practice-more").click();
-    await waitForUiSettled(appPage);
+    await expect(appPage.getByTestId("practice-more")).toHaveCount(0);
+    await expect(appPage.getByTestId("track-hand-select")).toHaveCount(0);
 
     const keyboard = appPage.getByTestId("piano-keyboard");
     await expect(keyboard).toBeVisible();
@@ -813,22 +813,11 @@ test.describe("Playback UI polish guardrails", () => {
     await expectSelectorsMeetHitTarget(appPage, [
       "button[aria-label='Mute']",
       "input[aria-label='Seek position']",
-      "[data-testid='metronome-toggle']",
       "[data-testid='volume-slider']",
       "[data-testid='speed-slider']",
-      "[data-testid='practice-more']",
     ]);
-
-    await appPage.getByTestId("practice-more").click();
-    await waitForUiSettled(appPage);
-
-    await expectSelectorsMeetHitTarget(appPage, [
-      "[data-testid='track-active-toggle']",
-      "[data-testid='track-hand-select']",
-      "[data-testid='track-sound-toggle']",
-      "[data-testid='track-color-input']",
-      "[data-testid='track-solo-toggle']",
-    ]);
+    await expect(appPage.getByTestId("metronome-toggle")).toHaveCount(0);
+    await expect(appPage.getByTestId("practice-more")).toHaveCount(0);
 
     await appPage.getByTestId("playback-drawer-trigger").click();
     await expectSelectorsMeetHitTarget(appPage, [
@@ -855,7 +844,6 @@ test.describe("Playback UI polish guardrails", () => {
     const modeControls = [
       appPage.getByTestId("mode-select-watch"),
       appPage.getByTestId("mode-select-wait"),
-      appPage.getByTestId("mode-select-free"),
       appPage.getByTestId("mode-select-back"),
     ];
     await expect(dialog).toBeVisible();

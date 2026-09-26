@@ -96,7 +96,6 @@ const practiceModeKeys: {
 }[] = [
   { value: "watch", key: "practice.watch" },
   { value: "wait", key: "practice.wait" },
-  { value: "free", key: "practice.free" },
 ];
 
 /**
@@ -144,14 +143,11 @@ export function SettingsPanel({
   const showFallingNoteLabels = useSettingsStore(
     (s) => s.showFallingNoteLabels,
   );
-  const showFingering = useSettingsStore((s) => s.showFingering);
   const compactKeyLabels = useSettingsStore((s) => s.compactKeyLabels);
   const volume = useSettingsStore((s) => s.volume);
   const muted = useSettingsStore((s) => s.muted);
   const defaultSpeed = useSettingsStore((s) => s.defaultSpeed);
   const defaultMode = useSettingsStore((s) => s.defaultMode);
-  const metronomeEnabled = useSettingsStore((s) => s.metronomeEnabled);
-  const countInBeats = useSettingsStore((s) => s.countInBeats);
   const latencyCompensation = useSettingsStore((s) => s.latencyCompensation);
   const audioCompatibilityMode = useSettingsStore(
     (s) => s.audioCompatibilityMode,
@@ -162,21 +158,17 @@ export function SettingsPanel({
   const setShowFallingNoteLabels = useSettingsStore(
     (s) => s.setShowFallingNoteLabels,
   );
-  const setShowFingering = useSettingsStore((s) => s.setShowFingering);
   const setCompactKeyLabels = useSettingsStore((s) => s.setCompactKeyLabels);
   const setVolume = useSettingsStore((s) => s.setVolume);
   const setMuted = useSettingsStore((s) => s.setMuted);
   const setDefaultSpeed = useSettingsStore((s) => s.setDefaultSpeed);
   const setDefaultMode = useSettingsStore((s) => s.setDefaultMode);
-  const setMetronomeEnabled = useSettingsStore((s) => s.setMetronomeEnabled);
-  const setCountInBeats = useSettingsStore((s) => s.setCountInBeats);
   const setLatencyCompensation = useSettingsStore(
     (s) => s.setLatencyCompensation,
   );
   const setAudioCompatibilityMode = useSettingsStore(
     (s) => s.setAudioCompatibilityMode,
   );
-  const setChildFocusMode = useSettingsStore((s) => s.setChildFocusMode);
 
   // First-visit pulse
   const [isFirstVisit] = useState(() => {
@@ -656,20 +648,6 @@ export function SettingsPanel({
                     {t("settings.muteAudio")}
                   </button>
                   <button
-                    onClick={() => setMetronomeEnabled(!metronomeEnabled)}
-                    className="px-2.5 py-1 rounded-md text-[11px] font-body font-medium cursor-pointer"
-                    style={{
-                      color: metronomeEnabled
-                        ? "var(--color-on-accent)"
-                        : "var(--color-text-muted)",
-                      background: metronomeEnabled
-                        ? "var(--color-accent)"
-                        : "var(--color-surface-alt)",
-                    }}
-                  >
-                    {t("settings.metronome")}
-                  </button>
-                  <button
                     onClick={() => setShowNoteLabels(!showNoteLabels)}
                     className="px-2.5 py-1 rounded-md text-[11px] font-body font-medium cursor-pointer"
                     style={{
@@ -768,13 +746,6 @@ export function SettingsPanel({
                       testId="toggle-falling-labels"
                     />
                     <ToggleRow
-                      label={t("settings.showFingering")}
-                      description={t("settings.showFingeringDesc")}
-                      checked={showFingering}
-                      onChange={setShowFingering}
-                      testId="toggle-fingering"
-                    />
-                    <ToggleRow
                       label={t("settings.compactKeyLabels")}
                       description={t("settings.compactKeyLabelsDesc")}
                       checked={compactKeyLabels}
@@ -837,14 +808,6 @@ export function SettingsPanel({
                 <TabContent>
                   <SectionTitle>{t("settings.practiceDefaults")}</SectionTitle>
                   <div className="flex flex-col gap-4 mt-3">
-                    <ToggleRow
-                      label={t("settings.childFocusMode")}
-                      description={t("settings.childFocusModeDesc")}
-                      checked={childFocusMode}
-                      onChange={setChildFocusMode}
-                      testId="toggle-child-focus-mode"
-                    />
-
                     {/* Default mode */}
                     <div>
                       <span
@@ -903,47 +866,6 @@ export function SettingsPanel({
                             }}
                           >
                             {s}x
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-
-                    {/* Metronome */}
-                    <ToggleRow
-                      label={t("settings.metronome")}
-                      description={t("settings.metronomeDesc")}
-                      checked={metronomeEnabled}
-                      onChange={setMetronomeEnabled}
-                      testId="toggle-metronome"
-                    />
-
-                    {/* Count-in beats */}
-                    <div>
-                      <span
-                        className="text-xs font-body block mb-1.5"
-                        style={{ color: "var(--color-text)" }}
-                      >
-                        {t("settings.countInBeats")}
-                      </span>
-                      <div className="flex gap-1.5">
-                        {[0, 2, 4, 8].map((n) => (
-                          <button
-                            key={n}
-                            data-testid={`count-in-beats-${n}`}
-                            onClick={() => setCountInBeats(n)}
-                            className="px-2.5 py-1 text-[11px] font-mono rounded-lg cursor-pointer transition-colors"
-                            style={{
-                              background:
-                                countInBeats === n
-                                  ? "var(--color-accent)"
-                                  : "var(--color-surface-alt)",
-                              color:
-                                countInBeats === n
-                                  ? "var(--color-on-accent)"
-                                  : "var(--color-text-muted)",
-                            }}
-                          >
-                            {n === 0 ? t("settings.countInOff") : `${n}`}
                           </button>
                         ))}
                       </div>

@@ -5,18 +5,15 @@ import {
 } from "./PracticeToolbar";
 
 describe("getPracticeToolbarControlVisibility", () => {
-  test("shows the advanced disclosure outside child focus mode", () => {
+  test("keeps Watch/Wait and speed, and hides advanced practice chrome", () => {
     expect(
       getPracticeToolbarControlVisibility({ childFocusMode: false }),
     ).toEqual({
       showModeSelector: true,
       showSpeedControl: true,
-      showAdvancedDisclosure: true,
-      showAdvancedControls: true,
+      showAdvancedDisclosure: false,
+      showAdvancedControls: false,
     });
-  });
-
-  test("hides advanced practice controls in child focus mode", () => {
     expect(
       getPracticeToolbarControlVisibility({ childFocusMode: true }),
     ).toEqual({
@@ -29,13 +26,13 @@ describe("getPracticeToolbarControlVisibility", () => {
 });
 
 describe("getPracticeToolbarInitialExpanded", () => {
-  test("opens advanced controls when the current song setup needs fixing", () => {
+  test("does not open advanced controls when the current song setup needs fixing", () => {
     expect(
       getPracticeToolbarInitialExpanded({
         childFocusMode: false,
         needsSongSetupFix: true,
       }),
-    ).toBe(true);
+    ).toBe(false);
   });
 
   test("keeps advanced controls closed in child focus mode", () => {
