@@ -32,7 +32,7 @@ test.describe("Song library live path", () => {
     await gotoLibrary(appPage);
 
     await expect(
-      appPage.getByRole("button", { name: "Import your own MIDI file" }),
+      appPage.getByTestId("library-import-file"),
     ).toBeVisible();
     await expect(
       appPage.getByTestId("song-select-hot-cross-buns"),

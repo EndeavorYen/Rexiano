@@ -78,9 +78,7 @@ test.describe("Watched MIDI folders", () => {
     await appPage
       .getByTestId("imported-song-tags-input")
       .fill("legato, recital");
-    await expect(appPage.getByTestId("imported-song-grade-select")).toHaveCount(
-      0,
-    );
+    await appPage.getByTestId("imported-song-grade-select").selectOption("2");
     await appPage
       .getByTestId("imported-song-category-select")
       .selectOption("classical");
