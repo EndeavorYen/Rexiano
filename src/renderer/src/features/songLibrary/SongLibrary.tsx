@@ -229,7 +229,6 @@ export function SongLibrary({
   const gradeFilter = useSongLibraryStore((s) => s.gradeFilter);
   const sortMode = useSongLibraryStore((s) => s.sortMode);
   const viewMode = useSongLibraryStore((s) => s.viewMode);
-  const favoriteSongIds = useSongLibraryStore((s) => s.favoriteSongIds);
   const fetchSongs = useSongLibraryStore((s) => s.fetchSongs);
   const refreshWatchedFolders = useSongLibraryStore(
     (s) => s.refreshWatchedFolders,
@@ -398,8 +397,8 @@ export function SongLibrary({
   }, [importedSongs, gradeFilter, searchQuery]);
 
   const songActivity = useMemo(
-    () => buildSongActivity(songs, sessions, recentFiles, favoriteSongIds),
-    [songs, sessions, recentFiles, favoriteSongIds],
+    () => buildSongActivity(songs, sessions, recentFiles, []),
+    [songs, sessions, recentFiles],
   );
 
   const importedSongActivity = useMemo(
@@ -1551,14 +1550,6 @@ export function SongLibrary({
                                 onSelect={handlePreviewSong}
                                 colorIndex={groupIdx * 4 + i}
                               />
-                              <FavoriteButton
-                                song={song}
-                                activity={
-                                  songActivity.get(song.id) ?? emptyActivity
-                                }
-                                onToggleFavorite={toggleFavoriteSong}
-                                className="absolute right-2 top-2"
-                              />
                               {loadingId === song.id && (
                                 <LoadingOverlay radiusClass="rounded-xl" />
                               )}
@@ -2177,7 +2168,7 @@ function SongListRow({
   );
 }
 
-function FavoriteButton({
+export function FavoriteButton({
   song,
   activity,
   onToggleFavorite,
