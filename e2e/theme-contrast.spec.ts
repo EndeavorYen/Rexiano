@@ -224,21 +224,20 @@ test("all themes render semantic selected, danger, boundary, and focus colors", 
   for (const themeId of ["lavender", "ocean", "peach", "midnight"] as const) {
     await appPage.evaluate((id) => {
       localStorage.setItem("rexiano-theme", id);
-      localStorage.removeItem("rexiano-onboarding-completed");
       window.location.hash = "#/menu";
     }, themeId);
     await appPage.reload();
     await waitForUiSettled(appPage);
 
+    await expect(appPage.getByTestId("onboarding-card")).toHaveCount(0);
     await expectSemanticFilledControl(
       appPage,
-      appPage.getByTestId("onboarding-next"),
-      `${themeId} onboarding next`,
+      appPage.getByRole("button", { name: "Start Practice" }),
+      `${themeId} start practice`,
     );
     if (themeId === "ocean" || themeId === "midnight") {
-      await saveScreenshot(appPage, testInfo, `${themeId}-onboarding-contrast`);
+      await saveScreenshot(appPage, testInfo, `${themeId}-menu-contrast`);
     }
-    await appPage.getByTestId("onboarding-skip").click();
 
     await appPage.getByRole("button", { name: "Settings" }).click();
     await appPage.getByTestId("settings-mode-toggle").click();

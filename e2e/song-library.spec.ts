@@ -85,29 +85,12 @@ test.describe("Song library selection workflow", () => {
     const list = appPage.getByTestId("song-library-list");
     await expect(list).toBeVisible();
 
-    await appPage.getByTestId("song-library-sort").selectOption("title");
-    const titleTexts = await appPage
-      .getByTestId("song-list-row-title")
-      .allTextContents();
-    const sortedTitles = [...titleTexts].sort((a, b) => a.localeCompare(b));
-    expect(titleTexts.slice(0, 6)).toEqual(sortedTitles.slice(0, 6));
-
-    const lastFavoriteButton = appPage
-      .getByTestId("song-favorite-toggle")
-      .last();
-    const favoriteTitle = await appPage
-      .getByTestId("song-list-row-title")
-      .last()
-      .textContent();
-    await lastFavoriteButton.click();
-
-    await appPage.getByTestId("song-library-sort").selectOption("recent");
-    await expect(appPage.getByTestId("song-list-row-title").first()).toHaveText(
-      favoriteTitle ?? "",
-    );
+    await expect(appPage.getByTestId("song-library-sort")).toHaveCount(0);
+    await expect(appPage.getByTestId("song-favorite-toggle")).toHaveCount(0);
+    await expect(appPage.getByTestId("library-add-folder")).toHaveCount(0);
     await expect(
-      appPage.getByTestId("song-favorite-toggle").first(),
-    ).toHaveAttribute("aria-pressed", "true");
+      appPage.getByTestId("song-list-row-title").first(),
+    ).toBeVisible();
   });
 
   test("keeps the full built-in library reachable inside the viewport", async ({
@@ -169,12 +152,11 @@ test.describe("Song library selection workflow", () => {
     const preview = appPage.getByTestId("song-selection-preview");
     await expect(preview).toBeVisible();
     await expect(preview).toContainText("Hot Cross Buns");
-    await expect(preview).toContainText("L0");
     await expect(preview).toContainText("Not practiced");
     await expect(previewMetricValue(preview, "Tracks")).toHaveText("1");
     await expect(
       preview.getByTestId("song-selection-preview-audio"),
-    ).toHaveText("Preview");
+    ).toHaveCount(0);
     await expect(appPage.getByTestId("mode-select-wait")).toBeHidden();
 
     await preview.getByTestId("song-selection-preview-practice").click();

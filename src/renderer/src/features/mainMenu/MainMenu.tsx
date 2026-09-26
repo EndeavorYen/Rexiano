@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo } from "react";
 import {
   Play,
   Clock3,
@@ -15,7 +15,6 @@ import { useTranslation } from "@renderer/i18n/useTranslation";
 import { useProgressStore } from "@renderer/stores/useProgressStore";
 import { useSettingsStore } from "@renderer/stores/useSettingsStore";
 import {
-  buildParentPracticeReport,
   type ParentPracticeAccuracyLevel,
   type ParentPracticeConsistencyLevel,
   type ParentPracticeReport,
@@ -23,8 +22,6 @@ import {
 import { LanguageSwitcher } from "@renderer/features/settings/LanguageSwitcher";
 import { formatRelativeTime } from "@renderer/utils/relativeTime";
 import type { RecentFile } from "@shared/types";
-
-const MS_PER_DAY = 86_400_000;
 
 interface MainMenuProps {
   onStartPractice: () => void;
@@ -48,7 +45,6 @@ export function MainMenu({
   const defaultMode = useSettingsStore((s) => s.defaultMode);
   const defaultSpeed = useSettingsStore((s) => s.defaultSpeed);
   const recentFiles = allRecents.slice(0, 5);
-  const [reportNow] = useState(() => Date.now());
 
   useEffect(() => {
     if (!isProgressLoaded) {
@@ -71,21 +67,6 @@ export function MainMenu({
 
   const totalSessions = sessions.length;
   const practicedSongs = new Set(sessions.map((s) => s.songId)).size;
-  const { weeklyReport, monthlyReport } = useMemo(() => {
-    const now = reportNow;
-    const endTimestamp = now + 1;
-
-    return {
-      weeklyReport: buildParentPracticeReport(sessions, {
-        startTimestamp: now - 7 * MS_PER_DAY,
-        endTimestamp,
-      }),
-      monthlyReport: buildParentPracticeReport(sessions, {
-        startTimestamp: now - 30 * MS_PER_DAY,
-        endTimestamp,
-      }),
-    };
-  }, [reportNow, sessions]);
 
   return (
     <div className="flex-1 min-h-0 app-shell overflow-y-auto px-6 py-8">
@@ -193,12 +174,6 @@ export function MainMenu({
             </section>
 
             <div className="space-y-4">
-              <ParentPracticeReportCard
-                report={weeklyReport}
-                monthlyReport={monthlyReport}
-                onStartPractice={onStartPractice}
-              />
-
               <aside className="surface-elevated p-4 sm:p-5 space-y-3">
                 <div
                   className="flex items-center gap-2 text-[11px] font-mono uppercase tracking-[0.16em]"
@@ -266,7 +241,7 @@ export function MainMenu({
   );
 }
 
-function ParentPracticeReportCard({
+export function ParentPracticeReportCard({
   report,
   monthlyReport,
   onStartPractice,

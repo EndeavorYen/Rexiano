@@ -98,20 +98,10 @@ test.describe("Parent practice report", () => {
     await appPage.reload();
     await appPage.waitForLoadState("domcontentloaded");
 
-    const report = appPage.getByTestId("parent-practice-report");
-    await expect(report).toBeVisible();
-    await expect(report).toContainText("Parent report");
-    await expect(report).toContainText("40 min");
-    await expect(report).toContainText("4 days");
+    await expect(appPage.getByTestId("parent-practice-report")).toHaveCount(0);
     await expect(
-      appPage.getByTestId("parent-report-consistency"),
-    ).toContainText("Strong");
-    await expect(appPage.getByTestId("parent-report-accuracy")).toContainText(
-      "Building",
-    );
-    await expect(appPage.getByTestId("parent-report-next-focus")).toContainText(
-      "Minuet",
-    );
+      appPage.getByRole("button", { name: "Start Practice" }),
+    ).toBeVisible();
     await expect(appPage.getByTestId("parent-report-monthly")).toContainText(
       "40 min",
     );

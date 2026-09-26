@@ -99,7 +99,6 @@ import {
 import { useMidiImportActions } from "./features/fileImport/useMidiImportActions";
 import { FileImportErrorAlert } from "./features/fileImport/FileImportErrorAlert";
 import { buildMidiDiagnosticNotice } from "./features/midiDiagnostics/midiDiagnosticNotice";
-import { OnboardingGuide } from "./features/onboarding/OnboardingGuide";
 import { shouldExposeE2eFixtures } from "./e2eFixtureAccess";
 import { useRecentFiles } from "./hooks/useRecentFiles";
 
@@ -1467,7 +1466,6 @@ function App(): React.JSX.Element {
       onDrop={handleDrop}
     >
       {showSceneCurtain && <div className="scene-curtain" />}
-      <OnboardingGuide />
       <BluetoothDeviceSelectionDialog />
 
       {/* Drag-and-drop overlay */}
