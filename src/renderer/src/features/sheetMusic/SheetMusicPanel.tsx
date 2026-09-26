@@ -24,6 +24,9 @@ import {
   groupNotesIntoStaffVoices,
   type ChordGroup,
 } from "./sheetMusicRenderUtils";
+import type { RenderContext, Stave, StaveNote, Tuplet } from "vexflow";
+
+type VexFlow = typeof import("vexflow");
 
 /** Layout constants */
 const STAVE_HEIGHT = 80;
@@ -65,10 +68,8 @@ interface SheetMusicPanelProps {
 interface RenderedVoice {
   voiceIndex: number;
   groups: ChordGroup[];
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  vexNotes: any[];
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  tuplets: any[];
+  vexNotes: StaveNote[];
+  tuplets: Tuplet[];
 }
 
 interface RenderedStaff {
@@ -87,12 +88,10 @@ function keySignatureToVexKey(keySignature: number): string {
 }
 
 function makeStaveNote(
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  VF: any,
+  VF: VexFlow,
   group: ChordGroup,
   clef: "treble" | "bass",
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-): any {
+): StaveNote {
   const { StaveNote, Accidental, Dot } = VF;
   const keys = [...group.keys];
   const note = new StaveNote({
@@ -117,16 +116,13 @@ function makeStaveNote(
 }
 
 function drawBeams(
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  VF: any,
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  context: any,
+  VF: VexFlow,
+  context: RenderContext,
   groups: ChordGroup[],
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  vexNotes: any[],
+  vexNotes: StaveNote[],
 ): void {
   const { Beam } = VF;
-  let run: unknown[] = [];
+  let run: StaveNote[] = [];
   let runStemDirection: 1 | -1 | undefined;
 
   const flush = (): void => {
@@ -157,13 +153,10 @@ function drawBeams(
 }
 
 function drawTies(
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  VF: any,
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  context: any,
+  VF: VexFlow,
+  context: RenderContext,
   groups: ChordGroup[],
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  vexNotes: any[],
+  vexNotes: StaveNote[],
 ): void {
   for (let i = 0; i < groups.length - 1; i++) {
     drawTieBetweenGroups(
@@ -178,18 +171,15 @@ function drawTies(
 }
 
 function makeTuplets(
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  VF: any,
+  VF: VexFlow,
   groups: ChordGroup[],
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  vexNotes: any[],
+  vexNotes: StaveNote[],
   stemDirection?: 1 | -1,
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-): any[] {
+): Tuplet[] {
   const { Tuplet } = VF;
   const groupsByTuplet = new Map<
     string,
-    { groups: ChordGroup[]; vexNotes: unknown[] }
+    { groups: ChordGroup[]; vexNotes: StaveNote[] }
   >();
 
   groups.forEach((group, index) => {
@@ -205,7 +195,7 @@ function makeTuplets(
 
   const location =
     stemDirection === -1 ? Tuplet.LOCATION_BOTTOM : Tuplet.LOCATION_TOP;
-  const tuplets: unknown[] = [];
+  const tuplets: Tuplet[] = [];
   for (const entry of groupsByTuplet.values()) {
     const tupletMeta = entry.groups[0]?.tuplet;
     if (!tupletMeta) continue;
@@ -223,12 +213,7 @@ function makeTuplets(
   return tuplets;
 }
 
-function drawTuplets(
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  context: any,
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  tuplets: any[],
-): void {
+function drawTuplets(context: RenderContext, tuplets: Tuplet[]): void {
   tuplets.forEach((tuplet) => {
     try {
       tuplet.setContext(context).draw();
@@ -239,16 +224,12 @@ function drawTuplets(
 }
 
 function drawTieBetweenGroups(
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  VF: any,
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  context: any,
+  VF: VexFlow,
+  context: RenderContext,
   current: ChordGroup,
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  currentNote: any,
+  currentNote: StaveNote | undefined,
   next: ChordGroup,
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  nextNote: any,
+  nextNote: StaveNote | undefined,
 ): void {
   if (
     current.isRest ||
@@ -277,7 +258,11 @@ function drawTieBetweenGroups(
       last_note: nextNote,
       first_indices: firstIndices,
       last_indices: lastIndices,
-    })
+      firstNote: currentNote,
+      lastNote: nextNote,
+      firstIndexes: firstIndices,
+      lastIndexes: lastIndices,
+    } as ConstructorParameters<typeof VF.StaveTie>[0])
       .setContext(context)
       .draw();
   } catch {
@@ -286,10 +271,8 @@ function drawTieBetweenGroups(
 }
 
 function drawCrossMeasureTies(
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  VF: any,
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  context: any,
+  VF: VexFlow,
+  context: RenderContext,
   renderedMeasures: RenderedMeasure[],
 ): void {
   for (let i = 0; i < renderedMeasures.length - 1; i++) {
@@ -303,10 +286,8 @@ function drawCrossMeasureTies(
 }
 
 function drawCrossStaffTies(
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  VF: any,
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  context: any,
+  VF: VexFlow,
+  context: RenderContext,
   current: RenderedStaff,
   next: RenderedStaff,
 ): void {
@@ -320,10 +301,8 @@ function drawCrossStaffTies(
 }
 
 function drawCrossVoiceTie(
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  VF: any,
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  context: any,
+  VF: VexFlow,
+  context: RenderContext,
   current: RenderedVoice,
   next: RenderedVoice,
 ): void {
@@ -356,10 +335,8 @@ function findFirstTieIndex(groups: ChordGroup[]): number {
 }
 
 function renderMeasure(
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  VF: any,
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  context: any,
+  VF: VexFlow,
+  context: RenderContext,
   measure: NotationMeasure,
   x: number,
   y: number,
@@ -382,8 +359,7 @@ function renderMeasure(
   }
   treble.setContext(context).draw();
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  let bass: any = null;
+  let bass: Stave | null = null;
   if (showBassStaff) {
     bass = new Stave(x, y + STAVE_HEIGHT + SYSTEM_GAP, width);
     if (isFirst) {
@@ -445,8 +421,8 @@ function renderMeasure(
 
   const trebleVexVoices = trebleVoices.map((renderedVoice) => {
     const voice = new Voice({
-      num_beats: measure.timeSignatureTop,
-      beat_value: measure.timeSignatureBottom,
+      numBeats: measure.timeSignatureTop,
+      beatValue: measure.timeSignatureBottom,
     });
     voice.setStrict(false);
     voice.addTickables(renderedVoice.vexNotes);
@@ -455,8 +431,8 @@ function renderMeasure(
 
   const bassVexVoices = bassVoices.map((renderedVoice) => {
     const voice = new Voice({
-      num_beats: measure.timeSignatureTop,
-      beat_value: measure.timeSignatureBottom,
+      numBeats: measure.timeSignatureTop,
+      beatValue: measure.timeSignatureBottom,
     });
     voice.setStrict(false);
     voice.addTickables(renderedVoice.vexNotes);
@@ -502,10 +478,8 @@ function renderMeasure(
  * Draw an empty slot when the song has fewer than 4 measures left.
  */
 function renderEmptyMeasure(
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  VF: any,
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  context: any,
+  VF: VexFlow,
+  context: RenderContext,
   x: number,
   y: number,
   width: number,
