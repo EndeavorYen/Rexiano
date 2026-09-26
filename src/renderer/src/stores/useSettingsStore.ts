@@ -67,7 +67,7 @@ interface PersistedSettings {
 const defaults: PersistedSettings = {
   showNoteLabels: true,
   showFallingNoteLabels: true,
-  showFingering: true,
+  showFingering: false,
   compactKeyLabels: false,
   language: detectLanguage(),
   volume: 80,
@@ -122,7 +122,7 @@ export function normalizePersistedSettings(value: unknown): PersistedSettings {
       source.showFallingNoteLabels,
       defaults.showFallingNoteLabels!,
     ),
-    showFingering: savedBoolean(source.showFingering, defaults.showFingering!),
+    showFingering: false,
     compactKeyLabels: savedBoolean(
       source.compactKeyLabels,
       defaults.compactKeyLabels!,

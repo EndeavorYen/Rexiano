@@ -33,11 +33,12 @@ export interface PracticeToolbarInitialExpandedInput {
 export function getPracticeToolbarControlVisibility({
   childFocusMode,
 }: PracticeToolbarControlVisibilityInput): PracticeToolbarControlVisibility {
+  void childFocusMode;
   return {
     showModeSelector: true,
     showSpeedControl: true,
-    showAdvancedDisclosure: !childFocusMode,
-    showAdvancedControls: !childFocusMode,
+    showAdvancedDisclosure: false,
+    showAdvancedControls: false,
   };
 }
 
@@ -46,7 +47,9 @@ export function getPracticeToolbarInitialExpanded({
   childFocusMode,
   needsSongSetupFix,
 }: PracticeToolbarInitialExpandedInput): boolean {
-  return !childFocusMode && needsSongSetupFix;
+  void childFocusMode;
+  void needsSongSetupFix;
+  return false;
 }
 
 export function PracticeToolbar({

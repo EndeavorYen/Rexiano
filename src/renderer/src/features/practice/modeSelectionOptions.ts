@@ -21,18 +21,14 @@ const MODE_OPTIONS: Array<Omit<ModeOptionModel, "isDefault">> = [
     titleKey: "practice.wait",
     descKey: "modeSelect.waitDesc",
   },
-  {
-    mode: "free",
-    titleKey: "practice.free",
-    descKey: "modeSelect.freeDesc",
-  },
 ];
 
 export function getModeSelectionOptions(
   defaultMode: PracticeMode,
 ): ModeOptionModel[] {
+  const visibleDefault = defaultMode === "free" ? "wait" : defaultMode;
   return MODE_OPTIONS.map((option) => ({
     ...option,
-    isDefault: option.mode === defaultMode,
+    isDefault: option.mode === visibleDefault,
   }));
 }

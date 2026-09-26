@@ -51,7 +51,6 @@ import {
   usePracticeLifecycle,
 } from "./features/practice/usePracticeLifecycle";
 import { PracticeToolbar } from "./features/practice/PracticeToolbar";
-import { ScoreOverlay } from "./features/practice/ScoreOverlay";
 import { useDialogFocus } from "./hooks/useDialogFocus";
 import { useKeyboardShortcuts } from "./hooks/useKeyboardShortcuts";
 import { useTranslation } from "./i18n/useTranslation";
@@ -1803,7 +1802,6 @@ function App(): React.JSX.Element {
                 minHeight={fallingCanvasMinHeight}
               />
             </div>
-            <ScoreOverlay />
           </div>
 
           {/* Transport bar */}

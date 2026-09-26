@@ -64,46 +64,6 @@ const modes: {
       </svg>
     ),
   },
-  {
-    id: "free",
-    labelKey: "practice.free",
-    icon: (
-      <svg
-        width="16"
-        height="16"
-        viewBox="0 0 16 16"
-        fill="none"
-        aria-hidden="true"
-      >
-        <path
-          d="M3 8C3 5.5 5 3 8 3C11 3 12 5 12.5 6.5"
-          stroke="currentColor"
-          strokeWidth="1.5"
-          strokeLinecap="round"
-        />
-        <path
-          d="M10.5 4.5L12.5 6.5L14 4.5"
-          stroke="currentColor"
-          strokeWidth="1.5"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
-        <path
-          d="M13 8C13 10.5 11 13 8 13C5 13 4 11 3.5 9.5"
-          stroke="currentColor"
-          strokeWidth="1.5"
-          strokeLinecap="round"
-        />
-        <path
-          d="M5.5 11.5L3.5 9.5L2 11.5"
-          stroke="currentColor"
-          strokeWidth="1.5"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
-      </svg>
-    ),
-  },
 ];
 
 export function PracticeModeSelector(): React.JSX.Element {
