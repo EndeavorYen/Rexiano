@@ -740,7 +740,6 @@ export function SheetMusicPanel({
       ref={containerRef}
       className="relative w-full min-w-0 overflow-hidden"
       style={{
-        flex: mode === "sheet" ? 1 : undefined,
         height: mode === "split" ? height : undefined,
         flexShrink: mode === "split" ? 0 : undefined,
         minHeight: mode === "split" ? height : undefined,

@@ -5,26 +5,23 @@ import {
   setDisplayMode,
 } from "./helpers/appHarness";
 
-test.describe("Sheet-only Wait Mode", () => {
-  test("keeps playback gated with no falling-notes renderer mounted", async ({
+test.describe("Sheet-only display mode", () => {
+  test("split keeps the staff, falling notes, and keyboard", async ({
     appPage,
   }) => {
     await gotoLibrary(appPage);
     await loadFirstBuiltInSong(appPage);
 
-    await setDisplayMode(appPage, "sheet");
+    await expect(appPage.getByTestId("display-mode-sheet")).toHaveCount(0);
+    await setDisplayMode(appPage, "split");
     await waitForUiSettled(appPage);
 
     await expect(appPage.getByTestId("sheet-music-panel")).toBeVisible();
-    await expect(appPage.getByTestId("falling-notes-panel")).toBeHidden();
-
-    // Playback time is owned by TransportClock, not by the PixiJS ticker, so
-    // sheet-only mode unmounts the renderer outright rather than hiding it.
-    // If this canvas ever comes back, the clock has been coupled to the view
-    // again and the gating below would only be passing by accident.
+    await expect(appPage.getByTestId("falling-notes-panel")).toBeVisible();
     await expect(
       appPage.getByTestId("falling-notes-panel").locator("canvas"),
-    ).toHaveCount(0);
+    ).toHaveCount(1);
+    await expect(appPage.getByTestId("piano-keyboard")).toBeVisible();
 
     const seekSlider = appPage.getByRole("slider", {
       name: /seek position/i,

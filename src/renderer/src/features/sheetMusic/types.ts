@@ -6,11 +6,15 @@
  * representation used by MidiToNotation and consumed by SheetMusicPanel.
  */
 
-/** Display mode for the sheet music panel */
+/** Display mode for the sheet music panel. Sheet-only is not a live mode. */
 export type DisplayMode =
-  | "split" // Mode A: sheet music top + falling notes bottom
-  | "sheet" // Mode B: sheet music only
-  | "falling"; // Mode C: falling notes only (current default)
+  | "split" // sheet music top + falling notes bottom
+  | "falling"; // falling notes + keyboard
+
+/** Saved `sheet` and any unknown value land on split so notation never hides the keyboard. */
+export function normalizeDisplayMode(value: string): DisplayMode {
+  return value === "falling" ? "falling" : "split";
+}
 
 /** VexFlow-compatible stem direction for explicit multi-voice notation */
 export type StemDirection = 1 | -1;

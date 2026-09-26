@@ -472,10 +472,13 @@ test.describe("Playback UI polish guardrails", () => {
     await loadFirstBuiltInSong(appPage);
     await waitForUiSettled(appPage);
 
-    await setDisplayMode(appPage, "sheet");
+    await expect(appPage.getByTestId("display-mode-sheet")).toHaveCount(0);
+
+    await setDisplayMode(appPage, "falling");
     await waitForUiSettled(appPage);
-    await expect(appPage.getByTestId("sheet-music-panel")).toBeVisible();
-    await expect(appPage.getByTestId("falling-notes-panel")).toBeHidden();
+    await expect(appPage.getByTestId("sheet-music-panel")).toHaveCount(0);
+    await expect(appPage.getByTestId("falling-notes-panel")).toBeVisible();
+    await expect(appPage.getByTestId("piano-keyboard")).toBeVisible();
 
     await setDisplayMode(appPage, "split");
     await waitForUiSettled(appPage);
@@ -689,7 +692,7 @@ test.describe("Playback UI polish guardrails", () => {
     }
 
     await loadFirstBuiltInSong(appPage);
-    await setDisplayMode(appPage, "sheet");
+    await setDisplayMode(appPage, "split");
     await waitForUiSettled(appPage);
     await appPage.keyboard.press("Escape");
     await waitForUiSettled(appPage);
@@ -737,7 +740,7 @@ test.describe("Playback UI polish guardrails", () => {
     await appPage.setViewportSize({ width: 390, height: 844 });
     await gotoLibrary(appPage);
     await loadFirstBuiltInSong(appPage);
-    await setDisplayMode(appPage, "sheet");
+    await setDisplayMode(appPage, "split");
     await waitForUiSettled(appPage);
     await appPage.keyboard.press("Escape");
     await waitForUiSettled(appPage);
@@ -917,7 +920,8 @@ test.describe("Playback UI polish guardrails", () => {
     await appPage.setViewportSize({ width: 390, height: 320 });
     await gotoLibrary(appPage);
     await loadFirstBuiltInSong(appPage);
-    await expect(appPage.getByTestId("display-mode-sheet")).toBeInViewport();
+    await expect(appPage.getByTestId("display-mode-sheet")).toHaveCount(0);
+    await expect(appPage.getByTestId("display-mode-split")).toBeInViewport();
     await openPlaybackDrawer(appPage);
 
     const drawer = appPage.getByTestId("playback-settings-drawer");
