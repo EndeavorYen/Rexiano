@@ -71,9 +71,9 @@ describe("useSettingsStore", () => {
       expect(store.getState().metronomeEnabled).toBe(false);
     });
 
-    test("countInBeats defaults to 4", async () => {
+    test("countInBeats defaults to 0", async () => {
       const store = await getStore();
-      expect(store.getState().countInBeats).toBe(4);
+      expect(store.getState().countInBeats).toBe(0);
     });
 
     test("latencyCompensation defaults to 0", async () => {
@@ -244,7 +244,7 @@ describe("useSettingsStore", () => {
       store.getState().setDefaultMode("free");
       const raw = storage.get(STORAGE_KEY);
       const parsed = JSON.parse(raw!);
-      expect(parsed.defaultMode).toBe("free");
+      expect(parsed.defaultMode).toBe("wait");
     });
 
     test("setLatencyCompensation persists to localStorage", async () => {
@@ -287,7 +287,9 @@ describe("useSettingsStore", () => {
       expect(store2.getState().volume).toBe(42);
       expect(store2.getState().defaultMode).toBe("wait");
       expect(store2.getState().showNoteLabels).toBe(false);
-      expect(store2.getState().childFocusMode).toBe(true);
+      expect(store2.getState().childFocusMode).toBe(false);
+      expect(store2.getState().metronomeEnabled).toBe(false);
+      expect(store2.getState().countInBeats).toBe(0);
     });
 
     test("clamped values are persisted (not original)", async () => {
@@ -345,7 +347,7 @@ describe("useSettingsStore", () => {
       const store = await getStore();
       expect(store.getState().volume).toBe(100);
       expect(store.getState().defaultSpeed).toBe(0.25);
-      expect(store.getState().countInBeats).toBe(3);
+      expect(store.getState().countInBeats).toBe(0);
       expect(store.getState().latencyCompensation).toBe(0);
     });
   });

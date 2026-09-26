@@ -68,7 +68,7 @@ export function getTransportControlVisibility({
     showPrimaryControls: true,
     showTimeline: true,
     showMetronomeControls: false,
-    showVolumeControls: !childFocusMode,
+    showVolumeControls: true,
   };
 }
 

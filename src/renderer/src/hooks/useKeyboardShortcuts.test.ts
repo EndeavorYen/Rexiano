@@ -324,9 +324,9 @@ describe("useKeyboardShortcuts", () => {
       expect(usePracticeStore.getState().setMode).toHaveBeenCalledWith("wait");
     });
 
-    test("3 switches to free mode", () => {
+    test("3 does not switch to free mode", () => {
       fireKey("Digit3");
-      expect(usePracticeStore.getState().setMode).toHaveBeenCalledWith("free");
+      expect(usePracticeStore.getState().setMode).not.toHaveBeenCalled();
     });
   });
 

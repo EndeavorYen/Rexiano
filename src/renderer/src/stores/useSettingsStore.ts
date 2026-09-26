@@ -75,7 +75,7 @@ const defaults: PersistedSettings = {
   defaultSpeed: 1.0,
   defaultMode: "watch",
   metronomeEnabled: false,
-  countInBeats: 4,
+  countInBeats: 0,
   latencyCompensation: 0,
   audioCompatibilityMode: false,
   childFocusMode: false,
@@ -105,9 +105,9 @@ function savedPracticeMode(
   value: unknown,
   fallback: PracticeMode,
 ): PracticeMode {
-  return value === "watch" || value === "wait" || value === "free"
-    ? value
-    : fallback;
+  if (value === "watch" || value === "wait") return value;
+  if (value === "free") return "wait";
+  return fallback;
 }
 
 export function normalizePersistedSettings(value: unknown): PersistedSettings {
@@ -136,17 +136,8 @@ export function normalizePersistedSettings(value: unknown): PersistedSettings {
       2,
     ),
     defaultMode: savedPracticeMode(source.defaultMode, defaults.defaultMode!),
-    metronomeEnabled: savedBoolean(
-      source.metronomeEnabled,
-      defaults.metronomeEnabled!,
-    ),
-    countInBeats: Math.round(
-      clampNumber(
-        savedNumber(source.countInBeats, defaults.countInBeats!),
-        0,
-        8,
-      ),
-    ),
+    metronomeEnabled: false,
+    countInBeats: 0,
     latencyCompensation: Math.round(
       clampNumber(
         savedNumber(source.latencyCompensation, defaults.latencyCompensation!),
@@ -158,10 +149,7 @@ export function normalizePersistedSettings(value: unknown): PersistedSettings {
       source.audioCompatibilityMode,
       defaults.audioCompatibilityMode!,
     ),
-    childFocusMode: savedBoolean(
-      source.childFocusMode,
-      defaults.childFocusMode!,
-    ),
+    childFocusMode: false,
   };
 }
 
@@ -241,8 +229,9 @@ export const useSettingsStore = create<SettingsState>()((set) => {
       set({ defaultSpeed: clamped });
     },
     setDefaultMode: (m) => {
-      persist({ defaultMode: m });
-      set({ defaultMode: m });
+      const mode = m === "free" ? "wait" : m;
+      persist({ defaultMode: mode });
+      set({ defaultMode: mode });
     },
     setMetronomeEnabled: (v) => {
       persist({ metronomeEnabled: v });

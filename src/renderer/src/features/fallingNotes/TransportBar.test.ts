@@ -129,7 +129,7 @@ describe("getTransportControlVisibility", () => {
       showPrimaryControls: true,
       showTimeline: true,
       showMetronomeControls: false,
-      showVolumeControls: false,
+      showVolumeControls: true,
     });
   });
 });

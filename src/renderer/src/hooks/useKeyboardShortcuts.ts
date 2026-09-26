@@ -45,7 +45,6 @@ export function getShowHelp(): boolean {
 const MODE_MAP: Record<string, PracticeMode> = {
   "1": "watch",
   "2": "wait",
-  "3": "free",
 };
 
 const INTERACTIVE_TARGET_SELECTOR = [
