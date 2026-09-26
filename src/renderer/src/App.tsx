@@ -464,7 +464,7 @@ function App(): React.JSX.Element {
       const fixture = getSheetMusicVisualFixture(fixtureName);
       cancelPendingPlaybackStart();
       reset();
-      usePracticeStore.getState().setDisplayMode("sheet");
+      usePracticeStore.getState().setDisplayMode("split");
       usePracticeStore.getState().setMode("watch");
       setSheetFixtureNotationData(fixture.notationData);
       loadSong(fixture.song);
@@ -1788,7 +1788,7 @@ function App(): React.JSX.Element {
               data-testid="falling-notes-panel"
               className="flex-1 min-h-0 relative flex flex-col"
               style={{
-                display: displayMode === "sheet" ? "none" : "flex",
+                display: "flex",
                 filter:
                   isSplitMode && splitFocus === "sheet"
                     ? "saturate(0.9) brightness(0.965)"
@@ -1797,13 +1797,11 @@ function App(): React.JSX.Element {
               }}
               onMouseEnter={() => isSplitMode && setSplitFocusPanel("falling")}
             >
-              {displayMode !== "sheet" && (
-                <FallingNotesCanvas
-                  onActiveNotesChange={handleActiveNotesChange}
-                  onNoteRendererReady={handleFallingNoteRendererReady}
-                  minHeight={fallingCanvasMinHeight}
-                />
-              )}
+              <FallingNotesCanvas
+                onActiveNotesChange={handleActiveNotesChange}
+                onNoteRendererReady={handleFallingNoteRendererReady}
+                minHeight={fallingCanvasMinHeight}
+              />
             </div>
             <ScoreOverlay />
           </div>

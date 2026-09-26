@@ -46,7 +46,7 @@ export async function dismissPlaybackOverlay(page: Page): Promise<void> {
 
 export async function setDisplayMode(
   page: Page,
-  mode: "falling" | "sheet" | "split",
+  mode: "falling" | "split",
 ): Promise<void> {
   await dismissPlaybackOverlay(page);
   await page.getByTestId(`display-mode-${mode}`).click();

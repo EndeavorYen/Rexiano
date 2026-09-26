@@ -24,6 +24,17 @@ describe("usePracticeStore", () => {
   });
 
   // ─── Initial state ────────────────────────────────────
+  test("migrates a saved sheet-only display mode to split", () => {
+    usePracticeStore.getState().setDisplayMode("sheet");
+    expect(usePracticeStore.getState().displayMode).toBe("split");
+
+    usePracticeStore.getState().setDisplayMode("falling");
+    expect(usePracticeStore.getState().displayMode).toBe("falling");
+
+    usePracticeStore.getState().setDisplayMode("split");
+    expect(usePracticeStore.getState().displayMode).toBe("split");
+  });
+
   test("has correct initial state", () => {
     const s = usePracticeStore.getState();
     expect(s.mode).toBe("watch");

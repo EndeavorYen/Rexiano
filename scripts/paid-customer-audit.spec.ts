@@ -141,7 +141,7 @@ test("paid customer refund-hunt audit", async ({ electronApp }) => {
     await auditSettled();
     await shot("08-playback-settings");
     await viewportIssues("playback drawer desktop");
-    await appPage.getByTestId("display-mode-sheet").click();
+    await appPage.getByTestId("display-mode-split").click();
     await auditSettled();
     await appPage.keyboard.press("Escape");
     await auditSettled();

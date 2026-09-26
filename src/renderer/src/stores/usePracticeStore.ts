@@ -1,6 +1,9 @@
 import { create } from "zustand";
 import type { PracticeMode, PracticeScore, NoteResult } from "@shared/types";
-import type { DisplayMode } from "@renderer/features/sheetMusic/types";
+import {
+  normalizeDisplayMode,
+  type DisplayMode,
+} from "@renderer/features/sheetMusic/types";
 import type { TrackHandAssignment } from "@renderer/engines/midi/TrackHandAssignment";
 import type { TrackPracticePreferences } from "@renderer/features/practice/songPracticeSetup";
 
@@ -32,7 +35,7 @@ interface PracticeState {
   score: PracticeScore;
   /** Per-note results keyed by a unique note identifier */
   noteResults: Map<string, NoteResult>;
-  /** Display mode: falling notes, sheet music, or split view */
+  /** Display mode: falling notes, or split with the staff */
   displayMode: DisplayMode;
 
   setMode: (mode: PracticeMode) => void;
@@ -49,7 +52,7 @@ interface PracticeState {
     handAssignments: Record<number, TrackHandAssignment>;
     trackPreferences?: Record<number, TrackPracticePreferences>;
   }) => void;
-  setDisplayMode: (mode: DisplayMode) => void;
+  setDisplayMode: (mode: DisplayMode | "sheet") => void;
   recordHit: (noteKey: string) => void;
   recordMiss: (noteKey: string) => void;
   resetScore: () => void;
@@ -83,7 +86,8 @@ export const usePracticeStore = create<PracticeState>()((set) => ({
 
   setLoopRange: (range) => set({ loopRange: range }),
 
-  setDisplayMode: (displayMode) => set({ displayMode }),
+  setDisplayMode: (displayMode) =>
+    set({ displayMode: normalizeDisplayMode(displayMode) }),
 
   setActiveTracks: (tracks) =>
     set({ activeTracks: tracks, activeTracksInitialized: true }),

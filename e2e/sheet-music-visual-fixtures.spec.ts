@@ -75,7 +75,7 @@ async function loadBuiltInSongSheet(
     timeout: 20_000,
   });
 
-  await setDisplayMode(appPage, "sheet");
+  await setDisplayMode(appPage, "split");
 
   await waitForUiSettled(appPage);
   await expect(appPage.getByTestId("sheet-music-panel")).toBeVisible();
