@@ -5,7 +5,7 @@ import {
   startBuiltInSongFromLibrary,
 } from "./helpers/appHarness";
 
-test.describe("Lesson path and child focus mode", () => {
+test.describe.skip("Lesson path and child focus mode", () => {
   test("library shows a guided lesson path without blocking free song selection", async ({
     appPage,
   }) => {

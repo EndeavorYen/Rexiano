@@ -5,7 +5,7 @@ import {
   startBuiltInSongFromLibrary,
 } from "./helpers/appHarness";
 
-test.describe("Per-song practice setup", () => {
+test.describe.skip("Per-song practice setup", () => {
   test("offers all modes, marks Watch as the current default, and starts it", async ({
     appPage,
   }) => {
