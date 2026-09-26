@@ -1,6 +1,8 @@
 import { describe, expect, test } from "vitest";
 import {
   buildImportedSongRecordsFromDiscoveredPaths,
+  createImportedMetadataDraft,
+  createImportedMetadataPatch,
   createImportedSongId,
   importedSongMatchesQuery,
   mergeImportedSongMetadata,
@@ -246,6 +248,64 @@ describe("validateImportedSongSidecarMetadata", () => {
         "Ignored invalid sidecar tag at index 1.",
         "Ignored unsupported sidecar fields: arrangement.",
       ],
+    });
+  });
+});
+
+describe("createImportedMetadataDraft and createImportedMetadataPatch", () => {
+  test("creates draft from record and patch from draft roundtrip", () => {
+    const record = makeRecord({
+      title: "Prelude",
+      composer: "Chopin",
+      tags: ["warmup", "etude"],
+      grade: 4,
+      category: "classical",
+    });
+
+    const draft = createImportedMetadataDraft(record);
+    expect(draft).toEqual({
+      title: "Prelude",
+      composer: "Chopin",
+      tags: "warmup, etude",
+      grade: "4",
+      category: "classical",
+    });
+
+    const patch = createImportedMetadataPatch(draft);
+    expect(patch).toEqual({
+      title: "Prelude",
+      composer: "Chopin",
+      tags: ["warmup", "etude"],
+      grade: 4,
+      category: "classical",
+    });
+  });
+
+  test("handles empty/optional fields in draft and patch", () => {
+    const record = makeRecord({
+      title: "Untitled",
+      composer: undefined,
+      tags: [],
+      grade: undefined,
+      category: undefined,
+    });
+
+    const draft = createImportedMetadataDraft(record);
+    expect(draft).toEqual({
+      title: "Untitled",
+      composer: "",
+      tags: "",
+      grade: "",
+      category: "",
+    });
+
+    const patch = createImportedMetadataPatch(draft);
+    expect(patch).toEqual({
+      title: "Untitled",
+      composer: undefined,
+      tags: [],
+      grade: undefined,
+      category: undefined,
     });
   });
 });

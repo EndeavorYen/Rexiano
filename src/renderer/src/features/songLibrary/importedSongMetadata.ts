@@ -297,3 +297,67 @@ export function reconcileImportedSongAvailability(
     missing: !availablePaths.has(normalizeImportedSongPath(record.sourcePath)),
   }));
 }
+
+export type ImportedGradeDraft =
+  | ""
+  | "0"
+  | "1"
+  | "2"
+  | "3"
+  | "4"
+  | "5"
+  | "6"
+  | "7"
+  | "8";
+
+export type ImportedCategoryDraft = "" | ImportedSongCategory;
+
+export interface ImportedSongMetadataDraft {
+  title: string;
+  composer: string;
+  tags: string;
+  grade: ImportedGradeDraft;
+  category: ImportedCategoryDraft;
+}
+
+export const importedCategoryOptions = [
+  "exercise",
+  "popular",
+  "holiday",
+  "classical",
+] as const satisfies readonly ImportedSongCategory[];
+
+export function createImportedMetadataDraft(
+  record: ImportedSongRecord,
+): ImportedSongMetadataDraft {
+  return {
+    title: record.title,
+    composer: record.composer ?? "",
+    tags: record.tags.join(", "),
+    grade:
+      record.grade === undefined
+        ? ""
+        : (`${record.grade}` as ImportedGradeDraft),
+    category: record.category ?? "",
+  };
+}
+
+export function createImportedMetadataPatch(
+  draft: ImportedSongMetadataDraft,
+): ImportedSongMetadataPatch {
+  const tags = draft.tags
+    .split(",")
+    .map((tag) => tag.trim())
+    .filter(Boolean);
+
+  return {
+    title: draft.title.trim(),
+    composer: draft.composer.trim() || undefined,
+    tags,
+    grade:
+      draft.grade === ""
+        ? undefined
+        : (Number(draft.grade) as NonNullable<ImportedSongRecord["grade"]>),
+    category: draft.category || undefined,
+  };
+}
