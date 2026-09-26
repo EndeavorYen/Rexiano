@@ -8,11 +8,7 @@ const STORAGE_KEY = USER_DATA_STORAGE_KEYS.settings;
 
 /** Detect initial language from browser/OS setting */
 function detectLanguage(): Language {
-  if (typeof navigator !== "undefined") {
-    const lang = navigator.language;
-    if (lang.startsWith("zh")) return "zh-TW";
-  }
-  return "en";
+  return "zh-TW";
 }
 
 interface SettingsState {

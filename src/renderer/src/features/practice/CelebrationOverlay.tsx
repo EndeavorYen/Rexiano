@@ -1,4 +1,3 @@
-import { useMemo } from "react";
 import type { PracticeMode, PracticeScore } from "@shared/types";
 import { useProgressStore } from "../../stores/useProgressStore";
 import {
@@ -75,46 +74,6 @@ const NEXT_ACTION_BODY_KEYS: Record<
   "next-song": "celebration.nextAction.nextSong.body",
 };
 
-/** Number of CSS particles to render for each tier */
-const PARTICLE_COUNT = { amazing: 40, great: 24, encourage: 12 };
-
-/** Simple seeded PRNG to keep particle generation deterministic per tier */
-function seededRandom(seed: number): () => number {
-  let s = seed;
-  return (): number => {
-    s = (s * 16807 + 0) % 2147483647;
-    return (s - 1) / 2147483646;
-  };
-}
-
-interface Particle {
-  id: number;
-  left: number;
-  delay: number;
-  duration: number;
-  size: number;
-  hue: number;
-  drift: number;
-}
-
-function generateParticles(count: number, tier: CelebrationTier): Particle[] {
-  const rand = seededRandom(count * 7 + tier.length * 31);
-  return Array.from({ length: count }, (_, i) => ({
-    id: i,
-    left: rand() * 100,
-    delay: rand() * 1.2,
-    duration: 1.6 + rand() * 1.4,
-    size: tier === "amazing" ? 6 + rand() * 8 : 4 + rand() * 6,
-    hue:
-      tier === "amazing"
-        ? rand() * 360
-        : tier === "great"
-          ? 40 + rand() * 30
-          : 200 + rand() * 60,
-    drift: (rand() - 0.5) * 80,
-  }));
-}
-
 /** Convert accuracy to a 0-5 star rating */
 function getStarCount(accuracy: number): number {
   if (accuracy >= 95) return 5;
@@ -165,8 +124,7 @@ function StarDisplay({ accuracy }: { accuracy: number }): React.JSX.Element {
 }
 
 /**
- * Celebration screen shown when a practice session ends.
- * Uses pure CSS animations for particle effects -- no PixiJS dependency.
+ * One score card shown when a practice session ends.
  */
 export function CelebrationOverlay({
   score,
@@ -184,7 +142,6 @@ export function CelebrationOverlay({
   });
   const isListenThrough = presentation.variant === "listen";
   const tier = isListenThrough ? "great" : getTier(score.accuracy);
-  const count = PARTICLE_COUNT[tier];
 
   const previousBest = useProgressStore((s) =>
     songId ? s.getBestScore(songId) : null,
@@ -196,12 +153,6 @@ export function CelebrationOverlay({
     previousBest ? previousBest.score.accuracy : null,
   );
 
-  // Regenerate particles when tier changes (count is derived from tier)
-  const particles = useMemo(
-    () => generateParticles(count, tier),
-    [count, tier],
-  );
-
   if (!visible) return <></>;
 
   return (
@@ -210,32 +161,6 @@ export function CelebrationOverlay({
       data-testid="celebration-overlay"
       data-tier={tier}
     >
-      {/* Particles */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        {particles.map((p) => (
-          <span
-            key={p.id}
-            className={`absolute celebration-particle ${tier === "amazing" ? "celebration-confetti" : tier === "great" ? "celebration-star" : "celebration-sparkle"}`}
-            style={{
-              left: `${p.left}%`,
-              top: "-5%",
-              width: p.size,
-              height: tier === "amazing" ? p.size * 0.6 : p.size,
-              animationDelay: `${p.delay}s`,
-              animationDuration: `${p.duration}s`,
-              background:
-                tier === "amazing"
-                  ? `hsl(${p.hue}, 80%, 60%)`
-                  : tier === "great"
-                    ? `hsl(${p.hue}, 90%, 55%)`
-                    : `hsl(${p.hue}, 60%, 70%)`,
-              borderRadius: tier === "amazing" ? "1px" : "50%",
-              ["--drift" as string]: `${p.drift}px`,
-            }}
-          />
-        ))}
-      </div>
-
       {/* Content card */}
       <div
         className="relative z-10 flex flex-col items-center gap-4 px-12 py-8 rounded-3xl celebration-card"

@@ -326,27 +326,23 @@ test.describe("Playback UI polish guardrails", () => {
 
     const headerPanel = appPage.getByTestId("playback-header-panel");
     const title = appPage.getByTestId("playback-song-title");
-    const chips = appPage.getByTestId("playback-header-chips");
 
     await expect(headerPanel).toBeVisible();
     await expect(title).toBeVisible();
-    await expect(chips).toBeVisible();
+    await expect(appPage.getByTestId("playback-header-chips")).toHaveCount(0);
+    await expect(
+      appPage.getByRole("button", { name: /Library|曲庫/ }),
+    ).toBeVisible();
 
-    const [headerBox, titleBox, chipsBox] = await Promise.all([
+    const [headerBox, titleBox] = await Promise.all([
       headerPanel.boundingBox(),
       title.boundingBox(),
-      chips.boundingBox(),
     ]);
 
     expect(headerBox).not.toBeNull();
     expect(titleBox).not.toBeNull();
-    expect(chipsBox).not.toBeNull();
-    if (!headerBox || !titleBox || !chipsBox) return;
+    if (!headerBox || !titleBox) return;
 
-    const titleCenterY = titleBox.y + titleBox.height / 2;
-    const chipsCenterY = chipsBox.y + chipsBox.height / 2;
-
-    expect(Math.abs(titleCenterY - chipsCenterY)).toBeLessThan(14);
     expect(headerBox.height).toBeLessThan(116);
 
     await expect(headerPanel.locator(".progress-rail")).toHaveCount(0);
@@ -623,30 +619,25 @@ test.describe("Playback UI polish guardrails", () => {
     });
 
     const header = appPage.getByTestId("playback-header-panel");
-    const chips = appPage.getByTestId("playback-header-chips");
     const actions = appPage.getByTestId("playback-header-actions");
     const drawerButton = appPage.getByTestId("playback-drawer-trigger");
 
     await expect(header).toBeVisible();
-    await expect(chips).toBeVisible();
+    await expect(appPage.getByTestId("playback-header-chips")).toHaveCount(0);
     await expect(actions).toBeVisible();
     await expect(drawerButton).toBeVisible();
 
-    const [headerBox, chipsBox, actionsBox] = await Promise.all([
+    const [headerBox, actionsBox] = await Promise.all([
       header.boundingBox(),
-      chips.boundingBox(),
       actions.boundingBox(),
     ]);
     expect(headerBox).not.toBeNull();
-    expect(chipsBox).not.toBeNull();
     expect(actionsBox).not.toBeNull();
-    if (!headerBox || !chipsBox || !actionsBox) return;
+    if (!headerBox || !actionsBox) return;
 
     expect(actionsBox.x + actionsBox.width).toBeLessThanOrEqual(
       headerBox.x + headerBox.width + 1,
     );
-    expect(chipsBox.x + chipsBox.width).toBeLessThanOrEqual(actionsBox.x + 4);
-    expect(Math.abs(chipsBox.y - actionsBox.y)).toBeLessThan(30);
   });
 
   test("density-guard keeps BPM visible in only one place in split mode", async ({
@@ -661,7 +652,7 @@ test.describe("Playback UI polish guardrails", () => {
     await waitForUiSettled(appPage);
 
     const bpmTextCount = await appPage.getByText(/BPM/i).count();
-    expect(bpmTextCount).toBe(1);
+    expect(bpmTextCount).toBe(0);
     await expect(appPage.getByTestId("transport-strip")).not.toContainText(
       "BPM",
     );
