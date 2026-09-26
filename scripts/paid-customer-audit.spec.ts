@@ -182,25 +182,13 @@ test("paid customer refund-hunt audit", async ({ electronApp }) => {
     await auditSettled();
     await shot("11-mobile-drawer");
     await viewportIssues("drawer narrow");
-    await appPage.getByTestId("open-editor").scrollIntoViewIfNeeded();
-    await appPage.getByTestId("open-editor").click();
-    await auditSettled();
-    await shot("12-mobile-editor");
-    await viewportIssues("editor narrow");
-    const scrollStats = await appPage
-      .getByTestId("piano-roll-scroll")
-      .evaluate((el) => ({
-        clientWidth: el.clientWidth,
-        clientHeight: el.clientHeight,
-        scrollWidth: el.scrollWidth,
-        scrollHeight: el.scrollHeight,
-      }));
-    if (scrollStats.clientWidth < 180 || scrollStats.clientHeight < 160) {
+    const editorEntryCount = await appPage.getByTestId("open-editor").count();
+    if (editorEntryCount !== 0) {
       findings.push({
         label: "mobile editor",
-        kind: "too-small-editor",
-        message: "Piano roll editor canvas is too small for practical editing.",
-        scrollStats,
+        kind: "editor-still-on-live-path",
+        message: "Playback drawer still exposes the piano-roll editor.",
+        editorEntryCount,
       });
     }
   });

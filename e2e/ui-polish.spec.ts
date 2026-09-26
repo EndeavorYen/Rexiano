@@ -930,81 +930,8 @@ test.describe("Playback UI polish guardrails", () => {
 
     const body = drawer.locator(".app-side-drawer-body");
     await scrollLocatorIfOverflowing(body, "y");
-    await appPage.getByTestId("open-editor").scrollIntoViewIfNeeded();
-    await expect(appPage.getByTestId("open-editor")).toBeInViewport();
+    await expect(appPage.getByTestId("open-editor")).toHaveCount(0);
+    await expect(appPage.getByTestId("piano-roll-editor")).toHaveCount(0);
     await expect(appPage.getByTestId("settings-trigger")).toBeInViewport();
-  });
-
-  test("piano roll editor keeps its canvas scrollable on narrow viewports", async ({
-    appPage,
-  }) => {
-    await appPage.setViewportSize({ width: 390, height: 520 });
-    await gotoLibrary(appPage);
-    await loadFirstBuiltInSong(appPage);
-    await openPlaybackDrawer(appPage);
-    await appPage.getByTestId("open-editor").scrollIntoViewIfNeeded();
-    await appPage.getByTestId("open-editor").click();
-
-    const editor = appPage.getByTestId("piano-roll-editor");
-    const scrollRegion = appPage.getByTestId("piano-roll-scroll");
-    const grid = appPage.getByTestId("piano-roll-grid");
-    await expect(editor).toBeVisible();
-    await expectLocatorFitsInsideViewport(appPage, editor);
-    await expect(scrollRegion).toBeVisible();
-    await expect(grid).toBeVisible();
-
-    const scrollBox = await scrollRegion.boundingBox();
-    expect(scrollBox).not.toBeNull();
-    if (scrollBox) {
-      expect(scrollBox.width).toBeGreaterThan(180);
-      expect(scrollBox.height).toBeGreaterThanOrEqual(160);
-    }
-
-    await expectLocatorCanScroll(scrollRegion, "x");
-    await expectLocatorCanScroll(scrollRegion, "y");
-    await expect(appPage.getByTestId("close-editor")).toBeInViewport();
-  });
-
-  test("piano roll editor keeps mobile inspector controls clear of transport", async ({
-    appPage,
-  }) => {
-    await appPage.setViewportSize({ width: 390, height: 520 });
-    await gotoLibrary(appPage);
-    await loadFirstBuiltInSong(appPage);
-    await openPlaybackDrawer(appPage);
-    await appPage.getByTestId("open-editor").scrollIntoViewIfNeeded();
-    await appPage.getByTestId("open-editor").click();
-
-    await expect(appPage.getByTestId("piano-roll-editor")).toBeVisible();
-    await expect(appPage.getByTestId("transport-strip")).toBeHidden();
-    await expect(appPage.getByTestId("track-select")).toHaveCount(1);
-    await expectLocatorCenterReceivesPointer(
-      appPage.getByTestId("track-select"),
-    );
-    await expectLocatorCenterReceivesPointer(appPage.getByTestId("track-name"));
-  });
-
-  test("piano roll editor pauses active mobile playback before hiding transport", async ({
-    appPage,
-  }) => {
-    await appPage.setViewportSize({ width: 390, height: 520 });
-    await gotoLibrary(appPage);
-    await loadFirstBuiltInSong(appPage);
-
-    const playButton = appPage.getByRole("button", {
-      name: /Play \(Space\)|播放/,
-    });
-    if ((await playButton.count()) > 0 && (await playButton.isVisible())) {
-      await playButton.click();
-    }
-    await expect(appPage.locator(".workspace-frame-live")).toBeVisible();
-
-    await openPlaybackDrawer(appPage);
-    await appPage.getByTestId("open-editor").scrollIntoViewIfNeeded();
-    await appPage.getByTestId("open-editor").click();
-
-    await expect(appPage.getByTestId("piano-roll-editor")).toBeVisible();
-    await expect(appPage.getByTestId("transport-strip")).toBeHidden();
-    await expect(appPage.locator(".workspace-frame-live")).toBeHidden();
   });
 });

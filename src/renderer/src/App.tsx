@@ -1,11 +1,5 @@
 import { useState, useCallback, useRef, useEffect, useMemo } from "react";
-import {
-  AlertTriangle,
-  ArrowLeft,
-  PanelRightOpen,
-  PencilRuler,
-  X,
-} from "lucide-react";
+import { AlertTriangle, ArrowLeft, PanelRightOpen, X } from "lucide-react";
 import { useSongStore } from "./stores/useSongStore";
 import { useSongLibraryStore } from "./stores/useSongLibraryStore";
 import { usePlaybackStore } from "./stores/usePlaybackStore";
@@ -82,7 +76,6 @@ import { MainMenu } from "./features/mainMenu/MainMenu";
 import { ModeSelectionModal } from "./features/practice/ModeSelectionModal";
 import { CelebrationOverlay } from "./features/practice/CelebrationOverlay";
 import { getCelebrationPresentation } from "./features/practice/celebrationUtils";
-import { PianoRollEditor } from "./features/editor/PianoRollEditor";
 import { selectNextPracticeAction } from "./features/practice/nextPracticeAction";
 import { getFocusModeExitDecision } from "./features/practice/focusModeExitGuard";
 import {
@@ -170,7 +163,6 @@ function App(): React.JSX.Element {
   // - No song + playback route => menu
   const view: AppRoute = resolveRoute(routeIntent, !!song);
   const [showPlaybackDrawer, setShowPlaybackDrawer] = useState(false);
-  const [showEditor, setShowEditor] = useState(false);
   const appShellRef = useRef<HTMLDivElement>(null);
   const playbackDrawerRef = useRef<HTMLElement>(null);
   const playbackDrawerTriggerRef = useRef<HTMLButtonElement>(null);
@@ -221,7 +213,6 @@ function App(): React.JSX.Element {
   useEffect(() => {
     return useSongStore.subscribe((state) => {
       if (!state.song) {
-        setShowEditor(false);
         getMetronome()?.stop();
         usePlaybackStore.getState().setCountInActive(false);
       }
@@ -1413,7 +1404,6 @@ function App(): React.JSX.Element {
   const viewportHeight = viewportSize.height;
   const isNarrowViewport = viewportSize.width < 640;
   const compactPlaybackChrome = isSplitMode || isNarrowViewport;
-  const showTransportBar = !(showEditor && isNarrowViewport);
   const splitFocus = isSplitMode ? splitFocusPanel : "sheet";
   const keyboardHeight = isSplitMode ? 84 : isNarrowViewport ? 72 : 100;
   const reservedChromeHeight =
@@ -1755,25 +1745,7 @@ function App(): React.JSX.Element {
                       onBeforeBluetoothConnect={closePlaybackDrawer}
                     />
                   </section>
-                  <section className="app-side-section flex items-center gap-2">
-                    <button
-                      onClick={() => {
-                        if (isNarrowViewport) {
-                          usePlaybackStore.getState().setPlaying(false);
-                        }
-                        setShowPlaybackDrawer(false);
-                        setShowEditor(true);
-                      }}
-                      className="btn-surface-themed w-9 h-9 flex items-center justify-center rounded-full cursor-pointer"
-                      title={t("editor.open")}
-                      aria-label={t("editor.open")}
-                      data-testid="open-editor"
-                    >
-                      <PencilRuler
-                        size={16}
-                        style={{ color: "var(--color-text)" }}
-                      />
-                    </button>
+                  <section className="app-side-section">
                     <SettingsPanel />
                   </section>
                 </div>
@@ -1781,91 +1753,75 @@ function App(): React.JSX.Element {
             </div>
           )}
 
-          {/* Main display area: editor / sheet music / falling notes / both */}
+          {/* Main display area: sheet music / falling notes */}
           <div
             className={`workspace-frame ${isPlaying ? "workspace-frame-live" : ""} flex-1 relative flex flex-col min-h-0 surface-panel overflow-hidden`}
           >
-            {showEditor && song ? (
-              <PianoRollEditor
-                key={song.fileName}
-                parsedSong={song}
-                onClose={() => setShowEditor(false)}
+            {/* Sheet music panel (shown in split & sheet modes) */}
+            <div
+              className="relative"
+              style={
+                isSplitMode
+                  ? {
+                      filter:
+                        splitFocus === "sheet"
+                          ? "saturate(1.03) brightness(1.015)"
+                          : "saturate(0.9) brightness(0.965)",
+                      transition: "filter 160ms ease",
+                    }
+                  : undefined
+              }
+              onMouseEnter={() => isSplitMode && setSplitFocusPanel("sheet")}
+              data-testid="split-sheet-region"
+            >
+              <SheetMusicPanel
+                notationData={notationData}
+                mode={displayMode}
+                height={splitSheetHeight}
+                tempoMap={notationTempoMap}
               />
-            ) : (
-              <>
-                {/* Sheet music panel (shown in split & sheet modes) */}
-                <div
-                  className="relative"
-                  style={
-                    isSplitMode
-                      ? {
-                          filter:
-                            splitFocus === "sheet"
-                              ? "saturate(1.03) brightness(1.015)"
-                              : "saturate(0.9) brightness(0.965)",
-                          transition: "filter 160ms ease",
-                        }
-                      : undefined
-                  }
-                  onMouseEnter={() =>
-                    isSplitMode && setSplitFocusPanel("sheet")
-                  }
-                  data-testid="split-sheet-region"
-                >
-                  <SheetMusicPanel
-                    notationData={notationData}
-                    mode={displayMode}
-                    height={splitSheetHeight}
-                    tempoMap={notationTempoMap}
-                  />
-                </div>
+            </div>
 
-                {/* Falling notes canvas. Playback time belongs to
+            {/* Falling notes canvas. Playback time belongs to
                 TransportClock, so this can unmount without stopping the song. */}
-                <div
-                  data-testid="falling-notes-panel"
-                  className="flex-1 min-h-0 relative flex flex-col"
-                  style={{
-                    display: displayMode === "sheet" ? "none" : "flex",
-                    filter:
-                      isSplitMode && splitFocus === "sheet"
-                        ? "saturate(0.9) brightness(0.965)"
-                        : undefined,
-                    transition: isSplitMode ? "filter 160ms ease" : undefined,
-                  }}
-                  onMouseEnter={() =>
-                    isSplitMode && setSplitFocusPanel("falling")
-                  }
-                >
-                  {displayMode !== "sheet" && (
-                    <FallingNotesCanvas
-                      onActiveNotesChange={handleActiveNotesChange}
-                      onNoteRendererReady={handleFallingNoteRendererReady}
-                      minHeight={fallingCanvasMinHeight}
-                    />
-                  )}
-                </div>
-                <ScoreOverlay />
-              </>
-            )}
+            <div
+              data-testid="falling-notes-panel"
+              className="flex-1 min-h-0 relative flex flex-col"
+              style={{
+                display: displayMode === "sheet" ? "none" : "flex",
+                filter:
+                  isSplitMode && splitFocus === "sheet"
+                    ? "saturate(0.9) brightness(0.965)"
+                    : undefined,
+                transition: isSplitMode ? "filter 160ms ease" : undefined,
+              }}
+              onMouseEnter={() => isSplitMode && setSplitFocusPanel("falling")}
+            >
+              {displayMode !== "sheet" && (
+                <FallingNotesCanvas
+                  onActiveNotesChange={handleActiveNotesChange}
+                  onNoteRendererReady={handleFallingNoteRendererReady}
+                  minHeight={fallingCanvasMinHeight}
+                />
+              )}
+            </div>
+            <ScoreOverlay />
           </div>
 
           {/* Transport bar */}
-          {showTransportBar && <TransportBar compact={compactPlaybackChrome} />}
+          <TransportBar compact={compactPlaybackChrome} />
 
           {/* Practice toolbar */}
-          {!showEditor && <PracticeToolbar compact={compactPlaybackChrome} />}
+          <PracticeToolbar compact={compactPlaybackChrome} />
 
           {/* Piano keyboard */}
-          {!showEditor && (
-            <PianoKeyboard
-              activeNotes={activeNotes}
-              midiActiveNotes={midiActiveNotes}
-              missedNotes={wrongNotes}
-              height={keyboardHeight}
-              compactLabels={compactKeyLabels}
-            />
-          )}
+          <PianoKeyboard
+            activeNotes={activeNotes}
+            midiActiveNotes={midiActiveNotes}
+            missedNotes={wrongNotes}
+            height={keyboardHeight}
+            compactLabels={compactKeyLabels}
+          />
         </div>
       )}
 
