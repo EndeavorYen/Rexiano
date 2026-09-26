@@ -161,7 +161,6 @@ interface ImportedSongMetadataDraft {
   category: ImportedCategoryDraft;
 }
 
-const importedGradeOptions = [0, 1, 2, 3, 4, 5, 6, 7, 8] as const;
 const importedCategoryOptions = [
   "exercise",
   "popular",
@@ -1655,8 +1654,6 @@ function SongSelectionPreviewPanel({
     preview.kind === "builtin"
       ? `builtin:${preview.song.id}`
       : `imported:${preview.importedSong.id}`;
-  const grade =
-    preview.grade !== undefined ? gradeLabelShort[preview.grade] : "--";
   const category = preview.category
     ? t(categoryLabelKeys[preview.category])
     : "--";
@@ -1742,7 +1739,7 @@ function SongSelectionPreviewPanel({
         </div>
       </div>
 
-      <dl className="mt-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-5">
+      <dl className="mt-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
         <PreviewMetric
           label={t("library.preview.length")}
           value={
@@ -1751,7 +1748,6 @@ function SongSelectionPreviewPanel({
               : "--"
           }
         />
-        <PreviewMetric label={t("library.preview.grade")} value={grade} />
         <PreviewMetric label={t("library.preview.category")} value={category} />
         <PreviewMetric
           label={t("library.preview.bestScore")}
@@ -1955,7 +1951,7 @@ function ImportedSongMetadataEditor({
 
   return (
     <div
-      className="grid gap-2 rounded-lg px-3 py-3 md:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)_minmax(0,1.1fr)_auto_auto_auto]"
+      className="grid gap-2 rounded-lg px-3 py-3 md:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)_minmax(0,1.1fr)_auto_auto]"
       style={{
         background: "color-mix(in srgb, var(--color-note3) 7%, transparent)",
         border:
@@ -2002,27 +1998,6 @@ function ImportedSongMetadataEditor({
         placeholder={t("library.importedMetadataTags")}
         data-testid="imported-song-tags-input"
       />
-      <select
-        value={draft.grade}
-        onChange={(event) =>
-          onChange({ grade: event.target.value as ImportedGradeDraft })
-        }
-        className="rounded-md px-2 py-1.5 text-xs font-body"
-        style={{
-          color: "var(--color-text)",
-          background: "var(--color-surface)",
-          border: "1px solid var(--color-border)",
-        }}
-        aria-label={t("library.importedMetadataGrade")}
-        data-testid="imported-song-grade-select"
-      >
-        <option value="">--</option>
-        {importedGradeOptions.map((grade) => (
-          <option key={grade} value={`${grade}`}>
-            {gradeLabelShort[grade]}
-          </option>
-        ))}
-      </select>
       <select
         value={draft.category}
         onChange={(event) =>

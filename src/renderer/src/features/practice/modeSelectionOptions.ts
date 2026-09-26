@@ -2,11 +2,8 @@ import type { PracticeMode } from "@shared/types";
 
 export interface ModeOptionModel {
   mode: PracticeMode;
-  titleKey: "practice.watch" | "practice.wait" | "practice.free";
-  descKey:
-    | "modeSelect.watchDesc"
-    | "modeSelect.waitDesc"
-    | "modeSelect.freeDesc";
+  titleKey: "practice.watch" | "practice.wait";
+  descKey: "modeSelect.watchDesc" | "modeSelect.waitDesc";
   isDefault: boolean;
 }
 
