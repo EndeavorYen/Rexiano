@@ -31,9 +31,7 @@ test.describe("Song library live path", () => {
   test("shows MIDI import and built-in songs", async ({ appPage }) => {
     await gotoLibrary(appPage);
 
-    await expect(
-      appPage.getByTestId("library-import-file"),
-    ).toBeVisible();
+    await expect(appPage.getByTestId("library-import-file")).toBeVisible();
     await expect(
       appPage.getByTestId("song-select-hot-cross-buns"),
     ).toBeVisible();

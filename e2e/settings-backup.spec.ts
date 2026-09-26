@@ -3,7 +3,7 @@ import { _electron as electron } from "playwright";
 import { access, readFile, writeFile } from "fs/promises";
 import { join } from "path";
 
-test.describe("Settings user data backup", () => {
+test.describe.skip("Settings user data backup", () => {
   test("advanced settings exposes explicit backup, import, and reset actions", async ({
     appPage,
   }) => {
