@@ -3,6 +3,7 @@ import type { PracticeScore, SessionRecord } from "@shared/types";
 import {
   buildDailyGoalStatus,
   computeDailyGoalProgress,
+  getRetrySpeed,
   selectNextPracticeAction,
 } from "./nextPracticeAction";
 
@@ -81,104 +82,23 @@ describe("selectNextPracticeAction", () => {
     });
   });
 
-  test("suggests trying the left hand after a strong right-hand pass", () => {
-    expect(
-      selectNextPracticeAction({
-        score: score({ accuracy: 90, missedNotes: 4 }),
-        mode: "wait",
-        speed: 1,
-        tracksPlayed: [0],
-        handAssignments: { 0: "right", 1: "left" },
-      }),
-    ).toMatchObject({
-      kind: "try-other-hand",
-      priority: "medium",
-      targetTracks: [1],
-      targetMode: "wait",
-      reason: "other-hand-ready",
-    });
-  });
-
-  test("keeps slow-down as the first action for low-accuracy one-hand practice", () => {
-    expect(
-      selectNextPracticeAction({
-        score: score({ accuracy: 58, missedNotes: 18 }),
-        mode: "wait",
-        speed: 1,
-        tracksPlayed: [0],
-        handAssignments: { 0: "right", 1: "left" },
-      }),
-    ).toMatchObject({
-      kind: "slow-down",
-      targetSpeed: 0.75,
-    });
-  });
-
-  test("suggests the weakest note after a solid session with weak-spot data", () => {
-    expect(
-      selectNextPracticeAction({
-        score: score({ accuracy: 86, missedNotes: 5 }),
-        mode: "wait",
-        speed: 1,
-        weakSpots: [
-          { midi: 64, noteName: "E4", missRate: 0.4, totalAttempts: 5 },
-          { midi: 60, noteName: "C4", missRate: 0.75, totalAttempts: 8 },
-        ],
-      }),
-    ).toMatchObject({
-      kind: "practice-weak-note",
-      priority: "medium",
-      targetMidi: 60,
-      targetMode: "wait",
-      reason: "weak-note-ready",
-    });
-  });
-
-  test("suggests looping the weakest measure after a solid session with weak-section data", () => {
-    expect(
-      selectNextPracticeAction({
-        score: score({ accuracy: 88, missedNotes: 4 }),
-        mode: "wait",
-        speed: 1,
-        weakSections: [
-          {
-            measureIndex: 1,
-            measureNumber: 2,
-            missRate: 0.4,
-            totalAttempts: 5,
-          },
-          {
-            measureIndex: 3,
-            measureNumber: 4,
-            missRate: 0.75,
-            totalAttempts: 8,
-          },
-        ],
-      }),
-    ).toMatchObject({
-      kind: "practice-weak-section",
-      priority: "medium",
-      targetMeasureIndex: 3,
-      targetMeasureNumber: 4,
-      targetMode: "wait",
-      reason: "weak-section-ready",
-    });
-  });
-
-  test("keeps slow-down ahead of weak-note suggestions for low accuracy", () => {
-    expect(
-      selectNextPracticeAction({
-        score: score({ accuracy: 62, missedNotes: 15 }),
-        mode: "wait",
-        speed: 1,
-        weakSpots: [
-          { midi: 60, noteName: "C4", missRate: 0.75, totalAttempts: 8 },
-        ],
-      }),
-    ).toMatchObject({
-      kind: "slow-down",
-      reason: "accuracy-low",
-    });
+  test("only suggests actions the live practice surface can do", () => {
+    const live = new Set([
+      "slow-down",
+      "raise-speed",
+      "repeat-once",
+      "next-song",
+    ]);
+    for (const accuracy of [0, 40, 69, 70, 85, 88, 94, 95, 100]) {
+      for (const speed of [0.25, 0.5, 0.75, 1, 1.5]) {
+        const action = selectNextPracticeAction({
+          score: score({ accuracy }),
+          mode: "wait",
+          speed,
+        });
+        expect(live.has(action.kind)).toBe(true);
+      }
+    }
   });
 
   test("suggests choosing the next song after a mastered full-speed pass", () => {
@@ -194,6 +114,41 @@ describe("selectNextPracticeAction", () => {
       targetMode: "wait",
       reason: "song-mastered",
     });
+  });
+});
+
+describe("getRetrySpeed", () => {
+  test("replays at the suggested speed for speed advice", () => {
+    expect(
+      getRetrySpeed({
+        kind: "slow-down",
+        priority: "high",
+        targetSpeed: 0.75,
+        targetMode: "wait",
+        reason: "accuracy-low",
+      }),
+    ).toBe(0.75);
+    expect(
+      getRetrySpeed({
+        kind: "raise-speed",
+        priority: "medium",
+        targetSpeed: 1,
+        targetMode: "wait",
+        reason: "strong-pass",
+      }),
+    ).toBe(1);
+  });
+
+  test("keeps the current speed otherwise", () => {
+    expect(getRetrySpeed(undefined)).toBeNull();
+    expect(
+      getRetrySpeed({
+        kind: "repeat-once",
+        priority: "low",
+        targetMode: "wait",
+        reason: "steady-progress",
+      }),
+    ).toBeNull();
   });
 });
 

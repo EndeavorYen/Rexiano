@@ -8,7 +8,7 @@ import {
 } from "./celebrationUtils";
 import { useTranslation } from "@renderer/i18n/useTranslation";
 import type { TranslationKey } from "@renderer/i18n/types";
-import type { NextPracticeAction } from "./nextPracticeAction";
+import { getRetrySpeed, type NextPracticeAction } from "./nextPracticeAction";
 
 interface CelebrationOverlayProps {
   score: PracticeScore;
@@ -55,9 +55,6 @@ const NEXT_ACTION_TITLE_KEYS: Record<
   "slow-down": "celebration.nextAction.slowDown.title",
   "raise-speed": "celebration.nextAction.raiseSpeed.title",
   "repeat-once": "celebration.nextAction.repeatOnce.title",
-  "try-other-hand": "celebration.nextAction.tryOtherHand.title",
-  "practice-weak-note": "celebration.nextAction.practiceWeakNote.title",
-  "practice-weak-section": "celebration.nextAction.practiceWeakSection.title",
   "next-song": "celebration.nextAction.nextSong.title",
 };
 
@@ -68,9 +65,6 @@ const NEXT_ACTION_BODY_KEYS: Record<
   "slow-down": "celebration.nextAction.slowDown.body",
   "raise-speed": "celebration.nextAction.raiseSpeed.body",
   "repeat-once": "celebration.nextAction.repeatOnce.body",
-  "try-other-hand": "celebration.nextAction.tryOtherHand.body",
-  "practice-weak-note": "celebration.nextAction.practiceWeakNote.body",
-  "practice-weak-section": "celebration.nextAction.practiceWeakSection.body",
   "next-song": "celebration.nextAction.nextSong.body",
 };
 
@@ -84,9 +78,10 @@ function getStarCount(accuracy: number): number {
   return 1; // Always at least 1 star — keep it encouraging
 }
 
-function formatSpeed(speed: number | undefined): string {
-  if (speed === undefined) return "";
-  return `${speed.toFixed(2).replace(/\.?0+$/, "")}x`;
+/** Same "75%" form as the speed control. */
+function formatSpeed(speed: number | undefined | null): string {
+  if (speed === undefined || speed === null) return "";
+  return `${Math.round(speed * 100)}%`;
 }
 
 /** Render star display */
@@ -153,6 +148,9 @@ export function CelebrationOverlay({
     previousBest ? previousBest.score.accuracy : null,
   );
 
+  // The replay button applies speed advice, so advice and button agree.
+  const retrySpeed = isListenThrough ? null : getRetrySpeed(nextAction);
+
   if (!visible) return <></>;
 
   return (
@@ -213,32 +211,15 @@ export function CelebrationOverlay({
           </div>
         )}
 
-        {/* Score breakdown — compact and secondary */}
+        {/* One accuracy number (#242); hits / misses / streak stay off */}
         {presentation.showScore && (
-          <div
-            className="flex gap-6 px-4 py-3 rounded-xl"
-            style={{
-              background: "var(--color-surface-alt)",
-              border: "1px solid var(--color-border)",
-            }}
+          <p
+            className="font-display text-lg font-bold tabular-nums"
+            style={{ color: "var(--color-text)" }}
+            data-testid="celebration-accuracy"
           >
-            <ScoreStat
-              label={t("celebration.accuracy")}
-              value={`${score.accuracy.toFixed(1)}%`}
-            />
-            <ScoreStat
-              label={t("celebration.hits")}
-              value={String(score.hitNotes)}
-            />
-            <ScoreStat
-              label={t("celebration.missed")}
-              value={String(score.missedNotes)}
-            />
-            <ScoreStat
-              label={t("celebration.bestStreak")}
-              value={String(score.bestStreak)}
-            />
-          </div>
+            {t("celebration.accuracy")} {`${score.accuracy.toFixed(0)}%`}
+          </p>
         )}
 
         {isListenThrough && (
@@ -302,8 +283,6 @@ export function CelebrationOverlay({
             >
               {t(NEXT_ACTION_BODY_KEYS[nextAction.kind], {
                 speed: formatSpeed(nextAction.targetSpeed),
-                measure: nextAction.targetMeasureNumber ?? "",
-                note: nextAction.targetMidi ?? "",
               })}
             </p>
           </div>
@@ -324,7 +303,11 @@ export function CelebrationOverlay({
           >
             {isListenThrough
               ? t("celebration.playAgain")
-              : t(TIER_PLAY_AGAIN_KEYS[tier])}
+              : retrySpeed !== null
+                ? t("celebration.playAgainAtSpeed", {
+                    speed: formatSpeed(retrySpeed),
+                  })
+                : t(TIER_PLAY_AGAIN_KEYS[tier])}
           </button>
           <button
             onClick={onChooseSong}
@@ -335,31 +318,6 @@ export function CelebrationOverlay({
           </button>
         </div>
       </div>
-    </div>
-  );
-}
-
-function ScoreStat({
-  label,
-  value,
-}: {
-  label: string;
-  value: string;
-}): React.JSX.Element {
-  return (
-    <div className="flex flex-col items-center gap-0.5">
-      <span
-        className="text-lg font-display font-bold tabular-nums"
-        style={{ color: "var(--color-text)" }}
-      >
-        {value}
-      </span>
-      <span
-        className="text-[10px] font-body uppercase tracking-wider"
-        style={{ color: "var(--color-text-muted)" }}
-      >
-        {label}
-      </span>
     </div>
   );
 }

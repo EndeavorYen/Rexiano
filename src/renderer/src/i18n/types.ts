@@ -459,13 +459,11 @@ export interface TranslationMap {
   "celebration.listen.nextBody": string;
   "celebration.newRecord": string;
   "celebration.playAgain": string;
+  "celebration.playAgainAtSpeed": string;
   "celebration.oneMoreTime": string;
   "celebration.tryAgain": string;
   "celebration.pickSong": string;
   "celebration.accuracy": string;
-  "celebration.hits": string;
-  "celebration.missed": string;
-  "celebration.bestStreak": string;
   "celebration.nextAction.label": string;
   "celebration.nextAction.slowDown.title": string;
   "celebration.nextAction.slowDown.body": string;
@@ -473,12 +471,6 @@ export interface TranslationMap {
   "celebration.nextAction.raiseSpeed.body": string;
   "celebration.nextAction.repeatOnce.title": string;
   "celebration.nextAction.repeatOnce.body": string;
-  "celebration.nextAction.tryOtherHand.title": string;
-  "celebration.nextAction.tryOtherHand.body": string;
-  "celebration.nextAction.practiceWeakNote.title": string;
-  "celebration.nextAction.practiceWeakNote.body": string;
-  "celebration.nextAction.practiceWeakSection.title": string;
-  "celebration.nextAction.practiceWeakSection.body": string;
   "celebration.nextAction.nextSong.title": string;
   "celebration.nextAction.nextSong.body": string;
   "celebration.starRating": string;

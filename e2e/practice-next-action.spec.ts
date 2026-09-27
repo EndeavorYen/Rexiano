@@ -154,13 +154,21 @@ test.describe("Post-session next action", () => {
     await expect(nextAction).toBeVisible();
     await expect(nextAction).toContainText("Next step");
     await expect(nextAction).toContainText("Slow down");
-    await expect(nextAction).toContainText("0.75x");
+    await expect(nextAction).toContainText("75%");
+    await expect(appPage.getByTestId("celebration-again")).toContainText(
+      "Play again at 75%",
+    );
   });
 
   test("celebration retry starts a fresh Wait session", async ({ appPage }) => {
     const before = await showWaitCelebration(appPage);
 
+    // 50% accuracy at full speed: the replay button carries the slow-down.
+    await expect(appPage.getByTestId("celebration-again")).toContainText(
+      "Play again at 75%",
+    );
     await appPage.getByTestId("celebration-again").click();
+    await expect(appPage.getByTestId("speed-slider")).toHaveValue("75");
     await appPage.clock.resume();
     await expect(appPage.getByTestId("celebration-overlay")).toHaveCount(0);
     await expectFreshWaitRetry(appPage, before);

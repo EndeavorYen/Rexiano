@@ -504,13 +504,11 @@ export const en: TranslationMap = {
     "The song will pause and wait while you play along.",
   "celebration.newRecord": "New Record!",
   "celebration.playAgain": "Play Again!",
+  "celebration.playAgainAtSpeed": "Play again at {speed}",
   "celebration.oneMoreTime": "One More Time!",
   "celebration.tryAgain": "Try Again!",
   "celebration.pickSong": "Pick a Song",
   "celebration.accuracy": "Accuracy",
-  "celebration.hits": "Hits",
-  "celebration.missed": "Missed",
-  "celebration.bestStreak": "Best Streak",
   "celebration.nextAction.label": "Next step",
   "celebration.nextAction.slowDown.title": "Slow down",
   "celebration.nextAction.slowDown.body":
@@ -521,15 +519,6 @@ export const en: TranslationMap = {
   "celebration.nextAction.repeatOnce.title": "Repeat once",
   "celebration.nextAction.repeatOnce.body":
     "Play it once more while the pattern is fresh.",
-  "celebration.nextAction.tryOtherHand.title": "Try the other hand",
-  "celebration.nextAction.tryOtherHand.body":
-    "Switch hands next and keep the same practice mode.",
-  "celebration.nextAction.practiceWeakNote.title": "Focus one note",
-  "celebration.nextAction.practiceWeakNote.body":
-    "Give MIDI note {note} a few slow, careful tries.",
-  "celebration.nextAction.practiceWeakSection.title": "Loop one measure",
-  "celebration.nextAction.practiceWeakSection.body":
-    "Use A-B practice on measure {measure} and play it slowly.",
   "celebration.nextAction.nextSong.title": "Choose the next song",
   "celebration.nextAction.nextSong.body":
     "That pass is solid. Pick a new song near this level.",

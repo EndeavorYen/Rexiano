@@ -35,6 +35,8 @@ import { useAppE2eFixtures } from "./hooks/useAppE2eFixtures";
 import { PlaybackHeader } from "./features/practice/PlaybackHeader";
 import { PlaybackDrawer } from "./features/practice/PlaybackDrawer";
 import { usePracticeInsights } from "./features/practice/usePracticeInsights";
+import { getRetrySpeed } from "./features/practice/nextPracticeAction";
+import { applyPracticeSpeedChangeForSong } from "./features/practice/practiceSetupControlActions";
 import { useSheetMusicNotation } from "./features/sheetMusic/useSheetMusicNotation";
 
 function App(): React.JSX.Element {
@@ -149,8 +151,25 @@ function App(): React.JSX.Element {
     displayScore,
     mode,
     speed,
-    activeTracks,
   });
+
+  // Replay applies the end card's speed advice (#290).
+  const handlePracticeAgainWithAdvice = useCallback(() => {
+    const retrySpeed = getRetrySpeed(nextPracticeAction);
+    if (retrySpeed !== null) {
+      const practice = usePracticeStore.getState();
+      applyPracticeSpeedChangeForSong(
+        {
+          song: useSongStore.getState().song,
+          activeTracks: practice.activeTracks,
+          currentMode: practice.mode,
+          setSpeed: practice.setSpeed,
+        },
+        retrySpeed,
+      );
+    }
+    handlePracticeAgain();
+  }, [handlePracticeAgain, nextPracticeAction]);
 
   // ─── Phase 7: Sheet Music ──────────────────────────────
   const displayMode = usePracticeStore((s) => s.displayMode);
@@ -544,7 +563,7 @@ function App(): React.JSX.Element {
         <CelebrationOverlay
           score={displayScore}
           visible={showCelebration}
-          onPracticeAgain={handlePracticeAgain}
+          onPracticeAgain={handlePracticeAgainWithAdvice}
           onChooseSong={handleChooseSong}
           songId={songId}
           nextAction={nextPracticeAction}
