@@ -117,9 +117,9 @@ test.describe("Core accessibility guardrails", () => {
     await expect(peach).toBeFocused();
     await appPage.keyboard.press("Tab");
     await expect(menu).toBeHidden();
-    await expect(
-      appPage.getByTestId("song-library-recommendation"),
-    ).toBeFocused();
+    // The recommendation card is hidden when it repeats the next lesson
+    // (#278), so focus moves on to the lesson path.
+    await expect(appPage.getByTestId("lesson-progression-next")).toBeFocused();
   });
 
   test("playback drawer and transport controls expose keyboard-safe names", async ({

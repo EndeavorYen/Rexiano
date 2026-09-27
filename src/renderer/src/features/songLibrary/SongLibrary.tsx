@@ -517,14 +517,17 @@ export function SongLibrary({
           dailyGoalStatus={dailyGoalStatus}
         />
 
-        {practiceRecommendation && (
-          <PracticeRecommendationBanner
-            recommendation={practiceRecommendation}
-            isLoading={loadingId === practiceRecommendation.song.id}
-            onSelectSong={(songId) => void handleSelectSong(songId)}
-            rememberReturnFocus={rememberLibraryReturnFocus}
-          />
-        )}
+        {/* The lesson path's "next lesson" already offers this song. */}
+        {practiceRecommendation &&
+          practiceRecommendation.song.id !==
+            lessonProgression.nextLesson?.song.id && (
+            <PracticeRecommendationBanner
+              recommendation={practiceRecommendation}
+              isLoading={loadingId === practiceRecommendation.song.id}
+              onSelectSong={(songId) => void handleSelectSong(songId)}
+              rememberReturnFocus={rememberLibraryReturnFocus}
+            />
+          )}
 
         {lessonProgression.groups.length > 0 && (
           <LessonProgressionSection

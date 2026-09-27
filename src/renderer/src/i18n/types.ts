@@ -111,7 +111,6 @@ export interface TranslationMap {
   "library.preview.audioPreviewError": string;
   "library.preview.playAlong": string;
   "library.lessonPath.title": string;
-  "library.lessonPath.free": string;
   "library.lessonPath.next": string;
   "library.lessonPath.completed": string;
   "library.lessonPath.mastery": string;
@@ -135,6 +134,13 @@ export interface TranslationMap {
   "library.unfavorite": string;
   "library.practicedTimes": string;
   "library.neverPracticed": string;
+  "library.tag.level": string;
+  "library.tag.major": string;
+  "library.tag.minor": string;
+  "library.tag.twoHands": string;
+  "library.tag.beginner": string;
+  "library.tag.exercise": string;
+  "library.tag.scale": string;
   "library.noSongsYet": string;
   "library.noSongsHint": string;
   "library.emptyRecentHint": string;
