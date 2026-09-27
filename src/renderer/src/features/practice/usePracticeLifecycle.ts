@@ -27,6 +27,7 @@ import type { ParsedSong } from "@renderer/engines/midi/types";
 import type { WaitMode } from "@renderer/engines/practice/WaitMode";
 import { getMetronome } from "@renderer/engines/metronome/metronomeManager";
 import { syncMetronomeToPlayback } from "@renderer/engines/metronome/metronomeRuntime";
+import { readRenderDiagnosticsFlag } from "@renderer/engines/fallingNotes/renderDiagnostics";
 import type { PracticeMode } from "@shared/types";
 
 interface AudioRef {
@@ -299,6 +300,11 @@ export function usePracticeLifecycle(
               if (!livePlayback.isPlaying || livePlayback.countInActive) return;
               scheduler.resume(livePlayback.currentTime);
               syncCurrentPracticeMetronome();
+              if (readRenderDiagnosticsFlag()) {
+                console.debug(
+                  "[MidiDiagnostics] input -> sound noteOn scheduled (audio stack resumed)",
+                );
+              }
             })
             .catch((err) => {
               console.error("WaitMode audio resume failed:", err);

@@ -92,6 +92,20 @@ describe("MidiInputParser", () => {
       expect(noteOnCb).toHaveBeenCalledWith(60, 100);
     });
 
+    test("fires onNoteOn with event timeStamp when present", () => {
+      const noteOnCb = vi.fn();
+      parser.onNoteOn(noteOnCb);
+      parser.attach(mockInput);
+
+      const handler = getHandler(mockInput);
+      handler({
+        data: new Uint8Array([0x90, 60, 100]),
+        timeStamp: 1234.56,
+      } as unknown as MIDIMessageEvent);
+
+      expect(noteOnCb).toHaveBeenCalledWith(60, 100, 1234.56);
+    });
+
     test("fires onNoteOn for different channels (0x91-0x9F)", () => {
       const noteOnCb = vi.fn();
       parser.onNoteOn(noteOnCb);

@@ -8,6 +8,7 @@ import {
 } from "@renderer/engines/midi/BleMidiManager";
 import { MidiOutputSender } from "@renderer/engines/midi/MidiOutputSender";
 import { MIDI_CONNECTION_ERROR } from "@renderer/features/midiDevice/midiConnectionErrors";
+import { readRenderDiagnosticsFlag } from "@renderer/engines/fallingNotes/renderDiagnostics";
 
 interface MidiDeviceState {
   /** Available MIDI inputs */
@@ -41,7 +42,7 @@ interface MidiDeviceState {
   /** Select an output device by ID */
   selectOutput: (deviceId: string | null) => void;
   /** Handle a MIDI note-on event */
-  onNoteOn: (midi: number) => void;
+  onNoteOn: (midi: number, timestamp?: number) => void;
   /** Handle a MIDI note-off event */
   onNoteOff: (midi: number) => void;
   /** Replace the device lists (called by MidiDeviceManager callback) */
@@ -68,12 +69,14 @@ export function getMidiPlaybackOutputSender(): MidiOutputSender {
 }
 
 function getParser(store: {
-  onNoteOn: (midi: number) => void;
+  onNoteOn: (midi: number, timestamp?: number) => void;
   onNoteOff: (midi: number) => void;
 }): MidiInputParser {
   if (!_parser) {
     _parser = new MidiInputParser();
-    _parser.onNoteOn((midi) => store.onNoteOn(midi));
+    _parser.onNoteOn((midi, _velocity, timestamp) =>
+      store.onNoteOn(midi, timestamp),
+    );
     _parser.onNoteOff((midi) => store.onNoteOff(midi));
   }
   return _parser;
@@ -81,7 +84,7 @@ function getParser(store: {
 
 /** Attach the parser to the currently active MIDI input */
 function syncParserToActiveInput(store: {
-  onNoteOn: (midi: number) => void;
+  onNoteOn: (midi: number, timestamp?: number) => void;
   onNoteOff: (midi: number) => void;
 }): void {
   const manager = MidiDeviceManager.getInstance();
@@ -214,10 +217,23 @@ export const useMidiDeviceStore = create<MidiDeviceState>()((set, get) => ({
     }
   },
 
-  onNoteOn: (midi) => {
+  onNoteOn: (midi, timestamp) => {
     const next = new Set(get().activeNotes);
     next.add(midi);
     set({ activeNotes: next });
+
+    if (
+      timestamp !== undefined &&
+      typeof window !== "undefined" &&
+      readRenderDiagnosticsFlag()
+    ) {
+      requestAnimationFrame(() => {
+        const highlightLatencyMs = performance.now() - timestamp;
+        console.debug(
+          `[MidiDiagnostics] input -> highlight: ${highlightLatencyMs.toFixed(2)}ms (midi: ${midi})`,
+        );
+      });
+    }
   },
 
   onNoteOff: (midi) => {
@@ -244,9 +260,12 @@ export const useMidiDeviceStore = create<MidiDeviceState>()((set, get) => ({
       _bleManager = new BleMidiManager();
     }
 
-    // Wire up MIDI callbacks to this store's note handlers
     _bleManager.setCallbacks({
-      onNoteOn: (note) => get().onNoteOn(note),
+      onNoteOn: (note) =>
+        get().onNoteOn(
+          note,
+          typeof performance !== "undefined" ? performance.now() : undefined,
+        ),
       onNoteOff: (note) => get().onNoteOff(note),
       onStatusChange: (bleStatus, bleDeviceName, connectionError) => {
         set({
