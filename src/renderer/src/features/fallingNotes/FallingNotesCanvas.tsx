@@ -2,6 +2,10 @@ import { useRef, useEffect, useState } from "react";
 import "pixi.js/unsafe-eval";
 import { Application } from "pixi.js";
 import { NoteRenderer } from "@renderer/engines/fallingNotes/NoteRenderer";
+import {
+  FULL_KEY_RANGE,
+  type KeyRange,
+} from "@renderer/engines/fallingNotes/keyPositions";
 import { getCanvasBgColor } from "@renderer/engines/fallingNotes/noteColors";
 import { createTickerUpdate } from "@renderer/engines/fallingNotes/tickerLoop";
 import {
@@ -24,12 +28,15 @@ interface FallingNotesCanvasProps {
   onNoteRendererReady?: (renderer: NoteRenderer) => void;
   /** Optional minimum render height in px */
   minHeight?: number;
+  /** Keys to lay out across the width; must match PianoKeyboard's range */
+  keyRange?: KeyRange;
 }
 
 export function FallingNotesCanvas({
   onActiveNotesChange,
   onNoteRendererReady,
   minHeight = 200,
+  keyRange = FULL_KEY_RANGE,
 }: FallingNotesCanvasProps): React.JSX.Element {
   const containerRef = useRef<HTMLDivElement>(null);
   const appRef = useRef<Application | null>(null);
@@ -48,6 +55,13 @@ export function FallingNotesCanvas({
   useEffect(() => {
     onActiveNotesChangeRef.current = onActiveNotesChange;
   }, [onActiveNotesChange]);
+
+  // Latest key range, read once the async Pixi setup has a renderer.
+  const keyRangeRef = useRef(keyRange);
+  useEffect(() => {
+    keyRangeRef.current = keyRange;
+    rendererRef.current?.setKeyRange(keyRange);
+  }, [keyRange]);
 
   // Stable ref for audio time callback
   // Stable ref for note renderer callback
@@ -118,6 +132,7 @@ export function FallingNotesCanvas({
 
       // Create the note renderer
       const noteRenderer = new NoteRenderer(app.stage);
+      noteRenderer.setKeyRange(keyRangeRef.current);
       noteRenderer.init(app.screen.width);
       rendererRef.current = noteRenderer;
       onNoteRendererReadyRef.current?.(noteRenderer);

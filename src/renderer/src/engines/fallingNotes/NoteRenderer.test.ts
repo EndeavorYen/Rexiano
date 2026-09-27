@@ -91,7 +91,7 @@ vi.mock("@renderer/engines/practice/FingeringEngine", () => ({
   },
 }));
 
-import { NoteRenderer } from "./NoteRenderer";
+import { NoteRenderer, labelFitsWidth } from "./NoteRenderer";
 import { Container } from "pixi.js";
 import type { ParsedSong } from "@renderer/engines/midi/types";
 import type { Viewport } from "./ViewportManager";
@@ -767,5 +767,31 @@ describe("NoteRenderer", () => {
       // No crash, and all state is clean
       expect(renderer.activeNotes.size).toBe(0);
     });
+  });
+});
+
+describe("labelFitsWidth", () => {
+  test("hides a sharp label on an 88-key black key", () => {
+    // 1280px / 52 white keys * 0.58 ≈ 14px
+    expect(labelFitsWidth(63, 14)).toBe(false);
+  });
+
+  test("shows labels once the keyboard is fitted to the song", () => {
+    // 1280px / 21 white keys ≈ 61px white, 35px black
+    expect(labelFitsWidth(64, 61)).toBe(true);
+    expect(labelFitsWidth(63, 35)).toBe(true);
+  });
+});
+
+describe("NoteRenderer.setKeyRange", () => {
+  test("skips notes outside the fitted range", () => {
+    const renderer = new NoteRenderer(new Container());
+    renderer.init(2100);
+    renderer.setKeyRange({ first: 48, last: 83 });
+    const positions = (
+      renderer as unknown as { keyPositions: Map<number, unknown> }
+    ).keyPositions;
+    expect(positions.get(48)).toEqual({ x: 0, width: 100 });
+    expect(positions.has(21)).toBe(false);
   });
 });

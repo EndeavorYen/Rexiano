@@ -5,6 +5,7 @@ import { useSettingsStore } from "./stores/useSettingsStore";
 import { getMetronome } from "./engines/metronome/metronomeManager";
 import { FallingNotesCanvas } from "./features/fallingNotes/FallingNotesCanvas";
 import { PianoKeyboard } from "./features/fallingNotes/PianoKeyboard";
+import { computeKeyRange } from "./engines/fallingNotes/keyPositions";
 import { TransportBar } from "./features/fallingNotes/TransportBar";
 import { SettingsPanel } from "./features/settings/SettingsPanel";
 import { SongLibrary } from "./features/songLibrary/SongLibrary";
@@ -39,6 +40,16 @@ import { useSheetMusicNotation } from "./features/sheetMusic/useSheetMusicNotati
 function App(): React.JSX.Element {
   const { t } = useTranslation();
   const song = useSongStore((s) => s.song);
+  // Fit the keyboard and falling-notes lane to the song, fixed per song.
+  const keyRange = useMemo(
+    () =>
+      computeKeyRange(
+        (song?.tracks ?? []).flatMap((track) =>
+          track.notes.map((note) => note.midi),
+        ),
+      ),
+    [song],
+  );
   const loadSong = useSongStore((s) => s.loadSong);
   const reset = usePlaybackStore((s) => s.reset);
   const {
@@ -500,6 +511,7 @@ function App(): React.JSX.Element {
                 onActiveNotesChange={handleActiveNotesChange}
                 onNoteRendererReady={handleFallingNoteRendererReady}
                 minHeight={fallingCanvasMinHeight}
+                keyRange={keyRange}
               />
             </div>
           </div>
@@ -513,6 +525,7 @@ function App(): React.JSX.Element {
             missedNotes={wrongNotes}
             height={keyboardHeight}
             compactLabels={compactKeyLabels}
+            range={keyRange}
           />
         </div>
       )}
