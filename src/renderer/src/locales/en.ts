@@ -119,7 +119,6 @@ export const en: TranslationMap = {
   "library.preview.audioPreviewStop": "Stop",
   "library.preview.audioPreviewError":
     "Could not play this audio preview. Try Practice to load the song.",
-  "library.preview.playAlong": "Play Along",
   "library.lessonPath.title": "Lesson path",
   "library.lessonPath.next": "Next lesson",
   "library.lessonPath.completed": "{completed}/{total} complete",

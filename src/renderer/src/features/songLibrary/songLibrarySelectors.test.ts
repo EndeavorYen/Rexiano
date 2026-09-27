@@ -426,17 +426,12 @@ describe("buildSongSelectionPreviewModel", () => {
 });
 
 describe("buildSongPreviewSessionActions", () => {
-  test("offers practice first and play along second for new practice sessions", () => {
+  test("offers exactly one start action that opens the mode picker", () => {
     expect(buildSongPreviewSessionActions("practice")).toEqual([
       {
         intent: "practice",
         labelKey: "library.recommendation.cta",
         emphasis: "primary",
-      },
-      {
-        intent: "play-along",
-        labelKey: "library.preview.playAlong",
-        emphasis: "secondary",
       },
     ]);
   });
