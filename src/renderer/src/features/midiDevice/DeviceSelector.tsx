@@ -162,7 +162,7 @@ export function DeviceSelector({
       {/* Error message */}
       {errorGuidance && (
         <div
-          className="flex items-center gap-2 rounded-lg px-2 py-1.5 max-w-[420px]"
+          className="flex flex-wrap items-center gap-2 rounded-lg px-2 py-1.5 max-w-[420px]"
           style={{
             color: "var(--color-danger-text)",
             background:
@@ -171,8 +171,10 @@ export function DeviceSelector({
           }}
           data-testid="midi-error-guidance"
         >
-          <span className="min-w-0" title={errorGuidance.title}>
-            <span className="block text-xs font-semibold truncate">
+          {/* Full width so the title wraps instead of truncating; recovery
+              buttons flow onto the next line in narrow drawers. */}
+          <span className="min-w-0 basis-full" title={errorGuidance.title}>
+            <span className="block text-xs font-semibold">
               {errorGuidance.title}
             </span>
             <span
