@@ -10,6 +10,7 @@ import {
   type RenderDiagnosticsFrame,
 } from "@renderer/engines/fallingNotes/renderDiagnostics";
 import { useThemeStore } from "@renderer/stores/useThemeStore";
+import { syncFallingNotesSize } from "./fallingNotesResize";
 import { useTranslation } from "@renderer/i18n/useTranslation";
 import {
   describeFallingNotesInitFailure,
@@ -108,6 +109,10 @@ export function FallingNotesCanvas({
         return;
       }
 
+      // Out of flow: a fixed-height canvas must never prop the container open,
+      // or the stage cannot shrink when switching falling → split.
+      app.canvas.style.position = "absolute";
+      app.canvas.style.inset = "0";
       container.appendChild(app.canvas);
       appRef.current = app;
 
@@ -138,7 +143,7 @@ export function FallingNotesCanvas({
       // fires when appRef and rendererRef are already set
       resizeObserver = new ResizeObserver(() => {
         if (appRef.current && rendererRef.current) {
-          rendererRef.current.resize(appRef.current.screen.width);
+          syncFallingNotesSize(appRef.current, rendererRef.current);
         }
       });
       resizeObserver.observe(container);
