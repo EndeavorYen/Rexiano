@@ -109,7 +109,6 @@ export interface TranslationMap {
   "library.preview.audioPreviewLoading": string;
   "library.preview.audioPreviewStop": string;
   "library.preview.audioPreviewError": string;
-  "library.preview.playAlong": string;
   "library.lessonPath.title": string;
   "library.lessonPath.next": string;
   "library.lessonPath.completed": string;

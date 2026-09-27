@@ -77,8 +77,7 @@ export type SongSelectionPreviewModel =
 
 export type SongPreviewSessionLabelKey =
   | "library.recommendation.cta"
-  | "library.continuePractice"
-  | "library.preview.playAlong";
+  | "library.continuePractice";
 
 export interface SongPreviewSessionAction {
   intent: PracticeSessionIntent;
@@ -200,6 +199,10 @@ export function buildImportedSongSelectionPreviewModel(
   };
 }
 
+/**
+ * One start action per preview (P2 checklist: "one practice start action").
+ * Watch / Wait is chosen in the mode picker it opens (#291).
+ */
 export function buildSongPreviewSessionActions(
   primaryCta: SongSelectionPreviewModel["primaryCta"],
 ): SongPreviewSessionAction[] {
@@ -211,11 +214,6 @@ export function buildSongPreviewSessionActions(
           ? "library.continuePractice"
           : "library.recommendation.cta",
       emphasis: "primary",
-    },
-    {
-      intent: "play-along",
-      labelKey: "library.preview.playAlong",
-      emphasis: "secondary",
     },
   ];
 }

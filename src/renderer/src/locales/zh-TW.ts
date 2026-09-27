@@ -117,7 +117,6 @@ export const zhTW: TranslationMap = {
   "library.preview.audioPreviewStop": "停止",
   "library.preview.audioPreviewError":
     "目前無法播放試聽，請改用開始練習載入曲目。",
-  "library.preview.playAlong": "跟彈",
   "library.lessonPath.title": "課程路徑",
   "library.lessonPath.next": "下一課",
   "library.lessonPath.completed": "已完成 {completed}/{total}",

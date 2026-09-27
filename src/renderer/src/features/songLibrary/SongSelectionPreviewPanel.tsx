@@ -1,5 +1,5 @@
 import { useRef, useEffect } from "react";
-import { Music, PlayCircle } from "lucide-react";
+import { PlayCircle } from "lucide-react";
 import { useTranslation } from "@renderer/i18n/useTranslation";
 import { categoryLabelKeys, formatSongDuration } from "./songCardUtils";
 import {
@@ -137,8 +137,6 @@ export function SongSelectionPreviewPanel({
                     borderTopColor: "var(--color-on-accent)",
                   }}
                 />
-              ) : action.intent === "play-along" ? (
-                <Music size={16} />
               ) : (
                 <PlayCircle size={16} />
               )}

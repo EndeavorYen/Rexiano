@@ -8,6 +8,8 @@ const LIVE_PATH_FILES = [
   "features/songLibrary/SongCard.tsx",
   "features/songLibrary/SongLibrary.tsx",
   "features/songLibrary/SongLibraryFilters.tsx",
+  "features/songLibrary/SongSelectionPreviewPanel.tsx",
+  "features/songLibrary/songLibrarySelectors.ts",
   "features/settings/SettingsPanel.tsx",
   "features/settings/LanguageSwitcher.tsx",
   "features/practice/PracticeModeSelector.tsx",
