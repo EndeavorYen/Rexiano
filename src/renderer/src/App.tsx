@@ -408,7 +408,7 @@ function App(): React.JSX.Element {
             }}
           />
           {showMenuSettings && (
-            <SettingsPanel inline onClose={() => setShowMenuSettings(false)} />
+            <SettingsPanel onClose={() => setShowMenuSettings(false)} />
           )}
         </>
       )}

@@ -1,7 +1,7 @@
 import { X } from "lucide-react";
 import { useTranslation } from "@renderer/i18n/useTranslation";
 import { DeviceSelector } from "@renderer/features/midiDevice/DeviceSelector";
-import { SettingsPanel } from "@renderer/features/settings/SettingsPanel";
+import { SettingsSections } from "@renderer/features/settings/SettingsPanel";
 
 export interface PlaybackDrawerProps {
   show: boolean;
@@ -48,7 +48,7 @@ export function PlaybackDrawer({
             <DeviceSelector onBeforeBluetoothConnect={onClose} />
           </section>
           <section className="app-side-section">
-            <SettingsPanel />
+            <SettingsSections />
           </section>
         </div>
       </aside>

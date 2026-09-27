@@ -53,7 +53,11 @@ test.describe("App routing and drawer behavior", () => {
     await expect(appPage.getByTestId("playback-drawer-trigger")).toBeVisible();
 
     await openPlaybackDrawer(appPage);
-    await expect(appPage.getByTestId("settings-trigger")).toBeVisible();
+    const drawer = appPage.getByTestId("playback-settings-drawer");
+    // Settings render inline in the drawer; no nested settings dialog.
+    await expect(drawer.getByTestId("settings-sections")).toBeVisible();
+    await expect(drawer.getByTestId("toggle-mute")).toBeVisible();
+    await expect(appPage.getByTestId("settings-trigger")).toHaveCount(0);
     await closeTopDrawer(appPage);
   });
 });
