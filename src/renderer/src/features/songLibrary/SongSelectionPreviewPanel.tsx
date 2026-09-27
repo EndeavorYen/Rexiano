@@ -7,6 +7,7 @@ import {
   type SongSelectionPreviewModel,
 } from "./songLibrarySelectors";
 import type { PracticeSessionIntent } from "@renderer/features/practice/sessionIntent";
+import { formatSongTag } from "./songTagLabel";
 
 export function PreviewMetric({
   label,
@@ -183,7 +184,7 @@ export function SongSelectionPreviewPanel({
                 border: "1px solid var(--color-border)",
               }}
             >
-              {tag}
+              {formatSongTag(tag, t)}
             </span>
           ))}
         </div>

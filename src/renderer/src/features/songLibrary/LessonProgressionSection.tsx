@@ -46,17 +46,6 @@ export function LessonProgressionSection({
             {t("library.lessonPath.title")}
           </span>
         </div>
-        <span
-          className="rounded-full px-2 py-0.5 text-[10px] font-body font-medium"
-          style={{
-            color: "var(--color-text-muted)",
-            background:
-              "color-mix(in srgb, var(--color-surface-alt) 76%, var(--color-surface))",
-            border: "1px solid var(--color-border)",
-          }}
-        >
-          {t("library.lessonPath.free")}
-        </span>
       </div>
 
       <div className="grid gap-3 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1.8fr)]">

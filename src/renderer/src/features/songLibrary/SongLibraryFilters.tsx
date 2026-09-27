@@ -42,7 +42,7 @@ export function SongLibraryFilters(): React.JSX.Element {
 
   return (
     <div className="flex flex-col gap-3 w-full">
-      {/* Search + difficulty row */}
+      {/* Search + difficulty + view toggle on one row */}
       <div className="flex min-w-0 flex-col items-stretch gap-3 lg:flex-row lg:items-center">
         <div className="flex-1 relative">
           <Search
@@ -88,44 +88,38 @@ export function SongLibraryFilters(): React.JSX.Element {
             </button>
           ))}
         </div>
-      </div>
 
-      <div className="flex flex-col gap-2 xl:flex-row xl:items-center xl:justify-end">
-        <div className="flex min-w-0 flex-wrap items-center gap-2">
-          <div
-            className="flex items-center gap-1 rounded-lg p-1"
-            style={{
-              background:
-                "color-mix(in srgb, var(--color-surface) 80%, transparent)",
-              border: "1px solid var(--color-border)",
-            }}
-          >
-            {viewModes.map((mode) => {
-              const Icon = mode.icon;
-              const isActive = viewMode === mode.value;
-              return (
-                <button
-                  key={mode.value}
-                  type="button"
-                  data-testid={`song-library-view-${mode.value}`}
-                  onClick={() => setViewMode(mode.value)}
-                  className="flex h-9 w-9 items-center justify-center rounded-md transition-colors cursor-pointer"
-                  aria-label={t(mode.key)}
-                  aria-pressed={isActive}
-                  style={{
-                    background: isActive
-                      ? "var(--color-accent)"
-                      : "transparent",
-                    color: isActive
-                      ? "var(--color-on-accent)"
-                      : "var(--color-text-muted)",
-                  }}
-                >
-                  <Icon size={14} />
-                </button>
-              );
-            })}
-          </div>
+        <div
+          className="flex shrink-0 items-center gap-1 self-end rounded-lg p-1 lg:self-auto"
+          style={{
+            background:
+              "color-mix(in srgb, var(--color-surface) 80%, transparent)",
+            border: "1px solid var(--color-border)",
+          }}
+        >
+          {viewModes.map((mode) => {
+            const Icon = mode.icon;
+            const isActive = viewMode === mode.value;
+            return (
+              <button
+                key={mode.value}
+                type="button"
+                data-testid={`song-library-view-${mode.value}`}
+                onClick={() => setViewMode(mode.value)}
+                className="flex h-9 w-9 items-center justify-center rounded-md transition-colors cursor-pointer"
+                aria-label={t(mode.key)}
+                aria-pressed={isActive}
+                style={{
+                  background: isActive ? "var(--color-accent)" : "transparent",
+                  color: isActive
+                    ? "var(--color-on-accent)"
+                    : "var(--color-text-muted)",
+                }}
+              >
+                <Icon size={14} />
+              </button>
+            );
+          })}
         </div>
       </div>
     </div>

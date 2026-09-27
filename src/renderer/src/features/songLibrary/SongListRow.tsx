@@ -145,7 +145,7 @@ export function SongListRow({
         data-testid={`song-select-${song.id}`}
         onClick={(event) => onSelect(song.id, event.detail === 0)}
         disabled={isLoading}
-        className="grid min-w-0 flex-1 grid-cols-1 gap-2 px-3 py-2.5 text-left cursor-pointer disabled:cursor-wait disabled:opacity-60 md:grid-cols-[minmax(0,1.5fr)_auto_auto_auto]"
+        className="grid min-w-0 flex-1 grid-cols-1 items-center gap-2 px-3 py-2.5 text-left cursor-pointer disabled:cursor-wait disabled:opacity-60 md:grid-cols-[minmax(0,1.5fr)_auto_auto_auto]"
       >
         <span className="min-w-0">
           <h3
@@ -180,11 +180,9 @@ export function SongListRow({
           className="flex items-center gap-2 text-[11px] font-mono tabular-nums md:justify-end"
           style={{ color: "var(--color-text-muted)" }}
         >
-          <span>
-            {activity.bestAccuracy !== null
-              ? `${Math.round(activity.bestAccuracy)}%`
-              : "--"}
-          </span>
+          {activity.bestAccuracy !== null && (
+            <span>{`${Math.round(activity.bestAccuracy)}%`}</span>
+          )}
           <span>{practicedLabel}</span>
         </span>
 

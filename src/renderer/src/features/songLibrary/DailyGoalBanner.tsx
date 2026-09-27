@@ -13,7 +13,7 @@ export function DailyGoalBanner({
 
   return (
     <div
-      className="mt-4 rounded-xl px-4 py-3"
+      className="rounded-xl px-4 py-3"
       style={{
         background:
           "color-mix(in srgb, var(--color-note2) 8%, var(--color-surface))",
