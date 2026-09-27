@@ -7,7 +7,7 @@ import {
   type SongSelectionPreviewModel,
 } from "./songLibrarySelectors";
 import type { PracticeSessionIntent } from "@renderer/features/practice/sessionIntent";
-import { formatSongTag } from "./songTagLabel";
+import { formatSongTag, previewTags } from "./songTagLabel";
 
 export function PreviewMetric({
   label,
@@ -65,6 +65,7 @@ export function SongSelectionPreviewPanel({
     preview.kind === "builtin"
       ? `builtin:${preview.song.id}`
       : `imported:${preview.importedSong.id}`;
+  const shownTags = previewTags(preview.tags, preview.category ?? null);
   const category = preview.category
     ? t(categoryLabelKeys[preview.category])
     : "--";
@@ -170,9 +171,9 @@ export function SongSelectionPreviewPanel({
         />
       </dl>
 
-      {preview.tags.length > 0 && (
+      {shownTags.length > 0 && (
         <div className="mt-3 flex flex-wrap gap-1.5">
-          {preview.tags.slice(0, 6).map((tag) => (
+          {shownTags.slice(0, 6).map((tag) => (
             <span
               key={tag}
               className="rounded-md px-2 py-1 text-[10px] font-body font-medium"

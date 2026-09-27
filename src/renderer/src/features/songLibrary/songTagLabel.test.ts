@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { formatSongTag } from "./songTagLabel";
+import { formatSongTag, previewTags } from "./songTagLabel";
 import { en } from "@renderer/locales/en";
 import { zhTW } from "@renderer/locales/zh-TW";
 import type {
@@ -36,5 +36,36 @@ describe("formatSongTag", () => {
     expect(formatSongTag("level-5", zh)).toBe("第 5 級");
     expect(formatSongTag("g-major", zh)).toBe("G 大調");
     expect(formatSongTag("two-hands", zh)).toBe("雙手");
+  });
+});
+
+describe("song tag coverage", () => {
+  test("every built-in tag has a zh-TW label, not an English fallback", async () => {
+    const { readFileSync } = await import("node:fs");
+    const { resolve } = await import("node:path");
+    const raw = JSON.parse(
+      readFileSync(resolve(process.cwd(), "resources/midi/songs.json"), "utf8"),
+    ) as { tags?: string[] }[] | { songs: { tags?: string[] }[] };
+    const songs = Array.isArray(raw) ? raw : raw.songs;
+    const tags = new Set(songs.flatMap((song) => song.tags ?? []));
+    const zh = translator(zhTW);
+    for (const tag of tags) {
+      expect(formatSongTag(tag, zh), tag).not.toMatch(/[a-z]{3,}/);
+    }
+  });
+
+  test("translates genre tags", () => {
+    expect(formatSongTag("baroque", translator(zhTW))).toBe("巴洛克");
+    expect(formatSongTag("alberti-bass", translator(en))).toBe("Alberti bass");
+  });
+});
+
+describe("previewTags", () => {
+  test("drops the tag that repeats the category", () => {
+    expect(previewTags(["classical", "baroque", "3-4"], "classical")).toEqual([
+      "baroque",
+      "3-4",
+    ]);
+    expect(previewTags(["folk"], null)).toEqual(["folk"]);
   });
 });
