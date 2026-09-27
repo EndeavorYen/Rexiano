@@ -1,3 +1,4 @@
+import { rangeProgressStyle } from "@renderer/utils/rangeProgress";
 import { useState } from "react";
 import {
   Play,
@@ -297,7 +298,10 @@ export function TransportBar({
               onChange={(e) => seekPlayback(parseFloat(e.target.value))}
               disabled={!song}
               className="seek-slider-input w-full relative z-10"
-              style={{ accentColor: "var(--color-accent)" }}
+              style={{
+                accentColor: "var(--color-accent)",
+                ...rangeProgressStyle(currentTime, 0, duration || 1),
+              }}
               aria-label={t("transport.seekPosition")}
             />
           </div>
