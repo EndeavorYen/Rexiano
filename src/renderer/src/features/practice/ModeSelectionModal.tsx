@@ -39,7 +39,7 @@ export function ModeSelectionModal({
 
   return (
     <div
-      className="mode-selection-backdrop fixed inset-0 z-[200] flex items-start justify-center overflow-y-auto overscroll-contain p-4 modal-backdrop-cinematic"
+      className="mode-selection-backdrop fixed inset-0 z-[200] flex items-start justify-center sm:items-center overflow-y-auto overscroll-contain p-4 modal-backdrop-cinematic"
       onClick={(event) => {
         if (event.target === event.currentTarget) onDismiss();
       }}
@@ -47,7 +47,7 @@ export function ModeSelectionModal({
     >
       <div
         ref={dialogRef}
-        className="mode-selection-dialog max-h-[calc(100vh-2rem)] w-full max-w-[680px] overflow-y-auto rounded-2xl shadow-2xl modal-card-cinematic p-4 sm:w-[92vw] sm:p-6"
+        className="mode-selection-dialog max-h-[calc(100vh-2rem)] w-full max-w-[560px] overflow-y-auto rounded-2xl shadow-2xl modal-card-cinematic p-4 sm:w-[92vw] sm:p-6"
         style={{
           background:
             "color-mix(in srgb, var(--color-surface) 90%, transparent)",
@@ -76,7 +76,7 @@ export function ModeSelectionModal({
         </p>
 
         {/* Mode cards */}
-        <div className="mode-selection-grid grid grid-cols-1 gap-3 sm:grid-cols-3">
+        <div className="mode-selection-grid grid grid-cols-1 gap-3 sm:grid-cols-2">
           {options.map((opt, idx) => (
             <button
               key={opt.mode}
@@ -98,11 +98,10 @@ export function ModeSelectionModal({
             >
               {opt.isDefault && (
                 <span
-                  className="mode-selection-default-badge absolute right-2 top-2 rounded-full px-2 py-0.5 text-[9px] font-body font-bold uppercase tracking-wide"
+                  className="mode-selection-default-badge absolute -top-2.5 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full px-2 py-0.5 text-[9px] font-body font-bold uppercase tracking-wide"
                   style={{
-                    color: "var(--color-accent-text)",
-                    background:
-                      "color-mix(in srgb, var(--color-accent) 12%, var(--color-surface))",
+                    color: "var(--color-on-accent)",
+                    background: "var(--color-accent)",
                   }}
                   data-testid="mode-select-current-default"
                 >
