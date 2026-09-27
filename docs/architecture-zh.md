@@ -116,13 +116,13 @@ Rexiano 目前有八個 Zustand stores。
 
 Engines 需可獨立測試，並且不依賴 React。
 
-| Engine 區域            | 主要模組                                                                                                                                 | 契約                                                                                                                |
-| ---------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
-| `engines/audio`        | `AudioEngine`、`AudioScheduler`、`SoundFontLoader`、`recoveryUtils`                                                                      | 使用 `AudioContext.currentTime` 作為播放時鐘，look-ahead 排程，透過 IPC 載入 SoundFont，音頻失敗時復原或 fallback。 |
-| `engines/fallingNotes` | `NoteRenderer`、`ViewportManager`、`tickerLoop`、`keyPositions`、`noteColors`、render diagnostics/stress fixtures                        | 以 PixiJS object pools 渲染可見音符，將 MIDI notes 映射到 88 鍵座標，並讓 60 FPS loop 留在 React 外。               |
-| `engines/midi`         | `MidiFileParser`、`MidiDeviceManager`、`MidiInputParser`、`MidiOutputSender`、`BleMidiManager`、`TrackHandAssignment`、`MidiDiagnostics` | 將 MIDI 檔解析成以秒為單位的 `ParsedSong`，管理 Web MIDI / BLE MIDI 裝置，並暴露 note / CC callbacks。              |
-| `engines/practice`     | `WaitMode`、`SpeedController`、`LoopController`、`ScoreCalculator`、`FingeringEngine`、`practiceManager`                                 | 練習邏輯保持 deterministic：wait-mode state machine、速度 clamping、A-B loop、評分、指法與 singleton 生命週期。     |
-| `engines/metronome`    | `MetronomeEngine`、`metronomeManager`                                                                                                    | 透過 Web Audio 產生節拍器點擊與 count-in timing。                                                                   |
+| Engine 區域            | 主要模組                                                                                                                                 | 契約                                                                                                                                     |
+| ---------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| `engines/audio`        | `AudioEngine`、`AudioScheduler`、`SoundFontLoader`、`recoveryUtils`                                                                      | 使用 `AudioContext.currentTime` 作為播放時鐘，look-ahead 排程，透過 IPC 載入 SoundFont，音頻失敗時復原或 fallback。                      |
+| `engines/fallingNotes` | `NoteRenderer`、`ViewportManager`、`tickerLoop`、`keyPositions`、`noteColors`、render diagnostics/stress fixtures                        | 以 PixiJS object pools 渲染可見音符，將 MIDI notes 映射到依曲目音域縮放的鍵盤座標（`computeKeyRange`），並讓 60 FPS loop 留在 React 外。 |
+| `engines/midi`         | `MidiFileParser`、`MidiDeviceManager`、`MidiInputParser`、`MidiOutputSender`、`BleMidiManager`、`TrackHandAssignment`、`MidiDiagnostics` | 將 MIDI 檔解析成以秒為單位的 `ParsedSong`，管理 Web MIDI / BLE MIDI 裝置，並暴露 note / CC callbacks。                                   |
+| `engines/practice`     | `WaitMode`、`SpeedController`、`LoopController`、`ScoreCalculator`、`FingeringEngine`、`practiceManager`                                 | 練習邏輯保持 deterministic：wait-mode state machine、速度 clamping、A-B loop、評分、指法與 singleton 生命週期。                          |
+| `engines/metronome`    | `MetronomeEngine`、`metronomeManager`                                                                                                    | 透過 Web Audio 產生節拍器點擊與 count-in timing。                                                                                        |
 
 ## 資料流
 

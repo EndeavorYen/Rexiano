@@ -247,7 +247,7 @@ ParsedSong
 +------------------------------+
 ```
 
-- **X 軸**：MIDI 音符編號 → 螢幕 x 座標（透過 `keyPositions.ts` 映射 88 鍵佈局）
+- **X 軸**：MIDI 音符編號 → 螢幕 x 座標（透過 `keyPositions.ts` 映射鍵盤佈局；`computeKeyRange()` 依曲目音域取整八度、至少 3 個八度，`PianoKeyboard` 與 `NoteRenderer.setKeyRange()` 共用同一個範圍，見 #277）
 - **Y 軸**：`screenY = hitLineY - (noteTime - currentTime) × pixelsPerSecond`
 - **pixelsPerSecond**：預設 200px/s，控制音符密度（未來可讓使用者調整）
 
