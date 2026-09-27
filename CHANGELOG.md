@@ -1,5 +1,50 @@
 # Changelog
 
+## [1.5.0](https://github.com/EndeavorYen/Rexiano/compare/v1.4.0...v1.5.0) (2026-09-27)
+
+
+### Features
+
+* add eight public-domain built-in songs ([#227](https://github.com/EndeavorYen/Rexiano/issues/227)) ([0bb443e](https://github.com/EndeavorYen/Rexiano/commit/0bb443e71397bfbeba7a8e05a8cfe6d9e769b64d))
+* **audio-midi:** measure and document MIDI input latency on Rex's setup ([#252](https://github.com/EndeavorYen/Rexiano/issues/252)) ([#271](https://github.com/EndeavorYen/Rexiano/issues/271)) ([56a3b54](https://github.com/EndeavorYen/Rexiano/commit/56a3b54b2071112e1e47be8b61c6bb5631bf61c6))
+* label score vs MIDI origins and put display mode on the stage ([#234](https://github.com/EndeavorYen/Rexiano/issues/234)) ([fb7ba09](https://github.com/EndeavorYen/Rexiano/commit/fb7ba09dc2b42577335dde592d0e4a74bafb2457))
+* **library:** tighten library header, dedupe recommendations, humanize tags ([#278](https://github.com/EndeavorYen/Rexiano/issues/278)) ([#287](https://github.com/EndeavorYen/Rexiano/issues/287)) ([cbbbc23](https://github.com/EndeavorYen/Rexiano/commit/cbbbc230018afdab21126b7a74d1f492d7a3450f))
+* localize leftover player-facing copy and language switch ([#230](https://github.com/EndeavorYen/Rexiano/issues/230)) ([3525100](https://github.com/EndeavorYen/Rexiano/commit/352510068756e5ed82754be04f832ed85585ad9e))
+* **practice:** fit keyboard and falling-notes lane to the song's range ([#286](https://github.com/EndeavorYen/Rexiano/issues/286)) ([bba45e5](https://github.com/EndeavorYen/Rexiano/commit/bba45e5decdfaef4ea9bf54ce8a4cbf36a1c9436)), closes [#277](https://github.com/EndeavorYen/Rexiano/issues/277)
+* **practice:** merge transport and practice toolbar into one control bar ([#297](https://github.com/EndeavorYen/Rexiano/issues/297)) ([0deeb7d](https://github.com/EndeavorYen/Rexiano/commit/0deeb7dfad5d353e7f6896f54bedf003f711dc52)), closes [#289](https://github.com/EndeavorYen/Rexiano/issues/289)
+* prefer MusicXML as source of truth for built-in Au Clair ([#233](https://github.com/EndeavorYen/Rexiano/issues/233)) ([3ab7be4](https://github.com/EndeavorYen/Rexiano/commit/3ab7be4ecb589977af38c20c820d4b9a6f49a14c))
+
+
+### Bug Fixes
+
+* align Minuet in G first strain with Petzold ([#232](https://github.com/EndeavorYen/Rexiano/issues/232)) ([a247cb0](https://github.com/EndeavorYen/Rexiano/commit/a247cb094e5b4b1a117a137d203d77c30ad5a335)), closes [#224](https://github.com/EndeavorYen/Rexiano/issues/224)
+* align tests and i18n with the deleted live surface ([#240](https://github.com/EndeavorYen/Rexiano/issues/240)) ([284e2e9](https://github.com/EndeavorYen/Rexiano/commit/284e2e9b62ae260fbbe5dba6b3f32c28aec03a13))
+* collapse home and library to songs and import ([#244](https://github.com/EndeavorYen/Rexiano/issues/244)) ([d3c4826](https://github.com/EndeavorYen/Rexiano/commit/d3c48265f8c84e8bfb2f791fee47143936e58e7c))
+* collapse practice chrome to Watch, Wait, and speed ([#247](https://github.com/EndeavorYen/Rexiano/issues/247)) ([ab215e9](https://github.com/EndeavorYen/Rexiano/commit/ab215e9841210daa88ea6eee5249d791f6f1267c))
+* collapse Settings to MIDI input, volume, and language ([#241](https://github.com/EndeavorYen/Rexiano/issues/241)) ([0133b9f](https://github.com/EndeavorYen/Rexiano/commit/0133b9f89591de730ee5726d9b1cec26e5168bf2))
+* complete round-two player, data, and launch hardening ([#215](https://github.com/EndeavorYen/Rexiano/issues/215)) ([886556e](https://github.com/EndeavorYen/Rexiano/commit/886556e9624c6cbf65eb261bd001a170f245e663))
+* first-run home and Watch end no longer dead-end ([#223](https://github.com/EndeavorYen/Rexiano/issues/223)) ([cdd2449](https://github.com/EndeavorYen/Rexiano/commit/cdd2449ba568a9bb6cd5cc32299512e6171182e4))
+* harden player and release readiness ([#188](https://github.com/EndeavorYen/Rexiano/issues/188)) ([fc8d221](https://github.com/EndeavorYen/Rexiano/commit/fc8d221470a67a0d49269f2b598b317efc4e4a0d))
+* hide MIDI output and connection test from the device selector ([#237](https://github.com/EndeavorYen/Rexiano/issues/237)) ([aee0482](https://github.com/EndeavorYen/Rexiano/commit/aee048256a10fbd4f27cf0f88cd2c4b231340796))
+* **i18n:** zh-TW screenshot pass - translate song tags, drop mixed copy ([#299](https://github.com/EndeavorYen/Rexiano/issues/299)) ([255881f](https://github.com/EndeavorYen/Rexiano/commit/255881f59ca9c3710d4ef942e4653861d13143d7)), closes [#293](https://github.com/EndeavorYen/Rexiano/issues/293)
+* keep left-hand middle C on the bass staff ([#226](https://github.com/EndeavorYen/Rexiano/issues/226)) ([6fd910c](https://github.com/EndeavorYen/Rexiano/commit/6fd910c53291f292055bdc94005b01302c3be090))
+* **library:** song preview offers one start action ([#296](https://github.com/EndeavorYen/Rexiano/issues/296)) ([c4c4596](https://github.com/EndeavorYen/Rexiano/commit/c4c4596c8909a831c73535ae095a295b5e32fa9d)), closes [#291](https://github.com/EndeavorYen/Rexiano/issues/291)
+* make unit tests pass on Windows ([#257](https://github.com/EndeavorYen/Rexiano/issues/257)) ([ebb2da0](https://github.com/EndeavorYen/Rexiano/commit/ebb2da0641a16d09d0fccb92a6f4ff698838f26d)), closes [#250](https://github.com/EndeavorYen/Rexiano/issues/250)
+* omit empty bass staff on melody-only songs ([#231](https://github.com/EndeavorYen/Rexiano/issues/231)) ([cecb15a](https://github.com/EndeavorYen/Rexiano/commit/cecb15aa73bad4b3c8575531fef9b9b2b9490621)), closes [#225](https://github.com/EndeavorYen/Rexiano/issues/225)
+* **practice:** end card only suggests what the live surface can do ([#295](https://github.com/EndeavorYen/Rexiano/issues/295)) ([f4a485b](https://github.com/EndeavorYen/Rexiano/commit/f4a485b49863d343d99c35dd6324f9480f94edaf)), closes [#290](https://github.com/EndeavorYen/Rexiano/issues/290)
+* **practice:** resize falling-notes canvas when the stage changes size ([#281](https://github.com/EndeavorYen/Rexiano/issues/281)) ([f107254](https://github.com/EndeavorYen/Rexiano/commit/f1072544ef63016e4c015fcaf15713b6ffa887d4)), closes [#272](https://github.com/EndeavorYen/Rexiano/issues/272)
+* remove Insights button and dialog from playback ([#259](https://github.com/EndeavorYen/Rexiano/issues/259)) ([61b15f0](https://github.com/EndeavorYen/Rexiano/commit/61b15f08f1eed8c6e089ca07745ff872fe7ea168)), closes [#245](https://github.com/EndeavorYen/Rexiano/issues/245)
+* remove piano-roll editor from the playback live path ([#238](https://github.com/EndeavorYen/Rexiano/issues/238)) ([382184f](https://github.com/EndeavorYen/Rexiano/commit/382184f26feca0bfded90a4e8a76f4149cce7895))
+* remove sheet-only display mode ([#236](https://github.com/EndeavorYen/Rexiano/issues/236)) ([44dc190](https://github.com/EndeavorYen/Rexiano/commit/44dc190c54e9fb267575d28797a6f33e48821689))
+* **sheet-music:** zoom the split sheet system to fit the panel ([#282](https://github.com/EndeavorYen/Rexiano/issues/282)) ([b18c237](https://github.com/EndeavorYen/Rexiano/commit/b18c237f0a37d2f17d4094d986762199cc6dc1b1)), closes [#273](https://github.com/EndeavorYen/Rexiano/issues/273)
+* simplify session start and end to one score card ([#242](https://github.com/EndeavorYen/Rexiano/issues/242)) ([d5a7f38](https://github.com/EndeavorYen/Rexiano/commit/d5a7f38cf44b16ae3593778eb2a9e4acc984f3d2))
+* skip count-in hang and bind MIDI reads to grant inodes ([#219](https://github.com/EndeavorYen/Rexiano/issues/219)) ([236d575](https://github.com/EndeavorYen/Rexiano/commit/236d575731daa8adffb17d9c407e2479dd0c4844))
+* type VexFlow in SheetMusicPanel without any suppressions ([#255](https://github.com/EndeavorYen/Rexiano/issues/255)) ([8b308a7](https://github.com/EndeavorYen/Rexiano/commit/8b308a77f2188d99485bb742e7100cf236b2d591))
+* **ui:** centre the Watch / Wait mode picker ([#284](https://github.com/EndeavorYen/Rexiano/issues/284)) ([b939268](https://github.com/EndeavorYen/Rexiano/commit/b9392687c0b3a95f9fd3ceaded366ff134a6b47c)), closes [#276](https://github.com/EndeavorYen/Rexiano/issues/276)
+* **ui:** draw range slider tracks and progress fill ([#283](https://github.com/EndeavorYen/Rexiano/issues/283)) ([f459142](https://github.com/EndeavorYen/Rexiano/commit/f459142732d0d0b7b1239e011f0192aa0b5fe64b)), closes [#274](https://github.com/EndeavorYen/Rexiano/issues/274)
+* **ui:** show settings inline in the playback drawer ([#285](https://github.com/EndeavorYen/Rexiano/issues/285)) ([e9e5b7e](https://github.com/EndeavorYen/Rexiano/commit/e9e5b7e8646286f9f9e1ea2fa32fe6af8979d099)), closes [#275](https://github.com/EndeavorYen/Rexiano/issues/275)
+* **ui:** tidy the home screen and let lesson titles wrap ([#298](https://github.com/EndeavorYen/Rexiano/issues/298)) ([6832fdd](https://github.com/EndeavorYen/Rexiano/commit/6832fdd5ae6f8b65d7bb722b7dc0f8d2f240d75f)), closes [#292](https://github.com/EndeavorYen/Rexiano/issues/292)
+
 ## [1.4.0](https://github.com/EndeavorYen/Rexiano/compare/v1.3.1...v1.4.0) (2026-08-08)
 
 
