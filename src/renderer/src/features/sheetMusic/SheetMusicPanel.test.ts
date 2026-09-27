@@ -3,6 +3,8 @@ import {
   calcMeasureSlotLayout,
   calcMeasureWidths,
   calcSheetRenderWidth,
+  calcSheetPanX,
+  calcSheetScale,
   shouldRenderBassStaff,
 } from "./sheetMusicUtils";
 import { groupNotesIntoStaffVoices } from "./sheetMusicRenderUtils";
@@ -281,5 +283,48 @@ describe("shouldRenderBassStaff", () => {
     ];
 
     expect(shouldRenderBassStaff(measures)).toBe(true);
+  });
+});
+
+describe("calcSheetScale", () => {
+  it("shrinks a grand staff to fit a short split panel", () => {
+    // 216px system in a 168px panel: both staves must stay visible.
+    expect(calcSheetScale(168, 216)).toBeCloseTo(168 / 216);
+  });
+
+  it("grows a single staff up to the max zoom", () => {
+    expect(calcSheetScale(272, 116)).toBe(1.35);
+  });
+
+  it("never shrinks below the min zoom", () => {
+    expect(calcSheetScale(40, 216)).toBe(0.6);
+  });
+
+  it("zooms out further when the measures would overflow the width", () => {
+    expect(calcSheetScale(216, 216, 800, 1000)).toBeCloseTo(0.8);
+  });
+
+  it("keeps dense measures readable instead of zooming out to fit", () => {
+    expect(calcSheetScale(216, 216, 1500, 4400)).toBe(0.6);
+  });
+
+  it("returns 1 for unknown sizes", () => {
+    expect(calcSheetScale(0, 216)).toBe(1);
+    expect(calcSheetScale(168, 0)).toBe(1);
+  });
+});
+
+describe("calcSheetPanX", () => {
+  it("does not pan when the system fits", () => {
+    expect(calcSheetPanX(900, 1200, 1200)).toBe(0);
+  });
+
+  it("keeps the cursor a third in from the left", () => {
+    expect(calcSheetPanX(1500, 3000, 1200)).toBe(1100);
+  });
+
+  it("clamps to the start and the end of the system", () => {
+    expect(calcSheetPanX(100, 3000, 1200)).toBe(0);
+    expect(calcSheetPanX(2990, 3000, 1200)).toBe(1800);
   });
 });

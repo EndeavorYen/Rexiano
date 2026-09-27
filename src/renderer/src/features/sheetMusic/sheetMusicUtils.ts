@@ -174,3 +174,54 @@ export function calcMeasureSlotLayout(
     return layout;
   });
 }
+
+/** Smallest and largest zoom the split sheet panel may apply to a system. */
+export const MIN_SHEET_SCALE = 0.6;
+export const MAX_SHEET_SCALE = 1.35;
+
+/**
+ * Zoom that fits one rendered system into the sheet panel.
+ *
+ * The system is rendered at a fixed logical size. Scaling it keeps both
+ * staves of a grand staff visible in a short panel, and lets a single staff
+ * grow when there is room. `renderWidth` is the logical width the measures
+ * need at that zoom; if it overflows `containerWidth`, zoom out further, but
+ * never below MIN_SHEET_SCALE. Anything still wider is panned with
+ * `calcSheetPanX` instead of scrolled.
+ */
+export function calcSheetScale(
+  panelHeight: number,
+  contentHeight: number,
+  containerWidth?: number,
+  renderWidth?: number,
+): number {
+  if (!(panelHeight > 0) || !(contentHeight > 0)) return 1;
+  let scale = Math.min(
+    MAX_SHEET_SCALE,
+    Math.max(MIN_SHEET_SCALE, panelHeight / contentHeight),
+  );
+  if (
+    containerWidth !== undefined &&
+    renderWidth !== undefined &&
+    containerWidth > 0 &&
+    renderWidth * scale > containerWidth
+  ) {
+    scale = Math.max(MIN_SHEET_SCALE, containerWidth / renderWidth);
+  }
+  return scale;
+}
+
+/**
+ * Horizontal pan (px, >= 0) that keeps the cursor in view when the scaled
+ * system is wider than the panel. The cursor sits about a third in from the
+ * left so the player can read ahead.
+ */
+export function calcSheetPanX(
+  cursorX: number,
+  contentWidth: number,
+  viewportWidth: number,
+): number {
+  const maxPan = contentWidth - viewportWidth;
+  if (!(maxPan > 0)) return 0;
+  return Math.min(maxPan, Math.max(0, cursorX - viewportWidth / 3));
+}

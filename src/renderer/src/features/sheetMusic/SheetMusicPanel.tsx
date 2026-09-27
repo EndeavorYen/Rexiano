@@ -18,6 +18,8 @@ import {
   MIN_MEASURE_WIDTH,
   calcMeasureSlotLayout,
   calcSheetRenderWidth,
+  calcSheetPanX,
+  calcSheetScale,
   shouldRenderBassStaff,
 } from "./sheetMusicUtils";
 import {
@@ -536,21 +538,37 @@ export function SheetMusicPanel({
     return getMeasureWindow(activeMeasureIndex, notationData.measures.length);
   }, [notationData, activeMeasureIndex]);
 
+  const showBassStaff = notationData
+    ? shouldRenderBassStaff(notationData.measures)
+    : true;
+  const systemHeight = showBassStaff ? SYSTEM_HEIGHT : STAVE_HEIGHT;
+  const totalHeight = systemHeight + TOP_MARGIN * 2 + 16;
+  // Render at a fixed logical size, then zoom so the system fits the panel.
+  const heightScale = calcSheetScale(height, totalHeight);
+  const logicalContainerWidth = containerWidth / heightScale;
+
   const renderWidth = useMemo(() => {
     if (!notationData) {
       return Math.max(
-        containerWidth,
+        logicalContainerWidth,
         LEFT_MARGIN * 2 + MIN_MEASURE_WIDTH * DISPLAY_MEASURE_COUNT,
       );
     }
     return calcSheetRenderWidth(
-      containerWidth,
+      logicalContainerWidth,
       notationData.measures,
       visibleMeasures,
       LEFT_MARGIN,
       DISPLAY_MEASURE_COUNT,
     );
-  }, [containerWidth, notationData, visibleMeasures]);
+  }, [logicalContainerWidth, notationData, visibleMeasures]);
+  const scale = calcSheetScale(
+    height,
+    totalHeight,
+    containerWidth,
+    renderWidth,
+  );
+  const offsetY = Math.max(0, (height - totalHeight * scale) / 2);
   const svgWidth = renderWidth + SVG_BOUNDS_GUARD;
 
   const measureSlotLayout = useMemo(() => {
@@ -563,11 +581,6 @@ export function SheetMusicPanel({
       DISPLAY_MEASURE_COUNT,
     );
   }, [notationData, visibleMeasures, renderWidth]);
-  const showBassStaff = notationData
-    ? shouldRenderBassStaff(notationData.measures)
-    : true;
-  const systemHeight = showBassStaff ? SYSTEM_HEIGHT : STAVE_HEIGHT;
-  const totalHeight = systemHeight + TOP_MARGIN * 2 + 16;
   const activeSlotIndex =
     cursorPosition && visibleMeasures.length > 0
       ? visibleMeasures.indexOf(cursorPosition.measureIndex)
@@ -586,6 +599,11 @@ export function SheetMusicPanel({
   const activeMeasureLeft = activeSlotLayout?.x ?? 0;
   const activeMeasureWidth = activeSlotLayout?.width ?? 0;
   const cursorLeft = activeMeasureLeft + activeMeasureWidth * beatRatio;
+  const panX = calcSheetPanX(
+    cursorLeft * scale,
+    renderWidth * scale,
+    containerWidth,
+  );
 
   useEffect(() => {
     const el = containerRef.current;
@@ -620,7 +638,7 @@ export function SheetMusicPanel({
         const { Renderer } = VF;
         const stage = document.createElement("div");
         const renderer = new Renderer(stage, Renderer.Backends.SVG);
-        renderer.resize(svgWidth, Math.max(totalHeight, height));
+        renderer.resize(svgWidth, totalHeight);
         const context = renderer.getContext();
         const renderedMeasures: RenderedMeasure[] = [];
 
@@ -700,7 +718,6 @@ export function SheetMusicPanel({
     notationData,
     renderWidth,
     svgWidth,
-    height,
     totalHeight,
     visibleMeasures,
     measureSlotLayout,
@@ -725,58 +742,71 @@ export function SheetMusicPanel({
       data-testid="sheet-music-panel"
     >
       <div
-        ref={svgHostRef}
-        className="h-full w-full min-w-0 overflow-x-auto overflow-y-hidden"
-        data-testid="sheet-music-svg-host"
-      />
+        className="absolute left-0 pointer-events-none"
+        style={{
+          top: offsetY,
+          width: renderWidth,
+          height: totalHeight,
+          transform: `translateX(${-panX}px) scale(${scale})`,
+          transformOrigin: "0 0",
+          transition: "transform 200ms ease-out",
+        }}
+        data-testid="sheet-music-scaled-system"
+      >
+        <div
+          ref={svgHostRef}
+          className="h-full w-full"
+          data-testid="sheet-music-svg-host"
+        />
 
-      {activeSlotIndex >= 0 && cursorPosition && (
-        <>
-          <div
-            className="absolute pointer-events-none"
-            style={{
-              left: activeMeasureLeft,
-              width: activeMeasureWidth,
-              top: TOP_MARGIN,
-              height: systemHeight,
-              background: "rgba(30, 110, 114, 0.06)",
-              borderRadius: 3,
-              transition: "left 120ms ease-out, width 120ms ease-out",
-            }}
-            data-testid="sheet-active-measure-overlay"
-          />
-          <div
-            className="absolute pointer-events-none"
-            style={{
-              left: cursorLeft,
-              width: 2,
-              top: TOP_MARGIN + 4,
-              height: systemHeight - 8,
-              background:
-                "linear-gradient(180deg, rgba(30, 110, 114, 0.75), rgba(30, 110, 114, 0.4))",
-              borderRadius: 999,
-              boxShadow: "0 0 8px rgba(30, 110, 114, 0.3)",
-              transform: "translateX(-1px)",
-              transition: "left 120ms linear",
-            }}
-            data-testid="sheet-cursor-line"
-          />
-          <div
-            className="absolute pointer-events-none"
-            style={{
-              left: cursorLeft - 4,
-              top: TOP_MARGIN + 32,
-              width: 8,
-              height: 8,
-              borderRadius: "999px",
-              background: "rgba(30, 110, 114, 0.92)",
-              boxShadow: "0 0 10px rgba(30, 110, 114, 0.35)",
-              transition: "left 120ms linear",
-            }}
-            data-testid="sheet-cursor-dot"
-          />
-        </>
-      )}
+        {activeSlotIndex >= 0 && cursorPosition && (
+          <>
+            <div
+              className="absolute pointer-events-none"
+              style={{
+                left: activeMeasureLeft,
+                width: activeMeasureWidth,
+                top: TOP_MARGIN,
+                height: systemHeight,
+                background: "rgba(30, 110, 114, 0.06)",
+                borderRadius: 3,
+                transition: "left 120ms ease-out, width 120ms ease-out",
+              }}
+              data-testid="sheet-active-measure-overlay"
+            />
+            <div
+              className="absolute pointer-events-none"
+              style={{
+                left: cursorLeft,
+                width: 2,
+                top: TOP_MARGIN + 4,
+                height: systemHeight - 8,
+                background:
+                  "linear-gradient(180deg, rgba(30, 110, 114, 0.75), rgba(30, 110, 114, 0.4))",
+                borderRadius: 999,
+                boxShadow: "0 0 8px rgba(30, 110, 114, 0.3)",
+                transform: "translateX(-1px)",
+                transition: "left 120ms linear",
+              }}
+              data-testid="sheet-cursor-line"
+            />
+            <div
+              className="absolute pointer-events-none"
+              style={{
+                left: cursorLeft - 4,
+                top: TOP_MARGIN + 32,
+                width: 8,
+                height: 8,
+                borderRadius: "999px",
+                background: "rgba(30, 110, 114, 0.92)",
+                boxShadow: "0 0 10px rgba(30, 110, 114, 0.35)",
+                transition: "left 120ms linear",
+              }}
+              data-testid="sheet-cursor-dot"
+            />
+          </>
+        )}
+      </div>
 
       {!notationData && (
         <div

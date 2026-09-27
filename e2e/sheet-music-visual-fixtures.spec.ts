@@ -94,7 +94,11 @@ async function readSheetSvgStats(
 
     const width = Number(svg.getAttribute("width") ?? 0);
     const height = Number(svg.getAttribute("height") ?? 0);
-    const hostClientWidth = host?.clientWidth ?? 0;
+    // The SVG host is zoomed and panned inside the panel; the panel is the
+    // visible viewport.
+    const hostClientWidth =
+      document.querySelector("[data-testid='sheet-music-panel']")
+        ?.clientWidth ?? 0;
     const nodes = svg.querySelectorAll(
       "path,rect,ellipse,circle,line,polygon,polyline,text",
     );
