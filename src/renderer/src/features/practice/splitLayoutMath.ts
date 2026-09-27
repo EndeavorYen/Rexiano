@@ -2,7 +2,6 @@ import type { TrackPracticePreferences } from "./songPracticeSetup";
 
 export const HEADER_ESTIMATED_HEIGHT = 112;
 export const TRANSPORT_ESTIMATED_HEIGHT = 84;
-export const TOOLBAR_ESTIMATED_HEIGHT = 72;
 export const CHROME_VERTICAL_PADDING = 34;
 export const SPLIT_SHEET_MIN = 168;
 export const SPLIT_SHEET_MAX = 272;
@@ -52,8 +51,8 @@ export function calculateSplitLayoutDimensions({
   const keyboardHeight = isSplitMode ? 84 : isNarrowViewport ? 72 : 100;
   const reservedChromeHeight =
     HEADER_ESTIMATED_HEIGHT +
+    // One control bar since #289; the practice toolbar row is gone.
     TRANSPORT_ESTIMATED_HEIGHT +
-    TOOLBAR_ESTIMATED_HEIGHT +
     keyboardHeight +
     CHROME_VERTICAL_PADDING;
   const estimatedWorkspaceHeight = Math.max(

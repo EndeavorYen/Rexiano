@@ -289,7 +289,6 @@ export interface TranslationMap {
   "practice.trackColor": string;
   "practice.sound": string;
   "practice.visible": string;
-  "practice.fixSong": string;
   "practice.confirmExitPlaying": string;
   "practice.accuracy": string;
   "practice.combo": string;
@@ -297,9 +296,6 @@ export interface TranslationMap {
   "practice.setA": string;
   "practice.setB": string;
   "practice.clearLoop": string;
-  "practice.more": string;
-  "practice.showAdvanced": string;
-  "practice.hideAdvanced": string;
   "practice.loopSection": string;
   "practice.setALabel": string;
   "practice.setBLabel": string;
@@ -393,8 +389,6 @@ export interface TranslationMap {
   "settings.shortcut.loopA": string;
   "settings.shortcut.loopB": string;
   "settings.shortcut.closeBack": string;
-  "settings.basicMode": string;
-  "settings.advancedMode": string;
   "settings.searchTabs": string;
   "settings.searchTabsAria": string;
   "settings.noMatchingTab": string;

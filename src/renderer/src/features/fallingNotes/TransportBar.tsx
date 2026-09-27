@@ -11,6 +11,8 @@ import {
 import { usePlaybackStore } from "@renderer/stores/usePlaybackStore";
 import { useSongStore } from "@renderer/stores/useSongStore";
 import { VolumeControl } from "@renderer/features/audio/VolumeControl";
+import { PracticeModeSelector } from "@renderer/features/practice/PracticeModeSelector";
+import { SpeedSlider } from "@renderer/features/practice/SpeedSlider";
 import { getAudioStatusGuidance } from "@renderer/features/audio/audioStatusGuidance";
 import { useTranslation } from "@renderer/i18n/useTranslation";
 import {
@@ -79,7 +81,6 @@ export function TransportBar({
   const song = useSongStore((s) => s.song);
   const currentTime = usePlaybackStore((s) => s.currentTime);
   const isPlaying = usePlaybackStore((s) => s.isPlaying);
-  const volume = usePlaybackStore((s) => s.volume);
   const setPlaying = usePlaybackStore((s) => s.setPlaying);
   const audioStatus = usePlaybackStore((s) => s.audioStatus);
   const audioRecoveryState = usePlaybackStore((s) => s.audioRecoveryState);
@@ -92,7 +93,6 @@ export function TransportBar({
   );
   const requestAudioRecovery = usePlaybackStore((s) => s.requestAudioRecovery);
   const duration = song?.duration ?? 0;
-  const volumePercent = Math.round(volume * 100);
   const audioGuidance = getAudioStatusGuidance(
     {
       audioStatus,
@@ -123,12 +123,12 @@ export function TransportBar({
       }`}
       data-testid="transport-strip"
     >
+      {/* One bar (#289): play · seek · Watch/Wait · speed · volume. Below
+          lg the seek row drops under the controls. */}
       <div
-        className={`grid ${
-          controlVisibility.showVolumeControls
-            ? "lg:grid-cols-[auto_1fr_auto]"
-            : "lg:grid-cols-[auto_1fr]"
-        } lg:items-center ${compact ? "gap-1.5 lg:gap-2.5" : "gap-2 lg:gap-3"}`}
+        className={`flex flex-wrap items-center ${
+          compact ? "gap-1.5 lg:gap-2.5" : "gap-2 lg:gap-3"
+        }`}
       >
         <div
           className={`flex items-center gap-2 overflow-x-auto lg:overflow-visible rounded-xl ${
@@ -265,7 +265,7 @@ export function TransportBar({
         </div>
 
         <div
-          className={`flex items-center min-w-0 lg:min-w-[280px] rounded-xl px-2 ${
+          className={`order-last flex basis-full items-center min-w-0 rounded-xl px-2 lg:order-none lg:basis-0 lg:flex-1 lg:min-w-[220px] ${
             compact ? "gap-2 py-0.5" : "gap-3 py-1"
           }`}
           style={{
@@ -317,9 +317,17 @@ export function TransportBar({
           </span>
         </div>
 
+        <div
+          className="flex shrink-0 flex-wrap items-center gap-2"
+          data-testid="transport-practice-controls"
+        >
+          <PracticeModeSelector />
+          <SpeedSlider />
+        </div>
+
         {controlVisibility.showVolumeControls && (
           <div
-            className={`flex items-center justify-end rounded-xl px-1.5 ${
+            className={`ml-auto flex items-center justify-end rounded-xl px-1.5 ${
               compact ? "gap-2 py-1" : "gap-2.5 py-1.5"
             }`}
             style={{
@@ -328,16 +336,6 @@ export function TransportBar({
               border: "1px solid var(--color-border)",
             }}
           >
-            <span
-              className="control-chip font-mono tabular-nums"
-              style={{
-                color: "var(--color-text-muted)",
-              }}
-              data-testid="transport-volume-percent"
-            >
-              {volumePercent}%
-            </span>
-
             <VolumeControl />
           </div>
         )}

@@ -15,7 +15,6 @@ const LIVE_PATH_FILES = [
   "features/practice/PracticeModeSelector.tsx",
   "features/practice/ModeSelectionModal.tsx",
   "features/practice/SpeedSlider.tsx",
-  "features/practice/PracticeToolbar.tsx",
   "features/practice/CelebrationOverlay.tsx",
   "features/practice/modeSelectionOptions.ts",
   "features/fallingNotes/TransportBar.tsx",

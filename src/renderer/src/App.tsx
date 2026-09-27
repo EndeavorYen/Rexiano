@@ -11,7 +11,6 @@ import { SettingsPanel } from "./features/settings/SettingsPanel";
 import { SongLibrary } from "./features/songLibrary/SongLibrary";
 import { BluetoothDeviceSelectionDialog } from "./features/midiDevice/BluetoothDeviceSelectionDialog";
 import { usePracticeLifecycle } from "./features/practice/usePracticeLifecycle";
-import { PracticeToolbar } from "./features/practice/PracticeToolbar";
 import { useKeyboardShortcuts } from "./hooks/useKeyboardShortcuts";
 import { useTranslation } from "./i18n/useTranslation";
 import { SheetMusicPanel } from "./features/sheetMusic/SheetMusicPanel";
@@ -536,7 +535,6 @@ function App(): React.JSX.Element {
           </div>
 
           <TransportBar compact={compactPlaybackChrome} />
-          <PracticeToolbar compact={compactPlaybackChrome} />
 
           <PianoKeyboard
             activeNotes={activeNotes}
