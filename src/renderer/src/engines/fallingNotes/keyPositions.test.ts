@@ -1,5 +1,11 @@
 import { describe, it, expect } from "vitest";
-import { buildKeyPositions, type KeyPosition } from "./keyPositions";
+import {
+  buildKeyPositions,
+  computeKeyRange,
+  FULL_KEY_RANGE,
+  isBlackKey,
+  type KeyPosition,
+} from "./keyPositions";
 
 const FIRST_NOTE = 21; // A0
 const LAST_NOTE = 108; // C8
@@ -118,5 +124,51 @@ describe("buildKeyPositions", () => {
       // Spot-check: last key ends at canvas width
       expect(pos.get(108)!.x + pos.get(108)!.width).toBeCloseTo(width, 10);
     }
+  });
+});
+
+describe("computeKeyRange", () => {
+  it("returns the full keyboard when there are no notes", () => {
+    expect(computeKeyRange([])).toEqual(FULL_KEY_RANGE);
+  });
+
+  it("grows a one-octave song to three whole octaves around it", () => {
+    // Hot Cross Buns: E4 D4 C4 (64, 62, 60)
+    expect(computeKeyRange([64, 62, 60])).toEqual({ first: 48, last: 83 });
+  });
+
+  it("keeps a wide song's own octaves", () => {
+    // G2 .. E6 spans five octaves already
+    expect(computeKeyRange([43, 88])).toEqual({ first: 36, last: 95 });
+  });
+
+  it("always starts and ends on a white key", () => {
+    for (const notes of [[61], [22, 30], [70, 106], [49, 51, 54]]) {
+      const range = computeKeyRange(notes);
+      expect(isBlackKey(range.first)).toBe(false);
+      expect(isBlackKey(range.last)).toBe(false);
+      expect(range.first).toBeLessThanOrEqual(Math.min(...notes));
+      expect(range.last).toBeGreaterThanOrEqual(Math.max(...notes));
+    }
+  });
+
+  it("clamps to the 88 keys at both ends", () => {
+    expect(computeKeyRange([21, 23]).first).toBe(21);
+    expect(computeKeyRange([106, 108]).last).toBe(108);
+    expect(
+      computeKeyRange([106, 108]).last - computeKeyRange([106, 108]).first + 1,
+    ).toBeGreaterThanOrEqual(36);
+  });
+});
+
+describe("buildKeyPositions with a range", () => {
+  it("spreads only the ranged keys across the width", () => {
+    const range = { first: 48, last: 83 }; // C3..B5, 21 white keys
+    const pos = buildKeyPositions(2100, range);
+    expect(pos.get(48)).toEqual({ x: 0, width: 100 });
+    expect(pos.get(83)!.x + pos.get(83)!.width).toBeCloseTo(2100, 10);
+    expect(pos.has(47)).toBe(false);
+    expect(pos.has(84)).toBe(false);
+    expect(pos.size).toBe(36);
   });
 });

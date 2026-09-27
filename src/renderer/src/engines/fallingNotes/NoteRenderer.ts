@@ -6,7 +6,13 @@
 import { Container, Sprite, Text, TextStyle, Texture } from "pixi.js";
 import type { ParsedSong, ParsedNote } from "@renderer/engines/midi/types";
 import type { TrackHandAssignment } from "@renderer/engines/midi/TrackHandAssignment";
-import { buildKeyPositions, type KeyPosition } from "./keyPositions";
+import {
+  buildKeyPositions,
+  FULL_KEY_RANGE,
+  isBlackKey,
+  type KeyPosition,
+  type KeyRange,
+} from "./keyPositions";
 import { getTrackColor } from "./noteColors";
 import {
   noteToScreenY,
@@ -29,6 +35,19 @@ const INITIAL_POOL_SIZE = 512;
 
 /** Minimum note rectangle height (px) to show a label inside it. */
 const MIN_HEIGHT_FOR_LABEL = 16;
+
+/** Approximate px per label character at the 12px label font size. */
+const LABEL_CHAR_WIDTH = 7.5;
+
+/**
+ * Whether a note's name label ("E5", "D#5") fits inside a note of this width
+ * without clipping. Checked without building the string: this runs per note
+ * per frame.
+ */
+export function labelFitsWidth(midi: number, noteWidth: number): boolean {
+  const chars = isBlackKey(midi) ? 3 : 2;
+  return noteWidth >= chars * LABEL_CHAR_WIDTH + 4;
+}
 
 /** Minimum note height (px) at which we show the fingering label */
 const MIN_HEIGHT_FOR_FINGERING = 14;
@@ -134,6 +153,8 @@ export class NoteRenderer {
   private lastVisibleNoteCount = 0;
   private poolGrowthCount = 0;
   private keyPositions = new Map<number, KeyPosition>();
+  private keyRange: KeyRange = FULL_KEY_RANGE;
+  private canvasWidth = 0;
   private noteTexture: Texture = Texture.EMPTY;
 
   /** Tracks in-flight rAF animation handles per sprite to cancel on recycle */
@@ -177,7 +198,8 @@ export class NoteRenderer {
    * @param canvasWidth Canvas pixel width, used to compute key positions
    */
   init(canvasWidth: number): void {
-    this.keyPositions = buildKeyPositions(canvasWidth);
+    this.canvasWidth = canvasWidth;
+    this.keyPositions = buildKeyPositions(canvasWidth, this.keyRange);
     this.noteTexture = Texture.WHITE;
 
     for (let i = 0; i < INITIAL_POOL_SIZE; i++) {
@@ -196,7 +218,22 @@ export class NoteRenderer {
    * @param canvasWidth New canvas pixel width
    */
   resize(canvasWidth: number): void {
-    this.keyPositions = buildKeyPositions(canvasWidth);
+    this.canvasWidth = canvasWidth;
+    this.keyPositions = buildKeyPositions(canvasWidth, this.keyRange);
+  }
+
+  /**
+   * Show only `range` across the canvas width. Must match the range given to
+   * `PianoKeyboard` so notes land on their keys. Notes outside it are skipped.
+   */
+  setKeyRange(range: KeyRange): void {
+    if (
+      range.first === this.keyRange.first &&
+      range.last === this.keyRange.last
+    )
+      return;
+    this.keyRange = range;
+    this.keyPositions = buildKeyPositions(this.canvasWidth, range);
   }
 
   setTrackDisplayPreferences(preferences: TrackDisplayPreferences): void {
@@ -274,6 +311,7 @@ export class NoteRenderer {
         if (
           this.showNoteLabels &&
           h >= MIN_HEIGHT_FOR_LABEL &&
+          labelFitsWidth(note.midi, kp.width) &&
           shownLabelCount < maxVisibleLabels
         ) {
           let label = this._spriteLabels.get(sprite);

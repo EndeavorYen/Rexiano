@@ -1,4 +1,8 @@
 import { useMemo } from "react";
+import {
+  FULL_KEY_RANGE,
+  type KeyRange,
+} from "@renderer/engines/fallingNotes/keyPositions";
 
 /** MIDI range for a standard 88-key piano: A0 (21) to C8 (108) */
 const FIRST_NOTE = 21;
@@ -80,12 +84,12 @@ interface Layout {
   whiteKeyCount: number;
 }
 
-function buildLayout(): Layout {
+function buildLayout(range: KeyRange): Layout {
   const whiteKeys: WhiteKeyInfo[] = [];
   const blackKeys: BlackKeyInfo[] = [];
   let whiteIndex = 0;
 
-  for (let midi = FIRST_NOTE; midi <= LAST_NOTE; midi++) {
+  for (let midi = range.first; midi <= range.last; midi++) {
     const noteInOctave = midi % 12;
     if (IS_BLACK_NOTE[noteInOctave]) {
       blackKeys.push({ midi, leftWhiteIndex: whiteIndex - 1 });
@@ -112,6 +116,8 @@ interface PianoKeyboardProps {
   showLabels?: boolean;
   /** Show simplified key names to reduce crowding on narrow layouts */
   compactLabels?: boolean;
+  /** Keys to show; must match the falling-notes renderer's range */
+  range?: KeyRange;
 }
 
 /** Returns the CSS animation class for practice mode hit/miss feedback. */
@@ -197,8 +203,9 @@ export function PianoKeyboard({
   height = 120,
   showLabels = true,
   compactLabels = false,
+  range = FULL_KEY_RANGE,
 }: PianoKeyboardProps): React.JSX.Element {
-  const layout = useMemo(() => buildLayout(), []);
+  const layout = useMemo(() => buildLayout(range), [range]);
   const wPct = 100 / layout.whiteKeyCount;
 
   return (
@@ -234,7 +241,10 @@ export function PianoKeyboard({
               <span
                 style={{
                   ...KEY_LABEL_STYLE,
-                  color: "var(--color-text-muted)",
+                  // Keep the name readable on the highlighted key.
+                  ...(songActive || midiActive
+                    ? { color: "var(--color-on-accent)", opacity: 0.95 }
+                    : { color: "var(--color-text-muted)" }),
                 }}
               >
                 {compactLabels
