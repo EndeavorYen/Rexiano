@@ -16,9 +16,9 @@ It is an acceptance list, not a claim that Rexiano already beats Synthesia.
 2. Hit line stays readable at 50% and 100% speed.
 3. Wait pauses on the target note until the correct key; next note does not jump the cursor.
 4. Device connect lives in the drawer and must not cover the hit line while waiting.
+5. Latency of highlight vs Bluetooth key: in-app UI hop is ≤ 1 frame (4–8ms post-delivery); BLE transport overhead documented in docs/performance-diagnostics.md.
 
 ## Still open
 
 - Motion / density vs Synthesia side-by-side recording
-- Latency of highlight vs Bluetooth key
 - Post-session still offers more than one next action

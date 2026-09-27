@@ -8,7 +8,11 @@
 // - Emit parsed events via callback-based pattern
 
 /** Callback for Note On events */
-export type NoteOnCallback = (midi: number, velocity: number) => void;
+export type NoteOnCallback = (
+  midi: number,
+  velocity: number,
+  timestamp?: number,
+) => void;
 
 /** Callback for Note Off events */
 export type NoteOffCallback = (midi: number) => void;
@@ -95,6 +99,8 @@ export class MidiInputParser {
         // Note On with velocity 0 is treated as Note Off
         if (velocity === 0) {
           this._onNoteOff?.(midi);
+        } else if (e.timeStamp !== undefined) {
+          this._onNoteOn?.(midi, velocity, e.timeStamp);
         } else {
           this._onNoteOn?.(midi, velocity);
         }
