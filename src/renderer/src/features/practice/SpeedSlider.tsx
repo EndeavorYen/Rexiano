@@ -1,3 +1,4 @@
+import { rangeProgressStyle } from "@renderer/utils/rangeProgress";
 import { usePracticeStore } from "@renderer/stores/usePracticeStore";
 import { useSongStore } from "@renderer/stores/useSongStore";
 import { useTranslation } from "@renderer/i18n/useTranslation";
@@ -29,6 +30,9 @@ export function SpeedSlider(): React.JSX.Element {
   const setSpeed = usePracticeStore((s) => s.setSpeed);
 
   const speedPercent = Math.round(speed * 100);
+  // The highlighted preset already shows the value; only show the readout
+  // for off-preset speeds.
+  const isPresetSpeed = mainPresets.some((v) => Math.abs(speed - v) < 0.001);
   const applySpeed = (nextSpeed: number): void => {
     applyPracticeSpeedChangeForSong(
       {
@@ -92,18 +96,24 @@ export function SpeedSlider(): React.JSX.Element {
         value={speedPercent}
         onChange={(e) => applySpeed(parseFloat(e.target.value) / 100)}
         className="speed-slider-input shrink-0"
-        style={{ accentColor: "var(--color-accent)", width: 96 }}
+        style={{
+          accentColor: "var(--color-accent)",
+          width: 96,
+          ...rangeProgressStyle(speedPercent, SPEED_MIN, SPEED_MAX),
+        }}
         aria-label={t("practice.playbackSpeedPercentage")}
         data-testid="speed-slider"
       />
 
-      <span
-        className="text-[11px] font-mono tabular-nums shrink-0"
-        style={{ color: "var(--color-text)" }}
-        data-testid="speed-slider-percent"
-      >
-        {formatSpeed(speed)}
-      </span>
+      {!isPresetSpeed && (
+        <span
+          className="text-[11px] font-mono tabular-nums shrink-0"
+          style={{ color: "var(--color-text)" }}
+          data-testid="speed-slider-percent"
+        >
+          {formatSpeed(speed)}
+        </span>
+      )}
     </div>
   );
 }

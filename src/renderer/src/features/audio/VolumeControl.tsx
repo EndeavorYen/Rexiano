@@ -1,3 +1,4 @@
+import { rangeProgressStyle } from "@renderer/utils/rangeProgress";
 import { useCallback, useRef } from "react";
 import { VolumeX, Volume1, Volume2 } from "lucide-react";
 import { usePlaybackStore } from "@renderer/stores/usePlaybackStore";
@@ -71,7 +72,11 @@ export function VolumeControl(): React.JSX.Element {
         value={displayValue}
         onChange={handleVolumeChange}
         className="volume-slider-input"
-        style={{ accentColor: "var(--color-accent)", width: 88 }}
+        style={{
+          accentColor: "var(--color-accent)",
+          width: 88,
+          ...rangeProgressStyle(displayValue, 0, 100),
+        }}
         aria-label={t("transport.volume")}
         title={`${t("transport.volume")}: ${displayValue}%`}
         data-testid="volume-slider"

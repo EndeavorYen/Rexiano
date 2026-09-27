@@ -1,3 +1,4 @@
+import { rangeProgressStyle } from "@renderer/utils/rangeProgress";
 import { useState, useRef, useCallback } from "react";
 import { X, Settings, Volume2, Globe } from "lucide-react";
 import { useSettingsStore } from "@renderer/stores/useSettingsStore";
@@ -205,6 +206,7 @@ export function SettingsPanel({
                         value={muted ? 0 : volume}
                         onChange={(e) => setVolume(Number(e.target.value))}
                         className="w-full"
+                        style={rangeProgressStyle(muted ? 0 : volume, 0, 100)}
                         disabled={muted}
                         data-testid="volume-slider"
                       />

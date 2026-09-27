@@ -511,17 +511,25 @@ input[type="range"] {
   padding: 0;
 }
 
-input[type="range"]::-webkit-slider-track {
+/* Chromium only styles ::-webkit-slider-runnable-track. The played part is
+   filled from --range-progress, set inline by each slider. */
+input[type="range"]::-webkit-slider-runnable-track {
   height: 6px;
   border-radius: 999px;
-  background: color-mix(in srgb, var(--color-border) 90%, var(--color-surface));
+  background: linear-gradient(
+    to right,
+    var(--color-accent) 0,
+    var(--color-accent) var(--range-progress, 0%),
+    color-mix(in srgb, var(--color-border) 90%, var(--color-surface))
+      var(--range-progress, 0%)
+  );
   box-shadow: inset 0 0 0 1px
     color-mix(in srgb, var(--color-border) 72%, transparent);
   transition: background 0.15s ease;
 }
 
-input[type="range"]:hover::-webkit-slider-track {
-  background: color-mix(in srgb, var(--color-accent) 24%, var(--color-border));
+input[type="range"]:disabled::-webkit-slider-runnable-track {
+  opacity: 0.5;
 }
 
 input[type="range"]::-webkit-slider-thumb {
@@ -572,6 +580,12 @@ input[type="range"]::-moz-range-thumb {
   box-shadow:
     0 1px 3px rgba(0, 0, 0, 0.2),
     0 0 0 1px color-mix(in srgb, var(--color-accent) 22%, transparent);
+}
+
+input[type="range"]::-moz-range-progress {
+  height: 6px;
+  border-radius: 999px;
+  background: var(--color-accent);
 }
 
 input[type="range"]:disabled::-moz-range-thumb {
