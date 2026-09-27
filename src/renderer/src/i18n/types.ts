@@ -29,7 +29,6 @@ export interface TranslationMap {
   "app.importRecoveryActionsLabel": string;
   "app.startPractice": string;
   "app.openSettings": string;
-  "app.menuGreeting": string;
   "onboarding.dialogLabel": string;
   "onboarding.step.start.title": string;
   "onboarding.step.start.description": string;
@@ -142,7 +141,6 @@ export interface TranslationMap {
   "library.tag.scale": string;
   "library.noSongsYet": string;
   "library.noSongsHint": string;
-  "library.emptyRecentHint": string;
   "library.noMatchSearch": string;
   "library.noMatchHint": string;
   "library.difficultyDescription.beginner": string;

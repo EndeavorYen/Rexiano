@@ -32,7 +32,6 @@ export const zhTW: TranslationMap = {
   "app.importRecoveryActionsLabel": "匯入復原操作",
   "app.startPractice": "開始彈琴",
   "app.openSettings": "設定",
-  "app.menuGreeting": "今天要彈什麼呢？",
   "onboarding.dialogLabel": "歡迎導覽",
   "onboarding.step.start.title": "開始彈琴",
   "onboarding.step.start.description":
@@ -150,7 +149,6 @@ export const zhTW: TranslationMap = {
   "library.tag.scale": "音階",
   "library.noSongsYet": "還沒有曲子",
   "library.noSongsHint": "匯入樂譜或 MIDI 開始練習吧！",
-  "library.emptyRecentHint": "從曲庫選一首內建曲子開始吧！",
   "library.noMatchSearch": "沒有符合搜尋的曲子",
   "library.noMatchHint": "試試其他關鍵字或清除篩選",
   "library.difficultyDescription.beginner": "簡單旋律、單手、慢速",

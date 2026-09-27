@@ -122,9 +122,10 @@ export function LessonProgressionSection({
                 }}
                 data-testid={`lesson-group-${group.id}`}
               >
-                <div className="flex items-center justify-between gap-2">
+                <div className="flex items-start justify-between gap-2">
+                  {/* Wrap instead of truncating: "Right-hand mel…" (#292) */}
                   <span
-                    className="truncate text-xs font-body font-semibold"
+                    className="min-w-0 text-xs font-body font-semibold leading-snug"
                     style={{ color: "var(--color-text)" }}
                   >
                     {t(group.titleKey)}

@@ -33,7 +33,6 @@ export const en: TranslationMap = {
   "app.importRecoveryActionsLabel": "Import recovery actions",
   "app.startPractice": "Start Playing",
   "app.openSettings": "Settings",
-  "app.menuGreeting": "What shall we play today?",
   "onboarding.dialogLabel": "Welcome guide",
   "onboarding.step.start.title": "Start Playing",
   "onboarding.step.start.description":
@@ -152,7 +151,6 @@ export const en: TranslationMap = {
   "library.tag.scale": "Scale",
   "library.noSongsYet": "No songs here yet",
   "library.noSongsHint": "Import a score or MIDI file below to get started!",
-  "library.emptyRecentHint": "Pick a song from the library to get started!",
   "library.noMatchSearch": "No songs match your search",
   "library.noMatchHint": "Try a different keyword or clear the filter",
   "library.difficultyDescription.beginner":
