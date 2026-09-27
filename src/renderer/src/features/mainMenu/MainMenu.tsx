@@ -11,8 +11,6 @@ import {
 import appIcon from "../../../../../docs/figure/Rexiano_icon.png";
 import { useTranslation } from "@renderer/i18n/useTranslation";
 import { useProgressStore } from "@renderer/stores/useProgressStore";
-import { useSettingsStore } from "@renderer/stores/useSettingsStore";
-import { LanguageSwitcher } from "@renderer/features/settings/LanguageSwitcher";
 import { formatRelativeTime } from "@renderer/utils/relativeTime";
 import type { RecentFile } from "@shared/types";
 
@@ -35,20 +33,14 @@ export function MainMenu({
   const sessions = useProgressStore((s) => s.sessions);
   const isProgressLoaded = useProgressStore((s) => s.isLoaded);
   const loadSessions = useProgressStore((s) => s.loadSessions);
-  const defaultMode = useSettingsStore((s) => s.defaultMode);
-  const defaultSpeed = useSettingsStore((s) => s.defaultSpeed);
   const recentFiles = allRecents.slice(0, 5);
+  const hasRecents = recentFiles.length > 0 && !!onSelectRecent;
 
   useEffect(() => {
     if (!isProgressLoaded) {
       void loadSessions();
     }
   }, [isProgressLoaded, loadSessions]);
-
-  const defaultModeLabel = useMemo(() => {
-    if (defaultMode === "wait") return t("practice.wait");
-    return t("practice.watch");
-  }, [defaultMode, t]);
 
   const greeting = useMemo(() => {
     const hour = new Date().getHours();
@@ -63,8 +55,13 @@ export function MainMenu({
   return (
     <div className="flex-1 min-h-0 app-shell overflow-y-auto px-6 py-8">
       <div className="mx-auto h-full w-full max-w-6xl flex items-center">
-        <div className="surface-panel subtle-shadow-md w-full p-6 sm:p-8 lg:p-10 animate-page-enter">
-          <div className="grid gap-6 lg:grid-cols-[1.2fr_0.9fr]">
+        <div
+          className={`surface-panel subtle-shadow-md w-full p-6 sm:p-8 lg:p-10 animate-page-enter ${hasRecents ? "" : "mx-auto max-w-2xl"}`}
+        >
+          {/* The recents column only appears once there is something in it. */}
+          <div
+            className={`grid gap-6 ${hasRecents ? "lg:grid-cols-[1.2fr_0.9fr]" : ""}`}
+          >
             <section className="space-y-6">
               <span className="kicker-label">{t("app.subtitle")}</span>
 
@@ -90,13 +87,6 @@ export function MainMenu({
                   </p>
                 </div>
               </div>
-
-              <p
-                className="text-sm sm:text-base max-w-lg"
-                style={{ color: "var(--color-text-muted)" }}
-              >
-                {t("app.menuGreeting")}
-              </p>
 
               <div className="flex flex-wrap gap-2.5">
                 <MetaPill
@@ -142,40 +132,20 @@ export function MainMenu({
                   <SlidersHorizontal size={16} />
                   {t("app.openSettings")}
                 </button>
-                <LanguageSwitcher compact />
-              </div>
-
-              <div
-                className="inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-body"
-                style={{
-                  color: "var(--color-text-muted)",
-                  background:
-                    "color-mix(in srgb, var(--color-surface-alt) 70%, var(--color-surface))",
-                  border: "1px solid var(--color-border)",
-                }}
-                data-testid="main-menu-last-used-summary"
-              >
-                <Clock3 size={12} />
-                <span>
-                  {t("settings.defaultMode")}: {defaultModeLabel}
-                </span>
-                <span className="font-mono tabular-nums">
-                  {Math.round(defaultSpeed * 100)}%
-                </span>
               </div>
             </section>
 
-            <div className="space-y-4">
-              <aside className="surface-elevated p-4 sm:p-5 space-y-3">
-                <div
-                  className="flex items-center gap-2 text-[11px] font-mono uppercase tracking-[0.16em]"
-                  style={{ color: "var(--color-text-muted)" }}
-                >
-                  <Clock3 size={13} />
-                  {t("library.recentlyPlayed")}
-                </div>
+            {hasRecents && (
+              <div className="space-y-4">
+                <aside className="surface-elevated p-4 sm:p-5 space-y-3">
+                  <div
+                    className="flex items-center gap-2 text-[11px] font-mono uppercase tracking-[0.16em]"
+                    style={{ color: "var(--color-text-muted)" }}
+                  >
+                    <Clock3 size={13} />
+                    {t("library.recentlyPlayed")}
+                  </div>
 
-                {recentFiles.length > 0 && onSelectRecent ? (
                   <div className="space-y-2.5">
                     {recentFiles.map((file, idx) => (
                       <button
@@ -208,24 +178,9 @@ export function MainMenu({
                       </button>
                     ))}
                   </div>
-                ) : (
-                  <button
-                    type="button"
-                    onClick={onStartPractice}
-                    className="rounded-lg px-3.5 py-4 text-sm text-left w-full cursor-pointer"
-                    style={{
-                      color: "var(--color-text-muted)",
-                      background:
-                        "color-mix(in srgb, var(--color-surface) 74%, transparent)",
-                      border: "1px dashed var(--color-border)",
-                    }}
-                    data-testid="main-menu-empty-recent"
-                  >
-                    {t("library.emptyRecentHint")}
-                  </button>
-                )}
-              </aside>
-            </div>
+                </aside>
+              </div>
+            )}
           </div>
         </div>
       </div>
