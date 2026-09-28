@@ -169,6 +169,8 @@ jobs:
     name: Build and verify Windows
     needs: [resolve-release-ref, preflight]
     runs-on: windows-latest
+    outputs:
+      signing: ${{ steps.win-signing.outputs.mode }}
     steps:
       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
         with:
@@ -195,23 +197,32 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Require Windows signing credentials
+      # Published releases are unsigned by owner decision (issue #187 stays
+      # open). No secrets -> unsigned build; both secrets -> signed and
+      # verified; only one secret is a misconfiguration and fails.
+      - name: Resolve Windows signing mode
+        id: win-signing
         shell: pwsh
         env:
           WIN_CSC_LINK: ${{ secrets.WINDOWS_CSC_LINK }}
           WIN_CSC_KEY_PASSWORD: ${{ secrets.WINDOWS_CSC_KEY_PASSWORD }}
         run: |
-          if (
-            [string]::IsNullOrWhiteSpace($env:WIN_CSC_LINK) -or
-            [string]::IsNullOrWhiteSpace($env:WIN_CSC_KEY_PASSWORD)
-          ) {
-            throw "Official Windows releases require both signing secrets."
+          $hasLink = -not [string]::IsNullOrWhiteSpace($env:WIN_CSC_LINK)
+          $hasPassword = -not [string]::IsNullOrWhiteSpace($env:WIN_CSC_KEY_PASSWORD)
+          if ($hasLink -and $hasPassword) {
+            "mode=signed" >> $env:GITHUB_OUTPUT
+          } elseif (-not $hasLink -and -not $hasPassword) {
+            Write-Host "No Windows signing secrets; packaging unsigned artifacts."
+            "mode=unsigned" >> $env:GITHUB_OUTPUT
+          } else {
+            throw "Windows signing secrets are incomplete; set both or neither."
           }
 
       - name: Build application
         run: pnpm build
 
       - name: Package signed Windows artifacts
+        if: steps.win-signing.outputs.mode == 'signed'
         shell: pwsh
         env:
           WIN_CSC_LINK: ${{ secrets.WINDOWS_CSC_LINK }}
@@ -219,8 +230,17 @@ jobs:
           CSC_IDENTITY_AUTO_DISCOVERY: "true"
         run: pnpm exec electron-builder --win -c.forceCodeSigning=true --publish never
 
+      - name: Package unsigned Windows artifacts
+        if: steps.win-signing.outputs.mode == 'unsigned'
+        shell: pwsh
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: "false"
+        run: pnpm exec electron-builder --win --publish never
+
       - name: Verify Windows artifact inventory and signatures
         shell: pwsh
+        env:
+          SIGNING_MODE: ${{ steps.win-signing.outputs.mode }}
         run: |
           $version = (Get-Content package.json -Raw | ConvertFrom-Json).version
           $expectedNames = @(
@@ -238,6 +258,10 @@ jobs:
           )
           if ($difference.Count -ne 0) {
             throw "Windows artifact inventory differs from the required setup, portable, and zip files."
+          }
+          if ($env:SIGNING_MODE -ne "signed") {
+            Write-Host "Unsigned release: inventory verified, signature checks skipped."
+            exit 0
           }
 
           $signToolCommand = Get-Command signtool.exe -ErrorAction SilentlyContinue
@@ -298,6 +322,8 @@ jobs:
     name: Build and verify macOS
     needs: [resolve-release-ref, preflight]
     runs-on: macos-latest
+    outputs:
+      signing: ${{ steps.mac-package.outputs.mode }}
     steps:
       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
         with:
@@ -325,7 +351,8 @@ jobs:
       - name: Build application
         run: pnpm build
 
-      - name: Package signed and notarized macOS artifacts
+      - name: Package macOS artifacts
+        id: mac-package
         shell: bash
         env:
           CSC_LINK: ${{ secrets.MACOS_CSC_LINK }}
@@ -343,10 +370,6 @@ jobs:
           certificate_count=0
           [[ -n "$CSC_LINK" ]] && certificate_count=$((certificate_count + 1))
           [[ -n "$CSC_KEY_PASSWORD" ]] && certificate_count=$((certificate_count + 1))
-          if [[ "$certificate_count" -ne 2 ]]; then
-            echo "Official macOS releases require both certificate secrets." >&2
-            exit 1
-          fi
 
           api_count=0
           [[ -n "$APPLE_API_KEY_BASE64" ]] && api_count=$((api_count + 1))
@@ -357,6 +380,20 @@ jobs:
           [[ -n "$APPLE_APP_SPECIFIC_PASSWORD" ]] && apple_id_count=$((apple_id_count + 1))
           [[ -n "$APPLE_TEAM_ID" ]] && apple_id_count=$((apple_id_count + 1))
 
+          # Published releases are unsigned by owner decision (issue #187
+          # stays open). No macOS secret at all -> unsigned DMGs; any secret
+          # set -> the full signed and notarized path, which fails if incomplete.
+          if [[ "$certificate_count" -eq 0 && "$api_count" -eq 0 && "$apple_id_count" -eq 0 ]]; then
+            echo "No macOS signing secrets; packaging unsigned DMGs."
+            echo "mode=unsigned" >> "$GITHUB_OUTPUT"
+            export CSC_IDENTITY_AUTO_DISCOVERY=false
+            pnpm exec electron-builder --mac -c.mac.identity=null --publish never
+            exit 0
+          fi
+          if [[ "$certificate_count" -ne 2 ]]; then
+            echo "Signed macOS releases require both certificate secrets." >&2
+            exit 1
+          fi
           if [[ "$api_count" -ne 0 && "$api_count" -ne 3 ]] ||
             [[ "$apple_id_count" -ne 0 && "$apple_id_count" -ne 3 ]]; then
             echo "Notarization sets must be complete." >&2
@@ -393,11 +430,13 @@ jobs:
 
           export CSC_IDENTITY_AUTO_DISCOVERY=true
           pnpm exec electron-builder --mac -c.forceCodeSigning=true -c.mac.notarize=true --publish never
+          echo "mode=signed" >> "$GITHUB_OUTPUT"
 
       - name: Verify macOS artifact inventory, signatures, and notarization
         shell: bash
         env:
           EXPECTED_APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          SIGNING_MODE: ${{ steps.mac-package.outputs.mode }}
         run: |
           set -euo pipefail
 
@@ -419,6 +458,10 @@ jobs:
               exit 1
             fi
           done
+          if [[ "$SIGNING_MODE" != "signed" ]]; then
+            echo "Unsigned release: inventory verified, signature checks skipped."
+            exit 0
+          fi
 
           verified_team=""
           verify_app() {
@@ -647,6 +690,9 @@ jobs:
 
       - name: Verify inventory and generate deterministic checksums
         shell: bash
+        env:
+          WINDOWS_SIGNING: ${{ needs.build-windows.outputs.signing }}
+          MACOS_SIGNING: ${{ needs.build-mac.outputs.signing }}
         run: |
           set -euo pipefail
 
@@ -679,6 +725,14 @@ jobs:
             done | LC_ALL=C sort -k2,2 > SHA256SUMS.txt
             sha256sum --check SHA256SUMS.txt
             {
+              if [[ "$WINDOWS_SIGNING" != "signed" || "$MACOS_SIGNING" != "signed" ]]; then
+                echo "## Unsigned installers"
+                echo
+                echo "These installers are not code-signed. Windows SmartScreen:"
+                echo "choose More info, then Run anyway. macOS: right-click the app"
+                echo "and choose Open, or allow it in System Settings, Privacy & Security."
+                echo
+              fi
               echo "## SHA256 Checksums"
               echo
               sed 's/^/    /' SHA256SUMS.txt

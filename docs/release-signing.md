@@ -2,7 +2,21 @@
 
 Published GitHub Release assets are unsigned. Fail-closed signing is not the live public path. Issue #187 is a future production-secrets run, not evidence that current downloads are signed.
 
-The release workflow fails closed when signing credentials are required. A missing credential, failed test,
+## Signing mode (owner decision, v1.5.0)
+
+The owner chose to keep publishing unsigned installers. Each platform picks its
+mode from the repository secrets:
+
+| Secrets set | Result |
+| --- | --- |
+| None for that platform | Unsigned package; exact inventory still verified; signature checks skipped |
+| All required secrets | Signed (and notarized on macOS) package with every check below |
+| Some but not all | The job fails; a half-configured signing setup never ships |
+
+When any platform is unsigned, the release notes get an "Unsigned installers"
+section that tells users how to get past SmartScreen and Gatekeeper.
+
+In signed mode the release workflow fails closed. A missing credential, failed test,
 unexpected artifact, invalid signature, failed notarization check, or changed tag
 stops the workflow before a GitHub Release becomes public. Release Please first
 creates a draft and an immutable tag; the release workflow publishes that draft
@@ -10,9 +24,9 @@ only after every platform gate succeeds.
 
 Local and fork builds may remain unsigned. `electron-builder.yml` deliberately
 keeps `mac.notarize: false` so contributors can package the application without
-maintainer credentials. That local setting is not an official release path: the
-GitHub release workflow overrides it with mandatory signing and notarization and
-has no unsigned fallback.
+maintainer credentials. When signing
+secrets exist, the GitHub release workflow overrides that setting with mandatory
+signing and notarization; without any secrets it packages unsigned, as above.
 
 ## Production release gates
 

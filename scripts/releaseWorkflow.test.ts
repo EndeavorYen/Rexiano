@@ -247,7 +247,7 @@ describe("release workflow", () => {
     expect(e2e).toContain('ELECTRON_RUN_AS_NODE: ""');
   });
 
-  test("fails Windows releases closed and verifies every executable", () => {
+  test("signed Windows releases verify every executable", () => {
     const windows = jobBlock(releaseWorkflow, "build-windows");
 
     expect(windows).toContain("WIN_CSC_LINK: ${{ secrets.WINDOWS_CSC_LINK }}");
@@ -270,7 +270,7 @@ describe("release workflow", () => {
     expect(windows).toContain("Rexiano.exe");
   });
 
-  test("fails macOS releases closed and verifies apps inside both DMGs", () => {
+  test("signed macOS releases verify apps inside both DMGs", () => {
     const mac = jobBlock(releaseWorkflow, "build-mac");
 
     for (const secret of [
@@ -361,20 +361,54 @@ describe("release workflow", () => {
     ).toHaveLength(1);
   });
 
-  test("keeps local builds unsigned but forbids release-workflow fallbacks", () => {
+  test("publishes unsigned only when no signing secret is set at all", () => {
     const builderConfig = readRepoFile("electron-builder.yml");
+    const windows = jobBlock(releaseWorkflow, "build-windows");
+    const mac = jobBlock(releaseWorkflow, "build-mac");
+    const publish = jobBlock(releaseWorkflow, "publish");
 
     expect(builderConfig).toContain("notarize: false");
-    expect(releaseWorkflow).not.toContain("unsigned fallback");
-    expect(releaseWorkflow).not.toContain("building unsigned");
-    expect(releaseWorkflow).not.toContain("CSC_IDENTITY_AUTO_DISCOVERY=false");
-    expect(releaseWorkflow).not.toContain(
-      'CSC_IDENTITY_AUTO_DISCOVERY = "false"',
+
+    // Windows: both secrets -> signed; none -> unsigned; one -> fail.
+    expect(windows).toContain("mode=signed");
+    expect(windows).toContain("mode=unsigned");
+    expect(windows).toContain(
+      "Windows signing secrets are incomplete; set both or neither.",
     );
-    expect(releaseWorkflow).not.toContain("mac.identity=null");
-    expect(releaseWorkflow).not.toContain("mac.notarize=false");
+    expect(windows).toContain("if: steps.win-signing.outputs.mode == 'signed'");
+    expect(windows).toContain(
+      "if: steps.win-signing.outputs.mode == 'unsigned'",
+    );
+    expect(windows).toContain(
+      "run: pnpm exec electron-builder --win --publish never",
+    );
+    // The unsigned path still checks the exact inventory before skipping
+    // signature checks.
+    expect(windows.indexOf("Windows artifact inventory differs")).toBeLessThan(
+      windows.indexOf("signature checks skipped"),
+    );
+
+    // macOS: no secret at all -> unsigned; any secret -> full signed path.
+    expect(mac).toContain(
+      '"$certificate_count" -eq 0 && "$api_count" -eq 0 && "$apple_id_count" -eq 0',
+    );
+    expect(mac).toContain(
+      "pnpm exec electron-builder --mac -c.mac.identity=null --publish never",
+    );
+    expect(mac).toContain(
+      "Signed macOS releases require both certificate secrets.",
+    );
+    expect(mac.indexOf("Missing required macOS artifact")).toBeLessThan(
+      mac.indexOf("signature checks skipped"),
+    );
+
+    // Release notes say when installers are unsigned.
+    expect(publish).toContain("needs.build-windows.outputs.signing");
+    expect(publish).toContain("needs.build-mac.outputs.signing");
+    expect(publish).toContain("## Unsigned installers");
+
     expect(releaseWorkflow).not.toContain("electron-vite build");
-    expect(releaseWorkflow.match(/--publish never/g)).toHaveLength(3);
+    expect(releaseWorkflow.match(/--publish never/g)).toHaveLength(5);
     expect(releaseWorkflow.match(/GH_TOKEN:/g)).toHaveLength(1);
   });
 
