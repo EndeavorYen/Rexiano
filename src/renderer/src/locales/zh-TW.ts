@@ -125,7 +125,7 @@ export const zhTW: TranslationMap = {
   "library.lessonPath.mastery": "精熟目標 {accuracy}%",
   "library.dailyGoal.label": "每日目標",
   "library.dailyGoal.minutes": "{practiced} / {target} 分鐘",
-  "library.dailyGoal.remaining": "今天還差 {remaining} 分鐘",
+  "library.dailyGoal.remaining": "今天還差 {remaining} 分鐘（跟彈才算時間）",
   "library.dailyGoal.complete": "今天目標已完成",
   "library.removeRecent": "從最近移除",
   "library.allSongs": "全部曲目",

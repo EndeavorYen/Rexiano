@@ -9,6 +9,7 @@ import { parseImportedPracticeFile } from "../../engines/score/decodeImportedPra
 import { preferredDisplayModeForSource } from "../../engines/score/builtinScoreSource";
 import { usePracticeStore } from "../../stores/usePracticeStore";
 import { useSongLibraryStore } from "../../stores/useSongLibraryStore";
+import { queueRecentFile } from "./pendingRecent";
 
 const BUILTIN_RECENT_PREFIX = "builtin:";
 
@@ -60,16 +61,8 @@ export async function openBuiltinSong(
     .setDisplayMode(preferredDisplayModeForSource(origin));
   resetPlayback();
 
-  // The song is open at this point; a failed recents write must not undo that.
-  try {
-    await window.api.saveRecentFile({
-      path: builtinRecentPath(songId),
-      name: result.fileName,
-      timestamp: Date.now(),
-    });
-  } catch (error) {
-    console.error("Failed to save recent built-in song:", error);
-  }
+  // Written to recents once playback starts (see pendingRecent.ts).
+  queueRecentFile({ path: builtinRecentPath(songId), name: result.fileName });
   return result.fileName;
 }
 

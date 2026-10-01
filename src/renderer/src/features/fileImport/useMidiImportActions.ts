@@ -27,6 +27,7 @@ import {
 import { subscribeToAssociatedMidiImports } from "./associatedMidiImport";
 import type { RecentFile } from "@shared/types";
 import { openRecentEntry } from "../songLibrary/openBuiltinSong";
+import { queueRecentFile } from "../songLibrary/pendingRecent";
 
 export const MIDI_EXTENSIONS = [
   ".mid",
@@ -218,22 +219,13 @@ export function useMidiImportActions({
       }
 
       if (result.path) {
-        void window.api
-          .saveRecentFile({
-            path: result.path,
-            name: result.fileName,
-            timestamp: Date.now(),
-          })
-          .then(refreshRecentFiles)
-          .catch((error: unknown) => {
-            console.error("Failed to save recent MIDI file:", error);
-          });
+        queueRecentFile({ path: result.path, name: result.fileName });
       }
     } catch (error) {
       console.error("Failed to read MIDI file:", error);
       showImportError(getMidiReadFailureError(error));
     }
-  }, [loadParsedSong, refreshRecentFiles, showImportError]);
+  }, [loadParsedSong, showImportError]);
 
   const handleLoadMidiPath = useCallback(
     async (filePath: string): Promise<void> => {
@@ -261,16 +253,10 @@ export function useMidiImportActions({
           return;
         }
 
-        void window.api
-          .saveRecentFile({
-            path: result.path ?? filePath,
-            name: result.fileName,
-            timestamp: Date.now(),
-          })
-          .then(refreshRecentFiles)
-          .catch((error: unknown) => {
-            console.error("Failed to save recent MIDI file:", error);
-          });
+        queueRecentFile({
+          path: result.path ?? filePath,
+          name: result.fileName,
+        });
       } catch (error) {
         console.error("Failed to load MIDI from path:", error);
         showImportError(
@@ -282,7 +268,7 @@ export function useMidiImportActions({
         );
       }
     },
-    [loadParsedSong, refreshRecentFiles, showImportError],
+    [loadParsedSong, showImportError],
   );
 
   const handleOpenRecent = useCallback(

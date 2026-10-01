@@ -27,6 +27,7 @@ import { useMidiImportActions } from "./features/fileImport/useMidiImportActions
 import { FileImportErrorAlert } from "./features/fileImport/FileImportErrorAlert";
 import { buildMidiDiagnosticNotice } from "./features/midiDiagnostics/midiDiagnosticNotice";
 import { useRecentFiles } from "./hooks/useRecentFiles";
+import { flushPendingRecent } from "./features/songLibrary/pendingRecent";
 import {
   calculateSplitLayoutDimensions,
   getMutedTrackIndices,
@@ -137,6 +138,16 @@ function App(): React.JSX.Element {
     ];
     return () => unsubscribers.forEach((unsubscribe) => unsubscribe());
   }, []);
+
+  // A song becomes "recently played" when it actually starts playing (#306).
+  useEffect(() => {
+    return usePlaybackStore.subscribe((state, prev) => {
+      if (!state.isPlaying || prev.isPlaying) return;
+      void flushPendingRecent(window.api.saveRecentFile).then((saved) => {
+        if (saved) refreshRecentFiles();
+      });
+    });
+  }, [refreshRecentFiles]);
 
   // ─── Mode selection + celebration + stats flow ────────
   const mode = usePracticeStore((s) => s.mode);

@@ -20,6 +20,7 @@ import {
   openRecentEntry,
   recentOpenTarget,
 } from "./openBuiltinSong";
+import { clearPendingRecent, flushPendingRecent } from "./pendingRecent";
 
 const api = {
   loadBuiltinSong: vi.fn(),
@@ -31,6 +32,7 @@ beforeEach(() => {
   vi.clearAllMocks();
   (globalThis as unknown as { window: { api: typeof api } }).window = { api };
   useSongLibraryStore.setState({ songs: [] });
+  clearPendingRecent();
   // Start from the mode no test expects, so a missing setDisplayMode fails.
   usePracticeStore.setState({ displayMode: "sheet" as never });
   api.saveRecentFile.mockResolvedValue(undefined);
@@ -85,12 +87,14 @@ describe("openBuiltinSong", () => {
     // Home never mounted the library, so the catalogue is fetched on demand.
     expect(api.listBuiltinSongs).toHaveBeenCalled();
     expect(usePracticeStore.getState().displayMode).toBe("split");
-    expect(api.saveRecentFile).toHaveBeenCalledWith(
-      expect.objectContaining({
-        path: "builtin:hot-cross-buns",
-        name: "Hot Cross Buns",
-      }),
-    );
+    // Opening is not playing: the recent waits for playback to start (#306).
+    expect(api.saveRecentFile).not.toHaveBeenCalled();
+    await flushPendingRecent(api.saveRecentFile, 99);
+    expect(api.saveRecentFile).toHaveBeenCalledWith({
+      path: "builtin:hot-cross-buns",
+      name: "Hot Cross Buns",
+      timestamp: 99,
+    });
   });
 
   test("resolves the display mode before the song reaches the player", async () => {
@@ -125,20 +129,6 @@ describe("openBuiltinSong", () => {
     });
     expect(api.listBuiltinSongs).not.toHaveBeenCalled();
     expect(usePracticeStore.getState().displayMode).toBe("falling");
-  });
-
-  test("a failed recents write does not turn an opened song into a failure", async () => {
-    api.loadBuiltinSong.mockResolvedValue({ fileName: "Song", data: [] });
-    api.listBuiltinSongs.mockResolvedValue([{ id: "song", origin: "midi" }]);
-    api.saveRecentFile.mockRejectedValue(new Error("disk full"));
-    const loadSong = vi.fn();
-    const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
-
-    await expect(
-      openBuiltinSong("song", { loadSong, resetPlayback: vi.fn() }),
-    ).resolves.toBe("Song");
-    expect(loadSong).toHaveBeenCalledOnce();
-    errorSpy.mockRestore();
   });
 
   test("returns null and loads nothing when the song is not in the catalogue", async () => {

@@ -127,7 +127,8 @@ export const en: TranslationMap = {
   "library.lessonPath.mastery": "Mastery target {accuracy}%",
   "library.dailyGoal.label": "Daily goal",
   "library.dailyGoal.minutes": "{practiced} / {target} min",
-  "library.dailyGoal.remaining": "{remaining} min left today",
+  "library.dailyGoal.remaining":
+    "{remaining} min left today (Wait mode counts)",
   "library.dailyGoal.complete": "Goal complete for today",
   "library.removeRecent": "Remove from recents",
   "library.allSongs": "All Songs",
