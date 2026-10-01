@@ -26,7 +26,9 @@ When adding a song to `resources/midi/songs.json`:
 - Add useful musical tags such as `3-4`, `a-minor`, `g-major`, `scale`, or
   `melody`.
 - Keep `category` aligned with the song's role: `exercise`, `classical`,
-  `popular`, or `holiday`.
+  `folk`, `popular`, or `holiday`. Traditional and nursery songs (tagged
+  `traditional`) are `folk` (童謠・民謠), never `popular`; `songCatalogue.test.ts`
+  enforces this.
 - Prefer short, readable beginner pieces for L0-L2. Longer or denser pieces
   should start at L3+.
 

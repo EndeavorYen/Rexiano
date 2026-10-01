@@ -1,7 +1,6 @@
 import type { BuiltinSongMeta } from "../../../../shared/types";
 import type { TranslationKey } from "@renderer/i18n/types";
 
-/** Tooltip descriptions explaining each difficulty level */
 /** Short difficulty names shown on cards and list rows */
 export const difficultyLabelKeys: Record<
   BuiltinSongMeta["difficulty"],
@@ -12,6 +11,7 @@ export const difficultyLabelKeys: Record<
   advanced: "library.difficulty.advanced",
 };
 
+/** Tooltip descriptions explaining each difficulty level */
 export const difficultyDescriptionKeys: Record<
   BuiltinSongMeta["difficulty"],
   TranslationKey
