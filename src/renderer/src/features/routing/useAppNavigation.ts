@@ -15,6 +15,9 @@ import { useTranslation } from "@renderer/i18n/useTranslation";
 import type { PracticeSessionIntent } from "@renderer/features/practice/sessionIntent";
 import type { ParsedSong } from "@renderer/engines/midi/types";
 
+/** The playback header's button is labelled 曲庫 / "Library" (#325). */
+export const PLAYBACK_EXIT_ROUTE: AppRoute = "library";
+
 export function shouldSyncRouteHash(
   currentHash: string,
   targetHash: string,
@@ -131,7 +134,7 @@ export function useAppNavigation({
     useSongStore.getState().clearSong();
     usePracticeStore.getState().resetScore();
     setSessionIntent("practice");
-    applyRoute("menu");
+    applyRoute(PLAYBACK_EXIT_ROUTE);
   }, [applyRoute, setSessionIntent, t]);
 
   return {
