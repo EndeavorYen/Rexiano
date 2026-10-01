@@ -32,13 +32,22 @@ export interface BeamConfig {
  * Beam per beat of the meter (6/8 → 3+3 eighths, 3/4 → per quarter). A
  * single voice lets each beam pick one stem side for its whole group; a
  * fixed voice keeps its direction.
+ *
+ * Half-note meters beam straight eighths in fours, but a triplet is one
+ * quarter long and must keep its own beam, so a voice with tuplets beams per
+ * quarter instead.
  */
 export function beamConfigForVoice(
   stemDirection: 1 | -1 | undefined,
   timeSignature: string,
   VF?: VexFlow,
+  hasTuplets = false,
 ): BeamConfig {
-  const groups = VF?.Beam.getDefaultBeamGroups(timeSignature);
+  const halfNoteBeat = timeSignature.split("/")[1] === "2";
+  const groups =
+    VF && hasTuplets && halfNoteBeat
+      ? [new VF.Fraction(1, 4)]
+      : VF?.Beam.getDefaultBeamGroups(timeSignature);
   return stemDirection === undefined
     ? { groups, maintainStemDirections: false }
     : { groups, stemDirection, maintainStemDirections: true };

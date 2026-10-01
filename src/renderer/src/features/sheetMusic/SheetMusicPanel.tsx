@@ -133,6 +133,7 @@ function createBeams(
     groups[0]?.stemDirection,
     timeSignature,
     VF,
+    groups.some((group) => group.tuplet !== undefined),
   );
   return VF.Beam.generateBeams(vexNotes, config);
 }

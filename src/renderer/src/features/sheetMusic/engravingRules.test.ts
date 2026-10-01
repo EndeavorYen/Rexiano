@@ -40,3 +40,33 @@ describe("beamConfigForVoice (#330)", () => {
     ).toBe(false);
   });
 });
+
+describe("beam groups with real VexFlow notes (#330)", () => {
+  const eighths = (count: number): VF.StaveNote[] =>
+    Array.from(
+      { length: count },
+      () => new VF.StaveNote({ keys: ["c/5"], duration: "8" }),
+    );
+  const beamSizes = (notes: VF.StaveNote[], config: object): number[] =>
+    VF.Beam.generateBeams(notes, config).map((beam) => beam.getNotes().length);
+
+  test("triplets in cut time are beamed one triplet at a time", () => {
+    const notes = eighths(12);
+    for (let i = 0; i < notes.length; i += 3) {
+      new VF.Tuplet(notes.slice(i, i + 3), { numNotes: 3, notesOccupied: 2 });
+    }
+    const config = beamConfigForVoice(undefined, "2/2", VF, true);
+    expect(beamSizes(notes, config)).toEqual([3, 3, 3, 3]);
+  });
+
+  test("straight eighths in cut time keep half-note beam groups", () => {
+    const config = beamConfigForVoice(undefined, "2/2", VF, false);
+    expect(beamSizes(eighths(8), config)).toEqual([4, 4]);
+  });
+
+  test("beamed notes lose their flags", () => {
+    const notes = eighths(4);
+    VF.Beam.generateBeams(notes, beamConfigForVoice(undefined, "4/4", VF));
+    expect(notes.every((note) => note.hasBeam())).toBe(true);
+  });
+});
