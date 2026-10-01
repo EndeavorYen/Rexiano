@@ -1,4 +1,5 @@
 import { Midi } from "@tonejs/midi";
+import { findPickup } from "../midi/pickup";
 
 const DIVISIONS = 24;
 const STEPS = [
@@ -55,8 +56,20 @@ export function midiToMusicXml(
   options: MidiToMusicXmlOptions = {},
 ): string {
   const bpm = midi.header.tempos[0]?.bpm ?? 120;
-  const timeSignature = midi.header.timeSignatures[0]?.timeSignature ?? [4, 4];
-  const [beats, beatType] = timeSignature;
+  const ppq = midi.header.ppq;
+  const pickup = findPickup(
+    midi.header.timeSignatures.map((ts) => ({
+      ticks: ts.ticks,
+      numerator: ts.timeSignature[0],
+      denominator: ts.timeSignature[1],
+    })),
+    ppq,
+  );
+  // A pickup is written under the song's real meter, as measure 0.
+  const [beats, beatType]: number[] = pickup
+    ? [pickup.numerator, pickup.denominator]
+    : (midi.header.timeSignatures[0]?.timeSignature ?? [4, 4]);
+  const pickupQuarters = pickup ? pickup.ticks / ppq : 0;
   const keyName = midi.header.keySignatures[0]?.key ?? "C";
   const keyScale =
     midi.header.keySignatures[0]?.scale === "minor" ? "minor" : "major";
@@ -74,26 +87,34 @@ export function midiToMusicXml(
   );
   const measureCount = Math.max(
     1,
-    Math.ceil(lastBeat / measureQuarters - 1e-9),
+    Math.ceil((lastBeat - pickupQuarters) / measureQuarters - 1e-9),
   );
+  const bounds: { number: number; start: number; end: number }[] = pickup
+    ? [{ number: 0, start: 0, end: pickupQuarters }]
+    : [];
+  for (let index = 0; index < measureCount; index++) {
+    const start = pickupQuarters + index * measureQuarters;
+    bounds.push({ number: index + 1, start, end: start + measureQuarters });
+  }
 
-  const measures = Array.from({ length: measureCount }, (_, index) => {
-    const start = index * measureQuarters;
-    const end = start + measureQuarters;
-    return renderMeasure({
-      number: index + 1,
-      start,
-      end,
-      notes,
-      staves,
-      includeAttributes: index === 0,
-      fifths,
-      keyScale,
-      beats,
-      beatType,
-      bpm,
-    });
-  }).join("\n");
+  const measures = bounds
+    .map(({ number, start, end }, index) => {
+      return renderMeasure({
+        number,
+        implicit: pickup !== null && index === 0,
+        start,
+        end,
+        notes,
+        staves,
+        includeAttributes: index === 0,
+        fifths,
+        keyScale,
+        beats,
+        beatType,
+        bpm,
+      });
+    })
+    .join("\n");
 
   const title = escapeXml(options.title ?? "Untitled");
   const composer = escapeXml(options.composer ?? "Traditional");
@@ -153,6 +174,7 @@ function staffFromTrackName(name: string): 1 | 2 | null {
 
 function renderMeasure(args: {
   number: number;
+  implicit: boolean;
   start: number;
   end: number;
   notes: TimedNote[];
@@ -211,7 +233,8 @@ ${
 `
     : "";
 
-  return `    <measure number="${args.number}">
+  const implicit = args.implicit ? ' implicit="yes"' : "";
+  return `    <measure number="${args.number}"${implicit}>
 ${attributes}${staffChunks.join("\n")}
     </measure>`;
 }
@@ -231,6 +254,9 @@ function renderStaffEvents(args: {
       durationBeats:
         Math.min(note.startBeats + note.durationBeats, args.end) -
         Math.max(note.startBeats, args.start),
+      // A note crossing a barline is split and tied, not struck again.
+      tiedFromPrevious: note.startBeats < args.start - 1e-6,
+      tiedToNext: note.startBeats + note.durationBeats > args.end + 1e-6,
     }))
     .filter((note) => note.durationBeats > 1e-6)
     .sort((a, b) => a.startBeats - b.startBeats || a.midi - b.midi);
@@ -265,18 +291,34 @@ function restXml(durationBeats: number, staff: 1 | 2): string {
       </note>`;
 }
 
-function noteXml(note: TimedNote, isChord: boolean): string {
+function noteXml(
+  note: TimedNote & { tiedFromPrevious?: boolean; tiedToNext?: boolean },
+  isChord: boolean,
+): string {
   const duration = Math.max(1, Math.round(note.durationBeats * DIVISIONS));
   const { step, alter, octave } = midiToPitch(note.midi);
   const alterXml = alter === 0 ? "" : `\n          <alter>${alter}</alter>`;
   const chordXml = isChord ? "\n        <chord/>" : "";
+  const tieTypes = [
+    ...(note.tiedFromPrevious ? ["stop"] : []),
+    ...(note.tiedToNext ? ["start"] : []),
+  ];
+  const tieXml = tieTypes
+    .map((type) => `\n        <tie type="${type}"/>`)
+    .join("");
+  const notationsXml =
+    tieTypes.length > 0
+      ? `\n        <notations>${tieTypes
+          .map((type) => `<tied type="${type}"/>`)
+          .join("")}</notations>`
+      : "";
   return `      <note>${chordXml}
         <pitch>
           <step>${step}</step>${alterXml}
           <octave>${octave}</octave>
         </pitch>
-        <duration>${duration}</duration>
-        <staff>${note.staff}</staff>
+        <duration>${duration}</duration>${tieXml}
+        <staff>${note.staff}</staff>${notationsXml}
       </note>`;
 }
 

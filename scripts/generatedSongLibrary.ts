@@ -6,6 +6,7 @@ import {
   type MidiEvent,
   type MidiKeySignatureEvent,
 } from "midi-file";
+import { findPickup } from "../src/renderer/src/engines/midi/pickup";
 
 export type Difficulty = "beginner" | "intermediate" | "advanced";
 export type Category =
@@ -219,7 +220,21 @@ export function applyNotationHeaderMetadata(
 ): void {
   const metadata = parseNotationTags(tags);
 
-  if (metadata.timeSignature) {
+  const pickup = findPickup(
+    midi.header.timeSignatures.map((ts) => ({
+      ticks: ts.ticks,
+      numerator: ts.timeSignature[0],
+      denominator: ts.timeSignature[1],
+    })),
+    midi.header.ppq,
+  );
+  if (metadata.timeSignature && pickup) {
+    // Keep the short pickup bar; the tagged meter starts after it (#333).
+    const realMeter = midi.header.timeSignatures.find(
+      (ts) => ts.ticks === pickup.ticks,
+    );
+    if (realMeter) realMeter.timeSignature = metadata.timeSignature;
+  } else if (metadata.timeSignature) {
     midi.header.timeSignatures = midi.header.timeSignatures.filter(
       (timeSignature) => timeSignature.ticks !== 0,
     );

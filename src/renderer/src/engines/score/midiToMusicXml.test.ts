@@ -53,4 +53,61 @@ describe("midiToMusicXml", () => {
     expect(rightNotes?.map((note) => note.midi)).toEqual([72]);
     expect(leftNotes?.map((note) => note.midi)).toEqual([48]);
   });
+
+  test("writes a pickup as an implicit measure 0 and reads it back (#333)", () => {
+    const midi = new Midi();
+    midi.header.setTempo(120);
+    const ppq = midi.header.ppq;
+    midi.header.timeSignatures = [
+      { ticks: 0, timeSignature: [1, 4] },
+      { ticks: ppq, timeSignature: [3, 4] },
+    ];
+    const track = midi.addTrack();
+    track.name = "Melody";
+    // One-beat pickup, then a full 3/4 bar.
+    track.addNote({ midi: 60, time: 0, duration: 0.5, velocity: 0.7 });
+    track.addNote({ midi: 62, time: 0.5, duration: 0.5, velocity: 0.7 });
+    track.addNote({ midi: 60, time: 1, duration: 0.5, velocity: 0.7 });
+    track.addNote({ midi: 65, time: 1.5, duration: 0.5, velocity: 0.7 });
+
+    const xml = midiToMusicXml(midi);
+    expect(xml).toContain('<measure number="0" implicit="yes">');
+    expect(xml).toContain("<beats>3</beats>");
+    expect(xml).not.toContain("<beats>1</beats>");
+    expect(xml.match(/<measure /g)).toHaveLength(2);
+
+    const back = musicXmlToMidi(xml);
+    expect(
+      back.header.timeSignatures.map((ts) => [ts.ticks, ts.timeSignature]),
+    ).toEqual([
+      [0, [1, 4]],
+      [back.header.ppq, [3, 4]],
+    ]);
+  });
+
+  test("a note across a barline is tied, not re-struck (#333)", () => {
+    const midi = new Midi();
+    midi.header.setTempo(120);
+    midi.header.timeSignatures = [{ ticks: 0, timeSignature: [2, 4] }];
+    const track = midi.addTrack();
+    track.name = "Melody";
+    track.addNote({ midi: 64, time: 0, duration: 0.5, velocity: 0.7 });
+    // Two beats starting on beat 2 of bar 1.
+    track.addNote({ midi: 67, time: 0.5, duration: 1, velocity: 0.7 });
+
+    const xml = midiToMusicXml(midi);
+    expect(xml).toContain('<tie type="start"/>');
+    expect(xml).toContain('<tie type="stop"/>');
+    expect(xml).toContain('<tied type="start"/>');
+
+    const parsed = parseMidiFile(
+      "tied.mid",
+      Array.from(musicXmlToMidi(xml).toArray()),
+    );
+    const notes = parsed.tracks.flatMap((entry) => entry.notes);
+    expect(notes.map((n) => [n.midi, n.durationTicks])).toEqual([
+      [64, parsed.ppq],
+      [67, (parsed.ppq ?? 0) * 2],
+    ]);
+  });
 });
