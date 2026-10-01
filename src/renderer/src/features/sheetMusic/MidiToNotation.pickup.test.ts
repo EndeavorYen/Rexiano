@@ -86,4 +86,14 @@ describe("pickup measures (#333)", () => {
     expect(first.isPickup).toBeFalsy();
     expect(first.number).toBe(1);
   });
+
+  it("keeps the pickup when built-in metadata forces the meter", () => {
+    // Built-in songs pass their tagged meter; the pickup must survive it.
+    const [pickup, first] = convertSongToNotation(happyBirthday(), {
+      timeSignatureTop: 3,
+      timeSignatureBottom: 4,
+    }).measures;
+    expect(pickup).toMatchObject({ isPickup: true, ticksPerMeasure: PPQ });
+    expect(pitches(first.trebleNotes)).toEqual([62, 60, 65]);
+  });
 });

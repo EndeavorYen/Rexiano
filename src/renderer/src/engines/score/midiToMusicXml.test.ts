@@ -110,4 +110,61 @@ describe("midiToMusicXml", () => {
       [67, (parsed.ppq ?? 0) * 2],
     ]);
   });
+
+  test("a held bass under moving notes in one hand keeps its timing (#334)", () => {
+    const midi = new Midi();
+    midi.header.setTempo(120);
+    midi.header.timeSignatures = [{ ticks: 0, timeSignature: [3, 4] }];
+    const right = midi.addTrack();
+    right.name = "Right Hand";
+    const left = midi.addTrack();
+    left.name = "Left Hand";
+    for (let bar = 0; bar < 2; bar++) {
+      const t = bar * 1.5;
+      right.addNote({ midi: 69, time: t, duration: 1.5, velocity: 0.7 });
+      // Waltz bass: A2 held for the bar, chords on beats 2 and 3.
+      left.addNote({ midi: 45, time: t, duration: 1.5, velocity: 0.6 });
+      for (const beat of [1, 2]) {
+        left.addNote({
+          midi: 52,
+          time: t + beat * 0.5,
+          duration: 0.5,
+          velocity: 0.6,
+        });
+        left.addNote({
+          midi: 57,
+          time: t + beat * 0.5,
+          duration: 0.5,
+          velocity: 0.6,
+        });
+      }
+    }
+
+    const xml = midiToMusicXml(midi);
+    expect(xml).toContain("<voice>2</voice>");
+    const parsed = parseMidiFile(
+      "waltz.mid",
+      Array.from(musicXmlToMidi(xml).toArray()),
+    );
+    const ppq = parsed.ppq ?? 0;
+    const lh = parsed.tracks.find((t) => t.name === "Left Hand")?.notes ?? [];
+    expect(
+      lh.map((n) => [
+        n.midi,
+        (n.ticks ?? 0) / ppq,
+        (n.durationTicks ?? 0) / ppq,
+      ]),
+    ).toEqual([
+      [45, 0, 3],
+      [52, 1, 1],
+      [57, 1, 1],
+      [52, 2, 1],
+      [57, 2, 1],
+      [45, 3, 3],
+      [52, 4, 1],
+      [57, 4, 1],
+      [52, 5, 1],
+      [57, 5, 1],
+    ]);
+  });
 });

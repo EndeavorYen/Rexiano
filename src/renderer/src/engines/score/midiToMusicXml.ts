@@ -45,6 +45,8 @@ interface TimedNote {
   startBeats: number;
   durationBeats: number;
   staff: 1 | 2;
+  /** 1-based voice within the staff */
+  voice: number;
 }
 
 /**
@@ -156,13 +158,50 @@ function collectStaffNotes(midi: Midi, secondsPerQuarter: number): TimedNote[] {
           1 / DIVISIONS,
         ),
         staff: named ?? (note.midi < 60 ? 2 : 1),
+        voice: 1,
       });
     }
   }
-  return notes.sort(
+  notes.sort(
     (a, b) =>
       a.startBeats - b.startBeats || a.staff - b.staff || a.midi - b.midi,
   );
+  assignVoices(notes);
+  return notes;
+}
+
+/**
+ * Split each staff into voices so a note held under moving notes in the
+ * same hand keeps its timing. A chord (same start, same length) stays in one
+ * voice; anything that overlaps a sounding note moves to the next free voice.
+ */
+function assignVoices(notes: TimedNote[]): void {
+  const voicesByStaff = new Map<
+    number,
+    { end: number; lastStart: number; lastDuration: number }[]
+  >();
+  for (const note of notes) {
+    const voices = voicesByStaff.get(note.staff) ?? [];
+    let index = voices.findIndex(
+      (voice) =>
+        Math.abs(voice.lastStart - note.startBeats) < 1e-6 &&
+        Math.abs(voice.lastDuration - note.durationBeats) < 1e-6,
+    );
+    if (index < 0) {
+      index = voices.findIndex((voice) => voice.end <= note.startBeats + 1e-6);
+    }
+    if (index < 0) {
+      voices.push({ end: 0, lastStart: -1, lastDuration: -1 });
+      index = voices.length - 1;
+    }
+    voices[index] = {
+      end: Math.max(voices[index].end, note.startBeats + note.durationBeats),
+      lastStart: note.startBeats,
+      lastDuration: note.durationBeats,
+    };
+    note.voice = index + 1;
+    voicesByStaff.set(note.staff, voices);
+  }
 }
 
 function staffFromTrackName(name: string): 1 | 2 | null {
@@ -189,19 +228,34 @@ function renderMeasure(args: {
   const staffChunks: string[] = [];
   let previousAdvance = 0;
   for (const staff of args.staves) {
-    const { xml, advance } = renderStaffEvents({
-      staff,
-      start: args.start,
-      end: args.end,
-      notes: args.notes.filter((note) => note.staff === staff),
-    });
-    if (previousAdvance > 0) {
-      staffChunks.push(
-        `      <backup><duration>${Math.round(previousAdvance * DIVISIONS)}</duration></backup>`,
-      );
+    const staffNotes = args.notes.filter((note) => note.staff === staff);
+    const soundingVoices = new Set(
+      staffNotes
+        .filter(
+          (note) =>
+            note.startBeats < args.end - 1e-6 &&
+            note.startBeats + note.durationBeats > args.start + 1e-6,
+        )
+        .map((note) => note.voice),
+    );
+    // Voice 1 always fills the bar; other voices only where they sound.
+    const voices = [...new Set([1, ...soundingVoices])].sort((a, b) => a - b);
+    for (const voice of voices) {
+      const { xml, advance } = renderStaffEvents({
+        staff,
+        voice,
+        start: args.start,
+        end: args.end,
+        notes: staffNotes.filter((note) => note.voice === voice),
+      });
+      if (previousAdvance > 0) {
+        staffChunks.push(
+          `      <backup><duration>${Math.round(previousAdvance * DIVISIONS)}</duration></backup>`,
+        );
+      }
+      staffChunks.push(xml);
+      previousAdvance = advance;
     }
-    staffChunks.push(xml);
-    previousAdvance = advance;
   }
 
   const attributes = args.includeAttributes
@@ -241,6 +295,7 @@ ${attributes}${staffChunks.join("\n")}
 
 function renderStaffEvents(args: {
   staff: 1 | 2;
+  voice: number;
   start: number;
   end: number;
   notes: TimedNote[];
@@ -267,7 +322,7 @@ function renderStaffEvents(args: {
       prev && Math.abs(prev.startBeats - note.startBeats) < 1e-6,
     );
     if (!isChord && note.startBeats > cursor + 1e-6) {
-      events.push(restXml(note.startBeats - cursor, args.staff));
+      events.push(restXml(note.startBeats - cursor, args.staff, args.voice));
       cursor = note.startBeats;
     }
     events.push(noteXml(note, isChord));
@@ -275,18 +330,19 @@ function renderStaffEvents(args: {
   }
 
   if (cursor < args.end - 1e-6) {
-    events.push(restXml(args.end - cursor, args.staff));
+    events.push(restXml(args.end - cursor, args.staff, args.voice));
     cursor = args.end;
   }
 
   return { xml: events.join("\n"), advance: cursor - args.start };
 }
 
-function restXml(durationBeats: number, staff: 1 | 2): string {
+function restXml(durationBeats: number, staff: 1 | 2, voice: number): string {
   const duration = Math.max(1, Math.round(durationBeats * DIVISIONS));
   return `      <note>
         <rest/>
         <duration>${duration}</duration>
+        <voice>${voice}</voice>
         <staff>${staff}</staff>
       </note>`;
 }
@@ -318,6 +374,7 @@ function noteXml(
           <octave>${octave}</octave>
         </pitch>
         <duration>${duration}</duration>${tieXml}
+        <voice>${note.voice}</voice>
         <staff>${note.staff}</staff>${notationsXml}
       </note>`;
 }

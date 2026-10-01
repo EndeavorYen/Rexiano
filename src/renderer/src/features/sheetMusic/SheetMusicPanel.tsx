@@ -19,6 +19,7 @@ import {
   endBarlineType,
   measureNumberLabel,
   stemOptionsForGroup,
+  voiceMeter,
 } from "./engravingRules";
 import {
   MIN_MEASURE_WIDTH,
@@ -445,27 +446,26 @@ function renderMeasure(
       )
     : [];
 
+  const [numBeats, beatValue] = voiceMeter(measure);
   const trebleVexVoices = trebleVoices.map((renderedVoice) => {
-    const voice = new Voice({
-      numBeats: measure.timeSignatureTop,
-      beatValue: measure.timeSignatureBottom,
-    });
+    const voice = new Voice({ numBeats, beatValue });
     voice.setStrict(false);
     voice.addTickables(renderedVoice.vexNotes);
     return voice;
   });
 
   const bassVexVoices = bassVoices.map((renderedVoice) => {
-    const voice = new Voice({
-      numBeats: measure.timeSignatureTop,
-      beatValue: measure.timeSignatureBottom,
-    });
+    const voice = new Voice({ numBeats, beatValue });
     voice.setStrict(false);
     voice.addTickables(renderedVoice.vexNotes);
     return voice;
   });
 
-  const staveWidth = width - (isFirst ? 80 : 20);
+  // Never format wider than the stave's note area: a clef, key and time
+  // signature can take more than the 80px estimate, which pushed a short
+  // first measure's last note onto its barline (#333).
+  const noteArea = treble.getNoteEndX() - treble.getNoteStartX() - 10;
+  const staveWidth = Math.min(width - (isFirst ? 80 : 20), noteArea);
   const formatter = new Formatter();
   if (trebleVexVoices.length > 0) {
     formatter.joinVoices(trebleVexVoices);

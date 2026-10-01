@@ -5,6 +5,7 @@ import {
   endBarlineType,
   measureNumberLabel,
   stemOptionsForGroup,
+  voiceMeter,
 } from "./engravingRules";
 
 describe("stemOptionsForGroup (#330)", () => {
@@ -86,5 +87,24 @@ describe("score furniture (#332)", () => {
     expect(measureNumberLabel(5, 0)).toBe("5");
     expect(measureNumberLabel(1, 0)).toBeNull();
     expect(measureNumberLabel(6, 1)).toBeNull();
+  });
+});
+
+describe("voiceMeter (#333)", () => {
+  test("a one-beat pickup under 3/4 counts its voices as 1/4", () => {
+    expect(
+      voiceMeter({
+        timeSignatureTop: 3,
+        timeSignatureBottom: 4,
+        isPickup: true,
+        pickupBeats: 1,
+      }),
+    ).toEqual([1, 4]);
+  });
+
+  test("a full measure counts against its own meter", () => {
+    expect(voiceMeter({ timeSignatureTop: 6, timeSignatureBottom: 8 })).toEqual(
+      [6, 8],
+    );
   });
 });

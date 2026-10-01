@@ -1143,7 +1143,9 @@ function buildNotation(
       index: measures.length,
       // A pickup is measure 0, so the first full measure is still 1.
       number: pickup ? measures.length : measures.length + 1,
-      ...(isPickup ? { isPickup: true } : {}),
+      ...(isPickup
+        ? { isPickup: true, pickupBeats: measureTicks / ticksPerQuarter }
+        : {}),
       startTick: measureStart,
       ticksPerMeasure: measureTicks,
       // The pickup is written under the meter that follows it.
@@ -1181,16 +1183,40 @@ export function convertSongToNotation(
     options.timeSignatureTop !== undefined ||
     options.timeSignatureBottom !== undefined;
 
-  const timeSignatures = forcedMeter
-    ? [
-        {
-          time: 0,
-          ticks: 0,
-          numerator: options.timeSignatureTop ?? 4,
-          denominator: options.timeSignatureBottom ?? 4,
-        },
-      ]
-    : song.timeSignatures;
+  // A forced meter (built-in song tags) still keeps the song's pickup bar.
+  const songPickup = findPickup(
+    song.timeSignatures.flatMap((ts) =>
+      ts.ticks === undefined
+        ? []
+        : [
+            {
+              ticks: ts.ticks,
+              numerator: ts.numerator,
+              denominator: ts.denominator,
+            },
+          ],
+    ),
+    song.ppq ?? DEFAULT_PPQ,
+  );
+  const forcedSignature = {
+    numerator: options.timeSignatureTop ?? 4,
+    denominator: options.timeSignatureBottom ?? 4,
+  };
+  const timeSignatures = !forcedMeter
+    ? song.timeSignatures
+    : songPickup
+      ? [
+          song.timeSignatures.find((ts) => ts.ticks === 0) ??
+            song.timeSignatures[0],
+          {
+            time:
+              song.timeSignatures.find((ts) => ts.ticks === songPickup.ticks)
+                ?.time ?? 0,
+            ticks: songPickup.ticks,
+            ...forcedSignature,
+          },
+        ]
+      : [{ time: 0, ticks: 0, ...forcedSignature }];
 
   const tempoMap = new TempoMap(
     song.tempos,
@@ -1218,7 +1244,7 @@ export function convertSongToNotation(
     ticksPerQuarter,
     keySignature,
     song.tempos[0]?.bpm ?? DEFAULT_BPM,
-    !forcedMeter,
+    !forcedMeter || songPickup !== null,
   );
 }
 

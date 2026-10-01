@@ -5,6 +5,7 @@
  * instead of importing it.
  */
 import type { BarlineType, Fraction } from "vexflow";
+import { pickupTimeSignature } from "@renderer/engines/midi/pickup";
 
 type VexFlow = typeof import("vexflow");
 
@@ -70,4 +71,20 @@ export function measureNumberLabel(
   slot: number,
 ): string | null {
   return slot === 0 && measureNumber > 1 ? String(measureNumber) : null;
+}
+
+/**
+ * Meter VexFlow counts a measure's voices against. A pickup shows the song's
+ * meter but holds only its own length, so its voices use that length; a
+ * full-bar voice would squeeze the pickup's notes against its barline (#333).
+ */
+export function voiceMeter(measure: {
+  timeSignatureTop: number;
+  timeSignatureBottom: number;
+  isPickup?: boolean;
+  pickupBeats?: number;
+}): [numBeats: number, beatValue: number] {
+  return measure.isPickup && measure.pickupBeats
+    ? pickupTimeSignature(measure.pickupBeats, measure.timeSignatureBottom)
+    : [measure.timeSignatureTop, measure.timeSignatureBottom];
 }

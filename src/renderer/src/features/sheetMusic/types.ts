@@ -111,6 +111,8 @@ export interface NotationMeasure {
   number?: number;
   /** Short opening measure (anacrusis), shown under the following meter */
   isPickup?: boolean;
+  /** Length of the pickup in quarter notes, when `isPickup` */
+  pickupBeats?: number;
   /** Absolute tick position of this measure's barline from song start */
   startTick: number;
   /** Ticks this measure spans, derived from its own time signature */
