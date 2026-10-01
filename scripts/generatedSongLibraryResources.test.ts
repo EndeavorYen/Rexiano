@@ -9,6 +9,7 @@ import { buildMidiDiagnosticNotice } from "@renderer/features/midiDiagnostics/mi
 import type { BuiltinSongMeta } from "@shared/types";
 import { filterSongsForLibrary } from "@renderer/features/songLibrary/songLibrarySelectors";
 import { buildGeneratedSongArtifacts } from "./generate-songs";
+import { findPickup } from "../src/renderer/src/engines/midi/pickup";
 
 type SongMeta = {
   id: string;
@@ -199,9 +200,20 @@ describe("generated built-in MIDI resources", () => {
       const keySignature = expectedKeySignature(song);
 
       if (timeSignature) {
-        const headerTimeSignature = midi.header.timeSignatures[0];
+        // A pickup bar comes first; the tagged meter starts after it (#333).
+        const pickup = findPickup(
+          midi.header.timeSignatures.map((ts) => ({
+            ticks: ts.ticks,
+            numerator: ts.timeSignature[0],
+            denominator: ts.timeSignature[1],
+          })),
+          midi.header.ppq,
+        );
+        const headerTimeSignature = midi.header.timeSignatures.find(
+          (ts) => ts.ticks === (pickup?.ticks ?? 0),
+        );
         if (
-          headerTimeSignature?.ticks !== 0 ||
+          headerTimeSignature?.ticks !== (pickup?.ticks ?? 0) ||
           headerTimeSignature.timeSignature[0] !== timeSignature[0] ||
           headerTimeSignature.timeSignature[1] !== timeSignature[1]
         ) {

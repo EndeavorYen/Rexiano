@@ -10,7 +10,7 @@
     "category": "folk",
     "grade": 0,
     "origin": "score",
-    "durationSeconds": 16,
+    "durationSeconds": 12,
     "tags": ["traditional", "melody", "beginner", "c-major", "4-4", "level-0"]
   },
   {
@@ -197,7 +197,7 @@
     "category": "classical",
     "grade": 3,
     "origin": "score",
-    "durationSeconds": 46,
+    "durationSeconds": 44,
     "tags": ["classical", "lullaby", "3-4", "two-hands", "level-3"]
   },
   {
@@ -230,7 +230,7 @@
     "category": "folk",
     "grade": 4,
     "origin": "score",
-    "durationSeconds": 64,
+    "durationSeconds": 80,
     "tags": ["traditional", "3-4", "g-major", "two-hands", "level-4"]
   },
   {
@@ -435,7 +435,7 @@
     "category": "folk",
     "grade": 2,
     "origin": "score",
-    "durationSeconds": 15,
+    "durationSeconds": 28,
     "tags": ["traditional", "melody", "french", "c-major", "4-4", "level-2"]
   },
   {
@@ -447,7 +447,7 @@
     "category": "folk",
     "grade": 3,
     "origin": "score",
-    "durationSeconds": 19,
+    "durationSeconds": 20,
     "tags": ["traditional", "melody", "c-major", "4-4", "two-hands", "level-3"]
   },
   {

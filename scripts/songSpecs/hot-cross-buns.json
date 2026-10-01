@@ -1,0 +1,102 @@
+{
+  "id": "hot-cross-buns",
+  "meter": [
+    4,
+    4
+  ],
+  "keyFifths": 0,
+  "mode": "major",
+  "pickupBeats": 0,
+  "rh": [
+    [
+      64,
+      0.0,
+      1.0
+    ],
+    [
+      62,
+      1.0,
+      1.0
+    ],
+    [
+      60,
+      2.0,
+      2.0
+    ],
+    [
+      64,
+      4.0,
+      1.0
+    ],
+    [
+      62,
+      5.0,
+      1.0
+    ],
+    [
+      60,
+      6.0,
+      2.0
+    ],
+    [
+      60,
+      8.0,
+      1.0
+    ],
+    [
+      60,
+      9.0,
+      1.0
+    ],
+    [
+      60,
+      10.0,
+      1.0
+    ],
+    [
+      60,
+      11.0,
+      1.0
+    ],
+    [
+      62,
+      12.0,
+      1.0
+    ],
+    [
+      62,
+      13.0,
+      1.0
+    ],
+    [
+      62,
+      14.0,
+      1.0
+    ],
+    [
+      62,
+      15.0,
+      1.0
+    ],
+    [
+      64,
+      16.0,
+      1.0
+    ],
+    [
+      62,
+      17.0,
+      1.0
+    ],
+    [
+      60,
+      18.0,
+      2.0
+    ]
+  ],
+  "lh": [],
+  "sources": [
+    "https://en.wikipedia.org/wiki/Hot_Cross_Buns_(song)"
+  ],
+  "notes": "Wikipedia 'Alternative' E-D-C melody (in C). Bars 1, 2, 5 = E D C(half). The source's four-eighths-C + four-eighths-D bar is written as quarters over bars 3-4 because level-0 (Beginner) allows only whole/half/quarter."
+}

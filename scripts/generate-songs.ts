@@ -32,6 +32,7 @@ import {
   type SongDef,
   type SongMeta,
 } from "./generatedSongLibrary";
+import { buildMidiFromSpec, loadSongSpec } from "./songSpec";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const outDir = join(__dirname, "..", "resources", "midi");
@@ -56,7 +57,6 @@ const Fs4 = 66;
 const G4 = 67;
 const Gs4 = 68;
 const A4 = 69;
-const Bb4 = 70;
 const B4 = 71;
 const C5 = 72;
 const Cs5 = 73;
@@ -256,45 +256,6 @@ function buildMaryHadALittleLamb(): Midi {
   return midi;
 }
 
-function buildHotCrossBuns(): Midi {
-  const midi = new Midi();
-  midi.header.setTempo(100);
-  const track = midi.addTrack();
-  track.name = "Piano";
-  track.channel = 0;
-
-  const melody: [number, number][] = [
-    // Hot cross buns (descending, half notes)
-    [E4, 2],
-    [D4, 2],
-    [C4, 2],
-    /* rest */ [C4, 0],
-    // Hot cross buns
-    [E4, 2],
-    [D4, 2],
-    [C4, 2],
-    // One a penny, two a penny (eighth notes run)
-    [C4, 0.5],
-    [C4, 0.5],
-    [C4, 0.5],
-    [C4, 0.5],
-    [D4, 0.5],
-    [D4, 0.5],
-    [D4, 0.5],
-    [D4, 0.5],
-    // Hot cross buns
-    [E4, 2],
-    [D4, 2],
-    [C4, 2],
-  ];
-
-  // Remove the zero-duration "rest" placeholder
-  const filtered = melody.filter(([, d]) => d > 0);
-  const entries = sequentialNotes(filtered);
-  addNotesFromBeats(track, entries, 100, 0.7);
-  return midi;
-}
-
 function buildJingleBells(): Midi {
   const midi = new Midi();
   midi.header.setTempo(120);
@@ -338,52 +299,6 @@ function buildJingleBells(): Midi {
 
   const entries = sequentialNotes(melody);
   addNotesFromBeats(track, entries, 120, 0.7);
-  return midi;
-}
-
-function buildHappyBirthday(): Midi {
-  const midi = new Midi();
-  midi.header.setTempo(100);
-  const track = midi.addTrack();
-  track.name = "Piano";
-  track.channel = 0;
-
-  // Happy Birthday in F major (starts on C4)
-  // 3/4 time — durations in quarter note beats
-  const melody: [number, number][] = [
-    // Happy birth-day to you
-    [C4, 0.75],
-    [C4, 0.25],
-    [D4, 1],
-    [C4, 1],
-    [F4, 1],
-    [E4, 2],
-    // Happy birth-day to you
-    [C4, 0.75],
-    [C4, 0.25],
-    [D4, 1],
-    [C4, 1],
-    [G4, 1],
-    [F4, 2],
-    // Happy birth-day dear (name)
-    [C4, 0.75],
-    [C4, 0.25],
-    [C5, 1],
-    [A4, 1],
-    [F4, 1],
-    [E4, 1],
-    [D4, 2],
-    // Happy birth-day to you
-    [Bb4, 0.75],
-    [Bb4, 0.25],
-    [A4, 1],
-    [F4, 1],
-    [G4, 1],
-    [F4, 2],
-  ];
-
-  const entries = sequentialNotes(melody);
-  addNotesFromBeats(track, entries, 100, 0.7);
   return midi;
 }
 
@@ -1087,139 +1002,6 @@ function buildOldMacDonald(): Midi {
   return midi;
 }
 
-function buildThisOldMan(): Midi {
-  const midi = new Midi();
-  midi.header.setTempo(110);
-  const track = midi.addTrack();
-  track.name = "Piano";
-  track.channel = 0;
-
-  const melody: [number, number][] = [
-    [C4, 1],
-    [C4, 1],
-    [D4, 1],
-    [E4, 1],
-    [C4, 1],
-    [E4, 1],
-    [D4, 2],
-    [G4, 1],
-    [G4, 1],
-    [G4, 1],
-    [E4, 1],
-    [C4, 1],
-    [D4, 1],
-    [C4, 2],
-    [C4, 1],
-    [C4, 1],
-    [D4, 1],
-    [E4, 1],
-    [C4, 1],
-    [E4, 1],
-    [D4, 2],
-    [G4, 1],
-    [E4, 1],
-    [C4, 1],
-    [D4, 1],
-    [C4, 4],
-  ];
-
-  addNotesFromBeats(track, sequentialNotes(melody), 110, 0.7);
-  return midi;
-}
-
-function buildAlouette(): Midi {
-  const midi = new Midi();
-  midi.header.setTempo(112);
-  const track = midi.addTrack();
-  track.name = "Piano";
-  track.channel = 0;
-
-  const melody: [number, number][] = [
-    [C4, 1],
-    [D4, 1],
-    [E4, 1],
-    [C4, 1],
-    [C4, 1],
-    [D4, 1],
-    [E4, 1],
-    [C4, 1],
-    [E4, 1],
-    [F4, 1],
-    [G4, 2],
-    [E4, 1],
-    [F4, 1],
-    [G4, 2],
-    [G4, 0.5],
-    [A4, 0.5],
-    [G4, 0.5],
-    [F4, 0.5],
-    [E4, 1],
-    [C4, 1],
-    [G4, 0.5],
-    [A4, 0.5],
-    [G4, 0.5],
-    [F4, 0.5],
-    [E4, 1],
-    [C4, 1],
-    [C4, 1],
-    [G4, 1],
-    [C4, 2],
-  ];
-
-  addNotesFromBeats(track, sequentialNotes(melody), 112, 0.7);
-  return midi;
-}
-
-function buildGoTellAuntRhody(): Midi {
-  const midi = new Midi();
-  midi.header.setTempo(96);
-
-  const rh = midi.addTrack();
-  rh.name = "Right Hand";
-  rh.channel = 0;
-  const lh = midi.addTrack();
-  lh.name = "Left Hand";
-  lh.channel = 1;
-
-  const rhMelody: [number, number][] = [
-    [E4, 1],
-    [E4, 1],
-    [G4, 1],
-    [G4, 1],
-    [E4, 1],
-    [C4, 1],
-    [C4, 2],
-    [D4, 1],
-    [D4, 1],
-    [F4, 1],
-    [F4, 1],
-    [D4, 1],
-    [D4, 1],
-    [D4, 2],
-    [C4, 1],
-    [D4, 1],
-    [E4, 1],
-    [F4, 1],
-    [G4, 1],
-    [G4, 1],
-    [G4, 2],
-    [E4, 1],
-    [D4, 1],
-    [C4, 2],
-    [C4, 2],
-  ];
-  const lhMelody: [number, number][] = [
-    [C3, 8],
-    [G3, 8],
-    [C3, 8],
-    [C3, 6],
-  ];
-
-  addNotesFromBeats(rh, sequentialNotes(rhMelody), 96, 0.7);
-  addNotesFromBeats(lh, sequentialNotes(lhMelody), 96, 0.55);
-  return midi;
-}
-
 function buildWhenTheSaints(): Midi {
   const midi = new Midi();
   midi.header.setTempo(108);
@@ -1399,6 +1181,14 @@ function buildSilentNight(): Midi {
 
 // ─── Song definitions ────────────────────────────────────────────────
 
+const songSpecsDir = join(__dirname, "songSpecs");
+
+/** Build a song from its checked note-list spec (#334). */
+function fromSpec(id: string, bpm: number): () => Midi {
+  return () =>
+    buildMidiFromSpec(loadSongSpec(join(songSpecsDir, `${id}.json`)), bpm);
+}
+
 const songDefs: SongDef[] = [
   // ── Exercises ──
   {
@@ -1434,7 +1224,7 @@ const songDefs: SongDef[] = [
     category: "folk",
     tags: ["traditional", "melody", "beginner", "c-major", "4-4"],
     bpm: 100,
-    build: buildHotCrossBuns,
+    build: fromSpec("hot-cross-buns", 100),
   },
   {
     id: "twinkle-twinkle",
@@ -1456,7 +1246,7 @@ const songDefs: SongDef[] = [
     category: "popular",
     tags: ["popular", "melody", "f-major", "3-4"],
     bpm: 100,
-    build: buildHappyBirthday,
+    build: fromSpec("happy-birthday", 100),
   },
   {
     id: "london-bridge",
@@ -1547,7 +1337,7 @@ const songDefs: SongDef[] = [
     tags: ["traditional", "melody", "c-major", "4-4", "level-2"],
     bpm: 110,
     grade: 2,
-    build: buildThisOldMan,
+    build: fromSpec("this-old-man", 110),
   },
   {
     id: "alouette",
@@ -1559,7 +1349,7 @@ const songDefs: SongDef[] = [
     tags: ["traditional", "melody", "french", "c-major", "4-4", "level-2"],
     bpm: 112,
     grade: 2,
-    build: buildAlouette,
+    build: fromSpec("alouette", 112),
   },
   {
     id: "go-tell-aunt-rhody",
@@ -1571,7 +1361,7 @@ const songDefs: SongDef[] = [
     tags: ["traditional", "melody", "c-major", "4-4", "two-hands", "level-3"],
     bpm: 96,
     grade: 3,
-    build: buildGoTellAuntRhody,
+    build: fromSpec("go-tell-aunt-rhody", 96),
   },
   {
     id: "when-the-saints",
@@ -1709,6 +1499,31 @@ const songDefs: SongDef[] = [
     tags: ["classical", "fast", "a-minor", "2-4"],
     bpm: 132,
     build: buildTurkishMarch,
+  },
+  // ── Checked note-list songs (#334) ──
+  {
+    id: "amazing-grace",
+    file: "amazing-grace.mid",
+    title: "Amazing Grace",
+    composer: "Traditional",
+    difficulty: "intermediate",
+    category: "folk",
+    tags: ["traditional", "3-4", "g-major", "two-hands"],
+    bpm: 72,
+    grade: 4,
+    build: fromSpec("amazing-grace", 72),
+  },
+  {
+    id: "brahms-lullaby",
+    file: "brahms-lullaby.mid",
+    title: "Brahms Lullaby",
+    composer: "Johannes Brahms",
+    difficulty: "beginner",
+    category: "classical",
+    tags: ["classical", "lullaby", "3-4", "two-hands"],
+    bpm: 66,
+    grade: 3,
+    build: fromSpec("brahms-lullaby", 66),
   },
 ];
 
@@ -1873,6 +1688,15 @@ function formatSongMeta(song: SongMeta): string {
     `    "id": ${jsonValue(song.id)},`,
     `    "file": ${jsonValue(song.file)},`,
     `    "title": ${jsonValue(song.title)},`,
+    // Curated catalogue text must survive every regeneration (#309).
+    ...(song.titleZhTW
+      ? [`    "titleZhTW": ${jsonValue(song.titleZhTW)},`]
+      : []),
+    ...(song.searchAliases
+      ? [
+          `    "searchAliases": [${song.searchAliases.map(jsonValue).join(", ")}],`,
+        ]
+      : []),
     `    "composer": ${jsonValue(song.composer)},`,
     `    "difficulty": ${jsonValue(song.difficulty)},`,
     `    "category": ${jsonValue(song.category)},`,
@@ -1894,7 +1718,7 @@ function formatSongMeta(song: SongMeta): string {
   return lines.join("\n");
 }
 
-function formatSongsJson(songsMeta: readonly SongMeta[]): string {
+export function formatSongsJson(songsMeta: readonly SongMeta[]): string {
   return `${["[", songsMeta.map(formatSongMeta).join(",\n"), "]"].join(
     "\n",
   )}\n`;
