@@ -58,7 +58,7 @@ export function LessonProgressionSection({
               onSelectSong(nextLesson.song.id);
             }}
             disabled={loadingId === nextLesson.song.id}
-            className="group flex min-w-0 items-center gap-3 rounded-xl px-3 py-3 text-left cursor-pointer transition-all disabled:cursor-wait disabled:opacity-60"
+            className="group flex min-w-0 self-start items-center gap-3 rounded-xl px-3 py-3 text-left cursor-pointer transition-all disabled:cursor-wait disabled:opacity-60"
             style={{
               background:
                 "color-mix(in srgb, var(--color-note2) 10%, var(--color-surface))",
@@ -103,7 +103,8 @@ export function LessonProgressionSection({
           </button>
         )}
 
-        <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
+        {/* Progress rows, not cards: they are not clickable (#307). */}
+        <div className="grid gap-x-5 gap-y-2.5 sm:grid-cols-2 xl:grid-cols-3">
           {lessonProgression.groups.map((group) => {
             const progressPercent =
               group.totalSongCount > 0
@@ -115,12 +116,7 @@ export function LessonProgressionSection({
             return (
               <div
                 key={group.id}
-                className="rounded-xl px-3 py-2.5"
-                style={{
-                  background:
-                    "color-mix(in srgb, var(--color-surface) 84%, transparent)",
-                  border: "1px solid var(--color-border)",
-                }}
+                className="px-0.5 py-1"
                 data-testid={`lesson-group-${group.id}`}
               >
                 <div className="flex items-start justify-between gap-2">
