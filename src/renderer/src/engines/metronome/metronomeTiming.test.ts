@@ -101,4 +101,25 @@ describe("canArmPlaybackCountIn", () => {
       }),
     ).toBe(true);
   });
+
+  test("a pickup's clicks are upbeats of the following meter (#333)", () => {
+    const pickupSong = song({
+      timeSignatures: [
+        { time: 0, ticks: 0, numerator: 1, denominator: 4 },
+        { time: 0.5, ticks: 480, numerator: 3, denominator: 4 },
+      ],
+    });
+    // At the very start, the pickup beat is beat 3 of a 3/4 bar.
+    expect(resolveMetronomeTiming(pickupSong, 0, 1)).toMatchObject({
+      beatsPerMeasure: 3,
+      currentBeat: 2,
+      firstClickBeat: 2,
+      firstClickDelaySeconds: 0,
+    });
+    // Bar 1 starts on the downbeat.
+    expect(resolveMetronomeTiming(pickupSong, 0.5, 1)).toMatchObject({
+      beatsPerMeasure: 3,
+      currentBeat: 0,
+    });
+  });
 });

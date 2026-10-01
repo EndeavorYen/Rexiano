@@ -576,7 +576,11 @@ export function SheetMusicPanel({
     activeSlotIndex >= 0 && cursorPosition && notationData
       ? notationData.measures[cursorPosition.measureIndex]
       : null;
-  const beatsPerMeasure = Math.max(activeMeasure?.timeSignatureTop ?? 4, 1);
+  // A pickup shows the song's meter but lasts only its own beats (#333).
+  const beatsPerMeasure = Math.max(
+    activeMeasure ? voiceMeter(activeMeasure)[0] : 4,
+    1,
+  );
   const beatRatio =
     cursorPosition && activeSlotIndex >= 0
       ? Math.max(0, Math.min(0.995, cursorPosition.beat / beatsPerMeasure))

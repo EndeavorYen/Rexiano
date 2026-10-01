@@ -148,11 +148,12 @@ function describeNotationWarningLocation(
 ): { measure: number; beat: number } | null {
   if (notationData.measures.length === 0) return null;
 
-  let measureStartTick = 0;
   for (const measure of notationData.measures) {
     const beatTicks =
       notationData.ticksPerQuarter * (4 / measure.timeSignatureBottom);
-    const measureTicks = measure.timeSignatureTop * beatTicks;
+    // Use the measure's own span: a pickup is shorter than its meter (#333).
+    const measureStartTick = measure.startTick;
+    const measureTicks = measure.ticksPerMeasure;
     const isInsideMeasure =
       warning.startTick >= measureStartTick &&
       warning.startTick < measureStartTick + measureTicks;
@@ -170,8 +171,6 @@ function describeNotationWarningLocation(
         beat,
       };
     }
-
-    measureStartTick += measureTicks;
   }
 
   return null;

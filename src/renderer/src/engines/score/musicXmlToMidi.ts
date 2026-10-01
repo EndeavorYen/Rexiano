@@ -219,7 +219,9 @@ function readPart(part: XmlNode): {
       const tieTypes = child.children
         .filter((node) => node.name === "tie")
         .map((node) => node.attrs.type);
-      const tieKey = `${note.staff}:${note.midi}`;
+      // Ties stay within a voice: another voice may sound the same pitch.
+      const voice = childText(child, "voice") || "1";
+      const tieKey = `${note.staff}:${voice}:${note.midi}`;
       const tiedFrom = tieTypes.includes("stop")
         ? openTies.get(tieKey)
         : undefined;

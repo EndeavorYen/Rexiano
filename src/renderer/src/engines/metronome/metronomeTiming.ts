@@ -1,4 +1,5 @@
 import { TempoMap } from "@renderer/engines/midi/TempoMap";
+import { findPickup } from "@renderer/engines/midi/pickup";
 import type { ParsedSong } from "@renderer/engines/midi/types";
 
 const POSITION_EPSILON_SECONDS = 0.01;
@@ -32,15 +33,32 @@ export function resolveMetronomeTiming(
     Math.max(ticks + tempoMap.ppq * 4, tempoMap.ppq * 4),
   );
   const measure = measures[position.measureIndex] ?? measures.at(-1)!;
-  const beatsPerMeasure = Math.max(1, measure.numerator);
+  // A pickup bar counts as the last beats of a full bar of the next meter,
+  // so its clicks are upbeats and the downbeat lands on bar 1 (#333).
+  const pickup =
+    position.measureIndex === 0
+      ? findPickup(
+          measures.slice(0, 2).map((entry) => ({
+            ticks: entry.startTick,
+            numerator: entry.numerator,
+            denominator: entry.denominator,
+          })),
+          tempoMap.ppq,
+        )
+      : null;
+  const pickupOffset =
+    pickup && pickup.denominator === measure.denominator
+      ? pickup.numerator - measure.numerator
+      : 0;
+  const beatsPerMeasure = Math.max(1, measure.numerator + pickupOffset);
   const beatFloor = Math.floor(position.beat + BEAT_EPSILON);
   const beatFraction = Math.max(0, position.beat - beatFloor);
-  const currentBeat = beatFloor % beatsPerMeasure;
+  const currentBeat = (beatFloor + pickupOffset) % beatsPerMeasure;
   const onBeat = beatFraction <= BEAT_EPSILON;
   const firstClickBeat = onBeat
     ? currentBeat
     : (currentBeat + 1) % beatsPerMeasure;
-  const ticksPerBeat = measure.ticksPerMeasure / beatsPerMeasure;
+  const ticksPerBeat = measure.ticksPerMeasure / Math.max(1, measure.numerator);
   const nextClickTicks = onBeat
     ? ticks
     : ticks + (1 - beatFraction) * ticksPerBeat;

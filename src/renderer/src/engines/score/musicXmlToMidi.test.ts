@@ -172,4 +172,33 @@ describe("musicXmlToMidi", () => {
       [72, ppq * 3, ppq],
     ]);
   });
+
+  test("a tie in one voice is not cut by another voice's same pitch (#333)", () => {
+    const xml = `<?xml version="1.0" encoding="UTF-8"?>
+<score-partwise version="3.1">
+  <part id="P1">
+    <measure number="1">
+      <attributes><divisions>1</divisions>
+        <time><beats>2</beats><beat-type>4</beat-type></time></attributes>
+      <note><pitch><step>C</step><octave>3</octave></pitch><duration>2</duration><tie type="start"/><voice>1</voice></note>
+      <backup><duration>2</duration></backup>
+      <note><pitch><step>C</step><octave>3</octave></pitch><duration>1</duration><voice>2</voice></note>
+      <note><rest/><duration>1</duration><voice>2</voice></note>
+    </measure>
+    <measure number="2">
+      <note><pitch><step>C</step><octave>3</octave></pitch><duration>2</duration><tie type="stop"/><voice>1</voice></note>
+    </measure>
+  </part>
+</score-partwise>`;
+    const { parsed, notes } = parsedNotesFromXml(xml);
+    const ppq = parsed.ppq ?? 0;
+    expect(
+      notes
+        .map((n) => [n.ticks, n.durationTicks])
+        .sort((a, b) => (a[0] ?? 0) - (b[0] ?? 0) || (b[1] ?? 0) - (a[1] ?? 0)),
+    ).toEqual([
+      [0, ppq * 4],
+      [0, ppq],
+    ]);
+  });
 });

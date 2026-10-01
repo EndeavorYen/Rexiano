@@ -90,4 +90,19 @@ describe("buildSessionSummariesForSong", () => {
 
     expect(summaries[0].measureDurationSeconds).toBe(1.5);
   });
+
+  test("uses the meter after a pickup bar for measure length (#333)", () => {
+    const [summary] = buildSessionSummariesForSong(
+      "song-a",
+      [session()],
+      song({
+        ppq: 480,
+        timeSignatures: [
+          { time: 0, ticks: 0, numerator: 1, denominator: 4 },
+          { time: 0.5, ticks: 480, numerator: 3, denominator: 4 },
+        ],
+      }),
+    );
+    expect(summary.measureDurationSeconds).toBe(1.5);
+  });
 });
