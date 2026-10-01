@@ -9,6 +9,7 @@ import type { ParsedSong } from "../src/renderer/src/engines/midi/types";
 import { musicXmlToMidi } from "../src/renderer/src/engines/score/musicXmlToMidi";
 import {
   buildGeneratedSongArtifacts,
+  formatSongsJson,
   materializeMissingBuiltinScores,
 } from "./generate-songs";
 
@@ -251,5 +252,12 @@ describe("buildGeneratedSongArtifacts score-first contract", () => {
     expect(xml).toContain(
       "<work-title>Twinkle Twinkle Little Star</work-title>",
     );
+  });
+});
+
+describe("formatSongsJson", () => {
+  test("keeps curated Chinese titles and search aliases", () => {
+    const committed = readFileSync(join(midiDir, "songs.json"), "utf8");
+    expect(formatSongsJson(JSON.parse(committed))).toBe(committed);
   });
 });

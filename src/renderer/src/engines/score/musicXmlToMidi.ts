@@ -1,4 +1,5 @@
 import { Midi } from "@tonejs/midi";
+import { pickupTimeSignature } from "../midi/pickup";
 
 const STEP_SEMITONES: Record<string, number> = {
   C: 0,
@@ -91,7 +92,23 @@ export function musicXmlToMidi(xml: string): Midi {
       }
     }
   }
-  midi.header.timeSignatures = [{ ticks: 0, timeSignature, measures: 0 }];
+  const pickupBeats = parsedParts[0]?.parsed.pickupBeats ?? 0;
+  const measureBeats = (timeSignature[0] * 4) / timeSignature[1];
+  midi.header.timeSignatures =
+    pickupBeats > 0 && pickupBeats < measureBeats
+      ? [
+          {
+            ticks: 0,
+            timeSignature: pickupTimeSignature(pickupBeats, timeSignature[1]),
+            measures: 0,
+          },
+          {
+            ticks: Math.round(pickupBeats * midi.header.ppq),
+            timeSignature,
+            measures: 1,
+          },
+        ]
+      : [{ ticks: 0, timeSignature, measures: 0 }];
   midi.header.keySignatures = [
     {
       ticks: 0,
@@ -108,6 +125,8 @@ function readPart(part: XmlNode): {
   timeSignature: [number, number];
   keyAccidentals: number;
   keyScale: "major" | "minor";
+  /** Length of an implicit (pickup) first measure, in quarter notes */
+  pickupBeats: number;
 } {
   let divisions = 1;
   let tempoBpm = 120;
@@ -117,8 +136,13 @@ function readPart(part: XmlNode): {
   let keyAccidentals = 0;
   let keyScale: "major" | "minor" = "major";
   const notes: ScoreNote[] = [];
+  /** Notes whose tie continues into a later note of the same pitch */
+  const openTies = new Map<string, ScoreNote>();
+  let pickupBeats = 0;
 
-  for (const measure of collect(part, "measure")) {
+  for (const [measureIndex, measure] of collect(part, "measure").entries()) {
+    const measureStart = cursorDivisions;
+    let measureEnd = cursorDivisions;
     for (const child of measure.children) {
       if (child.name === "attributes") {
         const rawDivisions = Number(childText(child, "divisions"));
@@ -177,6 +201,7 @@ function readPart(part: XmlNode): {
       if (!isChord) {
         lastNoteStart = startDivisions;
         cursorDivisions += durationDivisions;
+        measureEnd = Math.max(measureEnd, cursorDivisions);
       }
 
       if (child.children.some((node) => node.name === "rest")) continue;
@@ -185,16 +210,52 @@ function readPart(part: XmlNode): {
       if (!pitch) continue;
 
       const staffRaw = Number(childText(child, "staff"));
-      notes.push({
+      const note: ScoreNote = {
         midi: pitchToMidi(pitch),
         startBeats: startDivisions / divisions,
         durationBeats: durationDivisions / divisions,
         staff: Number.isInteger(staffRaw) && staffRaw > 0 ? staffRaw : 1,
-      });
+      };
+      const tieTypes = child.children
+        .filter((node) => node.name === "tie")
+        .map((node) => node.attrs.type);
+      // Ties stay within a voice: another voice may sound the same pitch.
+      const voice = childText(child, "voice") || "1";
+      const tieKey = `${note.staff}:${voice}:${note.midi}`;
+      const tiedFrom = tieTypes.includes("stop")
+        ? openTies.get(tieKey)
+        : undefined;
+      // A tie continues the earlier note instead of striking it again.
+      const held =
+        tiedFrom &&
+        Math.abs(
+          tiedFrom.startBeats + tiedFrom.durationBeats - note.startBeats,
+        ) < 1e-6
+          ? tiedFrom
+          : undefined;
+      if (held) {
+        held.durationBeats += note.durationBeats;
+      } else {
+        notes.push(note);
+      }
+      openTies.delete(tieKey);
+      if (tieTypes.includes("start")) openTies.set(tieKey, held ?? note);
+    }
+
+    measureEnd = Math.max(measureEnd, cursorDivisions);
+    if (measureIndex === 0 && measure.attrs.implicit === "yes") {
+      pickupBeats = (measureEnd - measureStart) / divisions;
     }
   }
 
-  return { notes, tempoBpm, timeSignature, keyAccidentals, keyScale };
+  return {
+    notes,
+    tempoBpm,
+    timeSignature,
+    keyAccidentals,
+    keyScale,
+    pickupBeats,
+  };
 }
 
 const KEY_NAMES_BY_FIFTHS = [

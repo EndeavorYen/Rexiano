@@ -159,4 +159,26 @@ describe("generated song library helpers", () => {
     expect(merged.titleZhTW).toBe("熱十字麵包");
     expect(merged.searchAliases).toEqual(["熱十字包"]);
   });
+
+  it("keeps a pickup's short first time signature when tagging the meter (#333)", () => {
+    const midi = new Midi();
+    const ppq = midi.header.ppq;
+    midi.header.timeSignatures = [
+      { ticks: 0, timeSignature: [1, 4] },
+      { ticks: ppq, timeSignature: [3, 4] },
+    ];
+    midi.addTrack().addNote({ midi: 60, time: 0, duration: 0.5 });
+
+    const bytes = encodeMidiWithNotationHeaderMetadata(midi, [
+      "c-major",
+      "3-4",
+    ]);
+    const back = new Midi(bytes);
+    expect(
+      back.header.timeSignatures.map((ts) => [ts.ticks, ts.timeSignature]),
+    ).toEqual([
+      [0, [1, 4]],
+      [ppq, [3, 4]],
+    ]);
+  });
 });

@@ -1,10 +1,26 @@
 import type { SessionRecord } from "@shared/types";
 import type { ParsedSong } from "@renderer/engines/midi/types";
 import type { SessionSummary } from "./WeakSpotAnalyzer";
+import { findPickup } from "@renderer/engines/midi/pickup";
 
 function getMeasureDurationSeconds(song: ParsedSong): number | undefined {
   const bpm = song.tempos[0]?.bpm;
-  const timeSignature = song.timeSignatures[0];
+  // After a pickup bar, the song's real meter starts (#333).
+  const pickup = findPickup(
+    song.timeSignatures.flatMap((ts) =>
+      ts.ticks === undefined
+        ? []
+        : [
+            {
+              ticks: ts.ticks,
+              numerator: ts.numerator,
+              denominator: ts.denominator,
+            },
+          ],
+    ),
+    song.ppq ?? 480,
+  );
+  const timeSignature = pickup ?? song.timeSignatures[0];
   if (!bpm || !timeSignature) return undefined;
   const beatSeconds = 60 / bpm;
   return (

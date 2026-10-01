@@ -146,4 +146,46 @@ describe("buildMidiDiagnosticNotice", () => {
       codes: ["notation-rhythm-approximation"],
     });
   });
+
+  test("locates warnings after a pickup bar by printed measure (#333)", () => {
+    const measure = (
+      index: number,
+      startTick: number,
+      ticksPerMeasure: number,
+    ): NotationData["measures"][number] => ({
+      index,
+      number: index,
+      ...(index === 0 ? { isPickup: true, pickupBeats: 1 } : {}),
+      startTick,
+      ticksPerMeasure,
+      timeSignatureTop: 3,
+      timeSignatureBottom: 4,
+      keySignature: 0,
+      trebleNotes: [],
+      bassNotes: [],
+    });
+    const notationData: NotationData = {
+      bpm: 120,
+      ticksPerQuarter: 480,
+      measures: [
+        measure(0, 0, 480),
+        measure(1, 480, 1440),
+        measure(2, 1920, 1440),
+      ],
+      warnings: [
+        {
+          kind: "unsupported-tuplet-approximation",
+          midi: 60,
+          startTick: 1920,
+          originalDurationTicks: 160,
+          approximatedDurationTicks: 120,
+        },
+      ],
+    };
+    expect(
+      buildMidiDiagnosticNotice(song(), { notationData })?.details,
+    ).toEqual([
+      "Sheet notation approximates 1 unsupported rhythm; first at measure 2, beat 1.",
+    ]);
+  });
 });

@@ -107,6 +107,12 @@ export interface NotationNote {
 export interface NotationMeasure {
   /** 0-based measure index */
   index: number;
+  /** Printed measure number: a pickup is 0, the first full measure is 1 */
+  number?: number;
+  /** Short opening measure (anacrusis), shown under the following meter */
+  isPickup?: boolean;
+  /** Length of the pickup in quarter notes, when `isPickup` */
+  pickupBeats?: number;
   /** Absolute tick position of this measure's barline from song start */
   startTick: number;
   /** Ticks this measure spans, derived from its own time signature */

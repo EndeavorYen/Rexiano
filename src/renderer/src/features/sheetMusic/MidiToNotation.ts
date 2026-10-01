@@ -20,6 +20,7 @@
  */
 
 import type { ParsedNote, ParsedSong } from "@renderer/engines/midi/types";
+import { findPickup } from "@renderer/engines/midi/pickup";
 import {
   TempoMap,
   DEFAULT_BPM,
@@ -837,6 +838,7 @@ function buildVoiceEvents(
   clef: Clef,
   measureTicks: number,
   ticksPerQuarter: number,
+  isPickup = false,
 ): NotationNote[] {
   const normalizedSegments: VoiceSegment[] = segments
     .map((segment) => {
@@ -858,7 +860,10 @@ function buildVoiceEvents(
   // Only a staff with nothing in the bar takes the centred whole rest; an
   // empty voice next to a sounding one keeps rests at its own beats.
   if (normalizedSegments.length === 0) {
-    return [createFullMeasureRest(measureTicks, clef, 0)];
+    // A pickup bar rests only for its own length (#333).
+    return isPickup
+      ? createRestEvents(0, measureTicks, clef, ticksPerQuarter)
+      : [createFullMeasureRest(measureTicks, clef, 0)];
   }
 
   const hasAssignedVoices = normalizedSegments.some(
@@ -999,6 +1004,7 @@ function buildNotation(
   ticksPerQuarter: number,
   keySignature: number,
   bpm: number,
+  detectPickup = false,
 ): NotationData {
   if (musicalNotes.length === 0) {
     return { measures: [], bpm, ticksPerQuarter, warnings: [] };
@@ -1066,8 +1072,19 @@ function buildNotation(
   // Trim the measure map to the music, but always keep at least one bar.
   const measures: NotationMeasure[] = [];
   const measureIssues: NotationMeasureIssue[] = [];
+  const pickup = detectPickup
+    ? findPickup(
+        measureMap.slice(0, 2).map((measure) => ({
+          ticks: measure.startTick,
+          numerator: measure.numerator,
+          denominator: measure.denominator,
+        })),
+        ticksPerQuarter,
+      )
+    : null;
 
   for (const measureInfo of measureMap) {
+    const isPickup = pickup !== null && measures.length === 0;
     if (measureInfo.startTick >= maxTick && measures.length > 0) break;
 
     const measureStart = measureInfo.startTick;
@@ -1103,12 +1120,14 @@ function buildNotation(
       "treble",
       measureTicks,
       ticksPerQuarter,
+      isPickup,
     );
     const bassNotes = buildVoiceEvents(
       bassSegments,
       "bass",
       measureTicks,
       ticksPerQuarter,
+      isPickup,
     );
 
     measureIssues.push(
@@ -1122,10 +1141,18 @@ function buildNotation(
 
     measures.push({
       index: measures.length,
+      // A pickup is measure 0, so the first full measure is still 1.
+      number: pickup ? measures.length : measures.length + 1,
+      ...(isPickup
+        ? { isPickup: true, pickupBeats: measureTicks / ticksPerQuarter }
+        : {}),
       startTick: measureStart,
       ticksPerMeasure: measureTicks,
-      timeSignatureTop: measureInfo.numerator,
-      timeSignatureBottom: measureInfo.denominator,
+      // The pickup is written under the meter that follows it.
+      timeSignatureTop: isPickup ? pickup.numerator : measureInfo.numerator,
+      timeSignatureBottom: isPickup
+        ? pickup.denominator
+        : measureInfo.denominator,
       keySignature,
       trebleNotes,
       bassNotes,
@@ -1156,16 +1183,40 @@ export function convertSongToNotation(
     options.timeSignatureTop !== undefined ||
     options.timeSignatureBottom !== undefined;
 
-  const timeSignatures = forcedMeter
-    ? [
-        {
-          time: 0,
-          ticks: 0,
-          numerator: options.timeSignatureTop ?? 4,
-          denominator: options.timeSignatureBottom ?? 4,
-        },
-      ]
-    : song.timeSignatures;
+  // A forced meter (built-in song tags) still keeps the song's pickup bar.
+  const songPickup = findPickup(
+    song.timeSignatures.flatMap((ts) =>
+      ts.ticks === undefined
+        ? []
+        : [
+            {
+              ticks: ts.ticks,
+              numerator: ts.numerator,
+              denominator: ts.denominator,
+            },
+          ],
+    ),
+    song.ppq ?? DEFAULT_PPQ,
+  );
+  const forcedSignature = {
+    numerator: options.timeSignatureTop ?? 4,
+    denominator: options.timeSignatureBottom ?? 4,
+  };
+  const timeSignatures = !forcedMeter
+    ? song.timeSignatures
+    : songPickup
+      ? [
+          song.timeSignatures.find((ts) => ts.ticks === 0) ??
+            song.timeSignatures[0],
+          {
+            time:
+              song.timeSignatures.find((ts) => ts.ticks === songPickup.ticks)
+                ?.time ?? 0,
+            ticks: songPickup.ticks,
+            ...forcedSignature,
+          },
+        ]
+      : [{ time: 0, ticks: 0, ...forcedSignature }];
 
   const tempoMap = new TempoMap(
     song.tempos,
@@ -1193,6 +1244,7 @@ export function convertSongToNotation(
     ticksPerQuarter,
     keySignature,
     song.tempos[0]?.bpm ?? DEFAULT_BPM,
+    !forcedMeter || songPickup !== null,
   );
 }
 

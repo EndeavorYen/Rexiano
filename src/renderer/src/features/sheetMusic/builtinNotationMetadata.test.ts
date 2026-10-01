@@ -61,7 +61,7 @@ describe("builtin notation metadata", () => {
       builtinSong({
         id: "german-dance",
         file: "german-dance.mid",
-        title: "German Dance (WoO 8 No. 1)",
+        title: "German Dance (WoO 13 No. 1)",
         tags: ["classical", "dance", "d-major", "3-4", "level-6"],
       }),
     ];

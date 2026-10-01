@@ -114,4 +114,91 @@ describe("musicXmlToMidi", () => {
       scale: "major",
     });
   });
+
+  test("an implicit first measure becomes a short pickup time signature (#333)", () => {
+    // Happy Birthday: "Hap-py" (dotted eighth + sixteenth) before bar 1.
+    const xml = `<?xml version="1.0" encoding="UTF-8"?>
+<score-partwise version="3.1">
+  <part id="P1">
+    <measure number="0" implicit="yes">
+      <attributes>
+        <divisions>4</divisions>
+        <time><beats>3</beats><beat-type>4</beat-type></time>
+      </attributes>
+      <note><pitch><step>C</step><octave>4</octave></pitch><duration>3</duration></note>
+      <note><pitch><step>C</step><octave>4</octave></pitch><duration>1</duration></note>
+    </measure>
+    <measure number="1">
+      <note><pitch><step>D</step><octave>4</octave></pitch><duration>4</duration></note>
+      <note><pitch><step>C</step><octave>4</octave></pitch><duration>4</duration></note>
+      <note><pitch><step>F</step><octave>4</octave></pitch><duration>4</duration></note>
+    </measure>
+  </part>
+</score-partwise>`;
+    const midi = musicXmlToMidi(xml);
+    const ppq = midi.header.ppq;
+    expect(
+      midi.header.timeSignatures.map((ts) => [ts.ticks, ts.timeSignature]),
+    ).toEqual([
+      [0, [1, 4]],
+      [ppq, [3, 4]],
+    ]);
+    // Note timing is unchanged: bar 1's D starts one beat in.
+    const { notes } = parsedNotesFromXml(xml);
+    expect(notes[2]).toMatchObject({ midi: 62, ticks: ppq });
+  });
+
+  test("tied notes become one held MIDI note (#333)", () => {
+    const xml = `<?xml version="1.0" encoding="UTF-8"?>
+<score-partwise version="3.1">
+  <part id="P1">
+    <measure number="1">
+      <attributes><divisions>1</divisions>
+        <time><beats>2</beats><beat-type>4</beat-type></time></attributes>
+      <note><pitch><step>E</step><octave>4</octave></pitch><duration>1</duration></note>
+      <note><pitch><step>G</step><octave>4</octave></pitch><duration>1</duration><tie type="start"/></note>
+    </measure>
+    <measure number="2">
+      <note><pitch><step>G</step><octave>4</octave></pitch><duration>1</duration><tie type="stop"/></note>
+      <note><pitch><step>C</step><octave>5</octave></pitch><duration>1</duration></note>
+    </measure>
+  </part>
+</score-partwise>`;
+    const { parsed, notes } = parsedNotesFromXml(xml);
+    const ppq = parsed.ppq ?? 0;
+    expect(notes.map((n) => [n.midi, n.ticks, n.durationTicks])).toEqual([
+      [64, 0, ppq],
+      [67, ppq, ppq * 2],
+      [72, ppq * 3, ppq],
+    ]);
+  });
+
+  test("a tie in one voice is not cut by another voice's same pitch (#333)", () => {
+    const xml = `<?xml version="1.0" encoding="UTF-8"?>
+<score-partwise version="3.1">
+  <part id="P1">
+    <measure number="1">
+      <attributes><divisions>1</divisions>
+        <time><beats>2</beats><beat-type>4</beat-type></time></attributes>
+      <note><pitch><step>C</step><octave>3</octave></pitch><duration>2</duration><tie type="start"/><voice>1</voice></note>
+      <backup><duration>2</duration></backup>
+      <note><pitch><step>C</step><octave>3</octave></pitch><duration>1</duration><voice>2</voice></note>
+      <note><rest/><duration>1</duration><voice>2</voice></note>
+    </measure>
+    <measure number="2">
+      <note><pitch><step>C</step><octave>3</octave></pitch><duration>2</duration><tie type="stop"/><voice>1</voice></note>
+    </measure>
+  </part>
+</score-partwise>`;
+    const { parsed, notes } = parsedNotesFromXml(xml);
+    const ppq = parsed.ppq ?? 0;
+    expect(
+      notes
+        .map((n) => [n.ticks, n.durationTicks])
+        .sort((a, b) => (a[0] ?? 0) - (b[0] ?? 0) || (b[1] ?? 0) - (a[1] ?? 0)),
+    ).toEqual([
+      [0, ppq * 4],
+      [0, ppq],
+    ]);
+  });
 });
