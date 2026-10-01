@@ -5,6 +5,9 @@ import { useSettingsStore } from "./stores/useSettingsStore";
 import { getMetronome } from "./engines/metronome/metronomeManager";
 import { FallingNotesCanvas } from "./features/fallingNotes/FallingNotesCanvas";
 import { PianoKeyboard } from "./features/fallingNotes/PianoKeyboard";
+import { createOnScreenKeyInput } from "./features/practice/onScreenKeyInput";
+import { getPracticeEngines } from "./engines/practice/practiceManager";
+import { WaitInputHint } from "./features/practice/WaitInputHint";
 import { computeKeyRange } from "./engines/fallingNotes/keyPositions";
 import { TransportBar } from "./features/fallingNotes/TransportBar";
 import { SettingsPanel } from "./features/settings/SettingsPanel";
@@ -15,6 +18,7 @@ import { useKeyboardShortcuts } from "./hooks/useKeyboardShortcuts";
 import { useTranslation } from "./i18n/useTranslation";
 import { SheetMusicPanel } from "./features/sheetMusic/SheetMusicPanel";
 import { usePracticeStore } from "./stores/usePracticeStore";
+import { useMidiDeviceStore } from "./stores/useMidiDeviceStore";
 import { MainMenu } from "./features/mainMenu/MainMenu";
 import { ModeSelectionModal } from "./features/practice/ModeSelectionModal";
 import { CelebrationOverlay } from "./features/practice/CelebrationOverlay";
@@ -37,6 +41,31 @@ import { usePracticeInsights } from "./features/practice/usePracticeInsights";
 import { getRetrySpeed } from "./features/practice/nextPracticeAction";
 import { applyPracticeSpeedChangeForSong } from "./features/practice/practiceSetupControlActions";
 import { useSheetMusicNotation } from "./features/sheetMusic/useSheetMusicNotation";
+
+/**
+ * On-screen keys feed the same note path as a MIDI keyboard, so Wait mode
+ * can be played with a mouse or a finger when no keyboard is plugged in.
+ */
+const ON_SCREEN_KEY_INPUT = createOnScreenKeyInput({
+  noteOn: (midi) => useMidiDeviceStore.getState().onNoteOn(midi),
+  noteOff: (midi) => useMidiDeviceStore.getState().onNoteOff(midi),
+  waitTargets: () => {
+    const { waitMode } = getPracticeEngines();
+    return waitMode?.state === "waiting" ? waitMode.targetNotes : null;
+  },
+  enabled: () => {
+    const midi = useMidiDeviceStore.getState();
+    return !midi.isConnected && midi.bleStatus !== "connected";
+  },
+});
+
+/**
+ * Store listeners run before the Wait engine and React effects catch up, so
+ * check latches once the current task has settled.
+ */
+function releaseStaleOnScreenNotesSoon(): void {
+  setTimeout(() => ON_SCREEN_KEY_INPUT.releaseStale(), 0);
+}
 
 function App(): React.JSX.Element {
   const { t } = useTranslation();
@@ -87,6 +116,26 @@ function App(): React.JSX.Element {
         usePlaybackStore.getState().setCountInActive(false);
       }
     });
+  }, []);
+
+  // Latched on-screen chord notes must not outlive the chord they belong to.
+  useEffect(() => {
+    const unsubscribers = [
+      usePracticeStore.subscribe(releaseStaleOnScreenNotesSoon),
+      usePlaybackStore.subscribe((state, prev) => {
+        if (state.isPlaying !== prev.isPlaying) releaseStaleOnScreenNotesSoon();
+      }),
+      useSongStore.subscribe(releaseStaleOnScreenNotesSoon),
+      useMidiDeviceStore.subscribe((state, prev) => {
+        if (
+          state.isConnected !== prev.isConnected ||
+          state.bleStatus !== prev.bleStatus
+        ) {
+          releaseStaleOnScreenNotesSoon();
+        }
+      }),
+    ];
+    return () => unsubscribers.forEach((unsubscribe) => unsubscribe());
   }, []);
 
   // ─── Mode selection + celebration + stats flow ────────
@@ -526,6 +575,9 @@ function App(): React.JSX.Element {
               }}
               onMouseEnter={() => isSplitMode && setSplitFocusPanel("falling")}
             >
+              <WaitInputHint
+                onConnectKeyboard={() => setShowPlaybackDrawer(true)}
+              />
               <FallingNotesCanvas
                 onActiveNotesChange={handleActiveNotesChange}
                 onNoteRendererReady={handleFallingNoteRendererReady}
@@ -544,6 +596,7 @@ function App(): React.JSX.Element {
             height={keyboardHeight}
             compactLabels={compactKeyLabels}
             range={keyRange}
+            onKeyPress={ON_SCREEN_KEY_INPUT}
           />
         </div>
       )}

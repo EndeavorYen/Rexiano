@@ -322,6 +322,9 @@ export const en: TranslationMap = {
   // ── Practice Mode ──────────────────────────────────────────────
   "practice.watch": "Watch",
   "practice.wait": "Wait",
+  "practice.waitInputHintTitle": "No keyboard connected",
+  "practice.waitInputHintBody": "Tap the keys below, or plug in your keyboard.",
+  "practice.waitInputHintConnect": "Connect keyboard",
   "practice.free": "Free",
   "practice.speed": "Speed",
   "practice.tracks": "Tracks",

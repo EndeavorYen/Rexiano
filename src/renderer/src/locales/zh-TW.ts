@@ -304,6 +304,9 @@ export const zhTW: TranslationMap = {
   // ── Practice Mode ──────────────────────────────────────────────
   "practice.watch": "觀看",
   "practice.wait": "等待",
+  "practice.waitInputHintTitle": "還沒接上電子琴",
+  "practice.waitInputHintBody": "可以直接點下面的琴鍵，或接上電子琴再彈。",
+  "practice.waitInputHintConnect": "連接電子琴",
   "practice.free": "自由",
   "practice.speed": "速度",
   "practice.tracks": "軌道",
