@@ -103,6 +103,7 @@ function makeStaveNote(
     duration: `${group.duration}${group.isRest ? "r" : ""}`,
     clef,
     ...stemOptionsForGroup(group),
+    alignCenter: group.fullMeasureRest === true,
   });
   for (let i = 0; i < group.dots; i++) {
     Dot.buildAndAttach([note], { all: true });

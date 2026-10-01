@@ -13,6 +13,7 @@ export interface ChordGroup {
   voiceIndex: number;
   stemDirection?: 1 | -1;
   tuplet?: NotationTuplet;
+  fullMeasureRest?: boolean;
 }
 
 function tupletsMatch(
@@ -68,6 +69,7 @@ export function groupNotesIntoChords(notes: NotationNote[]): ChordGroup[] {
         voiceIndex: note.voiceIndex ?? 0,
         stemDirection: note.stemDirection,
         tuplet: note.tuplet,
+        fullMeasureRest: note.fullMeasureRest,
       });
     }
   }

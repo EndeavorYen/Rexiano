@@ -99,6 +99,8 @@ export interface NotationNote {
   rhythmApproximation?: NotationRhythmApproximation;
   /** Supported tuplet group rendered with VexFlow Tuplet */
   tuplet?: NotationTuplet;
+  /** Whole rest filling an empty bar, centred whatever the meter */
+  fullMeasureRest?: boolean;
 }
 
 /** A measure (bar) of quantized notes */
