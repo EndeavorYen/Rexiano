@@ -126,23 +126,31 @@ export function calcSheetRenderWidth(
   const baseWidth = Math.max(containerWidth, minimumWidth);
   if (displayMeasureCount <= 0) return baseWidth;
 
-  // The song's last window can hold fewer measures. Spread those across the
-  // width instead of drawing empty bars after the final barline (#312).
-  const slotCount =
-    visibleMeasureIndices.length > 0
-      ? Math.min(displayMeasureCount, visibleMeasureIndices.length)
-      : displayMeasureCount;
   const slotMeasureIndices = Array.from(
-    { length: slotCount },
+    { length: displayMeasureCount },
     (_, slot) => visibleMeasureIndices[slot],
   );
+  const visibleTargets = slotMeasureIndices
+    .filter((measureIndex) => measureIndex !== undefined)
+    .map((measureIndex) => calcMeasureTargetWidth(measures[measureIndex]));
+  // Plan the full window like calcMeasureSlotLayout does: slots past the
+  // song's end count as an average visible bar, so the last line keeps its
+  // usual bar widths (#312).
+  const typicalTarget =
+    visibleTargets.length > 0
+      ? visibleTargets.reduce((sum, width) => sum + width, 0) /
+        visibleTargets.length
+      : calcMeasureTargetWidth(undefined);
   const denseTargetWidth =
     leftMargin * 2 +
-    slotMeasureIndices.reduce((sum, measureIndex) => {
-      const measure =
-        measureIndex === undefined ? undefined : measures[measureIndex];
-      return sum + calcMeasureTargetWidth(measure);
-    }, 0);
+    slotMeasureIndices.reduce(
+      (sum, measureIndex) =>
+        sum +
+        (measureIndex === undefined
+          ? typicalTarget
+          : calcMeasureTargetWidth(measures[measureIndex])),
+      0,
+    );
 
   return Math.max(baseWidth, Math.ceil(denseTargetWidth));
 }

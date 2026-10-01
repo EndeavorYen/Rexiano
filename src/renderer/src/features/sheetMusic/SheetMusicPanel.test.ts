@@ -114,6 +114,22 @@ describe("calcMeasureSlotLayout", () => {
     expect(layout[2].x + layout[2].width).toBeLessThanOrEqual(800 - 28);
   });
 
+  it("keeps dense bars at their usual width on the last line", () => {
+    const dense = [0, 1, 2, 3].map((index) => ({
+      ...makeMeasure(index, 24),
+      trebleNotes: Array.from({ length: 24 }, (_, note) =>
+        makeNote(note * 80, 60 + (note % 12), {
+          accidental: note % 2 === 0 ? "#" : "n",
+        }),
+      ),
+    }));
+    const fullWidth = calcSheetRenderWidth(1300, dense, [0, 1, 2, 3], 28, 4);
+    const lastWidth = calcSheetRenderWidth(1300, dense, [3], 28, 4);
+    const full = calcMeasureSlotLayout(dense, [0, 1, 2, 3], fullWidth, 28, 4);
+    const last = calcMeasureSlotLayout(dense, [3], lastWidth, 28, 4);
+    expect(Math.abs(last[0].width - full[3].width)).toBeLessThanOrEqual(3);
+  });
+
   it("does not stretch a short last window across the line", () => {
     const measures = [0, 1, 2, 3].map((index) => makeMeasure(index, 4));
     const full = calcMeasureSlotLayout(measures, [0, 1, 2, 3], 800, 28, 4);
