@@ -13,7 +13,6 @@ const PLAYER_FLOW_FILES = [
   "features/practice/PracticeModeSelector.tsx",
   "features/practice/ModeSelectionModal.tsx",
   "features/practice/SpeedSlider.tsx",
-  "features/practice/ABLoopSelector.tsx",
   "features/practice/CelebrationOverlay.tsx",
   "features/onboarding/OnboardingGuide.tsx",
   "features/mainMenu/MainMenu.tsx",

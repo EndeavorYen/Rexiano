@@ -294,19 +294,18 @@ describe("useKeyboardShortcuts", () => {
     });
   });
 
-  // ─── L — Loop toggle ───────────────────────────────────
-  describe("L — Loop toggle", () => {
-    test("clears loop when loop is active", () => {
+  // ─── A / B / L — removed with the loop UI (#311) ───────
+  describe("A / B / L — no hidden loop", () => {
+    test("A then B during playback never sets a loop range", () => {
+      fireKey("KeyA");
+      fireKey("KeyB");
+      expect(usePracticeStore.getState().setLoopRange).not.toHaveBeenCalled();
+    });
+
+    test("L does not touch the loop range", () => {
       (
         usePracticeStore.getState() as { loopRange: [number, number] | null }
       ).loopRange = [10, 20];
-      fireKey("KeyL");
-      expect(usePracticeStore.getState().setLoopRange).toHaveBeenCalledWith(
-        null,
-      );
-    });
-
-    test("does nothing when no loop is active", () => {
       fireKey("KeyL");
       expect(usePracticeStore.getState().setLoopRange).not.toHaveBeenCalled();
     });
