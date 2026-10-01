@@ -661,7 +661,7 @@ export function SheetMusicPanel({
                 isFirst || meterChanged,
                 showBassStaff,
                 measureIndex === notationData.measures.length - 1,
-                measureNumberLabel(measure.index + 1, slot),
+                measureNumberLabel(measure.number ?? measure.index + 1, slot),
               ),
             );
           } catch (e) {

@@ -166,7 +166,7 @@ function describeNotationWarningLocation(
         Math.floor((warning.startTick - measureStartTick) / beatTicks) + 1,
       );
       return {
-        measure: measure.index + 1,
+        measure: measure.number ?? measure.index + 1,
         beat,
       };
     }
