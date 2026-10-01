@@ -267,6 +267,8 @@ export function filterSongsForLibrary(
 
     const searchable = [
       song.title,
+      song.titleZhTW ?? "",
+      ...(song.searchAliases ?? []),
       song.composer,
       song.category ?? "",
       song.grade !== undefined ? `l${song.grade}` : "",

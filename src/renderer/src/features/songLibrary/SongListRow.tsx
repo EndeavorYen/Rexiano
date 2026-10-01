@@ -1,4 +1,5 @@
 import { Star } from "lucide-react";
+import { songDisplayTitle } from "./songTitle";
 import { useTranslation } from "@renderer/i18n/useTranslation";
 import { categoryLabelKeys, formatSongDuration } from "./songCardUtils";
 import type { SongActivity } from "./songLibrarySelectors";
@@ -38,7 +39,8 @@ export function FavoriteButton({
   onToggleFavorite: (songId: string) => void;
   className?: string;
 }): React.JSX.Element {
-  const { t } = useTranslation();
+  const { t, lang } = useTranslation();
+  const songTitle = songDisplayTitle(song, lang).primary;
   const label = activity.isFavorite
     ? t("library.unfavorite")
     : t("library.favorite");
@@ -49,9 +51,9 @@ export function FavoriteButton({
       data-testid="song-favorite-toggle"
       onClick={() => onToggleFavorite(song.id)}
       className={`flex h-9 w-9 items-center justify-center rounded-full transition-colors cursor-pointer ${className}`}
-      aria-label={`${label}: ${song.title}`}
+      aria-label={`${label}: ${songTitle}`}
       aria-pressed={activity.isFavorite}
-      title={`${label}: ${song.title}`}
+      title={`${label}: ${songTitle}`}
       style={{
         background: activity.isFavorite
           ? "color-mix(in srgb, var(--color-streak-gold) 18%, var(--color-surface))"
@@ -121,7 +123,8 @@ export function SongListRow({
   onSelect,
   animationDelay,
 }: SongListRowProps): React.JSX.Element {
-  const { t } = useTranslation();
+  const { t, lang } = useTranslation();
+  const title = songDisplayTitle(song, lang);
   const category = song.category ?? "popular";
   const practicedLabel =
     activity.playCount > 0
@@ -153,13 +156,15 @@ export function SongListRow({
             data-testid="song-list-row-title"
             style={{ color: "var(--color-text)" }}
           >
-            {song.title}
+            {title.primary}
           </h3>
           <span
             className="mt-0.5 block truncate text-xs"
             style={{ color: "var(--color-text-muted)" }}
           >
-            {song.composer}
+            {title.secondary
+              ? `${title.secondary} · ${song.composer}`
+              : song.composer}
           </span>
         </span>
 

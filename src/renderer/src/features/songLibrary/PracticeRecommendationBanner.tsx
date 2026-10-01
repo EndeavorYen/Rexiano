@@ -1,4 +1,5 @@
 import { PlayCircle } from "lucide-react";
+import { songDisplayTitle } from "./songTitle";
 import { useTranslation } from "@renderer/i18n/useTranslation";
 import type { TranslationKey } from "@renderer/i18n/types";
 import type {
@@ -28,7 +29,7 @@ export function PracticeRecommendationBanner({
   onSelectSong,
   rememberReturnFocus,
 }: PracticeRecommendationBannerProps): React.JSX.Element {
-  const { t } = useTranslation();
+  const { t, lang } = useTranslation();
 
   return (
     <section className="surface-elevated mb-5 p-4 animate-page-enter">
@@ -81,7 +82,7 @@ export function PracticeRecommendationBanner({
               style={{ color: "var(--color-text)" }}
               data-testid="song-library-recommendation-title"
             >
-              {recommendation.song.title}
+              {songDisplayTitle(recommendation.song, lang).primary}
             </span>
             <span
               className="block text-xs font-body"

@@ -1,5 +1,6 @@
 import { useRef, useEffect } from "react";
 import { PlayCircle } from "lucide-react";
+import { songDisplayTitle } from "./songTitle";
 import { useTranslation } from "@renderer/i18n/useTranslation";
 import { categoryLabelKeys, formatSongDuration } from "./songCardUtils";
 import {
@@ -58,7 +59,11 @@ export function SongSelectionPreviewPanel({
   isLoading,
   onStartSession,
 }: SongSelectionPreviewPanelProps): React.JSX.Element {
-  const { t } = useTranslation();
+  const { t, lang } = useTranslation();
+  const title =
+    preview.kind === "builtin"
+      ? songDisplayTitle(preview.song, lang)
+      : { primary: preview.title, secondary: null };
   const sectionRef = useRef<HTMLElement | null>(null);
   const primaryActionRef = useRef<HTMLButtonElement | null>(null);
   const previewKey =
@@ -104,13 +109,15 @@ export function SongSelectionPreviewPanel({
             style={{ color: "var(--color-text)" }}
             data-testid="song-selection-preview-title"
           >
-            {preview.title}
+            {title.primary}
           </h2>
           <p
             className="mt-1 truncate text-sm font-body"
             style={{ color: "var(--color-text-muted)" }}
           >
-            {preview.composer}
+            {title.secondary
+              ? `${title.secondary} · ${preview.composer}`
+              : preview.composer}
           </p>
         </div>
 

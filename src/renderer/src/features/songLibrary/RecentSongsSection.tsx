@@ -1,4 +1,6 @@
 import { PlayCircle, AlertCircle } from "lucide-react";
+import { displayTitleForName } from "./songTitle";
+import { useSongLibraryStore } from "@renderer/stores/useSongLibraryStore";
 import { useTranslation } from "@renderer/i18n/useTranslation";
 import { formatRelativeTime } from "@renderer/utils/relativeTime";
 import type { RecentFileRecovery } from "./recentFileRecovery";
@@ -21,7 +23,8 @@ export function RecentSongsSection({
   onRemoveRecent,
   rememberReturnFocus,
 }: RecentSongsSectionProps): React.JSX.Element | null {
-  const { t } = useTranslation();
+  const { t, lang } = useTranslation();
+  const catalogue = useSongLibraryStore((s) => s.songs);
 
   const continueRecent = recentFiles[0] ?? null;
   if (!continueRecent) return null;
@@ -82,7 +85,7 @@ export function RecentSongsSection({
               className="block truncate text-base font-display font-bold"
               style={{ color: "var(--color-text)" }}
             >
-              {continueRecent.name}
+              {displayTitleForName(continueRecent.name, catalogue, lang)}
             </span>
             <span
               className="block text-xs font-body"
@@ -122,7 +125,7 @@ export function RecentSongsSection({
                   overflow: "hidden",
                 }}
               >
-                {file.name}
+                {displayTitleForName(file.name, catalogue, lang)}
               </span>
               <span
                 className="shrink-0 opacity-70 font-mono tabular-nums text-[11px]"

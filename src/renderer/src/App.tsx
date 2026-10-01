@@ -18,6 +18,7 @@ import { useKeyboardShortcuts } from "./hooks/useKeyboardShortcuts";
 import { useTranslation } from "./i18n/useTranslation";
 import { SheetMusicPanel } from "./features/sheetMusic/SheetMusicPanel";
 import { usePracticeStore } from "./stores/usePracticeStore";
+import { useSongLibraryStore } from "./stores/useSongLibraryStore";
 import { useMidiDeviceStore } from "./stores/useMidiDeviceStore";
 import { MainMenu } from "./features/mainMenu/MainMenu";
 import { ModeSelectionModal } from "./features/practice/ModeSelectionModal";
@@ -27,6 +28,7 @@ import { useMidiImportActions } from "./features/fileImport/useMidiImportActions
 import { FileImportErrorAlert } from "./features/fileImport/FileImportErrorAlert";
 import { buildMidiDiagnosticNotice } from "./features/midiDiagnostics/midiDiagnosticNotice";
 import { useRecentFiles } from "./hooks/useRecentFiles";
+import { displayTitleForName } from "./features/songLibrary/songTitle";
 import {
   clearPendingRecent,
   flushPendingRecent,
@@ -74,7 +76,8 @@ function releaseStaleOnScreenNotesSoon(): void {
 const NO_NOTES = new Set<number>();
 
 function App(): React.JSX.Element {
-  const { t } = useTranslation();
+  const { t, lang } = useTranslation();
+  const songCatalogue = useSongLibraryStore((s) => s.songs);
   const song = useSongStore((s) => s.song);
   // Fit the keyboard and falling-notes lane to the song, fixed per song.
   const keyRange = useMemo(
@@ -545,7 +548,7 @@ function App(): React.JSX.Element {
           className="flex-1 min-h-0 flex flex-col animate-page-enter px-3 pb-3 pt-3"
         >
           <PlaybackHeader
-            songTitle={song.fileName}
+            songTitle={displayTitleForName(song.fileName, songCatalogue, lang)}
             isSplitMode={isSplitMode}
             playbackDrawerTriggerRef={playbackDrawerTriggerRef}
             onOpenPlaybackDrawer={() => setShowPlaybackDrawer(true)}

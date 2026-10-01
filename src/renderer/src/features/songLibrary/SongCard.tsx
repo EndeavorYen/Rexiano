@@ -2,6 +2,7 @@ import { useCallback } from "react";
 import type { BuiltinSongMeta } from "../../../../shared/types";
 import { useProgressStore } from "@renderer/stores/useProgressStore";
 import { difficultyDescriptionKeys } from "./songCardUtils";
+import { songDisplayTitle } from "./songTitle";
 import { useTranslation } from "@renderer/i18n/useTranslation";
 import type { TranslationKey } from "@renderer/i18n/types";
 import {
@@ -50,7 +51,8 @@ export function SongCard({
   onSelect,
   colorIndex,
 }: SongCardProps): React.JSX.Element {
-  const { t } = useTranslation();
+  const { t, lang } = useTranslation();
+  const title = songDisplayTitle(song, lang);
   const noteColors = [
     "var(--color-note1)",
     "var(--color-note2)",
@@ -97,13 +99,15 @@ export function SongCard({
               className="font-body font-semibold text-sm truncate"
               style={{ color: "var(--color-text)" }}
             >
-              {song.title}
+              {title.primary}
             </h3>
             <p
               className="text-xs mt-0.5 truncate"
               style={{ color: "var(--color-text-muted)" }}
             >
-              {song.composer}
+              {title.secondary
+                ? `${title.secondary} · ${song.composer}`
+                : song.composer}
             </p>
             {song.origin && (
               <p

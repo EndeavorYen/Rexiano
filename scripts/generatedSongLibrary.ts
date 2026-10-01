@@ -29,6 +29,10 @@ export interface SongMeta {
   id: string;
   file: string;
   title: string;
+  /** Curated in songs.json; the generator never writes it */
+  titleZhTW?: string;
+  /** Curated in songs.json; the generator never writes it */
+  searchAliases?: string[];
   composer: string;
   difficulty: Difficulty;
   category: Category;
@@ -346,6 +350,10 @@ function mergeGeneratedEntry(
   return {
     ...generated,
     title: existing.title || generated.title,
+    ...(existing.titleZhTW ? { titleZhTW: existing.titleZhTW } : {}),
+    ...(existing.searchAliases
+      ? { searchAliases: [...existing.searchAliases] }
+      : {}),
     composer: existing.composer || generated.composer,
     grade: existing.grade ?? generated.grade,
     tags: mergeTags(existing.tags, generated.tags),

@@ -1,4 +1,5 @@
 import { Target, PlayCircle } from "lucide-react";
+import { songDisplayTitle } from "./songTitle";
 import { useTranslation } from "@renderer/i18n/useTranslation";
 import type { TranslationKey } from "@renderer/i18n/types";
 import type {
@@ -28,7 +29,7 @@ export function LessonProgressionSection({
   onSelectSong,
   rememberReturnFocus,
 }: LessonProgressionSectionProps): React.JSX.Element {
-  const { t } = useTranslation();
+  const { t, lang } = useTranslation();
   const nextLesson = lessonProgression.nextLesson;
 
   return (
@@ -86,7 +87,7 @@ export function LessonProgressionSection({
                 className="block truncate text-sm font-display font-bold"
                 style={{ color: "var(--color-text)" }}
               >
-                {nextLesson.song.title}
+                {songDisplayTitle(nextLesson.song, lang).primary}
               </span>
               <span
                 className="block truncate text-xs font-body"

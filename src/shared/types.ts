@@ -104,6 +104,10 @@ export interface BuiltinSongMeta {
   id: string;
   file: string;
   title: string;
+  /** Name children in Taiwan know the song by; the English title stays the identity */
+  titleZhTW?: string;
+  /** Extra search terms, e.g. other common Chinese names */
+  searchAliases?: string[];
   composer: string;
   difficulty: "beginner" | "intermediate" | "advanced";
   category?: "exercise" | "classical" | "popular" | "holiday";
