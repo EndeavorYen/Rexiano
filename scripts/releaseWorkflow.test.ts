@@ -18,7 +18,7 @@ const officialActionPins: Record<string, string> = {
   "actions/upload-pages-artifact": "fc324d3547104276b827a68afc52ff2a11cc49c9",
   "googleapis/release-please-action":
     "45996ed1f6d02564a971a2fa1b5860e934307cf7",
-  "pnpm/action-setup": "0977fd99725f1db4007ccb2928dbb4e90d06cc86",
+  "pnpm/action-setup": "ea17c68df8912ef543352723c149a84f56e3d413",
   "softprops/action-gh-release": "3d0d9888cb7fd7b750713d6e236d1fcb99157228",
 };
 
