@@ -1,4 +1,8 @@
-import { useMemo } from "react";
+import { useEffect, useMemo } from "react";
+import {
+  createKeyPointerTracker,
+  type KeyPointerHandlers,
+} from "./keyPointerTracker";
 import {
   FULL_KEY_RANGE,
   type KeyRange,
@@ -118,6 +122,15 @@ interface PianoKeyboardProps {
   compactLabels?: boolean;
   /** Keys to show; must match the falling-notes renderer's range */
   range?: KeyRange;
+  /** When set, pressing a key with mouse or touch plays it like a MIDI key */
+  onKeyPress?: KeyPointerHandlers;
+}
+
+function midiFromPointerTarget(target: EventTarget | null): number | null {
+  if (!(target instanceof Element)) return null;
+  const key = target.closest<HTMLElement>("[data-midi]");
+  const midi = Number(key?.dataset.midi);
+  return Number.isInteger(midi) ? midi : null;
 }
 
 /** Returns the CSS animation class for practice mode hit/miss feedback. */
@@ -204,15 +217,42 @@ export function PianoKeyboard({
   showLabels = true,
   compactLabels = false,
   range = FULL_KEY_RANGE,
+  onKeyPress,
 }: PianoKeyboardProps): React.JSX.Element {
   const layout = useMemo(() => buildLayout(range), [range]);
   const wPct = 100 / layout.whiteKeyCount;
 
+  // Callers pass a stable handler object; a new one releases held keys first.
+  const tracker = useMemo(
+    () => (onKeyPress ? createKeyPointerTracker(onKeyPress) : null),
+    [onKeyPress],
+  );
+  useEffect(() => () => tracker?.releaseAll(), [tracker]);
+
+  const pointerHandlers = tracker
+    ? {
+        onPointerDown: (event: React.PointerEvent<HTMLDivElement>) => {
+          const midi = midiFromPointerTarget(event.target);
+          if (midi === null) return;
+          event.preventDefault();
+          event.currentTarget.setPointerCapture?.(event.pointerId);
+          tracker.down(event.pointerId, midi);
+        },
+        onPointerUp: (event: React.PointerEvent<HTMLDivElement>) =>
+          tracker.up(event.pointerId),
+        onPointerCancel: (event: React.PointerEvent<HTMLDivElement>) =>
+          tracker.up(event.pointerId),
+        onLostPointerCapture: (event: React.PointerEvent<HTMLDivElement>) =>
+          tracker.up(event.pointerId),
+      }
+    : {};
+
   return (
     <div
-      className="relative w-full select-none overflow-hidden"
+      className={`relative w-full select-none overflow-hidden ${tracker ? "cursor-pointer touch-none" : ""}`}
       style={{ height, background: "var(--color-surface)" }}
       data-testid="piano-keyboard"
+      {...pointerHandlers}
     >
       {/* White keys */}
       {layout.whiteKeys.map((key) => {
@@ -222,6 +262,7 @@ export function PianoKeyboard({
         return (
           <div
             key={key.midi}
+            data-midi={key.midi}
             className={`absolute top-0 ${practiceClass}`}
             style={{
               left: `${key.index * wPct}%`,
@@ -266,6 +307,7 @@ export function PianoKeyboard({
         return (
           <div
             key={key.midi}
+            data-midi={key.midi}
             className={`absolute top-0 ${practiceClass}`}
             style={{
               left: `${centerX - bWidth / 2}%`,

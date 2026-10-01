@@ -292,6 +292,9 @@ export interface TranslationMap {
   // ── Practice Mode ──────────────────────────────────────────────
   "practice.watch": string;
   "practice.wait": string;
+  "practice.waitInputHintTitle": string;
+  "practice.waitInputHintBody": string;
+  "practice.waitInputHintConnect": string;
   "practice.free": string;
   "practice.speed": string;
   "practice.tracks": string;
