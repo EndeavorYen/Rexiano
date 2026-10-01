@@ -8,7 +8,12 @@ import {
 } from "midi-file";
 
 export type Difficulty = "beginner" | "intermediate" | "advanced";
-export type Category = "exercise" | "classical" | "popular" | "holiday";
+export type Category =
+  | "exercise"
+  | "classical"
+  | "folk"
+  | "popular"
+  | "holiday";
 export type Grade = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8;
 
 export interface SongDef {

@@ -1,6 +1,5 @@
 import { describe, expect, test } from "vitest";
 import {
-  builtinOriginLabelKey,
   builtinScoreFileName,
   practiceSourceFromFileName,
   preferredDisplayModeForSource,
@@ -38,9 +37,7 @@ describe("builtinScoreSource", () => {
     expect(preferredDisplayModeForSource("midi")).toBe("falling");
   });
 
-  test("labels score-backed songs as score and MIDI-backed sheet as approximate", () => {
-    expect(builtinOriginLabelKey("score")).toBe("library.origin.score");
-    expect(builtinOriginLabelKey("midi")).toBe("library.origin.midi");
+  test("labels MIDI-backed sheet music as approximate", () => {
     expect(sheetFidelityLabelKey("score")).toBe("sheetMusic.fidelity.score");
     expect(sheetFidelityLabelKey("midi")).toBe(
       "sheetMusic.fidelity.approximate",

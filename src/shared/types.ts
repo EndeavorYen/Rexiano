@@ -110,7 +110,7 @@ export interface BuiltinSongMeta {
   searchAliases?: string[];
   composer: string;
   difficulty: "beginner" | "intermediate" | "advanced";
-  category?: "exercise" | "classical" | "popular" | "holiday";
+  category?: "exercise" | "classical" | "folk" | "popular" | "holiday";
   durationSeconds: number;
   tags: string[];
   /**
