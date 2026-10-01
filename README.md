@@ -144,7 +144,7 @@ build/                   Electron-builder resources
 
 | Layer     | Technology                                            |
 | --------- | ----------------------------------------------------- |
-| Desktop   | Electron 39                                           |
+| Desktop   | Electron 44                                           |
 | UI        | React 19, TypeScript 5.9, Tailwind CSS 4              |
 | Rendering | PixiJS 8 for falling notes, VexFlow 5 for sheet music |
 | State     | Zustand 5                                             |

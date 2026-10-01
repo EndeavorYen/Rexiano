@@ -44,7 +44,10 @@ vi.mock("@renderer/stores/usePracticeStore", () => ({
 }));
 
 // ── Mock practice engines ──────────────────────────────────────
-const mockWaitMode = { tick: vi.fn().mockReturnValue(true) };
+const mockWaitMode = {
+  tick: vi.fn().mockReturnValue(true),
+  nextOnsetTime: vi.fn().mockReturnValue(null as number | null),
+};
 const mockSpeedController = {
   multiplier: 1.0,
   effectivePixelsPerSecond: vi.fn((base: number) => base),
@@ -75,6 +78,7 @@ describe("TransportClock — createTransportTick", () => {
     mockSongState.song = mockSong;
     mockPracticeState.mode = "watch";
     mockWaitMode.tick.mockReturnValue(true);
+    mockWaitMode.nextOnsetTime.mockReturnValue(null);
     mockSpeedController.multiplier = 1.0;
     mockLoopController.isActive = false;
     mockLoopController.shouldLoop.mockReturnValue(false);
@@ -294,5 +298,26 @@ describe("TransportClock — animation frame loop", () => {
     const clock = new TransportClock();
     clock.start();
     expect(clock.isRunning).toBe(false);
+  });
+
+  it("in Wait mode a long frame gap stops at the next note instead of skipping it", () => {
+    mockPlaybackState.isPlaying = true;
+    mockPlaybackState.currentTime = 0.1;
+    mockPracticeState.mode = "wait";
+    mockWaitMode.nextOnsetTime.mockReturnValue(0.625);
+    // The audio clock ran on while no frames were drawn.
+    const tick = createTransportTick(() => 1.4);
+    tick(16);
+    expect(mockPlaybackState.setCurrentTime).toHaveBeenCalledWith(0.625);
+  });
+
+  it("outside Wait mode the audio clock is followed as before", () => {
+    mockPlaybackState.isPlaying = true;
+    mockPlaybackState.currentTime = 0.1;
+    mockPracticeState.mode = "watch";
+    mockWaitMode.nextOnsetTime.mockReturnValue(0.625);
+    const tick = createTransportTick(() => 1.4);
+    tick(16);
+    expect(mockPlaybackState.setCurrentTime).toHaveBeenCalledWith(1.4);
   });
 });

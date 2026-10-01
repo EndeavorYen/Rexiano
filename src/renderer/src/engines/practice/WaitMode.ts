@@ -251,6 +251,33 @@ export class WaitMode {
   }
 
   /**
+   * Song time at which the next unjudged note becomes the onset `tick` waits
+   * on (note time shifted by latency compensation), or null when none is left.
+   *
+   * The transport clamps time to this in Wait mode: the audio clock keeps
+   * running while no frames are drawn (a stalled or throttled window), and
+   * one late frame must not jump past a note's timing window and mark it
+   * missed instead of waiting for it.
+   */
+  nextOnsetTime(): number | null {
+    let earliest: number | null = null;
+    for (const trackIndex of this._activeTracks) {
+      const track = this._tracks[trackIndex];
+      if (!track) continue;
+      const cursor = this._trackCursors.get(trackIndex) ?? 0;
+      for (let ni = cursor; ni < track.notes.length; ni++) {
+        if (this._noteResults.has(`${trackIndex}:${ni}`)) continue;
+        const time = track.notes[ni].time;
+        if (earliest === null || time < earliest) earliest = time;
+        break;
+      }
+    }
+    if (earliest === null) return null;
+    const latencySec = useSettingsStore.getState().latencyCompensation / 1000;
+    return earliest + latencySec;
+  }
+
+  /**
    * Check user input against target notes.
    * Call this whenever the user's active MIDI notes change.
    *

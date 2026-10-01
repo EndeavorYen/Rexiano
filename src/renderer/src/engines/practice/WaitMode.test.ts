@@ -477,3 +477,44 @@ describe("WaitMode", () => {
     expect(onWait).toHaveBeenCalledOnce();
   });
 });
+
+describe("WaitMode.nextOnsetTime (frame gaps must not skip notes)", () => {
+  let wm: WaitMode;
+
+  beforeEach(() => {
+    wm = new WaitMode(200);
+    setLatencyMs(0);
+  });
+
+  it("returns the earliest note that has not been judged yet", () => {
+    wm.init(
+      makeTracks([
+        { midi: 60, time: 0.625 },
+        { midi: 60, time: 1.25 },
+      ]),
+      new Set([0]),
+    );
+    wm.start();
+    expect(wm.nextOnsetTime()).toBe(0.625);
+    // Wait at the first note, play it, move on.
+    expect(wm.tick(0.625)).toBe(false);
+    wm.checkInput(new Set([60]));
+    expect(wm.nextOnsetTime()).toBe(1.25);
+  });
+
+  it("shifts by latency compensation so the clamped time still matches", () => {
+    setLatencyMs(300);
+    wm.init(makeTracks([{ midi: 60, time: 1 }]), new Set([0]));
+    wm.start();
+    expect(wm.nextOnsetTime()).toBeCloseTo(1.3);
+    expect(wm.tick(wm.nextOnsetTime()!)).toBe(false);
+  });
+
+  it("returns null when every note is judged", () => {
+    wm.init(makeTracks([{ midi: 60, time: 0.5 }]), new Set([0]));
+    wm.start();
+    wm.tick(0.5);
+    wm.checkInput(new Set([60]));
+    expect(wm.nextOnsetTime()).toBeNull();
+  });
+});

@@ -144,7 +144,7 @@ build/                   Electron-builder 資源
 
 | 層級     | 技術                                     |
 | -------- | ---------------------------------------- |
-| 桌面框架 | Electron 39                              |
+| 桌面框架 | Electron 44                              |
 | UI       | React 19、TypeScript 5.9、Tailwind CSS 4 |
 | 渲染     | PixiJS 8 下落音符、VexFlow 5 五線譜      |
 | 狀態     | Zustand 5                                |
