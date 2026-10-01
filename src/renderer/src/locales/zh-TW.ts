@@ -264,7 +264,7 @@ export const zhTW: TranslationMap = {
   "midi.error": "連線錯誤",
   "midi.errorUnsupported": "此環境不支援 MIDI",
   "midi.errorUnsupportedGuidance": "請使用桌面版或支援 Web MIDI 的瀏覽器。",
-  "midi.errorDenied": "MIDI 權限被拒絕",
+  "midi.errorDenied": "無法開啟 MIDI",
   "midi.errorDeniedGuidance":
     "請確認電子琴已接上，並關掉其他正在使用 MIDI 的程式，然後重試。",
   "midi.errorUnavailable": "目前無法使用 MIDI",

@@ -16,6 +16,12 @@ describe("midiPermissionPolicy", () => {
         url: "file:///Applications/Rexiano.app/Contents/Resources/app.asar/out/renderer/index.html",
       }),
     ).toBe(true);
+    expect(
+      isAllowedMidiPermissionRequest({
+        permission: "midiSysex",
+        url: "file:///Applications/Rexiano.app/Contents/Resources/app.asar/out/renderer/index.html",
+      }),
+    ).toBe(true);
     // Electron 39 reports requestMIDIAccess({ sysex: false }) as "midiSysex",
     // so denying it denies every Web MIDI request (#303).
     configureTrustedRendererUrl("http://localhost:5173/");
