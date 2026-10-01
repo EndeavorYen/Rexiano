@@ -1,4 +1,5 @@
-import { beforeEach, describe, expect, test, vi } from "vitest";
+import { beforeEach, describe, expect, test, vi, type Mock } from "vitest";
+import type { ParsedSong } from "../../engines/midi/types";
 
 vi.mock("../../engines/score/decodeImportedPracticeFile", () => ({
   parseImportedPracticeFile: vi.fn((fileName: string) => ({
@@ -16,6 +17,7 @@ import { useSongLibraryStore } from "../../stores/useSongLibraryStore";
 import {
   builtinRecentPath,
   openBuiltinSong,
+  openRecentEntry,
   recentOpenTarget,
 } from "./openBuiltinSong";
 
@@ -29,6 +31,7 @@ beforeEach(() => {
   vi.clearAllMocks();
   (globalThis as unknown as { window: { api: typeof api } }).window = { api };
   useSongLibraryStore.setState({ songs: [] });
+  usePracticeStore.setState({ displayMode: "split" });
   api.saveRecentFile.mockResolvedValue(undefined);
 });
 
@@ -120,7 +123,21 @@ describe("openBuiltinSong", () => {
       resetPlayback: vi.fn(),
     });
     expect(api.listBuiltinSongs).not.toHaveBeenCalled();
-    expect(usePracticeStore.getState().displayMode).not.toBe("split");
+    expect(usePracticeStore.getState().displayMode).toBe("falling");
+  });
+
+  test("a failed recents write does not turn an opened song into a failure", async () => {
+    api.loadBuiltinSong.mockResolvedValue({ fileName: "Song", data: [] });
+    api.listBuiltinSongs.mockResolvedValue([{ id: "song", origin: "midi" }]);
+    api.saveRecentFile.mockRejectedValue(new Error("disk full"));
+    const loadSong = vi.fn();
+    const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+
+    await expect(
+      openBuiltinSong("song", { loadSong, resetPlayback: vi.fn() }),
+    ).resolves.toBe("Song");
+    expect(loadSong).toHaveBeenCalledOnce();
+    errorSpy.mockRestore();
   });
 
   test("returns null and loads nothing when the song is not in the catalogue", async () => {
@@ -135,5 +152,59 @@ describe("openBuiltinSong", () => {
     expect(title).toBeNull();
     expect(loadSong).not.toHaveBeenCalled();
     expect(api.saveRecentFile).not.toHaveBeenCalled();
+  });
+});
+
+describe("openRecentEntry", () => {
+  const deps = (): {
+    loadSong: Mock<(song: ParsedSong) => void>;
+    resetPlayback: Mock<() => void>;
+    loadFilePath: Mock<(path: string) => Promise<void>>;
+  } => ({
+    loadSong: vi.fn(),
+    resetPlayback: vi.fn(),
+    loadFilePath: vi.fn(async () => {}),
+  });
+
+  test("hands file recents to the file loader", async () => {
+    const d = deps();
+    const outcome = await openRecentEntry(
+      { path: "C:/a.mid", name: "a.mid", timestamp: 1 },
+      d,
+    );
+    expect(outcome).toEqual({ kind: "file" });
+    expect(d.loadFilePath).toHaveBeenCalledWith("C:/a.mid");
+    expect(api.loadBuiltinSong).not.toHaveBeenCalled();
+  });
+
+  test("opens a built-in recent without touching the file loader", async () => {
+    api.loadBuiltinSong.mockResolvedValue({ fileName: "Song", data: [] });
+    api.listBuiltinSongs.mockResolvedValue([]);
+    const d = deps();
+    const outcome = await openRecentEntry(
+      { path: "builtin:song", name: "Song", timestamp: 1 },
+      d,
+    );
+    expect(outcome).toEqual({ kind: "opened" });
+    expect(d.loadFilePath).not.toHaveBeenCalled();
+  });
+
+  test("reports a built-in the catalogue no longer has as unavailable", async () => {
+    api.loadBuiltinSong.mockResolvedValue(null);
+    const outcome = await openRecentEntry(
+      { path: "builtin:gone", name: "Gone", timestamp: 1 },
+      deps(),
+    );
+    expect(outcome).toEqual({ kind: "unavailable" });
+  });
+
+  test("reports a built-in that throws while loading as unavailable", async () => {
+    const failure = new Error("parse failed");
+    api.loadBuiltinSong.mockRejectedValue(failure);
+    const outcome = await openRecentEntry(
+      { path: "builtin:bad", name: "Bad", timestamp: 1 },
+      deps(),
+    );
+    expect(outcome).toEqual({ kind: "unavailable", diagnostic: failure });
   });
 });

@@ -26,10 +26,7 @@ import {
 } from "@shared/midiFileLimits";
 import { subscribeToAssociatedMidiImports } from "./associatedMidiImport";
 import type { RecentFile } from "@shared/types";
-import {
-  openBuiltinSong,
-  recentOpenTarget,
-} from "../songLibrary/openBuiltinSong";
+import { openRecentEntry } from "../songLibrary/openBuiltinSong";
 
 export const MIDI_EXTENSIONS = [
   ".mid",
@@ -290,35 +287,31 @@ export function useMidiImportActions({
 
   const handleOpenRecent = useCallback(
     async (file: RecentFile): Promise<void> => {
-      const target = recentOpenTarget(file.path);
-      if (target.kind === "file") {
-        await handleLoadMidiPath(target.path);
-        return;
-      }
-      const unavailable = (diagnostic?: unknown): void =>
+      const outcome = await openRecentEntry(file, {
+        loadSong,
+        resetPlayback,
+        loadFilePath: handleLoadMidiPath,
+      });
+      if (outcome.kind === "file") return;
+      if (outcome.kind === "unavailable") {
+        if (outcome.diagnostic) {
+          console.error(
+            "Failed to open built-in recent song:",
+            outcome.diagnostic,
+          );
+        }
         showImportError({
           kind: "builtin-unavailable",
           fileName: file.name,
           path: file.path,
-          diagnostic,
+          diagnostic: outcome.diagnostic,
         });
-      try {
-        const title = await openBuiltinSong(target.songId, {
-          loadSong,
-          resetPlayback,
-        });
-        if (!title) {
-          unavailable();
-          return;
-        }
-        setImportError((current) =>
-          reduceImportErrorForEvent(current, "import-succeeded"),
-        );
-        refreshRecentFiles();
-      } catch (error) {
-        console.error("Failed to open built-in recent song:", error);
-        unavailable(error);
+        return;
       }
+      setImportError((current) =>
+        reduceImportErrorForEvent(current, "import-succeeded"),
+      );
+      refreshRecentFiles();
     },
     [
       handleLoadMidiPath,

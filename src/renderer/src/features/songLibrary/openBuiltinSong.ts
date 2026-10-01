@@ -3,6 +3,7 @@
  * "Recently played" list. Recents store built-in songs as `builtin:<id>`,
  * which is not a file path and must not reach the file loader (#304).
  */
+import type { RecentFile } from "@shared/types";
 import type { ParsedSong } from "../../engines/midi/types";
 import { parseImportedPracticeFile } from "../../engines/score/decodeImportedPracticeFile";
 import { preferredDisplayModeForSource } from "../../engines/score/builtinScoreSource";
@@ -59,10 +60,46 @@ export async function openBuiltinSong(
     .setDisplayMode(preferredDisplayModeForSource(origin));
   resetPlayback();
 
-  await window.api.saveRecentFile({
-    path: builtinRecentPath(songId),
-    name: result.fileName,
-    timestamp: Date.now(),
-  });
+  // The song is open at this point; a failed recents write must not undo that.
+  try {
+    await window.api.saveRecentFile({
+      path: builtinRecentPath(songId),
+      name: result.fileName,
+      timestamp: Date.now(),
+    });
+  } catch (error) {
+    console.error("Failed to save recent built-in song:", error);
+  }
   return result.fileName;
+}
+
+export type RecentOpenOutcome =
+  | { kind: "file" }
+  | { kind: "opened" }
+  | { kind: "unavailable"; diagnostic?: unknown };
+
+interface OpenRecentEntryDeps extends OpenBuiltinSongDeps {
+  loadFilePath: (path: string) => Promise<void>;
+}
+
+/**
+ * Open one "Recently played" entry. File paths go to the file loader, which
+ * reports its own errors; built-in songs open here, and any failure comes
+ * back as `unavailable` for the caller to show.
+ */
+export async function openRecentEntry(
+  file: RecentFile,
+  { loadFilePath, ...deps }: OpenRecentEntryDeps,
+): Promise<RecentOpenOutcome> {
+  const target = recentOpenTarget(file.path);
+  if (target.kind === "file") {
+    await loadFilePath(target.path);
+    return { kind: "file" };
+  }
+  try {
+    const title = await openBuiltinSong(target.songId, deps);
+    return title ? { kind: "opened" } : { kind: "unavailable" };
+  } catch (diagnostic) {
+    return { kind: "unavailable", diagnostic };
+  }
 }
