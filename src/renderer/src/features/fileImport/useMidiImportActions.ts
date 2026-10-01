@@ -25,6 +25,11 @@ import {
   MIDI_FILE_TOO_LARGE_DIAGNOSTIC,
 } from "@shared/midiFileLimits";
 import { subscribeToAssociatedMidiImports } from "./associatedMidiImport";
+import type { RecentFile } from "@shared/types";
+import {
+  openBuiltinSong,
+  recentOpenTarget,
+} from "../songLibrary/openBuiltinSong";
 
 export const MIDI_EXTENSIONS = [
   ".mid",
@@ -71,6 +76,8 @@ export interface MidiImportActions {
   isDragging: boolean;
   handleOpenFile: () => Promise<void>;
   handleLoadMidiPath: (filePath: string) => Promise<void>;
+  /** Open a Recently played entry: a file path or a `builtin:<id>` song */
+  handleOpenRecent: (file: RecentFile) => Promise<void>;
   dismissImportError: () => void;
   handleImportRecoveryAction: (
     actionId: FileImportRecoveryActionId,
@@ -281,6 +288,47 @@ export function useMidiImportActions({
     [loadParsedSong, refreshRecentFiles, showImportError],
   );
 
+  const handleOpenRecent = useCallback(
+    async (file: RecentFile): Promise<void> => {
+      const target = recentOpenTarget(file.path);
+      if (target.kind === "file") {
+        await handleLoadMidiPath(target.path);
+        return;
+      }
+      const unavailable = (diagnostic?: unknown): void =>
+        showImportError({
+          kind: "builtin-unavailable",
+          fileName: file.name,
+          path: file.path,
+          diagnostic,
+        });
+      try {
+        const title = await openBuiltinSong(target.songId, {
+          loadSong,
+          resetPlayback,
+        });
+        if (!title) {
+          unavailable();
+          return;
+        }
+        setImportError((current) =>
+          reduceImportErrorForEvent(current, "import-succeeded"),
+        );
+        refreshRecentFiles();
+      } catch (error) {
+        console.error("Failed to open built-in recent song:", error);
+        unavailable(error);
+      }
+    },
+    [
+      handleLoadMidiPath,
+      loadSong,
+      refreshRecentFiles,
+      resetPlayback,
+      showImportError,
+    ],
+  );
+
   useEffect(() => {
     if (
       typeof window.api.takePendingAssociatedMidiFile !== "function" ||
@@ -428,6 +476,7 @@ export function useMidiImportActions({
     isDragging,
     handleOpenFile,
     handleLoadMidiPath,
+    handleOpenRecent,
     dismissImportError,
     handleImportRecoveryAction,
     handleDragEnter,

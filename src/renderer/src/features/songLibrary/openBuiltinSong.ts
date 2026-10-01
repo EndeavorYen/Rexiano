@@ -42,16 +42,18 @@ export async function openBuiltinSong(
 ): Promise<string | null> {
   const result = await window.api.loadBuiltinSong(songId);
   if (!result) return null;
-
-  loadSong(parseImportedPracticeFile(result.fileName, result.data));
+  const song = parseImportedPracticeFile(result.fileName, result.data);
 
   // Home can open a song before the library has ever fetched the catalogue.
+  // Resolve it first so the song, display mode and reset land together.
   if (useSongLibraryStore.getState().songs.length === 0) {
     await useSongLibraryStore.getState().fetchSongs();
   }
   const origin =
     useSongLibraryStore.getState().songs.find((entry) => entry.id === songId)
       ?.origin ?? "midi";
+
+  loadSong(song);
   usePracticeStore
     .getState()
     .setDisplayMode(preferredDisplayModeForSource(origin));

@@ -19,6 +19,8 @@ export interface TranslationMap {
   "app.importErrorParseGuidance": string;
   "app.importErrorMissingTitle": string;
   "app.importErrorMissingGuidance": string;
+  "app.importErrorBuiltinTitle": string;
+  "app.importErrorBuiltinGuidance": string;
   "app.importErrorReadTitle": string;
   "app.importErrorReadGuidance": string;
   "app.importErrorUnknownFile": string;

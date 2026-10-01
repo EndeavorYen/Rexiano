@@ -104,6 +104,24 @@ describe("getFileImportErrorGuidance", () => {
     });
   });
 
+  test("maps an unavailable built-in song to remove-recent, never re-import", () => {
+    const guidance = getFileImportErrorGuidance(
+      {
+        kind: "builtin-unavailable",
+        fileName: "Hot Cross Buns",
+        path: "builtin:hot-cross-buns",
+      },
+      t,
+    );
+    expect(guidance.title).toBe("app.importErrorBuiltinTitle");
+    expect(guidance.guidance).toBe(
+      "app.importErrorBuiltinGuidance:fileName=Hot Cross Buns",
+    );
+    expect(guidance.actions.map((action) => action.id)).toEqual([
+      "remove-recent",
+    ]);
+  });
+
   test("maps read failures to retry and re-import actions", () => {
     expect(
       getFileImportErrorGuidance(

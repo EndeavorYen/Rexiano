@@ -22,6 +22,9 @@ export const en: TranslationMap = {
   "app.importErrorMissingTitle": "Recent file is no longer available",
   "app.importErrorMissingGuidance":
     "{fileName} may have moved or become unreadable. Import it again from its current location.",
+  "app.importErrorBuiltinTitle": "This song couldn't open",
+  "app.importErrorBuiltinGuidance":
+    "{fileName} couldn't open. Pick another song; if it keeps happening, reinstall Rexiano.",
   "app.importErrorReadTitle": "File could not be read",
   "app.importErrorReadGuidance":
     "Check file permissions for {fileName}, then try again.",

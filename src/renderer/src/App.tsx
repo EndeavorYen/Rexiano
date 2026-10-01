@@ -9,10 +9,6 @@ import { computeKeyRange } from "./engines/fallingNotes/keyPositions";
 import { TransportBar } from "./features/fallingNotes/TransportBar";
 import { SettingsPanel } from "./features/settings/SettingsPanel";
 import { SongLibrary } from "./features/songLibrary/SongLibrary";
-import {
-  openBuiltinSong,
-  recentOpenTarget,
-} from "./features/songLibrary/openBuiltinSong";
 import { BluetoothDeviceSelectionDialog } from "./features/midiDevice/BluetoothDeviceSelectionDialog";
 import { usePracticeLifecycle } from "./features/practice/usePracticeLifecycle";
 import { useKeyboardShortcuts } from "./hooks/useKeyboardShortcuts";
@@ -276,6 +272,7 @@ function App(): React.JSX.Element {
     isDragging,
     handleOpenFile,
     handleLoadMidiPath,
+    handleOpenRecent,
     dismissImportError,
     handleImportRecoveryAction,
     handleDragEnter,
@@ -437,23 +434,7 @@ function App(): React.JSX.Element {
             recentFiles={recentFiles}
             onSelectRecent={(file) => {
               setSessionIntent("practice");
-              const target = recentOpenTarget(file.path);
-              if (target.kind === "file") {
-                void handleLoadMidiPath(target.path);
-                return;
-              }
-              void openBuiltinSong(target.songId, {
-                loadSong,
-                resetPlayback: reset,
-              })
-                .then(async (title) => {
-                  // A built-in that a newer build dropped leaves the list.
-                  if (title) refreshRecentFiles();
-                  else await removeRecentFile(file.path);
-                })
-                .catch((error: unknown) => {
-                  console.error("Failed to open built-in recent song:", error);
-                });
+              void handleOpenRecent(file);
             }}
           />
           {showMenuSettings && (

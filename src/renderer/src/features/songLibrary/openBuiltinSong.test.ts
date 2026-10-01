@@ -89,6 +89,40 @@ describe("openBuiltinSong", () => {
     );
   });
 
+  test("resolves the display mode before the song reaches the player", async () => {
+    api.loadBuiltinSong.mockResolvedValue({ fileName: "Song", data: [] });
+    let resolveCatalogue: (songs: unknown[]) => void = () => {};
+    api.listBuiltinSongs.mockReturnValue(
+      new Promise((resolve) => {
+        resolveCatalogue = resolve;
+      }),
+    );
+    const loadSong = vi.fn();
+    const opening = openBuiltinSong("song", {
+      loadSong,
+      resetPlayback: vi.fn(),
+    });
+    await Promise.resolve();
+    await Promise.resolve();
+    expect(loadSong).not.toHaveBeenCalled();
+    resolveCatalogue([{ id: "song", origin: "midi" }]);
+    await opening;
+    expect(loadSong).toHaveBeenCalledOnce();
+  });
+
+  test("uses an already-loaded catalogue without fetching again", async () => {
+    useSongLibraryStore.setState({
+      songs: [{ id: "song", origin: "midi" }] as never,
+    });
+    api.loadBuiltinSong.mockResolvedValue({ fileName: "Song", data: [] });
+    await openBuiltinSong("song", {
+      loadSong: vi.fn(),
+      resetPlayback: vi.fn(),
+    });
+    expect(api.listBuiltinSongs).not.toHaveBeenCalled();
+    expect(usePracticeStore.getState().displayMode).not.toBe("split");
+  });
+
   test("returns null and loads nothing when the song is not in the catalogue", async () => {
     api.loadBuiltinSong.mockResolvedValue(null);
     const loadSong = vi.fn();
