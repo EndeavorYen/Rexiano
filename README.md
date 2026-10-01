@@ -36,7 +36,7 @@
     </td>
     <td width="33%" align="center">
       <img src="docs/assets/screenshots/rexiano-practice.png" alt="Rexiano falling notes practice view" width="100%"><br>
-      <sub>Practice View: falling notes, keyboard feedback, scoring, loops, and speed control.</sub>
+      <sub>Practice View: falling notes, keyboard feedback, scoring, and speed control.</sub>
     </td>
     <td width="33%" align="center">
       <img src="docs/assets/screenshots/rexiano-split-sheet.png" alt="Rexiano split sheet music and falling notes view" width="100%"><br>
@@ -68,14 +68,14 @@ Each release includes `SHA256SUMS.txt` for checksum verification. Rexiano can al
 
 ## Highlights
 
-| Area            | What Rexiano Helps With                                                                                                    |
-| --------------- | -------------------------------------------------------------------------------------------------------------------------- |
-| Visual learning | 60 FPS falling notes, 88-key highlighting, note labels, and per-track colors for left/right hand separation.               |
-| Sheet music     | Split, sheet-only, and falling-notes display modes for switching between notation and piano-roll practice.                 |
-| Practice focus  | Watch, Wait, and Free modes, plus speed control, A-B loop, split-hand practice, metronome, count-in, and progress history. |
-| MIDI keyboards  | USB and Bluetooth MIDI input/output, hot-plug detection, auto-reconnect, and sustain pedal support.                        |
-| Sound           | Bundled FreePats Upright Piano KW SoundFont with Web Audio playback and a synthesizer fallback.                            |
-| Files           | Built-in song library plus drag-and-drop import for your own MIDI files.                                                   |
+| Area            | What Rexiano Helps With                                                                                          |
+| --------------- | ---------------------------------------------------------------------------------------------------------------- |
+| Visual learning | 60 FPS falling notes, 88-key highlighting, note labels, and per-track colors for left/right hand separation.     |
+| Sheet music     | Split, sheet-only, and falling-notes display modes for switching between notation and piano-roll practice.       |
+| Practice focus  | Watch, Wait, and Free modes, plus speed control, split-hand practice, metronome, count-in, and progress history. |
+| MIDI keyboards  | USB and Bluetooth MIDI input/output, hot-plug detection, auto-reconnect, and sustain pedal support.              |
+| Sound           | Bundled FreePats Upright Piano KW SoundFont with Web Audio playback and a synthesizer fallback.                  |
+| Files           | Built-in song library plus drag-and-drop import for your own MIDI files.                                         |
 
 ## Bluetooth MIDI
 
