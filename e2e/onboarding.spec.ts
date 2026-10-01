@@ -1,4 +1,9 @@
-import { test, expect, waitForUiSettled } from "./fixtures/electronApp";
+import {
+  test,
+  expect,
+  waitForAppDocument,
+  waitForUiSettled,
+} from "./fixtures/electronApp";
 
 async function expectOnboardingFocusWithin(
   page: Parameters<typeof waitForUiSettled>[0],
@@ -22,7 +27,7 @@ test.describe.skip("First-run onboarding", () => {
     electronApp,
   }) => {
     const page = await electronApp.firstWindow();
-    await page.waitForLoadState("domcontentloaded");
+    await waitForAppDocument(page);
     await waitForUiSettled(page);
 
     const card = page.getByTestId("onboarding-card");
@@ -40,7 +45,7 @@ test.describe.skip("First-run onboarding", () => {
     electronApp,
   }) => {
     const page = await electronApp.firstWindow();
-    await page.waitForLoadState("domcontentloaded");
+    await waitForAppDocument(page);
     await page.evaluate(() => {
       localStorage.removeItem("rexiano-onboarding-completed");
       localStorage.setItem(
@@ -69,7 +74,7 @@ test.describe.skip("First-run onboarding", () => {
     electronApp,
   }) => {
     const page = await electronApp.firstWindow();
-    await page.waitForLoadState("domcontentloaded");
+    await waitForAppDocument(page);
     await waitForUiSettled(page);
 
     const card = page.getByTestId("onboarding-card");

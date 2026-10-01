@@ -1,4 +1,4 @@
-import { test, expect } from "./fixtures/electronApp";
+import { test, expect, waitForAppDocument } from "./fixtures/electronApp";
 import { _electron as electron } from "playwright";
 import { access, readFile, writeFile } from "fs/promises";
 import { join } from "path";
@@ -89,7 +89,7 @@ test.describe.skip("Settings user data backup", () => {
 
     try {
       const relaunchedPage = await relaunched.firstWindow();
-      await relaunchedPage.waitForLoadState("domcontentloaded");
+      await waitForAppDocument(relaunchedPage);
       await expect(relaunchedPage.locator("#root")).not.toBeEmpty();
       expect(await readFile(progressPath, "utf-8")).toBe(oldProgress);
       expect(

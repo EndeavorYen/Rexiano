@@ -14,6 +14,13 @@ interface ElectronFixtures {
   appPage: Page;
 }
 
+const RM_RETRY = {
+  recursive: true,
+  force: true,
+  maxRetries: 10,
+  retryDelay: 200,
+} as const;
+
 const SETTINGS_KEY = "rexiano-settings";
 const ONBOARDING_KEY = "rexiano-onboarding-completed";
 
@@ -27,7 +34,7 @@ export const test = base.extend<ElectronFixtures>({
       workerIndex: testInfo.workerIndex,
       testId: testInfo.testId,
     });
-    rmSync(userDataPath, { recursive: true, force: true });
+    rmSync(userDataPath, RM_RETRY);
     mkdirSync(userDataPath, { recursive: true });
 
     const launchEnv: NodeJS.ProcessEnv = {
@@ -55,13 +62,19 @@ export const test = base.extend<ElectronFixtures>({
       await runFixture(app);
     } finally {
       await app.close();
-      rmSync(userDataPath, { recursive: true, force: true });
+      // Electron's helper processes can hold the profile for a moment after
+      // close; retry instead of failing the test on EPERM.
+      rmSync(userDataPath, RM_RETRY);
     }
   },
 
   appPage: async ({ electronApp }, runFixture) => {
     const page = await electronApp.firstWindow();
-    await page.waitForLoadState("domcontentloaded");
+    await waitForAppDocument(page);
+    // Keyboard-focus assertions need the window itself to be active.
+    await electronApp.evaluate(({ BrowserWindow }) => {
+      BrowserWindow.getAllWindows()[0]?.focus();
+    });
     await applyStableSettings(page);
     await applyStableRendering(page);
     await waitForUiSettled(page);
@@ -98,6 +111,18 @@ async function applyStableSettings(page: Page): Promise<void> {
   );
 
   await page.reload();
+  await waitForAppDocument(page);
+}
+
+/**
+ * The first window can report about:blank before it navigates to the app.
+ * Wait for the real document so evaluate() never runs on an opaque origin
+ * or in a context that is about to be destroyed by that navigation.
+ */
+export async function waitForAppDocument(page: Page): Promise<void> {
+  await page.waitForURL(
+    (url) => url.protocol === "file:" || url.hostname === "localhost",
+  );
   await page.waitForLoadState("domcontentloaded");
 }
 
