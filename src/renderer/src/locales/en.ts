@@ -277,9 +277,9 @@ export const en: TranslationMap = {
   "midi.errorUnsupported": "MIDI is not supported here",
   "midi.errorUnsupportedGuidance":
     "Use the desktop app or a browser with Web MIDI support.",
-  "midi.errorDenied": "MIDI permission was denied",
+  "midi.errorDenied": "Couldn't open MIDI",
   "midi.errorDeniedGuidance":
-    "Allow MIDI access in system or browser settings, then retry.",
+    "Check that the keyboard is plugged in and no other app is using MIDI, then retry.",
   "midi.errorUnavailable": "MIDI is not available",
   "midi.errorUnavailableGuidance":
     "Reconnect the device or reopen the app, then retry.",

@@ -47,6 +47,7 @@ vi.mock("./bluetoothDeviceSelection", () => ({
 }));
 
 import { registerMidiDeviceHandlers } from "./midiDeviceHandlers";
+import { configureTrustedRendererUrl } from "./midiPermissionPolicy";
 
 describe("midiDeviceHandlers security boundary", () => {
   beforeEach(() => {
@@ -58,18 +59,22 @@ describe("midiDeviceHandlers security boundary", () => {
     registerMidiDeviceHandlers();
   });
 
-  test("rejects SysEx and privileged IPC from untrusted frames", async () => {
-    const callback = vi.fn();
-    mocks.permissionHandler?.(
-      { getURL: () => "file:///mock/renderer/index.html" },
-      "midiSysex",
-      callback,
-      {
-        requestingUrl: "file:///mock/renderer/index.html",
-        isMainFrame: true,
-      },
-    );
-    expect(callback).toHaveBeenCalledWith(false);
+  test("grants Web MIDI (reported as midiSysex) only to the trusted main frame", () => {
+    configureTrustedRendererUrl("file:///mock/renderer/index.html");
+    const request = (url: string, isMainFrame: boolean): unknown => {
+      const callback = vi.fn();
+      mocks.permissionHandler?.({ getURL: () => url }, "midiSysex", callback, {
+        requestingUrl: url,
+        isMainFrame,
+      });
+      return callback.mock.calls[0]?.[0];
+    };
+    expect(request("file:///mock/renderer/index.html", true)).toBe(true);
+    expect(request("https://example.com/", true)).toBe(false);
+    expect(request("file:///mock/renderer/index.html", false)).toBe(false);
+  });
+
+  test("rejects privileged IPC from untrusted frames", async () => {
     await expect(
       mocks.handlers["midi:requestAccess"]("attacker"),
     ).rejects.toThrow("untrusted");

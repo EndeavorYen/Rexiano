@@ -1,4 +1,6 @@
-const ALLOWED_PERMISSIONS = new Set(["midi", "bluetooth"]);
+// Electron reports requestMIDIAccess({ sysex: false }) as "midiSysex", so it must
+// stay allowed for the trusted main frame or every Web MIDI request fails.
+const ALLOWED_PERMISSIONS = new Set(["midi", "midiSysex", "bluetooth"]);
 const TRUSTED_RENDERER_PROTOCOLS = new Set(["file:", "http:", "https:"]);
 
 let trustedRendererUrl: URL | null = null;
