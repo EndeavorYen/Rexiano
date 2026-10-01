@@ -11,6 +11,7 @@ import { useSongLibraryStore } from "../../stores/useSongLibraryStore";
 import { useProgressStore } from "../../stores/useProgressStore";
 import { groupSongsByCategory } from "./songCardUtils";
 import { openBuiltinSong, recentOpenTarget } from "./openBuiltinSong";
+import { queueRecentFile } from "./pendingRecent";
 import {
   buildImportedSongActivity,
   buildImportedSongSelectionPreviewModel,
@@ -351,12 +352,7 @@ export function SongLibrary({
             ),
           );
         reset();
-        await window.api.saveRecentFile({
-          path: file.path,
-          name: file.name,
-          timestamp: Date.now(),
-        });
-        refreshRecents();
+        queueRecentFile({ path: file.path, name: file.name });
       } catch (e) {
         setRecentRecovery(
           getRecentFileRecovery(
@@ -429,12 +425,7 @@ export function SongLibrary({
             ),
           );
         reset();
-        await window.api.saveRecentFile({
-          path: record.sourcePath,
-          name: record.title,
-          timestamp: Date.now(),
-        });
-        refreshRecents();
+        queueRecentFile({ path: record.sourcePath, name: record.title });
       } catch (e) {
         const msg = e instanceof Error ? e.message : t("general.error");
         setError(msg);
@@ -443,7 +434,7 @@ export function SongLibrary({
         setLoadingImportedPath(null);
       }
     },
-    [loadSong, onSessionIntentSelected, refreshRecents, reset, t],
+    [loadSong, onSessionIntentSelected, reset, t],
   );
 
   const handleStartPreviewSession = useCallback(

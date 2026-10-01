@@ -122,10 +122,11 @@ describe("buildSongActivity", () => {
 
     const activity = buildSongActivity(songs, sessions, recents, ["scale"]);
 
+    // Opening a song is not practice: only Wait sessions count (#306).
     expect(activity.get("scale")).toMatchObject({
       isFavorite: true,
       lastPlayedAt: 2000,
-      playCount: 1,
+      playCount: 0,
     });
     expect(activity.get("jingle")).toMatchObject({
       bestAccuracy: 92,
@@ -156,7 +157,7 @@ describe("buildImportedSongActivity", () => {
     expect(activity.get(importedSong.id)).toMatchObject({
       isFavorite: false,
       lastPlayedAt: 3000,
-      playCount: 2,
+      playCount: 1,
       bestAccuracy: 88,
     });
   });

@@ -28,6 +28,10 @@ import { FileImportErrorAlert } from "./features/fileImport/FileImportErrorAlert
 import { buildMidiDiagnosticNotice } from "./features/midiDiagnostics/midiDiagnosticNotice";
 import { useRecentFiles } from "./hooks/useRecentFiles";
 import {
+  clearPendingRecent,
+  flushPendingRecent,
+} from "./features/songLibrary/pendingRecent";
+import {
   calculateSplitLayoutDimensions,
   getMutedTrackIndices,
 } from "./features/practice/splitLayoutMath";
@@ -137,6 +141,25 @@ function App(): React.JSX.Element {
     ];
     return () => unsubscribers.forEach((unsubscribe) => unsubscribe());
   }, []);
+
+  // A song becomes "recently played" when it actually starts playing (#306).
+  // The pending entry belongs to the loaded song: any song change drops it,
+  // and loaders queue their own entry right after loadSong.
+  useEffect(() => {
+    const unsubSong = useSongStore.subscribe((state, prev) => {
+      if (state.song !== prev.song) clearPendingRecent();
+    });
+    const unsubPlayback = usePlaybackStore.subscribe((state, prev) => {
+      if (!state.isPlaying || prev.isPlaying) return;
+      void flushPendingRecent(window.api.saveRecentFile).then((saved) => {
+        if (saved) refreshRecentFiles();
+      });
+    });
+    return () => {
+      unsubSong();
+      unsubPlayback();
+    };
+  }, [refreshRecentFiles]);
 
   // ─── Mode selection + celebration + stats flow ────────
   const mode = usePracticeStore((s) => s.mode);

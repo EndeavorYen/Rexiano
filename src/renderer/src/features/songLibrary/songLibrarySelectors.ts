@@ -297,8 +297,9 @@ export function buildSongActivity(
     const songId = file.path.slice("builtin:".length);
     const current = activity.get(songId);
     if (!current) continue;
+    // A recents entry means the song was played, not practised; only
+    // sessions (Wait mode) add to playCount (#306).
     current.lastPlayedAt = Math.max(current.lastPlayedAt ?? 0, file.timestamp);
-    current.playCount += 1;
   }
 
   for (const session of sessions) {
@@ -344,8 +345,9 @@ export function buildImportedSongActivity(
     if (!song) continue;
     const current = activity.get(song.id);
     if (!current) continue;
+    // A recents entry means the song was played, not practised; only
+    // sessions (Wait mode) add to playCount (#306).
     current.lastPlayedAt = Math.max(current.lastPlayedAt ?? 0, file.timestamp);
-    current.playCount += 1;
   }
 
   for (const session of sessions) {
