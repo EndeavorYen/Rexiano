@@ -1,6 +1,11 @@
 import { describe, expect, test } from "vitest";
 import * as VF from "vexflow";
-import { beamConfigForVoice, stemOptionsForGroup } from "./engravingRules";
+import {
+  beamConfigForVoice,
+  endBarlineType,
+  measureNumberLabel,
+  stemOptionsForGroup,
+} from "./engravingRules";
 
 describe("stemOptionsForGroup (#330)", () => {
   test("a single voice lets VexFlow choose the stem from the note's position", () => {
@@ -68,5 +73,18 @@ describe("beam groups with real VexFlow notes (#330)", () => {
     const notes = eighths(4);
     VF.Beam.generateBeams(notes, beamConfigForVoice(undefined, "4/4", VF));
     expect(notes.every((note) => note.hasBeam())).toBe(true);
+  });
+});
+
+describe("score furniture (#332)", () => {
+  test("only the song's last measure ends with a final barline", () => {
+    expect(endBarlineType(VF, true)).toBe(VF.BarlineType.END);
+    expect(endBarlineType(VF, false)).toBe(VF.BarlineType.SINGLE);
+  });
+
+  test("each line is numbered from its first measure, except measure 1", () => {
+    expect(measureNumberLabel(5, 0)).toBe("5");
+    expect(measureNumberLabel(1, 0)).toBeNull();
+    expect(measureNumberLabel(6, 1)).toBeNull();
   });
 });
