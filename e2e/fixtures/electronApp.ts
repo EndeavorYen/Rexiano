@@ -71,10 +71,19 @@ export const test = base.extend<ElectronFixtures>({
   appPage: async ({ electronApp }, runFixture) => {
     const page = await electronApp.firstWindow();
     await waitForAppDocument(page);
-    // Keyboard-focus assertions need the window itself to be active.
-    await electronApp.evaluate(({ BrowserWindow }) => {
-      BrowserWindow.getAllWindows()[0]?.focus();
-    });
+    // Keyboard-focus assertions need the window itself to be active. The
+    // window stays hidden until ready-to-show, and focusing it before then
+    // does nothing.
+    await expect
+      .poll(() =>
+        electronApp.evaluate(({ BrowserWindow }) => {
+          const win = BrowserWindow.getAllWindows()[0];
+          if (!win?.isVisible()) return false;
+          win.focus();
+          return true;
+        }),
+      )
+      .toBe(true);
     await applyStableSettings(page);
     await applyStableRendering(page);
     await waitForUiSettled(page);
