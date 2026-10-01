@@ -1,6 +1,13 @@
+import { readdirSync, readFileSync } from "node:fs";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import { Midi } from "@tonejs/midi";
-import { buildMidiFromSpec, type SongSpec } from "./songSpec";
+import { buildMidiFromSpec, loadSongSpec, type SongSpec } from "./songSpec";
+
+const here = dirname(fileURLToPath(import.meta.url));
+const specDir = join(here, "songSpecs");
+const midiDir = join(here, "..", "resources", "midi");
 
 const spec: SongSpec = {
   id: "happy-birthday",
@@ -53,5 +60,28 @@ describe("buildMidiFromSpec (#333/#334)", () => {
     const midi = buildMidiFromSpec({ ...spec, pickupBeats: 0, lh: [] }, 100);
     expect(midi.tracks.map((t) => t.name)).toEqual(["Piano"]);
     expect(midi.header.timeSignatures).toHaveLength(1);
+  });
+});
+
+describe("packaged songs match their checked specs (#334)", () => {
+  const ids = readdirSync(specDir)
+    .filter((file) => file.endsWith(".json"))
+    .map((file) => file.replace(/\.json$/, ""));
+
+  it.each(ids)("%s", (id) => {
+    const spec = loadSongSpec(join(specDir, `${id}.json`));
+    const midi = new Midi(readFileSync(join(midiDir, `${id}.mid`)));
+    const ppq = midi.header.ppq;
+    const key = ([note, start, duration]: readonly number[]): string =>
+      `${note}@${start.toFixed(3)}+${duration.toFixed(3)}`;
+    const expected = [...spec.rh, ...spec.lh]
+      .filter(([, , duration]) => duration > 0)
+      .map(key)
+      .sort();
+    const actual = midi.tracks
+      .flatMap((track) => track.notes)
+      .map((n) => key([n.midi, n.ticks / ppq, n.durationTicks / ppq]))
+      .sort();
+    expect(actual).toEqual(expected);
   });
 });

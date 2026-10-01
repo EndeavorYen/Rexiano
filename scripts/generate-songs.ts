@@ -63,7 +63,6 @@ const Cs5 = 73;
 const D5 = 74;
 const Ds5 = 75;
 const E5 = 76;
-const F5 = 77;
 const Fs5 = 78;
 const G5 = 79;
 const Gs5 = 80;
@@ -393,64 +392,6 @@ function buildRowRowRow(): Midi {
   return midi;
 }
 
-function buildFurElise(): Midi {
-  const midi = new Midi();
-  midi.header.setTempo(72);
-  const track = midi.addTrack();
-  track.name = "Piano Right Hand";
-  track.channel = 0;
-
-  // Fur Elise opening theme — right hand only
-  // 3/8 time, written in eighth-note beats (1 beat = 1 eighth note)
-  const melody: [number, number][] = [
-    // E5 D#5 E5 D#5 E5 B4 D5 C5 A4 (the iconic opening)
-    [E5, 1],
-    [Ds5, 1],
-    [E5, 1],
-    [Ds5, 1],
-    [E5, 1],
-    [B4, 1],
-    [D5, 1],
-    [C5, 1],
-    [A4, 2],
-    // C4 E4 A4 B4
-    [C4, 1],
-    [E4, 1],
-    [A4, 1],
-    [B4, 2],
-    // E4 G#4 B4 C5
-    [E4, 1],
-    [Gs4, 1],
-    [B4, 1],
-    [C5, 2],
-    // E4 E5 D#5 E5 D#5 E5 B4 D5 C5 A4 (repeat)
-    [E4, 1],
-    [E5, 1],
-    [Ds5, 1],
-    [E5, 1],
-    [Ds5, 1],
-    [E5, 1],
-    [B4, 1],
-    [D5, 1],
-    [C5, 1],
-    [A4, 2],
-    // C4 E4 A4 B4
-    [C4, 1],
-    [E4, 1],
-    [A4, 1],
-    [B4, 2],
-    // E4 C5 B4 A4
-    [E4, 1],
-    [C5, 1],
-    [B4, 1],
-    [A4, 3],
-  ];
-
-  const entries = sequentialNotes(melody);
-  addNotesFromBeats(track, entries, 72, 0.7);
-  return midi;
-}
-
 function buildMinuetInG(): Midi {
   const midi = new Midi();
   midi.header.setTempo(108);
@@ -530,74 +471,6 @@ function buildMinuetInG(): Midi {
 
   const lhEntries = sequentialNotes(lhMelody);
   addNotesFromBeats(lh, lhEntries, 108, 0.6);
-
-  return midi;
-}
-
-function buildPreludeInC(): Midi {
-  const midi = new Midi();
-  midi.header.setTempo(72);
-
-  const rh = midi.addTrack();
-  rh.name = "Right Hand";
-  rh.channel = 0;
-
-  const lh = midi.addTrack();
-  lh.name = "Left Hand";
-  lh.channel = 1;
-
-  // BWV 846 Prelude in C Major — simplified arpeggiated pattern
-  // Each measure: 8 sixteenth notes arpeggiated
-  // Pattern per chord: bass, inner, top, inner, top, inner, top, inner
-  // Simplified to 8 measures
-
-  const chords: { bass: number; notes: number[] }[] = [
-    { bass: C3, notes: [E4, G4, C5, E5] }, // C major
-    { bass: D3, notes: [D4, A4, D5, F5] }, // Dm
-    { bass: G3, notes: [D4, G4, B4, F5] }, // G7
-    { bass: C3, notes: [E4, G4, C5, E5] }, // C major
-    { bass: A3, notes: [E4, A4, C5, E5] }, // Am
-    { bass: D3, notes: [Fs4, A4, D5, Fs5] }, // D7
-    { bass: G3, notes: [D4, G4, B4, D5] }, // G major
-    { bass: C3, notes: [E4, G4, C5, E5] }, // C major (ending)
-  ];
-
-  let beat = 0;
-  const secPerBeat = 60 / 72;
-
-  for (const chord of chords) {
-    // Left hand: bass note held for 2 beats
-    lh.addNote({
-      midi: chord.bass,
-      time: beat * secPerBeat,
-      duration: 2 * secPerBeat * 0.95,
-      velocity: 0.6,
-    });
-
-    // Right hand: arpeggiate the upper notes as sixteenth notes
-    // Pattern: 8 sixteenth notes = 2 beats
-    const pattern = [
-      chord.notes[0],
-      chord.notes[1],
-      chord.notes[2],
-      chord.notes[3],
-      chord.notes[2],
-      chord.notes[1],
-      chord.notes[2],
-      chord.notes[3],
-    ];
-
-    for (let i = 0; i < pattern.length; i++) {
-      rh.addNote({
-        midi: pattern[i],
-        time: (beat + i * 0.25) * secPerBeat,
-        duration: 0.25 * secPerBeat * 0.9,
-        velocity: 0.65,
-      });
-    }
-
-    beat += 2;
-  }
 
   return midi;
 }
@@ -718,64 +591,6 @@ function buildMoonlightSonata(): Midi {
   return midi;
 }
 
-function buildTurkishMarch(): Midi {
-  const midi = new Midi();
-  midi.header.setTempo(132);
-  const track = midi.addTrack();
-  track.name = "Piano Right Hand";
-  track.channel = 0;
-
-  // Turkish March (Rondo Alla Turca) — simplified opening theme
-  // 2/4 time, sixteenth note runs
-  const melody: [number, number][] = [
-    // Opening motif: B A G# A — C5 (16ths then quarter)
-    [B4, 0.25],
-    [A4, 0.25],
-    [Gs4, 0.25],
-    [A4, 0.25],
-    [C5, 1],
-    // D5 C5 B4 C5 — E5
-    [D5, 0.25],
-    [C5, 0.25],
-    [B4, 0.25],
-    [C5, 0.25],
-    [E5, 1],
-    // F5 E5 D#5 E5 — B4 B4 B4
-    [F5, 0.25],
-    [E5, 0.25],
-    [Ds5, 0.25],
-    [E5, 0.25],
-    [B4, 0.5],
-    [B4, 0.5],
-    [B4, 0.5],
-    // Repeat variation
-    [B4, 0.25],
-    [A4, 0.25],
-    [Gs4, 0.25],
-    [A4, 0.25],
-    [C5, 1],
-    [D5, 0.25],
-    [C5, 0.25],
-    [B4, 0.25],
-    [C5, 0.25],
-    [E5, 1],
-    // Descending run
-    [F5, 0.25],
-    [E5, 0.25],
-    [Ds5, 0.25],
-    [E5, 0.25],
-    [B4, 0.5],
-    [C5, 0.5],
-    // A major ending
-    [A4, 1],
-    [A4, 1],
-  ];
-
-  const entries = sequentialNotes(melody);
-  addNotesFromBeats(track, entries, 132, 0.75);
-  return midi;
-}
-
 function buildAuClairDeLaLune(): Midi {
   const midi = new Midi();
   midi.header.setTempo(96);
@@ -815,112 +630,6 @@ function buildAuClairDeLaLune(): Midi {
 
   const entries = sequentialNotes(melody);
   addNotesFromBeats(track, entries, 96, 0.7);
-  return midi;
-}
-
-function buildChopsticks(): Midi {
-  const midi = new Midi();
-  midi.header.setTempo(120);
-
-  const rh = midi.addTrack();
-  rh.name = "Right Hand";
-  rh.channel = 0;
-
-  // Chopsticks — the classic beginner duet, right hand part
-  // Played as repeated note pairs (both notes struck together)
-  // 3/4 time
-
-  // The famous two-note pattern: F4+G4, then stepping up
-  const pairs: [number, number, number][] = [
-    // Section 1: F+G repeated, then step up
-    [F4, G4, 1],
-    [F4, G4, 1],
-    [F4, G4, 1],
-    [E4, G4, 1],
-    [E4, G4, 1],
-    [E4, G4, 1],
-    [D4, B4, 1],
-    [D4, B4, 1],
-    [D4, B4, 1],
-    [C4, C5, 1],
-    [C4, C5, 1],
-    [C4, C5, 1],
-    // Section 2: descend
-    [D4, B4, 1],
-    [D4, B4, 1],
-    [D4, B4, 1],
-    [E4, G4, 1],
-    [E4, G4, 1],
-    [E4, G4, 1],
-    [F4, G4, 1],
-    [F4, G4, 1],
-    [F4, G4, 1],
-    [E4, C5, 2],
-    [E4, C5, 1],
-  ];
-
-  const secPerBeat = 60 / 120;
-  let beat = 0;
-  for (const [low, high, dur] of pairs) {
-    rh.addNote({
-      midi: low,
-      time: beat * secPerBeat,
-      duration: dur * secPerBeat * 0.9,
-      velocity: 0.7,
-    });
-    rh.addNote({
-      midi: high,
-      time: beat * secPerBeat,
-      duration: dur * secPerBeat * 0.9,
-      velocity: 0.7,
-    });
-    beat += dur;
-  }
-
-  return midi;
-}
-
-function buildLavenderBlue(): Midi {
-  const midi = new Midi();
-  midi.header.setTempo(100);
-  const track = midi.addTrack();
-  track.name = "Piano";
-  track.channel = 0;
-
-  // Lavender's Blue — English folk song, 3/4 waltz
-  // Key of C major
-  const melody: [number, number][] = [
-    // Lavender's blue, dilly dilly
-    [C4, 2],
-    [E4, 1],
-    [G4, 2],
-    [E4, 1],
-    // Lavender's green
-    [F4, 2],
-    [E4, 1],
-    [D4, 3],
-    // When I am king, dilly dilly
-    [E4, 2],
-    [G4, 1],
-    [C5, 2],
-    [G4, 1],
-    // You shall be queen
-    [A4, 2],
-    [G4, 1],
-    [F4, 3],
-    // Who told you so, dilly dilly
-    [G4, 2],
-    [A4, 1],
-    [G4, 2],
-    [F4, 1],
-    // Who told you so
-    [E4, 2],
-    [D4, 1],
-    [C4, 3],
-  ];
-
-  const entries = sequentialNotes(melody);
-  addNotesFromBeats(track, entries, 100, 0.7);
   return midi;
 }
 
@@ -999,117 +708,6 @@ function buildOldMacDonald(): Midi {
   const melody = [...phrase, ...phrase, ...eieio, ...phrase];
 
   addNotesFromBeats(track, sequentialNotes(melody), 108, 0.7);
-  return midi;
-}
-
-function buildWhenTheSaints(): Midi {
-  const midi = new Midi();
-  midi.header.setTempo(108);
-  const track = midi.addTrack();
-  track.name = "Piano";
-  track.channel = 0;
-
-  const melody: [number, number][] = [
-    [C4, 1],
-    [E4, 1],
-    [F4, 1],
-    [G4, 2],
-    [C4, 1],
-    [E4, 1],
-    [F4, 1],
-    [G4, 2],
-    [C4, 1],
-    [E4, 1],
-    [F4, 1],
-    [G4, 1],
-    [E4, 1],
-    [C4, 1],
-    [E4, 1],
-    [D4, 2],
-    [E4, 1],
-    [E4, 1],
-    [D4, 1],
-    [C4, 1],
-    [C4, 1],
-    [E4, 1],
-    [G4, 1],
-    [G4, 1],
-    [F4, 2],
-    [E4, 1],
-    [F4, 1],
-    [G4, 1],
-    [E4, 1],
-    [C4, 1],
-    [D4, 1],
-    [C4, 2],
-  ];
-
-  addNotesFromBeats(track, sequentialNotes(melody), 108, 0.7);
-  return midi;
-}
-
-function buildOhSusanna(): Midi {
-  const midi = new Midi();
-  midi.header.setTempo(112);
-
-  const rh = midi.addTrack();
-  rh.name = "Right Hand";
-  rh.channel = 0;
-  const lh = midi.addTrack();
-  lh.name = "Left Hand";
-  lh.channel = 1;
-
-  const verse: [number, number][] = [
-    [C4, 1],
-    [D4, 1],
-    [E4, 1],
-    [G4, 1],
-    [G4, 1],
-    [A4, 1],
-    [G4, 1],
-    [E4, 1],
-    [C4, 1],
-    [D4, 1],
-    [E4, 1],
-    [E4, 1],
-    [D4, 1],
-    [C4, 1],
-    [D4, 2],
-  ];
-  const verseEnd: [number, number][] = [
-    [C4, 1],
-    [D4, 1],
-    [E4, 1],
-    [G4, 1],
-    [G4, 1],
-    [A4, 1],
-    [G4, 1],
-    [E4, 1],
-    [C4, 1],
-    [D4, 1],
-    [E4, 1],
-    [E4, 1],
-    [D4, 1],
-    [D4, 1],
-    [C4, 2],
-  ];
-  const chorus: [number, number][] = [
-    [E4, 1],
-    [E4, 1],
-    [D4, 1],
-    [C4, 1],
-    [D4, 1],
-    [E4, 1],
-    [D4, 2],
-  ];
-  const rhMelody = [...verse, ...verseEnd, ...chorus, ...verseEnd];
-  const lhMelody: [number, number][] = Array.from({ length: 28 }, (_, i) => [
-    i % 2 === 0 ? C3 : G3,
-    2,
-  ]);
-
-  addNotesFromBeats(rh, sequentialNotes(rhMelody), 112, 0.7);
-  addNotesFromBeats(lh, sequentialNotes(lhMelody), 112, 0.55);
   return midi;
 }
 
@@ -1290,7 +888,7 @@ const songDefs: SongDef[] = [
     category: "popular",
     tags: ["popular", "duet", "classic", "c-major", "3-4"],
     bpm: 120,
-    build: buildChopsticks,
+    build: fromSpec("chopsticks", 120),
   },
   {
     id: "lavender-blue",
@@ -1301,7 +899,7 @@ const songDefs: SongDef[] = [
     category: "folk",
     tags: ["traditional", "melody", "folk", "c-major", "3-4"],
     bpm: 100,
-    build: buildLavenderBlue,
+    build: fromSpec("lavender-blue", 100),
   },
   {
     id: "lightly-row",
@@ -1373,7 +971,7 @@ const songDefs: SongDef[] = [
     tags: ["traditional", "melody", "c-major", "4-4", "level-3"],
     bpm: 108,
     grade: 3,
-    build: buildWhenTheSaints,
+    build: fromSpec("when-the-saints", 108),
   },
   {
     id: "oh-susanna",
@@ -1385,7 +983,7 @@ const songDefs: SongDef[] = [
     tags: ["traditional", "american", "c-major", "4-4", "two-hands", "level-4"],
     bpm: 112,
     grade: 4,
-    build: buildOhSusanna,
+    build: fromSpec("oh-susanna", 112),
   },
 
   // ── Holiday ──
@@ -1434,7 +1032,7 @@ const songDefs: SongDef[] = [
     category: "classical",
     tags: ["classical", "romantic", "a-minor", "3-8"],
     bpm: 72,
-    build: buildFurElise,
+    build: fromSpec("fur-elise", 72),
   },
   {
     id: "minuet-in-g",
@@ -1463,7 +1061,7 @@ const songDefs: SongDef[] = [
       "two-hands",
     ],
     bpm: 72,
-    build: buildPreludeInC,
+    build: fromSpec("prelude-in-c", 72),
   },
   {
     id: "canon-in-d",
@@ -1498,7 +1096,7 @@ const songDefs: SongDef[] = [
     category: "classical",
     tags: ["classical", "fast", "a-minor", "2-4"],
     bpm: 132,
-    build: buildTurkishMarch,
+    build: fromSpec("turkish-march", 132),
   },
   // ── Checked note-list songs (#334) ──
   {
@@ -1524,6 +1122,75 @@ const songDefs: SongDef[] = [
     bpm: 66,
     grade: 3,
     build: fromSpec("brahms-lullaby", 66),
+  },
+  // ── Checked note-list songs (#334) ──
+  {
+    id: "long-long-ago",
+    file: "long-long-ago.mid",
+    title: "Long Long Ago",
+    composer: "Thomas Haynes Bayly",
+    difficulty: "intermediate",
+    category: "classical",
+    tags: ["classical", "lyrical", "c-major", "4-4", "two-hands"],
+    bpm: 72,
+    grade: 4,
+    build: fromSpec("long-long-ago", 72),
+  },
+  {
+    id: "scarborough-fair",
+    file: "scarborough-fair.mid",
+    title: "Scarborough Fair",
+    composer: "Traditional (English)",
+    difficulty: "intermediate",
+    category: "folk",
+    tags: ["traditional", "english", "a-minor", "3-4", "two-hands"],
+    bpm: 76,
+    grade: 4,
+    build: fromSpec("scarborough-fair", 76),
+  },
+  {
+    id: "yankee-doodle",
+    file: "yankee-doodle.mid",
+    title: "Yankee Doodle",
+    composer: "Traditional",
+    difficulty: "beginner",
+    category: "folk",
+    tags: ["traditional", "american", "g-major", "4-4", "two-hands"],
+    bpm: 80,
+    grade: 3,
+    build: fromSpec("yankee-doodle", 80),
+  },
+  // ── Checked note-list songs (#334) ──
+  {
+    id: "clementi-sonatina",
+    file: "clementi-sonatina.mid",
+    title: "Sonatina in C Major (Op. 36 No. 1)",
+    composer: "Muzio Clementi",
+    difficulty: "intermediate",
+    category: "classical",
+    tags: [
+      "classical",
+      "sonatina",
+      "alberti-bass",
+      "c-major",
+      "4-4",
+      "two-hands",
+    ],
+    bpm: 112,
+    grade: 6,
+    build: fromSpec("clementi-sonatina", 112),
+  },
+  {
+    id: "german-dance",
+    file: "german-dance.mid",
+    title: "German Dance (WoO 13 No. 1)",
+    composer: "Ludwig van Beethoven",
+    difficulty: "intermediate",
+    category: "classical",
+    tags: ["classical", "dance", "d-major", "3-4", "two-hands"],
+    bpm: 116,
+    grade: 6,
+    build: fromSpec("german-dance", 116),
   },
 ];
 

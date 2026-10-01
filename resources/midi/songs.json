@@ -133,7 +133,7 @@
     "category": "folk",
     "grade": 2,
     "origin": "score",
-    "durationSeconds": 22,
+    "durationSeconds": 29,
     "tags": ["traditional", "melody", "folk", "c-major", "3-4", "level-2"]
   },
   {
@@ -161,7 +161,7 @@
     "category": "popular",
     "grade": 3,
     "origin": "score",
-    "durationSeconds": 12,
+    "durationSeconds": 24,
     "tags": [
       "popular",
       "duet",
@@ -210,11 +210,11 @@
     "category": "folk",
     "grade": 3,
     "origin": "score",
-    "durationSeconds": 30,
+    "durationSeconds": 48,
     "tags": [
       "traditional",
       "american",
-      "c-major",
+      "g-major",
       "4-4",
       "two-hands",
       "level-3"
@@ -243,7 +243,7 @@
     "category": "folk",
     "grade": 4,
     "origin": "score",
-    "durationSeconds": 51,
+    "durationSeconds": 90,
     "tags": ["traditional", "english", "a-minor", "3-4", "two-hands", "level-4"]
   },
   {
@@ -256,7 +256,7 @@
     "category": "classical",
     "grade": 4,
     "origin": "score",
-    "durationSeconds": 45,
+    "durationSeconds": 54,
     "tags": ["classical", "lyrical", "c-major", "4-4", "two-hands", "level-4"]
   },
   {
@@ -270,8 +270,8 @@
     "category": "classical",
     "grade": 5,
     "origin": "score",
-    "durationSeconds": 35,
-    "tags": ["classical", "romantic", "a-minor", "3-8", "level-5"]
+    "durationSeconds": 20,
+    "tags": ["classical", "romantic", "a-minor", "3-8", "two-hands", "level-5"]
   },
   {
     "id": "minuet-in-g",
@@ -312,7 +312,7 @@
     "category": "classical",
     "grade": 6,
     "origin": "score",
-    "durationSeconds": 14,
+    "durationSeconds": 64,
     "tags": [
       "classical",
       "baroque",
@@ -334,7 +334,7 @@
     "category": "classical",
     "grade": 6,
     "origin": "score",
-    "durationSeconds": 30,
+    "durationSeconds": 33,
     "tags": [
       "classical",
       "sonatina",
@@ -348,14 +348,14 @@
   {
     "id": "german-dance",
     "file": "german-dance.mid",
-    "title": "German Dance (WoO 8 No. 1)",
+    "title": "German Dance (WoO 13 No. 1)",
     "titleZhTW": "德國舞曲",
     "composer": "Ludwig van Beethoven",
     "difficulty": "intermediate",
     "category": "classical",
     "grade": 6,
     "origin": "score",
-    "durationSeconds": 35,
+    "durationSeconds": 50,
     "tags": ["classical", "dance", "d-major", "3-4", "two-hands", "level-6"]
   },
   {
@@ -382,8 +382,8 @@
     "category": "classical",
     "grade": 7,
     "origin": "score",
-    "durationSeconds": 7,
-    "tags": ["classical", "fast", "a-minor", "2-4", "level-7"]
+    "durationSeconds": 22,
+    "tags": ["classical", "fast", "a-minor", "2-4", "two-hands", "level-7"]
   },
   {
     "id": "lightly-row",
@@ -460,7 +460,7 @@
     "category": "folk",
     "grade": 3,
     "origin": "score",
-    "durationSeconds": 21,
+    "durationSeconds": 35,
     "tags": ["traditional", "melody", "c-major", "4-4", "level-3"]
   },
   {
@@ -474,7 +474,7 @@
     "category": "folk",
     "grade": 4,
     "origin": "score",
-    "durationSeconds": 30,
+    "durationSeconds": 35,
     "tags": [
       "traditional",
       "american",

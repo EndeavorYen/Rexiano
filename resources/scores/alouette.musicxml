@@ -43,6 +43,7 @@
           <octave>4</octave>
         </pitch>
         <duration>36</duration>
+        <voice>1</voice>
         <staff>1</staff>
       </note>
       <note>
@@ -51,6 +52,7 @@
           <octave>4</octave>
         </pitch>
         <duration>12</duration>
+        <voice>1</voice>
         <staff>1</staff>
       </note>
       <note>
@@ -59,6 +61,7 @@
           <octave>4</octave>
         </pitch>
         <duration>24</duration>
+        <voice>1</voice>
         <staff>1</staff>
       </note>
       <note>
@@ -67,12 +70,14 @@
           <octave>4</octave>
         </pitch>
         <duration>24</duration>
+        <voice>1</voice>
         <staff>1</staff>
       </note>
       <backup><duration>96</duration></backup>
       <note>
         <rest/>
         <duration>96</duration>
+        <voice>1</voice>
         <staff>2</staff>
       </note>
     </measure>
@@ -83,6 +88,7 @@
           <octave>4</octave>
         </pitch>
         <duration>12</duration>
+        <voice>1</voice>
         <staff>1</staff>
       </note>
       <note>
@@ -91,6 +97,7 @@
           <octave>4</octave>
         </pitch>
         <duration>12</duration>
+        <voice>1</voice>
         <staff>1</staff>
       </note>
       <note>
@@ -99,6 +106,7 @@
           <octave>4</octave>
         </pitch>
         <duration>12</duration>
+        <voice>1</voice>
         <staff>1</staff>
       </note>
       <note>
@@ -107,6 +115,7 @@
           <octave>4</octave>
         </pitch>
         <duration>12</duration>
+        <voice>1</voice>
         <staff>1</staff>
       </note>
       <note>
@@ -115,17 +124,20 @@
           <octave>4</octave>
         </pitch>
         <duration>24</duration>
+        <voice>1</voice>
         <staff>1</staff>
       </note>
       <note>
         <rest/>
         <duration>24</duration>
+        <voice>1</voice>
         <staff>1</staff>
       </note>
       <backup><duration>96</duration></backup>
       <note>
         <rest/>
         <duration>72</duration>
+        <voice>1</voice>
         <staff>2</staff>
       </note>
       <note>
@@ -134,6 +146,7 @@
           <octave>3</octave>
         </pitch>
         <duration>24</duration>
+        <voice>1</voice>
         <staff>2</staff>
       </note>
     </measure>
@@ -144,6 +157,7 @@
           <octave>4</octave>
         </pitch>
         <duration>36</duration>
+        <voice>1</voice>
         <staff>1</staff>
       </note>
       <note>
@@ -152,6 +166,7 @@
           <octave>4</octave>
         </pitch>
         <duration>12</duration>
+        <voice>1</voice>
         <staff>1</staff>
       </note>
       <note>
@@ -160,6 +175,7 @@
           <octave>4</octave>
         </pitch>
         <duration>24</duration>
+        <voice>1</voice>
         <staff>1</staff>
       </note>
       <note>
@@ -168,12 +184,14 @@
           <octave>4</octave>
         </pitch>
         <duration>24</duration>
+        <voice>1</voice>
         <staff>1</staff>
       </note>
       <backup><duration>96</duration></backup>
       <note>
         <rest/>
         <duration>96</duration>
+        <voice>1</voice>
         <staff>2</staff>
       </note>
     </measure>
@@ -184,6 +202,7 @@
           <octave>4</octave>
         </pitch>
         <duration>12</duration>
+        <voice>1</voice>
         <staff>1</staff>
       </note>
       <note>
@@ -192,6 +211,7 @@
           <octave>4</octave>
         </pitch>
         <duration>12</duration>
+        <voice>1</voice>
         <staff>1</staff>
       </note>
       <note>
@@ -200,6 +220,7 @@
           <octave>4</octave>
         </pitch>
         <duration>12</duration>
+        <voice>1</voice>
         <staff>1</staff>
       </note>
       <note>
@@ -208,6 +229,7 @@
           <octave>4</octave>
         </pitch>
         <duration>12</duration>
+        <voice>1</voice>
         <staff>1</staff>
       </note>
       <note>
@@ -216,12 +238,14 @@
           <octave>4</octave>
         </pitch>
         <duration>48</duration>
+        <voice>1</voice>
         <staff>1</staff>
       </note>
       <backup><duration>96</duration></backup>
       <note>
         <rest/>
         <duration>96</duration>
+        <voice>1</voice>
         <staff>2</staff>
       </note>
     </measure>
@@ -232,6 +256,7 @@
           <octave>4</octave>
         </pitch>
         <duration>12</duration>
+        <voice>1</voice>
         <staff>1</staff>
       </note>
       <note>
@@ -240,6 +265,7 @@
           <octave>4</octave>
         </pitch>
         <duration>12</duration>
+        <voice>1</voice>
         <staff>1</staff>
       </note>
       <note>
@@ -248,6 +274,7 @@
           <octave>4</octave>
         </pitch>
         <duration>12</duration>
+        <voice>1</voice>
         <staff>1</staff>
       </note>
       <note>
@@ -256,6 +283,7 @@
           <octave>4</octave>
         </pitch>
         <duration>12</duration>
+        <voice>1</voice>
         <staff>1</staff>
       </note>
       <note>
@@ -264,6 +292,7 @@
           <octave>4</octave>
         </pitch>
         <duration>12</duration>
+        <voice>1</voice>
         <staff>1</staff>
       </note>
       <note>
@@ -272,6 +301,7 @@
           <octave>4</octave>
         </pitch>
         <duration>12</duration>
+        <voice>1</voice>
         <staff>1</staff>
       </note>
       <note>
@@ -280,12 +310,14 @@
           <octave>4</octave>
         </pitch>
         <duration>24</duration>
+        <voice>1</voice>
         <staff>1</staff>
       </note>
       <backup><duration>96</duration></backup>
       <note>
         <rest/>
         <duration>96</duration>
+        <voice>1</voice>
         <staff>2</staff>
       </note>
     </measure>
@@ -296,6 +328,7 @@
           <octave>4</octave>
         </pitch>
         <duration>12</duration>
+        <voice>1</voice>
         <staff>1</staff>
       </note>
       <note>
@@ -304,6 +337,7 @@
           <octave>4</octave>
         </pitch>
         <duration>12</duration>
+        <voice>1</voice>
         <staff>1</staff>
       </note>
       <note>
@@ -312,6 +346,7 @@
           <octave>4</octave>
         </pitch>
         <duration>12</duration>
+        <voice>1</voice>
         <staff>1</staff>
       </note>
       <note>
@@ -320,6 +355,7 @@
           <octave>4</octave>
         </pitch>
         <duration>12</duration>
+        <voice>1</voice>
         <staff>1</staff>
       </note>
       <note>
@@ -328,6 +364,7 @@
           <octave>4</octave>
         </pitch>
         <duration>12</duration>
+        <voice>1</voice>
         <staff>1</staff>
       </note>
       <note>
@@ -336,6 +373,7 @@
           <octave>4</octave>
         </pitch>
         <duration>12</duration>
+        <voice>1</voice>
         <staff>1</staff>
       </note>
       <note>
@@ -344,12 +382,14 @@
           <octave>4</octave>
         </pitch>
         <duration>24</duration>
+        <voice>1</voice>
         <staff>1</staff>
       </note>
       <backup><duration>96</duration></backup>
       <note>
         <rest/>
         <duration>96</duration>
+        <voice>1</voice>
         <staff>2</staff>
       </note>
     </measure>
@@ -360,6 +400,7 @@
           <octave>4</octave>
         </pitch>
         <duration>12</duration>
+        <voice>1</voice>
         <staff>1</staff>
       </note>
       <note>
@@ -368,6 +409,7 @@
           <octave>4</octave>
         </pitch>
         <duration>12</duration>
+        <voice>1</voice>
         <staff>1</staff>
       </note>
       <note>
@@ -376,17 +418,20 @@
           <octave>4</octave>
         </pitch>
         <duration>24</duration>
+        <voice>1</voice>
         <staff>1</staff>
       </note>
       <note>
         <rest/>
         <duration>48</duration>
+        <voice>1</voice>
         <staff>1</staff>
       </note>
       <backup><duration>96</duration></backup>
       <note>
         <rest/>
         <duration>48</duration>
+        <voice>1</voice>
         <staff>2</staff>
       </note>
       <note>
@@ -395,6 +440,7 @@
           <octave>3</octave>
         </pitch>
         <duration>12</duration>
+        <voice>1</voice>
         <staff>2</staff>
       </note>
       <note>
@@ -403,6 +449,7 @@
           <octave>3</octave>
         </pitch>
         <duration>12</duration>
+        <voice>1</voice>
         <staff>2</staff>
       </note>
       <note>
@@ -411,6 +458,7 @@
           <octave>3</octave>
         </pitch>
         <duration>24</duration>
+        <voice>1</voice>
         <staff>2</staff>
       </note>
     </measure>
@@ -421,6 +469,7 @@
           <octave>4</octave>
         </pitch>
         <duration>12</duration>
+        <voice>1</voice>
         <staff>1</staff>
       </note>
       <note>
@@ -429,6 +478,7 @@
           <octave>4</octave>
         </pitch>
         <duration>12</duration>
+        <voice>1</voice>
         <staff>1</staff>
       </note>
       <note>
@@ -437,17 +487,20 @@
           <octave>4</octave>
         </pitch>
         <duration>24</duration>
+        <voice>1</voice>
         <staff>1</staff>
       </note>
       <note>
         <rest/>
         <duration>48</duration>
+        <voice>1</voice>
         <staff>1</staff>
       </note>
       <backup><duration>96</duration></backup>
       <note>
         <rest/>
         <duration>48</duration>
+        <voice>1</voice>
         <staff>2</staff>
       </note>
       <note>
@@ -456,6 +509,7 @@
           <octave>3</octave>
         </pitch>
         <duration>12</duration>
+        <voice>1</voice>
         <staff>2</staff>
       </note>
       <note>
@@ -464,6 +518,7 @@
           <octave>3</octave>
         </pitch>
         <duration>12</duration>
+        <voice>1</voice>
         <staff>2</staff>
       </note>
       <note>
@@ -472,6 +527,7 @@
           <octave>3</octave>
         </pitch>
         <duration>24</duration>
+        <voice>1</voice>
         <staff>2</staff>
       </note>
     </measure>
@@ -482,12 +538,14 @@
           <octave>4</octave>
         </pitch>
         <duration>96</duration>
+        <voice>1</voice>
         <staff>1</staff>
       </note>
       <backup><duration>96</duration></backup>
       <note>
         <rest/>
         <duration>96</duration>
+        <voice>1</voice>
         <staff>2</staff>
       </note>
     </measure>
@@ -498,6 +556,7 @@
           <octave>4</octave>
         </pitch>
         <duration>36</duration>
+        <voice>1</voice>
         <staff>1</staff>
       </note>
       <note>
@@ -506,6 +565,7 @@
           <octave>4</octave>
         </pitch>
         <duration>12</duration>
+        <voice>1</voice>
         <staff>1</staff>
       </note>
       <note>
@@ -514,6 +574,7 @@
           <octave>4</octave>
         </pitch>
         <duration>24</duration>
+        <voice>1</voice>
         <staff>1</staff>
       </note>
       <note>
@@ -522,12 +583,14 @@
           <octave>4</octave>
         </pitch>
         <duration>24</duration>
+        <voice>1</voice>
         <staff>1</staff>
       </note>
       <backup><duration>96</duration></backup>
       <note>
         <rest/>
         <duration>96</duration>
+        <voice>1</voice>
         <staff>2</staff>
       </note>
     </measure>
@@ -538,6 +601,7 @@
           <octave>4</octave>
         </pitch>
         <duration>12</duration>
+        <voice>1</voice>
         <staff>1</staff>
       </note>
       <note>
@@ -546,6 +610,7 @@
           <octave>4</octave>
         </pitch>
         <duration>12</duration>
+        <voice>1</voice>
         <staff>1</staff>
       </note>
       <note>
@@ -554,6 +619,7 @@
           <octave>4</octave>
         </pitch>
         <duration>12</duration>
+        <voice>1</voice>
         <staff>1</staff>
       </note>
       <note>
@@ -562,6 +628,7 @@
           <octave>4</octave>
         </pitch>
         <duration>12</duration>
+        <voice>1</voice>
         <staff>1</staff>
       </note>
       <note>
@@ -570,17 +637,20 @@
           <octave>4</octave>
         </pitch>
         <duration>24</duration>
+        <voice>1</voice>
         <staff>1</staff>
       </note>
       <note>
         <rest/>
         <duration>24</duration>
+        <voice>1</voice>
         <staff>1</staff>
       </note>
       <backup><duration>96</duration></backup>
       <note>
         <rest/>
         <duration>72</duration>
+        <voice>1</voice>
         <staff>2</staff>
       </note>
       <note>
@@ -589,6 +659,7 @@
           <octave>3</octave>
         </pitch>
         <duration>24</duration>
+        <voice>1</voice>
         <staff>2</staff>
       </note>
     </measure>
@@ -599,6 +670,7 @@
           <octave>4</octave>
         </pitch>
         <duration>36</duration>
+        <voice>1</voice>
         <staff>1</staff>
       </note>
       <note>
@@ -607,6 +679,7 @@
           <octave>4</octave>
         </pitch>
         <duration>12</duration>
+        <voice>1</voice>
         <staff>1</staff>
       </note>
       <note>
@@ -615,6 +688,7 @@
           <octave>4</octave>
         </pitch>
         <duration>24</duration>
+        <voice>1</voice>
         <staff>1</staff>
       </note>
       <note>
@@ -623,12 +697,14 @@
           <octave>4</octave>
         </pitch>
         <duration>24</duration>
+        <voice>1</voice>
         <staff>1</staff>
       </note>
       <backup><duration>96</duration></backup>
       <note>
         <rest/>
         <duration>96</duration>
+        <voice>1</voice>
         <staff>2</staff>
       </note>
     </measure>
@@ -639,6 +715,7 @@
           <octave>4</octave>
         </pitch>
         <duration>12</duration>
+        <voice>1</voice>
         <staff>1</staff>
       </note>
       <note>
@@ -647,6 +724,7 @@
           <octave>4</octave>
         </pitch>
         <duration>12</duration>
+        <voice>1</voice>
         <staff>1</staff>
       </note>
       <note>
@@ -655,6 +733,7 @@
           <octave>4</octave>
         </pitch>
         <duration>12</duration>
+        <voice>1</voice>
         <staff>1</staff>
       </note>
       <note>
@@ -663,6 +742,7 @@
           <octave>4</octave>
         </pitch>
         <duration>12</duration>
+        <voice>1</voice>
         <staff>1</staff>
       </note>
       <note>
@@ -671,12 +751,14 @@
           <octave>4</octave>
         </pitch>
         <duration>48</duration>
+        <voice>1</voice>
         <staff>1</staff>
       </note>
       <backup><duration>96</duration></backup>
       <note>
         <rest/>
         <duration>96</duration>
+        <voice>1</voice>
         <staff>2</staff>
       </note>
     </measure>
