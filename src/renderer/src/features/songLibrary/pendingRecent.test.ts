@@ -46,6 +46,16 @@ describe("pendingRecent", () => {
         throw new Error("disk full");
       }, 1),
     ).resolves.toBe(false);
+    expect(error).toHaveBeenCalled();
     error.mockRestore();
+  });
+
+  test("a song loaded without queueing (e.g. a dropped file) cannot inherit a stale entry", async () => {
+    const save = vi.fn(async () => {});
+    queueRecentFile({ path: "builtin:a", name: "A" });
+    // App clears the pending entry whenever the loaded song changes.
+    clearPendingRecent();
+    await expect(flushPendingRecent(save, 1)).resolves.toBe(false);
+    expect(save).not.toHaveBeenCalled();
   });
 });
