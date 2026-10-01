@@ -11,6 +11,7 @@ import { useSongLibraryStore } from "../../stores/useSongLibraryStore";
 import { useProgressStore } from "../../stores/useProgressStore";
 import { groupSongsByCategory } from "./songCardUtils";
 import { openBuiltinSong, recentOpenTarget } from "./openBuiltinSong";
+import { pickLibraryHeroEntry } from "./libraryEntryPoints";
 import { queueRecentFile } from "./pendingRecent";
 import {
   buildImportedSongActivity,
@@ -506,10 +507,12 @@ export function SongLibrary({
           dailyGoalStatus={dailyGoalStatus}
         />
 
-        {/* The lesson path's "next lesson" already offers this song. */}
+        {/* One big "play this next" entry: the lesson path leads (#307). */}
         {practiceRecommendation &&
-          practiceRecommendation.song.id !==
-            lessonProgression.nextLesson?.song.id && (
+          pickLibraryHeroEntry({
+            nextLessonSongId: lessonProgression.nextLesson?.song.id ?? null,
+            recommendationSongId: practiceRecommendation.song.id,
+          }) === "recommendation" && (
             <PracticeRecommendationBanner
               recommendation={practiceRecommendation}
               isLoading={loadingId === practiceRecommendation.song.id}

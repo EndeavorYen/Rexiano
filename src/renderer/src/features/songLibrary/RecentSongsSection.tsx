@@ -26,84 +26,38 @@ export function RecentSongsSection({
   const { t, lang } = useTranslation();
   const catalogue = useSongLibraryStore((s) => s.songs);
 
-  const continueRecent = recentFiles[0] ?? null;
-  if (!continueRecent) return null;
+  if (recentFiles.length === 0) return null;
 
   const RECENT_DISPLAY_LIMIT = 5;
   const visibleRecents = recentFiles.slice(0, RECENT_DISPLAY_LIMIT);
 
+  // A compact list: the one big "play next" entry is the lesson path (#307).
   return (
     <section
       className="surface-elevated mb-5 p-4 animate-page-enter"
       data-testid="song-library-continue"
     >
-      <button
-        onClick={() => {
-          rememberReturnFocus("song-library-continue-action");
-          onSelectRecent(continueRecent);
-        }}
-        disabled={loadingRecentPath === continueRecent.path}
-        className="group flex w-full items-center justify-between gap-4 rounded-xl px-4 py-3 text-left cursor-pointer transition-all duration-150 disabled:opacity-60 disabled:cursor-wait"
-        style={{
-          background:
-            "color-mix(in srgb, var(--color-accent) 10%, var(--color-surface))",
-          border:
-            "1px solid color-mix(in srgb, var(--color-accent) 20%, var(--color-border))",
-        }}
-        title={continueRecent.path}
-        data-testid="song-library-continue-action"
-      >
-        <div className="flex min-w-0 items-center gap-3">
-          <span
-            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full"
-            style={{
-              background: "var(--color-accent)",
-              color: "var(--color-on-accent)",
-            }}
-          >
-            {loadingRecentPath === continueRecent.path ? (
-              <span
-                className="h-4 w-4 rounded-full border-2 animate-spin"
-                style={{
-                  borderColor:
-                    "color-mix(in srgb, var(--color-on-accent) 45%, transparent)",
-                  borderTopColor: "var(--color-on-accent)",
-                }}
-              />
-            ) : (
-              <PlayCircle size={20} />
-            )}
-          </span>
-          <span className="min-w-0">
-            <span
-              className="block text-xs font-body font-semibold uppercase tracking-wide"
-              style={{ color: "var(--color-accent-text)" }}
-            >
-              {t("library.continuePractice")}
-            </span>
-            <span
-              className="block truncate text-base font-display font-bold"
-              style={{ color: "var(--color-text)" }}
-            >
-              {displayTitleForName(continueRecent.name, catalogue, lang)}
-            </span>
-            <span
-              className="block text-xs font-body"
-              style={{ color: "var(--color-text-muted)" }}
-            >
-              {t("library.continueHint")} ·{" "}
-              {formatRelativeTime(continueRecent.timestamp, t)}
-            </span>
-          </span>
-        </div>
-      </button>
-
-      {visibleRecents.length > 1 && (
-        <div className="mt-3 flex flex-wrap gap-2">
-          {visibleRecents.slice(1).map((file, idx) => (
+      <div className="mb-2 flex items-center gap-2">
+        <PlayCircle size={14} style={{ color: "var(--color-accent-text)" }} />
+        <span
+          className="text-xs font-body font-semibold uppercase tracking-wide"
+          style={{ color: "var(--color-accent-text)" }}
+        >
+          {t("library.recentlyPlayed")}
+        </span>
+      </div>
+      <div className="flex flex-wrap gap-2">
+        {visibleRecents.map((file, idx) => {
+          const isLatest = idx === 0;
+          return (
             <button
               key={file.path}
-              onClick={() => onSelectRecent(file)}
+              onClick={() => {
+                if (isLatest) {
+                  rememberReturnFocus("song-library-continue-action");
+                }
+                onSelectRecent(file);
+              }}
               disabled={loadingRecentPath === file.path}
               className="card-hover animate-page-enter group relative min-w-[170px] max-w-[260px] flex flex-col items-start gap-1 rounded-lg px-3 py-2 text-xs font-body font-medium cursor-pointer transition-all duration-150 disabled:opacity-50 disabled:cursor-wait"
               style={{
@@ -114,6 +68,9 @@ export function RecentSongsSection({
                 animationDelay: `${idx * 40}ms`,
               }}
               title={file.path}
+              data-testid={
+                isLatest ? "song-library-continue-action" : undefined
+              }
             >
               <span
                 className="w-full text-left leading-tight"
@@ -134,9 +91,9 @@ export function RecentSongsSection({
                 {formatRelativeTime(file.timestamp, t)}
               </span>
             </button>
-          ))}
-        </div>
-      )}
+          );
+        })}
+      </div>
       {recentRecovery && (
         <div
           className="flex flex-wrap items-center gap-2 mt-2 text-xs font-body"
