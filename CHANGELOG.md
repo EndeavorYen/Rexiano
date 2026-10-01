@@ -1,5 +1,32 @@
 # Changelog
 
+## [1.6.0](https://github.com/EndeavorYen/Rexiano/compare/v1.5.0...v1.6.0) (2026-10-01)
+
+
+### Features
+
+* **library:** show Chinese song titles in zh-TW and search them ([#321](https://github.com/EndeavorYen/Rexiano/issues/321)) ([969b76f](https://github.com/EndeavorYen/Rexiano/commit/969b76f68c9a7fe195e5e1fedc7523431e71296f)), closes [#308](https://github.com/EndeavorYen/Rexiano/issues/308)
+* **practice:** play Wait mode with on-screen keys and say when no keyboard is connected ([#318](https://github.com/EndeavorYen/Rexiano/issues/318)) ([00b4be2](https://github.com/EndeavorYen/Rexiano/commit/00b4be2395e0ed2a4ffb4f346649632f5accdffb))
+* **sheet:** final barline on the last measure; number each line ([#337](https://github.com/EndeavorYen/Rexiano/issues/337)) ([5642049](https://github.com/EndeavorYen/Rexiano/commit/5642049d978c2503b94e179b23dab842a51e4232)), closes [#332](https://github.com/EndeavorYen/Rexiano/issues/332)
+* **sheet:** pickup measures end to end; correct built-in song content ([#333](https://github.com/EndeavorYen/Rexiano/issues/333), [#334](https://github.com/EndeavorYen/Rexiano/issues/334)) ([#338](https://github.com/EndeavorYen/Rexiano/issues/338)) ([9c174a9](https://github.com/EndeavorYen/Rexiano/commit/9c174a98ff40f772bf6ebb41b8086cf844aafa18))
+
+
+### Bug Fixes
+
+* **deps:** clear high/critical audit findings in the build toolchain ([#327](https://github.com/EndeavorYen/Rexiano/issues/327)) ([84ca240](https://github.com/EndeavorYen/Rexiano/commit/84ca240e6892bd54e4361b502d3c188c3fda3469))
+* **deps:** upgrade Electron 39 → 44; keep Wait mode from skipping notes on late frames ([#329](https://github.com/EndeavorYen/Rexiano/issues/329)) ([4889cf1](https://github.com/EndeavorYen/Rexiano/commit/4889cf1e59b678a78347583ed681802178ecf95a))
+* **home:** reopen built-in songs from Recently played ([#316](https://github.com/EndeavorYen/Rexiano/issues/316)) ([8089057](https://github.com/EndeavorYen/Rexiano/commit/80890577ac2f9ae6d56b8e2374eaf26fd53d9603))
+* **library:** folk songs are 童謠・民謠, not 流行曲; show difficulty in list rows ([#323](https://github.com/EndeavorYen/Rexiano/issues/323)) ([51e2a9a](https://github.com/EndeavorYen/Rexiano/commit/51e2a9a14ac3d2154895d5cc8cf526448d6fdeaf))
+* **library:** one "play next" entry; course progress rows; neutral daily goal ([#324](https://github.com/EndeavorYen/Rexiano/issues/324)) ([d04e114](https://github.com/EndeavorYen/Rexiano/commit/d04e1143fdefa89d4dfb5d4726aee500098a3fb5)), closes [#307](https://github.com/EndeavorYen/Rexiano/issues/307)
+* **midi:** allow midiSysex so Web MIDI is not always denied ([#314](https://github.com/EndeavorYen/Rexiano/issues/314)) ([232d729](https://github.com/EndeavorYen/Rexiano/commit/232d7296a8e4c2afdc5d4ad442916170e856ad33))
+* **playback:** header 曲庫 button returns to the library ([#326](https://github.com/EndeavorYen/Rexiano/issues/326)) ([332bd30](https://github.com/EndeavorYen/Rexiano/commit/332bd3072bc48f0391ba3082d07ad2e9ccac45e7)), closes [#325](https://github.com/EndeavorYen/Rexiano/issues/325)
+* **practice:** drop the A/B/L loop shortcuts left behind by the loop UI removal ([#317](https://github.com/EndeavorYen/Rexiano/issues/317)) ([b83f75c](https://github.com/EndeavorYen/Rexiano/commit/b83f75c3be0e176f6a0c4701f7a9a94cd4f133c7))
+* **practice:** mode picker no longer looks pre-chosen; end card offers "試試跟彈" ([#320](https://github.com/EndeavorYen/Rexiano/issues/320)) ([0cb42fd](https://github.com/EndeavorYen/Rexiano/commit/0cb42fdd8a59a4a6555c69cd776a7d09ac09b698)), closes [#310](https://github.com/EndeavorYen/Rexiano/issues/310)
+* **progress:** count practice from sessions and record recents on play ([#319](https://github.com/EndeavorYen/Rexiano/issues/319)) ([567514b](https://github.com/EndeavorYen/Rexiano/commit/567514be15e106f32e63f645d2ee78a4a2d26228))
+* **sheet:** performance gaps as articulation; whole rests for empty bars ([#331](https://github.com/EndeavorYen/Rexiano/issues/331)) ([#336](https://github.com/EndeavorYen/Rexiano/issues/336)) ([1744276](https://github.com/EndeavorYen/Rexiano/commit/174427620e4c66ed7750483a78d8cf3621e4d887))
+* **sheet:** standard beams, flags and stem directions ([#330](https://github.com/EndeavorYen/Rexiano/issues/330)) ([#335](https://github.com/EndeavorYen/Rexiano/issues/335)) ([dac2166](https://github.com/EndeavorYen/Rexiano/commit/dac21663e76ede5ed1d1cc331591ca0f2a937bdc))
+* **ui:** taller falling-notes lane on short windows; no empty bar after the last measure ([#322](https://github.com/EndeavorYen/Rexiano/issues/322)) ([1909925](https://github.com/EndeavorYen/Rexiano/commit/1909925cf70eeb5c1b56c8a14b11a3659692e916))
+
 ## [1.5.0](https://github.com/EndeavorYen/Rexiano/compare/v1.4.0...v1.5.0) (2026-09-27)
 
 
