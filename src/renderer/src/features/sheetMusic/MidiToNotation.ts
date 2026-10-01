@@ -458,7 +458,12 @@ function finalizeQuantizedTiming(
   }
 }
 
-function makeRestKey(clef: Clef): string {
+/**
+ * Rests sit on the middle line, except a whole rest, which hangs from the
+ * fourth line.
+ */
+function makeRestKey(clef: Clef, vexDuration?: string): string {
+  if (vexDuration === "w") return clef === "treble" ? "d/5" : "f/3";
   return clef === "treble" ? "b/4" : "d/3";
 }
 
@@ -479,7 +484,7 @@ function createRestEvents(
       isRest: true,
       startTick: cursor,
       durationTicks: piece.ticks,
-      vexKey: makeRestKey(clef),
+      vexKey: makeRestKey(clef, piece.vexDuration),
       accidental: null,
       vexDuration: piece.vexDuration,
       dots: piece.dots,
@@ -493,6 +498,31 @@ function createRestEvents(
   }
 
   return events;
+}
+
+/** An empty bar takes a centred whole rest in every meter (#331). */
+function createFullMeasureRest(
+  measureTicks: number,
+  clef: Clef,
+  voiceIndex: number,
+  stemDirection?: StemDirection,
+): NotationNote {
+  return {
+    midi: null,
+    isRest: true,
+    startTick: 0,
+    durationTicks: measureTicks,
+    vexKey: makeRestKey(clef, "w"),
+    accidental: null,
+    vexDuration: "w",
+    dots: 0,
+    tied: false,
+    tiedFromPrevious: false,
+    tiedToNext: false,
+    voiceIndex,
+    stemDirection,
+    fullMeasureRest: true,
+  };
 }
 
 function createNoteEvents(
@@ -727,14 +757,9 @@ function buildSingleVoiceEvents(
     .sort((a, b) => a.startTick - b.startTick || a.midi - b.midi);
 
   if (voiceSegments.length === 0) {
-    return createRestEvents(
-      0,
-      measureTicks,
-      clef,
-      ticksPerQuarter,
-      voiceIndex,
-      stemDirection,
-    );
+    return [
+      createFullMeasureRest(measureTicks, clef, voiceIndex, stemDirection),
+    ];
   }
 
   const boundarySet = new Set<number>([0, measureTicks]);
@@ -907,6 +932,61 @@ function collectMeasureIssues(
 }
 
 /**
+ * Read short silences as articulation, not rests (#331).
+ *
+ * Scores exported from a performance release each note a few ticks before
+ * the next onset in the same staff, or before the barline. A gap shorter
+ * than a sixteenth note is extended to that next onset or barline, so a
+ * held whole note is not engraved as dotted half + dotted quarter +
+ * sixteenth rest.
+ */
+function closePerformanceGaps(
+  notes: MusicalNote[],
+  measureMap: MeasureInfo[],
+  ticksPerQuarter: number,
+): MusicalNote[] {
+  const maxGap = ticksPerQuarter / 4;
+  const barlines = measureMap.map((measure) => measure.endTick);
+  const onsetsByStaff = new Map<Clef, number[]>();
+  for (const note of notes) {
+    const staff = staffForMidi(note.midi, note.staffHint);
+    const onsets = onsetsByStaff.get(staff) ?? [];
+    onsets.push(note.rawStartTicks);
+    onsetsByStaff.set(staff, onsets);
+  }
+  for (const onsets of onsetsByStaff.values()) onsets.sort((a, b) => a - b);
+
+  // Smallest value in an ascending list that is >= `tick` (> when strict).
+  const firstFrom = (
+    sorted: number[],
+    tick: number,
+    strict: boolean,
+  ): number => {
+    let lo = 0;
+    let hi = sorted.length;
+    while (lo < hi) {
+      const mid = (lo + hi) >> 1;
+      const before = strict ? sorted[mid] <= tick : sorted[mid] < tick;
+      if (before) lo = mid + 1;
+      else hi = mid;
+    }
+    return lo < sorted.length ? sorted[lo] : Infinity;
+  };
+
+  return notes.map((note) => {
+    const end = note.rawStartTicks + note.rawDurationTicks;
+    const onsets =
+      onsetsByStaff.get(staffForMidi(note.midi, note.staffHint)) ?? [];
+    const nextOnset = firstFrom(onsets, note.rawStartTicks, true);
+    if (nextOnset < end) return note;
+    const target = Math.min(nextOnset, firstFrom(barlines, end, false));
+    const gap = target - end;
+    if (gap <= 0 || gap >= maxGap) return note;
+    return { ...note, rawDurationTicks: note.rawDurationTicks + gap };
+  });
+}
+
+/**
  * Core conversion: musical notes plus a measure map become notation data.
  */
 function buildNotation(
@@ -920,7 +1000,11 @@ function buildNotation(
     return { measures: [], bpm, ticksPerQuarter, warnings: [] };
   }
 
-  const quantized: QuantizedNote[] = musicalNotes.map((note) => {
+  const quantized: QuantizedNote[] = closePerformanceGaps(
+    musicalNotes,
+    measureMap,
+    ticksPerQuarter,
+  ).map((note) => {
     const standardStartTick = quantizeTicks(
       note.rawStartTicks,
       ticksPerQuarter,
