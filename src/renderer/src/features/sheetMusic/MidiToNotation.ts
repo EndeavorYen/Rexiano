@@ -757,9 +757,14 @@ function buildSingleVoiceEvents(
     .sort((a, b) => a.startTick - b.startTick || a.midi - b.midi);
 
   if (voiceSegments.length === 0) {
-    return [
-      createFullMeasureRest(measureTicks, clef, voiceIndex, stemDirection),
-    ];
+    return createRestEvents(
+      0,
+      measureTicks,
+      clef,
+      ticksPerQuarter,
+      voiceIndex,
+      stemDirection,
+    );
   }
 
   const boundarySet = new Set<number>([0, measureTicks]);
@@ -850,8 +855,10 @@ function buildVoiceEvents(
     })
     .filter((segment) => segment.endTick > segment.startTick);
 
+  // Only a staff with nothing in the bar takes the centred whole rest; an
+  // empty voice next to a sounding one keeps rests at its own beats.
   if (normalizedSegments.length === 0) {
-    return buildSingleVoiceEvents([], clef, measureTicks, ticksPerQuarter);
+    return [createFullMeasureRest(measureTicks, clef, 0)];
   }
 
   const hasAssignedVoices = normalizedSegments.some(
@@ -936,9 +943,11 @@ function collectMeasureIssues(
  *
  * Scores exported from a performance release each note a few ticks before
  * the next onset in the same staff, or before the barline. A gap shorter
- * than a sixteenth note is extended to that next onset or barline, so a
- * held whole note is not engraved as dotted half + dotted quarter +
- * sixteenth rest.
+ * than a sixteenth note, and shorter than a quarter of the note itself, is
+ * extended to that next onset or barline, so a held whole note is not
+ * engraved as dotted half + dotted quarter + sixteenth rest. The second
+ * limit keeps a written sixteenth rest after a short, late-released note.
+ * Onsets inside the note belong to another voice and are ignored.
  */
 function closePerformanceGaps(
   notes: MusicalNote[],
@@ -956,18 +965,13 @@ function closePerformanceGaps(
   }
   for (const onsets of onsetsByStaff.values()) onsets.sort((a, b) => a - b);
 
-  // Smallest value in an ascending list that is >= `tick` (> when strict).
-  const firstFrom = (
-    sorted: number[],
-    tick: number,
-    strict: boolean,
-  ): number => {
+  // Smallest value in an ascending list that is >= `tick`.
+  const firstFrom = (sorted: number[], tick: number): number => {
     let lo = 0;
     let hi = sorted.length;
     while (lo < hi) {
       const mid = (lo + hi) >> 1;
-      const before = strict ? sorted[mid] <= tick : sorted[mid] < tick;
-      if (before) lo = mid + 1;
+      if (sorted[mid] < tick) lo = mid + 1;
       else hi = mid;
     }
     return lo < sorted.length ? sorted[lo] : Infinity;
@@ -977,11 +981,11 @@ function closePerformanceGaps(
     const end = note.rawStartTicks + note.rawDurationTicks;
     const onsets =
       onsetsByStaff.get(staffForMidi(note.midi, note.staffHint)) ?? [];
-    const nextOnset = firstFrom(onsets, note.rawStartTicks, true);
-    if (nextOnset < end) return note;
-    const target = Math.min(nextOnset, firstFrom(barlines, end, false));
+    const target = Math.min(firstFrom(onsets, end), firstFrom(barlines, end));
     const gap = target - end;
-    if (gap <= 0 || gap >= maxGap) return note;
+    if (gap <= 0 || gap >= maxGap || gap >= note.rawDurationTicks / 4) {
+      return note;
+    }
     return { ...note, rawDurationTicks: note.rawDurationTicks + gap };
   });
 }

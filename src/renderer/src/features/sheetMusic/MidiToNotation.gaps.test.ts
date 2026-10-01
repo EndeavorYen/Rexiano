@@ -85,6 +85,31 @@ describe("performance gaps (#331)", () => {
     expect(symbols(first.trebleNotes)).toEqual(["q", "q", "q", "q"]);
   });
 
+  it("a held note over another voice in the same hand is extended too", () => {
+    // G5 held for most of the bar over C5 eighths in the right hand.
+    const song = makeSong([
+      note(79, 0, PPQ * 4 - 20, "Right Hand"),
+      ...Array.from({ length: 8 }, (_, i) =>
+        note(72, (i * PPQ) / 2, PPQ / 2, "Right Hand"),
+      ),
+    ]);
+    const [first] = convertSongToNotation(song).measures;
+    const held = first.trebleNotes.filter((n) => n.midi === 79);
+    expect(symbols(held)).toEqual(["w"]);
+    expect(first.trebleNotes.some((n) => n.isRest)).toBe(false);
+  });
+
+  it("a late-released short note keeps the written sixteenth rest", () => {
+    // Eighth note held a little long, then a sixteenth rest.
+    const song = makeSong([
+      note(72, 0, Math.round(PPQ * 0.52)),
+      note(72, (PPQ * 3) / 4, PPQ / 4),
+      note(72, PPQ, PPQ * 3),
+    ]);
+    const [first] = convertSongToNotation(song).measures;
+    expect(symbols(first.trebleNotes).slice(0, 3)).toEqual(["8", "16r", "16"]);
+  });
+
   it("a written sixteenth rest is kept", () => {
     const sixteenth = PPQ / 4;
     const song = makeSong([
@@ -97,6 +122,27 @@ describe("performance gaps (#331)", () => {
 });
 
 describe("full-measure rests (#331)", () => {
+  it("an empty treble bar hangs its whole rest from the fourth line", () => {
+    const song = makeSong([note(48, 0, PPQ * 4), note(72, PPQ * 4, PPQ * 4)]);
+    const [first] = convertSongToNotation(song).measures;
+    expect(symbols(first.trebleNotes)).toEqual(["wr"]);
+    expect(first.trebleNotes[0].vexKey).toBe("d/5");
+  });
+
+  it("an empty voice beside a sounding one keeps ordinary rests", () => {
+    // Voice 1 has quarters while voice 0 holds nothing in bar 2.
+    const song = makeSong([
+      note(79, 0, PPQ * 4),
+      ...[0, 1, 2, 3].map((beat) => note(72, beat * PPQ, PPQ)),
+      ...[0, 1, 2, 3].map((beat) => note(72, PPQ * 4 + beat * PPQ, PPQ)),
+    ]);
+    const bars = convertSongToNotation(song).measures;
+    const wholeRests = bars.flatMap((bar) =>
+      bar.trebleNotes.filter((n) => n.fullMeasureRest),
+    );
+    expect(wholeRests).toEqual([]);
+  });
+
   it.each([
     [3, 4],
     [4, 4],
