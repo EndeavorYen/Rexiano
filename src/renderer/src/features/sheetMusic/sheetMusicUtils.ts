@@ -126,8 +126,14 @@ export function calcSheetRenderWidth(
   const baseWidth = Math.max(containerWidth, minimumWidth);
   if (displayMeasureCount <= 0) return baseWidth;
 
+  // The song's last window can hold fewer measures. Spread those across the
+  // width instead of drawing empty bars after the final barline (#312).
+  const slotCount =
+    visibleMeasureIndices.length > 0
+      ? Math.min(displayMeasureCount, visibleMeasureIndices.length)
+      : displayMeasureCount;
   const slotMeasureIndices = Array.from(
-    { length: displayMeasureCount },
+    { length: slotCount },
     (_, slot) => visibleMeasureIndices[slot],
   );
   const denseTargetWidth =
@@ -150,8 +156,14 @@ export function calcMeasureSlotLayout(
 ): MeasureSlotLayout[] {
   if (displayMeasureCount <= 0) return [];
 
+  // The song's last window can hold fewer measures. Spread those across the
+  // width instead of drawing empty bars after the final barline (#312).
+  const slotCount =
+    visibleMeasureIndices.length > 0
+      ? Math.min(displayMeasureCount, visibleMeasureIndices.length)
+      : displayMeasureCount;
   const slotMeasureIndices = Array.from(
-    { length: displayMeasureCount },
+    { length: slotCount },
     (_, slot) => visibleMeasureIndices[slot],
   );
   const noteCounts = slotMeasureIndices.map((measureIndex) =>

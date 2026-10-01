@@ -34,6 +34,19 @@ describe("getMutedTrackIndices", () => {
 });
 
 describe("calculateSplitLayoutDimensions", () => {
+  test("the smallest window keeps a usable falling-notes lane (#312)", () => {
+    const small = calculateSplitLayoutDimensions({
+      viewportHeight: 600,
+      isSplitMode: true,
+      isNarrowViewport: false,
+    });
+    // The minimum window used to leave about 118 px for falling notes.
+    expect(small.splitFallingAvailableHeight).toBeGreaterThanOrEqual(160);
+    // The score keeps room for a grand staff at the minimum zoom (216 × 0.6).
+    expect(small.splitSheetHeight!).toBeGreaterThanOrEqual(130);
+    expect(small.keyboardHeight).toBe(72);
+  });
+
   test("computes standard non-split dimensions", () => {
     const dimensions = calculateSplitLayoutDimensions({
       viewportHeight: 900,

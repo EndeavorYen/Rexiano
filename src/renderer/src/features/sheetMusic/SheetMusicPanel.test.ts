@@ -104,13 +104,22 @@ describe("calcMeasureSlotLayout", () => {
       4,
     );
 
-    expect(layout).toHaveLength(4);
+    // The song's last window has 3 measures: no empty fourth bar (#312).
+    expect(layout).toHaveLength(3);
+    expect(layout.every((slot) => slot.measureIndex !== undefined)).toBe(true);
     expect(layout[1].measureIndex).toBe(1);
     expect(layout[1].width).toBeGreaterThan(layout[0].width * 2);
     expect(layout[1].x).toBe(layout[0].x + layout[0].width);
     expect(layout[2].x).toBe(layout[1].x + layout[1].width);
-    expect(layout[3].x).toBe(layout[2].x + layout[2].width);
-    expect(layout[3].x + layout[3].width).toBeLessThanOrEqual(800 - 28);
+    expect(layout[2].x + layout[2].width).toBeLessThanOrEqual(800 - 28);
+    expect(layout[2].x + layout[2].width).toBeGreaterThan(800 - 28 - 1);
+  });
+
+  it("keeps four slots for a full window", () => {
+    const measures = [0, 1, 2, 3].map((index) => makeMeasure(index, 4));
+    expect(
+      calcMeasureSlotLayout(measures, [0, 1, 2, 3], 800, 28, 4),
+    ).toHaveLength(4);
   });
 });
 
