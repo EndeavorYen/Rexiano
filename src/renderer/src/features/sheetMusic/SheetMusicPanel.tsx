@@ -14,7 +14,12 @@ import { usePlaybackStore } from "@renderer/stores/usePlaybackStore";
 import type { TempoMap } from "@renderer/engines/midi/TempoMap";
 import type { NotationData, NotationMeasure, DisplayMode } from "./types";
 import { getCursorPosition, getMeasureWindow } from "./CursorSync";
-import { beamConfigForVoice, stemOptionsForGroup } from "./engravingRules";
+import {
+  beamConfigForVoice,
+  endBarlineType,
+  measureNumberLabel,
+  stemOptionsForGroup,
+} from "./engravingRules";
 import {
   MIN_MEASURE_WIDTH,
   calcMeasureSlotLayout,
@@ -321,6 +326,25 @@ function findFirstTieIndex(groups: ChordGroup[]): number {
   return -1;
 }
 
+/** Small muted number above the start of a line (#332). */
+function drawMeasureNumber(
+  context: RenderContext,
+  stave: Stave,
+  label: string,
+): void {
+  const group = context.openGroup("measure-number") as SVGElement | undefined;
+  context.save();
+  try {
+    context.setFont("'DM Sans Variable', sans-serif", 11, "normal");
+    context.fillText(label, stave.getX(), stave.getYForLine(0) - 10);
+  } finally {
+    // Close the group even on failure so later measures are not nested in it.
+    context.restore();
+    context.closeGroup();
+  }
+  group?.style?.setProperty("fill", "var(--color-text-muted)");
+}
+
 function renderMeasure(
   VF: VexFlow,
   context: RenderContext,
@@ -331,9 +355,12 @@ function renderMeasure(
   isFirst: boolean,
   showTimeSignature: boolean,
   showBassStaff: boolean,
+  isLastMeasure: boolean,
+  measureNumber: string | null,
 ): RenderedMeasure {
   const { Stave, Voice, Formatter, StaveConnector } = VF;
   const timeSignature = `${measure.timeSignatureTop}/${measure.timeSignatureBottom}`;
+  const endBarline = endBarlineType(VF, isLastMeasure);
 
   const treble = new Stave(x, y, width);
   if (isFirst) {
@@ -344,7 +371,9 @@ function renderMeasure(
   if (showTimeSignature) {
     treble.addTimeSignature(timeSignature);
   }
+  treble.setEndBarType(endBarline);
   treble.setContext(context).draw();
+  if (measureNumber) drawMeasureNumber(context, treble, measureNumber);
 
   let bass: Stave | null = null;
   if (showBassStaff) {
@@ -357,6 +386,7 @@ function renderMeasure(
     if (showTimeSignature) {
       bass.addTimeSignature(timeSignature);
     }
+    bass.setEndBarType(endBarline);
     bass.setContext(context).draw();
 
     if (isFirst) {
@@ -366,7 +396,7 @@ function renderMeasure(
         .draw();
     }
     new StaveConnector(treble, bass)
-      .setType("singleRight")
+      .setType(isLastMeasure ? "boldDoubleRight" : "singleRight")
       .setContext(context)
       .draw();
   }
@@ -630,6 +660,8 @@ export function SheetMusicPanel({
                 isFirst,
                 isFirst || meterChanged,
                 showBassStaff,
+                measureIndex === notationData.measures.length - 1,
+                measureNumberLabel(measure.index + 1, slot),
               ),
             );
           } catch (e) {

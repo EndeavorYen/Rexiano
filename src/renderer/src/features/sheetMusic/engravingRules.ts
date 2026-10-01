@@ -4,7 +4,7 @@
  * VexFlow is loaded lazily, so these helpers take the module as an argument
  * instead of importing it.
  */
-import type { Fraction } from "vexflow";
+import type { BarlineType, Fraction } from "vexflow";
 
 type VexFlow = typeof import("vexflow");
 
@@ -51,4 +51,23 @@ export function beamConfigForVoice(
   return stemDirection === undefined
     ? { groups, maintainStemDirections: false }
     : { groups, stemDirection, maintainStemDirections: true };
+}
+
+/** The song's last measure closes with a final (thin–thick) barline. */
+export function endBarlineType(
+  VF: VexFlow,
+  isLastMeasure: boolean,
+): BarlineType {
+  return isLastMeasure ? VF.BarlineType.END : VF.BarlineType.SINGLE;
+}
+
+/**
+ * Printed music numbers the first measure of each line so a teacher can say
+ * "from bar 5". The opening line is left unnumbered.
+ */
+export function measureNumberLabel(
+  measureNumber: number,
+  slot: number,
+): string | null {
+  return slot === 0 && measureNumber > 1 ? String(measureNumber) : null;
 }
