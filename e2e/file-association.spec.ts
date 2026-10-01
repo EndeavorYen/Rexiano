@@ -1,5 +1,6 @@
 import { test as base, expect } from "@playwright/test";
 import { _electron as electron } from "playwright";
+import { waitForAppDocument } from "./fixtures/electronApp";
 import { execFile } from "child_process";
 import { copyFileSync, mkdirSync, mkdtempSync, rmSync } from "fs";
 import { tmpdir } from "os";
@@ -39,7 +40,7 @@ base("routes cold-start and warm-instance file associations", async () => {
 
   try {
     const page = await primary.firstWindow();
-    await page.waitForLoadState("domcontentloaded");
+    await waitForAppDocument(page);
     await expect(page.getByTestId("playback-song-title")).toHaveText(
       basename(coldMidiPath),
     );

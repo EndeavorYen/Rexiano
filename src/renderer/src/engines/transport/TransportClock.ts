@@ -50,9 +50,9 @@ export function createTransportTick(
     const { waitMode, speedController, loopController } = getPracticeEngines();
 
     // ── WaitMode gate: if waiting for input, time does not advance ──
-    if (usePracticeStore.getState().mode === "wait" && waitMode) {
-      if (!waitMode.tick(playState.currentTime)) return;
-    }
+    const waitGate =
+      usePracticeStore.getState().mode === "wait" ? waitMode : null;
+    if (waitGate && !waitGate.tick(playState.currentTime)) return;
 
     let effectiveTime: number;
     const audioTime = getAudioCurrentTime?.();
@@ -65,6 +65,13 @@ export function createTransportTick(
         playState.currentTime + dt * speedMultiplier,
         song.duration,
       );
+    }
+
+    // A late frame (throttled or stalled window) must not carry Wait mode
+    // past the next note: stop there so the following tick waits on it.
+    const nextOnset = waitGate?.nextOnsetTime() ?? null;
+    if (nextOnset !== null && effectiveTime > nextOnset) {
+      effectiveTime = Math.max(playState.currentTime, nextOnset);
     }
 
     // ── Loop check: auto-seek at B point (before writing to store) ──
