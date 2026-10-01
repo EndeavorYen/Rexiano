@@ -14,6 +14,7 @@ import { usePlaybackStore } from "@renderer/stores/usePlaybackStore";
 import type { TempoMap } from "@renderer/engines/midi/TempoMap";
 import type { NotationData, NotationMeasure, DisplayMode } from "./types";
 import { getCursorPosition, getMeasureWindow } from "./CursorSync";
+import { beamConfigForVoice, stemOptionsForGroup } from "./engravingRules";
 import {
   MIN_MEASURE_WIDTH,
   calcMeasureSlotLayout,
@@ -26,7 +27,7 @@ import {
   groupNotesIntoStaffVoices,
   type ChordGroup,
 } from "./sheetMusicRenderUtils";
-import type { RenderContext, Stave, StaveNote, Tuplet } from "vexflow";
+import type { Beam, RenderContext, Stave, StaveNote, Tuplet } from "vexflow";
 
 type VexFlow = typeof import("vexflow");
 
@@ -72,6 +73,7 @@ interface RenderedVoice {
   groups: ChordGroup[];
   vexNotes: StaveNote[];
   tuplets: Tuplet[];
+  beams: Beam[];
 }
 
 interface RenderedStaff {
@@ -100,7 +102,7 @@ function makeStaveNote(
     keys,
     duration: `${group.duration}${group.isRest ? "r" : ""}`,
     clef,
-    stemDirection: group.stemDirection,
+    ...stemOptionsForGroup(group),
   });
   for (let i = 0; i < group.dots; i++) {
     Dot.buildAndAttach([note], { all: true });
@@ -117,41 +119,23 @@ function makeStaveNote(
   return note;
 }
 
-function drawBeams(
+/**
+ * Build beams before the voice is drawn: VexFlow only suppresses flags and
+ * settles stem sides for notes that already belong to a beam (#330).
+ */
+function createBeams(
   VF: VexFlow,
-  context: RenderContext,
   groups: ChordGroup[],
   vexNotes: StaveNote[],
-): void {
-  const { Beam } = VF;
-  let run: StaveNote[] = [];
-  let runStemDirection: 1 | -1 | undefined;
-
-  const flush = (): void => {
-    if (run.length > 1) {
-      const config = runStemDirection
-        ? { stemDirection: runStemDirection }
-        : undefined;
-      for (const beam of Beam.generateBeams(run, config)) {
-        beam.setContext(context).draw();
-      }
-    }
-    run = [];
-    runStemDirection = undefined;
-  };
-
-  groups.forEach((group, index) => {
-    if (!group.isRest && (group.duration === "8" || group.duration === "16")) {
-      if (runStemDirection !== group.stemDirection && run.length > 0) {
-        flush();
-      }
-      runStemDirection = group.stemDirection;
-      run.push(vexNotes[index]);
-    } else {
-      flush();
-    }
-  });
-  flush();
+  timeSignature: string,
+): Beam[] {
+  const config = beamConfigForVoice(
+    groups[0]?.stemDirection,
+    timeSignature,
+    VF,
+    groups.some((group) => group.tuplet !== undefined),
+  );
+  return VF.Beam.generateBeams(vexNotes, config);
 }
 
 function drawTies(
@@ -391,11 +375,18 @@ function renderMeasure(
       const vexNotes = groups.map((chord) =>
         makeStaveNote(VF, chord, "treble"),
       );
+      const tuplets = makeTuplets(
+        VF,
+        groups,
+        vexNotes,
+        groups[0]?.stemDirection,
+      );
       return {
         voiceIndex: groups[0]?.voiceIndex ?? 0,
         groups,
         vexNotes,
-        tuplets: makeTuplets(VF, groups, vexNotes, groups[0]?.stemDirection),
+        tuplets,
+        beams: createBeams(VF, groups, vexNotes, timeSignature),
       };
     },
   );
@@ -406,16 +397,18 @@ function renderMeasure(
           const vexNotes = groups.map((chord) =>
             makeStaveNote(VF, chord, "bass"),
           );
+          const tuplets = makeTuplets(
+            VF,
+            groups,
+            vexNotes,
+            groups[0]?.stemDirection,
+          );
           return {
             voiceIndex: groups[0]?.voiceIndex ?? 0,
             groups,
             vexNotes,
-            tuplets: makeTuplets(
-              VF,
-              groups,
-              vexNotes,
-              groups[0]?.stemDirection,
-            ),
+            tuplets,
+            beams: createBeams(VF, groups, vexNotes, timeSignature),
           };
         },
       )
@@ -459,12 +452,12 @@ function renderMeasure(
     bassVexVoices.forEach((voice) => voice.draw(context, bass));
   }
   trebleVoices.forEach((voice) => {
-    drawBeams(VF, context, voice.groups, voice.vexNotes);
+    voice.beams.forEach((beam) => beam.setContext(context).draw());
     drawTies(VF, context, voice.groups, voice.vexNotes);
     drawTuplets(context, voice.tuplets);
   });
   bassVoices.forEach((voice) => {
-    drawBeams(VF, context, voice.groups, voice.vexNotes);
+    voice.beams.forEach((beam) => beam.setContext(context).draw());
     drawTies(VF, context, voice.groups, voice.vexNotes);
     drawTuplets(context, voice.tuplets);
   });
