@@ -7,7 +7,8 @@ export type FileImportErrorKind =
   | "oversized"
   | "read-failed"
   | "parse-failed"
-  | "missing-recent";
+  | "missing-recent"
+  | "builtin-unavailable";
 
 export interface FileImportErrorInput {
   kind: FileImportErrorKind;
@@ -128,6 +129,21 @@ export function getFileImportErrorGuidance(
             id: "remove-recent",
             label: t("library.removeRecent"),
             emphasis: "secondary",
+          },
+        ],
+      };
+    case "builtin-unavailable":
+      return {
+        title: t("app.importErrorBuiltinTitle"),
+        guidance: t("app.importErrorBuiltinGuidance", {
+          fileName: error.fileName ?? t("app.importErrorUnknownFile"),
+        }),
+        diagnostic: diagnosticToString(error),
+        actions: [
+          {
+            id: "remove-recent",
+            label: t("library.removeRecent"),
+            emphasis: "primary",
           },
         ],
       };

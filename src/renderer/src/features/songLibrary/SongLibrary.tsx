@@ -10,6 +10,7 @@ import {
 import { useSongLibraryStore } from "../../stores/useSongLibraryStore";
 import { useProgressStore } from "../../stores/useProgressStore";
 import { groupSongsByCategory } from "./songCardUtils";
+import { openBuiltinSong, recentOpenTarget } from "./openBuiltinSong";
 import {
   buildImportedSongActivity,
   buildImportedSongSelectionPreviewModel,
@@ -260,26 +261,11 @@ export function SongLibrary({
       setError(null);
       setLoadingId(songId);
       try {
-        const result = await window.api.loadBuiltinSong(songId);
-        if (result) {
-          const parsed = parseImportedPracticeFile(
-            result.fileName,
-            result.data,
-          );
-          loadSong(parsed);
-          const origin =
-            songs.find((entry) => entry.id === songId)?.origin ?? "midi";
-          usePracticeStore
-            .getState()
-            .setDisplayMode(preferredDisplayModeForSource(origin));
-          reset();
-          await window.api.saveRecentFile({
-            path: `builtin:${songId}`,
-            name: result.fileName,
-            timestamp: Date.now(),
-          });
-          refreshRecents();
-        }
+        const title = await openBuiltinSong(songId, {
+          loadSong,
+          resetPlayback: reset,
+        });
+        if (title) refreshRecents();
       } catch (e) {
         const msg = e instanceof Error ? e.message : t("general.error");
         setError(msg);
@@ -288,7 +274,7 @@ export function SongLibrary({
         setLoadingId(null);
       }
     },
-    [loadSong, onSessionIntentSelected, reset, refreshRecents, songs, t],
+    [loadSong, onSessionIntentSelected, reset, refreshRecents, t],
   );
 
   const handlePreviewSong = useCallback(
@@ -307,13 +293,34 @@ export function SongLibrary({
       setRecentRecovery(null);
       setLoadingRecentPath(file.path);
       try {
-        let result;
-        if (file.path.startsWith("builtin:")) {
-          const songId = file.path.slice("builtin:".length);
-          result = await window.api.loadBuiltinSong(songId);
-        } else {
-          result = await window.api.loadMidiPath(file.path);
+        const target = recentOpenTarget(file.path);
+        if (target.kind === "builtin") {
+          // Built-in songs never suggest re-importing a file (#304).
+          let title: string | null = null;
+          let diagnostic: unknown;
+          try {
+            title = await openBuiltinSong(target.songId, {
+              loadSong,
+              resetPlayback: reset,
+            });
+          } catch (error) {
+            diagnostic = error;
+            console.error("Failed to open built-in recent song:", error);
+          }
+          if (!title) {
+            setRecentRecovery(
+              getRecentFileRecovery(
+                file,
+                { kind: "builtin-unavailable", diagnostic },
+                t,
+              ),
+            );
+            return;
+          }
+          refreshRecents();
+          return;
         }
+        const result = await window.api.loadMidiPath(file.path);
 
         if (!result) {
           setRecentRecovery(
@@ -336,22 +343,13 @@ export function SongLibrary({
           return;
         }
         loadSong(parsed);
-        if (file.path.startsWith("builtin:")) {
-          const songId = file.path.slice("builtin:".length);
-          const origin =
-            songs.find((entry) => entry.id === songId)?.origin ?? "midi";
-          usePracticeStore
-            .getState()
-            .setDisplayMode(preferredDisplayModeForSource(origin));
-        } else {
-          usePracticeStore
-            .getState()
-            .setDisplayMode(
-              preferredDisplayModeForSource(
-                practiceSourceFromFileName(result.fileName),
-              ),
-            );
-        }
+        usePracticeStore
+          .getState()
+          .setDisplayMode(
+            preferredDisplayModeForSource(
+              practiceSourceFromFileName(result.fileName),
+            ),
+          );
         reset();
         await window.api.saveRecentFile({
           path: file.path,
@@ -372,7 +370,7 @@ export function SongLibrary({
         setLoadingRecentPath(null);
       }
     },
-    [loadSong, onSessionIntentSelected, reset, refreshRecents, songs, t],
+    [loadSong, onSessionIntentSelected, reset, refreshRecents, t],
   );
 
   const handleRemoveRecent = useCallback(

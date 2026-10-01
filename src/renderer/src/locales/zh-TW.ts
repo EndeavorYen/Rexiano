@@ -22,6 +22,9 @@ export const zhTW: TranslationMap = {
   "app.importErrorMissingTitle": "最近檔案已無法使用",
   "app.importErrorMissingGuidance":
     "{fileName} 可能已被移動或無法讀取，請從目前位置重新匯入。",
+  "app.importErrorBuiltinTitle": "這首曲子打不開",
+  "app.importErrorBuiltinGuidance":
+    "{fileName} 暫時打不開。先選別首曲子；如果一直這樣，請重新安裝 Rexiano。",
   "app.importErrorReadTitle": "無法讀取檔案",
   "app.importErrorReadGuidance": "請確認 {fileName} 的檔案權限，然後再試一次。",
   "app.importErrorUnknownFile": "此檔案",

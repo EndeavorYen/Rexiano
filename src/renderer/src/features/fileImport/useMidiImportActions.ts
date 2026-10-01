@@ -25,6 +25,8 @@ import {
   MIDI_FILE_TOO_LARGE_DIAGNOSTIC,
 } from "@shared/midiFileLimits";
 import { subscribeToAssociatedMidiImports } from "./associatedMidiImport";
+import type { RecentFile } from "@shared/types";
+import { openRecentEntry } from "../songLibrary/openBuiltinSong";
 
 export const MIDI_EXTENSIONS = [
   ".mid",
@@ -71,6 +73,8 @@ export interface MidiImportActions {
   isDragging: boolean;
   handleOpenFile: () => Promise<void>;
   handleLoadMidiPath: (filePath: string) => Promise<void>;
+  /** Open a Recently played entry: a file path or a `builtin:<id>` song */
+  handleOpenRecent: (file: RecentFile) => Promise<void>;
   dismissImportError: () => void;
   handleImportRecoveryAction: (
     actionId: FileImportRecoveryActionId,
@@ -281,6 +285,43 @@ export function useMidiImportActions({
     [loadParsedSong, refreshRecentFiles, showImportError],
   );
 
+  const handleOpenRecent = useCallback(
+    async (file: RecentFile): Promise<void> => {
+      const outcome = await openRecentEntry(file, {
+        loadSong,
+        resetPlayback,
+        loadFilePath: handleLoadMidiPath,
+      });
+      if (outcome.kind === "file") return;
+      if (outcome.kind === "unavailable") {
+        if (outcome.diagnostic) {
+          console.error(
+            "Failed to open built-in recent song:",
+            outcome.diagnostic,
+          );
+        }
+        showImportError({
+          kind: "builtin-unavailable",
+          fileName: file.name,
+          path: file.path,
+          diagnostic: outcome.diagnostic,
+        });
+        return;
+      }
+      setImportError((current) =>
+        reduceImportErrorForEvent(current, "import-succeeded"),
+      );
+      refreshRecentFiles();
+    },
+    [
+      handleLoadMidiPath,
+      loadSong,
+      refreshRecentFiles,
+      resetPlayback,
+      showImportError,
+    ],
+  );
+
   useEffect(() => {
     if (
       typeof window.api.takePendingAssociatedMidiFile !== "function" ||
@@ -428,6 +469,7 @@ export function useMidiImportActions({
     isDragging,
     handleOpenFile,
     handleLoadMidiPath,
+    handleOpenRecent,
     dismissImportError,
     handleImportRecoveryAction,
     handleDragEnter,

@@ -272,6 +272,7 @@ function App(): React.JSX.Element {
     isDragging,
     handleOpenFile,
     handleLoadMidiPath,
+    handleOpenRecent,
     dismissImportError,
     handleImportRecoveryAction,
     handleDragEnter,
@@ -433,7 +434,7 @@ function App(): React.JSX.Element {
             recentFiles={recentFiles}
             onSelectRecent={(file) => {
               setSessionIntent("practice");
-              void handleLoadMidiPath(file.path);
+              void handleOpenRecent(file);
             }}
           />
           {showMenuSettings && (

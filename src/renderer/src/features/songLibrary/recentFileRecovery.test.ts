@@ -19,6 +19,20 @@ const recentFile: RecentFile = {
 };
 
 describe("getRecentFileRecovery", () => {
+  test("a built-in that cannot open offers removal, not re-import", () => {
+    const recovery = getRecentFileRecovery(
+      { path: "builtin:hot-cross-buns", name: "Hot Cross Buns", timestamp: 1 },
+      { kind: "builtin-unavailable" },
+      t,
+    );
+    expect(recovery.guidance.title).toBe("app.importErrorBuiltinTitle");
+    expect(recovery.guidance.actions.map((action) => action.id)).toEqual([
+      "remove-recent",
+    ]);
+    expect(recovery.canRemove).toBe(true);
+    expect(recovery.removePath).toBe("builtin:hot-cross-buns");
+  });
+
   test("offers removal for missing recent file paths", () => {
     expect(getRecentFileRecovery(recentFile, { kind: "missing" }, t)).toEqual({
       guidance: {
