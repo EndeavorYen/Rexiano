@@ -197,8 +197,10 @@ test.describe("Sheet music visual fixtures", () => {
       const stats = await readSheetSvgStats(appPage);
 
       expect(stats).not.toBeNull();
-      expect(stats?.glyphCount).toBeGreaterThan(80);
-      expect(stats?.visibleGlyphCount).toBeGreaterThan(40);
+      // One-measure fixtures: since #312 the line ends at the final barline,
+      // so the three empty padding bars (and their staff lines) are gone.
+      expect(stats?.glyphCount).toBeGreaterThan(35);
+      expect(stats?.visibleGlyphCount).toBeGreaterThan(24);
       expect(stats?.leftSystemGlyphCount).toBeGreaterThanOrEqual(18);
       expect(stats?.invalidBoxCount).toBe(0);
       expect(stats?.minX).toBeGreaterThanOrEqual(-2);
