@@ -260,6 +260,8 @@ export class WaitMode {
    * missed instead of waiting for it.
    */
   nextOnsetTime(): number | null {
+    // Only a running Wait session gates time; idle or waiting never clamps.
+    if (this._state !== "playing") return null;
     let earliest: number | null = null;
     for (const trackIndex of this._activeTracks) {
       const track = this._tracks[trackIndex];

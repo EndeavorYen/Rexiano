@@ -1,6 +1,6 @@
 # Rexiano 架構總覽
 
-> **TL;DR**：Rexiano 是 Electron 39 桌面應用，renderer 使用 React 19，核心邏輯放在純 TypeScript engines，Zustand stores 負責橋接狀態與 engine 生命週期，所有檔案系統與 app shell 能力都走 IPC。新增行為時維持既有分層：`main` 管原生能力，`preload` 暴露型別化 API，`stores` 協調狀態，`features` 渲染 UI，`engines` 保持無 React 依賴。
+> **TL;DR**：Rexiano 是 Electron 44 桌面應用，renderer 使用 React 19，核心邏輯放在純 TypeScript engines，Zustand stores 負責橋接狀態與 engine 生命週期，所有檔案系統與 app shell 能力都走 IPC。新增行為時維持既有分層：`main` 管原生能力，`preload` 暴露型別化 API，`stores` 協調狀態，`features` 渲染 UI，`engines` 保持無 React 依賴。
 >
 > **讀者**：開發者與貢獻者
 >

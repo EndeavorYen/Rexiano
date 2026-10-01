@@ -9,7 +9,7 @@
 
 - 開發前先讀 `CLAUDE.md` 的必讀文件清單，尤其是 `docs/DESIGN.md`、`docs/ROADMAP.md` 與 `docs/init.md`。
 - `docs/ROADMAP.md` 是進度單一真實來源；完成 roadmap 任務時，同步更新對應 checkbox。
-- 技術棧：Electron 33、React 19、TypeScript 5.9、electron-vite、Tailwind CSS 4、PixiJS 8、Zustand 5、Vitest 4、Playwright、pnpm。
+- 技術棧：Electron 44、React 19、TypeScript 5.9、electron-vite、Tailwind CSS 4、PixiJS 8、Zustand 5、Vitest 4、Playwright、pnpm。
 - 主要驗證命令：`pnpm lint && pnpm typecheck && pnpm test`。UI、視覺或主要流程變更時，再加跑對應 `pnpm test:e2e`、`pnpm test:visual` 或聚焦 Playwright 測試。
 
 ## TDD Workflow

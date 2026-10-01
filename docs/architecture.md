@@ -1,6 +1,6 @@
 # Rexiano Architecture Overview
 
-> **TL;DR**: Rexiano is an Electron 39 desktop app with a React 19 renderer, pure TypeScript engines, Zustand stores as the bridge, and IPC for all file-system and app-shell work. Keep new behavior inside the existing layers: `main` owns native capabilities, `preload` exposes typed APIs, `stores` coordinate state and engine lifecycles, `features` render UI, and `engines` stay React-free.
+> **TL;DR**: Rexiano is an Electron 44 desktop app with a React 19 renderer, pure TypeScript engines, Zustand stores as the bridge, and IPC for all file-system and app-shell work. Keep new behavior inside the existing layers: `main` owns native capabilities, `preload` exposes typed APIs, `stores` coordinate state and engine lifecycles, `features` render UI, and `engines` stay React-free.
 >
 > **Audience**: Developers and contributors
 >

@@ -43,6 +43,11 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      # Electron 42+ downloads its binary on first run, not at install.
+      # Fetch it once here so parallel Playwright workers don't race on it.
+      - name: Download Electron binary
+        run: node node_modules/electron/install.js
+
       - name: Run Playwright E2E
         run: pnpm test:e2e
         env:

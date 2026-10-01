@@ -517,4 +517,20 @@ describe("WaitMode.nextOnsetTime (frame gaps must not skip notes)", () => {
     wm.checkInput(new Set([60]));
     expect(wm.nextOnsetTime()).toBeNull();
   });
+
+  it("ignores inactive tracks and takes the earliest onset across active ones", () => {
+    const tracks: ParsedTrack[] = [
+      ...makeTracks([{ midi: 72, time: 2 }]),
+      ...makeTracks([{ midi: 48, time: 1.5 }]),
+      ...makeTracks([{ midi: 36, time: 0.25 }]),
+    ];
+    wm.init(tracks, new Set([0, 1]));
+    wm.start();
+    expect(wm.nextOnsetTime()).toBe(1.5);
+  });
+
+  it("does not clamp while idle", () => {
+    wm.init(makeTracks([{ midi: 60, time: 1 }]), new Set([0]));
+    expect(wm.nextOnsetTime()).toBeNull();
+  });
 });
