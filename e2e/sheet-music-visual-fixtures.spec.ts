@@ -178,9 +178,11 @@ test.describe("Sheet music visual fixtures", () => {
     expect(stats).not.toBeNull();
     expect(stats?.width).toBeGreaterThanOrEqual(1200);
     expect(stats?.height).toBeGreaterThanOrEqual(200);
-    expect(stats?.glyphCount).toBeGreaterThan(220);
-    expect(stats?.visibleGlyphCount).toBeGreaterThan(140);
-    expect(stats?.distinctColumns).toBeGreaterThan(50);
+    // Beamed sixteenths no longer also draw a flag each (#330), so the
+    // glyph count is lower than when flags and beams were both drawn.
+    expect(stats?.glyphCount).toBeGreaterThan(180);
+    expect(stats?.visibleGlyphCount).toBeGreaterThan(110);
+    expect(stats?.distinctColumns).toBeGreaterThan(40);
     expect(stats?.invalidBoxCount).toBe(0);
     expect(stats?.minX).toBeGreaterThanOrEqual(-2);
     expect(stats?.maxX).toBeLessThanOrEqual((stats?.width ?? 0) + 2);
