@@ -53,7 +53,19 @@ const ON_SCREEN_KEY_INPUT = createOnScreenKeyInput({
     const { waitMode } = getPracticeEngines();
     return waitMode?.state === "waiting" ? waitMode.targetNotes : null;
   },
+  enabled: () => {
+    const midi = useMidiDeviceStore.getState();
+    return !midi.isConnected && midi.bleStatus !== "connected";
+  },
 });
+
+/**
+ * Store listeners run before the Wait engine and React effects catch up, so
+ * check latches once the current task has settled.
+ */
+function releaseStaleOnScreenNotesSoon(): void {
+  setTimeout(() => ON_SCREEN_KEY_INPUT.releaseStale(), 0);
+}
 
 function App(): React.JSX.Element {
   const { t } = useTranslation();
@@ -108,21 +120,22 @@ function App(): React.JSX.Element {
 
   // Latched on-screen chord notes must not outlive the chord they belong to.
   useEffect(() => {
-    const unsubPractice = usePracticeStore.subscribe(() =>
-      ON_SCREEN_KEY_INPUT.releaseStale(),
-    );
-    const unsubPlayback = usePlaybackStore.subscribe((state, prev) => {
-      if (state.isPlaying !== prev.isPlaying)
-        ON_SCREEN_KEY_INPUT.releaseStale();
-    });
-    const unsubSong = useSongStore.subscribe(() =>
-      ON_SCREEN_KEY_INPUT.releaseStale(),
-    );
-    return () => {
-      unsubPractice();
-      unsubPlayback();
-      unsubSong();
-    };
+    const unsubscribers = [
+      usePracticeStore.subscribe(releaseStaleOnScreenNotesSoon),
+      usePlaybackStore.subscribe((state, prev) => {
+        if (state.isPlaying !== prev.isPlaying) releaseStaleOnScreenNotesSoon();
+      }),
+      useSongStore.subscribe(releaseStaleOnScreenNotesSoon),
+      useMidiDeviceStore.subscribe((state, prev) => {
+        if (
+          state.isConnected !== prev.isConnected ||
+          state.bleStatus !== prev.bleStatus
+        ) {
+          releaseStaleOnScreenNotesSoon();
+        }
+      }),
+    ];
+    return () => unsubscribers.forEach((unsubscribe) => unsubscribe());
   }, []);
 
   // ─── Mode selection + celebration + stats flow ────────

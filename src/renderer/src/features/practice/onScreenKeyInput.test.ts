@@ -6,6 +6,7 @@ interface Harness {
   noteOn: Mock<(midi: number) => void>;
   noteOff: Mock<(midi: number) => void>;
   setTargets: (targets: number[] | null) => void;
+  setEnabled: (enabled: boolean) => void;
   input: ReturnType<typeof createOnScreenKeyInput>;
 }
 
@@ -22,10 +23,12 @@ function harness(initialTargets: number[] | null): Harness {
   const noteOff = vi.fn((midi: number) => {
     active.delete(midi);
   });
+  let enabled = true;
   const input = createOnScreenKeyInput({
     noteOn,
     noteOff,
     waitTargets: () => targets,
+    enabled: () => enabled,
   });
   return {
     active,
@@ -33,6 +36,9 @@ function harness(initialTargets: number[] | null): Harness {
     noteOff,
     setTargets: (next) => {
       targets = next ? new Set(next) : null;
+    },
+    setEnabled: (next) => {
+      enabled = next;
     },
     input,
   };
@@ -82,5 +88,40 @@ describe("createOnScreenKeyInput", () => {
     h.input.noteOn(60);
     h.input.noteOff(60);
     expect(h.active.size).toBe(0);
+  });
+
+  test("does nothing while a real keyboard is connected", () => {
+    const h = harness([60]);
+    h.setEnabled(false);
+    h.input.noteOn(60);
+    h.input.noteOff(60);
+    expect(h.noteOn).not.toHaveBeenCalled();
+    expect(h.noteOff).not.toHaveBeenCalled();
+  });
+
+  test("connecting a keyboard releases on-screen latches", () => {
+    const h = harness([60, 64]);
+    h.input.noteOn(60);
+    h.input.noteOff(60);
+    expect(h.active.has(60)).toBe(true);
+    h.setEnabled(false);
+    h.input.releaseStale();
+    expect(h.active.has(60)).toBe(false);
+  });
+
+  test("never releases a note this input did not turn on", () => {
+    const h = harness(null);
+    h.input.noteOff(72);
+    expect(h.noteOff).not.toHaveBeenCalled();
+  });
+
+  test("a stale latch from the last chord is gone once the next one starts", () => {
+    const h = harness([60, 64]);
+    h.input.noteOn(60);
+    h.input.noteOff(60);
+    // Wait moved on to a different chord without the on-screen keys.
+    h.setTargets([62, 65]);
+    h.input.releaseStale();
+    expect(h.active.has(60)).toBe(false);
   });
 });
