@@ -58,6 +58,7 @@ export interface UsePracticeSessionFlowResult {
   handleModeSelect: (mode: PracticeMode) => void;
   handleModeDismiss: () => void;
   handlePracticeAgain: () => void;
+  handleTryWait: () => void;
   handleChooseSong: () => void;
   hidePostSessionFlow: () => void;
   showCelebrationForScore: (score: PracticeScore) => void;
@@ -133,6 +134,7 @@ export function usePracticeSessionFlow({
     handleModeSelect,
     handleModeDismiss,
     handlePracticeAgain,
+    handleTryWait,
     handleChooseSong,
     hidePostSessionFlow,
     showCelebrationForScore,
@@ -180,6 +182,7 @@ export function usePracticeSessionFlow({
     handleModeSelect,
     handleModeDismiss,
     handlePracticeAgain,
+    handleTryWait,
     handleChooseSong,
     hidePostSessionFlow,
     showCelebrationForScore,

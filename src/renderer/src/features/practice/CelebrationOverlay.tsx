@@ -1,11 +1,15 @@
 import type { PracticeMode, PracticeScore } from "@shared/types";
 import { useProgressStore } from "../../stores/useProgressStore";
+import { useRef } from "react";
 import {
+  getCelebrationActions,
   getCelebrationPresentation,
   getTier,
   isNewRecord,
+  type CelebrationActionId,
   type CelebrationTier,
 } from "./celebrationUtils";
+import { useDialogFocus } from "@renderer/hooks/useDialogFocus";
 import { useTranslation } from "@renderer/i18n/useTranslation";
 import type { TranslationKey } from "@renderer/i18n/types";
 import { getRetrySpeed, type NextPracticeAction } from "./nextPracticeAction";
@@ -15,6 +19,8 @@ interface CelebrationOverlayProps {
   visible: boolean;
   onPracticeAgain: () => void;
   onChooseSong: () => void;
+  /** Replay the same song in Wait mode (the advice after a Watch run) */
+  onTryWait?: () => void;
   /** Song identifier used to look up previous best score for "New Record!" detection */
   songId?: string;
   nextAction?: NextPracticeAction;
@@ -126,6 +132,7 @@ export function CelebrationOverlay({
   visible,
   onPracticeAgain,
   onChooseSong,
+  onTryWait,
   songId,
   nextAction,
   mode = "wait",
@@ -151,7 +158,37 @@ export function CelebrationOverlay({
   // The replay button applies speed advice, so advice and button agree.
   const retrySpeed = isListenThrough ? null : getRetrySpeed(nextAction);
 
+  const cardRef = useRef<HTMLDivElement>(null);
+  const primaryRef = useRef<HTMLButtonElement>(null);
+  useDialogFocus({
+    active: visible,
+    containerRef: cardRef,
+    initialFocusRef: primaryRef,
+  });
+
   if (!visible) return <></>;
+
+  const actions = getCelebrationActions(presentation.variant).filter(
+    (action) => action !== "try-wait" || onTryWait,
+  );
+  const actionLabel = (action: CelebrationActionId): string => {
+    if (action === "try-wait") return t("celebration.listen.tryWait");
+    if (action === "choose-song") return t("celebration.pickSong");
+    if (isListenThrough) return t("celebration.listen.listenAgain");
+    return retrySpeed !== null
+      ? t("celebration.playAgainAtSpeed", { speed: formatSpeed(retrySpeed) })
+      : t(TIER_PLAY_AGAIN_KEYS[tier]);
+  };
+  const actionHandler = (action: CelebrationActionId): (() => void) => {
+    if (action === "try-wait") return () => onTryWait?.();
+    if (action === "choose-song") return onChooseSong;
+    return onPracticeAgain;
+  };
+  const actionTestId: Record<CelebrationActionId, string> = {
+    "try-wait": "celebration-try-wait",
+    "play-again": "celebration-again",
+    "choose-song": "celebration-choose-song",
+  };
 
   return (
     <div
@@ -161,6 +198,11 @@ export function CelebrationOverlay({
     >
       {/* Content card */}
       <div
+        ref={cardRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="celebration-title"
+        tabIndex={-1}
         className="relative z-10 flex flex-col items-center gap-4 px-12 py-8 rounded-3xl celebration-card"
         style={{
           background:
@@ -181,6 +223,7 @@ export function CelebrationOverlay({
 
         {/* Title */}
         <h2
+          id="celebration-title"
           className="text-3xl font-display font-bold celebration-title"
           style={{ color: "var(--color-accent-text)" }}
         >
@@ -222,38 +265,6 @@ export function CelebrationOverlay({
           </p>
         )}
 
-        {isListenThrough && (
-          <div
-            className="w-full rounded-xl px-4 py-3 text-left"
-            style={{
-              background:
-                "color-mix(in srgb, var(--color-accent) 8%, var(--color-surface-alt))",
-              border:
-                "1px solid color-mix(in srgb, var(--color-accent) 20%, var(--color-border))",
-            }}
-            data-testid="celebration-next-action"
-          >
-            <span
-              className="text-[10px] font-body font-semibold uppercase tracking-wider"
-              style={{ color: "var(--color-text-muted)" }}
-            >
-              {t("celebration.nextAction.label")}
-            </span>
-            <p
-              className="mt-1 text-sm font-display font-bold"
-              style={{ color: "var(--color-text)" }}
-            >
-              {t("celebration.listen.nextTitle")}
-            </p>
-            <p
-              className="mt-0.5 text-xs font-body"
-              style={{ color: "var(--color-text-muted)" }}
-            >
-              {t("celebration.listen.nextBody")}
-            </p>
-          </div>
-        )}
-
         {nextAction && !isListenThrough && (
           <div
             className="w-full rounded-xl px-4 py-3 text-left"
@@ -288,34 +299,38 @@ export function CelebrationOverlay({
           </div>
         )}
 
-        {/* Buttons with warmer wording */}
-        <div className="flex gap-3 mt-1">
-          <button
-            onClick={onPracticeAgain}
-            className="px-6 py-2.5 text-sm font-display font-bold rounded-xl cursor-pointer transition-transform hover:scale-105 active:scale-95"
-            style={{
-              background: "var(--color-accent)",
-              color: "var(--color-on-accent)",
-              boxShadow:
-                "0 2px 8px color-mix(in srgb, var(--color-accent) 30%, transparent)",
-            }}
-            data-testid="celebration-again"
-          >
-            {isListenThrough
-              ? t("celebration.playAgain")
-              : retrySpeed !== null
-                ? t("celebration.playAgainAtSpeed", {
-                    speed: formatSpeed(retrySpeed),
-                  })
-                : t(TIER_PLAY_AGAIN_KEYS[tier])}
-          </button>
-          <button
-            onClick={onChooseSong}
-            className="px-6 py-2.5 text-sm font-display font-bold rounded-xl cursor-pointer btn-ghost-themed"
-            data-testid="celebration-choose-song"
-          >
-            {t("celebration.pickSong")}
-          </button>
+        {/* Primary action first; the rest are quieter */}
+        <div className="flex flex-wrap justify-center gap-3 mt-1">
+          {actions.map((action, index) =>
+            index === 0 ? (
+              <button
+                key={action}
+                ref={primaryRef}
+                type="button"
+                onClick={actionHandler(action)}
+                className="px-6 py-2.5 text-sm font-display font-bold rounded-xl cursor-pointer transition-transform hover:scale-105 active:scale-95"
+                style={{
+                  background: "var(--color-accent)",
+                  color: "var(--color-on-accent)",
+                  boxShadow:
+                    "0 2px 8px color-mix(in srgb, var(--color-accent) 30%, transparent)",
+                }}
+                data-testid={actionTestId[action]}
+              >
+                {actionLabel(action)}
+              </button>
+            ) : (
+              <button
+                key={action}
+                type="button"
+                onClick={actionHandler(action)}
+                className="px-6 py-2.5 text-sm font-display font-bold rounded-xl cursor-pointer btn-ghost-themed"
+                data-testid={actionTestId[action]}
+              >
+                {actionLabel(action)}
+              </button>
+            ),
+          )}
         </div>
       </div>
     </div>

@@ -86,9 +86,9 @@ export function ModeSelectionModal({
               style={{
                 background:
                   "color-mix(in srgb, var(--color-surface-alt) 80%, var(--color-surface))",
-                border: opt.isDefault
-                  ? "2px solid var(--color-accent)"
-                  : "1px solid var(--color-border)",
+                // Same border on every card: the badge marks the default,
+                // so no card looks already chosen (#310).
+                border: "1px solid var(--color-border)",
                 animationDelay: `${idx * 70}ms`,
               }}
               aria-label={`${t(opt.titleKey)}${

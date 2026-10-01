@@ -54,3 +54,17 @@ export function isNewRecord(
   if (totalNotes <= 0 || !songId) return false;
   return previousBestAccuracy === null || accuracy > previousBestAccuracy;
 }
+
+export type CelebrationActionId = "try-wait" | "play-again" | "choose-song";
+
+/**
+ * End-card buttons, primary first. After a Watch run the advice is "try
+ * playing along", so that is the primary button rather than a note (#310).
+ */
+export function getCelebrationActions(
+  variant: CelebrationPresentation["variant"],
+): CelebrationActionId[] {
+  return variant === "listen"
+    ? ["try-wait", "play-again", "choose-song"]
+    : ["play-again", "choose-song"];
+}
