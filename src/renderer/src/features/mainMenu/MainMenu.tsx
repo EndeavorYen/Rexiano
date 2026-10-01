@@ -9,6 +9,8 @@ import {
   Upload,
 } from "lucide-react";
 import appIcon from "../../../../../docs/figure/Rexiano_icon.png";
+import { displayTitleForName } from "@renderer/features/songLibrary/songTitle";
+import { useSongLibraryStore } from "@renderer/stores/useSongLibraryStore";
 import { useTranslation } from "@renderer/i18n/useTranslation";
 import { useProgressStore } from "@renderer/stores/useProgressStore";
 import { formatRelativeTime } from "@renderer/utils/relativeTime";
@@ -29,7 +31,15 @@ export function MainMenu({
   onSelectRecent,
   recentFiles: allRecents,
 }: MainMenuProps): React.JSX.Element {
-  const { t } = useTranslation();
+  const { t, lang } = useTranslation();
+  const catalogue = useSongLibraryStore((s) => s.songs);
+  // Recents store English titles; the catalogue maps them to zh-TW names.
+  useEffect(() => {
+    const library = useSongLibraryStore.getState();
+    if (library.songs.length === 0 && !library.isLoading) {
+      void library.fetchSongs();
+    }
+  }, []);
   const sessions = useProgressStore((s) => s.sessions);
   const isProgressLoaded = useProgressStore((s) => s.isLoaded);
   const loadSessions = useProgressStore((s) => s.loadSessions);
@@ -158,11 +168,11 @@ export function MainMenu({
                           border: "1px solid var(--color-border)",
                           animationDelay: `${idx * 55}ms`,
                         }}
-                        title={file.name}
+                        title={displayTitleForName(file.name, catalogue, lang)}
                       >
                         <div className="flex items-start justify-between gap-2">
                           <p className="text-sm font-body font-medium truncate">
-                            {file.name}
+                            {displayTitleForName(file.name, catalogue, lang)}
                           </p>
                           <ArrowUpRight
                             size={13}

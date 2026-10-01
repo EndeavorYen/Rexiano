@@ -72,6 +72,26 @@ function makeImportedSong(
 }
 
 describe("filterSongsForLibrary", () => {
+  test("finds songs by their Chinese title and aliases (#308)", () => {
+    const songs = [
+      makeSong("happy", { title: "Happy Birthday", titleZhTW: "生日快樂" }),
+      makeSong("jingle", {
+        title: "Jingle Bells",
+        titleZhTW: "鈴兒響叮噹",
+        searchAliases: ["聖誕鈴聲"],
+      }),
+    ];
+    const search = (searchQuery: string): string[] =>
+      filterSongsForLibrary(songs, {
+        difficultyFilter: "all",
+        gradeFilter: "all",
+        searchQuery,
+      }).map((s) => s.id);
+    expect(search("生日")).toEqual(["happy"]);
+    expect(search("聖誕鈴聲")).toEqual(["jingle"]);
+    expect(search("happy")).toEqual(["happy"]);
+  });
+
   test("matches title, composer, tags, and category metadata", () => {
     const songs = [
       makeSong("scale", {

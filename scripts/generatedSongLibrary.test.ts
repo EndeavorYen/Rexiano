@@ -147,4 +147,16 @@ describe("generated song library helpers", () => {
     ]);
     expect(merged[1]).toEqual(existing[1]);
   });
+
+  it("keeps curated Chinese titles and search aliases when regenerating (#308)", () => {
+    const generated = [songMeta({ durationSeconds: 15 })];
+    const existing = [
+      songMeta({ titleZhTW: "熱十字麵包", searchAliases: ["熱十字包"] }),
+    ];
+
+    const [merged] = mergeGeneratedSongMetadata(generated, existing);
+
+    expect(merged.titleZhTW).toBe("熱十字麵包");
+    expect(merged.searchAliases).toEqual(["熱十字包"]);
+  });
 });
