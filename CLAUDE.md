@@ -106,7 +106,6 @@ stores/
 features/practice/       ← React UI 元件
   PracticeModeSelector  ← Watch / Wait / Free 模式切換
   SpeedSlider           ← 速度預設按鈕 + 連續滑桿
-  ABLoopSelector        ← A-B 循環起止點設定
   TrackSelector         ← 分手練習 track 勾選
   ScoreOverlay          ← 即時分數 HUD（右上角浮動）
   （PracticeModeSelector / SpeedSlider 嵌在 TransportBar 同一條控制列，#289）

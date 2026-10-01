@@ -313,14 +313,6 @@ export interface TranslationMap {
   "practice.confirmExitPlaying": string;
   "practice.accuracy": string;
   "practice.combo": string;
-  "practice.abLoop": string;
-  "practice.setA": string;
-  "practice.setB": string;
-  "practice.clearLoop": string;
-  "practice.loopSection": string;
-  "practice.setALabel": string;
-  "practice.setBLabel": string;
-  "practice.clearLoopLabel": string;
   "practice.encourageOnFire": string;
   "practice.encourageStreak": string;
   "practice.encouragePerfect": string;
@@ -332,10 +324,7 @@ export interface TranslationMap {
   "practice.modeLabel": string;
   "practice.setSpeedTo": string;
   "practice.playbackSpeedPercentage": string;
-  "practice.loopStartValue": string;
-  "practice.loopEndValue": string;
   "practice.metronomeBeat": string;
-  "practice.abLoopRange": string;
 
   // ── Settings ───────────────────────────────────────────────────
   "settings.title": string;
@@ -407,8 +396,6 @@ export interface TranslationMap {
   "settings.shortcut.restart": string;
   "settings.shortcut.speedDown": string;
   "settings.shortcut.speedUp": string;
-  "settings.shortcut.loopA": string;
-  "settings.shortcut.loopB": string;
   "settings.shortcut.closeBack": string;
   "settings.searchTabs": string;
   "settings.searchTabsAria": string;

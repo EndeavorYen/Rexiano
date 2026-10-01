@@ -4,7 +4,7 @@
 >
 > Other languages: [繁體中文](./user-guide.md)
 >
-> **TL;DR** - Press **Start Playing**, choose or import a score or MIDI song in the library, preview it, then start **Practice** or **Play Along**. In the player, use falling notes, sheet music, Wait mode, A-B loops, MIDI keyboard feedback, and practice reports to turn each session into a small, doable task.
+> **TL;DR** - Press **Start Playing**, choose or import a score or MIDI song in the library, preview it, then start **Practice** or **Play Along**. In the player, use falling notes, sheet music, Wait mode, MIDI keyboard feedback, and practice reports to turn each session into a small, doable task.
 
 ---
 
@@ -13,7 +13,7 @@
 1. [Quick Start](#1-quick-start)
 2. [Song Library and MIDI Import](#2-song-library-and-midi-import)
 3. [Player and Display Modes](#3-player-and-display-modes)
-4. [Practice Modes and A-B Loop](#4-practice-modes-and-a-b-loop)
+4. [Practice Modes and Speed](#4-practice-modes-and-speed)
 5. [Connecting a MIDI Keyboard](#5-connecting-a-midi-keyboard)
 6. [Settings, Backup, and Updates](#6-settings-backup-and-updates)
 7. [Keyboard Shortcuts](#7-keyboard-shortcuts)
@@ -75,7 +75,7 @@ The player combines notation, falling notes, piano keys, transport controls, and
 
 ![Rexiano falling-notes practice](./assets/screenshots/rexiano-practice.png)
 
-> **Screen callout**: When a falling note reaches the hit line above the keyboard, it is time to play. The lower controls handle playback, speed, metronome, volume, practice mode, and A-B looping.
+> **Screen callout**: When a falling note reaches the hit line above the keyboard, it is time to play. The lower controls handle playback, speed, metronome, volume, and practice mode.
 
 ### Three Display Modes
 
@@ -104,9 +104,9 @@ The player also has side panels for **Practice Insights**, **Editor**, and **MID
 
 ---
 
-## 4. Practice Modes and A-B Loop
+## 4. Practice Modes and Speed
 
-Choosing the right mode, speed, and loop is more effective than always playing from the beginning.
+Choosing the right mode and speed is more effective than always playing from the beginning.
 
 | Mode      | Behavior                                       | Best for                                  |
 | --------- | ---------------------------------------------- | ----------------------------------------- |
@@ -119,17 +119,16 @@ Choosing the right mode, speed, and loop is more effective than always playing f
 1. Use **Watch** once to hear the song and see the hand split.
 2. Switch to **Wait** and set speed to 50% or 75%.
 3. Open **More** and select only the right-hand or left-hand track.
-4. At a hard passage, press **A** at the start and **B** at the end to repeat that section.
-5. After three steady repeats, raise speed toward 100%, clear the loop, and reconnect the passage.
+4. At a hard passage, drag the seek bar back to just before it and play it at 50%.
+5. After three steady repeats, raise speed toward 100% and reconnect the passage.
 
-### Speed, Tracks, and A-B Loop
+### Speed and Tracks
 
 | Control | What it does                                                           | Tip                                              |
 | ------- | ---------------------------------------------------------------------- | ------------------------------------------------ |
 | Speed   | Quick 50%, 75%, 100% buttons plus a 25%-200% slider                    | Start new songs at 50%, not full speed           |
 | Tracks  | Chooses scored tracks and labels them right, left, both, or background | Mark accompaniment as background when needed     |
 | Sound   | Per-track sound, solo, visibility, and color options                   | Solo the melody in teacher-made multi-track MIDI |
-| A-B     | A sets loop start, B sets loop end; the seek bar highlights the range  | `L` clears the loop; use A/B to set points       |
 
 At the end of a session, Rexiano shows accuracy, hits, misses, best streak, new-record status, and a suggested next action.
 
@@ -172,7 +171,7 @@ Settings opens in **Basic** mode with theme and language only. Switch to **Advan
 | Display   | Piano key labels, falling note labels, fingering numbers, compact key labels             |
 | Audio     | Volume, mute, audio compatibility mode                                                   |
 | Practice  | Child Focus Mode, default mode, default speed, metronome, count-in, latency compensation |
-| Shortcuts | Common playback, speed, loop, and back shortcuts                                         |
+| Shortcuts | Common playback, speed, and back shortcuts                                               |
 | Language  | English / 繁體中文                                                                       |
 | Backup    | Export, import, or reset settings, progress, and recents                                 |
 | About     | Version, update check, and matching release download                                     |
@@ -194,8 +193,6 @@ Shortcuts are ignored while typing in search boxes or metadata fields.
 | `↑` or `]`                | Speed +25%                                            |
 | `↓` or `[`                | Speed -25%                                            |
 | `1` / `2` / `3`           | Switch Watch / Wait / Free                            |
-| `A` / `B`                 | Set A-B loop start / end                              |
-| `L`                       | Clear A-B loop                                        |
 | `M`                       | Mute / unmute                                         |
 | `Esc`                     | Pause during playback; usually closes focused dialogs |
 | `Ctrl+O` / `Cmd+O`        | Open a score or MIDI file                             |
@@ -242,7 +239,7 @@ Rexiano works best when practice becomes short, clear, and finishable.
 3. **Listen before playing**: use Watch once, then Wait.
 4. **Slow is faster**: 50% speed with correct notes beats repeated full-speed mistakes.
 5. **Practice one hand at a time**: use track controls for right hand, then left hand, then both.
-6. **Loop two measures**: make hard passages tiny; reconnect them after three steady repeats.
+6. **Practise hard spots in small pieces**: drag back before the passage; reconnect after three steady repeats.
 7. **Read the parent report, not one score**: 7-day and 30-day trends are better than a single session.
 8. **Praise specific progress**: "That C to G passage was steadier today" helps more than generic praise.
 

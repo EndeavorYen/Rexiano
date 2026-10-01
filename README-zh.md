@@ -36,7 +36,7 @@
     </td>
     <td width="33%" align="center">
       <img src="docs/assets/screenshots/rexiano-practice.png" alt="Rexiano 下落音符練習畫面" width="100%"><br>
-      <sub>練習畫面：下落音符、鍵盤回饋、評分、循環與速度控制。</sub>
+      <sub>練習畫面：下落音符、鍵盤回饋、評分與速度控制。</sub>
     </td>
     <td width="33%" align="center">
       <img src="docs/assets/screenshots/rexiano-split-sheet.png" alt="Rexiano 五線譜與下落音符分割畫面" width="100%"><br>
@@ -72,7 +72,7 @@
 | --------- | -------------------------------------------------------------------------------------- |
 | 視覺學習  | 60 FPS 下落音符、88 鍵高亮、音名標籤，以及左右手分色。                                 |
 | 五線譜    | 可切換分割、純五線譜、純下落音符模式，在樂譜與 piano-roll 練習間轉換。                 |
-| 聚焦練習  | Watch、Wait、Free 模式，加上速度控制、A-B 循環、分手練習、節拍器、預備拍與歷史進度。   |
+| 聚焦練習  | Watch、Wait、Free 模式，加上速度控制、分手練習、節拍器、預備拍與歷史進度。             |
 | MIDI 鍵盤 | USB 與藍牙 MIDI 輸入/輸出、熱插拔、自動重連與延音踏板支援。                            |
 | 音色      | 內建 FreePats Upright Piano KW SoundFont，透過 Web Audio 播放，並保留合成器 fallback。 |
 | 檔案      | 內建曲庫，也可拖放匯入自己的 MIDI 檔。                                                 |
