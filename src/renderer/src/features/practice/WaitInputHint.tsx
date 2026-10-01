@@ -24,7 +24,18 @@ export function WaitInputHint({
   useEffect(
     () =>
       useMidiDeviceStore.subscribe((state) => {
-        if (state.activeNotes.size > 0) setPlayed(true);
+        // Only a note played while the hint is showing came from the
+        // on-screen keys; real keyboard notes must not retire it.
+        if (
+          state.activeNotes.size > 0 &&
+          shouldShowWaitInputHint({
+            mode: usePracticeStore.getState().mode,
+            isConnected: state.isConnected,
+            bleStatus: state.bleStatus,
+          })
+        ) {
+          setPlayed(true);
+        }
       }),
     [],
   );
