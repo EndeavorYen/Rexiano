@@ -1,5 +1,6 @@
 import { describe, test, expect } from "vitest";
 import {
+  getCelebrationActions,
   getCelebrationPresentation,
   getTier,
   isNewRecord,
@@ -110,5 +111,22 @@ describe("getCelebrationPresentation", () => {
       showScore: true,
       chooseSongGoesToStats: false,
     });
+  });
+});
+
+describe("getCelebrationActions (#310)", () => {
+  test("after listening, the first action is to try playing along in Wait", () => {
+    expect(getCelebrationActions("listen")).toEqual([
+      "try-wait",
+      "play-again",
+      "choose-song",
+    ]);
+  });
+
+  test("after a scored run, replay comes first", () => {
+    expect(getCelebrationActions("scored")).toEqual([
+      "play-again",
+      "choose-song",
+    ]);
   });
 });

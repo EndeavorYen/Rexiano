@@ -504,10 +504,9 @@ export const en: TranslationMap = {
   "celebration.encourage.subtitle": "Every practice makes you stronger!",
   "celebration.listen.title": "Nice listen!",
   "celebration.listen.subtitle":
-    "Ready to hear it again, or pick another song?",
-  "celebration.listen.nextTitle": "Try Wait next",
-  "celebration.listen.nextBody":
-    "The song will pause and wait while you play along.",
+    "Next, play along: the song will wait for each note.",
+  "celebration.listen.tryWait": "Try playing along",
+  "celebration.listen.listenAgain": "Listen again",
   "celebration.newRecord": "New Record!",
   "celebration.playAgain": "Play Again!",
   "celebration.playAgainAtSpeed": "Play again at {speed}",
@@ -585,7 +584,7 @@ export const en: TranslationMap = {
   "modeSelect.waitDesc": "Music waits for you to play each note",
   "modeSelect.freeDesc": "Play freely without guidance",
   "modeSelect.escToSkip": "Press Esc to skip",
-  "modeSelect.mustChoose": "Choose a mode to start playing",
+  "modeSelect.mustChoose": "Tap a card to start",
   "modeSelect.currentDefault": "Current default",
   "modeSelect.backToLibrary": "Back to library",
 

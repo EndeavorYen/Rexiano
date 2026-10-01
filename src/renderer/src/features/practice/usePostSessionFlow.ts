@@ -47,6 +47,8 @@ export interface PostSessionFlowState {
   handleModeSelect: (mode: PracticeMode) => void;
   handleModeDismiss: () => void;
   handlePracticeAgain: () => void;
+  /** Replay the current song in Wait mode (end-card advice after Watch) */
+  handleTryWait: () => void;
   handleChooseSong: () => void;
   handleViewStats: () => void;
   hidePostSessionFlow: () => void;
@@ -257,6 +259,19 @@ export function usePostSessionFlow({
     });
   }, [onRequestPlaybackStart, resetPostSessionState]);
 
+  const handleTryWait = useCallback(() => {
+    applyPracticeModeChangeForSong(
+      {
+        song: useSongStore.getState().song,
+        activeTracks,
+        currentSpeed: speed,
+        setMode: usePracticeStore.getState().setMode,
+      },
+      "wait",
+    );
+    handlePracticeAgain();
+  }, [activeTracks, handlePracticeAgain, speed]);
+
   const dismissToLibrary = useCallback(() => {
     runPracticeDismissal({
       cancelPendingPlaybackStart: onCancelPendingPlaybackStart,
@@ -292,6 +307,7 @@ export function usePostSessionFlow({
     handleModeSelect,
     handleModeDismiss: dismissToLibrary,
     handlePracticeAgain,
+    handleTryWait,
     handleChooseSong,
     handleViewStats,
     hidePostSessionFlow,

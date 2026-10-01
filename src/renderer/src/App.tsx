@@ -71,6 +71,8 @@ function releaseStaleOnScreenNotesSoon(): void {
   setTimeout(() => ON_SCREEN_KEY_INPUT.releaseStale(), 0);
 }
 
+const NO_NOTES = new Set<number>();
+
 function App(): React.JSX.Element {
   const { t } = useTranslation();
   const song = useSongStore((s) => s.song);
@@ -180,6 +182,7 @@ function App(): React.JSX.Element {
     handleModeDismiss,
     handlePracticeAgain,
     handleChooseSong,
+    handleTryWait,
     hidePostSessionFlow,
     showCelebrationForScore,
     modeSelectionDefault,
@@ -613,7 +616,9 @@ function App(): React.JSX.Element {
           <TransportBar compact={compactPlaybackChrome} />
 
           <PianoKeyboard
-            activeNotes={activeNotes}
+            // The song is over behind the end card; do not leave its last
+            // note lit (#310).
+            activeNotes={showCelebration ? NO_NOTES : activeNotes}
             midiActiveNotes={midiActiveNotes}
             missedNotes={wrongNotes}
             height={keyboardHeight}
@@ -640,6 +645,7 @@ function App(): React.JSX.Element {
           visible={showCelebration}
           onPracticeAgain={handlePracticeAgainWithAdvice}
           onChooseSong={handleChooseSong}
+          onTryWait={handleTryWait}
           songId={songId}
           nextAction={nextPracticeAction}
           mode={mode}

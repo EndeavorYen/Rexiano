@@ -459,8 +459,8 @@ export interface TranslationMap {
   "celebration.encourage.subtitle": string;
   "celebration.listen.title": string;
   "celebration.listen.subtitle": string;
-  "celebration.listen.nextTitle": string;
-  "celebration.listen.nextBody": string;
+  "celebration.listen.tryWait": string;
+  "celebration.listen.listenAgain": string;
   "celebration.newRecord": string;
   "celebration.playAgain": string;
   "celebration.playAgainAtSpeed": string;
