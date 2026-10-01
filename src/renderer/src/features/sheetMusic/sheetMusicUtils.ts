@@ -156,23 +156,33 @@ export function calcMeasureSlotLayout(
 ): MeasureSlotLayout[] {
   if (displayMeasureCount <= 0) return [];
 
-  // The song's last window can hold fewer measures. Spread those across the
-  // width instead of drawing empty bars after the final barline (#312).
+  const slotMeasureIndices = Array.from(
+    { length: displayMeasureCount },
+    (_, slot) => visibleMeasureIndices[slot],
+  );
+  const visibleCounts = slotMeasureIndices
+    .filter((measureIndex) => measureIndex !== undefined)
+    .map((measureIndex) => countRenderableNotes(measures[measureIndex]));
+  const typicalCount =
+    visibleCounts.length > 0
+      ? visibleCounts.reduce((sum, count) => sum + count, 0) /
+        visibleCounts.length
+      : 0;
+  // Slots past the song's end are planned like an average visible bar.
+  const noteCounts = slotMeasureIndices.map((measureIndex) =>
+    measureIndex === undefined
+      ? typicalCount
+      : countRenderableNotes(measures[measureIndex]),
+  );
+  const usableWidth = Math.max(1, totalWidth - leftMargin * 2);
+  // Widths are planned for a full window so bars keep their usual size. The
+  // song's last window simply stops after its final measure: no empty bars
+  // are laid out past the final barline (#312).
   const slotCount =
     visibleMeasureIndices.length > 0
       ? Math.min(displayMeasureCount, visibleMeasureIndices.length)
       : displayMeasureCount;
-  const slotMeasureIndices = Array.from(
-    { length: slotCount },
-    (_, slot) => visibleMeasureIndices[slot],
-  );
-  const noteCounts = slotMeasureIndices.map((measureIndex) =>
-    countRenderableNotes(
-      measureIndex === undefined ? undefined : measures[measureIndex],
-    ),
-  );
-  const usableWidth = Math.max(1, totalWidth - leftMargin * 2);
-  const widths = calcMeasureWidths(noteCounts, usableWidth);
+  const widths = calcMeasureWidths(noteCounts, usableWidth).slice(0, slotCount);
 
   let x = leftMargin;
   return widths.map((width, slot) => {

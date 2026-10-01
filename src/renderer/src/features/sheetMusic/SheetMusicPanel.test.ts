@@ -112,7 +112,17 @@ describe("calcMeasureSlotLayout", () => {
     expect(layout[1].x).toBe(layout[0].x + layout[0].width);
     expect(layout[2].x).toBe(layout[1].x + layout[1].width);
     expect(layout[2].x + layout[2].width).toBeLessThanOrEqual(800 - 28);
-    expect(layout[2].x + layout[2].width).toBeGreaterThan(800 - 28 - 1);
+  });
+
+  it("does not stretch a short last window across the line", () => {
+    const measures = [0, 1, 2, 3].map((index) => makeMeasure(index, 4));
+    const full = calcMeasureSlotLayout(measures, [0, 1, 2, 3], 800, 28, 4);
+    const last = calcMeasureSlotLayout(measures, [3], 800, 28, 4);
+    expect(last).toHaveLength(1);
+    // Same width as a bar in a full window; the rest of the line stays blank.
+    // Floor rounding hands up to 3 px of leftover to the first slot.
+    expect(Math.abs(last[0].width - full[3].width)).toBeLessThanOrEqual(3);
+    expect(last[0].x).toBe(28);
   });
 
   it("keeps four slots for a full window", () => {

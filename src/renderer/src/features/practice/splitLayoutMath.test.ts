@@ -47,6 +47,21 @@ describe("calculateSplitLayoutDimensions", () => {
     expect(small.keyboardHeight).toBe(72);
   });
 
+  test("a taller window never gets a shorter falling-notes lane", () => {
+    // Keyboard and score minimums ramp in whole pixels; their rounding steps
+    // can coincide, so allow 1 px.
+    let previous = -Infinity;
+    for (let viewportHeight = 600; viewportHeight <= 1000; viewportHeight++) {
+      const { splitFallingAvailableHeight } = calculateSplitLayoutDimensions({
+        viewportHeight,
+        isSplitMode: true,
+        isNarrowViewport: false,
+      });
+      expect(splitFallingAvailableHeight).toBeGreaterThanOrEqual(previous - 1);
+      previous = splitFallingAvailableHeight;
+    }
+  });
+
   test("computes standard non-split dimensions", () => {
     const dimensions = calculateSplitLayoutDimensions({
       viewportHeight: 900,
