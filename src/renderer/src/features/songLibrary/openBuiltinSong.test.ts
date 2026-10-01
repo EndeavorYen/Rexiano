@@ -31,7 +31,8 @@ beforeEach(() => {
   vi.clearAllMocks();
   (globalThis as unknown as { window: { api: typeof api } }).window = { api };
   useSongLibraryStore.setState({ songs: [] });
-  usePracticeStore.setState({ displayMode: "split" });
+  // Start from the mode no test expects, so a missing setDisplayMode fails.
+  usePracticeStore.setState({ displayMode: "sheet" as never });
   api.saveRecentFile.mockResolvedValue(undefined);
 });
 

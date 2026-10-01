@@ -295,13 +295,25 @@ export function SongLibrary({
       try {
         const target = recentOpenTarget(file.path);
         if (target.kind === "builtin") {
-          const title = await openBuiltinSong(target.songId, {
-            loadSong,
-            resetPlayback: reset,
-          });
+          // Built-in songs never suggest re-importing a file (#304).
+          let title: string | null = null;
+          let diagnostic: unknown;
+          try {
+            title = await openBuiltinSong(target.songId, {
+              loadSong,
+              resetPlayback: reset,
+            });
+          } catch (error) {
+            diagnostic = error;
+            console.error("Failed to open built-in recent song:", error);
+          }
           if (!title) {
             setRecentRecovery(
-              getRecentFileRecovery(file, { kind: "missing" }, t),
+              getRecentFileRecovery(
+                file,
+                { kind: "builtin-unavailable", diagnostic },
+                t,
+              ),
             );
             return;
           }

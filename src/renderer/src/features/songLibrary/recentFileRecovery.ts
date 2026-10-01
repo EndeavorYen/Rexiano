@@ -10,7 +10,8 @@ type Translate = (key: TranslationKey, params?: InterpolationParams) => string;
 export type RecentFileFailure =
   | { kind: "missing" }
   | { kind: "read-failed"; diagnostic?: unknown }
-  | { kind: "parse-failed"; diagnostic?: unknown };
+  | { kind: "parse-failed"; diagnostic?: unknown }
+  | { kind: "builtin-unavailable"; diagnostic?: unknown };
 
 export interface RecentFileRecovery {
   guidance: FileImportErrorGuidance;
