@@ -476,45 +476,6 @@ function renderMeasure(
   };
 }
 
-/**
- * Draw an empty slot when the song has fewer than 4 measures left.
- */
-function renderEmptyMeasure(
-  VF: VexFlow,
-  context: RenderContext,
-  x: number,
-  y: number,
-  width: number,
-  isFirst: boolean,
-  showBassStaff: boolean,
-): void {
-  const { Stave, StaveConnector } = VF;
-  const treble = new Stave(x, y, width);
-  if (isFirst) {
-    treble.addClef("treble").addTimeSignature("4/4");
-  }
-  treble.setContext(context).draw();
-
-  if (!showBassStaff) return;
-
-  const bass = new Stave(x, y + STAVE_HEIGHT + SYSTEM_GAP, width);
-  if (isFirst) {
-    bass.addClef("bass").addTimeSignature("4/4");
-  }
-  bass.setContext(context).draw();
-
-  if (isFirst) {
-    new StaveConnector(treble, bass)
-      .setType("brace")
-      .setContext(context)
-      .draw();
-  }
-  new StaveConnector(treble, bass)
-    .setType("singleRight")
-    .setContext(context)
-    .draw();
-}
-
 export function SheetMusicPanel({
   notationData,
   mode,
@@ -652,18 +613,8 @@ export function SheetMusicPanel({
           const y = TOP_MARGIN;
           const isFirst = slot === 0;
 
-          if (measureIndex === undefined) {
-            renderEmptyMeasure(
-              VF,
-              context,
-              x,
-              y,
-              width,
-              isFirst,
-              showBassStaff,
-            );
-            continue;
-          }
+          // Slots past the song's last measure are not laid out (#312).
+          if (measureIndex === undefined) continue;
 
           const measure = notationData.measures[measureIndex];
           const previousMeasure = notationData.measures[measureIndex - 1];

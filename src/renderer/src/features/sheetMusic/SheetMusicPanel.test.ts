@@ -104,13 +104,48 @@ describe("calcMeasureSlotLayout", () => {
       4,
     );
 
-    expect(layout).toHaveLength(4);
+    // The song's last window has 3 measures: no empty fourth bar (#312).
+    expect(layout).toHaveLength(3);
+    expect(layout.every((slot) => slot.measureIndex !== undefined)).toBe(true);
     expect(layout[1].measureIndex).toBe(1);
     expect(layout[1].width).toBeGreaterThan(layout[0].width * 2);
     expect(layout[1].x).toBe(layout[0].x + layout[0].width);
     expect(layout[2].x).toBe(layout[1].x + layout[1].width);
-    expect(layout[3].x).toBe(layout[2].x + layout[2].width);
-    expect(layout[3].x + layout[3].width).toBeLessThanOrEqual(800 - 28);
+    expect(layout[2].x + layout[2].width).toBeLessThanOrEqual(800 - 28);
+  });
+
+  it("keeps dense bars at their usual width on the last line", () => {
+    const dense = [0, 1, 2, 3].map((index) => ({
+      ...makeMeasure(index, 24),
+      trebleNotes: Array.from({ length: 24 }, (_, note) =>
+        makeNote(note * 80, 60 + (note % 12), {
+          accidental: note % 2 === 0 ? "#" : "n",
+        }),
+      ),
+    }));
+    const fullWidth = calcSheetRenderWidth(1300, dense, [0, 1, 2, 3], 28, 4);
+    const lastWidth = calcSheetRenderWidth(1300, dense, [3], 28, 4);
+    const full = calcMeasureSlotLayout(dense, [0, 1, 2, 3], fullWidth, 28, 4);
+    const last = calcMeasureSlotLayout(dense, [3], lastWidth, 28, 4);
+    expect(Math.abs(last[0].width - full[3].width)).toBeLessThanOrEqual(3);
+  });
+
+  it("does not stretch a short last window across the line", () => {
+    const measures = [0, 1, 2, 3].map((index) => makeMeasure(index, 4));
+    const full = calcMeasureSlotLayout(measures, [0, 1, 2, 3], 800, 28, 4);
+    const last = calcMeasureSlotLayout(measures, [3], 800, 28, 4);
+    expect(last).toHaveLength(1);
+    // Same width as a bar in a full window; the rest of the line stays blank.
+    // Floor rounding hands up to 3 px of leftover to the first slot.
+    expect(Math.abs(last[0].width - full[3].width)).toBeLessThanOrEqual(3);
+    expect(last[0].x).toBe(28);
+  });
+
+  it("keeps four slots for a full window", () => {
+    const measures = [0, 1, 2, 3].map((index) => makeMeasure(index, 4));
+    expect(
+      calcMeasureSlotLayout(measures, [0, 1, 2, 3], 800, 28, 4),
+    ).toHaveLength(4);
   });
 });
 
