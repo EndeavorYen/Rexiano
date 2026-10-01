@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { Piano } from "lucide-react";
 import { useTranslation } from "@renderer/i18n/useTranslation";
 import { useMidiDeviceStore } from "@renderer/stores/useMidiDeviceStore";
@@ -17,8 +18,19 @@ export function WaitInputHint({
   const mode = usePracticeStore((s) => s.mode);
   const isConnected = useMidiDeviceStore((s) => s.isConnected);
   const bleStatus = useMidiDeviceStore((s) => s.bleStatus);
+  // Once the child plays an on-screen key the hint has done its job; keep it
+  // from covering the falling notes for the rest of the session.
+  const [played, setPlayed] = useState(false);
+  useEffect(
+    () =>
+      useMidiDeviceStore.subscribe((state) => {
+        if (state.activeNotes.size > 0) setPlayed(true);
+      }),
+    [],
+  );
 
-  const visible = shouldShowWaitInputHint({ mode, isConnected, bleStatus });
+  const visible =
+    !played && shouldShowWaitInputHint({ mode, isConnected, bleStatus });
 
   // The live region stays mounted so screen readers announce the hint when
   // it appears; only its content comes and goes.

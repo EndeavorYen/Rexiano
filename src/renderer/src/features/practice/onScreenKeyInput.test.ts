@@ -109,6 +109,16 @@ describe("createOnScreenKeyInput", () => {
     expect(h.active.has(60)).toBe(false);
   });
 
+  test("connecting a keyboard mid-press releases the held note once", () => {
+    const h = harness(null);
+    h.input.noteOn(60);
+    h.setEnabled(false);
+    h.input.releaseStale();
+    expect(h.active.has(60)).toBe(false);
+    h.input.noteOff(60);
+    expect(h.noteOff).toHaveBeenCalledOnce();
+  });
+
   test("never releases a note this input did not turn on", () => {
     const h = harness(null);
     h.input.noteOff(72);

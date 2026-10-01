@@ -38,7 +38,12 @@ export function createOnScreenKeyInput(
   };
 
   const releaseStale = (): void => {
-    const targets = deps.enabled() ? deps.waitTargets() : null;
+    if (!deps.enabled()) {
+      // A keyboard took over: drop every note this input still holds.
+      for (const midi of [...sounding]) release(midi);
+      return;
+    }
+    const targets = deps.waitTargets();
     for (const midi of [...latched]) {
       if (!targets?.has(midi)) release(midi);
     }
