@@ -27,12 +27,6 @@ export function preferredDisplayModeForSource(
   return source === "score" ? "split" : "falling";
 }
 
-export function builtinOriginLabelKey(
-  source: BuiltinSongSource,
-): "library.origin.score" | "library.origin.midi" {
-  return source === "score" ? "library.origin.score" : "library.origin.midi";
-}
-
 export function sheetFidelityLabelKey(
   source: BuiltinSongSource,
 ): "sheetMusic.fidelity.score" | "sheetMusic.fidelity.approximate" {

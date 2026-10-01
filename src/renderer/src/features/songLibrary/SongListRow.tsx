@@ -1,7 +1,11 @@
 import { Star } from "lucide-react";
 import { songDisplayTitle } from "./songTitle";
 import { useTranslation } from "@renderer/i18n/useTranslation";
-import { categoryLabelKeys, formatSongDuration } from "./songCardUtils";
+import {
+  categoryLabelKeys,
+  difficultyLabelKeys,
+  formatSongDuration,
+} from "./songCardUtils";
 import type { SongActivity } from "./songLibrarySelectors";
 import type { BuiltinSongMeta } from "@shared/types";
 
@@ -169,6 +173,25 @@ export function SongListRow({
         </span>
 
         <span className="flex flex-wrap items-center gap-1.5 md:justify-end">
+          {/* Difficulty in the default list view too, so a level-7 piece
+              does not look like a nursery song (#309). */}
+          <span
+            className="rounded-md px-1.5 py-0.5 text-[10px] font-body font-semibold"
+            data-testid={`song-difficulty-${song.id}`}
+            style={{
+              color:
+                song.difficulty === "beginner"
+                  ? "var(--color-accent-text)"
+                  : "var(--color-text)",
+              background:
+                song.difficulty === "advanced"
+                  ? "color-mix(in srgb, var(--color-accent) 18%, var(--color-surface-alt))"
+                  : "var(--color-surface-alt)",
+              border: "1px solid var(--color-border)",
+            }}
+          >
+            {t(difficultyLabelKeys[song.difficulty])}
+          </span>
           <span
             className="rounded-md px-1.5 py-0.5 text-[10px] font-body font-medium"
             style={{

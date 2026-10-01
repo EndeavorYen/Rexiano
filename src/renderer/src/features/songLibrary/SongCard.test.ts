@@ -160,9 +160,10 @@ function makeSong(
 }
 
 describe("CATEGORY_ORDER", () => {
-  test("contains exactly four categories in display order", () => {
+  test("contains exactly five categories in display order", () => {
     expect(CATEGORY_ORDER).toEqual([
       "exercise",
+      "folk",
       "popular",
       "holiday",
       "classical",

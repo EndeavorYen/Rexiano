@@ -1,6 +1,16 @@
 import type { BuiltinSongMeta } from "../../../../shared/types";
 import type { TranslationKey } from "@renderer/i18n/types";
 
+/** Short difficulty names shown on cards and list rows */
+export const difficultyLabelKeys: Record<
+  BuiltinSongMeta["difficulty"],
+  TranslationKey
+> = {
+  beginner: "library.difficulty.beginner",
+  intermediate: "library.difficulty.intermediate",
+  advanced: "library.difficulty.advanced",
+};
+
 /** Tooltip descriptions explaining each difficulty level */
 export const difficultyDescriptionKeys: Record<
   BuiltinSongMeta["difficulty"],
@@ -63,6 +73,7 @@ export type SongCategory = NonNullable<BuiltinSongMeta["category"]>;
 /** Ordered list of categories for display */
 export const CATEGORY_ORDER: SongCategory[] = [
   "exercise",
+  "folk",
   "popular",
   "holiday",
   "classical",
@@ -71,6 +82,7 @@ export const CATEGORY_ORDER: SongCategory[] = [
 /** Human-readable labels for each category */
 export const categoryLabelKeys: Record<SongCategory, TranslationKey> = {
   exercise: "library.category.exercise",
+  folk: "library.category.folk",
   popular: "library.category.popular",
   holiday: "library.category.holiday",
   classical: "library.category.classical",

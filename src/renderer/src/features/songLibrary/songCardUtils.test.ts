@@ -65,4 +65,25 @@ describe("groupSongsByCategory", () => {
     expect(groups[0].songs).toHaveLength(1);
     expect(groups[1].songs).toHaveLength(1);
   });
+
+  test("folk songs get their own 童謠・民謠 group after exercises (#309)", () => {
+    const base = {
+      composer: "Traditional",
+      difficulty: "beginner" as const,
+      durationSeconds: 30,
+      file: "x.mid",
+      tags: [],
+    };
+    const groups = groupSongsByCategory([
+      { ...base, id: "pop", title: "Pop", category: "popular" },
+      { ...base, id: "folk", title: "Folk", category: "folk" },
+      { ...base, id: "ex", title: "Ex", category: "exercise" },
+    ]);
+    expect(groups.map((g) => g.category)).toEqual([
+      "exercise",
+      "folk",
+      "popular",
+    ]);
+    expect(groups[1].labelKey).toBe("library.category.folk");
+  });
 });

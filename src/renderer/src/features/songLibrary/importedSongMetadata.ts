@@ -1,12 +1,14 @@
 export type ImportedSongCategory =
   | "exercise"
   | "classical"
+  | "folk"
   | "popular"
   | "holiday";
 
 const importedSongCategories = [
   "exercise",
   "classical",
+  "folk",
   "popular",
   "holiday",
 ] as const satisfies readonly ImportedSongCategory[];
@@ -322,6 +324,7 @@ export interface ImportedSongMetadataDraft {
 
 export const importedCategoryOptions = [
   "exercise",
+  "folk",
   "popular",
   "holiday",
   "classical",

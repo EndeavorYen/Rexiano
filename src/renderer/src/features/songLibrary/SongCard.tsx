@@ -1,14 +1,12 @@
 import { useCallback } from "react";
 import type { BuiltinSongMeta } from "../../../../shared/types";
 import { useProgressStore } from "@renderer/stores/useProgressStore";
-import { difficultyDescriptionKeys } from "./songCardUtils";
+import {
+  difficultyDescriptionKeys,
+  difficultyLabelKeys,
+} from "./songCardUtils";
 import { songDisplayTitle } from "./songTitle";
 import { useTranslation } from "@renderer/i18n/useTranslation";
-import type { TranslationKey } from "@renderer/i18n/types";
-import {
-  builtinOriginLabelKey,
-  type BuiltinSongSource,
-} from "@renderer/engines/score/builtinScoreSource";
 
 interface SongCardProps {
   song: BuiltinSongMeta;
@@ -27,15 +25,6 @@ const difficultyDots: Record<BuiltinSongMeta["difficulty"], number> = {
   beginner: 1,
   intermediate: 2,
   advanced: 3,
-};
-
-const difficultyLabelKeys: Record<
-  BuiltinSongMeta["difficulty"],
-  TranslationKey
-> = {
-  beginner: "library.difficulty.beginner",
-  intermediate: "library.difficulty.intermediate",
-  advanced: "library.difficulty.advanced",
 };
 
 /** Convert accuracy (0-100) to a 0-3 star count */
@@ -109,15 +98,6 @@ export function SongCard({
                 ? `${title.secondary} · ${song.composer}`
                 : song.composer}
             </p>
-            {song.origin && (
-              <p
-                className="text-[10px] mt-1 font-medium"
-                style={{ color: "var(--color-text-muted)" }}
-                data-testid={`song-origin-${song.id}`}
-              >
-                {t(builtinOriginLabelKey(song.origin as BuiltinSongSource))}
-              </p>
-            )}
           </div>
 
           {bestScore && (

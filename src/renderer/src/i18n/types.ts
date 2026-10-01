@@ -68,8 +68,6 @@ export interface TranslationMap {
   "library.saveImportedMetadata": string;
   "library.cancelImportedMetadata": string;
   "library.difficulty.all": string;
-  "library.origin.score": string;
-  "library.origin.midi": string;
   "library.difficulty.beginner": string;
   "library.difficulty.intermediate": string;
   "library.difficulty.advanced": string;
@@ -180,6 +178,7 @@ export interface TranslationMap {
   "library.gradeDescription.7": string;
   "library.gradeDescription.8": string;
   "library.category.exercise": string;
+  "library.category.folk": string;
   "library.category.popular": string;
   "library.category.holiday": string;
   "library.category.classical": string;
