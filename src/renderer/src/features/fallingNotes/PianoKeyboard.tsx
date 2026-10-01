@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   createKeyPointerTracker,
   type KeyPointerHandlers,
@@ -222,16 +222,18 @@ export function PianoKeyboard({
   const layout = useMemo(() => buildLayout(range), [range]);
   const wPct = 100 / layout.whiteKeyCount;
 
-  // Callers pass a stable handler object; a new one releases held keys first.
-  const tracker = useMemo(
-    () => (onKeyPress ? createKeyPointerTracker(onKeyPress) : null),
-    [onKeyPress],
+  // The tracker holds pressed-key state, so it lives in state, not a memo
+  // cache. `onKeyPress` must be a stable object (App passes a module constant).
+  const [tracker] = useState(() =>
+    onKeyPress ? createKeyPointerTracker(onKeyPress) : null,
   );
   useEffect(() => () => tracker?.releaseAll(), [tracker]);
 
   const pointerHandlers = tracker
     ? {
         onPointerDown: (event: React.PointerEvent<HTMLDivElement>) => {
+          // Only the primary mouse button plays; touch and pen always do.
+          if (event.pointerType === "mouse" && event.button !== 0) return;
           const midi = midiFromPointerTarget(event.target);
           if (midi === null) return;
           event.preventDefault();

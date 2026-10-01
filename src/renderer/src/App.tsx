@@ -5,7 +5,8 @@ import { useSettingsStore } from "./stores/useSettingsStore";
 import { getMetronome } from "./engines/metronome/metronomeManager";
 import { FallingNotesCanvas } from "./features/fallingNotes/FallingNotesCanvas";
 import { PianoKeyboard } from "./features/fallingNotes/PianoKeyboard";
-import type { KeyPointerHandlers } from "./features/fallingNotes/keyPointerTracker";
+import { createOnScreenKeyInput } from "./features/practice/onScreenKeyInput";
+import { getPracticeEngines } from "./engines/practice/practiceManager";
 import { WaitInputHint } from "./features/practice/WaitInputHint";
 import { computeKeyRange } from "./engines/fallingNotes/keyPositions";
 import { TransportBar } from "./features/fallingNotes/TransportBar";
@@ -45,10 +46,14 @@ import { useSheetMusicNotation } from "./features/sheetMusic/useSheetMusicNotati
  * On-screen keys feed the same note path as a MIDI keyboard, so Wait mode
  * can be played with a mouse or a finger when no keyboard is plugged in.
  */
-const ON_SCREEN_KEY_INPUT: KeyPointerHandlers = {
+const ON_SCREEN_KEY_INPUT = createOnScreenKeyInput({
   noteOn: (midi) => useMidiDeviceStore.getState().onNoteOn(midi),
   noteOff: (midi) => useMidiDeviceStore.getState().onNoteOff(midi),
-};
+  waitTargets: () => {
+    const { waitMode } = getPracticeEngines();
+    return waitMode?.state === "waiting" ? waitMode.targetNotes : null;
+  },
+});
 
 function App(): React.JSX.Element {
   const { t } = useTranslation();
@@ -99,6 +104,25 @@ function App(): React.JSX.Element {
         usePlaybackStore.getState().setCountInActive(false);
       }
     });
+  }, []);
+
+  // Latched on-screen chord notes must not outlive the chord they belong to.
+  useEffect(() => {
+    const unsubPractice = usePracticeStore.subscribe(() =>
+      ON_SCREEN_KEY_INPUT.releaseStale(),
+    );
+    const unsubPlayback = usePlaybackStore.subscribe((state, prev) => {
+      if (state.isPlaying !== prev.isPlaying)
+        ON_SCREEN_KEY_INPUT.releaseStale();
+    });
+    const unsubSong = useSongStore.subscribe(() =>
+      ON_SCREEN_KEY_INPUT.releaseStale(),
+    );
+    return () => {
+      unsubPractice();
+      unsubPlayback();
+      unsubSong();
+    };
   }, []);
 
   // ─── Mode selection + celebration + stats flow ────────
