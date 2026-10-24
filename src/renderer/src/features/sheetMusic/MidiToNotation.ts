@@ -288,30 +288,59 @@ function getDurationPieces(ticksPerQuarter: number): DurationPiece[] {
     { vexDuration: "8d", ticks: ticksPerQuarter * 0.75, dots: 1 },
     { vexDuration: "8", ticks: ticksPerQuarter / 2, dots: 0 },
     { vexDuration: "16", ticks: ticksPerQuarter / 4, dots: 0 },
+    { vexDuration: "32", ticks: ticksPerQuarter / 8, dots: 0 },
   ].sort((a, b) => b.ticks - a.ticks);
 }
 
 /**
  * Express a duration as a sequence of renderable note values.
  *
- * The input is first snapped to the 16th-note grid. Every grid multiple is
- * exactly representable by the piece set (16, 8, 8d, q, qd, h, hd, w cover 1,
- * 2, 3, 4, 6, 8, 12 and 16 grid units), so this never leaves a remainder.
- * Emitting a filler note for a sub-grid remainder — as an earlier version did —
- * inflates the duration and overfills the measure.
+ * When a duration is not representable by a single piece and starts off-beat,
+ * split at the next beat boundary first so tied continuations land on the beat.
  */
 function splitTicksIntoDurations(
   durationTicks: number,
   ticksPerQuarter: number,
+  startTickInMeasure = 0,
 ): DurationPiece[] {
-  const gridSize = ticksPerQuarter / QUANTIZE_GRID;
+  const fineUnit = ticksPerQuarter / 8;
+  const coarseUnit = ticksPerQuarter / QUANTIZE_GRID;
+  const fineSteps = Math.round(durationTicks / fineUnit);
+  const isThirtySecondAligned =
+    Math.abs(durationTicks - fineSteps * fineUnit) <= 1 && fineSteps % 2 === 1;
+  const gridSize = isThirtySecondAligned ? fineUnit : coarseUnit;
   let remaining = Math.max(
     gridSize,
     Math.round(durationTicks / gridSize) * gridSize,
   );
+  const durationPieces = getDurationPieces(ticksPerQuarter);
+
+  const isSinglePiece = durationPieces.some(
+    (piece) => piece.ticks === remaining,
+  );
+  const beatOffset =
+    ((startTickInMeasure % ticksPerQuarter) + ticksPerQuarter) %
+    ticksPerQuarter;
+  if (!isSinglePiece && beatOffset !== 0) {
+    const toNextBeat = ticksPerQuarter - beatOffset;
+    const headPiece = durationPieces.find(
+      (piece) => piece.ticks === toNextBeat,
+    );
+    if (headPiece && toNextBeat < remaining) {
+      return [
+        headPiece,
+        ...splitTicksIntoDurations(
+          remaining - toNextBeat,
+          ticksPerQuarter,
+          startTickInMeasure + toNextBeat,
+        ),
+      ];
+    }
+  }
+
   const pieces: DurationPiece[] = [];
 
-  for (const piece of getDurationPieces(ticksPerQuarter)) {
+  for (const piece of durationPieces) {
     while (remaining >= piece.ticks) {
       pieces.push(piece);
       remaining -= piece.ticks;
@@ -343,6 +372,28 @@ function getRhythmApproximation(
     kind: "unsupported-tuplet-approximation",
     originalDurationTicks: roundedOriginalDurationTicks,
     approximatedDurationTicks,
+  };
+}
+
+function getThirtySecondCandidate(
+  rawStartTicks: number,
+  rawDurationTicks: number,
+  ticksPerQuarter: number,
+): { startTick: number; endTick: number; durationTicks: number } | undefined {
+  const thirtySecondTicks = ticksPerQuarter / 8;
+  const toleranceTicks = Math.max(1, ticksPerQuarter / 32);
+  const startTick =
+    Math.round(rawStartTicks / thirtySecondTicks) * thirtySecondTicks;
+
+  if (Math.abs(rawStartTicks - startTick) > toleranceTicks) return undefined;
+  if (Math.abs(rawDurationTicks - thirtySecondTicks) > toleranceTicks) {
+    return undefined;
+  }
+
+  return {
+    startTick: Math.round(startTick),
+    endTick: Math.round(startTick + thirtySecondTicks),
+    durationTicks: Math.round(thirtySecondTicks),
   };
 }
 
@@ -442,7 +493,14 @@ function finalizeQuantizedTiming(
       note.endTick = note.standardEndTick;
     }
 
-    const minimumDurationTicks = ticksPerQuarter / QUANTIZE_GRID;
+    const thirtySecondTicks = Math.round(ticksPerQuarter / 8);
+    const isThirtySecond =
+      Math.abs(note.endTick - note.startTick - thirtySecondTicks) <= 1 &&
+      Math.abs(note.rawDurationTicks - thirtySecondTicks) <=
+        Math.max(1, ticksPerQuarter / 32);
+    const minimumDurationTicks = isThirtySecond
+      ? thirtySecondTicks
+      : ticksPerQuarter / QUANTIZE_GRID;
     const durationTicks = Math.max(
       note.endTick - note.startTick,
       minimumDurationTicks,
@@ -479,7 +537,11 @@ function createRestEvents(
   const events: NotationNote[] = [];
   let cursor = startTick;
 
-  for (const piece of splitTicksIntoDurations(durationTicks, ticksPerQuarter)) {
+  for (const piece of splitTicksIntoDurations(
+    durationTicks,
+    ticksPerQuarter,
+    startTick,
+  )) {
     events.push({
       midi: null,
       isRest: true,
@@ -552,7 +614,11 @@ function createNoteEvents(
     ];
   }
 
-  const pieces = splitTicksIntoDurations(durationTicks, ticksPerQuarter);
+  const pieces = splitTicksIntoDurations(
+    durationTicks,
+    ticksPerQuarter,
+    segment.startTick,
+  );
   const events: NotationNote[] = [];
   let cursor = segment.startTick;
 
@@ -683,16 +749,48 @@ function assignSegmentsToVoices<T extends VoiceSpan>(segments: T[]): T[][] {
   );
 }
 
+function partitionIntoConnectedOverlapGroups<T extends VoiceSpan>(
+  notes: T[],
+): T[][] {
+  if (notes.length === 0) return [];
+  const sorted = [...notes].sort(
+    (a, b) =>
+      a.startTick - b.startTick || a.endTick - b.endTick || a.midi - b.midi,
+  );
+  const groups: T[][] = [];
+  let currentGroup: T[] = [sorted[0]];
+  let groupMaxEnd = sorted[0].endTick;
+
+  for (let i = 1; i < sorted.length; i++) {
+    const note = sorted[i];
+    if (note.startTick < groupMaxEnd) {
+      currentGroup.push(note);
+      groupMaxEnd = Math.max(groupMaxEnd, note.endTick);
+    } else {
+      groups.push(currentGroup);
+      currentGroup = [note];
+      groupMaxEnd = note.endTick;
+    }
+  }
+  groups.push(currentGroup);
+  return groups;
+}
+
 function assignQuantizedNotesToVoices(notes: QuantizedNote[]): QuantizedNote[] {
   const assignStaff = (staffNotes: QuantizedNote[]): void => {
-    const voices = assignSegmentsToVoices(staffNotes);
-    voices.forEach((voice, voiceIndex) => {
-      const stemDirection = getStemDirectionForVoice(voiceIndex, voices.length);
-      voice.forEach((note) => {
-        note.voiceIndex = voiceIndex;
-        note.stemDirection = stemDirection;
+    for (const group of partitionIntoConnectedOverlapGroups(staffNotes)) {
+      const voices = assignSegmentsToVoices(group);
+      voices.forEach((voice, voiceIndex) => {
+        const stemDirection = getStemDirectionForVoice(
+          voiceIndex,
+          voices.length,
+        );
+        voice.forEach((note) => {
+          note.voiceIndex = voiceIndex;
+          note.stemDirection = stemDirection;
+        });
       });
-    });
+    }
   };
 
   assignStaff(notes.filter((note) => note.staff === "treble"));
@@ -769,14 +867,24 @@ function buildSingleVoiceEvents(
   }
 
   const boundarySet = new Set<number>([0, measureTicks]);
+  const thirtySecondTicks = ticksPerQuarter / 8;
+  let hasThirtySecondBoundary = false;
   for (const segment of voiceSegments) {
     boundarySet.add(segment.startTick);
     boundarySet.add(segment.endTick);
+    if (
+      Math.round(segment.startTick / thirtySecondTicks) % 2 === 1 ||
+      Math.round(segment.endTick / thirtySecondTicks) % 2 === 1
+    ) {
+      hasThirtySecondBoundary = true;
+    }
   }
   const boundaries = sanitizeBoundaries(
     boundarySet,
     measureTicks,
-    ticksPerQuarter / QUANTIZE_GRID,
+    hasThirtySecondBoundary
+      ? thirtySecondTicks
+      : ticksPerQuarter / QUANTIZE_GRID,
   );
 
   const events: NotationNote[] = [];
@@ -887,17 +995,72 @@ function buildVoiceEvents(
     });
   }
 
-  return voices.flatMap((voiceSegments, voiceIndex) =>
-    buildSingleVoiceEvents(
+  const activeVoices = voices
+    .map((voiceSegments, voiceIndex) => ({ voiceSegments, voiceIndex }))
+    .filter((entry) => entry.voiceSegments.length > 0);
+
+  return activeVoices.flatMap(({ voiceSegments, voiceIndex }) => {
+    const stemDirection =
+      activeVoices.length > 1
+        ? getStemDirectionForVoice(voiceIndex, voices.length)
+        : voiceIndex > 0 && voiceSegments.some((s) => s.tiedFromPrevious)
+          ? (voiceSegments[0]?.stemDirection ??
+            getStemDirectionForVoice(voiceIndex, voices.length))
+          : undefined;
+    const effectiveVoiceIndex =
+      activeVoices.length > 1 ||
+      (voiceIndex > 0 && voiceSegments.some((s) => s.tiedFromPrevious))
+        ? voiceIndex
+        : 0;
+
+    return buildSingleVoiceEvents(
       voiceSegments,
       clef,
       measureTicks,
       ticksPerQuarter,
-      voiceIndex,
-      voiceSegments[0]?.stemDirection ??
-        getStemDirectionForVoice(voiceIndex, voices.length),
-    ),
-  );
+      effectiveVoiceIndex,
+      stemDirection,
+    );
+  });
+}
+
+function applyMeasureAccidentalState(
+  notes: NotationNote[],
+  keySignature: number,
+): void {
+  const signatureAccidentals = getSignatureAccidentals(keySignature);
+  const activeByPitchKey = new Map<string, "#" | "b" | null>();
+
+  const sounding = notes
+    .filter((n) => !n.isRest)
+    .sort(
+      (a, b) =>
+        a.startTick - b.startTick ||
+        (a.midi ?? 0) - (b.midi ?? 0) ||
+        (a.voiceIndex ?? 0) - (b.voiceIndex ?? 0),
+    );
+
+  for (const note of sounding) {
+    const { letter, accidental } = getKeyParts(note.vexKey);
+    const octave = note.vexKey.split("/")[1] ?? "4";
+    const pitchKey = `${letter}/${octave}`;
+    const currentActive = activeByPitchKey.has(pitchKey)
+      ? (activeByPitchKey.get(pitchKey) ?? null)
+      : (signatureAccidentals.get(letter) ?? null);
+
+    if (note.tiedFromPrevious) {
+      note.accidental = null;
+      activeByPitchKey.set(pitchKey, accidental);
+      continue;
+    }
+
+    if (accidental === currentActive) {
+      note.accidental = null;
+    } else {
+      note.accidental = accidental === null ? "n" : accidental;
+      activeByPitchKey.set(pitchKey, accidental);
+    }
+  }
 }
 
 /**
@@ -916,8 +1079,14 @@ function collectMeasureIssues(
 
   const check = (clef: Clef, notes: NotationNote[]): void => {
     const totals = new Map<number, number>();
+    const seenChordSpans = new Set<string>();
     for (const note of notes) {
       const voiceIndex = note.voiceIndex ?? 0;
+      if (!note.isRest) {
+        const chordKey = `${voiceIndex}:${note.startTick}:${note.durationTicks}`;
+        if (seenChordSpans.has(chordKey)) continue;
+        seenChordSpans.add(chordKey);
+      }
       totals.set(
         voiceIndex,
         (totals.get(voiceIndex) ?? 0) + note.durationTicks,
@@ -1028,12 +1197,25 @@ function buildNotation(
       note.rawDurationTicks,
       ticksPerQuarter,
     );
-    const startTick = tripletCandidate?.startTick ?? standardStartTick;
-    const endTick = tripletCandidate?.endTick ?? standardEndTick;
-    const durationTicks = Math.max(
-      endTick - startTick,
-      ticksPerQuarter / QUANTIZE_GRID,
-    );
+    const thirtySecondCandidate = tripletCandidate
+      ? undefined
+      : getThirtySecondCandidate(
+          note.rawStartTicks,
+          note.rawDurationTicks,
+          ticksPerQuarter,
+        );
+    const startTick =
+      tripletCandidate?.startTick ??
+      thirtySecondCandidate?.startTick ??
+      standardStartTick;
+    const endTick =
+      tripletCandidate?.endTick ??
+      thirtySecondCandidate?.endTick ??
+      standardEndTick;
+    const minTicks = thirtySecondCandidate
+      ? thirtySecondCandidate.durationTicks
+      : ticksPerQuarter / QUANTIZE_GRID;
+    const durationTicks = Math.max(endTick - startTick, minTicks);
 
     return {
       midi: note.midi,
@@ -1129,6 +1311,8 @@ function buildNotation(
       ticksPerQuarter,
       isPickup,
     );
+    applyMeasureAccidentalState(trebleNotes, keySignature);
+    applyMeasureAccidentalState(bassNotes, keySignature);
 
     measureIssues.push(
       ...collectMeasureIssues(
@@ -1168,6 +1352,30 @@ function buildNotation(
   };
 }
 
+const KEY_SIGNATURE_FIFTHS: Record<string, number> = {
+  Cb: -7,
+  Gb: -6,
+  Db: -5,
+  Ab: -4,
+  Eb: -3,
+  Bb: -2,
+  F: -1,
+  C: 0,
+  G: 1,
+  D: 2,
+  A: 3,
+  E: 4,
+  B: 5,
+  "F#": 6,
+  "C#": 7,
+};
+
+function resolveSongKeySignature(song: ParsedSong): number {
+  const first = song.keySignatures?.[0];
+  if (!first?.key) return 0;
+  return KEY_SIGNATURE_FIFTHS[first.key] ?? 0;
+}
+
 /**
  * Convert a parsed song into notation data.
  *
@@ -1178,7 +1386,7 @@ export function convertSongToNotation(
   song: ParsedSong,
   options: ConvertSongOptions = {},
 ): NotationData {
-  const keySignature = options.keySignature ?? 0;
+  const keySignature = options.keySignature ?? resolveSongKeySignature(song);
   const forcedMeter =
     options.timeSignatureTop !== undefined ||
     options.timeSignatureBottom !== undefined;

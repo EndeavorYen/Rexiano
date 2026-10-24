@@ -285,9 +285,19 @@ function drawCrossStaffTies(
   next: RenderedStaff,
 ): void {
   for (const currentVoice of current.voices) {
-    const nextVoice = next.voices.find(
-      (voice) => voice.voiceIndex === currentVoice.voiceIndex,
-    );
+    const currentTieIdx = findLastTieIndex(currentVoice.groups);
+    if (currentTieIdx < 0) continue;
+    const currentKeys = currentVoice.groups[currentTieIdx].keys;
+
+    const nextVoice =
+      next.voices.find((voice) => {
+        const nextTieIdx = findFirstTieIndex(voice.groups);
+        return (
+          nextTieIdx >= 0 &&
+          voice.groups[nextTieIdx].keys.some((k) => currentKeys.includes(k))
+        );
+      }) ??
+      next.voices.find((voice) => voice.voiceIndex === currentVoice.voiceIndex);
     if (!nextVoice) continue;
     drawCrossVoiceTie(VF, context, currentVoice, nextVoice);
   }

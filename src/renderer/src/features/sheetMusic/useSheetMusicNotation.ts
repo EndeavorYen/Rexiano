@@ -22,7 +22,7 @@ export function buildNotationData(
   if (!song) return null;
 
   return convertSongToNotation(song, {
-    keySignature: builtinMeta?.keySignature ?? 0,
+    keySignature: builtinMeta?.keySignature,
     timeSignatureTop: builtinMeta?.timeSignatureTop,
     timeSignatureBottom: builtinMeta?.timeSignatureBottom,
   });
