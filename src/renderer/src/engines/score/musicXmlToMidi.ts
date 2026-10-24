@@ -1,4 +1,5 @@
 import { Midi } from "@tonejs/midi";
+import { parseMidi, writeMidi } from "midi-file";
 import { pickupTimeSignature } from "../midi/pickup";
 
 const STEP_SEMITONES: Record<string, number> = {
@@ -116,6 +117,21 @@ export function musicXmlToMidi(xml: string): Midi {
       scale: keyScale,
     },
   ];
+  const origToArray = midi.toArray.bind(midi);
+  midi.toArray = (): Uint8Array => {
+    const raw = origToArray();
+    const clampedFifths = Math.max(-7, Math.min(7, Math.round(keyAccidentals)));
+    const parsed = parseMidi(raw);
+    for (const track of parsed.tracks) {
+      for (const event of track) {
+        if (event.type === "keySignature") {
+          event.key = clampedFifths;
+          event.scale = keyScale === "minor" ? 1 : 0;
+        }
+      }
+    }
+    return new Uint8Array(writeMidi(parsed));
+  };
   return midi;
 }
 

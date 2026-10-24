@@ -79,6 +79,10 @@ describe("MidiToNotation", () => {
     it('returns "16" for sixteenth note', () => {
       expect(ticksToVexDuration(TPQ / 4, TPQ)).toBe("16");
     });
+
+    it('returns "32" for thirty-second note', () => {
+      expect(ticksToVexDuration(TPQ / 8, TPQ)).toBe("32");
+    });
   });
 
   describe("convertToNotation", () => {
@@ -192,6 +196,117 @@ describe("MidiToNotation", () => {
         vexKey: "f#/4",
         accidental: null,
       });
+    });
+
+    it("suppresses repeated accidentals in the same measure and emits natural sign on cancellation", () => {
+      // Fur Elise bar 1 pattern: E5, D#5, E5, D#5, E5, B4, D5, C5
+      const notes = [
+        { midi: 76, name: "E5", time: 0, duration: 0.25, velocity: 80 },
+        { midi: 75, name: "D#5", time: 0.25, duration: 0.25, velocity: 80 },
+        { midi: 76, name: "E5", time: 0.5, duration: 0.25, velocity: 80 },
+        { midi: 75, name: "D#5", time: 0.75, duration: 0.25, velocity: 80 },
+        { midi: 74, name: "D5", time: 1.0, duration: 0.25, velocity: 80 },
+      ];
+      const result = convertToNotation(notes, 120, 480, 4, 4, 0);
+      const sounding = result.measures[0].trebleNotes.filter((n) => !n.isRest);
+
+      expect(sounding.map((n) => [n.vexKey, n.accidental])).toEqual([
+        ["e/5", null],
+        ["d#/5", "#"],
+        ["e/5", null],
+        ["d#/5", null], // Second D#5 in the same measure suppresses '#'
+        ["d/5", "n"], // D5 after D#5 in the same measure emits natural 'n'
+      ]);
+    });
+
+    it("splits off-beat compound durations at the beat boundary (Prelude in C LH pattern)", () => {
+      // 16th rest (0.125s at 120 BPM), then E4 held for 1.75 beats (0.875s)
+      const notes = [
+        { midi: 60, name: "C4", time: 0, duration: 1.0, velocity: 80 },
+        { midi: 64, name: "E4", time: 0.125, duration: 0.875, velocity: 80 },
+      ];
+      const result = convertToNotation(notes, 120, 480, 4, 4, 0);
+      const upperVoice = result.measures[0].trebleNotes.filter(
+        (n) => (n.voiceIndex ?? 0) === 0,
+      );
+
+      // Should be: 16r (120), 8d (360) tied to q (480), h rest (960)
+      expect(
+        upperVoice.map((n) => [
+          n.startTick,
+          n.durationTicks,
+          n.vexDuration,
+          n.isRest,
+        ]),
+      ).toEqual([
+        [0, 120, "16", true],
+        [120, 360, "8d", false],
+        [480, 480, "q", false],
+        [960, 960, "h", true],
+      ]);
+    });
+
+    it("does not force stemDirection or create phantom rest voices in single-voice measures when another measure has two voices", () => {
+      const notes = [
+        // Measure 0 (0..2.0s): single voice quarter notes
+        { midi: 60, name: "C4", time: 0, duration: 0.5, velocity: 80 },
+        { midi: 62, name: "D4", time: 0.5, duration: 0.5, velocity: 80 },
+        { midi: 64, name: "E4", time: 1.0, duration: 0.5, velocity: 80 },
+        { midi: 65, name: "F4", time: 1.5, duration: 0.5, velocity: 80 },
+        // Measure 1 (2.0..4.0s): two overlapping voices (D5 held over B4 and G4)
+        { midi: 74, name: "D5", time: 2.0, duration: 1.0, velocity: 80 },
+        { midi: 71, name: "B4", time: 2.0, duration: 0.5, velocity: 80 },
+        { midi: 67, name: "G4", time: 2.5, duration: 0.5, velocity: 80 },
+      ];
+      const result = convertToNotation(notes, 120, 480, 4, 4, 0);
+
+      // Measure 0 has only 1 voice and auto-stems (undefined)
+      const m0Voices = new Set(
+        result.measures[0].trebleNotes.map((n) => n.voiceIndex ?? 0),
+      );
+      expect(m0Voices).toEqual(new Set([0]));
+      expect(
+        result.measures[0].trebleNotes.every(
+          (n) => n.stemDirection === undefined,
+        ),
+      ).toBe(true);
+
+      // Measure 1 has 2 voices with opposite stems
+      const m1Voices = new Set(
+        result.measures[1].trebleNotes.map((n) => n.voiceIndex ?? 0),
+      );
+      expect(m1Voices).toEqual(new Set([0, 1]));
+    });
+
+    it("does not report measure-tick-mismatch issues on chords", () => {
+      const notes = [
+        { midi: 60, name: "C4", time: 0, duration: 2.0, velocity: 80 },
+        { midi: 64, name: "E4", time: 0, duration: 2.0, velocity: 80 },
+        { midi: 67, name: "G4", time: 0, duration: 2.0, velocity: 80 },
+      ];
+      const result = convertToNotation(notes, 120, 480, 4, 4, 0);
+      expect(result.measureIssues).toEqual([]);
+    });
+
+    it("preserves 32nd-note pairs after a dotted eighth note without warnings", () => {
+      // Quarter (0.5s) + dotted eighth (0.375s) + two 32nds (0.0625s each) in 2/4 at 120 BPM
+      const notes = [
+        { midi: 72, name: "C5", time: 0, duration: 0.5, velocity: 80 },
+        { midi: 71, name: "B4", time: 0.5, duration: 0.375, velocity: 80 },
+        { midi: 69, name: "A4", time: 0.875, duration: 0.0625, velocity: 80 },
+        { midi: 71, name: "B4", time: 0.9375, duration: 0.0625, velocity: 80 },
+      ];
+      const result = convertToNotation(notes, 120, 480, 2, 4, 0);
+      expect(result.warnings).toEqual([]);
+      expect(result.measureIssues).toEqual([]);
+      expect(
+        result.measures[0].trebleNotes.map((n) => [n.midi, n.vexDuration]),
+      ).toEqual([
+        [72, "q"],
+        [71, "8d"],
+        [69, "32"],
+        [71, "32"],
+      ]);
     });
 
     it("inserts rests so off-beat notes keep their rhythmic position", () => {

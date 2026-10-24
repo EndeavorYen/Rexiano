@@ -17,6 +17,21 @@ const STEPS = [
   "B",
 ] as const;
 const ALTERS = [0, 1, 0, 1, 0, 0, 1, 0, 1, 0, 1, 0] as const;
+const FLAT_STEPS = [
+  "C",
+  "D",
+  "D",
+  "E",
+  "E",
+  "F",
+  "G",
+  "G",
+  "A",
+  "A",
+  "B",
+  "B",
+] as const;
+const FLAT_ALTERS = [0, -1, 0, -1, 0, 0, -1, 0, -1, 0, -1, 0] as const;
 const KEY_FIFTHS: Record<string, number> = {
   C: 0,
   G: 1,
@@ -246,6 +261,7 @@ function renderMeasure(args: {
         voice,
         start: args.start,
         end: args.end,
+        fifths: args.fifths,
         notes: staffNotes.filter((note) => note.voice === voice),
       });
       if (previousAdvance > 0) {
@@ -298,6 +314,7 @@ function renderStaffEvents(args: {
   voice: number;
   start: number;
   end: number;
+  fifths: number;
   notes: TimedNote[];
 }): { xml: string; advance: number } {
   const events: string[] = [];
@@ -325,7 +342,7 @@ function renderStaffEvents(args: {
       events.push(restXml(note.startBeats - cursor, args.staff, args.voice));
       cursor = note.startBeats;
     }
-    events.push(noteXml(note, isChord));
+    events.push(noteXml(note, isChord, args.fifths));
     if (!isChord) cursor = note.startBeats + note.durationBeats;
   }
 
@@ -350,9 +367,10 @@ function restXml(durationBeats: number, staff: 1 | 2, voice: number): string {
 function noteXml(
   note: TimedNote & { tiedFromPrevious?: boolean; tiedToNext?: boolean },
   isChord: boolean,
+  fifths: number,
 ): string {
   const duration = Math.max(1, Math.round(note.durationBeats * DIVISIONS));
-  const { step, alter, octave } = midiToPitch(note.midi);
+  const { step, alter, octave } = midiToPitch(note.midi, fifths);
   const alterXml = alter === 0 ? "" : `\n          <alter>${alter}</alter>`;
   const chordXml = isChord ? "\n        <chord/>" : "";
   const tieTypes = [
@@ -379,15 +397,20 @@ function noteXml(
       </note>`;
 }
 
-function midiToPitch(midi: number): {
+function midiToPitch(
+  midi: number,
+  fifths = 0,
+): {
   step: string;
   alter: number;
   octave: number;
 } {
   const pc = ((midi % 12) + 12) % 12;
+  const steps = fifths < 0 ? FLAT_STEPS : STEPS;
+  const alters = fifths < 0 ? FLAT_ALTERS : ALTERS;
   return {
-    step: STEPS[pc],
-    alter: ALTERS[pc],
+    step: steps[pc],
+    alter: alters[pc],
     octave: Math.floor(midi / 12) - 1,
   };
 }

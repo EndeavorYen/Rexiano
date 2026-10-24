@@ -167,4 +167,19 @@ describe("midiToMusicXml", () => {
       [57, 5, 1],
     ]);
   });
+
+  test("spells flat-key accidentals as flats (e.g. Bb4 in F major, not A#4)", () => {
+    const midi = new Midi();
+    midi.header.setTempo(120);
+    midi.header.keySignatures = [{ ticks: 0, key: "F", scale: "major" }];
+    const track = midi.addTrack();
+    track.name = "Right Hand";
+    track.addNote({ midi: 70, time: 0, duration: 0.5, velocity: 0.7 });
+
+    const xml = midiToMusicXml(midi);
+    expect(xml).toContain("<fifths>-1</fifths>");
+    expect(xml).toContain("<step>B</step>");
+    expect(xml).toContain("<alter>-1</alter>");
+    expect(xml).not.toContain("<step>A</step>");
+  });
 });

@@ -107,4 +107,19 @@ describe("voiceMeter (#333)", () => {
       [6, 8],
     );
   });
+
+  test("beamConfigForVoice beams eighth + two 32nd notes in 2/4 without beaming across rests", () => {
+    const notes = [
+      new VF.StaveNote({ keys: ["b/4"], duration: "8r" }),
+      new VF.StaveNote({ keys: ["a/4"], duration: "8" }),
+      new VF.StaveNote({ keys: ["g#/4"], duration: "8", dots: 1 }),
+      new VF.StaveNote({ keys: ["a/4"], duration: "32" }),
+      new VF.StaveNote({ keys: ["b/4"], duration: "32" }),
+    ];
+    const beams = VF.Beam.generateBeams(
+      notes,
+      beamConfigForVoice(undefined, "2/4", VF),
+    );
+    expect(beams.map((b) => b.getNotes().length)).toEqual([3]);
+  });
 });

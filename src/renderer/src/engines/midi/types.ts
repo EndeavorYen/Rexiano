@@ -57,6 +57,16 @@ export interface TimeSignatureEvent {
   ticks?: number;
 }
 
+/** Key signature change event */
+export interface KeySignatureEvent {
+  /** Key tonic name (e.g. "C", "G", "F", "Bb", "C#") */
+  key: string;
+  /** Scale mode ("major" | "minor") */
+  scale: "major" | "minor";
+  /** Position in MIDI ticks, when known */
+  ticks?: number;
+}
+
 /** Complete parsed representation of a MIDI file */
 export interface ParsedSong {
   /** Original file name */
@@ -69,6 +79,8 @@ export interface ParsedSong {
   tempos: TempoEvent[];
   /** Time signature changes */
   timeSignatures: TimeSignatureEvent[];
+  /** Key signature changes */
+  keySignatures?: KeySignatureEvent[];
   /** Total number of notes across all tracks */
   noteCount: number;
   /**

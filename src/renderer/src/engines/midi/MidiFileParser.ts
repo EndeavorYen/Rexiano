@@ -1,5 +1,6 @@
 import { Midi } from "@tonejs/midi";
 import type {
+  KeySignatureEvent,
   ParsedSong,
   ParsedTrack,
   ParsedNote,
@@ -59,6 +60,14 @@ export function parseMidiFile(fileName: string, data: number[]): ParsedSong {
     }),
   );
 
+  const keySignatures: KeySignatureEvent[] = midi.header.keySignatures.map(
+    (ks) => ({
+      key: ks.key,
+      scale: ks.scale === "minor" ? "minor" : "major",
+      ticks: ks.ticks,
+    }),
+  );
+
   const noteCount = tracks.reduce((sum, track) => sum + track.notes.length, 0);
 
   // Use the end time of the last audible note instead of midi.duration,
@@ -75,6 +84,7 @@ export function parseMidiFile(fileName: string, data: number[]): ParsedSong {
     tracks,
     tempos,
     timeSignatures,
+    keySignatures,
     noteCount,
     ppq: midi.header.ppq,
   };

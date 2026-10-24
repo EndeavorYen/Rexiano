@@ -12,7 +12,7 @@
  */
 import { Midi } from "@tonejs/midi";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "fs";
-import { join, dirname } from "path";
+import { join, dirname, resolve } from "path";
 import { fileURLToPath } from "url";
 import {
   builtinScoreFileName,
@@ -524,6 +524,10 @@ function buildCanonInD(): Midi {
 function buildMoonlightSonata(): Midi {
   const midi = new Midi();
   midi.header.setTempo(56);
+  midi.header.timeSignatures = [
+    { ticks: 0, timeSignature: [2, 2], measures: 0 },
+  ];
+  midi.header.keySignatures = [{ ticks: 0, key: "C#", scale: "minor" }];
 
   const rh = midi.addTrack();
   rh.name = "Right Hand";
@@ -535,7 +539,7 @@ function buildMoonlightSonata(): Midi {
 
   // Moonlight Sonata mvt 1 — simplified triplet arpeggios
   // Each beat has a triplet arpeggio (3 eighth-note triplets)
-  // 4/4 time, 8 measures
+  // 2/2 time, 8 measures
 
   const measures: { bass: number; tripletNotes: number[] }[] = [
     // Bar 1-2: C#m arpeggio over C#3 bass
@@ -560,7 +564,7 @@ function buildMoonlightSonata(): Midi {
     lh.addNote({
       midi: bar.bass,
       time: beat * secPerBeat,
-      duration: 4 * secPerBeat * 0.95,
+      duration: 4 * secPerBeat,
       velocity: 0.55,
     });
 
@@ -568,7 +572,7 @@ function buildMoonlightSonata(): Midi {
     lh.addNote({
       midi: bar.bass + 12,
       time: beat * secPerBeat,
-      duration: 4 * secPerBeat * 0.95,
+      duration: 4 * secPerBeat,
       velocity: 0.45,
     });
 
@@ -579,7 +583,7 @@ function buildMoonlightSonata(): Midi {
         rh.addNote({
           midi: bar.tripletNotes[t],
           time: (beat + tripletOffset) * secPerBeat,
-          duration: (1 / 3) * secPerBeat * 0.9,
+          duration: (1 / 3) * secPerBeat,
           velocity: t === 2 ? 0.65 : 0.5, // top note slightly louder
         });
       }
@@ -1429,6 +1433,9 @@ export function runGenerateSongs(): void {
   console.log("Done!");
 }
 
-if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
+if (
+  process.argv[1] &&
+  resolve(fileURLToPath(import.meta.url)) === resolve(process.argv[1])
+) {
   runGenerateSongs();
 }
