@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.6.1](https://github.com/EndeavorYen/Rexiano/compare/v1.6.0...v1.6.1) (2026-10-24)
+
+
+### Bug Fixes
+
+* **sheet:** align notation output with ground-truth scores ([#339](https://github.com/EndeavorYen/Rexiano/issues/339)) ([9c5d839](https://github.com/EndeavorYen/Rexiano/commit/9c5d83985cf9a4f9ebb5fa55096386d455122f74))
+
 ## [1.6.0](https://github.com/EndeavorYen/Rexiano/compare/v1.5.0...v1.6.0) (2026-10-01)
 
 
