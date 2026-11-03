@@ -1,4 +1,4 @@
-import { test, expect } from "./fixtures/electronApp";
+import { test, expect } from "./fixtures/app";
 import {
   closeTopDrawer,
   gotoLibrary,

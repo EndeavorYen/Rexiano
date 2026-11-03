@@ -1,13 +1,13 @@
 import { readFileSync } from "fs";
 import { resolve } from "path";
-import { test, expect } from "./fixtures/electronApp";
+import { test, expect } from "./fixtures/app";
 import { gotoLibrary, loadFirstBuiltInSong } from "./helpers/appHarness";
 
 async function dropMidiBytes(page: {
   evaluate: (fn: (midiBytes: number[]) => void, arg: number[]) => Promise<void>;
 }): Promise<void> {
   const midiBytes = Array.from(
-    readFileSync(resolve("resources/midi/c-major-scale.mid")),
+    readFileSync(resolve("public/midi/c-major-scale.mid")),
   );
   await page.evaluate((bytes) => {
     const dataTransfer = new DataTransfer();

@@ -1,4 +1,4 @@
-import { test, expect, waitForUiSettled } from "./fixtures/electronApp";
+import { test, expect, waitForUiSettled } from "./fixtures/app";
 import { gotoLibrary, loadFirstBuiltInSong } from "./helpers/appHarness";
 
 // Focused suite for #13/#15: run this when changing keyboard access,

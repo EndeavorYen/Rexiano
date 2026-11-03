@@ -3,7 +3,7 @@ import { readFileSync } from "fs";
 import { resolve } from "path";
 import { describe, expect, test, vi } from "vitest";
 import { SoundFont2 } from "soundfont2";
-import { SoundFontLoader } from "../src/renderer/src/engines/audio/SoundFontLoader";
+import { SoundFontLoader } from "../src/engines/audio/SoundFontLoader";
 
 const EXPECTED_SF2_SIZE_BYTES = 9_456_310;
 const EXPECTED_SF2_SHA256 =
@@ -43,7 +43,7 @@ function createMockAudioContext(): AudioContext {
 
 describe("bundled piano SoundFont asset", () => {
   test("matches the validated FreePats Upright Piano KW replacement", () => {
-    const data = readFileSync(resolve(process.cwd(), "resources", "piano.sf2"));
+    const data = readFileSync(resolve(process.cwd(), "public", "piano.sf2"));
 
     expect(data.length).toBe(EXPECTED_SF2_SIZE_BYTES);
     expect(sha256(data)).toBe(EXPECTED_SF2_SHA256);
@@ -68,7 +68,7 @@ describe("bundled piano SoundFont asset", () => {
   });
 
   test("loads through the app SoundFontLoader path without synthesis fallback", async () => {
-    const data = readFileSync(resolve(process.cwd(), "resources", "piano.sf2"));
+    const data = readFileSync(resolve(process.cwd(), "public", "piano.sf2"));
     const audioContext = createMockAudioContext();
     const loader = new SoundFontLoader();
     const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});

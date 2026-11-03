@@ -21,19 +21,17 @@ pnpm dev
 
 ### Useful Commands
 
-| Command            | Description                               |
-| ------------------ | ----------------------------------------- |
-| `pnpm dev`         | Start in development mode with HMR        |
-| `pnpm dev:sandbox` | Start in dev mode (non-WSL2 environments) |
-| `pnpm test`        | Run all tests with Vitest                 |
-| `pnpm test:watch`  | Run tests in watch mode                   |
-| `pnpm lint`        | Lint the codebase with ESLint             |
-| `pnpm typecheck`   | Run TypeScript compiler checks            |
-| `pnpm format`      | Format code with Prettier                 |
-| `pnpm build`       | Typecheck + production build              |
-| `pnpm build:win`   | Build Windows installer (.exe)            |
-| `pnpm build:mac`   | Build macOS disk image (.dmg)             |
-| `pnpm build:linux` | Build Linux packages (.AppImage, .deb)    |
+| Command           | Description                              |
+| ----------------- | ---------------------------------------- |
+| `pnpm dev`        | Start the Vite dev server with HMR       |
+| `pnpm test`       | Run all tests with Vitest                |
+| `pnpm test:watch` | Run tests in watch mode                  |
+| `pnpm lint`       | Lint the codebase with ESLint            |
+| `pnpm typecheck`  | Run TypeScript compiler checks           |
+| `pnpm format`     | Format code with Prettier                |
+| `pnpm build`      | Typecheck + production build to `dist/`  |
+| `pnpm preview`    | Serve the production build locally       |
+| `pnpm test:e2e`   | Build and run Playwright E2E in Chromium |
 
 ### Verify Before Submitting
 
@@ -81,18 +79,18 @@ test: add coverage for AB loop selector
 
 See [docs/DESIGN.md](docs/DESIGN.md) for the full system design. The codebase follows a strict three-layer architecture:
 
-| Layer        | Location                     | Rules                                             |
-| ------------ | ---------------------------- | ------------------------------------------------- |
-| **Engines**  | `src/renderer/src/engines/`  | Pure logic. No React imports. No DOM access.      |
-| **Stores**   | `src/renderer/src/stores/`   | Zustand stores. Bridge between engines and React. |
-| **Features** | `src/renderer/src/features/` | React UI components.                              |
+| Layer        | Location        | Rules                                             |
+| ------------ | --------------- | ------------------------------------------------- |
+| **Engines**  | `src/engines/`  | Pure logic. No React imports. No DOM access.      |
+| **Stores**   | `src/stores/`   | Zustand stores. Bridge between engines and React. |
+| **Features** | `src/features/` | React UI components.                              |
 
 ### Key Conventions
 
 - **PixiJS engine** reads Zustand state via `store.getState()` (not React hooks) to avoid unnecessary re-renders
 - **Theme colors** use CSS Custom Properties: `var(--color-*)`, defined in `themes/tokens.ts`
 - **Callback pattern** for engine-to-store communication (not EventEmitter)
-- **IPC** uses `number[]` instead of `Uint8Array` (Electron structured clone compatibility)
+- **`window.api`** (the web platform layer in `src/platform/`) passes file bytes as `number[]`; convert back to `Uint8Array` where needed
 - **Test files** live alongside their source modules (`*.test.ts`)
 - **Fonts** are bundled offline via `@fontsource` (Nunito, DM Sans, JetBrains Mono)
 

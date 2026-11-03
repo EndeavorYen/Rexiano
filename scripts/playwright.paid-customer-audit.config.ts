@@ -1,4 +1,5 @@
 import { defineConfig } from "@playwright/test";
+import { e2eUse, e2eWebServer } from "../e2e/webServer";
 import { resolve } from "node:path";
 import { chdir } from "node:process";
 
@@ -13,7 +14,6 @@ export default defineConfig({
   expect: {
     timeout: 10_000,
   },
-  use: {
-    actionTimeout: 10_000,
-  },
+  use: e2eUse,
+  webServer: e2eWebServer,
 });

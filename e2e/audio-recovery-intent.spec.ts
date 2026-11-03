@@ -1,5 +1,5 @@
 import type { Page } from "@playwright/test";
-import { test, expect } from "./fixtures/electronApp";
+import { test, expect } from "./fixtures/app";
 import {
   choosePracticeMode,
   gotoLibrary,

@@ -1,6 +1,6 @@
 import { mkdirSync, writeFileSync } from "fs";
 import { join } from "path";
-import { test, expect, waitForUiSettled } from "../e2e/fixtures/electronApp";
+import { test, expect, waitForUiSettled } from "../e2e/fixtures/app";
 import {
   collectViewportAudit,
   type ViewportAuditIssue,
@@ -13,10 +13,7 @@ mkdirSync(screens, { recursive: true });
 
 test.setTimeout(90_000);
 
-test("paid customer refund-hunt audit", async ({ electronApp }) => {
-  const appPage = await electronApp.firstWindow();
-  await appPage.waitForLoadState("domcontentloaded");
-
+test("paid customer refund-hunt audit", async ({ freshPage: appPage }) => {
   const logs: Array<{ type: string; text: string }> = [];
   const findings: unknown[] = [];
   const observations: unknown[] = [];

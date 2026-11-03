@@ -19,7 +19,7 @@
    （一段普通的漸慢會產生多餘小節與幽靈十六分音符），變拍則完全不支援。
    現在 `MidiFileParser` 保留 tick / PPQ / 完整 tempo map，`TempoMap` 做精確
    換算，`convertSongToNotation()` 直接吃 tick。回歸測試見
-   `src/renderer/src/features/sheetMusic/MidiToNotation.tempo.test.ts`。
+   `src/features/sheetMusic/MidiToNotation.tempo.test.ts`。
 7. 彈奏的畫面有些設定太多餘，請設定 "精簡模式" (沒有過多的設定，只有基礎設定) 和 "進階模式" (完整設定)
 8. 彈奏結束後，進入統計頁面
 9. 設計有用的統計數據，讓練習者可以知道各種指標或注意事項

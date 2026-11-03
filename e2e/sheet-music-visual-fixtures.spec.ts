@@ -1,4 +1,4 @@
-import { test, expect, waitForUiSettled } from "./fixtures/electronApp";
+import { test, expect, waitForUiSettled } from "./fixtures/app";
 import {
   choosePracticeModeIfPrompted,
   gotoLibrary,

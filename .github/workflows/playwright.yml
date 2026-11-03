@@ -16,9 +16,9 @@ concurrency:
 
 jobs:
   playwright:
-    name: Playwright (Windows)
-    runs-on: windows-latest
-    timeout-minutes: 40
+    name: Playwright (Chromium)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
 
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -43,15 +43,11 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      # Electron 42+ downloads its binary on first run, not at install.
-      # Fetch it once here so parallel Playwright workers don't race on it.
-      - name: Download Electron binary
-        run: node node_modules/electron/install.js
+      - name: Install Chromium
+        run: pnpm exec playwright install --with-deps chromium
 
       - name: Run Playwright E2E
         run: pnpm test:e2e
-        env:
-          ELECTRON_RUN_AS_NODE: ""
 
       - name: Upload Playwright report
         if: failure()

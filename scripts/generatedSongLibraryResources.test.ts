@@ -9,7 +9,7 @@ import { buildMidiDiagnosticNotice } from "@renderer/features/midiDiagnostics/mi
 import type { BuiltinSongMeta } from "@shared/types";
 import { filterSongsForLibrary } from "@renderer/features/songLibrary/songLibrarySelectors";
 import { buildGeneratedSongArtifacts } from "./generate-songs";
-import { findPickup } from "../src/renderer/src/engines/midi/pickup";
+import { findPickup } from "../src/engines/midi/pickup";
 
 type SongMeta = {
   id: string;
@@ -77,7 +77,7 @@ type ExpectedKeySignature = {
 };
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const resourcesDir = join(__dirname, "..", "resources", "midi");
+const resourcesDir = join(__dirname, "..", "public", "midi");
 const manifest = JSON.parse(
   readFileSync(join(resourcesDir, "songs.json"), "utf8"),
 ) as SongMeta[];

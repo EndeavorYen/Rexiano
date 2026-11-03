@@ -1,4 +1,4 @@
-import { test, expect } from "./fixtures/electronApp";
+import { test, expect } from "./fixtures/app";
 
 interface PracticeFixtureSnapshot {
   mode: "watch" | "wait" | "free";

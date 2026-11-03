@@ -3,9 +3,9 @@
  *
  * Run: pnpm exec jiti scripts/generate-songs.ts
  *
- * Produces generated MIDI files in resources/midi/ and updates songs.json.
+ * Produces generated MIDI files in public/midi/ and updates songs.json.
  * Existing curated songs.json fields such as grade and level tags are preserved.
- * Built-ins with resources/scores/<id>.musicxml treat that score as source of
+ * Built-ins with public/scores/<id>.musicxml treat that score as source of
  * truth. Missing scores are materialized from public-domain builders or the
  * packaged MIDI, then the build writes MIDI from the score.
  * Uses @tonejs/midi for MIDI file creation.
@@ -17,9 +17,9 @@ import { fileURLToPath } from "url";
 import {
   builtinScoreFileName,
   resolveBuiltinSongSource,
-} from "../src/renderer/src/engines/score/builtinScoreSource";
-import { musicXmlToMidi } from "../src/renderer/src/engines/score/musicXmlToMidi";
-import { midiToMusicXml } from "../src/renderer/src/engines/score/midiToMusicXml";
+} from "../src/engines/score/builtinScoreSource";
+import { musicXmlToMidi } from "../src/engines/score/musicXmlToMidi";
+import { midiToMusicXml } from "../src/engines/score/midiToMusicXml";
 import {
   addNotesFromBeats,
   applyInferredHandTrackNames,
@@ -35,8 +35,8 @@ import {
 import { buildMidiFromSpec, loadSongSpec } from "./songSpec";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const outDir = join(__dirname, "..", "resources", "midi");
-const defaultScoresDir = join(__dirname, "..", "resources", "scores");
+const outDir = join(__dirname, "..", "public", "midi");
+const defaultScoresDir = join(__dirname, "..", "public", "scores");
 
 // ─── MIDI note constants ─────────────────────────────────────────────
 

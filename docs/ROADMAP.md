@@ -1,6 +1,6 @@
 # Rexiano — 開發路線圖與追蹤清單
 
-> **最後更新**: 2026-09-27
+> **最後更新**: 2026-11-03
 >
 > 詳細設計請參考 [DESIGN.md](./DESIGN.md)
 >
@@ -15,11 +15,11 @@
 > 這三個階段都還沒做完。產品階段 1 只勾了譜→MIDI 第一刀；其餘維持未勾選。
 > 不要改 `MidiToNotation` 行為。
 
-| 階段 | 一句話 | 不是什麼 |
-| ---- | ------ | -------- |
-| **產品階段 1** | 譜 → MIDI，且匯入 MIDI 仍可練習 | 不是拿掉 MIDI 入口 |
-| **產品階段 2** | 更漂亮、簡潔、優雅的 UIUX，體感壓過 Synthesia | 不是再堆一排功能開關 |
-| **產品階段 3** | 厲害的 MIDI → 譜（接近音樂家會寫的譜） | 不是 audio-to-score；也不是「有顯示＝譜正確」 |
+| 階段           | 一句話                                        | 不是什麼                                      |
+| -------------- | --------------------------------------------- | --------------------------------------------- |
+| **產品階段 1** | 譜 → MIDI，且匯入 MIDI 仍可練習               | 不是拿掉 MIDI 入口                            |
+| **產品階段 2** | 更漂亮、簡潔、優雅的 UIUX，體感壓過 Synthesia | 不是再堆一排功能開關                          |
+| **產品階段 3** | 厲害的 MIDI → 譜（接近音樂家會寫的譜）        | 不是 audio-to-score；也不是「有顯示＝譜正確」 |
 
 ```mermaid
 flowchart LR
@@ -72,25 +72,26 @@ flowchart LR
 
 ## 版本規劃
 
-| 版本       | 里程碑           | 包含 Phase                                 |
-| ---------- | ---------------- | ------------------------------------------ |
-| **v0.1.0** | 靜默視覺化播放器 | Phase 1 + 2 + 3 ✅                         |
-| **v0.2.0** | 有聲播放器       | + Phase 4 ✅                               |
-| **v0.3.0** | MIDI 鍵盤連接    | + Phase 5 ✅                               |
-| **v0.4.0** | 練習模式         | + Phase 6 ✅                               |
-| **v0.4.1** | 🎯 兒童可用版    | + Phase 6.5（可用性增強）✅                |
-| **v0.5.0** | 五線譜顯示       | + Phase 7 ✅                               |
-| **v0.5.1** | 練習入口優化     | + Phase 7.5 ✅                             |
-| **v1.0.0** | 正式發佈         | + Phase 8 ✅ + Phase 9 ✅                  |
-| **v1.1.0** | 發佈品質強化     | 使用者文件、簽章準備、發佈流程整理 ✅      |
-| **v1.1.1** | Release pipeline | 多平台 release assets 修復與驗證 ✅        |
-| **v1.1.2** | 安全預檢         | 依賴 audit 清零、Electron 39、發佈檔案 ✅   |
-| **v1.1.3** | Audit 修補       | esbuild 0.28.1 override、發佈檔案 ✅       |
-| **v1.2.0** | Windows portable | Windows 免安裝 `.exe` 發佈檔 ✅            |
-| **v1.2.1** | 發佈資源修補     | 內建曲庫/SoundFont packaged 路徑、portable `.zip` |
-| **下一程** | 譜 → MIDI 雙入口 | 產品階段 1（第一刀已落地）                               |
-| **下一程** | 體驗壓過競品     | 產品階段 2（不是功能清單）                               |
-| **下一程** | 音樂家級 MIDI → 譜 | 產品階段 3（點名的曲子不能練之前不做）                             |
+| 版本       | 里程碑             | 包含 Phase                                        |
+| ---------- | ------------------ | ------------------------------------------------- |
+| **v0.1.0** | 靜默視覺化播放器   | Phase 1 + 2 + 3 ✅                                |
+| **v0.2.0** | 有聲播放器         | + Phase 4 ✅                                      |
+| **v0.3.0** | MIDI 鍵盤連接      | + Phase 5 ✅                                      |
+| **v0.4.0** | 練習模式           | + Phase 6 ✅                                      |
+| **v0.4.1** | 🎯 兒童可用版      | + Phase 6.5（可用性增強）✅                       |
+| **v0.5.0** | 五線譜顯示         | + Phase 7 ✅                                      |
+| **v0.5.1** | 練習入口優化       | + Phase 7.5 ✅                                    |
+| **v1.0.0** | 正式發佈           | + Phase 8 ✅ + Phase 9 ✅                         |
+| **v1.1.0** | 發佈品質強化       | 使用者文件、簽章準備、發佈流程整理 ✅             |
+| **v1.1.1** | Release pipeline   | 多平台 release assets 修復與驗證 ✅               |
+| **v1.1.2** | 安全預檢           | 依賴 audit 清零、Electron 39、發佈檔案 ✅         |
+| **v1.1.3** | Audit 修補         | esbuild 0.28.1 override、發佈檔案 ✅              |
+| **v1.2.0** | Windows portable   | Windows 免安裝 `.exe` 發佈檔 ✅                   |
+| **v1.2.1** | 發佈資源修補       | 內建曲庫/SoundFont packaged 路徑、portable `.zip` |
+| **v2.0.0** | 網頁版             | Phase 10：移除 Electron，Vercel + PWA ✅          |
+| **下一程** | 譜 → MIDI 雙入口   | 產品階段 1（第一刀已落地）                        |
+| **下一程** | 體驗壓過競品       | 產品階段 2（不是功能清單）                        |
+| **下一程** | 音樂家級 MIDI → 譜 | 產品階段 3（點名的曲子不能練之前不做）            |
 
 ---
 
@@ -374,27 +375,27 @@ flowchart LR
 
 ### Synthesia 對照表
 
-| 功能             | Synthesia | Rexiano Phase 6.5 後                 | 超越？ |
-| ---------------- | --------- | ------------------------------------ | ------ |
-| Falling notes    | ✅        | ✅ Phase 2                           | 平手   |
-| 鋼琴音色         | ✅ 優質   | ✅ FreePats Upright Piano KW bundled | 平手   |
-| 琴鍵音名         | ✅ 可開關 | ✅ Sprint 1                          | 平手   |
-| 音符音名         | ✅ 可開關 | ✅ Sprint 2                          | 平手   |
-| 指法建議         | ✅        | ✅ Sprint 5                          | 平手   |
-| 練習模式 (Wait)  | ✅        | ✅ Phase 6                           | 平手   |
-| 速度控制         | ✅        | ✅ Phase 6                           | 平手   |
-| A-B 循環         | ✅        | ✅ Phase 6                           | 平手   |
-| 分手練習         | ✅        | ✅ Phase 6                           | 平手   |
-| 評分系統         | ✅        | ✅ Phase 6                           | 平手   |
-| 暗色主題         | ✅        | ✅ Sprint 1                          | 平手   |
-| 節拍器           | ✅        | ✅ Sprint 4                          | 平手   |
-| 成績追蹤         | ✅        | ✅ Sprint 3                          | 平手   |
-| 新手引導         | ✅        | ✅ Sprint 4                          | 平手   |
-| **五線譜顯示**   | ❌        | ✅ Phase 7 有面板；譜尚未正確 | **顯示勝；正確譜＝產品階段 3** |
-| **練習洞察分析** | ❌        | ✅ Sprint 5                          | **勝** |
-| **多主題**       | ❌ 僅一種 | ✅ 4 套                              | **勝** |
-| **開源免費**     | ❌ $39    | ✅ 永遠免費                          | **勝** |
-| **中文 UI**      | ❌        | ✅ Sprint 5                          | **勝** |
+| 功能             | Synthesia | Rexiano Phase 6.5 後                 | 超越？                         |
+| ---------------- | --------- | ------------------------------------ | ------------------------------ |
+| Falling notes    | ✅        | ✅ Phase 2                           | 平手                           |
+| 鋼琴音色         | ✅ 優質   | ✅ FreePats Upright Piano KW bundled | 平手                           |
+| 琴鍵音名         | ✅ 可開關 | ✅ Sprint 1                          | 平手                           |
+| 音符音名         | ✅ 可開關 | ✅ Sprint 2                          | 平手                           |
+| 指法建議         | ✅        | ✅ Sprint 5                          | 平手                           |
+| 練習模式 (Wait)  | ✅        | ✅ Phase 6                           | 平手                           |
+| 速度控制         | ✅        | ✅ Phase 6                           | 平手                           |
+| A-B 循環         | ✅        | ✅ Phase 6                           | 平手                           |
+| 分手練習         | ✅        | ✅ Phase 6                           | 平手                           |
+| 評分系統         | ✅        | ✅ Phase 6                           | 平手                           |
+| 暗色主題         | ✅        | ✅ Sprint 1                          | 平手                           |
+| 節拍器           | ✅        | ✅ Sprint 4                          | 平手                           |
+| 成績追蹤         | ✅        | ✅ Sprint 3                          | 平手                           |
+| 新手引導         | ✅        | ✅ Sprint 4                          | 平手                           |
+| **五線譜顯示**   | ❌        | ✅ Phase 7 有面板；譜尚未正確        | **顯示勝；正確譜＝產品階段 3** |
+| **練習洞察分析** | ❌        | ✅ Sprint 5                          | **勝**                         |
+| **多主題**       | ❌ 僅一種 | ✅ 4 套                              | **勝**                         |
+| **開源免費**     | ❌ $39    | ✅ 永遠免費                          | **勝**                         |
+| **中文 UI**      | ❌        | ✅ Sprint 5                          | **勝**                         |
 
 ---
 
@@ -508,12 +509,15 @@ flowchart LR
 - [x] 多軌支援
   - [x] 新增 / 刪除軌道
   - [x] 軌道屬性（樂器、通道）
-- [x] 測試：新增 / 移動 / 刪除 / Undo / Redo / 匯出 round-trip 流程（見 `src/renderer/src/features/editor/editorCommands.test.ts`、`src/renderer/src/features/editor/midiExport.test.ts`、`e2e/editor-flow.spec.ts`）
+- [x] 測試：新增 / 移動 / 刪除 / Undo / Redo / 匯出 round-trip 流程（見 `src/features/editor/editorCommands.test.ts`、`src/features/editor/midiExport.test.ts`、`e2e/editor-flow.spec.ts`）
 
 ---
 
 ## Phase 9 — 打包與發佈 ✅
 
+> **歷史紀錄**：Phase 10 起 Rexiano 只有網頁版。以下桌面安裝檔、更新器、簽章與檔案關聯項目
+> 隨 Electron 一起移除；1.6.0 是最後一個桌面版。
+>
 > 可與 Phase 4~8 並行進行
 >
 > GitHub Releases 已正式發布 v1.1.3，並附 Windows、macOS、Linux 安裝檔與 `SHA256SUMS.txt`。
@@ -531,11 +535,11 @@ flowchart LR
   - [x] 應用內更新提示
   - [x] 發佈到 GitHub Releases
 - [x] 官方 release 簽章管線採 fail closed（缺少憑證、驗證失敗時不公開 release）
-  > 已公開的 GitHub Release 安裝檔是未簽章的。上一行的 fail-closed 是 `.github/workflows/release.yml` 的管線合約，不是使用者現在下載到的路徑。#187 不在這張卡，維持未勾。
+  > 最後的桌面版（1.6.0）GitHub Release 安裝檔是未簽章的。網頁版沒有安裝檔，簽章管線已隨 `release.yml` 移除。
   - [x] Windows: 強制 EV/OV signing 並驗證 setup、portable 與 zip 內執行檔
   - [x] macOS: 強制 Developer ID signing + notarization，驗證雙架構 DMG
   - [x] 簽章/公證 secrets、local/fork unsigned 邊界與 evidence checklist 文件（`docs/release-signing.md`）
-  - [ ] 使用 production secrets 完成真實三平台簽章發行與安裝 smoke 證據（#187）
+  - [x] ~~使用 production secrets 完成真實三平台簽章發行與安裝 smoke 證據（#187）~~ 網頁版取代桌面安裝檔，不再適用
 - [x] 檔案關聯
   - [x] `.mid` 檔案雙擊以 Rexiano 開啟（electron-builder.yml fileAssociations + 冷啟動／已開啟實例路由，#192）
   - [x] 各平台的 MIME type 註冊（Linux mimeTypes: audio/midi, audio/x-midi）
@@ -548,6 +552,30 @@ flowchart LR
   - [x] Windows BLE MIDI 橋接教學
   - [x] 開發者貢獻指南 (CONTRIBUTING.md)
   - [x] 功能截圖 / GIF（見 #102；`docs/assets/screenshots/` + README refresh script）
+
+---
+
+## Phase 10 — 網頁版（Vercel + PWA）✅
+
+> 取消 Electron 桌面版，Rexiano 只以網頁形式部署在 Vercel。介紹頁 `site/` 繼續放 GitHub Pages。
+> 只支援電腦與平板；不做手機直式版面。不做麥克風聽音。
+
+- [x] 專案改為純 Vite + React（`src/renderer/src` 攤平到 `src/`，`resources/` 改為 `public/`）
+- [x] 移除 Electron main / preload、electron-builder、桌面 release workflow
+- [x] 網頁 platform 層（`src/platform/`）實作 `window.api`
+  - [x] 內建曲庫與 SoundFont 以靜態檔 `fetch`
+  - [x] 練習紀錄、最近開啟改存 IndexedDB（無 IndexedDB 時退回單分頁記憶體）
+  - [x] 匯入的 MIDI / MusicXML 存在瀏覽器（`local:<hash>/<檔名>`），可從最近開啟與曲庫重開
+  - [x] 「監看資料夾」改為「匯入的樂譜與 MIDI」書架，可從曲庫移除
+  - [x] 開檔用瀏覽器檔案選擇器，匯出 MIDI 改為下載
+  - [x] 備份匯出／匯入／重置改寫 IndexedDB
+- [x] PWA：manifest、圖示、service worker 預先快取 App、SoundFont 與內建曲，可離線練習
+- [x] 已安裝的 PWA 可直接開啟 `.mid` / `.musicxml`（`file_handlers` + `launchQueue`）
+- [x] 藍牙 MIDI 改用瀏覽器原生配對視窗（移除 Electron 自製選單）
+- [x] 移除自動更新、檔案關聯、監看資料夾等桌面專屬功能
+- [x] `vercel.json`（快取與安全標頭）
+- [x] Playwright 改測 Chromium（`vite preview`），CI 改在 ubuntu
+- [x] iPad / iPhone 指引：Safari 不支援 Web MIDI，改用支援 Web MIDI 的瀏覽器 App
 
 ---
 
@@ -601,4 +629,7 @@ Phase 1 ✅ -→ Phase 2 ✅ -→ Phase 3 ✅
           ▼      ▼
         v1.1.3 已正式發布
         （assets + checksum 完成）
+                 |
+                 ▼
+        Phase 10 ✅ 網頁版（Vercel + PWA）
 ```

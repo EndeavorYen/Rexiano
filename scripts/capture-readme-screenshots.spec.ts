@@ -1,6 +1,6 @@
 import { mkdirSync } from "node:fs";
 import { join, resolve } from "node:path";
-import { expect, test, waitForUiSettled } from "../e2e/fixtures/electronApp";
+import { expect, test, waitForUiSettled } from "../e2e/fixtures/app";
 import { gotoLibrary, loadFirstBuiltInSong } from "../e2e/helpers/appHarness";
 
 const outputDir = resolve(process.cwd(), "docs/assets/screenshots");

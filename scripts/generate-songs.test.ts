@@ -5,8 +5,8 @@ import { fileURLToPath } from "node:url";
 import { Midi } from "@tonejs/midi";
 import { describe, expect, it, test } from "vitest";
 import { parseMidiFile } from "@renderer/engines/midi/MidiFileParser";
-import type { ParsedSong } from "../src/renderer/src/engines/midi/types";
-import { musicXmlToMidi } from "../src/renderer/src/engines/score/musicXmlToMidi";
+import type { ParsedSong } from "../src/engines/midi/types";
+import { musicXmlToMidi } from "../src/engines/score/musicXmlToMidi";
 import {
   buildGeneratedSongArtifacts,
   formatSongsJson,
@@ -78,7 +78,7 @@ const PETZOLD_FIRST_STRAIN_RH: ReadonlyArray<
 const resourcesRoot = join(
   dirname(fileURLToPath(import.meta.url)),
   "..",
-  "resources",
+  "public",
 );
 const midiDir = join(resourcesRoot, "midi");
 const auClairScorePath = join(

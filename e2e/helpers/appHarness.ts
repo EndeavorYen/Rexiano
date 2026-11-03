@@ -1,5 +1,5 @@
 import type { Locator, Page } from "@playwright/test";
-import { expect } from "../fixtures/electronApp";
+import { expect } from "../fixtures/app";
 
 type PracticeModeChoice = "watch" | "wait" | "free";
 

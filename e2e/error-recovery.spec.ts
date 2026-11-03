@@ -1,11 +1,16 @@
-import { test, expect } from "./fixtures/electronApp";
+import {
+  test,
+  expect,
+  readStoredRecord,
+  seedStoredRecord,
+} from "./fixtures/app";
 import {
   gotoLibrary,
   loadFirstBuiltInSong,
   openLibraryDrawer,
 } from "./helpers/appHarness";
-import { mkdirSync, readFileSync, rmSync, writeFileSync } from "fs";
-import { join, resolve } from "path";
+import { readFileSync } from "fs";
+import { resolve } from "path";
 import type { Page } from "@playwright/test";
 
 async function enterAndLeaveDrag(page: Page): Promise<void> {
@@ -109,7 +114,7 @@ test.describe("Error recovery", () => {
     await expect(toast).toBeVisible();
 
     const midiBytes = Array.from(
-      readFileSync(resolve("resources/midi/hot-cross-buns.mid")),
+      readFileSync(resolve("public/midi/hot-cross-buns.mid")),
     );
     await dropMidiBytes(appPage, midiBytes);
     await expect(toast).toBeHidden();
@@ -155,27 +160,15 @@ test.describe("Error recovery", () => {
   });
 
   test("confirmed removal immediately clears a real stale main-menu recent", async ({
-    electronApp,
     appPage,
   }) => {
-    const userDataPath = await electronApp.evaluate(({ app }) =>
-      app.getPath("userData"),
-    );
-    const recentsPath = join(userDataPath, "recents.json");
-    const stalePath = join(userDataPath, "moved-away.mid");
-    writeFileSync(
-      recentsPath,
-      JSON.stringify([
-        {
-          path: stalePath,
-          name: "moved-away.mid",
-          timestamp: Date.now(),
-        },
-      ]),
-      "utf-8",
-    );
-    await appPage.reload();
-    await appPage.waitForLoadState("domcontentloaded");
+    await seedStoredRecord(appPage, "recents", [
+      {
+        path: "local:0000dead/moved-away.mid",
+        name: "moved-away.mid",
+        timestamp: Date.now(),
+      },
+    ]);
 
     const staleCard = appPage.getByTitle("moved-away.mid");
     await expect(staleCard).toBeVisible();
@@ -192,31 +185,19 @@ test.describe("Error recovery", () => {
     await expect(
       appPage.getByRole("button", { name: "Start Playing" }),
     ).toBeFocused();
-    expect(JSON.parse(readFileSync(recentsPath, "utf-8"))).toEqual([]);
+    await expect.poll(() => readStoredRecord(appPage, "recents")).toEqual([]);
   });
 
   test("library recovery removes the stale recent from the main menu too", async ({
-    electronApp,
     appPage,
   }) => {
-    const userDataPath = await electronApp.evaluate(({ app }) =>
-      app.getPath("userData"),
-    );
-    const recentsPath = join(userDataPath, "recents.json");
-    const stalePath = join(userDataPath, "library-moved-away.mid");
-    writeFileSync(
-      recentsPath,
-      JSON.stringify([
-        {
-          path: stalePath,
-          name: "library-moved-away.mid",
-          timestamp: Date.now(),
-        },
-      ]),
-      "utf-8",
-    );
-    await appPage.reload();
-    await appPage.waitForLoadState("domcontentloaded");
+    await seedStoredRecord(appPage, "recents", [
+      {
+        path: "local:0000dead/library-moved-away.mid",
+        name: "library-moved-away.mid",
+        timestamp: Date.now(),
+      },
+    ]);
     await gotoLibrary(appPage);
 
     const continueRecent = appPage.getByTestId("song-library-continue");
@@ -229,31 +210,19 @@ test.describe("Error recovery", () => {
     await expect(continueRecent).toBeHidden();
     await appPage.getByRole("button", { name: "Close / Back" }).click();
     await expect(appPage.getByTitle("library-moved-away.mid")).toBeHidden();
-    expect(JSON.parse(readFileSync(recentsPath, "utf-8"))).toEqual([]);
+    await expect.poll(() => readStoredRecord(appPage, "recents")).toEqual([]);
   });
 
   test("failed removal keeps recovery and stale cards available in both views", async ({
-    electronApp,
     appPage,
   }) => {
-    const userDataPath = await electronApp.evaluate(({ app }) =>
-      app.getPath("userData"),
-    );
-    const recentsPath = join(userDataPath, "recents.json");
-    const stalePath = join(userDataPath, "read-only-recent.mid");
-    writeFileSync(
-      recentsPath,
-      JSON.stringify([
-        {
-          path: stalePath,
-          name: "read-only-recent.mid",
-          timestamp: Date.now(),
-        },
-      ]),
-      "utf-8",
-    );
-    await appPage.reload();
-    await appPage.waitForLoadState("domcontentloaded");
+    await seedStoredRecord(appPage, "recents", [
+      {
+        path: "local:0000dead/read-only-recent.mid",
+        name: "read-only-recent.mid",
+        timestamp: Date.now(),
+      },
+    ]);
     await gotoLibrary(appPage);
 
     const continueRecent = appPage.getByTestId("song-library-continue");
@@ -261,8 +230,12 @@ test.describe("Error recovery", () => {
     const libraryRecovery = appPage.getByTestId("recent-file-recovery");
     await expect(libraryRecovery).toBeVisible();
 
-    rmSync(recentsPath);
-    mkdirSync(recentsPath);
+    // Simulate browser storage refusing the write.
+    await appPage.evaluate(() => {
+      window.api.removeRecentFile = async () => {
+        throw new Error("storage is read-only");
+      };
+    });
     const libraryFailure = appPage.waitForEvent(
       "console",
       (message) =>

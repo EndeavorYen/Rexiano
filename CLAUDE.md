@@ -10,7 +10,7 @@
 
 進度 checkbox 只活在 [docs/ROADMAP.md](docs/ROADMAP.md)。這份文件不記 phase 狀態。DESIGN.md 是架構歷史，不要把它的 Phase 章節、OSMD 對照或簽章描述當成待辦。
 樂譜主渲染器是 VexFlow。不要加入 OSMD，不要做 OSMD native cursor，不要做第二套記譜引擎。
-已公開的安裝檔是未簽章的。fail-closed 簽章不是使用者現在下載到的路徑。不要在這裡做 issue 187。
+Rexiano 只有網頁版（Vercel + PWA），只支援電腦與平板。桌面版已移除，不要加回 Electron，也不要做 issue 187（桌面簽章）。
 `site/` 不是產品需求。不要把它寫進 ROADMAP 的下一程。
 
 ## 開發工作流程（必遵守）
@@ -26,13 +26,13 @@
 
 ## 技術堆疊速查
 
-- **框架**: Electron 44 + React 19 + TypeScript 5.9
-- **建置**: electron-vite 5 + Vite 7 + Tailwind CSS 4
+- **框架**: 網頁 App（React 19 + TypeScript 5.9），部署在 Vercel，可安裝成 PWA
+- **建置**: Vite 7 + Tailwind CSS 4 + vite-plugin-pwa
 - **渲染**: PixiJS 8（下落音符）、CSS（鍵盤 / UI）
 - **狀態**: Zustand 5（store 見下方列表）
-- **測試**: Vitest 4
+- **測試**: Vitest 4、Playwright（Chromium，跑 `vite preview`）
 - **套件管理**: pnpm
-- **音頻**: Web Audio API + SoundFont（`resources/piano.sf2`, 6MB）
+- **音頻**: Web Audio API + SoundFont（`public/piano.sf2`）
 
 ## 前端美學守則
 
@@ -61,8 +61,23 @@ Interpret creatively and make unexpected choices that feel genuinely designed fo
 
 ## 已知陷阱
 
-- **WSL2 + Electron**：VS Code 終端設定 `ELECTRON_RUN_AS_NODE=1` 會讓 Electron 以 Node 模式運行，須 `unset` 它。WSL2 不支援 Chromium sandbox，需 `NO_SANDBOX=1`
-- **IPC 傳 `number[]` 而非 `Uint8Array`**：Electron structured clone 會遺失 `Uint8Array` 型別，renderer 端再轉回即可
+- **`window.api` 是網頁 platform 層**（`src/platform/webApi.ts`），不是 IPC。檔案資料仍以 `number[]` 傳遞，沿用桌面版的介面形狀
+- **匯入的檔案路徑是 `local:<hash>/<檔名>`**，指向 IndexedDB 裡的檔案，不是磁碟路徑。舊備份裡的絕對路徑會被當成「已遺失」
+- **Safari（含所有 iOS / iPadOS 瀏覽器）沒有 Web MIDI 與 Web Bluetooth**。不要假設 `navigator.requestMIDIAccess` 存在
+- **Service worker 只在正式 build 註冊**；`VITE_REXIANO_E2E=1` 的 e2e build 不註冊
+
+## 網頁 platform 層
+
+```
+src/platform/
+  types.ts               ← RexianoApi 介面（window.api 的型別）
+  webApi.ts              ← 瀏覽器實作：fetch 靜態檔、IndexedDB、檔案選擇、下載、launchQueue
+  browserStore.ts        ← IndexedDB key-value（records / files），失敗時退回記憶體
+  installWebPlatform.ts  ← 在 main.tsx 啟動時掛上 window.api
+```
+
+- Feature 程式碼繼續呼叫 `window.api.*`；新增平台能力時加在 `RexianoApi` 與 `webApi.ts`，並在 `webApi.test.ts` 用 `createMemoryStore()` 測
+- 練習紀錄與最近開啟存在 IndexedDB `records`；匯入的檔案存在 `files`（上限 100 個，最久沒開的先刪）
 
 ## Zustand Store 一覽
 
@@ -80,7 +95,7 @@ Interpret creatively and make unexpected choices that feel genuinely designed fo
 ## 開發慣例
 
 - PixiJS 透過 `store.getState()` 直接讀取 Zustand（非 React hook），避免 re-render
-- 主題色統一透過 CSS Custom Properties `var(--color-*)` 引用，定義在 `src/renderer/src/themes/tokens.ts`
+- 主題色統一透過 CSS Custom Properties `var(--color-*)` 引用，定義在 `src/themes/tokens.ts`
 - 字型使用 @fontsource 離線打包（Nunito / DM Sans / JetBrains Mono），不依賴 CDN
 - 測試檔案放在對應模組旁邊（`*.test.ts`），使用 Vitest
 - **引擎層（`engines/`）為純邏輯，不依賴 React**；Store 層橋接引擎與 React；Features 層為 UI 元件
@@ -141,7 +156,7 @@ features/midiDevice/   ← React UI 元件
 - **MidiInputParser 使用 callback pattern**（`onNoteOn(cb)` / `onNoteOff(cb)` / `onCC(cb)`），不使用 EventEmitter
 - **Parser 與 Store 的橋接**：在 `useMidiDeviceStore` 中以 module-level 變數管理 `_parser` 實例，透過 `syncParserToActiveInput()` 在裝置切換時自動 attach/detach
 - **連線狀態指示燈使用固定色（非 theme vars）**：綠/灰/紅具有通用語義意義，需在所有主題下保持一致對比（見 `ConnectionStatus.tsx` JSDoc 說明）
-- **Electron MIDI 權限**：在 main process 中透過 `session.setPermissionRequestHandler` 自動核准 `midi` 權限請求（`src/main/ipc/midiDeviceHandlers.ts`）
+- **MIDI 權限**：由瀏覽器詢問使用者；藍牙 MIDI 用瀏覽器原生配對視窗（`BleMidiManager` → `navigator.bluetooth.requestDevice`）
 
 ### 測試注意事項
 
@@ -162,5 +177,5 @@ engines/audio/
 ### 關鍵要點
 
 - **時間基準**：播放中使用 `AudioContext.currentTime`（硬體時鐘），非 `requestAnimationFrame`
-- **SoundFont**：`resources/piano.sf2`（TimGM6mb, 6MB），透過 IPC 以 `number[]` 傳送到 renderer
+- **SoundFont**：`public/piano.sf2`，由 `window.api.loadSoundFont` 以靜態檔 fetch，並由 service worker 預先快取
 - **合成器 fallback**：若 SF2 載入失敗，退回正弦波合成音色

@@ -29,7 +29,8 @@ describe("agent docs do not regenerate deleted chrome", () => {
     const claude = readRepoFile("CLAUDE.md");
 
     expect(claude).toContain("樂譜主渲染器是 VexFlow。不要加入 OSMD");
-    expect(claude).toContain("已公開的安裝檔是未簽章的");
+    expect(claude).toContain("Rexiano 只有網頁版");
+    expect(claude).toContain("不要加回 Electron");
     expect(claude).toContain("`site/` 不是產品需求");
   });
 
@@ -52,33 +53,18 @@ describe("agent docs do not regenerate deleted chrome", () => {
     );
   });
 
-  test("ROADMAP says published assets are unsigned", () => {
+  test("ROADMAP records the move to the web", () => {
     const roadmap = readRepoFile("docs/ROADMAP.md");
 
-    expect(roadmap).toContain("已公開的 GitHub Release 安裝檔是未簽章的");
-    expect(roadmap).toContain(
-      "- [ ] 使用 production secrets 完成真實三平台簽章發行與安裝 smoke 證據（#187）",
-    );
+    expect(roadmap).toContain("Phase 10 — 網頁版（Vercel + PWA）");
+    expect(roadmap).toContain("1.6.0 是最後一個桌面版");
+    expect(roadmap).not.toContain("- [ ] 使用 production secrets");
   });
 
   test("ROADMAP keeps VexFlow as the only renderer", () => {
     const roadmap = readRepoFile("docs/ROADMAP.md");
 
     expect(roadmap).toContain("不要併入 OSMD，不要做 OSMD native cursor");
-  });
-
-  test("release signing doc is not the live path", () => {
-    const signingDocs = readRepoFile("docs/release-signing.md");
-
-    expect(signingDocs).toContain(
-      "Published GitHub Release assets are unsigned",
-    );
-    expect(signingDocs).toContain(
-      "Fail-closed signing is not the live public path",
-    );
-    expect(signingDocs).not.toContain(
-      "Official production releases fail closed",
-    );
   });
 
   test("P2 checklist uses the surviving surface", () => {

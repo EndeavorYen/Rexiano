@@ -862,14 +862,14 @@ features/insights/
 - i18n 框架：`react-i18next` 或自建輕量 key-value map
 - 預設語言跟隨系統 `navigator.language`
 - 初期僅支援 `zh-TW` 和 `en`
-- 翻譯檔案放在 `src/renderer/src/locales/`
+- 翻譯檔案放在 `src/locales/`
 
 ---
 
 ### Phase 6.5 新增檔案架構
 
 ```
-src/renderer/src/
+src/
 +-- hooks/
 |   +-- useKeyboardShortcuts.ts     ← 全域鍵盤快捷鍵
 +-- stores/

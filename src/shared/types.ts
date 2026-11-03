@@ -1,81 +1,16 @@
-/** Result of opening a MIDI file via the file dialog */
+/** Result of opening a MIDI file */
 export interface MidiFileResult {
   /** Original file name (e.g. "moonlight_sonata.mid") */
   fileName: string;
   /** Raw file content as a Uint8Array-compatible array */
   data: number[];
-  /** Absolute file path on disk (present for user-imported files, absent for built-in songs) */
+  /** Browser-storage path (`local:<hash>/<name>`) for imported files; absent for built-in songs */
   path?: string;
 }
 
-/** IPC channel names — single source of truth */
-export const IpcChannels = {
-  OPEN_MIDI_FILE: "dialog:openMidiFile",
-  /** OS file association: renderer atomically takes the latest pending MIDI path */
-  TAKE_PENDING_ASSOCIATED_MIDI_FILE: "app:takePendingAssociatedMidiFile",
-  /** OS file association: main notifies renderer that a path is ready to pull */
-  ASSOCIATED_MIDI_FILE_PENDING: "app:associatedMidiFilePending",
-  /** Phase 4: Load SoundFont file from resources/ directory */
-  LOAD_SOUNDFONT: "audio:loadSoundFont",
-  /** Phase 5: Grant MIDI device access permission */
-  MIDI_REQUEST_ACCESS: "midi:requestAccess",
-  /** Phase 5: List available MIDI devices */
-  MIDI_DEVICE_LIST: "midi:deviceList",
-  /** BLE MIDI: discovered device snapshot from main to renderer */
-  BLUETOOTH_SELECTION_UPDATE: "midi:bluetoothSelectionUpdate",
-  /** BLE MIDI: choose one device offered by the active native request */
-  BLUETOOTH_SELECTION_CHOOSE: "midi:bluetoothSelectionChoose",
-  /** BLE MIDI: cancel the active native request */
-  BLUETOOTH_SELECTION_CANCEL: "midi:bluetoothSelectionCancel",
-  /** Song library: list all built-in songs */
-  LIST_BUILTIN_SONGS: "library:listBuiltinSongs",
-  /** Song library: load a specific built-in song by ID */
-  LOAD_BUILTIN_SONG: "library:loadBuiltinSong",
-  /** Phase 6.5: Save a practice session record */
-  SAVE_SESSION: "progress:saveSession",
-  /** Phase 6.5: Load all practice session records */
-  LOAD_SESSIONS: "progress:loadSessions",
-  /** Phase 6.5: Save a recently opened MIDI file */
-  SAVE_RECENT_FILE: "recents:saveRecentFile",
-  /** Phase 6.5: Load list of recently opened MIDI files */
-  LOAD_RECENT_FILES: "recents:loadRecentFiles",
-  /** Phase 6.5: Remove one recently opened MIDI file */
-  REMOVE_RECENT_FILE: "recents:removeRecentFile",
-  /** Phase 6.5: Load a MIDI file by absolute path (for recent files) */
-  LOAD_MIDI_PATH: "dialog:loadMidiPath",
-  /** Editor: export generated MIDI bytes via a save dialog */
-  EXPORT_MIDI_FILE: "dialog:exportMidiFile",
-  /** User data backup: export file-backed scopes from userData */
-  USER_DATA_EXPORT_FILES: "userData:exportFiles",
-  /** User data backup: import file-backed scopes into userData */
-  USER_DATA_IMPORT_FILES: "userData:importFiles",
-  /** User data backup: reset file-backed scopes in userData */
-  USER_DATA_RESET_FILES: "userData:resetFiles",
-  /** User data backup: roll back a pending cross-process transaction */
-  USER_DATA_ROLLBACK_TRANSACTION: "userData:rollbackTransaction",
-  /** User data backup: finalize and clear a pending transaction journal */
-  USER_DATA_COMPLETE_TRANSACTION: "userData:completeTransaction",
-  /** User data backup: recover an interrupted transaction after restart */
-  USER_DATA_RECOVER_TRANSACTION: "userData:recoverTransaction",
-  /** Song library: choose a watched folder and scan MIDI files */
-  SELECT_WATCHED_MIDI_FOLDER: "library:selectWatchedMidiFolder",
-  /** Song library: rescan existing watched MIDI folders */
-  SCAN_WATCHED_MIDI_FOLDERS: "library:scanWatchedMidiFolders",
-  /** App update: check GitHub Releases for a newer packaged build */
-  UPDATE_CHECK: "app:updateCheck",
-  /** App update: download a selected release artifact */
-  UPDATE_DOWNLOAD: "app:updateDownload",
-  /** App update: open the release page in the browser */
-  UPDATE_OPEN_RELEASE: "app:updateOpenRelease",
-  /** App update: open the downloaded installer */
-  UPDATE_OPEN_DOWNLOADED: "app:updateOpenDownloaded",
-  /** App update: progress events emitted during artifact download */
-  UPDATE_PROGRESS: "app:updateProgress",
-} as const;
-
-/** Result of loading a SoundFont file via IPC */
+/** Result of loading a SoundFont file */
 export interface SoundFontResult {
-  /** Raw SF2 file content as a number[] (Uint8Array-safe for IPC) */
+  /** Raw SF2 file content as a number[] */
   data: number[];
   /** File name of the loaded SoundFont */
   fileName: string;
@@ -141,27 +76,6 @@ export interface MidiDeviceInfo {
   state: "connected" | "disconnected";
 }
 
-/** A device Electron has offered for the active Web Bluetooth request. */
-export interface BluetoothDeviceCandidate {
-  deviceId: string;
-  deviceName: string;
-}
-
-/** Complete accumulated device snapshot for one native chooser request. */
-export interface BluetoothDeviceSelectionUpdate {
-  requestId: string;
-  devices: BluetoothDeviceCandidate[];
-}
-
-export interface BluetoothDeviceSelectionChooseCommand {
-  requestId: string;
-  deviceId: string;
-}
-
-export interface BluetoothDeviceSelectionCancelCommand {
-  requestId: string;
-}
-
 // ─── Phase 6: Practice Mode ─────────────────────────────────────────
 
 /** Available practice modes */
@@ -193,7 +107,7 @@ export interface RecentFile {
   timestamp: number;
 }
 
-/** Record of a completed practice session, persisted to disk */
+/** Record of a completed practice session, persisted in browser storage */
 export interface SessionRecord {
   /** Unique identifier (UUID) */
   id: string;
@@ -215,90 +129,6 @@ export interface SessionRecord {
   tracksPlayed: number[];
   /** Per-note hit/miss results as JSON-safe entries for weak-spot analysis */
   noteResults?: [string, NoteResult][];
-}
-
-/** App version and changelog, exposed to renderer via IPC. */
-export interface AppInfo {
-  version: string;
-  changelog: string;
-}
-
-// ─── App Updates ────────────────────────────────────────────────────
-
-export interface AppUpdateProgress {
-  percent: number;
-  transferredBytes: number;
-  totalBytes: number;
-}
-
-export interface AppUpdateDisabled {
-  status: "disabled";
-  currentVersion: string;
-  reason: "development-build";
-}
-
-export interface AppUpdateNotAvailable {
-  status: "not-available";
-  currentVersion: string;
-  latestVersion: string;
-  releaseUrl: string;
-}
-
-export interface AppUpdateAvailable {
-  status: "available";
-  currentVersion: string;
-  latestVersion: string;
-  releaseName: string;
-  releaseUrl: string;
-  /** Opaque GitHub asset identity; main retains all trusted download metadata. */
-  artifactId: string;
-  artifactName: string;
-  artifactSize: number;
-}
-
-export interface AppUpdateFailed {
-  status: "failed";
-  currentVersion: string;
-  message: string;
-}
-
-export type AppUpdateCheckResult =
-  | AppUpdateDisabled
-  | AppUpdateNotAvailable
-  | AppUpdateAvailable
-  | AppUpdateFailed;
-
-export interface AppUpdateDownloading {
-  status: "downloading";
-  currentVersion: string;
-  latestVersion: string;
-  artifactName: string;
-  progress: AppUpdateProgress;
-}
-
-export type AppUpdateReady = Omit<AppUpdateAvailable, "status"> & {
-  status: "ready";
-  downloadedPath: string;
-  progress: AppUpdateProgress;
-};
-
-export type AppUpdateDownloadResult = AppUpdateReady | AppUpdateFailed;
-
-export type AppUpdateStatus =
-  | AppUpdateCheckResult
-  | AppUpdateDownloading
-  | AppUpdateReady;
-
-// ─── Watched MIDI Folders ───────────────────────────────────────────
-
-export interface WatchedMidiFolder {
-  folderPath: string;
-  midiFilePaths: string[];
-}
-
-export interface WatchedMidiFoldersScanResult {
-  folders: WatchedMidiFolder[];
-  errors: { folderPath: string; message: string }[];
 }
 
 // ─── User Data Backup ────────────────────────────────────────────────

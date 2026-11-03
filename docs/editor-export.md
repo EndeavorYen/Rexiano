@@ -16,7 +16,7 @@ Phase 8 currently supports MIDI export from the piano-roll editor.
 Verification:
 
 ```sh
-pnpm test src/renderer/src/features/editor/midiExport.test.ts src/main/ipc/fileHandlers.test.ts
+pnpm test src/features/editor/midiExport.test.ts src/main/ipc/fileHandlers.test.ts
 ```
 
 ## MusicXML Boundary

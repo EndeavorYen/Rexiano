@@ -1,6 +1,6 @@
 # Rexiano User Guide
 
-> **Version**: 1.3.0 | **Last updated**: 2026-06
+> **Version**: 2.0 (web) | **Last updated**: 2026-11
 >
 > Other languages: [繁體中文](./user-guide.md)
 >
@@ -15,7 +15,7 @@
 3. [Player and Display Modes](#3-player-and-display-modes)
 4. [Practice Modes and Speed](#4-practice-modes-and-speed)
 5. [Connecting a MIDI Keyboard](#5-connecting-a-midi-keyboard)
-6. [Settings, Backup, and Updates](#6-settings-backup-and-updates)
+6. [Settings and Backup](#6-settings-and-backup)
 7. [Keyboard Shortcuts](#7-keyboard-shortcuts)
 8. [FAQ](#8-faq)
 9. [Practice Tips for Parents](#9-practice-tips-for-parents)
@@ -50,12 +50,12 @@ The library is where you choose songs, organize your own MIDI files, and track p
 | Lesson path                | Groups built-in songs by level and progress            | Let children move through L0, L1, L2 gradually  |
 | Recent / Continue Practice | Reopens recently used scores and MIDI files            | Great for new teacher-assigned files            |
 | All Songs                  | Built-in library with search, filters, sort, favorites | Favorite 2-3 songs for the week                 |
-| Imported scores & MIDI     | Shows imported files and watched-folder songs          | Edit title, composer, tags, level, and category |
+| Imported scores & MIDI     | Shows files you imported, kept in this browser         | Edit title, composer, tags, level, and category |
 
 ### Import a Score or MIDI
 
 1. Press **Import a score or MIDI file**, or drag a `.musicxml` / `.mid` / `.midi` file into the Rexiano window.
-2. To manage a whole folder, press **Add folder**. Rexiano lists matching scores and MIDI files under **Imported scores & MIDI**.
+2. Imported files stay in this browser and are listed under **Imported scores & MIDI**, so you do not need to pick them again. Use the trash icon to remove one.
 3. After import, click the song row. It opens the preview instead of starting playback immediately.
 4. If the title or level is unclear, press the pencil icon to edit metadata for search and grouping.
 
@@ -149,11 +149,13 @@ You can watch and listen without a keyboard. Wait mode, play-along scoring, and 
 
 ### Bluetooth MIDI
 
+> Use Chrome or Edge. No iPad browser has Web MIDI; open Rexiano in a browser app with Web MIDI built in (for example Web MIDI Browser).
+
 | Platform | Suggested setup                                                                                                       |
 | -------- | --------------------------------------------------------------------------------------------------------------------- |
 | macOS    | Pair in system Bluetooth settings, then select the device in Rexiano; the **Bluetooth** button can also scan BLE MIDI |
 | Windows  | Pair first, then press **Bluetooth**; if no MIDI input appears, use MIDIberry or KORG BLE-MIDI Driver as a bridge     |
-| Linux    | Pair through BlueZ / ALSA, confirm a MIDI port appears, then select it in Rexiano                                     |
+| Android  | Press **Bluetooth** and choose the keyboard in the browser pairing dialog                                             |
 
 ### Latency Compensation
 
@@ -161,7 +163,7 @@ If Bluetooth feels slightly late in Wait mode, open **Settings -> Advanced -> Pr
 
 ---
 
-## 6. Settings, Backup, and Updates
+## 6. Settings and Backup
 
 Settings opens in **Basic** mode with theme and language only. Switch to **Advanced** for the full panel.
 
@@ -174,7 +176,9 @@ Settings opens in **Basic** mode with theme and language only. Switch to **Advan
 | Shortcuts | Common playback, speed, and back shortcuts                                               |
 | Language  | English / 繁體中文                                                                       |
 | Backup    | Export, import, or reset settings, progress, and recents                                 |
-| About     | Version, update check, and matching release download                                     |
+| About     | Version information                                                                      |
+
+Practice history and settings live in the browser. Export a **Backup** before switching computers or browsers or clearing site data.
 
 **Child Focus Mode** hides some advanced controls for children practicing alone. If playback is active and someone tries to leave the player, Rexiano asks before returning to the library.
 
