@@ -1,5 +1,21 @@
 # Changelog
 
+## [2.0.0](https://github.com/EndeavorYen/Rexiano/compare/v1.6.0...v2.0.0) (2026-11-03)
+
+
+### ⚠ BREAKING CHANGES
+
+* there is no desktop app anymore; 1.6.0 is the last desktop release. Its backups can be imported into the web app.
+
+### Features
+
+* turn Rexiano into a web-only app on Vercel ([#344](https://github.com/EndeavorYen/Rexiano/issues/344)) ([0c8d9dd](https://github.com/EndeavorYen/Rexiano/commit/0c8d9dd2b294db2497ff748286f0b716b5ea3ade))
+
+
+### Bug Fixes
+
+* **sheet:** align notation output with ground-truth scores ([#339](https://github.com/EndeavorYen/Rexiano/issues/339)) ([9c5d839](https://github.com/EndeavorYen/Rexiano/commit/9c5d83985cf9a4f9ebb5fa55096386d455122f74))
+
 ## [1.6.0](https://github.com/EndeavorYen/Rexiano/compare/v1.5.0...v1.6.0) (2026-10-01)
 
 
