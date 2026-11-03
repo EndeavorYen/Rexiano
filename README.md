@@ -5,7 +5,7 @@
 <h1 align="center">Rexiano</h1>
 
 <p align="center">
-  Free, offline piano practice — falling notes, sheet music, and MIDI.<br>
+  Free piano practice in your browser — falling notes, sheet music, and MIDI. Install it as an app to practice offline.<br>
   Built by a dad for Rex, and shared with anyone learning piano.
 </p>
 
@@ -14,12 +14,12 @@
 </p>
 
 <p align="center">
-  Unlike <strong>Synthesia</strong>, Rexiano is free, open source, and fully offline, with Watch and Wait practice modes.
+  Unlike <strong>Synthesia</strong>, Rexiano is free, open source, and runs right in the browser, with Watch and Wait practice modes.
 </p>
 
 <p align="center">
-  <a href="https://github.com/EndeavorYen/Rexiano/releases/latest"><strong>Download Rexiano 1.4.0</strong></a><br>
-  <sub>Windows · macOS · Linux · current app version <code>1.4.0</code></sub>
+  <strong>Open Rexiano in your browser</strong><br>
+  <sub>Computers and tablets · MIDI keyboards in Chrome / Edge · Installable as a PWA for offline use</sub>
 </p>
 
 <p align="center">
@@ -47,24 +47,27 @@
 
 ## Start Practicing
 
-1. Download the latest build from [GitHub Releases](https://github.com/EndeavorYen/Rexiano/releases/latest).
-2. Open Rexiano and choose a built-in song, or drag in your own `.mid` / `.midi` file.
+1. Open the Rexiano web app (hosted on Vercel) in Chrome or Edge.
+2. Choose a built-in song, or drag in your own `.mid` / `.midi` / `.musicxml` file. Imported files stay in this browser, so you can reopen them from Recent or the library.
 3. Start with **Watch** mode, then switch to **Wait** mode when you want Rexiano to pause until you play the right notes.
 4. Connect a USB or Bluetooth MIDI keyboard when you want live key feedback and scoring.
 
 No keyboard is required for listening and visual study. Wait mode and scored practice need MIDI input.
 
-## Install
+To practice offline, click **Install** in the Chrome / Edge address bar. Rexiano becomes a standalone app with the built-in songs and piano sound downloaded ahead of time, and it can open `.mid` files directly.
 
-| Platform | Download                                                                   | Notes                                                                                                                          |
-| -------- | -------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
-| Windows  | `rexiano-x.x.x-setup.exe`, `rexiano-x.x.x-win-x64.zip`, or portable `.exe` | Use the `.zip` build if your browser blocks direct `.exe` downloads. The installer adds shortcuts; portable builds do not.     |
-| macOS    | `rexiano-x.x.x-arm64.dmg` or `rexiano-x.x.x-x64.dmg`                       | Drag Rexiano to Applications. On first launch, use Control-click > Open or System Settings > Privacy & Security > Open Anyway. |
-| Linux    | `rexiano-x.x.x-x86_64.AppImage` or `rexiano-x.x.x-amd64.deb`               | AppImage runs without installation; `.deb` integrates with Debian/Ubuntu app menus.                                            |
+## Browser Support
 
-Public builds are currently unsigned/not notarized, so Windows SmartScreen or macOS Gatekeeper may ask for confirmation on first launch. See the [Installation Guide](docs/installation-en.md) and [release signing notes](docs/release-signing.md) for details.
+| Device                  | Practice & playback | MIDI keyboard                        |
+| ----------------------- | ------------------- | ------------------------------------ |
+| Windows / macOS / Linux | ✅                  | Chrome, Edge (USB and Bluetooth)     |
+| Android tablet          | ✅                  | Chrome (USB and Bluetooth)           |
+| iPad                    | ✅                  | Safari has no Web MIDI — see below   |
+| Phone                   | Not supported       | Layout targets computers and tablets |
 
-Each release includes `SHA256SUMS.txt` for checksum verification. Rexiano can also check GitHub Releases from Settings > About.
+**MIDI on iPad**: every iPadOS browser, Chrome included, runs on Safari's engine, which has no Web MIDI. Install a browser app with Web MIDI built in from the App Store (for example "Web MIDI Browser") and open the Rexiano address there.
+
+Practice history lives in the browser. Export it from **User Data Backup** in Settings before switching browsers or clearing site data. Backups from the 1.6.0 desktop app import here too.
 
 ## Highlights
 
@@ -79,13 +82,13 @@ Each release includes `SHA256SUMS.txt` for checksum verification. Rexiano can al
 
 ## Bluetooth MIDI
 
-Bluetooth MIDI support depends on how your operating system exposes the keyboard:
+In Chrome / Edge, the **Bluetooth** button in the MIDI drawer opens the browser's own pairing dialog. A keyboard already paired with the system that shows up as a normal MIDI port can be picked directly:
 
-| Platform | Setup                                                                                                                                            |
-| -------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
-| macOS    | Pair the keyboard in Bluetooth settings, then select it in Rexiano.                                                                              |
-| Linux    | Pair through BlueZ/ALSA, confirm the MIDI port appears, then select it in Rexiano.                                                               |
-| Windows  | Try Rexiano's Bluetooth scan first. If the paired keyboard does not appear as MIDI input, use MIDIberry or the KORG BLE-MIDI Driver as a bridge. |
+| Platform | Setup                                                                                                      |
+| -------- | ---------------------------------------------------------------------------------------------------------- |
+| macOS    | Pair in Audio MIDI Setup; the keyboard then appears as a normal MIDI device.                               |
+| Windows  | Try Rexiano's Bluetooth button first. If that fails, bridge it with MIDIberry or the KORG BLE-MIDI Driver. |
+| Android  | Pair with Rexiano's Bluetooth button.                                                                      |
 
 Detailed steps live in [User Guide -- Connecting a MIDI Keyboard](docs/user-guide-en.md#5-connecting-a-midi-keyboard).
 
@@ -104,12 +107,12 @@ Common commands:
 
 | Command            | Purpose                                      |
 | ------------------ | -------------------------------------------- |
-| `pnpm dev`         | Start Electron in development mode with HMR. |
-| `pnpm build`       | Typecheck and build the production app.      |
+| `pnpm dev`         | Start the Vite dev server with HMR.          |
+| `pnpm build`       | Typecheck and build to `dist/` (with PWA).   |
 | `pnpm lint`        | Run ESLint.                                  |
 | `pnpm typecheck`   | Run TypeScript checks.                       |
 | `pnpm test`        | Run Vitest unit tests.                       |
-| `pnpm test:e2e`    | Build and run Playwright Electron E2E tests. |
+| `pnpm test:e2e`    | Build and run Playwright E2E in Chromium.    |
 | `pnpm test:visual` | Build and run focused UI visual guard tests. |
 
 Before opening a PR, run:
@@ -121,47 +124,48 @@ pnpm lint && pnpm typecheck && pnpm test
 To refresh README screenshots:
 
 ```bash
-pnpm build
 pnpm exec playwright test -c scripts/playwright.readme-screenshots.config.ts
 ```
+
+## Deploy
+
+Import the repo in Vercel; `vercel.json` already sets Vite, pnpm, and the `dist/` output. Pushes to `main` deploy automatically and pull requests get preview URLs.
 
 ## Project Map
 
 ```text
 src/
-  main/                  Electron main process and IPC
-  preload/               Secure context bridge
-  renderer/src/
-    engines/             Pure logic: audio, falling notes, MIDI, practice
-    stores/              Zustand state
-    features/            React UI
-    themes/              CSS custom property tokens
-resources/               SoundFont files and built-in MIDI songs
-build/                   Electron-builder resources
+  platform/              Web platform: static assets, IndexedDB, file picker and downloads (window.api)
+  engines/               Pure logic: audio, falling notes, MIDI, practice
+  stores/                Zustand state
+  features/              React UI
+  themes/                CSS custom property tokens
+  shared/                Types and shared validation
+public/                  SoundFont, built-in MIDI songs, PWA icons
+site/                    GitHub Pages landing site
 ```
 
 ## Tech Stack
 
 | Layer     | Technology                                            |
 | --------- | ----------------------------------------------------- |
-| Desktop   | Electron 44                                           |
+| Build     | Vite 7, vite-plugin-pwa (Workbox)                     |
 | UI        | React 19, TypeScript 5.9, Tailwind CSS 4              |
 | Rendering | PixiJS 8 for falling notes, VexFlow 5 for sheet music |
 | State     | Zustand 5                                             |
-| MIDI      | Web MIDI API, `@tonejs/midi`                          |
+| MIDI      | Web MIDI API, Web Bluetooth, `@tonejs/midi`           |
 | Audio     | Web Audio API, `soundfont2`                           |
-| Testing   | Vitest 4, Playwright 1.58                             |
-| Packaging | electron-builder 26                                   |
+| Storage   | IndexedDB, localStorage                               |
+| Testing   | Vitest 4, Playwright                                  |
+| Hosting   | Vercel                                                |
 
 ## Documentation
 
-| Goal                                 | English                                                                        | 繁體中文                                                             |
-| ------------------------------------ | ------------------------------------------------------------------------------ | -------------------------------------------------------------------- |
-| Start using Rexiano                  | [User Guide](docs/user-guide-en.md)                                            | [使用手冊](docs/user-guide.md)                                       |
-| Install or troubleshoot first launch | [Installation Guide](docs/installation-en.md)                                  | [安裝指南](docs/installation.md)                                     |
-| Understand the architecture          | [Architecture](docs/architecture.md), [System Design](docs/DESIGN-en.md)       | [架構文件](docs/architecture-zh.md), [系統設計](docs/DESIGN.md)      |
-| Track project work                   | [Roadmap](docs/ROADMAP.md)                                                     | [開發路線圖](docs/ROADMAP.md)                                        |
-| Review release policy                | [Release Signing](docs/release-signing.md), [Update Flow](docs/update-flow.md) | [簽章政策](docs/release-signing.md), [更新流程](docs/update-flow.md) |
+| Goal                        | English                                                                  | 繁體中文                                                        |
+| --------------------------- | ------------------------------------------------------------------------ | --------------------------------------------------------------- |
+| Start using Rexiano         | [User Guide](docs/user-guide-en.md)                                      | [使用手冊](docs/user-guide.md)                                  |
+| Understand the architecture | [Architecture](docs/architecture.md), [System Design](docs/DESIGN-en.md) | [架構文件](docs/architecture-zh.md), [系統設計](docs/DESIGN.md) |
+| Track project work          | [Roadmap](docs/ROADMAP.md)                                               | [開發路線圖](docs/ROADMAP.md)                                   |
 
 ## Contributing
 

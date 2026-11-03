@@ -1,5 +1,5 @@
 import type { Locator, Page, TestInfo } from "@playwright/test";
-import { test, expect, waitForUiSettled } from "./fixtures/electronApp";
+import { test, expect, waitForUiSettled } from "./fixtures/app";
 import {
   choosePracticeMode,
   closeTopDrawer,

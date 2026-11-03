@@ -5,7 +5,7 @@
 <h1 align="center">Rexiano</h1>
 
 <p align="center">
-  免費、離線的鋼琴練習 — 下落音符、五線譜與 MIDI。<br>
+  免費的網頁鋼琴練習 — 下落音符、五線譜與 MIDI，裝成 App 後可離線使用。<br>
   一位爸爸為 Rex 打造，並分享給所有學琴的人。
 </p>
 
@@ -14,12 +14,12 @@
 </p>
 
 <p align="center">
-  和 <strong>Synthesia</strong> 不同：Rexiano 免費、開源、完全離線，並提供 Watch 與 Wait 練習模式。
+  和 <strong>Synthesia</strong> 不同：Rexiano 免費、開源、打開瀏覽器就能練，並提供 Watch 與 Wait 練習模式。
 </p>
 
 <p align="center">
-  <a href="https://github.com/EndeavorYen/Rexiano/releases/latest"><strong>下載 Rexiano 1.4.0</strong></a><br>
-  <sub>Windows · macOS · Linux · 目前 app 版本 <code>1.4.0</code></sub>
+  <strong>在瀏覽器開啟 Rexiano</strong><br>
+  <sub>電腦與平板 · Chrome / Edge 可接 MIDI 鍵盤 · 可安裝成 PWA 離線使用</sub>
 </p>
 
 <p align="center">
@@ -47,24 +47,27 @@
 
 ## 開始練習
 
-1. 從 [GitHub Releases](https://github.com/EndeavorYen/Rexiano/releases/latest) 下載最新 build。
-2. 開啟 Rexiano，選擇內建曲目，或拖入自己的 `.mid` / `.midi` 檔案。
+1. 用 Chrome 或 Edge 開啟 Rexiano 網頁版（部署在 Vercel）。
+2. 選擇內建曲目，或拖入自己的 `.mid` / `.midi` / `.musicxml` 檔案。匯入的檔案會存在這個瀏覽器裡，之後可從「最近開啟」或曲庫直接重開。
 3. 先用 **Watch** 模式聽與看，再切到 **Wait** 模式，讓 Rexiano 等你彈對音符才繼續。
 4. 想要即時琴鍵回饋與評分時，連接 USB 或藍牙 MIDI 鍵盤。
 
 只聽音樂與看視覺化不需要外接鍵盤。Wait 模式與評分練習需要 MIDI 輸入。
 
-## 安裝
+想離線練琴：在 Chrome / Edge 網址列點「安裝」，Rexiano 會變成獨立 App，內建曲目與音色會先下載好。裝好後也可以直接用 Rexiano 開啟 `.mid` 檔。
 
-| 平台    | 下載檔案                                                                  | 備註                                                                                    |
-| ------- | ------------------------------------------------------------------------- | --------------------------------------------------------------------------------------- |
-| Windows | `rexiano-x.x.x-setup.exe`、`rexiano-x.x.x-win-x64.zip` 或 portable `.exe` | 若瀏覽器阻擋直接下載 `.exe`，請改用 `.zip`。安裝版會建立捷徑；免安裝版不會。            |
-| macOS   | `rexiano-x.x.x-arm64.dmg` 或 `rexiano-x.x.x-x64.dmg`                      | 拖到「應用程式」。首次開啟可用 Control-click > 開啟，或到系統設定的隱私權與安全性允許。 |
-| Linux   | `rexiano-x.x.x-x86_64.AppImage` 或 `rexiano-x.x.x-amd64.deb`              | AppImage 免安裝；`.deb` 會整合到 Debian/Ubuntu 應用程式選單。                           |
+## 瀏覽器支援
 
-目前公開 build 尚未簽章/公證，因此 Windows SmartScreen 或 macOS Gatekeeper 第一次啟動時可能要求確認。細節請看[安裝指南](docs/installation.md)與[簽章說明](docs/release-signing.md)。
+| 裝置                         | 練習與播放 | MIDI 鍵盤                                |
+| ---------------------------- | ---------- | ---------------------------------------- |
+| Windows / macOS / Linux 電腦 | ✅         | Chrome、Edge（USB 與藍牙）               |
+| Android 平板                 | ✅         | Chrome（USB 與藍牙）                     |
+| iPad                         | ✅         | Safari 不支援 Web MIDI，請改用下面的方式 |
+| 手機                         | 不支援     | 版面以電腦與平板為主                     |
 
-每個 release 都會附上 `SHA256SUMS.txt` 供 checksum 驗證。Rexiano 也可以從「設定 > 關於」檢查 GitHub Releases 上的新版本。
+**iPad 接 MIDI 鍵盤**：iPadOS 上所有瀏覽器（包含 Chrome）都用 Safari 的核心，都沒有 Web MIDI。請到 App Store 安裝內建 Web MIDI 的瀏覽器 App（例如「Web MIDI Browser」），用它開啟 Rexiano 網址即可。
+
+練習紀錄存在瀏覽器裡。換瀏覽器或清除網站資料前，請先在設定的「使用者資料備份」匯出。桌面版（1.6.0）的備份檔也可以在這裡匯入。
 
 ## 特色
 
@@ -79,13 +82,13 @@
 
 ## 藍牙 MIDI
 
-藍牙 MIDI 是否可直接使用，取決於作業系統如何暴露鍵盤裝置：
+在 Chrome / Edge 按 MIDI 抽屜裡的「藍牙」按鈕，會跳出瀏覽器原生的配對視窗。若鍵盤已在系統配對且出現在一般 MIDI 裝置列表，也可以直接選它：
 
-| 平台    | 設定方式                                                                                                         |
-| ------- | ---------------------------------------------------------------------------------------------------------------- |
-| macOS   | 在系統藍牙設定配對鍵盤，再於 Rexiano 選擇裝置。                                                                  |
-| Linux   | 透過 BlueZ/ALSA 配對，確認 MIDI port 出現後再於 Rexiano 選擇。                                                   |
-| Windows | 先嘗試 Rexiano 的 Bluetooth 掃描。若已配對但沒有 MIDI input，請使用 MIDIberry 或 KORG BLE-MIDI Driver 作為橋接。 |
+| 平台    | 設定方式                                                                                     |
+| ------- | -------------------------------------------------------------------------------------------- |
+| macOS   | 在「音訊 MIDI 設定」配對鍵盤後，它會出現在一般 MIDI 裝置列表。                               |
+| Windows | 先試 Rexiano 的藍牙按鈕。若不行，用 MIDIberry 或 KORG BLE-MIDI Driver 橋接成一般 MIDI 裝置。 |
+| Android | 直接用 Rexiano 的藍牙按鈕配對。                                                              |
 
 詳細步驟請看[使用手冊 — 連接 MIDI 鍵盤](docs/user-guide.md#5-連接-midi-鍵盤)。
 
@@ -102,15 +105,15 @@ pnpm dev
 
 常用指令：
 
-| 指令               | 用途                                      |
-| ------------------ | ----------------------------------------- |
-| `pnpm dev`         | 以開發模式啟動 Electron，含 HMR。         |
-| `pnpm build`       | 型別檢查並建置正式版 app。                |
-| `pnpm lint`        | 執行 ESLint。                             |
-| `pnpm typecheck`   | 執行 TypeScript 檢查。                    |
-| `pnpm test`        | 執行 Vitest 單元測試。                    |
-| `pnpm test:e2e`    | 建置後執行 Playwright Electron E2E 測試。 |
-| `pnpm test:visual` | 建置後執行重點 UI 視覺 guard 測試。       |
+| 指令               | 用途                                    |
+| ------------------ | --------------------------------------- |
+| `pnpm dev`         | 啟動 Vite 開發伺服器，含 HMR。          |
+| `pnpm build`       | 型別檢查並建置到 `dist/`（含 PWA）。    |
+| `pnpm lint`        | 執行 ESLint。                           |
+| `pnpm typecheck`   | 執行 TypeScript 檢查。                  |
+| `pnpm test`        | 執行 Vitest 單元測試。                  |
+| `pnpm test:e2e`    | 建置後在 Chromium 執行 Playwright E2E。 |
+| `pnpm test:visual` | 建置後執行重點 UI 視覺 guard 測試。     |
 
 送出 PR 前請執行：
 
@@ -121,47 +124,48 @@ pnpm lint && pnpm typecheck && pnpm test
 更新 README 截圖：
 
 ```bash
-pnpm build
 pnpm exec playwright test -c scripts/playwright.readme-screenshots.config.ts
 ```
+
+## 部署
+
+在 Vercel 匯入這個 repo 即可，設定都在 `vercel.json`（Vite、pnpm、輸出 `dist/`）。推到 `main` 會自動部署，PR 會有預覽網址。
 
 ## 專案地圖
 
 ```text
 src/
-  main/                  Electron 主程序與 IPC
-  preload/               安全 context bridge
-  renderer/src/
-    engines/             純邏輯：音頻、下落音符、MIDI、練習
-    stores/              Zustand 狀態
-    features/            React UI
-    themes/              CSS custom property tokens
-resources/               SoundFont 檔案與內建 MIDI 曲目
-build/                   Electron-builder 資源
+  platform/              網頁 platform 層：靜態資源、IndexedDB、檔案選擇與下載（window.api）
+  engines/               純邏輯：音頻、下落音符、MIDI、練習
+  stores/                Zustand 狀態
+  features/              React UI
+  themes/                CSS custom property tokens
+  shared/                型別與共用驗證
+public/                  SoundFont、內建 MIDI 曲目、PWA 圖示
+site/                    GitHub Pages 介紹頁
 ```
 
 ## 技術堆疊
 
-| 層級     | 技術                                     |
-| -------- | ---------------------------------------- |
-| 桌面框架 | Electron 44                              |
-| UI       | React 19、TypeScript 5.9、Tailwind CSS 4 |
-| 渲染     | PixiJS 8 下落音符、VexFlow 5 五線譜      |
-| 狀態     | Zustand 5                                |
-| MIDI     | Web MIDI API、`@tonejs/midi`             |
-| 音頻     | Web Audio API、`soundfont2`              |
-| 測試     | Vitest 4、Playwright 1.58                |
-| 打包     | electron-builder 26                      |
+| 層級 | 技術                                        |
+| ---- | ------------------------------------------- |
+| 建置 | Vite 7、vite-plugin-pwa（Workbox）          |
+| UI   | React 19、TypeScript 5.9、Tailwind CSS 4    |
+| 渲染 | PixiJS 8 下落音符、VexFlow 5 五線譜         |
+| 狀態 | Zustand 5                                   |
+| MIDI | Web MIDI API、Web Bluetooth、`@tonejs/midi` |
+| 音頻 | Web Audio API、`soundfont2`                 |
+| 儲存 | IndexedDB、localStorage                     |
+| 測試 | Vitest 4、Playwright                        |
+| 部署 | Vercel                                      |
 
 ## 文件
 
-| 目標                   | 繁體中文                                                             | English                                                                        |
-| ---------------------- | -------------------------------------------------------------------- | ------------------------------------------------------------------------------ |
-| 開始使用 Rexiano       | [使用手冊](docs/user-guide.md)                                       | [User Guide](docs/user-guide-en.md)                                            |
-| 安裝或排除首次啟動問題 | [安裝指南](docs/installation.md)                                     | [Installation Guide](docs/installation-en.md)                                  |
-| 理解架構               | [架構文件](docs/architecture-zh.md)、[系統設計](docs/DESIGN.md)      | [Architecture](docs/architecture.md)、[System Design](docs/DESIGN-en.md)       |
-| 追蹤專案工作           | [開發路線圖](docs/ROADMAP.md)                                        | [Roadmap](docs/ROADMAP.md)                                                     |
-| 查看發佈政策           | [簽章政策](docs/release-signing.md)、[更新流程](docs/update-flow.md) | [Release Signing](docs/release-signing.md)、[Update Flow](docs/update-flow.md) |
+| 目標             | 繁體中文                                                        | English                                                                  |
+| ---------------- | --------------------------------------------------------------- | ------------------------------------------------------------------------ |
+| 開始使用 Rexiano | [使用手冊](docs/user-guide.md)                                  | [User Guide](docs/user-guide-en.md)                                      |
+| 理解架構         | [架構文件](docs/architecture-zh.md)、[系統設計](docs/DESIGN.md) | [Architecture](docs/architecture.md)、[System Design](docs/DESIGN-en.md) |
+| 追蹤專案工作     | [開發路線圖](docs/ROADMAP.md)                                   | [Roadmap](docs/ROADMAP.md)                                               |
 
 ## 貢獻
 

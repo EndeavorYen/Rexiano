@@ -33,7 +33,7 @@ flowchart TB
     IPC["src/main/ipc/*\nfile, MIDI, progress, recent files,\nbackup, watched folders, app info, updates"]
     Preload["src/preload/index.ts\ncontextBridge window.api"]
     Shared["src/shared/types.ts\nIpcChannels and IPC payload types"]
-    Renderer["src/renderer/src\nReact app"]
+    Renderer["src\nReact app"]
     Stores["stores/*\nZustand state bridge"]
     Features["features/*\nUI surfaces"]
     Engines["engines/*\npure logic and runtime engines"]
@@ -204,7 +204,7 @@ Keep changes small and layer-aligned:
 1. For behavior changes, start with the closest failing Vitest or Playwright test; documentation-only edits can skip TDD but still need a reasonable check.
 2. Use existing stores and engines before adding new modules.
 3. Keep public time values in seconds, not milliseconds or MIDI ticks.
-4. Keep theme colors in `src/renderer/src/themes/tokens.ts` and consume them via `var(--color-*)`; semantic status colors are the rare exception.
+4. Keep theme colors in `src/themes/tokens.ts` and consume them via `var(--color-*)`; semantic status colors are the rare exception.
 5. Keep fonts offline through existing `@fontsource` packages; do not add CDN fonts.
 6. Keep binary IPC payloads as `number[]`.
 7. Update `docs/ROADMAP.md` only when a tracked roadmap task is completed; it is the project progress source of truth.

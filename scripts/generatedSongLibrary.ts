@@ -6,7 +6,7 @@ import {
   type MidiEvent,
   type MidiKeySignatureEvent,
 } from "midi-file";
-import { findPickup } from "../src/renderer/src/engines/midi/pickup";
+import { findPickup } from "../src/engines/midi/pickup";
 
 export type Difficulty = "beginner" | "intermediate" | "advanced";
 export type Category =

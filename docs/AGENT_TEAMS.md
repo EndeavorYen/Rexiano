@@ -113,7 +113,7 @@ sudo apt install tmux && tmux && claude --teammate-mode tmux
 ```yaml
 身份：資深 TypeScript 工程師，專精非 UI 邏輯
 擅長：Web Audio API, WebGL, MIDI protocol, 演算法, 效能優化
-負責層：src/renderer/src/engines/*, src/main/ipc/*
+負責層：src/engines/*, src/main/ipc/*
 工具權限：Read, Edit, Write, Bash, Grep, Glob
 限制：不碰 *.tsx 元件、不改 CSS/theme
 ```
@@ -123,7 +123,7 @@ sudo apt install tmux && tmux && claude --teammate-mode tmux
 ```yaml
 身份：React + Tailwind 前端工程師
 擅長：React 19, Zustand, 元件設計, 響應式佈局, 無障礙
-負責層：src/renderer/src/features/*, src/renderer/src/stores/*
+負責層：src/features/*, src/stores/*
 工具權限：Read, Edit, Write, Bash, Grep, Glob
 限制：不碰 engines/ 引擎邏輯、不改 main process
 ```
@@ -439,7 +439,7 @@ interface IAudioEngine {
 | 檔案                       | 策略                             | Owner         |
 | -------------------------- | -------------------------------- | ------------- |
 | `src/shared/types.ts`      | Lead 在 Stage 1 定義新 interface | Lead          |
-| `src/renderer/src/App.tsx` | Lead 或指定 UI/UX                | Lead          |
+| `src/App.tsx` | Lead 或指定 UI/UX                | Lead          |
 | `package.json`             | Lead 安裝依賴                    | Lead          |
 | `themes/tokens.ts`         | 指定 Designer（上場時）或 UI/UX  | 單一 Teammate |
 | `assets/main.css`          | 指定 Designer（上場時）或 UI/UX  | 單一 Teammate |

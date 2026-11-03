@@ -10,7 +10,7 @@ import { join, dirname } from "path";
 import { fileURLToPath } from "url";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const outDir = join(__dirname, "..", "resources", "midi");
+const outDir = join(__dirname, "..", "public", "midi");
 mkdirSync(outDir, { recursive: true });
 
 function saveMidi(midi, filename) {

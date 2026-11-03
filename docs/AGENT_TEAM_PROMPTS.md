@@ -76,11 +76,11 @@ Rexiano — 開源跨平台鋼琴練習軟體（Synthesia 替代品）。
 Phase 4 目標：讓 falling notes 有聲音——載入鋼琴 SoundFont，透過 Web Audio API 播放。
 
 現有 scaffold（已建立但內部是 TODO stub）：
-- src/renderer/src/engines/audio/types.ts — 完整介面定義（IAudioEngine, ISoundFontLoader, IAudioScheduler）
-- src/renderer/src/engines/audio/AudioEngine.ts — stub class
-- src/renderer/src/engines/audio/SoundFontLoader.ts — stub class
-- src/renderer/src/engines/audio/AudioScheduler.ts — 有骨架（constructor, start/stop/seek/dispose, private _tick）
-- src/renderer/src/stores/usePlaybackStore.ts — 已有 audioStatus, volume
+- src/engines/audio/types.ts — 完整介面定義（IAudioEngine, ISoundFontLoader, IAudioScheduler）
+- src/engines/audio/AudioEngine.ts — stub class
+- src/engines/audio/SoundFontLoader.ts — stub class
+- src/engines/audio/AudioScheduler.ts — 有骨架（constructor, start/stop/seek/dispose, private _tick）
+- src/stores/usePlaybackStore.ts — 已有 audioStatus, volume
 - src/shared/types.ts — 已有 IpcChannels.LOAD_SOUNDFONT
 
 關鍵設計（來自 DESIGN.md）：
@@ -187,8 +187,8 @@ Lead 需要做：
    - IpcChannels 新增 MIDI_REQUEST_ACCESS, MIDI_DEVICE_LIST 等
 2. 更新 src/preload/index.d.ts 新增 MIDI 相關的 window.api 方法
 3. 建立空目錄：
-   - src/renderer/src/features/midiDevice/
-   - src/renderer/src/engines/midi/（已有 MidiFileParser.ts, types.ts）
+   - src/features/midiDevice/
+   - src/engines/midi/（已有 MidiFileParser.ts, types.ts）
 4. git commit "phase 5: scaffold midi device types and directories"
 ```
 
@@ -218,9 +218,9 @@ Phase 5 目標：連接實體 MIDI 鍵盤（USB/Bluetooth），支援輸入（�
 - MIDI Output 用途：將歌曲 MIDI 事件發送到外部鍵盤喇叭（示範模式）
 
 現有相關程式碼：
-- src/renderer/src/engines/midi/MidiFileParser.ts — MIDI 檔案解析（不需改）
-- src/renderer/src/engines/midi/types.ts — ParsedSong/ParsedTrack/ParsedNote
-- src/renderer/src/features/fallingNotes/PianoKeyboard.tsx — 已有即時高亮功能（onActiveNotesChange callback）
+- src/engines/midi/MidiFileParser.ts — MIDI 檔案解析（不需改）
+- src/engines/midi/types.ts — ParsedSong/ParsedTrack/ParsedNote
+- src/features/fallingNotes/PianoKeyboard.tsx — 已有即時高亮功能（onActiveNotesChange callback）
 - src/shared/types.ts — Lead 已新增 MIDI device 相關型別和 IPC channels
 
 團隊（4 人）：
@@ -326,8 +326,8 @@ Lead 需要做：
    - PracticeScore { totalNotes, hitNotes, missedNotes, accuracy, currentStreak, bestStreak }
    - NoteResult = 'hit' | 'miss' | 'pending'
 2. 建立空目錄：
-   - src/renderer/src/engines/practice/
-   - src/renderer/src/features/practice/
+   - src/engines/practice/
+   - src/features/practice/
 3. git commit "phase 6: scaffold practice mode types and directories"
 ```
 
@@ -528,10 +528,10 @@ Lead 需要做：
    - SessionRecord { id, songId, songTitle, timestamp, mode, speed, score, durationSeconds, tracksPlayed }
    - IpcChannels 新增 SAVE_SESSION, LOAD_SESSIONS
 3. 建立空目錄：
-   - src/renderer/src/hooks/
-   - src/renderer/src/features/onboarding/
-   - src/renderer/src/features/insights/
-   - src/renderer/src/engines/metronome/
+   - src/hooks/
+   - src/features/onboarding/
+   - src/features/insights/
+   - src/engines/metronome/
 4. git commit "phase 6.5: scaffold usability enhancements"
 ```
 
@@ -724,8 +724,8 @@ Lead 需要做：
    - Measure { notes, timeSignature, keySignature, clef }
    - DisplayMode = 'split' | 'sheet-only' | 'notes-only'
 3. 建立空目錄：
-   - src/renderer/src/engines/notation/
-   - src/renderer/src/features/sheetMusic/
+   - src/engines/notation/
+   - src/features/sheetMusic/
 4. git commit "phase 7: scaffold notation types and add vexflow"
 ```
 
@@ -880,8 +880,8 @@ Lead 需要做：
    - EditorTool = 'select' | 'draw' | 'erase'
    - EditorCommand (for Undo/Redo) { execute(), undo(), description }
 2. 建立空目錄：
-   - src/renderer/src/engines/editor/
-   - src/renderer/src/features/editor/
+   - src/engines/editor/
+   - src/features/editor/
 3. git commit "phase 8: scaffold editor types and directories"
 ```
 

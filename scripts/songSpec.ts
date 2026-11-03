@@ -7,7 +7,7 @@
  */
 import { Midi } from "@tonejs/midi";
 import { readFileSync } from "fs";
-import { pickupTimeSignature } from "../src/renderer/src/engines/midi/pickup";
+import { pickupTimeSignature } from "../src/engines/midi/pickup";
 import type { NoteEntry } from "./generatedSongLibrary";
 
 export interface SongSpec {

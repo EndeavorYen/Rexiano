@@ -1,4 +1,5 @@
 import { defineConfig } from "@playwright/test";
+import { e2eUse, e2eWebServer } from "./e2e/webServer";
 
 export default defineConfig({
   testDir: "./e2e",
@@ -18,7 +19,6 @@ export default defineConfig({
       maxDiffPixelRatio: 0.02,
     },
   },
-  use: {
-    actionTimeout: 10_000,
-  },
+  use: e2eUse,
+  webServer: e2eWebServer,
 });

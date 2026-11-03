@@ -33,7 +33,7 @@ flowchart TB
     IPC["src/main/ipc/*\nfile、MIDI、progress、recent files、\nbackup、watched folders、app info、updates"]
     Preload["src/preload/index.ts\ncontextBridge window.api"]
     Shared["src/shared/types.ts\nIpcChannels 與 IPC payload types"]
-    Renderer["src/renderer/src\nReact app"]
+    Renderer["src\nReact app"]
     Stores["stores/*\nZustand 狀態橋接"]
     Features["features/*\nUI 介面"]
     Engines["engines/*\n純邏輯與 runtime engines"]
@@ -204,7 +204,7 @@ flowchart TD
 1. 行為變更先寫最貼近的 Vitest 或 Playwright 失敗測試；純文件變更可不走 TDD，但仍需合理檢查。
 2. 新增 module 前，先確認既有 stores 與 engines 是否已涵蓋該領域。
 3. 公開時間值使用秒，不使用毫秒或 MIDI ticks。
-4. 主題色定義在 `src/renderer/src/themes/tokens.ts`，元件透過 `var(--color-*)` 使用；語意狀態色是少數例外。
+4. 主題色定義在 `src/themes/tokens.ts`，元件透過 `var(--color-*)` 使用；語意狀態色是少數例外。
 5. 字型維持既有 `@fontsource` 離線打包，不新增 CDN 字型。
 6. Binary IPC payload 使用 `number[]`。
 7. 只有完成被追蹤的 roadmap 任務時才更新 `docs/ROADMAP.md`；它是專案進度單一真實來源。

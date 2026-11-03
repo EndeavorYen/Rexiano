@@ -1,6 +1,4 @@
-import { mkdirSync, writeFileSync } from "fs";
-import { join } from "path";
-import { test, expect } from "./fixtures/electronApp";
+import { test, expect, seedStoredRecord } from "./fixtures/app";
 import type { SessionRecord } from "../src/shared/types";
 
 function makeSession(
@@ -32,12 +30,8 @@ function makeSession(
 
 test.describe.skip("Parent practice report", () => {
   test("main menu summarizes weekly and monthly progress from saved sessions", async ({
-    electronApp,
     appPage,
   }) => {
-    const userDataPath = await electronApp.evaluate(({ app }) =>
-      app.getPath("userData"),
-    );
     const now = await appPage.evaluate(() => Date.now());
     const sessions: SessionRecord[] = [
       makeSession("scale-1", now, 4, {
@@ -88,15 +82,7 @@ test.describe.skip("Parent practice report", () => {
       }),
     ];
 
-    mkdirSync(userDataPath, { recursive: true });
-    writeFileSync(
-      join(userDataPath, "progress.json"),
-      JSON.stringify(sessions, null, 2),
-      "utf-8",
-    );
-
-    await appPage.reload();
-    await appPage.waitForLoadState("domcontentloaded");
+    await seedStoredRecord(appPage, "progress", sessions);
 
     const report = appPage.getByTestId("parent-practice-report");
     await expect(report).toBeVisible();

@@ -1,4 +1,4 @@
-import { test, expect, waitForUiSettled } from "./fixtures/electronApp";
+import { test, expect, waitForUiSettled } from "./fixtures/app";
 import { gotoLibrary } from "./helpers/appHarness";
 
 const FORBIDDEN_ENGLISH_UI =

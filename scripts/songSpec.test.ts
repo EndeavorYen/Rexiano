@@ -7,7 +7,7 @@ import { buildMidiFromSpec, loadSongSpec, type SongSpec } from "./songSpec";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const specDir = join(here, "songSpecs");
-const midiDir = join(here, "..", "resources", "midi");
+const midiDir = join(here, "..", "public", "midi");
 
 const spec: SongSpec = {
   id: "happy-birthday",
