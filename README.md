@@ -146,6 +146,8 @@ pnpm exec playwright test -c scripts/playwright.readme-screenshots.config.ts
 
 Import the repo in Vercel; `vercel.json` already sets Vite, pnpm, and the `dist/` output. Pushes to `main` deploy automatically and pull requests get preview URLs.
 
+Releases are automatic too: add a version at the top of `src/data/changelog.json`, bump `package.json` to match, and once it lands on `main` the GitHub Release workflow creates the tag and the release notes (Chinese and English).
+
 ## Project Map
 
 ```text

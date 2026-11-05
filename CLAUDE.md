@@ -42,7 +42,7 @@ Rexiano 的介面和 colormon、sudomon 是同一家族（不含寶可夢元素�
 - **字型**：標題與數字用 Baloo 2，內文用 Noto Sans TC（@fontsource 打包；中文字型不進 precache，用到才快取）
 - **元件**（`src/assets/main.css`）：`.family-bar` 頂列、`.icon-btn` 44px 圓角方鈕（`.dot` 是紅點）、`.set-card` 卡片、`.segmented` 分段選擇、`.family-scrim` / `.family-sheet` 對話框、`.btn-primary-themed` 太陽黃按鈕、`.btn-ghost-themed` 外框按鈕
 - **頂列**：返回、Logo、標題，右邊是 ⓘ 更新紀錄（`ChangelogButton`）和齒輪設定
-- **更新紀錄**：使用者看得到的變更，在 `src/data/changelog.json` 最上面加一版（中英都寫，2–4 條白話），跑 `pnpm changelog` 產生 `CHANGELOG.md`
+- **更新紀錄**：使用者看得到的變更，在 `src/data/changelog.json` 最上面加一版（中英都寫，2–4 條白話），跑 `pnpm changelog` 產生 `CHANGELOG.md`，`package.json` 版本跟著改；合併進 main 後 `github-release.yml` 自動建標籤與 GitHub Release（內容由 `scripts/release-notes.mjs` 產生）
 - **琴鍵**：白鍵長寬約 4:1（`proportionalKeyboardHeight`），黑鍵 0.6 寬、0.63 長；有毛氈條、前緣與陰影。不要再把鍵盤壓扁
 - 精緻優先：留白一致（卡片 12–16px 內距、元件間 12px）、44px 以上的點擊區、不用 emoji
 
