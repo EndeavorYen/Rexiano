@@ -9,8 +9,8 @@ const officialActionPins: Record<string, string> = {
   "actions/checkout": "3d3c42e5aac5ba805825da76410c181273ba90b1",
   "actions/configure-pages": "45bfe0192ca1faeb007ade9deae92b16b8254a0d",
   "actions/deploy-pages": "368f82528645a54fb793d4d04e342629a3f51346",
-  "actions/setup-node": "820762786026740c76f36085b0efc47a31fe5020",
-  "actions/upload-artifact": "043fb46d1a93c77aae656e7c1c64a875d1fc6a0a",
+  "actions/setup-node": "949feb2413d6458794dcd2491c4babbbce0c15c1",
+  "actions/upload-artifact": "cf430e030ddbb5b0abf93d22962f4752f3646cd9",
   "actions/upload-pages-artifact": "fc324d3547104276b827a68afc52ff2a11cc49c9",
   "pnpm/action-setup": "ea17c68df8912ef543352723c149a84f56e3d413",
 };
