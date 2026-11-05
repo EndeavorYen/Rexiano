@@ -326,10 +326,6 @@ export interface TranslationMap {
   "settings.languageSwitcherAria": string;
   "settings.showFingering": string;
   "settings.theme": string;
-  "settings.themeName.lavender": string;
-  "settings.themeName.ocean": string;
-  "settings.themeName.peach": string;
-  "settings.themeName.midnight": string;
   "settings.changeTheme": string;
   "settings.tab.theme": string;
   "settings.tab.display": string;
@@ -573,6 +569,44 @@ export interface TranslationMap {
   "time.daysAgo": string;
   "time.monthsAgo": string;
   "time.longAgo": string;
+  "piano.title": string;
+  "piano.connect": string;
+  "piano.howToConnect": string;
+  "piano.manage": string;
+  "piano.connectedTo": string;
+  "piano.notConnected": string;
+  "piano.connectedHint": string;
+  "piano.connectHint": string;
+  "piano.homeHint": string;
+  "piano.iosTitle": string;
+  "piano.iosBody": string;
+  "piano.iosStep1": string;
+  "piano.iosStep2": string;
+  "piano.iosStep3": string;
+  "piano.getBluefy": string;
+  "piano.copyAddress": string;
+  "piano.copied": string;
+  "piano.browserTitle": string;
+  "piano.macSafariBody": string;
+  "piano.otherBrowserBody": string;
+  "piano.tryAgain": string;
+  "piano.soundSource": string;
+  "piano.soundPiano": string;
+  "piano.soundComputer": string;
+  "piano.soundPianoHint": string;
+  "piano.soundPianoWaiting": string;
+  "piano.soundComputerHint": string;
+  "piano.otherConnections": string;
+  "piano.otherConnectionsHint": string;
+  "piano.outputLatency": string;
+  "piano.outputLatencyHint": string;
+  "piano.outputLatencyValue": string;
+  "changelog.title": string;
+  "settings.themeSystem": string;
+  "settings.themeLight": string;
+  "settings.themeDark": string;
+  "settings.backupBrowserDesc": string;
+  "settings.reloadNow": string;
 }
 
 /**

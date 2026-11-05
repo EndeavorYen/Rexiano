@@ -253,7 +253,7 @@ export function TransportBar({
           {audioRecoverySuccessVisible && (
             <span
               className="control-chip text-xs font-body"
-              style={{ color: "var(--color-accent)" }}
+              style={{ color: "var(--color-accent-text)" }}
               title={audioGuidance?.guidance}
               aria-label={audioGuidance?.title}
               data-testid="audio-status-recovered"

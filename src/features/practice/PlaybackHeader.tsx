@@ -1,4 +1,4 @@
-import { AlertTriangle, ArrowLeft, PanelRightOpen } from "lucide-react";
+import { AlertTriangle, ArrowLeft, SlidersHorizontal } from "lucide-react";
 import { DisplayModeToggle } from "@renderer/features/sheetMusic/DisplayModeToggle";
 import { useTranslation } from "@renderer/i18n/useTranslation";
 import type { MidiDiagnosticNotice } from "@renderer/features/midiDiagnostics/midiDiagnosticNotice";
@@ -24,52 +24,50 @@ export function PlaybackHeader({
 
   return (
     <div
-      className={`surface-panel subtle-shadow ${
-        isSplitMode ? "px-2 py-1.5 mb-1.5" : "px-2.5 py-2 mb-2"
-      }`}
-      style={{
-        borderRadius: "1.1rem",
-      }}
+      className={isSplitMode ? "mb-1.5" : "mb-2"}
       data-testid="playback-header-panel"
     >
-      <div className="flex items-center gap-1.5 justify-between min-w-0">
+      <div className="family-bar min-w-0" style={{ minHeight: 48 }}>
+        <button
+          onClick={onExitPlayback}
+          className="icon-btn"
+          aria-label={t("song.backToLibrary")}
+          title={t("song.backToLibrary")}
+        >
+          <ArrowLeft size={20} />
+        </button>
         <div
-          className="min-w-0 flex-1 flex items-center gap-1.5 overflow-hidden"
+          className="min-w-0 flex-1 flex items-baseline gap-2 overflow-hidden"
           data-testid="playback-title-meta-row"
         >
-          <span className="kicker-label shrink-0 text-[11px]">
-            {t("app.subtitle")}
-          </span>
           <h2
-            className="font-semibold font-body truncate text-[1.02rem] leading-tight max-w-[min(40vw,420px)]"
+            className="m-0 truncate font-display text-xl font-extrabold leading-tight"
             data-testid="playback-song-title"
           >
             {songTitle}
           </h2>
+          <span
+            className="hidden shrink-0 text-sm font-bold md:inline"
+            style={{ color: "var(--color-text-muted)" }}
+          >
+            {t("app.subtitle")}
+          </span>
         </div>
 
         <div
-          className="flex flex-wrap items-center justify-end gap-1 shrink-0 max-w-full"
+          className="flex items-center justify-end gap-2 shrink-0"
           data-testid="playback-header-actions"
         >
           <DisplayModeToggle />
           <button
             ref={playbackDrawerTriggerRef}
             onClick={onOpenPlaybackDrawer}
-            className="btn-surface-themed flex min-h-9 items-center gap-1 rounded-lg font-body cursor-pointer px-2 py-[3px] text-[10px]"
+            className="icon-btn"
             data-testid="playback-drawer-trigger"
             aria-label={t("settings.title")}
+            title={t("settings.title")}
           >
-            <PanelRightOpen size={13} />
-            <span className="hidden sm:inline">{t("settings.title")}</span>
-          </button>
-          <button
-            onClick={onExitPlayback}
-            className="btn-surface-themed flex min-h-9 items-center gap-1 rounded-lg font-body cursor-pointer px-2 py-[3px] text-[10px]"
-            aria-label={t("song.backToLibrary")}
-          >
-            <ArrowLeft size={13} />
-            <span className="hidden sm:inline">{t("song.backToLibrary")}</span>
+            <SlidersHorizontal size={20} />
           </button>
         </div>
       </div>

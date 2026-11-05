@@ -3,7 +3,42 @@
  * Manages a double-buffered sprite pool, per-frame viewport updates, and
  * practice mode visual feedback (hit flash, miss fade, combo text pop).
  */
-import { Container, Sprite, Text, TextStyle, Texture } from "pixi.js";
+import { Container, NineSliceSprite, Text, TextStyle, Texture } from "pixi.js";
+
+/** Falling notes are nine-slice sprites so their rounded corners never stretch. */
+type Sprite = NineSliceSprite;
+
+/** Corner slice of the note texture, in px. */
+const NOTE_SLICE = 6;
+/** Gap left between notes on neighbouring keys, in px per side. */
+const NOTE_INSET = 1;
+
+/**
+ * A small rounded, lightly shaded tile. Tinted per track, so it is drawn in
+ * greys: full white at the top easing to a slightly darker bottom, with a
+ * faint edge so touching notes stay distinct.
+ */
+function createNoteTexture(): Texture | null {
+  if (typeof document === "undefined") return null;
+  const size = 16;
+  const canvas = document.createElement("canvas");
+  canvas.width = size;
+  canvas.height = size;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return null;
+  const r = 5;
+  const path = new Path2D();
+  path.roundRect(0.5, 0.5, size - 1, size - 1, r);
+  const fill = ctx.createLinearGradient(0, 0, 0, size);
+  fill.addColorStop(0, "#ffffff");
+  fill.addColorStop(1, "#e4e4e4");
+  ctx.fillStyle = fill;
+  ctx.fill(path);
+  ctx.strokeStyle = "rgba(0,0,0,0.16)";
+  ctx.lineWidth = 1;
+  ctx.stroke(path);
+  return Texture.from(canvas);
+}
 import type { ParsedSong, ParsedNote } from "@renderer/engines/midi/types";
 import type { TrackHandAssignment } from "@renderer/engines/midi/TrackHandAssignment";
 import {
@@ -200,7 +235,7 @@ export class NoteRenderer {
   init(canvasWidth: number): void {
     this.canvasWidth = canvasWidth;
     this.keyPositions = buildKeyPositions(canvasWidth, this.keyRange);
-    this.noteTexture = Texture.WHITE;
+    this.noteTexture = createNoteTexture() ?? Texture.WHITE;
 
     for (let i = 0; i < INITIAL_POOL_SIZE; i++) {
       this.pool.push(this.createSprite());
@@ -300,10 +335,10 @@ export class NoteRenderer {
           sprite.tint = color;
         }
 
-        sprite.x = kp.x;
+        sprite.x = kp.x + NOTE_INSET;
         sprite.y = rectY;
-        sprite.width = kp.width;
-        sprite.height = Math.max(h, 2);
+        sprite.width = Math.max(kp.width - NOTE_INSET * 2, 2);
+        sprite.height = Math.max(h, NOTE_SLICE * 2);
         sprite.visible = true;
         nextActive.set(key, sprite);
 
@@ -454,7 +489,13 @@ export class NoteRenderer {
   }
 
   private createSprite(): Sprite {
-    const s = new Sprite(this.noteTexture);
+    const s = new NineSliceSprite({
+      texture: this.noteTexture,
+      leftWidth: NOTE_SLICE,
+      rightWidth: NOTE_SLICE,
+      topHeight: NOTE_SLICE,
+      bottomHeight: NOTE_SLICE,
+    });
     s.visible = false;
     this.container.addChild(s);
     return s;

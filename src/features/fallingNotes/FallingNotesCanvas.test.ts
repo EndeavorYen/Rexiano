@@ -66,9 +66,10 @@ vi.mock("pixi.js", () => {
     Application: vi.fn(),
     Container: MockContainer,
     Sprite: MockSprite,
+    NineSliceSprite: MockSprite,
     Text: MockText,
     TextStyle: MockTextStyle,
-    Texture: { WHITE: {} },
+    Texture: { WHITE: {}, from: () => ({}) },
   };
 });
 

@@ -8,7 +8,11 @@ import { PianoKeyboard } from "./features/fallingNotes/PianoKeyboard";
 import { createOnScreenKeyInput } from "./features/practice/onScreenKeyInput";
 import { getPracticeEngines } from "./engines/practice/practiceManager";
 import { WaitInputHint } from "./features/practice/WaitInputHint";
-import { computeKeyRange } from "./engines/fallingNotes/keyPositions";
+import {
+  computeKeyRange,
+  isBlackKey,
+  type KeyRange,
+} from "./engines/fallingNotes/keyPositions";
 import { TransportBar } from "./features/fallingNotes/TransportBar";
 import { SettingsPanel } from "./features/settings/SettingsPanel";
 import { SongLibrary } from "./features/songLibrary/SongLibrary";
@@ -407,8 +411,15 @@ function App(): React.JSX.Element {
         viewportHeight,
         isSplitMode,
         isNarrowViewport,
+        whiteKeyWidth: viewportSize.width / countWhiteKeys(keyRange),
       }),
-    [isNarrowViewport, isSplitMode, viewportHeight],
+    [
+      isNarrowViewport,
+      isSplitMode,
+      viewportHeight,
+      viewportSize.width,
+      keyRange,
+    ],
   );
 
   const splitFocus = isSplitMode ? splitFocusPanel : "sheet";
@@ -513,9 +524,6 @@ function App(): React.JSX.Element {
               void handleOpenRecent(file);
             }}
           />
-          {showMenuSettings && (
-            <SettingsPanel onClose={() => setShowMenuSettings(false)} />
-          )}
         </>
       )}
 
@@ -534,9 +542,14 @@ function App(): React.JSX.Element {
               return handleOpenFile();
             }}
             onBack={() => applyRoute("menu")}
+            onOpenSettings={() => setShowMenuSettings(true)}
             onSessionIntentSelected={setSessionIntent}
           />
         </div>
+      )}
+
+      {!song && showMenuSettings && (
+        <SettingsPanel onClose={() => setShowMenuSettings(false)} />
       )}
 
       {/* View: Playback */}
@@ -657,3 +670,11 @@ function App(): React.JSX.Element {
 }
 
 export default App;
+
+function countWhiteKeys(range: KeyRange): number {
+  let count = 0;
+  for (let midi = range.first; midi <= range.last; midi++) {
+    if (!isBlackKey(midi)) count++;
+  }
+  return Math.max(1, count);
+}

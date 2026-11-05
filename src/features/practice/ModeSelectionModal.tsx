@@ -111,7 +111,7 @@ export function ModeSelectionModal({
               <div
                 className="mode-selection-card-icon w-11 h-11 rounded-full flex items-center justify-center"
                 style={{
-                  color: "var(--color-accent)",
+                  color: "var(--color-accent-text)",
                   background:
                     "color-mix(in srgb, var(--color-accent) 12%, var(--color-surface))",
                   border:

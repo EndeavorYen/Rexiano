@@ -54,7 +54,7 @@ export const en: TranslationMap = {
   "onboarding.getStarted": "Get Started",
 
   // ── Song Library ───────────────────────────────────────────────
-  "library.title": "Rexiano",
+  "library.title": "Library",
   "library.subtitle": "Pick a song to start practicing",
   "library.searchPlaceholder": "Search songs...",
   "library.importMidi": "Import a score or MIDI file",
@@ -312,9 +312,10 @@ export const en: TranslationMap = {
   "midi.bleConnectedDevice": "Bluetooth MIDI device",
   "practice.watch": "Watch",
   "practice.wait": "Wait",
-  "practice.waitInputHintTitle": "No keyboard connected",
-  "practice.waitInputHintBody": "Tap the keys below, or plug in your keyboard.",
-  "practice.waitInputHintConnect": "Connect keyboard",
+  "practice.waitInputHintTitle": "No piano connected",
+  "practice.waitInputHintBody":
+    "Tap the keys below, or connect your Bluetooth piano.",
+  "practice.waitInputHintConnect": "Connect piano",
   "practice.free": "Free",
   "practice.speed": "Speed",
   "practice.tracks": "Tracks",
@@ -357,10 +358,6 @@ export const en: TranslationMap = {
   "settings.languageSwitcherAria": "App language",
   "settings.showFingering": "Show fingering numbers",
   "settings.theme": "Theme",
-  "settings.themeName.lavender": "Lavender",
-  "settings.themeName.ocean": "Ocean",
-  "settings.themeName.peach": "Peach",
-  "settings.themeName.midnight": "Midnight",
   "settings.changeTheme": "Change theme",
   "settings.tab.theme": "Theme",
   "settings.tab.display": "Display",
@@ -630,4 +627,52 @@ export const en: TranslationMap = {
   "time.daysAgo": "{count}d ago",
   "time.monthsAgo": "{count}mo ago",
   "time.longAgo": "long ago",
+  "piano.title": "Piano",
+  "piano.connect": "Connect piano",
+  "piano.howToConnect": "How to connect",
+  "piano.manage": "Settings",
+  "piano.connectedTo": "Connected to {name}",
+  "piano.notConnected": "No piano connected",
+  "piano.connectedHint": "Your keys come in, and the song plays on the piano.",
+  "piano.connectHint":
+    "Press Connect, then pick your piano in the window that opens.",
+  "piano.homeHint":
+    "Connect a Bluetooth piano to score your playing and hear the song on the piano.",
+  "piano.iosTitle": "On iPad, open Rexiano in Bluefy",
+  "piano.iosBody":
+    "Safari and Chrome on iPad can't reach a Bluetooth piano. Bluefy is a free browser app that can.",
+  "piano.iosStep1": "Install Bluefy from the App Store",
+  "piano.iosStep2": "Copy this address and open it in Bluefy",
+  "piano.iosStep3": "Press Connect piano in Bluefy",
+  "piano.getBluefy": "Get Bluefy",
+  "piano.copyAddress": "Copy address",
+  "piano.copied": "Copied",
+  "piano.browserTitle": "This browser can't reach a Bluetooth piano",
+  "piano.macSafariBody":
+    "Safari on a Mac can't reach a Bluetooth piano. Open Rexiano in Chrome or Edge.",
+  "piano.otherBrowserBody":
+    "Open Rexiano in Chrome or Edge, on a computer or an Android tablet.",
+  "piano.tryAgain": "Try again",
+  "piano.soundSource": "Where the song plays",
+  "piano.soundPiano": "Piano",
+  "piano.soundComputer": "This device",
+  "piano.soundPianoHint":
+    "The song plays on the piano. In Wait mode it only plays the hand you're not practising.",
+  "piano.soundPianoWaiting":
+    "Once a piano is connected the song plays on it; until then this device's speakers play.",
+  "piano.soundComputerHint": "The song plays on this device's speakers.",
+  "piano.otherConnections": "Other ways to connect",
+  "piano.otherConnectionsHint":
+    "If the piano is already paired in the system (for example macOS Audio MIDI Setup), pick it here.",
+  "piano.outputLatency": "Line up the piano sound",
+  "piano.outputLatencyHint":
+    "If the piano sounds a little behind the falling notes, move this right to send the song earlier.",
+  "piano.outputLatencyValue": "{ms} ms early",
+  "changelog.title": "What's new",
+  "settings.themeSystem": "System",
+  "settings.themeLight": "Light",
+  "settings.themeDark": "Dark",
+  "settings.backupBrowserDesc":
+    "Practice history and settings live in this browser. Export a copy before switching computers or browsers, or clearing site data.",
+  "settings.reloadNow": "Reload",
 };

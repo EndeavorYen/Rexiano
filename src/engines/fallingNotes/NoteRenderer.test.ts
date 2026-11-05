@@ -1,5 +1,5 @@
 import { describe, test, expect, vi, beforeEach } from "vitest";
-import type { Sprite } from "pixi.js";
+import type { NineSliceSprite as Sprite } from "pixi.js";
 
 // Mock pixi.js before importing NoteRenderer
 
@@ -63,9 +63,10 @@ vi.mock("pixi.js", () => {
   return {
     Container: MockContainer,
     Sprite: MockSprite,
+    NineSliceSprite: MockSprite,
     Text: MockText,
     TextStyle: MockTextStyle,
-    Texture: { WHITE: {} },
+    Texture: { WHITE: {}, from: () => ({}) },
   };
 });
 
@@ -405,8 +406,8 @@ describe("NoteRenderer", () => {
     expect(renderer.activeNotes.has(60)).toBe(false);
   });
 
-  test("enforces minimum 2px height for very short notes", () => {
-    // duration=0.001 at pps=200 → h = 0.2px, should clamp to 2
+  test("keeps very short notes tall enough for their rounded corners", () => {
+    // duration=0.001 at pps=200 → h = 0.2px, clamps to two corner slices (12px)
     const song = makeSong([
       { notes: [{ midi: 60, time: 0, duration: 0.001 }] },
     ]);
@@ -422,7 +423,7 @@ describe("NoteRenderer", () => {
     }[];
     const visible = sprites.filter((s) => s.visible);
     expect(visible.length).toBe(1);
-    expect(visible[0].height).toBe(2);
+    expect(visible[0].height).toBe(12);
   });
 
   test("destroy cleans up resources", () => {

@@ -90,6 +90,16 @@ export class MidiOutputSender {
     );
   }
 
+  /** Send any short message on this sender's channel (status low nibble is replaced). */
+  sendRaw(message: number[], timestamp: number = 0): void {
+    if (!this._output || message.length === 0) return;
+    const [status, ...data] = message;
+    this._output.send(
+      [(status & 0xf0) | this._channel, ...data.map((b) => b & 0x7f)],
+      timestamp,
+    );
+  }
+
   /**
    * Send All Notes Off (CC 123, value 0) to silence all sounding notes.
    */

@@ -50,9 +50,9 @@
 1. 用 Chrome 或 Edge 開啟 Rexiano 網頁版（部署在 Vercel）。
 2. 選擇內建曲目，或拖入自己的 `.mid` / `.midi` / `.musicxml` 檔案。匯入的檔案會存在這個瀏覽器裡，之後可從「最近開啟」或曲庫直接重開。
 3. 先用 **Watch** 模式聽與看，再切到 **Wait** 模式，讓 Rexiano 等你彈對音符才繼續。
-4. 想要即時琴鍵回饋與評分時，連接 USB 或藍牙 MIDI 鍵盤。
+4. 連上藍牙鋼琴：彈的音會即時回饋和計分，曲子也會從鋼琴彈出來（等待模式只彈你沒在練的那一手）。
 
-只聽音樂與看視覺化不需要外接鍵盤。Wait 模式與評分練習需要 MIDI 輸入。
+只聽音樂與看視覺化不需要鋼琴；也可以直接點畫面上的琴鍵。Rexiano 只支援藍牙（BLE-MIDI）鋼琴，例如 Roland、Yamaha Clavinova、Kawai、Casio 的藍牙款；沒有藍牙的琴可加裝 Yamaha MD-BT01 或 CME WIDI Master。
 
 想離線練琴：在 Chrome / Edge 網址列點「安裝」，Rexiano 會變成獨立 App，內建曲目與音色會先下載好。裝好後也可以直接用 Rexiano 開啟 `.mid` 檔。
 
@@ -65,7 +65,7 @@
 | iPad                         | ✅         | Safari 不支援 Web MIDI，請改用下面的方式 |
 | 手機                         | 不支援     | 版面以電腦與平板為主                     |
 
-**iPad 接 MIDI 鍵盤**：iPadOS 上所有瀏覽器（包含 Chrome）都用 Safari 的核心，都沒有 Web MIDI。請到 App Store 安裝內建 Web MIDI 的瀏覽器 App（例如「Web MIDI Browser」），用它開啟 Rexiano 網址即可。
+**iPad 連藍牙鋼琴**：iPadOS 上所有瀏覽器（包含 Chrome）都用 Safari 的核心，沒有 Web Bluetooth。請到 App Store 安裝免費的 [Bluefy](https://apps.apple.com/app/id1492822055)，用它開啟 Rexiano 網址，再按「連接鋼琴」。Rexiano 在 iPad 的 Safari 裡也會顯示這個說明。
 
 練習紀錄存在瀏覽器裡。換瀏覽器或清除網站資料前，請先在設定的「使用者資料備份」匯出。桌面版（1.6.0）的備份檔也可以在這裡匯入。
 
@@ -80,17 +80,22 @@
 | 音色      | 內建 FreePats Upright Piano KW SoundFont，透過 Web Audio 播放，並保留合成器 fallback。 |
 | 檔案      | 內建曲庫，也可拖放匯入自己的 MIDI 檔。                                                 |
 
-## 藍牙 MIDI
+## 藍牙鋼琴
 
-在 Chrome / Edge 按 MIDI 抽屜裡的「藍牙」按鈕，會跳出瀏覽器原生的配對視窗。若鍵盤已在系統配對且出現在一般 MIDI 裝置列表，也可以直接選它：
+按「連接鋼琴」，在瀏覽器跳出的視窗選你的鋼琴。同一個連線雙向使用：
 
-| 平台    | 設定方式                                                                                     |
-| ------- | -------------------------------------------------------------------------------------------- |
-| macOS   | 在「音訊 MIDI 設定」配對鍵盤後，它會出現在一般 MIDI 裝置列表。                               |
-| Windows | 先試 Rexiano 的藍牙按鈕。若不行，用 MIDIberry 或 KORG BLE-MIDI Driver 橋接成一般 MIDI 裝置。 |
-| Android | 直接用 Rexiano 的藍牙按鈕配對。                                                              |
+- **琴鍵進來**：計分、等待模式判斷彈對沒有
+- **曲子出去**：設定裡「曲子從哪裡出聲」選「鋼琴」時，曲子從鋼琴彈出來，電腦會靜音；選「這台裝置」則用電腦喇叭
+- 觀看模式整首都彈；等待模式只彈你沒在練的那一手；連上時會自動切到平台鋼琴音色
+- 鋼琴聲音比畫面慢時，到設定的「鋼琴聲音對齊」往右調
 
-詳細步驟請看[使用手冊 — 連接 MIDI 鍵盤](docs/user-guide.md#5-連接-midi-鍵盤)。
+鋼琴已經在系統裡配對好（例如 Mac 的「音訊 MIDI 設定」）時，也可以在「其他連線方式」直接選它。
+
+詳細步驟請看[使用手冊 — 連接藍牙鋼琴](docs/user-guide.md#5-連接藍牙鋼琴)。
+
+## 外觀與更新紀錄
+
+介面和 colormon 等遊戲同一家族，可在設定選擇 跟著系統／淺色／深色。右上角 ⓘ 是更新紀錄，有新版本時會出現小紅點；內容來自 `src/data/changelog.json`，`CHANGELOG.md` 由 `pnpm changelog` 產生。
 
 ## 開發
 

@@ -8,6 +8,9 @@
 //   Service UUID:        03B80E5A-EDE8-4B33-A751-6CE34EC4C700
 //   Characteristic UUID: 7772E5DB-3868-4112-A1A9-F2669D106BF3
 //   Packet: [header, (timestamp, midi-status?, data...)+]
+//
+// The same characteristic carries both directions: notifications bring the
+// learner's key presses in, writes send the song out (see BleMidiOutput).
 
 const BLE_MIDI_SERVICE = "03b80e5a-ede8-4b33-a751-6ce34ec4c700";
 const BLE_MIDI_CHARACTERISTIC = "7772e5db-3868-4112-a1a9-f2669d106bf3";
@@ -29,6 +32,8 @@ export interface BleMidiCallbacks {
   ) => void;
   /** Fired only when an established connection is lost unexpectedly. */
   onDisconnect?: () => void;
+  /** Fired once the MIDI characteristic is ready for reading and writing. */
+  onConnected?: () => void;
 }
 
 export type BleMidiStatus =
@@ -80,7 +85,7 @@ export class BleMidiManager {
 
   /**
    * Scan for and connect to a BLE MIDI device.
-   * This triggers the browser/Electron Bluetooth device picker.
+   * This opens the browser's own Bluetooth device picker.
    */
   async connect(): Promise<void> {
     if (!BleMidiManager.isSupported) {
@@ -149,6 +154,7 @@ export class BleMidiManager {
       this._status = "connected";
       this._error = null;
       this._publishStatus();
+      this._callbacks.onConnected?.();
     } catch (err) {
       this._cleanupConnection();
       const msg = getConnectionErrorMessage(err);
@@ -156,6 +162,21 @@ export class BleMidiManager {
       this._status = "error";
       this._error = msg;
       this._publishStatus();
+    }
+  }
+
+  /**
+   * Send one BLE-MIDI packet to the piano. Without-response writes keep up
+   * with dense passages; older stacks only offer the acknowledged write.
+   */
+  async write(packet: Uint8Array): Promise<void> {
+    const characteristic = this._characteristic;
+    if (!characteristic) return;
+    const value = packet as Uint8Array<ArrayBuffer>;
+    if (characteristic.writeValueWithoutResponse) {
+      await characteristic.writeValueWithoutResponse(value);
+    } else {
+      await characteristic.writeValue(value);
     }
   }
 

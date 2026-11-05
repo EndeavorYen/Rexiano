@@ -1,8 +1,9 @@
 import { useState, useRef, useCallback } from "react";
-import { PanelRightOpen, X } from "lucide-react";
+import { X } from "lucide-react";
 import { useTranslation } from "@renderer/i18n/useTranslation";
 import { useDialogFocus } from "@renderer/hooks/useDialogFocus";
 import { DeviceSelector } from "../midiDevice/DeviceSelector";
+import { PianoQuickConnect } from "../midiDevice/PianoQuickConnect";
 
 export function SongLibraryMidiDrawer(): React.JSX.Element {
   const { t } = useTranslation();
@@ -25,15 +26,12 @@ export function SongLibraryMidiDrawer(): React.JSX.Element {
 
   return (
     <>
-      <button
-        ref={triggerRef}
-        onClick={() => setIsOpen(true)}
-        className="fixed right-5 bottom-5 z-30 btn-surface-themed rounded-full px-3 py-2 flex items-center gap-1.5 text-xs font-body cursor-pointer subtle-shadow"
-        data-testid="library-device-drawer-trigger"
-      >
-        <PanelRightOpen size={14} />
-        MIDI
-      </button>
+      <PianoQuickConnect
+        variant="pill"
+        onOpenDetails={() => setIsOpen(true)}
+        testId="library-device-drawer-trigger"
+        triggerRef={triggerRef}
+      />
 
       {isOpen && (
         <div className="app-overlay-backdrop" onClick={close}>
@@ -42,26 +40,26 @@ export function SongLibraryMidiDrawer(): React.JSX.Element {
             className="app-side-drawer"
             role="dialog"
             aria-modal="true"
-            aria-label="MIDI"
+            aria-label={t("piano.title")}
             tabIndex={-1}
             data-testid="library-midi-drawer"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="app-side-drawer-header">
-              <span className="kicker-label">MIDI</span>
+              <h2 className="m-0 font-display text-xl font-extrabold">
+                {t("piano.title")}
+              </h2>
               <button
                 ref={closeRef}
                 onClick={close}
-                className="btn-surface-themed w-9 h-9 rounded-full flex items-center justify-center cursor-pointer"
+                className="icon-btn"
                 aria-label={t("settings.close")}
               >
                 <X size={14} />
               </button>
             </div>
             <div className="app-side-drawer-body">
-              <section className="app-side-section">
-                <DeviceSelector onBeforeBluetoothConnect={close} />
-              </section>
+              <DeviceSelector />
             </div>
           </aside>
         </div>

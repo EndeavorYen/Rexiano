@@ -214,6 +214,7 @@ describe("useMidiDeviceStore", () => {
     onOutputChange?.({ id: "out-1" });
 
     expect(getMidiPlaybackOutputSender().isAttached).toBe(true);
+    expect(useMidiDeviceStore.getState().pianoOutputAvailable).toBe(true);
   });
 
   test("selectOutput(null) calls manager.disconnectOutput", () => {

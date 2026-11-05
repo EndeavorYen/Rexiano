@@ -18,7 +18,7 @@ describe("Theme integration", () => {
     return "--color-" + key.replace(/[A-Z]/g, (m) => "-" + m.toLowerCase());
   }
 
-  const ALL_THEME_IDS: ThemeId[] = ["lavender", "ocean", "peach", "midnight"];
+  const ALL_THEME_IDS: ThemeId[] = ["light", "dark"];
 
   describe.each(ALL_THEME_IDS)("theme %s CSS variable mapping", (id) => {
     const theme = themes[id];
@@ -37,7 +37,7 @@ describe("Theme integration", () => {
   });
 
   test("all themes produce identical CSS variable name sets", () => {
-    const referenceVars = Object.keys(themes.lavender.colors)
+    const referenceVars = Object.keys(themes.light.colors)
       .map((k) => colorKeyToCssVar(k))
       .sort();
 
@@ -45,15 +45,13 @@ describe("Theme integration", () => {
       const vars = Object.keys(themes[id].colors)
         .map((k) => colorKeyToCssVar(k))
         .sort();
-      expect(vars, `${id} CSS vars should match lavender`).toEqual(
-        referenceVars,
-      );
+      expect(vars, `${id} CSS vars should match light`).toEqual(referenceVars);
     }
   });
 
-  test("midnight theme inverts typical light/dark expectations", () => {
-    const lavender = themes.lavender;
-    const midnight = themes.midnight;
+  test("dark theme inverts typical light/dark expectations", () => {
+    const lavender = themes.light;
+    const midnight = themes.dark;
 
     // Background luminance comparison
     const lavBgLum = hexLuminance(lavender.colors.bg);

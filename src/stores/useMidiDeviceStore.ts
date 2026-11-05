@@ -7,6 +7,8 @@ import {
   type BleMidiStatus,
 } from "@renderer/engines/midi/BleMidiManager";
 import { MidiOutputSender } from "@renderer/engines/midi/MidiOutputSender";
+import { BleMidiOutput } from "@renderer/engines/midi/BleMidiOutput";
+import { PianoPlaybackOutput } from "@renderer/engines/midi/PianoPlaybackOutput";
 import { MIDI_CONNECTION_ERROR } from "@renderer/features/midiDevice/midiConnectionErrors";
 import { readRenderDiagnosticsFlag } from "@renderer/engines/fallingNotes/renderDiagnostics";
 
@@ -31,6 +33,8 @@ interface MidiDeviceState {
   bleStatus: BleMidiStatus;
   /** Connected BLE device name (e.g. "Roland FP-30X") */
   bleDeviceName: string | null;
+  /** A piano can receive the song (Bluetooth or a Web MIDI output port) */
+  pianoOutputAvailable: boolean;
 
   // ─── Actions ──────────────────────────────────
   /** Initialize MIDI access and begin listening for devices */
@@ -61,9 +65,17 @@ let _parser: MidiInputParser | null = null;
 /** Module-level BLE MIDI manager */
 let _bleManager: BleMidiManager | null = null;
 
-/** One stable sender is shared by device selection and song scheduling. */
+/** Web MIDI output port, used when the OS already exposes the piano. */
 const _playbackOutputSender = new MidiOutputSender();
 
+/** The one sink the AudioScheduler mirrors the song to. */
+const _pianoOutput = new PianoPlaybackOutput(_playbackOutputSender);
+
+export function getPianoPlaybackOutput(): PianoPlaybackOutput {
+  return _pianoOutput;
+}
+
+/** The Web MIDI leg of the piano output (OS-exposed output port). */
 export function getMidiPlaybackOutputSender(): MidiOutputSender {
   return _playbackOutputSender;
 }
@@ -107,6 +119,7 @@ export const useMidiDeviceStore = create<MidiDeviceState>()((set, get) => ({
   activeNotes: new Set(),
   bleStatus: "idle" as BleMidiStatus,
   bleDeviceName: null,
+  pianoOutputAvailable: false,
 
   connect: async () => {
     const manager = MidiDeviceManager.getInstance();
@@ -134,7 +147,11 @@ export const useMidiDeviceStore = create<MidiDeviceState>()((set, get) => ({
       } else {
         _playbackOutputSender.detach();
       }
-      set({ selectedOutputId: device?.id ?? null });
+      _pianoOutput.onWebMidiChanged();
+      set({
+        selectedOutputId: device?.id ?? null,
+        pianoOutputAvailable: _pianoOutput.hasPiano,
+      });
     });
 
     try {
@@ -171,6 +188,7 @@ export const useMidiDeviceStore = create<MidiDeviceState>()((set, get) => ({
     manager.disconnectInput();
     manager.disconnectOutput();
     _playbackOutputSender.detach();
+    _pianoOutput.onWebMidiChanged();
     manager.onDeviceListChange(null);
     manager.onActiveInputChange(null);
     manager.onActiveOutputChange(null);
@@ -184,9 +202,10 @@ export const useMidiDeviceStore = create<MidiDeviceState>()((set, get) => ({
     set({
       selectedInputId: null,
       selectedOutputId: null,
-      isConnected: false,
+      isConnected: get().bleStatus === "connected",
       connectionError: null,
       activeNotes: new Set(),
+      pianoOutputAvailable: _pianoOutput.hasPiano,
     });
   },
 
@@ -277,6 +296,14 @@ export const useMidiDeviceStore = create<MidiDeviceState>()((set, get) => ({
         });
       },
       onDisconnect: () => get().handleBluetoothDeviceLoss(),
+      onConnected: () => {
+        const manager = _bleManager;
+        if (!manager) return;
+        _pianoOutput.setBluetooth(
+          new BleMidiOutput({ write: (packet) => manager.write(packet) }),
+        );
+        set({ pianoOutputAvailable: true });
+      },
     });
 
     set({ bleStatus: "scanning", connectionError: null });
@@ -293,20 +320,28 @@ export const useMidiDeviceStore = create<MidiDeviceState>()((set, get) => ({
   },
 
   disconnectBluetooth: () => {
-    if (_bleManager) {
-      _bleManager.disconnect();
-      _bleManager = null;
+    // Let the piano hear "all keys up" before the link drops.
+    const output = _pianoOutput.detachBluetooth();
+    const manager = _bleManager;
+    _bleManager = null;
+    if (manager) {
+      void (output?.silenceAndClose() ?? Promise.resolve()).then(() =>
+        manager.disconnect(),
+      );
     }
     set({
       bleStatus: "idle",
       bleDeviceName: null,
       isConnected: get().selectedInputId !== null,
       activeNotes: new Set(),
+      pianoOutputAvailable: _pianoOutput.hasPiano,
     });
   },
 
   handleBluetoothDeviceLoss: () => {
+    _pianoOutput.setBluetooth(null);
     set({
+      pianoOutputAvailable: _pianoOutput.hasPiano,
       bleStatus: "idle",
       bleDeviceName: null,
       connectionError: null,

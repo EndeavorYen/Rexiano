@@ -1,7 +1,7 @@
 import { describe, test, expect } from "vitest";
 import { themes, hexToPixi, type ThemeId, type ThemeTokens } from "./tokens";
 
-const ALL_THEME_IDS: ThemeId[] = ["lavender", "ocean", "peach", "midnight"];
+const ALL_THEME_IDS: ThemeId[] = ["light", "dark"];
 
 /** All color keys that every theme must define */
 const REQUIRED_COLOR_KEYS: (keyof ThemeTokens["colors"])[] = [
@@ -129,7 +129,7 @@ function hueDistance(a: string, b: string): number {
 }
 
 describe("Theme tokens", () => {
-  test("all four theme IDs are defined", () => {
+  test("both theme IDs are defined", () => {
     for (const id of ALL_THEME_IDS) {
       expect(themes[id]).toBeDefined();
     }
@@ -174,8 +174,8 @@ describe("Theme tokens", () => {
     });
   });
 
-  describe("midnight theme (dark theme specifics)", () => {
-    const midnight = themes.midnight;
+  describe("dark theme specifics", () => {
+    const midnight = themes.dark;
 
     test("background is dark (low luminance)", () => {
       // #0f0f14 should have R,G,B all below 0x30
@@ -197,21 +197,23 @@ describe("Theme tokens", () => {
       expect(b).toBeGreaterThan(0xc0);
     });
 
-    test("white keys are dark (inverted for dark theme)", () => {
-      const r = parseInt(midnight.colors.keyWhite.slice(1, 3), 16);
-      expect(r).toBeLessThan(0x40);
+    test("keys still read as a piano: white keys light, black keys dark", () => {
+      const white = parseInt(midnight.colors.keyWhite.slice(1, 3), 16);
+      const black = parseInt(midnight.colors.keyBlack.slice(1, 3), 16);
+      expect(white).toBeGreaterThan(0xc0);
+      expect(black).toBeLessThan(0x20);
     });
 
-    test("has same number of color keys as lavender", () => {
+    test("has same number of color keys as light", () => {
       expect(Object.keys(midnight.colors).length).toBe(
-        Object.keys(themes.lavender.colors).length,
+        Object.keys(themes.light.colors).length,
       );
     });
   });
 
   describe("cross-theme consistency", () => {
     test("all themes have identical color key sets", () => {
-      const referenceKeys = Object.keys(themes.lavender.colors).sort();
+      const referenceKeys = Object.keys(themes.light.colors).sort();
       for (const id of ALL_THEME_IDS) {
         expect(
           Object.keys(themes[id].colors).sort(),
@@ -233,37 +235,21 @@ describe("Theme tokens", () => {
 
   describe("semantic text contrast", () => {
     const EXPECTED_SEMANTIC_COLORS = {
-      lavender: {
-        accent: "#705A87",
-        accentText: "#5F4A75",
-        onAccent: "#FFFFFF",
-        successText: "#166534",
-        dangerText: "#B91C1C",
-        controlBorder: "#6C6478",
+      light: {
+        accent: "#FFC53D",
+        accentText: "#1F7A45",
+        onAccent: "#3A2A00",
+        successText: "#1F7A45",
+        dangerText: "#C0392B",
+        controlBorder: "#7A879B",
       },
-      ocean: {
-        accent: "#0F766E",
-        accentText: "#0B5E58",
-        onAccent: "#FFFFFF",
-        successText: "#166534",
-        dangerText: "#B91C1C",
-        controlBorder: "#5C6F68",
-      },
-      peach: {
-        accent: "#9C5A3C",
-        accentText: "#7F4931",
-        onAccent: "#FFFFFF",
-        successText: "#166534",
-        dangerText: "#B91C1C",
-        controlBorder: "#6F5C50",
-      },
-      midnight: {
-        accent: "#4C8EA3",
-        accentText: "#5EA5BB",
-        onAccent: "#0E1013",
-        successText: "#86C4AD",
-        dangerText: "#FCA5A5",
-        controlBorder: "#97A6B6",
+      dark: {
+        accent: "#FFC53D",
+        accentText: "#4CC27E",
+        onAccent: "#2A1E00",
+        successText: "#4CC27E",
+        dangerText: "#F07A75",
+        controlBorder: "#7A879D",
       },
     } satisfies Record<
       ThemeId,
@@ -305,14 +291,11 @@ describe("Theme tokens", () => {
     );
 
     test.each(ALL_THEME_IDS)(
-      "%s primary gradient text remains readable at rest and on hover",
+      "%s primary button text remains readable at rest and on hover",
       (id) => {
-        const { accent, note3, onAccent } = themes[id].colors;
+        const { accent, accentHover, onAccent } = themes[id].colors;
         const foreground = rgbFromHex(onAccent);
-        const gradientEndpoints = [
-          rgbFromHex(accent),
-          mixSrgb(accent, note3, 0.7),
-        ];
+        const gradientEndpoints = [rgbFromHex(accent), rgbFromHex(accentHover)];
         const states = [
           { foreground, backgrounds: gradientEndpoints },
           {
@@ -359,24 +342,26 @@ describe("Theme tokens", () => {
     );
   });
 
-  describe("ocean theme visual balance", () => {
-    const ocean = themes.ocean;
+  describe("family look (colormon / sudomon)", () => {
+    const light = themes.light;
 
-    test("uses a clean elevated surface with strong text contrast", () => {
-      expect(hslFromHex(ocean.colors.surface).s).toBeLessThanOrEqual(0.08);
-      expect(relativeLuminance(ocean.colors.surface)).toBeGreaterThanOrEqual(
-        0.94,
-      );
+    test("white cards on the blue-grey page with strong ink", () => {
+      expect(light.colors.bg).toBe("#EAF1F8");
+      expect(light.colors.surface).toBe("#FFFFFF");
       expect(
-        contrastRatio(ocean.colors.text, ocean.colors.surface),
+        contrastRatio(light.colors.text, light.colors.surface),
       ).toBeGreaterThanOrEqual(12);
     });
 
-    test("keeps feedback colors visually separate from the primary accent", () => {
-      expect(
-        hueDistance(ocean.colors.hitLine, ocean.colors.accent),
-      ).toBeGreaterThanOrEqual(90);
-      const glowHue = hslFromHex(ocean.colors.hitGlow).h;
+    test("left and right hands stay clearly different colors", () => {
+      for (const id of ALL_THEME_IDS) {
+        const { note1, note2 } = themes[id].colors;
+        expect(hueDistance(note1, note2)).toBeGreaterThanOrEqual(90);
+      }
+    });
+
+    test("hit glow stays warm", () => {
+      const glowHue = hslFromHex(light.colors.hitGlow).h;
       expect(glowHue).toBeGreaterThanOrEqual(35);
       expect(glowHue).toBeLessThanOrEqual(65);
     });

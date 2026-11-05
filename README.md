@@ -50,9 +50,9 @@
 1. Open the Rexiano web app (hosted on Vercel) in Chrome or Edge.
 2. Choose a built-in song, or drag in your own `.mid` / `.midi` / `.musicxml` file. Imported files stay in this browser, so you can reopen them from Recent or the library.
 3. Start with **Watch** mode, then switch to **Wait** mode when you want Rexiano to pause until you play the right notes.
-4. Connect a USB or Bluetooth MIDI keyboard when you want live key feedback and scoring.
+4. Connect a Bluetooth piano: your playing is scored live, and the song plays on the piano (in Wait mode, only the hand you are not practising).
 
-No keyboard is required for listening and visual study. Wait mode and scored practice need MIDI input.
+No piano is needed to listen and watch, and you can tap the on-screen keys. Rexiano supports Bluetooth (BLE-MIDI) pianos only — for example Bluetooth models from Roland, Yamaha Clavinova, Kawai and Casio; a piano without Bluetooth can use a Yamaha MD-BT01 or CME WIDI Master adapter.
 
 To practice offline, click **Install** in the Chrome / Edge address bar. Rexiano becomes a standalone app with the built-in songs and piano sound downloaded ahead of time, and it can open `.mid` files directly.
 
@@ -65,7 +65,7 @@ To practice offline, click **Install** in the Chrome / Edge address bar. Rexiano
 | iPad                    | ✅                  | Safari has no Web MIDI — see below   |
 | Phone                   | Not supported       | Layout targets computers and tablets |
 
-**MIDI on iPad**: every iPadOS browser, Chrome included, runs on Safari's engine, which has no Web MIDI. Install a browser app with Web MIDI built in from the App Store (for example "Web MIDI Browser") and open the Rexiano address there.
+**Bluetooth piano on iPad**: every iPadOS browser, Chrome included, runs on Safari's engine, which has no Web Bluetooth. Install the free [Bluefy](https://apps.apple.com/app/id1492822055) browser, open the Rexiano address there and press Connect piano. Rexiano shows the same steps when opened in Safari on an iPad.
 
 Practice history lives in the browser. Export it from **User Data Backup** in Settings before switching browsers or clearing site data. Backups from the 1.6.0 desktop app import here too.
 
@@ -80,17 +80,22 @@ Practice history lives in the browser. Export it from **User Data Backup** in Se
 | Sound           | Bundled FreePats Upright Piano KW SoundFont with Web Audio playback and a synthesizer fallback.                  |
 | Files           | Built-in song library plus drag-and-drop import for your own MIDI files.                                         |
 
-## Bluetooth MIDI
+## Bluetooth Piano
 
-In Chrome / Edge, the **Bluetooth** button in the MIDI drawer opens the browser's own pairing dialog. A keyboard already paired with the system that shows up as a normal MIDI port can be picked directly:
+Press **Connect piano** and pick your piano in the browser's dialog. One connection works both ways:
 
-| Platform | Setup                                                                                                      |
-| -------- | ---------------------------------------------------------------------------------------------------------- |
-| macOS    | Pair in Audio MIDI Setup; the keyboard then appears as a normal MIDI device.                               |
-| Windows  | Try Rexiano's Bluetooth button first. If that fails, bridge it with MIDIberry or the KORG BLE-MIDI Driver. |
-| Android  | Pair with Rexiano's Bluetooth button.                                                                      |
+- **Keys in**: scoring, and Wait mode knows when you played the right notes
+- **Song out**: with "Where the song plays" set to **Piano**, the song plays on the piano and the computer stays silent; **This device** uses the speakers
+- Watch plays the whole song; Wait plays only the hand you're not practising; the piano switches to its grand piano voice on connect
+- If the piano sounds behind the falling notes, move **Line up the piano sound** in Settings to the right
 
-Detailed steps live in [User Guide -- Connecting a MIDI Keyboard](docs/user-guide-en.md#5-connecting-a-midi-keyboard).
+A piano already paired in the system (for example macOS Audio MIDI Setup) can be picked under **Other ways to connect**.
+
+Detailed steps live in [User Guide -- Connecting a Bluetooth Piano](docs/user-guide-en.md#5-connecting-a-bluetooth-piano).
+
+## Look and What's New
+
+The interface shares its look with our other family games, in System, Light or Dark. The ⓘ at the top shows what's new, with a red dot for versions you haven't opened; it reads `src/data/changelog.json`, and `pnpm changelog` regenerates `CHANGELOG.md`.
 
 ## Develop
 

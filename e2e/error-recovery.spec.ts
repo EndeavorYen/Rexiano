@@ -299,14 +299,15 @@ test.describe("Error recovery", () => {
     );
   });
 
-  test("MIDI drawer shows actionable guidance when Web MIDI is unavailable", async ({
+  test("piano drawer sends browsers without Web Bluetooth to a browser that works", async ({
     appPage,
   }) => {
     await appPage.addInitScript(() => {
-      Object.defineProperty(navigator, "requestMIDIAccess", {
+      Object.defineProperty(navigator, "bluetooth", {
         configurable: true,
         value: undefined,
       });
+      delete (navigator as { bluetooth?: unknown }).bluetooth;
     });
     await appPage.reload();
     await appPage.waitForLoadState("domcontentloaded");
@@ -314,8 +315,34 @@ test.describe("Error recovery", () => {
     await gotoLibrary(appPage);
     const drawer = await openLibraryDrawer(appPage);
 
-    const guidance = drawer.getByTestId("midi-error-guidance");
-    await expect(guidance).toBeVisible();
-    await expect(guidance).toContainText("MIDI is not supported here");
+    const guide = drawer.getByTestId("piano-browser-guide");
+    await expect(guide).toBeVisible();
+    await expect(guide).toContainText("Chrome or Edge");
+    await expect(drawer.getByTestId("piano-connect-bluetooth")).toHaveCount(0);
+  });
+
+  test("iPad Safari is pointed to Bluefy", async ({ browser }) => {
+    const context = await browser.newContext({
+      viewport: { width: 1024, height: 768 },
+      userAgent:
+        "Mozilla/5.0 (iPad; CPU OS 26_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.0 Mobile/15E148 Safari/604.1",
+    });
+    const page = await context.newPage();
+    await page.addInitScript(() => {
+      localStorage.setItem("rexiano-onboarding-completed", "1");
+      localStorage.setItem(
+        "rexiano-settings",
+        JSON.stringify({ language: "en" }),
+      );
+      delete (navigator as { bluetooth?: unknown }).bluetooth;
+    });
+    await page.goto("/");
+    await page.getByTestId("main-menu-settings").click();
+    const guide = page.getByTestId("piano-browser-guide-ios");
+    await expect(guide).toBeVisible();
+    await expect(
+      guide.getByRole("link", { name: "Get Bluefy" }),
+    ).toHaveAttribute("href", "https://apps.apple.com/app/id1492822055");
+    await context.close();
   });
 });

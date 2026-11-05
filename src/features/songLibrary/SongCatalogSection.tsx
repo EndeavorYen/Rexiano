@@ -79,7 +79,7 @@ export function SongCatalogSection({
             >
               <Music
                 size={28}
-                style={{ color: "var(--color-accent)", opacity: 0.6 }}
+                style={{ color: "var(--color-accent-text)", opacity: 0.6 }}
               />
             </div>
             {songs.length === 0 ? (

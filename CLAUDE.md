@@ -34,30 +34,17 @@ Rexiano 只有網頁版（Vercel + PWA），只支援電腦與平板。桌面版
 - **套件管理**: pnpm
 - **音頻**: Web Audio API + SoundFont（`public/piano.sf2`）
 
-## 前端美學守則
+## 介面設計：colormon 家族
 
-DISTILLED_AESTHETICS_PROMPT = """
-<frontend_aesthetics>
-You tend to converge toward generic, "on distribution" outputs. In frontend design, this creates what users call the "AI slop" aesthetic. Avoid this: make creative, distinctive frontends that surprise and delight. Focus on:
+Rexiano 的介面和 colormon、sudomon 是同一家族（不含寶可夢元素）。新畫面照這套做，不要另創風格：
 
-Typography: Choose fonts that are beautiful, unique, and interesting. Avoid generic fonts like Arial and Inter; opt instead for distinctive choices that elevate the frontend's aesthetics.
-
-Color & Theme: Commit to a cohesive aesthetic. Use CSS variables for consistency. Dominant colors with sharp accents outperform timid, evenly-distributed palettes. Draw from IDE themes and cultural aesthetics for inspiration.
-
-Motion: Use animations for effects and micro-interactions. Prioritize CSS-only solutions for HTML. Use Motion library for React when available. Focus on high-impact moments: one well-orchestrated page load with staggered reveals (animation-delay) creates more delight than scattered micro-interactions.
-
-Backgrounds: Create atmosphere and depth rather than defaulting to solid colors. Layer CSS gradients, use geometric patterns, or add contextual effects that match the overall aesthetic.
-
-Avoid generic AI-generated aesthetics:
-
-- Overused font families (Inter, Roboto, Arial, system fonts)
-- Clichéd color schemes (particularly purple gradients on white backgrounds)
-- Predictable layouts and component patterns
-- Cookie-cutter design that lacks context-specific character
-
-Interpret creatively and make unexpected choices that feel genuinely designed for the context. Vary between light and dark themes, different fonts, different aesthetics. You still tend to converge on common choices (Space Grotesk, for example) across generations. Avoid this: it is critical that you think outside the box!
-</frontend_aesthetics>
-"""
+- **配色**：`src/themes/tokens.ts` 只有 `light` / `dark` 兩套；淺藍灰底 `#EAF1F8`、白卡片、深色字、太陽黃 `#FFC53D` 主要按鈕、綠色是「對」、紅色是「錯」。主題偏好是 跟著系統／淺色／深色（`useThemeStore.preference`）
+- **字型**：標題與數字用 Baloo 2，內文用 Noto Sans TC（@fontsource 打包；中文字型不進 precache，用到才快取）
+- **元件**（`src/assets/main.css`）：`.family-bar` 頂列、`.icon-btn` 44px 圓角方鈕（`.dot` 是紅點）、`.set-card` 卡片、`.segmented` 分段選擇、`.family-scrim` / `.family-sheet` 對話框、`.btn-primary-themed` 太陽黃按鈕、`.btn-ghost-themed` 外框按鈕
+- **頂列**：返回、Logo、標題，右邊是 ⓘ 更新紀錄（`ChangelogButton`）和齒輪設定
+- **更新紀錄**：使用者看得到的變更，在 `src/data/changelog.json` 最上面加一版（中英都寫，2–4 條白話），跑 `pnpm changelog` 產生 `CHANGELOG.md`
+- **琴鍵**：白鍵長寬約 4:1（`proportionalKeyboardHeight`），黑鍵 0.6 寬、0.63 長；有毛氈條、前緣與陰影。不要再把鍵盤壓扁
+- 精緻優先：留白一致（卡片 12–16px 內距、元件間 12px）、44px 以上的點擊區、不用 emoji
 
 ## 已知陷阱
 
@@ -65,6 +52,25 @@ Interpret creatively and make unexpected choices that feel genuinely designed fo
 - **匯入的檔案路徑是 `local:<hash>/<檔名>`**，指向 IndexedDB 裡的檔案，不是磁碟路徑。舊備份裡的絕對路徑會被當成「已遺失」
 - **Safari（含所有 iOS / iPadOS 瀏覽器）沒有 Web MIDI 與 Web Bluetooth**。不要假設 `navigator.requestMIDIAccess` 存在
 - **Service worker 只在正式 build 註冊**；`VITE_REXIANO_E2E=1` 的 e2e build 不註冊
+
+## 藍牙鋼琴（輸入＋輸出）
+
+只支援藍牙（BLE-MIDI）鋼琴，不支援 USB 鍵盤。同一個藍牙連線雙向使用：琴鍵進來、曲子出去。
+
+```
+engines/midi/
+  bleMidiPacket.ts       ← BLE-MIDI 封包編碼（20 bytes、13-bit 時間戳）
+  BleMidiOutput.ts       ← 自己排程送出（Web Bluetooth 不能預約時間）；pause 讓已響的音自然結束，stop/seek 一律全部停音
+  PianoPlaybackOutput.ts ← AudioScheduler 唯一的輸出：藍牙優先，其次 Web MIDI 輸出埠
+features/audio/
+  pianoOutputPolicy.ts   ← Watch 全送、Wait 只送孩子沒在練的那手、Free 不送；鋼琴出聲時電腦靜音
+features/midiDevice/
+  pianoBrowserSupport.ts ← 沒有 Web Bluetooth 時：iPad → Bluefy、Mac Safari / 其他 → Chrome 或 Edge
+```
+
+- 孩子按的鍵**絕不**送回鋼琴（會變雙重音）
+- 連上時送 Program Change 0（平台鋼琴）
+- 「其他連線方式」裡的 Web MIDI 只在展開時才初始化，避免一打開抽屜就跳權限
 
 ## 網頁 platform 層
 

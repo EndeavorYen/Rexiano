@@ -62,6 +62,7 @@ import {
 interface SongLibraryProps {
   onOpenFile: () => Promise<void>;
   onBack?: () => void;
+  onOpenSettings?: () => void;
   onSessionIntentSelected?: (intent: PracticeSessionIntent) => void;
   recentFiles: RecentFile[];
   onRefreshRecentFiles: () => void;
@@ -84,6 +85,7 @@ function previewSourceTestId(preview: SongSelectionPreviewModel): string {
 export function SongLibrary({
   onOpenFile,
   onBack,
+  onOpenSettings,
   onSessionIntentSelected,
   recentFiles,
   onRefreshRecentFiles: refreshRecents,
@@ -517,6 +519,7 @@ export function SongLibrary({
         <SongLibraryHeader
           onBack={onBack}
           onOpenFile={onOpenFile}
+          onOpenSettings={onOpenSettings}
           greeting={greeting}
           dailyGoalStatus={dailyGoalStatus}
         />

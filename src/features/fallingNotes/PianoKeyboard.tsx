@@ -67,10 +67,12 @@ function getBlackKeyLabel(midi: number): string {
   return BLACK_NOTE_NAMES[noteInOctave] ?? "";
 }
 
-/** Black key width as a fraction of white key width */
-const BLACK_KEY_WIDTH_RATIO = 0.58;
-/** Black key height as a fraction of total keyboard height */
-const BLACK_KEY_HEIGHT_RATIO = 0.64;
+/** Black key width as a fraction of white key width (a real piano: ~0.6) */
+const BLACK_KEY_WIDTH_RATIO = 0.6;
+/** Black key length as a fraction of the white key length (real: ~0.63) */
+const BLACK_KEY_HEIGHT_RATIO = 0.63;
+/** Gap between neighbouring white keys, in px. */
+const WHITE_KEY_GAP = 2;
 
 interface WhiteKeyInfo {
   midi: number;
@@ -147,22 +149,40 @@ function getPracticeClass(
 /** MIDI input highlight — a distinct warm cyan to contrast the theme accent */
 const MIDI_HIGHLIGHT = "#38bdf8";
 
+// Keys are drawn like an instrument: a shadow under the fallboard at the top,
+// a slightly lighter front lip on white keys, and a bevelled front face on
+// black keys. Pressed keys sink and glow.
+
 function getWhiteKeyBackground(
   songActive: boolean,
   midiActive: boolean,
 ): string {
-  if (midiActive) return MIDI_HIGHLIGHT;
-  if (songActive) return "var(--color-key-active)";
-  return "linear-gradient(to bottom, var(--color-key-white), var(--color-key-white-bottom))";
+  if (midiActive) {
+    return `linear-gradient(to bottom, color-mix(in srgb, ${MIDI_HIGHLIGHT} 70%, #fff), ${MIDI_HIGHLIGHT})`;
+  }
+  if (songActive) {
+    return "linear-gradient(to bottom, color-mix(in srgb, var(--color-key-active) 55%, #fff), var(--color-key-active))";
+  }
+  return [
+    "linear-gradient(to bottom, rgba(0,0,0,0.10), rgba(0,0,0,0) 14px)",
+    "linear-gradient(to bottom, var(--color-key-white) 70%, var(--color-key-white-bottom))",
+  ].join(", ");
 }
 
 function getBlackKeyBackground(
   songActive: boolean,
   midiActive: boolean,
 ): string {
-  if (midiActive) return MIDI_HIGHLIGHT;
-  if (songActive) return "var(--color-key-active)";
-  return "linear-gradient(to bottom, var(--color-key-black-top), var(--color-key-black))";
+  if (midiActive) {
+    return `linear-gradient(to bottom, ${MIDI_HIGHLIGHT}, color-mix(in srgb, ${MIDI_HIGHLIGHT} 70%, #000))`;
+  }
+  if (songActive) {
+    return "linear-gradient(to bottom, var(--color-key-active), color-mix(in srgb, var(--color-key-active) 72%, #000))";
+  }
+  // Body, then a lighter front face across the bottom 12%.
+  return [
+    "linear-gradient(to bottom, var(--color-key-black-top) 0%, var(--color-key-black) 86%, color-mix(in srgb, var(--color-key-black-top) 80%, #fff) 88%, var(--color-key-black-top) 100%)",
+  ].join(", ");
 }
 
 function getKeyShadow(
@@ -171,24 +191,24 @@ function getKeyShadow(
   isBlack: boolean,
 ): string {
   if (midiActive) {
-    return `0 0 ${isBlack ? 8 : 10}px color-mix(in srgb, ${MIDI_HIGHLIGHT} 50%, transparent), inset 0 0 6px color-mix(in srgb, ${MIDI_HIGHLIGHT} 25%, transparent)`;
+    return `0 0 ${isBlack ? 10 : 14}px color-mix(in srgb, ${MIDI_HIGHLIGHT} 55%, transparent), inset 0 -2px 0 rgba(0,0,0,0.15)`;
   }
   if (songActive) {
-    return `0 0 ${isBlack ? 8 : 10}px color-mix(in srgb, var(--color-accent) ${isBlack ? 45 : 35}%, transparent), inset 0 0 6px color-mix(in srgb, var(--color-accent) 15%, transparent)`;
+    return `0 0 ${isBlack ? 10 : 14}px color-mix(in srgb, var(--color-accent) ${isBlack ? 55 : 45}%, transparent), inset 0 -2px 0 rgba(0,0,0,0.12)`;
   }
   return isBlack
-    ? "0 2px 3px rgba(0,0,0,0.25), inset 0 -1px 1px rgba(255,255,255,0.05)"
-    : "0 2px 4px rgba(0,0,0,0.08)";
+    ? "1px 3px 4px rgba(0,0,0,0.38), inset 1px 0 0 rgba(255,255,255,0.08), inset -1px 0 0 rgba(0,0,0,0.4)"
+    : "inset 0 -6px 0 rgba(0,0,0,0.045), inset 0 -7px 0 rgba(255,255,255,0.7), 0 1px 2px rgba(0,0,0,0.12)";
 }
 
-/** Get translateY for key press effect */
+/** Pressed keys sink a little, black keys a little more. */
 function getKeyTransform(
   songActive: boolean,
   midiActive: boolean,
   isBlack: boolean,
 ): string {
   if (midiActive || songActive) {
-    return isBlack ? "translateY(2px)" : "translateY(1px)";
+    return isBlack ? "translateY(2px)" : "translateY(1.5px)";
   }
   return "translateY(0)";
 }
@@ -196,14 +216,15 @@ function getKeyTransform(
 /** Shared label style for key note names */
 const KEY_LABEL_STYLE: React.CSSProperties = {
   position: "absolute",
-  bottom: 4,
+  bottom: 10,
   left: 0,
   right: 0,
   textAlign: "center",
-  fontFamily: "'JetBrains Mono Variable', 'JetBrains Mono', monospace",
+  fontFamily: "var(--font-display)",
   fontSize: 10,
+  fontWeight: 600,
   lineHeight: 1,
-  opacity: 0.6,
+  opacity: 0.7,
   pointerEvents: "none",
   userSelect: "none",
 };
@@ -251,11 +272,13 @@ export function PianoKeyboard({
 
   return (
     <div
-      className={`relative w-full select-none overflow-hidden ${tracker ? "cursor-pointer touch-none" : ""}`}
-      style={{ height, background: "var(--color-surface)" }}
+      className={`piano-keyboard relative w-full select-none overflow-hidden ${tracker ? "cursor-pointer touch-none" : ""}`}
+      style={{ height }}
       data-testid="piano-keyboard"
       {...pointerHandlers}
     >
+      {/* Felt strip and the shadow the fallboard casts on the keys. */}
+      <div className="piano-keyboard-felt" aria-hidden="true" />
       {/* White keys */}
       {layout.whiteKeys.map((key) => {
         const songActive = activeNotes?.has(key.midi) ?? false;
@@ -267,13 +290,12 @@ export function PianoKeyboard({
             data-midi={key.midi}
             className={`absolute top-0 ${practiceClass}`}
             style={{
-              left: `${key.index * wPct}%`,
-              width: `${wPct}%`,
+              left: `calc(${key.index * wPct}% + ${WHITE_KEY_GAP / 2}px)`,
+              width: `calc(${wPct}% - ${WHITE_KEY_GAP}px)`,
               height: "100%",
               boxSizing: "border-box",
               background: getWhiteKeyBackground(songActive, midiActive),
-              borderRight: "1px solid var(--color-border)",
-              borderRadius: "0 0 4px 4px",
+              borderRadius: "0 0 7px 7px",
               boxShadow: getKeyShadow(songActive, midiActive, false),
               transform: getKeyTransform(songActive, midiActive, false),
               transition:
@@ -315,9 +337,9 @@ export function PianoKeyboard({
               left: `${centerX - bWidth / 2}%`,
               width: `${bWidth}%`,
               height: `${BLACK_KEY_HEIGHT_RATIO * 100}%`,
-              zIndex: 1,
+              zIndex: 3,
               background: getBlackKeyBackground(songActive, midiActive),
-              borderRadius: "0 0 3px 3px",
+              borderRadius: "0 0 4px 4px",
               boxShadow: getKeyShadow(songActive, midiActive, true),
               transform: getKeyTransform(songActive, midiActive, true),
               transition:

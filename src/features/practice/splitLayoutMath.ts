@@ -58,6 +58,31 @@ export interface SplitLayoutInputs {
   viewportHeight: number;
   isSplitMode: boolean;
   isNarrowViewport: boolean;
+  /** Width of one white key in px; makes the keyboard look like a piano. */
+  whiteKeyWidth?: number;
+}
+
+/**
+ * A real white key is about 6× longer than it is wide; on screen 4× reads as
+ * a piano without eating the falling-notes lane. The keyboard never takes
+ * more than this share of the window.
+ */
+export const KEY_LENGTH_TO_WIDTH = 4;
+const KEYBOARD_MAX_SHARE = 0.27;
+const KEYBOARD_MAX_SHARE_SPLIT = 0.21;
+
+export function proportionalKeyboardHeight(
+  whiteKeyWidth: number,
+  viewportHeight: number,
+  minHeight: number,
+  isSplitMode: boolean,
+): number {
+  const cap = Math.round(
+    viewportHeight *
+      (isSplitMode ? KEYBOARD_MAX_SHARE_SPLIT : KEYBOARD_MAX_SHARE),
+  );
+  const ideal = Math.round(whiteKeyWidth * KEY_LENGTH_TO_WIDTH);
+  return Math.max(minHeight, Math.min(ideal, cap));
 }
 
 export interface SplitLayoutDimensions {
@@ -75,10 +100,19 @@ export function calculateSplitLayoutDimensions({
   viewportHeight,
   isSplitMode,
   isNarrowViewport,
+  whiteKeyWidth,
 }: SplitLayoutInputs): SplitLayoutDimensions {
   const compactPlaybackChrome = isSplitMode || isNarrowViewport;
   let keyboardHeight = isNarrowViewport ? 72 : 100;
   if (isSplitMode) keyboardHeight = splitKeyboardHeight(viewportHeight);
+  if (whiteKeyWidth !== undefined && whiteKeyWidth > 0) {
+    keyboardHeight = proportionalKeyboardHeight(
+      whiteKeyWidth,
+      viewportHeight,
+      keyboardHeight,
+      isSplitMode,
+    );
+  }
   const sheetMin = Math.round(
     SPLIT_SHEET_MIN_SHORT +
       (SPLIT_SHEET_MIN - SPLIT_SHEET_MIN_SHORT) *

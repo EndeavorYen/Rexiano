@@ -1,4 +1,4 @@
-import { existsSync, readFileSync } from "node:fs";
+import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, test } from "vitest";
 
@@ -7,35 +7,25 @@ const panelSource = readFileSync(
   "utf8",
 );
 
-describe("live path settings absence", () => {
-  test("settings panel presents only language and audio/volume controls", () => {
-    // Surviving live controls
-    expect(panelSource).toContain("settings.tab.lang");
-    expect(panelSource).toContain("settings.tab.audio");
+describe("live path settings", () => {
+  test("settings is one column of family cards with the agreed controls", () => {
+    // Appearance, language, sound, piano and backup.
+    expect(panelSource).toContain("settings-appearance");
+    expect(panelSource).toContain("settings-language");
     expect(panelSource).toContain('data-testid="volume-slider"');
     expect(panelSource).toContain('data-testid="toggle-mute"');
+    expect(panelSource).toContain("<DeviceSelector");
+    expect(panelSource).toContain("piano-latency-slider");
+    expect(panelSource).toContain("user-data-export");
+    expect(panelSource).toContain("user-data-import");
+  });
 
-    // Deleted live chrome
-    expect(panelSource).not.toContain("settings.tab.theme");
+  test("dropped chrome stays dropped", () => {
     expect(panelSource).not.toContain("settings.tab.display");
     expect(panelSource).not.toContain("settings.tab.practice");
     expect(panelSource).not.toContain("settings.tab.keys");
-    expect(panelSource).not.toContain("settings.tab.backup");
     expect(panelSource).not.toContain("settings.tab.about");
     expect(panelSource).not.toContain("latencyCompensation");
-    expect(panelSource).not.toContain("ThemePicker");
-  });
-
-  test("backup, theme picker, and updater modules stay in the tree", () => {
-    expect(
-      existsSync(
-        resolve(process.cwd(), "src/features/settings/ThemePicker.tsx"),
-      ),
-    ).toBe(true);
-    expect(
-      existsSync(
-        resolve(process.cwd(), "src/features/settings/userDataBackup.ts"),
-      ),
-    ).toBe(true);
+    expect(panelSource).not.toContain("childFocusMode");
   });
 });
