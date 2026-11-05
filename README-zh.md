@@ -18,8 +18,8 @@
 </p>
 
 <p align="center">
-  <strong>在瀏覽器開啟 Rexiano</strong><br>
-  <sub>電腦與平板 · Chrome / Edge 可接 MIDI 鍵盤 · 可安裝成 PWA 離線使用</sub>
+  <a href="https://rexiano.vercel.app/"><strong>在瀏覽器開啟 Rexiano → rexiano.vercel.app</strong></a><br>
+  <sub>電腦與平板 · Chrome / Edge 可連藍牙鋼琴（iPad 用 Bluefy）· 可安裝成 PWA 離線使用</sub>
 </p>
 
 <p align="center">
@@ -31,23 +31,23 @@
 <table>
   <tr>
     <td width="33%" align="center">
-      <img src="docs/assets/screenshots/rexiano-library.png" alt="Rexiano 曲庫與內建曲目" width="100%"><br>
-      <sub>曲庫：內建曲目、篩選、收藏與最近檔案。</sub>
+      <img src="docs/assets/screenshots/rexiano-library-zh.png" alt="Rexiano 曲庫與內建曲目" width="100%"><br>
+      <sub>曲庫：96 首內建曲目、課程路徑、篩選與最近開啟。</sub>
     </td>
     <td width="33%" align="center">
-      <img src="docs/assets/screenshots/rexiano-practice.png" alt="Rexiano 下落音符練習畫面" width="100%"><br>
-      <sub>練習畫面：下落音符、鍵盤回饋、評分與速度控制。</sub>
+      <img src="docs/assets/screenshots/rexiano-practice-zh.png" alt="Rexiano 下落音符練習畫面" width="100%"><br>
+      <sub>練習畫面：下落音符、鍵盤回饋、觀看／等待與速度控制。</sub>
     </td>
     <td width="33%" align="center">
-      <img src="docs/assets/screenshots/rexiano-split-sheet.png" alt="Rexiano 五線譜與下落音符分割畫面" width="100%"><br>
-      <sub>分割樂譜：五線譜與下落音符同步顯示。</sub>
+      <img src="docs/assets/screenshots/rexiano-split-sheet-zh.png" alt="Rexiano 五線譜與下落音符分割畫面" width="100%"><br>
+      <sub>雙顯示：五線譜與下落音符同步捲動。</sub>
     </td>
   </tr>
 </table>
 
 ## 開始練習
 
-1. 用 Chrome 或 Edge 開啟 Rexiano 網頁版（部署在 Vercel）。
+1. 用 Chrome 或 Edge 開啟 [rexiano.vercel.app](https://rexiano.vercel.app/)。
 2. 選擇內建曲目，或拖入自己的 `.mid` / `.midi` / `.musicxml` 檔案。匯入的檔案會存在這個瀏覽器裡，之後可從「最近開啟」或曲庫直接重開。
 3. 先用 **Watch** 模式聽與看，再切到 **Wait** 模式，讓 Rexiano 等你彈對音符才繼續。
 4. 連上藍牙鋼琴：彈的音會即時回饋和計分，曲子也會從鋼琴彈出來（等待模式只彈你沒在練的那一手）。
@@ -58,12 +58,12 @@
 
 ## 瀏覽器支援
 
-| 裝置                         | 練習與播放 | MIDI 鍵盤                                |
-| ---------------------------- | ---------- | ---------------------------------------- |
-| Windows / macOS / Linux 電腦 | ✅         | Chrome、Edge（USB 與藍牙）               |
-| Android 平板                 | ✅         | Chrome（USB 與藍牙）                     |
-| iPad                         | ✅         | Safari 不支援 Web MIDI，請改用下面的方式 |
-| 手機                         | 不支援     | 版面以電腦與平板為主                     |
+| 裝置                         | 練習與播放 | 藍牙鋼琴                  |
+| ---------------------------- | ---------- | ------------------------- |
+| Windows / macOS / Linux 電腦 | ✅         | Chrome、Edge              |
+| Android 平板                 | ✅         | Chrome                    |
+| iPad                         | ✅         | Bluefy 瀏覽器，見下方說明 |
+| 手機                         | 不支援     | 版面以電腦與平板為主      |
 
 **iPad 連藍牙鋼琴**：iPadOS 上所有瀏覽器（包含 Chrome）都用 Safari 的核心，沒有 Web Bluetooth。請到 App Store 安裝免費的 [Bluefy](https://apps.apple.com/app/id1492822055)，用它開啟 Rexiano 網址，再按「連接鋼琴」。Rexiano 在 iPad 的 Safari 裡也會顯示這個說明。
 
@@ -71,14 +71,24 @@
 
 ## 特色
 
-| 面向      | Rexiano 幫你做到                                                                       |
-| --------- | -------------------------------------------------------------------------------------- |
-| 視覺學習  | 60 FPS 下落音符、88 鍵高亮、音名標籤，以及左右手分色。                                 |
-| 五線譜    | 可切換分割、純五線譜、純下落音符模式，在樂譜與 piano-roll 練習間轉換。                 |
-| 聚焦練習  | Watch、Wait、Free 模式，加上速度控制、分手練習、節拍器、預備拍與歷史進度。             |
-| MIDI 鍵盤 | USB 與藍牙 MIDI 輸入/輸出、熱插拔、自動重連與延音踏板支援。                            |
-| 音色      | 內建 FreePats Upright Piano KW SoundFont，透過 Web Audio 播放，並保留合成器 fallback。 |
-| 檔案      | 內建曲庫，也可拖放匯入自己的 MIDI 檔。                                                 |
+| 面向     | Rexiano 幫你做到                                                                       |
+| -------- | -------------------------------------------------------------------------------------- |
+| 視覺學習 | 60 FPS 下落音符、88 鍵高亮、音名標籤，以及左右手分色。                                 |
+| 五線譜   | 只看下落音符，或五線譜和下落音符一起顯示、同步捲動。                                   |
+| 聚焦練習 | Watch、Wait、Free 模式，加上速度控制、分手練習、節拍器、預備拍與歷史進度。             |
+| 藍牙鋼琴 | 琴鍵進來計分、判斷等待模式；曲子從鋼琴彈出來，等待模式只彈另一手。                     |
+| 音色     | 內建 FreePats Upright Piano KW SoundFont，透過 Web Audio 播放，並保留合成器 fallback。 |
+| 曲目     | 96 首內建曲目，依 L0–L8 分級；也可拖放匯入自己的 MIDI 與 MusicXML。                    |
+
+## 內建曲目
+
+96 首，每首都有 L0–L8 分級與五線譜：
+
+- **童謠與民謠**：從單手開始，再到雙手
+- **古典名曲**：給愛麗絲、G 大調小步舞曲、卡農、土耳其進行曲等
+- **教材小品**（62 首）：拜耳 Op.101 第 8–31 首（剛開始雙手）、車爾尼 Op.821、布格繆勒 25 首練習曲 Op.100、巴哈《安娜·瑪德蓮娜筆記本》、莫札特 K.2、克萊曼第小奏鳴曲 Op.36 No.1 三個樂章、庫勞 Op.20 No.1、柴可夫斯基《兒童曲集》
+
+內建曲目都是公有領域作品。教材小品由 `scripts/mutopia/` 從 [Mutopia Project](https://www.mutopiaproject.org) 與 [Nathanael Meister 的鋼琴教材](https://github.com/nathanaelmeister/piano_-_first_two_hand_exercises) 的 LilyPond 原始檔轉換。
 
 ## 藍牙鋼琴
 
@@ -126,7 +136,7 @@ pnpm dev
 pnpm lint && pnpm typecheck && pnpm test
 ```
 
-更新 README 截圖：
+更新 README 與介紹頁截圖（中英文）：
 
 ```bash
 pnpm exec playwright test -c scripts/playwright.readme-screenshots.config.ts
@@ -185,4 +195,5 @@ Rexiano 以 [GNU General Public License v3.0](LICENSE) 釋出。你可以依 GPL
 ## 致謝
 
 - 為正在學鋼琴的 Rex 而建，以愛打造。
+- 教材小品來自 [Mutopia Project](https://www.mutopiaproject.org) 與 [Nathanael Meister](https://github.com/nathanaelmeister/piano_-_first_two_hand_exercises)；鋼琴音色來自 [FreePats](https://freepats.zenvoid.org/)。
 - 感謝讓 Rexiano 成為可能的所有開源專案。

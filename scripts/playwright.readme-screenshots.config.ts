@@ -1,3 +1,4 @@
+import { resolve } from "node:path";
 import { defineConfig } from "@playwright/test";
 import { e2eUse, e2eWebServer } from "../e2e/webServer";
 
@@ -8,5 +9,6 @@ export default defineConfig({
   fullyParallel: false,
   reporter: [["list"]],
   use: e2eUse,
-  webServer: e2eWebServer,
+  // Run the web server from the repo root, not from scripts/.
+  webServer: { ...e2eWebServer, cwd: resolve(__dirname, "..") },
 });

@@ -28,7 +28,7 @@ import {
 import {
   getSiteContent,
   localeOptions,
-  releasesUrl,
+  appUrl,
   repoUrl,
   resolveLocale,
   type IconKey,
@@ -155,9 +155,9 @@ export function App(): React.JSX.Element {
               <h1>Rexiano</h1>
               <p className="hero-lead">{content.hero.lead}</p>
               <div className="hero-actions" aria-label="Primary actions">
-                <a className="button button-primary" href={releasesUrl}>
-                  <Download aria-hidden="true" size={20} />
-                  {content.hero.actions.download}
+                <a className="button button-primary" href={appUrl}>
+                  <Piano aria-hidden="true" size={20} />
+                  {content.hero.actions.open}
                 </a>
                 <a
                   className="button button-secondary"
@@ -187,19 +187,19 @@ export function App(): React.JSX.Element {
               </div>
               <figure className="screenshot-frame hero-frame">
                 <img
-                  src={asset("rexiano-split-sheet.png")}
+                  src={asset(content.screenshots.items[2].image)}
                   alt={content.screenshots.items[2].alt}
                 />
               </figure>
               <figure className="screenshot-frame mini-frame mini-frame-left">
                 <img
-                  src={asset("rexiano-library.png")}
+                  src={asset(content.screenshots.items[1].image)}
                   alt={content.screenshots.items[1].alt}
                 />
               </figure>
               <figure className="screenshot-frame mini-frame mini-frame-right">
                 <img
-                  src={asset("rexiano-practice.png")}
+                  src={asset(content.screenshots.items[0].image)}
                   alt={content.screenshots.items[0].alt}
                 />
               </figure>
@@ -311,16 +311,16 @@ export function App(): React.JSX.Element {
               <h2 id="start-heading">{content.start.heading}</h2>
               <p>{content.start.description}</p>
               <div className="start-actions">
-                <a className="button button-primary" href={releasesUrl}>
-                  <Download aria-hidden="true" size={20} />
-                  {content.start.actions.releases}
+                <a className="button button-primary" href={appUrl}>
+                  <Piano aria-hidden="true" size={20} />
+                  {content.start.actions.open}
                 </a>
                 <a
                   className="button button-secondary"
-                  href={content.start.installationHref}
+                  href={content.start.guideHref}
                 >
                   <ExternalLink aria-hidden="true" size={19} />
-                  {content.start.actions.installation}
+                  {content.start.actions.guide}
                 </a>
               </div>
               <p className="download-note">{content.start.note}</p>

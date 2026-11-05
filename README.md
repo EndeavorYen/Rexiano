@@ -18,8 +18,8 @@
 </p>
 
 <p align="center">
-  <strong>Open Rexiano in your browser</strong><br>
-  <sub>Computers and tablets · MIDI keyboards in Chrome / Edge · Installable as a PWA for offline use</sub>
+  <a href="https://rexiano.vercel.app/"><strong>Open Rexiano in your browser → rexiano.vercel.app</strong></a><br>
+  <sub>Computers and tablets · Bluetooth pianos in Chrome / Edge (Bluefy on iPad) · Installable as a PWA for offline use</sub>
 </p>
 
 <p align="center">
@@ -32,11 +32,11 @@
   <tr>
     <td width="33%" align="center">
       <img src="docs/assets/screenshots/rexiano-library.png" alt="Rexiano song library with built-in songs" width="100%"><br>
-      <sub>Song Library: built-in songs, filters, favorites, and recent files.</sub>
+      <sub>Song Library: 96 built-in songs, a lesson path, filters, and recent files.</sub>
     </td>
     <td width="33%" align="center">
       <img src="docs/assets/screenshots/rexiano-practice.png" alt="Rexiano falling notes practice view" width="100%"><br>
-      <sub>Practice View: falling notes, keyboard feedback, scoring, and speed control.</sub>
+      <sub>Practice View: falling notes, keyboard feedback, Watch / Wait, and speed control.</sub>
     </td>
     <td width="33%" align="center">
       <img src="docs/assets/screenshots/rexiano-split-sheet.png" alt="Rexiano split sheet music and falling notes view" width="100%"><br>
@@ -47,7 +47,7 @@
 
 ## Start Practicing
 
-1. Open the Rexiano web app (hosted on Vercel) in Chrome or Edge.
+1. Open [rexiano.vercel.app](https://rexiano.vercel.app/) in Chrome or Edge.
 2. Choose a built-in song, or drag in your own `.mid` / `.midi` / `.musicxml` file. Imported files stay in this browser, so you can reopen them from Recent or the library.
 3. Start with **Watch** mode, then switch to **Wait** mode when you want Rexiano to pause until you play the right notes.
 4. Connect a Bluetooth piano: your playing is scored live, and the song plays on the piano (in Wait mode, only the hand you are not practising).
@@ -58,11 +58,11 @@ To practice offline, click **Install** in the Chrome / Edge address bar. Rexiano
 
 ## Browser Support
 
-| Device                  | Practice & playback | MIDI keyboard                        |
+| Device                  | Practice & playback | Bluetooth piano                      |
 | ----------------------- | ------------------- | ------------------------------------ |
-| Windows / macOS / Linux | ✅                  | Chrome, Edge (USB and Bluetooth)     |
-| Android tablet          | ✅                  | Chrome (USB and Bluetooth)           |
-| iPad                    | ✅                  | Safari has no Web MIDI — see below   |
+| Windows / macOS / Linux | ✅                  | Chrome, Edge                         |
+| Android tablet          | ✅                  | Chrome                               |
+| iPad                    | ✅                  | Bluefy browser — see below           |
 | Phone                   | Not supported       | Layout targets computers and tablets |
 
 **Bluetooth piano on iPad**: every iPadOS browser, Chrome included, runs on Safari's engine, which has no Web Bluetooth. Install the free [Bluefy](https://apps.apple.com/app/id1492822055) browser, open the Rexiano address there and press Connect piano. Rexiano shows the same steps when opened in Safari on an iPad.
@@ -74,11 +74,21 @@ Practice history lives in the browser. Export it from **User Data Backup** in Se
 | Area            | What Rexiano Helps With                                                                                          |
 | --------------- | ---------------------------------------------------------------------------------------------------------------- |
 | Visual learning | 60 FPS falling notes, 88-key highlighting, note labels, and per-track colors for left/right hand separation.     |
-| Sheet music     | Split, sheet-only, and falling-notes display modes for switching between notation and piano-roll practice.       |
+| Sheet music     | Falling notes alone, or sheet music and falling notes together, scrolling in sync.                               |
 | Practice focus  | Watch, Wait, and Free modes, plus speed control, split-hand practice, metronome, count-in, and progress history. |
-| MIDI keyboards  | USB and Bluetooth MIDI input/output, hot-plug detection, auto-reconnect, and sustain pedal support.              |
+| Bluetooth piano | Your keys in for scoring and Wait mode; the song out to the piano, with only the other hand in Wait mode.        |
 | Sound           | Bundled FreePats Upright Piano KW SoundFont with Web Audio playback and a synthesizer fallback.                  |
-| Files           | Built-in song library plus drag-and-drop import for your own MIDI files.                                         |
+| Songs           | 96 built-in songs graded L0–L8, plus drag-and-drop import of your own MIDI and MusicXML files.                   |
+
+## Built-in Songs
+
+96 songs, each graded from L0 to L8 and shown with sheet music:
+
+- **Folk and children's songs** to start with one hand, then both
+- **Classics** such as Für Elise, Minuet in G, Canon in D and the Turkish March
+- **Teaching Pieces** (62): Beyer Op. 101 Nos. 8–31 for first two-hand playing, Czerny Op. 821, Burgmüller's 25 Studies Op. 100, the Notebook for Anna Magdalena Bach, Mozart K. 2, Clementi Op. 36 No. 1 (all three movements), Kuhlau Op. 20 No. 1 and Tchaikovsky's Children's Album
+
+Every built-in piece is in the public domain. Teaching pieces are converted from the LilyPond sources of the [Mutopia Project](https://www.mutopiaproject.org) and [Nathanael Meister's piano school](https://github.com/nathanaelmeister/piano_-_first_two_hand_exercises) by `scripts/mutopia/`.
 
 ## Bluetooth Piano
 
@@ -126,7 +136,7 @@ Before opening a PR, run:
 pnpm lint && pnpm typecheck && pnpm test
 ```
 
-To refresh README screenshots:
+To refresh the README and site screenshots (English and Chinese):
 
 ```bash
 pnpm exec playwright test -c scripts/playwright.readme-screenshots.config.ts
@@ -185,4 +195,5 @@ Rexiano is licensed under the [GNU General Public License v3.0](LICENSE). You ma
 ## Acknowledgments
 
 - Built with love for Rex, who is learning to play piano.
+- Teaching pieces from the [Mutopia Project](https://www.mutopiaproject.org) and [Nathanael Meister](https://github.com/nathanaelmeister/piano_-_first_two_hand_exercises); piano sound from [FreePats](https://freepats.zenvoid.org/).
 - Thank you to the open-source projects that make Rexiano possible.

@@ -43,14 +43,16 @@ Rexiano's main flow is: Start Playing -> Song Library -> Song Preview -> Practic
 
 The library is where you choose songs, organize your own MIDI files, and track progress.
 
-| Area                       | What it does                                           | Best use                                        |
-| -------------------------- | ------------------------------------------------------ | ----------------------------------------------- |
-| Daily goal                 | Shows today's practiced minutes                        | Treat it as a gentle "sit down and play" cue    |
-| Recommended next           | Suggests a song from your progress                     | Use it when you are not sure what to play       |
-| Lesson path                | Groups built-in songs by level and progress            | Let children move through L0, L1, L2 gradually  |
-| Recent / Continue Practice | Reopens recently used scores and MIDI files            | Great for new teacher-assigned files            |
-| All Songs                  | Built-in library with search, filters, sort, favorites | Favorite 2-3 songs for the week                 |
-| Imported scores & MIDI     | Shows files you imported, kept in this browser         | Edit title, composer, tags, level, and category |
+| Area                       | What it does                                           | Best use                                       |
+| -------------------------- | ------------------------------------------------------ | ---------------------------------------------- |
+| Daily goal                 | Shows today's practiced minutes                        | Treat it as a gentle "sit down and play" cue   |
+| Recommended next           | Suggests a song from your progress                     | Use it when you are not sure what to play      |
+| Lesson path                | Groups built-in songs by level and progress            | Let children move through L0, L1, L2 gradually |
+| Recent / Continue Practice | Reopens recently used scores and MIDI files            | Great for new teacher-assigned files           |
+| All Songs                  | Built-in library with search, filters, sort, favorites | Favorite 2-3 songs for the week                |
+
+There are 96 built-in songs: folk and children's songs, classics, and Teaching Pieces — Beyer (first two-hand playing), Czerny, Burgmüller's 25 Studies, the Anna Magdalena Notebook, sonatinas and Tchaikovsky's Children's Album. Search for a composer or "minuet" to find them.
+| Imported scores & MIDI | Shows files you imported, kept in this browser | Edit title, composer, tags, level, and category |
 
 ### Import a Score or MIDI
 
@@ -212,12 +214,12 @@ Shortcuts are ignored while typing in search boxes or metadata fields.
 3. The SoundFont can take a few seconds to load the first time; wait if loading is shown.
 4. If audio shows an error, use the retry action, or enable audio compatibility mode in Settings and reload the song.
 
-### My MIDI keyboard does not appear. What should I do?
+### Rexiano cannot find my Bluetooth piano. What should I do?
 
-1. USB: unplug and reconnect, try another USB port, and confirm the keyboard is powered on.
-2. Bluetooth: pair at the operating-system level first, then press **Bluetooth** in Rexiano.
-3. Windows: if pairing works but no MIDI input appears, use MIDIberry or KORG BLE-MIDI Driver.
-4. Close DAWs or recording apps that may be holding the MIDI device, then reopen Rexiano.
+1. Make sure the piano's Bluetooth MIDI is on and not connected to a phone or another app.
+2. Use Chrome or Edge; on iPad use Bluefy. Safari has no Web Bluetooth.
+3. Press **Connect piano** and pick the piano in the browser's dialog; no system pairing is needed first.
+4. Still nothing: turn the piano off and on, reload Rexiano and connect again.
 
 ### I imported a file, but now Rexiano cannot find it.
 
@@ -225,7 +227,7 @@ Recent files remember their original path. If the file moved or was deleted, Rex
 
 ### Why do some notes not show labels?
 
-Very short notes hide text automatically to prevent label overlap. Use Sheet mode to confirm pitch, or slow the song down.
+Very short notes hide text automatically to prevent label overlap. Switch to **Both** to read the pitch on the staff, or slow the song down.
 
 ### Should I use sheet music or falling notes?
 

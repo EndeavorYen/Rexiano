@@ -92,7 +92,7 @@ export type SiteContent = {
     lead: string;
     guideHref: string;
     actions: {
-      download: string;
+      open: string;
       guide: string;
       github: string;
     };
@@ -120,10 +120,10 @@ export type SiteContent = {
     label: string;
     heading: string;
     description: string;
-    installationHref: string;
+    guideHref: string;
     actions: {
-      releases: string;
-      installation: string;
+      open: string;
+      guide: string;
     };
     note: string;
   };
@@ -143,6 +143,7 @@ export type SiteContent = {
   };
 };
 
+export const appUrl = "https://rexiano.vercel.app/";
 export const repoUrl = "https://github.com/EndeavorYen/Rexiano";
 export const releasesUrl = `${repoUrl}/releases`;
 export const issuesUrl = `${repoUrl}/issues`;
@@ -180,9 +181,9 @@ const siteContent: Record<Locale, SiteContent> = {
   en: {
     meta: {
       htmlLang: "en",
-      title: "Rexiano - Open-source piano practice",
+      title: "Rexiano - Free piano practice in your browser",
       description:
-        "Rexiano is an open-source piano practice app with falling notes, sheet music, MIDI keyboard support, and focused practice tools.",
+        "Rexiano is a free, open-source piano practice web app with falling notes, sheet music, a Bluetooth piano that plays along, and 96 graded songs.",
       languageToggleLabel: "Language",
     },
     nav: {
@@ -193,196 +194,191 @@ const siteContent: Record<Locale, SiteContent> = {
       github: "GitHub",
     },
     hero: {
-      lead: "Free, open-source piano practice with falling notes, sheet music, MIDI keyboards, and focused practice tools.",
+      lead: "Free piano practice in your browser: falling notes, sheet music, and a Bluetooth piano that plays the song with you. Built by a dad for Rex.",
       guideHref: `${docsBaseUrl}/docs/user-guide-en.md`,
       actions: {
-        download: "Download",
+        open: "Open Rexiano",
         guide: "Read the guide",
         github: "View on GitHub",
       },
-      facts: ["React + Electron", "GPL-3.0", "Windows, macOS, Linux"],
-      note: "A MIDI keyboard is optional for watching and listening. Wait mode scoring and live key feedback need MIDI input.",
+      facts: ["Runs in the browser", "Install as an app", "GPL-3.0"],
+      note: "No piano is needed to watch and listen. Connect a Bluetooth piano for scoring, Wait mode, and the song playing on the piano.",
     },
     flow: {
       label: "Practice flow",
-      heading: "A short path from song choice to better reps",
+      heading: "From song choice to better repetitions",
       items: [
         {
           label: "01",
-          title: "Start Playing",
+          title: "Pick a song",
           description:
-            "Open the main entry point and choose whether to continue, browse, or import a MIDI file.",
-          icon: "monitorPlay",
-        },
-        {
-          label: "02",
-          title: "Song Library and preview",
-          description:
-            "Pick a built-in song, recommendation, recent file, or imported MIDI, then review the level and tracks before practice.",
+            "Choose from 96 graded songs, follow the lesson path, or drop in your own MIDI or MusicXML file.",
           icon: "library",
         },
         {
-          label: "03",
-          title: "Practice or play along",
+          label: "02",
+          title: "Watch first",
           description:
-            "Slow the song down, loop a phrase, isolate a hand, then let Wait mode pause until the right notes are played.",
+            "Hear the song and see the notes fall onto the keys, at full speed or slowed down.",
+          icon: "monitorPlay",
+        },
+        {
+          label: "03",
+          title: "Play along in Wait mode",
+          description:
+            "Rexiano waits until the right notes are played, while the piano plays the hand you are not practising.",
           icon: "keyboard",
         },
       ],
     },
     features: {
       label: "Feature tour",
-      heading: "Built for visual practice and real instruments",
+      heading: "Made for children learning a real piano",
       description:
-        "Rexiano connects modern desktop app engineering with the concrete needs of piano learners: clear feedback, repeatable practice, and a path from play-along to reading notation.",
+        "Clear feedback, short repeatable practice, and a path from playing along to reading notation, on a computer or tablet.",
       items: [
         {
-          title: "Falling notes with a real piano keyboard",
+          title: "Falling notes on a real-looking keyboard",
           description:
-            "PixiJS renders a rhythm-game practice lane while the 88-key keyboard highlights notes in sync with playback.",
-          detail:
-            "Built for smooth, visual practice instead of static playback.",
+            "Notes fall onto keys with true proportions, with a color for each hand and note names on the keys.",
+          detail: "Smooth 60 FPS rendering with PixiJS.",
           icon: "piano",
         },
         {
-          title: "Sheet music beside the note lane",
+          title: "Sheet music that moves with the notes",
           description:
-            "Switch between falling notes, traditional staff notation, or a split view that keeps both ways of reading visible.",
-          detail: "VexFlow powers notation and cursor sync.",
+            "Show the falling notes alone, or the staff above them, scrolling together so reading grows naturally.",
+          detail: "Notation by VexFlow.",
           icon: "split",
         },
         {
-          title: "USB and Bluetooth MIDI practice",
+          title: "A Bluetooth piano that plays along",
           description:
-            "Connect a MIDI keyboard for input, output, and Wait mode scoring. Rexiano uses Chromium's Web MIDI support through Electron.",
-          detail:
-            "Works with normal MIDI ports exposed by the operating system.",
+            "One connection both ways: your keys are scored, and the song plays on the piano itself — only the other hand in Wait mode.",
+          detail: "Roland, Yamaha, Kawai, Casio and other BLE-MIDI pianos.",
           icon: "cable",
+        },
+        {
+          title: "96 graded songs",
+          description:
+            "Folk songs, classics, and 62 teaching pieces: Beyer, Czerny, Burgmüller, the Anna Magdalena Notebook, sonatinas and Tchaikovsky.",
+          detail: "Every built-in piece is in the public domain.",
+          icon: "music",
         },
         {
           title: "Focused practice modes",
           description:
-            "Watch, Wait, and Free modes support speed control, A-B loops, hand or track selection, and score feedback. A MIDI input unlocks live scoring.",
-          detail: "Designed for short daily practice sessions.",
+            "Watch, Wait and Free modes with speed control, loops, one-hand practice and gentle scoring.",
+          detail: "Designed for short daily sessions.",
           icon: "gauge",
         },
         {
-          title: "Progress history and weak spots",
+          title: "Works offline as an app",
           description:
-            "Session history, best scores, daily goals, and weak-note analysis help learners choose the next useful repetition.",
-          detail: "Practice closes with a next-step loop.",
-          icon: "activity",
-        },
-        {
-          title: "Offline piano audio",
-          description:
-            "A bundled piano SoundFont gives Rexiano a real instrument voice, with a synthesizer fallback if the sample cannot load.",
-          detail: "No CDN fonts or runtime sample downloads required.",
+            "Install it from Chrome or Edge; the songs and the piano sound are kept on the device.",
+          detail: "Progress stays in the browser, with backup export.",
           icon: "headphones",
         },
       ],
     },
     screenshots: {
       label: "Screenshots",
-      heading: "Real product screens",
+      heading: "Real app screens",
       description:
-        "The site uses the same screenshot assets as the README, so the product page stays tied to the app that users actually download.",
+        "These are the same screenshots as the README, captured from the app by an automated test.",
       items: [
         {
           id: "practice",
           label: "Practice",
-          title: "Practice mode",
+          title: "Practice",
           caption:
-            "Falling notes, keyboard feedback, transport controls, speed, loop, score, and track controls in one workspace.",
+            "Falling notes, keyboard feedback, Watch and Wait, speed and volume in one view.",
           image: "rexiano-practice.png",
-          alt: "Rexiano practice workspace with falling notes, piano keyboard, and practice controls.",
+          alt: "Rexiano practice view with falling notes, a piano keyboard and practice controls.",
         },
         {
           id: "library",
           label: "Library",
           title: "Song library",
           caption:
-            "Browse built-in pieces, recommendations, recent files, grades, favorites, and import options before entering practice.",
+            "Daily goal, lesson path, search and filters across 96 built-in songs.",
           image: "rexiano-library.png",
-          alt: "Rexiano song library with built-in songs, practice recommendations, and filters.",
+          alt: "Rexiano song library with the lesson path and the song list.",
         },
         {
           id: "split-sheet",
-          label: "Split Sheet",
-          title: "Notation plus falling notes",
+          label: "Sheet music",
+          title: "Sheet music plus falling notes",
           caption:
-            "Use traditional staff notation and the falling-note lane together when a learner needs both reading models.",
+            "The staff and the falling notes scroll together when a learner needs both.",
           image: "rexiano-split-sheet.png",
-          alt: "Rexiano split view showing sheet music above falling notes and the piano keyboard.",
+          alt: "Rexiano showing sheet music above falling notes and the piano keyboard.",
         },
       ],
     },
     start: {
       label: "Getting started",
-      heading: "Download, connect, and play",
+      heading: "Open, connect, and play",
       description:
-        "Pick the package for your platform, then follow the installation guide for MIDI and first-run notes.",
-      installationHref: `${docsBaseUrl}/docs/installation-en.md`,
+        "Nothing to download: open Rexiano in your browser. Use Install in the address bar to keep it as an app for offline practice.",
+      guideHref: `${docsBaseUrl}/docs/user-guide-en.md#5-connecting-a-bluetooth-piano`,
       actions: {
-        releases: "Latest releases",
-        installation: "Installation guide",
+        open: "Open Rexiano",
+        guide: "Connecting a piano",
       },
-      note: "Public builds may show Windows SmartScreen or macOS Gatekeeper prompts when signing or notarization credentials are not active.",
+      note: "Computers and tablets only. Phones are not supported.",
     },
     platforms: {
-      label: "Platform",
+      label: "Device",
       items: [
         {
-          id: "windows",
-          label: "Windows",
-          title: "Windows installer or portable build",
+          id: "computer",
+          label: "Computer",
+          title: "Windows, macOS or Linux",
           description:
-            "Download the latest installer or portable package from GitHub Releases.",
+            "Use Chrome or Edge, then press Connect piano and pick your piano.",
           notes: [
-            "Use the NSIS installer for normal desktop shortcuts and file association.",
-            "Use the portable zip when you want to try Rexiano without installation.",
-            "Bluetooth MIDI may need a bridge driver depending on the keyboard and Windows setup.",
+            "Bluetooth pianos connect straight from the browser; no pairing in system settings first.",
+            "A piano already paired with the system can be picked under Other ways to connect.",
+            "If the piano sounds late, move Line up the piano sound in Settings.",
           ],
           icon: "laptop",
         },
         {
-          id: "macos",
-          label: "macOS",
-          title: "macOS DMG",
-          description:
-            "Install from the DMG, then pair Bluetooth MIDI devices through Audio MIDI Setup when needed.",
+          id: "android",
+          label: "Android tablet",
+          title: "Android tablet",
+          description: "Use Chrome and connect the piano the same way.",
           notes: [
-            "macOS exposes paired BLE MIDI devices as normal MIDI ports.",
-            "Unsigned builds may require the standard security confirmation on first launch.",
-            "USB MIDI keyboards usually appear automatically.",
+            "Install Rexiano from the Chrome menu to practice offline.",
+            "Turn on Bluetooth and location if Chrome asks for them to find the piano.",
           ],
-          icon: "apple",
+          icon: "monitorPlay",
         },
         {
-          id: "linux",
-          label: "Linux",
-          title: "AppImage or deb package",
+          id: "ipad",
+          label: "iPad",
+          title: "iPad with Bluefy",
           description:
-            "Use the AppImage for a portable run or the deb package for a desktop-integrated install.",
+            "Safari and every other iPad browser lack Web Bluetooth, so open Rexiano in the free Bluefy browser to connect a piano.",
           notes: [
-            "Most USB MIDI devices are exposed through ALSA.",
-            "Bluetooth MIDI depends on the desktop stack and BlueZ pairing support.",
-            "The AppImage is the fastest way to smoke-test a release.",
+            "Without a piano, Safari works for watching and listening.",
+            "Rexiano shows these steps when it is opened in Safari on an iPad.",
           ],
-          icon: "settings",
+          icon: "apple",
         },
       ],
     },
     docs: {
       label: "Manual and developer docs",
-      heading: "A compact hub for the repo",
+      heading: "Where to read more",
       description:
-        "Pages gives new users the map. The detailed manuals, design notes, and release guides stay in Markdown where contributors can review and update them with the code.",
+        "The manuals, design notes and project history live in Markdown next to the code.",
       resources: [
         {
           title: "User Guide",
           description:
-            "Practice modes, library flow, MIDI setup, and daily use.",
+            "Practice modes, the library, connecting a piano, and daily use.",
           href: `${docsBaseUrl}/docs/user-guide-en.md`,
           icon: "bookOpen",
         },
@@ -393,63 +389,41 @@ const siteContent: Record<Locale, SiteContent> = {
           icon: "fileText",
         },
         {
-          title: "Installation",
-          description:
-            "Platform notes for Windows, macOS, Linux, and MIDI devices.",
-          href: `${docsBaseUrl}/docs/installation-en.md`,
-          icon: "download",
+          title: "What's New",
+          description: "Changes in each version, in plain words.",
+          href: `${docsBaseUrl}/CHANGELOG.md`,
+          icon: "circleCheck",
         },
         {
           title: "Architecture",
           description:
-            "Renderer, engine, store, IPC, audio, MIDI, and release design.",
+            "Web platform layer, engines, stores, audio, MIDI and Bluetooth.",
           href: `${docsBaseUrl}/docs/architecture.md`,
           icon: "workflow",
         },
         {
           title: "Design Document",
           description:
-            "Technical history, system phases, data model, domain decisions, and testing strategy.",
+            "Technical history, data model, domain decisions and testing strategy.",
           href: `${docsBaseUrl}/docs/DESIGN-en.md`,
           icon: "layers",
         },
         {
           title: "Roadmap",
-          description: "Technical status tracking and completed phases.",
+          description: "What is done and what comes next.",
           href: `${docsBaseUrl}/docs/ROADMAP.md`,
           icon: "route",
         },
         {
-          title: "MIDI Level Guide",
-          description: "Song grade references and progression from L0 to L8.",
+          title: "Song Level Guide",
+          description: "How songs are graded from L0 to L8.",
           href: `${docsBaseUrl}/docs/midi-level-guide.md`,
           icon: "music",
         },
         {
-          title: "Release and Updates",
-          description:
-            "How Rexiano checks GitHub Releases from packaged builds.",
-          href: `${docsBaseUrl}/docs/update-flow.md`,
-          icon: "circleCheck",
-        },
-        {
-          title: "Release Signing",
-          description:
-            "Windows and macOS signing policy, secrets, and unsigned fallback.",
-          href: `${docsBaseUrl}/docs/release-signing.md`,
-          icon: "circleCheck",
-        },
-        {
-          title: "SoundFont Provenance",
-          description:
-            "Bundled piano sample source, license notes, and loader checks.",
-          href: `${docsBaseUrl}/docs/soundfont-provenance.md`,
-          icon: "headphones",
-        },
-        {
           title: "Contributing",
           description:
-            "Local setup, development workflow, and project conventions.",
+            "Local setup, development workflow and project conventions.",
           href: `${docsBaseUrl}/CONTRIBUTING.md`,
           icon: "badgeCheck",
         },
@@ -459,10 +433,10 @@ const siteContent: Record<Locale, SiteContent> = {
       sentence:
         "Built for Rex, shared with learners, and licensed under GPL-3.0.",
       links: [
+        { label: "Open Rexiano", href: appUrl },
         { label: "GitHub", href: repoUrl },
         { label: "Releases", href: releasesUrl },
         { label: "Issues", href: issuesUrl },
-        { label: "Docs", href: docsUrl },
         { label: "License", href: `${docsBaseUrl}/LICENSE` },
       ],
     },
@@ -470,277 +444,249 @@ const siteContent: Record<Locale, SiteContent> = {
   "zh-TW": {
     meta: {
       htmlLang: "zh-Hant-TW",
-      title: "Rexiano - 開源鋼琴練習工具",
+      title: "Rexiano - 打開瀏覽器就能練琴",
       description:
-        "Rexiano 是開源鋼琴練習 app，支援下落音符、五線譜、MIDI 鍵盤與專注練習工具。",
+        "Rexiano 是免費開源的網頁鋼琴練習 App：下落音符、五線譜、會跟著彈的藍牙鋼琴，和 96 首分級曲目。",
       languageToggleLabel: "語言",
     },
     nav: {
-      features: "功能",
-      screenshots: "截圖",
+      features: "特色",
+      screenshots: "畫面",
       start: "開始",
       docs: "文件",
       github: "GitHub",
     },
     hero: {
-      lead: "免費、開源的鋼琴練習工具，結合下落音符、五線譜、MIDI 鍵盤與專注練習流程。",
+      lead: "打開瀏覽器就能練琴：下落音符、五線譜，藍牙鋼琴還會跟你一起彈。一位爸爸為 Rex 打造。",
       guideHref: `${docsBaseUrl}/docs/user-guide.md`,
       actions: {
-        download: "下載",
+        open: "開始練琴",
         guide: "閱讀指南",
-        github: "查看 GitHub",
+        github: "在 GitHub 查看",
       },
-      facts: ["React + Electron", "GPL-3.0", "Windows、macOS、Linux"],
-      note: "不接 MIDI 鍵盤也能觀看與聆聽；Wait 模式評分與即時琴鍵回饋需要 MIDI 輸入。",
+      facts: ["瀏覽器直接用", "可安裝成 App", "GPL-3.0"],
+      note: "沒有鋼琴也能看和聽。連上藍牙鋼琴後，可以計分、用等待模式，曲子還會從鋼琴彈出來。",
     },
     flow: {
-      label: "練習流程",
-      heading: "從選曲到有效重複的短路徑",
+      label: "練琴流程",
+      heading: "從選歌到越彈越好",
       items: [
         {
           label: "01",
-          title: "Start Playing",
-          description: "從首頁入口開始，選擇繼續練習、瀏覽曲庫或匯入 MIDI 檔。",
-          icon: "monitorPlay",
-        },
-        {
-          label: "02",
-          title: "曲庫與預覽",
+          title: "選一首曲子",
           description:
-            "選擇內建曲目、推薦曲、最近檔案或匯入 MIDI，先確認等級與聲部再開始。",
+            "96 首分級曲目、照課程路徑走，或拖入自己的 MIDI、MusicXML 檔。",
           icon: "library",
         },
         {
+          label: "02",
+          title: "先看先聽",
+          description: "聽整首曲子、看音符落到琴鍵上，可以放慢速度。",
+          icon: "monitorPlay",
+        },
+        {
           label: "03",
-          title: "練習或跟彈",
-          description:
-            "放慢速度、循環片段、分手練習，讓 Wait 模式在正確音符被彈出前暫停。",
+          title: "用等待模式跟彈",
+          description: "彈對了才往下走；你沒在練的那一手，由鋼琴自己彈。",
           icon: "keyboard",
         },
       ],
     },
     features: {
-      label: "功能導覽",
-      heading: "為視覺化練習與真實樂器而做",
+      label: "特色",
+      heading: "為正在學真鋼琴的孩子設計",
       description:
-        "Rexiano 把現代桌面 app 工程和鋼琴學習需求接在一起：清楚回饋、可重複練習，並能從跟彈逐步走向讀譜。",
+        "清楚的回饋、短而能重複的練習，從跟彈慢慢走到看譜；電腦和平板都能用。",
       items: [
         {
-          title: "下落音符與 88 鍵鋼琴",
-          description:
-            "PixiJS 負責流暢渲染節奏遊戲式練習軌，88 鍵鍵盤會跟播放同步高亮。",
-          detail: "為流暢、直覺的視覺練習而設計。",
+          title: "像真的一樣的琴鍵",
+          description: "音符落到比例正確的琴鍵上，左右手不同顏色，鍵上有音名。",
+          detail: "PixiJS 60 FPS 流暢繪製。",
           icon: "piano",
         },
         {
-          title: "五線譜並排練習",
+          title: "跟著音符走的五線譜",
           description:
-            "可在下落音符、傳統五線譜、或上下分割視圖之間切換，保留兩種閱讀方式。",
-          detail: "VexFlow 負責譜面與游標同步。",
+            "只看下落音符，或五線譜在上、音符在下一起捲動，看譜能力慢慢長出來。",
+          detail: "樂譜由 VexFlow 繪製。",
           icon: "split",
         },
         {
-          title: "USB 與藍牙 MIDI 練習",
+          title: "會跟著彈的藍牙鋼琴",
           description:
-            "連接 MIDI 鍵盤做輸入、輸出與 Wait 模式評分。Rexiano 透過 Electron 使用 Chromium 的 Web MIDI 支援。",
-          detail: "適用於作業系統已辨識的標準 MIDI port。",
+            "同一個連線雙向使用：彈的音會計分，曲子也從鋼琴彈出來；等待模式只彈另一手。",
+          detail: "Roland、Yamaha、Kawai、Casio 等藍牙 MIDI 鋼琴。",
           icon: "cable",
         },
         {
-          title: "專注練習模式",
+          title: "96 首分級曲目",
           description:
-            "Watch、Wait、Free 模式支援速度控制、A-B 循環、分手或分軌設定與分數回饋；即時評分需要 MIDI 輸入。",
-          detail: "適合短時間、每天可重複的練習。",
+            "童謠民謠、古典名曲，加上 62 首教材小品：拜耳、車爾尼、布格繆勒、《安娜·瑪德蓮娜筆記本》、小奏鳴曲和柴可夫斯基。",
+          detail: "內建曲目都是公有領域作品。",
+          icon: "music",
+        },
+        {
+          title: "專注的練習模式",
+          description:
+            "觀看、等待、自由三種模式，可調速度、循環段落、分手練習。",
+          detail: "適合每天短短練一下。",
           icon: "gauge",
         },
         {
-          title: "進度紀錄與弱點分析",
+          title: "裝成 App 也能離線",
           description:
-            "歷史成績、最佳分數、每日目標與弱點音符分析，幫助學習者挑下一次最有價值的重複。",
-          detail: "練習結束後接上下一步。",
-          icon: "activity",
-        },
-        {
-          title: "離線鋼琴音色",
-          description:
-            "內建鋼琴 SoundFont 提供真實樂器聲音；若 sample 載入失敗，仍保留合成器 fallback。",
-          detail: "不依賴 CDN 字型或執行時 sample 下載。",
+            "在 Chrome 或 Edge 按「安裝」，曲子和鋼琴音色會存在裝置上。",
+          detail: "練習紀錄存在瀏覽器，可匯出備份。",
           icon: "headphones",
         },
       ],
     },
     screenshots: {
-      label: "截圖",
-      heading: "真實產品畫面",
-      description:
-        "這個頁面沿用 README 的截圖資產，讓產品頁和使用者實際下載到的 app 保持一致。",
+      label: "畫面",
+      heading: "實際的 App 畫面",
+      description: "和 README 用的是同一組截圖，由自動化測試直接從 App 擷取。",
       items: [
         {
           id: "practice",
           label: "練習",
-          title: "練習模式",
+          title: "練習畫面",
           caption:
-            "下落音符、鍵盤回饋、播放控制、速度、循環、分數與 track 控制集中在同一個工作區。",
-          image: "rexiano-practice.png",
-          alt: "Rexiano 練習畫面，包含下落音符、鋼琴鍵盤與練習控制。",
+            "下落音符、琴鍵回饋、觀看與等待、速度和音量，都在同一個畫面。",
+          image: "rexiano-practice-zh.png",
+          alt: "Rexiano 練習畫面：下落音符、鋼琴鍵盤與練習控制。",
         },
         {
           id: "library",
           label: "曲庫",
           title: "曲庫",
-          caption:
-            "進入練習前，可瀏覽內建曲、推薦、最近檔案、等級、收藏與匯入選項。",
-          image: "rexiano-library.png",
-          alt: "Rexiano 曲庫畫面，包含內建曲、練習推薦與篩選器。",
+          caption: "每日目標、課程路徑，以及 96 首內建曲目的搜尋與篩選。",
+          image: "rexiano-library-zh.png",
+          alt: "Rexiano 曲庫：課程路徑與曲目清單。",
         },
         {
           id: "split-sheet",
           label: "五線譜",
-          title: "譜面加下落音符",
-          caption: "當學習者需要同時看傳統譜面與視覺化節奏時，可使用分割視圖。",
-          image: "rexiano-split-sheet.png",
-          alt: "Rexiano 分割視圖，上方為五線譜，下方為下落音符與鋼琴鍵盤。",
+          title: "五線譜加下落音符",
+          caption: "需要兩種看法時，五線譜和下落音符會一起捲動。",
+          image: "rexiano-split-sheet-zh.png",
+          alt: "Rexiano 同時顯示五線譜、下落音符與鋼琴鍵盤。",
         },
       ],
     },
     start: {
       label: "開始使用",
-      heading: "下載、連接、開始彈",
+      heading: "打開、連琴、開始彈",
       description:
-        "依平台選擇安裝包，再依安裝指南處理 MIDI 與第一次啟動注意事項。",
-      installationHref: `${docsBaseUrl}/docs/installation.md`,
+        "不用下載，用瀏覽器打開就好。在網址列按「安裝」，就能變成 App、沒網路也能練。",
+      guideHref: `${docsBaseUrl}/docs/user-guide.md#5-連接藍牙鋼琴`,
       actions: {
-        releases: "最新發佈",
-        installation: "安裝指南",
+        open: "開始練琴",
+        guide: "怎麼連鋼琴",
       },
-      note: "公開 build 在簽章或公證憑證未啟用時，可能會顯示 Windows SmartScreen 或 macOS Gatekeeper 提示。",
+      note: "支援電腦和平板，不支援手機。",
     },
     platforms: {
-      label: "平台",
+      label: "裝置",
       items: [
         {
-          id: "windows",
-          label: "Windows",
-          title: "Windows 安裝程式或免安裝版",
-          description:
-            "從 GitHub Releases 下載最新安裝程式或 portable package。",
+          id: "computer",
+          label: "電腦",
+          title: "Windows、macOS 或 Linux",
+          description: "用 Chrome 或 Edge 開啟，按「連接鋼琴」再選你的鋼琴。",
           notes: [
-            "一般安裝建議使用 NSIS installer，會建立桌面捷徑與檔案關聯。",
-            "想先試用時，可使用 portable zip，不需要完整安裝。",
-            "藍牙 MIDI 可能依鍵盤與 Windows 設定需要橋接 driver。",
+            "藍牙鋼琴直接從瀏覽器連，不用先在系統設定配對。",
+            "已經和系統配對好的鋼琴，可以在「其他連線方式」選。",
+            "鋼琴聲音比畫面慢時，到設定調「鋼琴聲音對齊」。",
           ],
           icon: "laptop",
         },
         {
-          id: "macos",
-          label: "macOS",
-          title: "macOS DMG",
-          description:
-            "從 DMG 安裝，需要藍牙 MIDI 時可透過 Audio MIDI Setup 配對。",
+          id: "android",
+          label: "Android 平板",
+          title: "Android 平板",
+          description: "用 Chrome 開啟，連鋼琴的方式一樣。",
           notes: [
-            "macOS 會把已配對的 BLE MIDI 裝置暴露為一般 MIDI port。",
-            "未簽章 build 第一次啟動時可能需要標準安全性確認。",
-            "USB MIDI 鍵盤通常會自動出現。",
+            "從 Chrome 選單安裝 Rexiano，就能離線練。",
+            "Chrome 要求開啟藍牙和定位時請允許，才找得到鋼琴。",
           ],
-          icon: "apple",
+          icon: "monitorPlay",
         },
         {
-          id: "linux",
-          label: "Linux",
-          title: "AppImage 或 deb 套件",
-          description: "AppImage 適合免安裝試用，deb 則提供較完整桌面整合。",
+          id: "ipad",
+          label: "iPad",
+          title: "iPad 用 Bluefy",
+          description:
+            "iPad 上的 Safari 和其他瀏覽器都沒有 Web Bluetooth，請用免費的 Bluefy 瀏覽器開啟 Rexiano 來連鋼琴。",
           notes: [
-            "多數 USB MIDI 裝置會透過 ALSA 出現。",
-            "藍牙 MIDI 取決於桌面環境與 BlueZ 配對支援。",
-            "AppImage 是最快速的 release smoke test 路徑。",
+            "不連鋼琴的話，用 Safari 看和聽也可以。",
+            "在 iPad 的 Safari 打開 Rexiano 時，也會顯示這些步驟。",
           ],
-          icon: "settings",
+          icon: "apple",
         },
       ],
     },
     docs: {
-      label: "使用手冊與開發文件",
-      heading: "Repo 的雙語文件入口",
-      description:
-        "Pages 負責給新使用者地圖；詳細手冊、設計筆記與發佈指南仍保留在 Markdown，方便跟程式碼一起 review 和更新。",
+      label: "手冊與開發文件",
+      heading: "想知道更多",
+      description: "使用手冊、設計文件和專案歷程都以 Markdown 放在程式碼旁邊。",
       resources: [
         {
           title: "使用手冊",
-          description: "練習模式、曲庫流程、MIDI 設定與日常使用。",
+          description: "練習模式、曲庫、連接鋼琴與日常使用。",
           href: `${docsBaseUrl}/docs/user-guide.md`,
           icon: "bookOpen",
         },
         {
-          title: "English User Guide",
+          title: "English Guide",
           description: "The full user manual in English.",
           href: `${docsBaseUrl}/docs/user-guide-en.md`,
           icon: "fileText",
         },
         {
-          title: "安裝指南",
-          description: "Windows、macOS、Linux 與 MIDI 裝置平台注意事項。",
-          href: `${docsBaseUrl}/docs/installation.md`,
-          icon: "download",
+          title: "更新紀錄",
+          description: "每一版改了什麼，用白話寫。",
+          href: `${docsBaseUrl}/CHANGELOG.md`,
+          icon: "circleCheck",
         },
         {
           title: "架構文件",
-          description:
-            "Renderer、engine、store、IPC、audio、MIDI 與 release 設計。",
+          description: "網頁平台層、引擎、狀態、音訊、MIDI 與藍牙。",
           href: `${docsBaseUrl}/docs/architecture-zh.md`,
           icon: "workflow",
         },
         {
-          title: "設計文件",
-          description: "技術歷史、系統階段、資料模型、領域決策與測試策略。",
+          title: "系統設計",
+          description: "技術歷程、資料模型、領域決策與測試策略。",
           href: `${docsBaseUrl}/docs/DESIGN.md`,
           icon: "layers",
         },
         {
-          title: "Roadmap",
-          description: "技術狀態追蹤與已完成階段。",
+          title: "開發路線圖",
+          description: "做完了什麼、接下來做什麼。",
           href: `${docsBaseUrl}/docs/ROADMAP.md`,
           icon: "route",
         },
         {
-          title: "MIDI 等級指南",
-          description: "L0 到 L8 的曲目分級與學習進程參考。",
+          title: "曲目分級指引",
+          description: "曲子怎麼從 L0 分到 L8。",
           href: `${docsBaseUrl}/docs/midi-level-guide.md`,
           icon: "music",
         },
         {
-          title: "更新流程",
-          description: "Rexiano packaged build 如何檢查 GitHub Releases。",
-          href: `${docsBaseUrl}/docs/update-flow.md`,
-          icon: "circleCheck",
-        },
-        {
-          title: "發佈簽章",
-          description:
-            "Windows 與 macOS 簽章策略、secrets 與 unsigned fallback。",
-          href: `${docsBaseUrl}/docs/release-signing.md`,
-          icon: "circleCheck",
-        },
-        {
-          title: "SoundFont 來源",
-          description: "內建鋼琴 sample 來源、授權筆記與 loader 檢查。",
-          href: `${docsBaseUrl}/docs/soundfont-provenance.md`,
-          icon: "headphones",
-        },
-        {
           title: "貢獻指南",
-          description: "本機開發、工作流程與專案慣例。",
+          description: "本機設定、開發流程與專案慣例。",
           href: `${docsBaseUrl}/CONTRIBUTING.md`,
           icon: "badgeCheck",
         },
       ],
     },
     footer: {
-      sentence: "為 Rex 製作，分享給所有學琴者，並以 GPL-3.0 授權。",
+      sentence: "為 Rex 打造，分享給所有學琴的人，以 GPL-3.0 授權。",
       links: [
+        { label: "開始練琴", href: appUrl },
         { label: "GitHub", href: repoUrl },
         { label: "Releases", href: releasesUrl },
         { label: "Issues", href: issuesUrl },
-        { label: "文件", href: docsUrl },
         { label: "授權", href: `${docsBaseUrl}/LICENSE` },
       ],
     },
