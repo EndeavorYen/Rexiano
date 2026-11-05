@@ -1,55 +1,69 @@
-import { useState, useRef, useCallback } from "react";
-import { X, Volume2, Globe } from "lucide-react";
+import { useCallback, useRef, useState } from "react";
+import { X } from "lucide-react";
 import { useSettingsStore } from "@renderer/stores/useSettingsStore";
+import { useThemeStore } from "@renderer/stores/useThemeStore";
+import type { ThemePreference } from "@renderer/themes/tokens";
 import { rangeProgressStyle } from "@renderer/utils/rangeProgress";
 import { LanguageSwitcher } from "./LanguageSwitcher";
 import { useTranslation } from "@renderer/i18n/useTranslation";
+import type { TranslationKey } from "@renderer/i18n/types";
 import { useDialogFocus } from "@renderer/hooks/useDialogFocus";
-
-type SettingsTab = "language" | "audio";
-
-const tabIds: SettingsTab[] = ["language", "audio"];
-
-const tabKeys = ["settings.tab.lang", "settings.tab.audio"] as const;
-
-const tabIcons = [
-  <Globe size={14} key="lang" />,
-  <Volume2 size={14} key="audio" />,
-];
+import { DeviceSelector } from "../midiDevice/DeviceSelector";
+import {
+  applyUserDataBackupToRuntime,
+  createUserDataBackupFromRuntime,
+  parseUserDataBackupText,
+} from "./userDataBackup";
+import {
+  downloadBytes,
+  pickFileWithInput,
+} from "@renderer/platform/installWebPlatform";
 
 /**
- * Live-path settings: language + volume/mute.
- * Theme, display, backup, updates, and latency stay off this surface.
+ * Settings, the colormon / sudomon way: one scrolling column of cards.
+ * Appearance, language, sound, piano and backup — nothing else lives here.
  */
 
-function SectionHeading({ children }: { children: string }): React.JSX.Element {
+const THEME_OPTIONS: { id: ThemePreference; key: TranslationKey }[] = [
+  { id: "system", key: "settings.themeSystem" },
+  { id: "light", key: "settings.themeLight" },
+  { id: "dark", key: "settings.themeDark" },
+];
+
+function AppearanceCard(): React.JSX.Element {
+  const { t } = useTranslation();
+  const preference = useThemeStore((s) => s.preference);
+  const setPreference = useThemeStore((s) => s.setPreference);
   return (
-    <h3
-      className="text-[11px] font-display font-bold uppercase tracking-wider"
-      style={{ color: "var(--color-text-muted)" }}
-    >
-      {children}
-    </h3>
+    <section className="set-card" data-testid="settings-appearance">
+      <h3>{t("settings.theme")}</h3>
+      <div className="segmented" role="group" aria-label={t("settings.theme")}>
+        {THEME_OPTIONS.map((option) => (
+          <button
+            key={option.id}
+            aria-pressed={preference === option.id}
+            onClick={() => setPreference(option.id)}
+            data-testid={`theme-${option.id}`}
+          >
+            {t(option.key)}
+          </button>
+        ))}
+      </div>
+    </section>
   );
 }
 
-function LanguageSettingsSection(): React.JSX.Element {
+function LanguageCard(): React.JSX.Element {
   const { t } = useTranslation();
   return (
-    <div className="animate-page-enter">
-      <SectionHeading>{t("settings.language")}</SectionHeading>
+    <section className="set-card" data-testid="settings-language">
+      <h3>{t("settings.language")}</h3>
       <LanguageSwitcher />
-      <p
-        className="text-[10px] font-body mt-3"
-        style={{ color: "var(--color-text-muted)" }}
-      >
-        {t("settings.langDesc")}
-      </p>
-    </div>
+    </section>
   );
 }
 
-function AudioSettingsSection(): React.JSX.Element {
+function SoundCard(): React.JSX.Element {
   const { t } = useTranslation();
   const volume = useSettingsStore((s) => s.volume);
   const muted = useSettingsStore((s) => s.muted);
@@ -57,92 +71,195 @@ function AudioSettingsSection(): React.JSX.Element {
   const setMuted = useSettingsStore((s) => s.setMuted);
 
   return (
-    <div className="animate-page-enter">
-      <SectionHeading>{t("settings.audioSettings")}</SectionHeading>
-      <div className="flex flex-col gap-4 mt-3">
-        <div>
-          <div className="flex items-center justify-between mb-1.5">
-            <span
-              className="text-xs font-body"
-              style={{ color: "var(--color-text)" }}
-            >
-              {t("settings.volume")}
-            </span>
-            <span
-              className="text-xs font-mono tabular-nums"
-              style={{ color: "var(--color-text-muted)" }}
-            >
-              {muted ? t("settings.muted") : volume}
-            </span>
-          </div>
-          <input
-            type="range"
-            min={0}
-            max={100}
-            value={muted ? 0 : volume}
-            onChange={(e) => setVolume(Number(e.target.value))}
-            className="w-full"
-            style={rangeProgressStyle(muted ? 0 : volume, 0, 100)}
-            disabled={muted}
-            aria-label={t("settings.volume")}
-            data-testid="volume-slider"
-          />
-        </div>
-        <label
-          className="flex items-center justify-between cursor-pointer gap-3 rounded-xl px-3 py-2.5"
+    <section className="set-card" data-testid="settings-sound">
+      <h3>{t("settings.audioSettings")}</h3>
+      <label className="flex flex-col gap-1.5">
+        <span className="flex items-center justify-between text-sm">
+          <span>{t("settings.volume")}</span>
+          <span
+            className="tabular-nums"
+            style={{ color: "var(--color-text-muted)" }}
+          >
+            {muted ? t("settings.muted") : volume}
+          </span>
+        </span>
+        <input
+          type="range"
+          min={0}
+          max={100}
+          value={muted ? 0 : volume}
+          onChange={(e) => setVolume(Number(e.target.value))}
+          className="w-full"
+          style={rangeProgressStyle(muted ? 0 : volume, 0, 100)}
+          disabled={muted}
+          aria-label={t("settings.volume")}
+          data-testid="volume-slider"
+        />
+      </label>
+      <label className="flex min-h-10 cursor-pointer items-center gap-3 text-sm">
+        <input
+          type="checkbox"
+          role="switch"
+          checked={muted}
+          onChange={() => setMuted(!muted)}
+          className="h-5 w-5 shrink-0"
+          style={{ accentColor: "var(--color-success-text)" }}
+          data-testid="toggle-mute"
+        />
+        <span>{t("settings.muteAudio")}</span>
+      </label>
+    </section>
+  );
+}
+
+function PianoLatencyCard(): React.JSX.Element {
+  const { t } = useTranslation();
+  const latency = useSettingsStore((s) => s.pianoOutputLatency);
+  const setLatency = useSettingsStore((s) => s.setPianoOutputLatency);
+  return (
+    <section className="set-card" data-testid="settings-piano-latency">
+      <h3>{t("piano.outputLatency")}</h3>
+      <p className="hint">{t("piano.outputLatencyHint")}</p>
+      <label className="flex flex-col gap-1.5">
+        <span className="flex justify-end text-sm tabular-nums">
+          {t("piano.outputLatencyValue", { ms: latency })}
+        </span>
+        <input
+          type="range"
+          min={0}
+          max={150}
+          step={5}
+          value={latency}
+          onChange={(e) => setLatency(Number(e.target.value))}
+          style={rangeProgressStyle(latency, 0, 150)}
+          aria-label={t("piano.outputLatency")}
+          data-testid="piano-latency-slider"
+        />
+      </label>
+    </section>
+  );
+}
+
+function BackupCard(): React.JSX.Element {
+  const { t } = useTranslation();
+  const [message, setMessage] = useState<{
+    text: string;
+    ok: boolean;
+    reload?: boolean;
+  } | null>(null);
+
+  const exportBackup = useCallback(async () => {
+    const result = await createUserDataBackupFromRuntime(
+      localStorage,
+      window.api,
+    );
+    if (!result.ok) {
+      setMessage({
+        text: result.errors[0] ?? t("settings.backupUnknownError"),
+        ok: false,
+      });
+      return;
+    }
+    const day = new Date().toISOString().slice(0, 10);
+    downloadBytes(
+      `rexiano-backup-${day}.json`,
+      new TextEncoder().encode(JSON.stringify(result.manifest, null, 2)),
+      "application/json",
+    );
+    setMessage({
+      text: t("settings.backupExportSuccess", {
+        count: result.manifest.scopes.length,
+      }),
+      ok: true,
+    });
+  }, [t]);
+
+  const importBackup = useCallback(async () => {
+    const file = await pickFileWithInput(".json,application/json");
+    if (!file) return;
+    const parsed = parseUserDataBackupText(await file.text());
+    if (!parsed.ok) {
+      setMessage({
+        text: parsed.errors[0] ?? t("settings.backupUnknownError"),
+        ok: false,
+      });
+      return;
+    }
+    const applied = await applyUserDataBackupToRuntime(
+      parsed.manifest,
+      localStorage,
+      window.api,
+    );
+    if (!applied.ok) {
+      setMessage({
+        text: applied.errors[0] ?? t("settings.backupUnknownError"),
+        ok: false,
+      });
+      return;
+    }
+    setMessage({
+      text: t("settings.backupImportSuccess", {
+        count: applied.appliedScopes.length,
+      }),
+      ok: true,
+      reload: true,
+    });
+  }, [t]);
+
+  return (
+    <section className="set-card" data-testid="settings-backup">
+      <h3>{t("settings.backupTitle")}</h3>
+      <p className="hint">{t("settings.backupBrowserDesc")}</p>
+      <div className="grid grid-cols-2 gap-2">
+        <button
+          onClick={() => void exportBackup()}
+          className="btn-surface-themed min-h-11 rounded-2xl px-3 text-sm font-bold cursor-pointer"
+          data-testid="user-data-export"
+        >
+          {t("settings.backupExport")}
+        </button>
+        <button
+          onClick={() => void importBackup()}
+          className="btn-surface-themed min-h-11 rounded-2xl px-3 text-sm font-bold cursor-pointer"
+          data-testid="user-data-import"
+        >
+          {t("settings.backupImport")}
+        </button>
+      </div>
+      {message && (
+        <p
+          className="m-0 flex flex-wrap items-center gap-2 text-sm"
+          role="status"
           style={{
-            background:
-              "color-mix(in srgb, var(--color-surface-alt) 52%, var(--color-surface))",
-            border: "1px solid var(--color-border)",
+            color: message.ok
+              ? "var(--color-success-text)"
+              : "var(--color-danger-text)",
           }}
         >
-          <span
-            className="text-xs font-body"
-            style={{ color: "var(--color-text)" }}
-          >
-            {t("settings.muteAudio")}
-          </span>
-          <button
-            role="switch"
-            aria-checked={muted}
-            onClick={() => setMuted(!muted)}
-            className="w-10 h-[22px] rounded-full relative transition-colors shrink-0"
-            style={{
-              background: muted
-                ? "var(--color-accent)"
-                : "var(--color-surface-alt)",
-              border: muted
-                ? "1px solid transparent"
-                : "1px solid var(--color-border)",
-            }}
-            data-testid="toggle-mute"
-          >
-            <span
-              className="absolute top-[2px] w-4 h-4 rounded-full transition-all duration-150"
-              style={{
-                background: muted
-                  ? "var(--color-on-accent)"
-                  : "var(--color-text-muted)",
-                left: muted ? "calc(100% - 19px)" : "2px",
-                boxShadow: "0 1px 2px rgba(0,0,0,0.12)",
-              }}
-            />
-          </button>
-        </label>
-      </div>
-    </div>
+          {message.text}
+          {message.reload && (
+            <button
+              onClick={() => window.location.reload()}
+              className="btn-primary-themed min-h-9 rounded-xl px-3 text-sm cursor-pointer"
+            >
+              {t("settings.reloadNow")}
+            </button>
+          )}
+        </p>
+      )}
+    </section>
   );
 }
 
 /**
- * Language and audio settings stacked, for surfaces that already are a panel
- * (the playback drawer). No dialog, no tabs.
+ * Sound and language cards, for surfaces that already are a panel
+ * (the playback drawer).
  */
 export function SettingsSections(): React.JSX.Element {
   return (
-    <div className="flex flex-col gap-5" data-testid="settings-sections">
-      <LanguageSettingsSection />
-      <AudioSettingsSection />
+    <div className="flex flex-col gap-3" data-testid="settings-sections">
+      <SoundCard />
+      <LanguageCard />
     </div>
   );
 }
@@ -152,19 +269,18 @@ interface SettingsPanelProps {
   onClose?: () => void;
 }
 
-/** Settings dialog with language / audio tabs (main menu). */
+/** The settings sheet opened from the gear in the top bar. */
 export function SettingsPanel({
   onClose,
 }: SettingsPanelProps = {}): React.JSX.Element {
   const { t } = useTranslation();
-  const [activeTab, setActiveTab] = useState<SettingsTab>("language");
   const panelRef = useRef<HTMLDivElement>(null);
+  const closeButtonRef = useRef<HTMLButtonElement>(null);
 
   const handleClose = useCallback(() => {
     onClose?.();
   }, [onClose]);
 
-  const closeButtonRef = useRef<HTMLButtonElement>(null);
   useDialogFocus({
     active: true,
     containerRef: panelRef,
@@ -173,85 +289,49 @@ export function SettingsPanel({
   });
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center modal-backdrop-cinematic">
+    <div
+      className="family-scrim"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) handleClose();
+      }}
+    >
       <div
         ref={panelRef}
-        className="w-[92vw] max-w-[560px] max-h-[85vh] flex flex-col rounded-2xl shadow-2xl modal-card-cinematic overflow-hidden"
-        style={{
-          background:
-            "color-mix(in srgb, var(--color-surface) 90%, transparent)",
-          border: "1px solid var(--color-border)",
-        }}
+        className="family-sheet"
         role="dialog"
         aria-modal="true"
         aria-label={t("settings.title")}
         tabIndex={-1}
         data-testid="settings-panel"
       >
-        <div
-          className="flex items-center justify-between px-5 py-3.5 shrink-0"
-          style={{
-            borderBottom: "1px solid var(--color-border)",
-          }}
-        >
-          <h2
-            className="text-base font-display font-bold"
-            style={{ color: "var(--color-text)" }}
-          >
-            {t("settings.title")}
-          </h2>
+        <div className="family-sheet-head">
+          <h2>{t("settings.title")}</h2>
           <button
             ref={closeButtonRef}
-            onClick={() => handleClose()}
-            className="btn-surface-themed w-7 h-7 flex items-center justify-center rounded-full cursor-pointer transition-colors"
+            onClick={handleClose}
+            className="icon-btn"
             title={t("settings.close")}
             aria-label={t("settings.close")}
             data-testid="settings-close"
           >
-            <X size={14} style={{ color: "var(--color-text-muted)" }} />
+            <X size={20} />
           </button>
         </div>
-
-        <div
-          className="flex shrink-0 px-2 pt-2 gap-1 overflow-x-auto"
-          style={{
-            borderBottom: "1px solid var(--color-border)",
-            background:
-              "color-mix(in srgb, var(--color-surface-alt) 30%, var(--color-surface))",
-          }}
-        >
-          {tabIds.map((id, i) => (
-            <button
-              key={id}
-              onClick={() => setActiveTab(id)}
-              className="flex items-center gap-1.5 px-3 py-2 text-xs font-body font-medium rounded-t-lg cursor-pointer transition-colors relative whitespace-nowrap"
-              style={{
-                color:
-                  activeTab === id
-                    ? "var(--color-accent-text)"
-                    : "var(--color-text)",
-                background:
-                  activeTab === id
-                    ? "color-mix(in srgb, var(--color-accent) 9%, var(--color-surface))"
-                    : "transparent",
-              }}
-              data-testid={`settings-tab-${id}`}
+        <div className="family-sheet-body">
+          <AppearanceCard />
+          <LanguageCard />
+          <SoundCard />
+          <section className="flex flex-col gap-2" data-testid="settings-piano">
+            <h3
+              className="m-0 px-1 text-sm font-bold"
+              style={{ color: "var(--color-text-muted)" }}
             >
-              {tabIcons[i]}
-              {t(tabKeys[i])}
-              {activeTab === id && (
-                <div
-                  className="absolute bottom-0 left-2 right-2 h-0.5 rounded-full"
-                  style={{ background: "var(--color-accent)" }}
-                />
-              )}
-            </button>
-          ))}
-        </div>
-
-        <div className="flex-1 overflow-y-auto px-5 py-4">
-          {activeTab === "language" && <LanguageSettingsSection />}
-          {activeTab === "audio" && <AudioSettingsSection />}
+              {t("piano.title")}
+            </h3>
+            <DeviceSelector />
+          </section>
+          <PianoLatencyCard />
+          <BackupCard />
         </div>
       </div>
     </div>

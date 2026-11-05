@@ -6,22 +6,23 @@ const selectorSource = readFileSync(
   resolve(process.cwd(), "src/features/midiDevice/DeviceSelector.tsx"),
   "utf8",
 );
-const senderModule = resolve(
-  process.cwd(),
-  "src/engines/midi/MidiOutputSender.ts",
-);
 
-describe("live path MIDI output absence", () => {
-  test("device selector does not offer output or a connection test", () => {
-    expect(selectorSource).not.toContain("midi.outputLabel");
-    expect(selectorSource).not.toContain("midi.outputDevice");
-    expect(selectorSource).not.toContain('data-testid="midi-test-button"');
-    expect(selectorSource).toContain("midi.inputDevice");
+describe("piano connection surface", () => {
+  test("Bluetooth comes first; Web MIDI ports sit under other connections", () => {
     expect(selectorSource).toContain("connectBluetooth");
-    expect(selectorSource).toContain("connect();");
+    expect(selectorSource).toContain("piano-other-connections");
+    expect(selectorSource).toContain("midi.inputDevice");
+    expect(selectorSource).toContain("midi.outputDevice");
+    // Web MIDI is only touched once the section is opened.
+    expect(selectorSource).toContain("void connect();");
+    expect(selectorSource).not.toContain('data-testid="midi-test-button"');
   });
 
   test("MidiOutputSender stays in the tree", () => {
-    expect(existsSync(senderModule)).toBe(true);
+    expect(
+      existsSync(
+        resolve(process.cwd(), "src/engines/midi/MidiOutputSender.ts"),
+      ),
+    ).toBe(true);
   });
 });

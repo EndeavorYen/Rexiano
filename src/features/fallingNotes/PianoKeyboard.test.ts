@@ -21,17 +21,20 @@ describe("PianoKeyboard highlight helpers", () => {
     });
 
     test("returns key-active color when song active but not MIDI", () => {
-      expect(getWhiteKeyBackground(true, false)).toBe(
+      expect(getWhiteKeyBackground(true, false)).toContain(
         "var(--color-key-active)",
       );
     });
 
     test("returns MIDI highlight when MIDI active", () => {
-      expect(getWhiteKeyBackground(false, true)).toBe(MIDI_HIGHLIGHT);
+      expect(getWhiteKeyBackground(false, true)).toContain(MIDI_HIGHLIGHT);
     });
 
     test("MIDI highlight takes priority over song active", () => {
-      expect(getWhiteKeyBackground(true, true)).toBe(MIDI_HIGHLIGHT);
+      expect(getWhiteKeyBackground(true, true)).toContain(MIDI_HIGHLIGHT);
+      expect(getWhiteKeyBackground(true, true)).not.toContain(
+        "--color-key-active",
+      );
     });
   });
 
@@ -43,17 +46,20 @@ describe("PianoKeyboard highlight helpers", () => {
     });
 
     test("returns key-active color when song active but not MIDI", () => {
-      expect(getBlackKeyBackground(true, false)).toBe(
+      expect(getBlackKeyBackground(true, false)).toContain(
         "var(--color-key-active)",
       );
     });
 
     test("returns MIDI highlight when MIDI active", () => {
-      expect(getBlackKeyBackground(false, true)).toBe(MIDI_HIGHLIGHT);
+      expect(getBlackKeyBackground(false, true)).toContain(MIDI_HIGHLIGHT);
     });
 
     test("MIDI highlight takes priority over song active", () => {
-      expect(getBlackKeyBackground(true, true)).toBe(MIDI_HIGHLIGHT);
+      expect(getBlackKeyBackground(true, true)).toContain(MIDI_HIGHLIGHT);
+      expect(getBlackKeyBackground(true, true)).not.toContain(
+        "--color-key-active",
+      );
     });
   });
 

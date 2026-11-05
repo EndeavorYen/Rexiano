@@ -90,7 +90,7 @@ export function StatBadge({
         border: "1px solid var(--color-border)",
       }}
     >
-      <span style={{ color: "var(--color-accent)" }}>{icon}</span>
+      <span style={{ color: "var(--color-accent-text)" }}>{icon}</span>
       <div className="min-w-0">
         <span
           className="text-sm font-display font-bold leading-tight block"

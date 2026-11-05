@@ -493,6 +493,85 @@ describe("AudioScheduler", () => {
       expect(midiOutput.clearScheduled).toHaveBeenCalledTimes(3);
     });
 
+    test("pause releases the piano softly when the output supports it", () => {
+      const midiOutput = {
+        noteOn: vi.fn(),
+        noteOff: vi.fn(),
+        clearScheduled: vi.fn(),
+        releaseScheduled: vi.fn(),
+      };
+      scheduler.setMidiOutput(midiOutput);
+      scheduler.setSong(song([track([note(0, 0.5)])]));
+      scheduler.start(0);
+      midiOutput.clearScheduled.mockClear();
+
+      scheduler.pause();
+      expect(midiOutput.releaseScheduled).toHaveBeenCalledTimes(1);
+      expect(midiOutput.releaseScheduled).toHaveBeenCalledWith(
+        expect.any(Number),
+      );
+      expect(midiOutput.clearScheduled).not.toHaveBeenCalled();
+    });
+
+    test("switching hands mid-song re-sends the look-ahead under the new split", () => {
+      const midiOutput = {
+        noteOn: vi.fn(),
+        noteOff: vi.fn(),
+        clearScheduled: vi.fn(),
+        releaseScheduled: vi.fn(),
+      };
+      scheduler.setMidiOutput(midiOutput);
+      scheduler.setMidiExcludedTracks(new Set([0]));
+      scheduler.setSong(
+        song([track([note(0.05, 0.5, 60)]), track([note(0.05, 0.5, 48)])]),
+      );
+      scheduler.start(0);
+      vi.advanceTimersByTime(25);
+      expect(midiOutput.noteOn).toHaveBeenCalledWith(
+        48,
+        80,
+        expect.any(Number),
+      );
+      midiOutput.noteOn.mockClear();
+
+      scheduler.setMidiExcludedTracks(new Set([1]));
+      expect(midiOutput.releaseScheduled).toHaveBeenCalledTimes(1);
+      vi.advanceTimersByTime(25);
+      expect(midiOutput.noteOn).toHaveBeenCalledWith(
+        60,
+        80,
+        expect.any(Number),
+      );
+      expect(midiOutput.noteOn).not.toHaveBeenCalledWith(
+        48,
+        80,
+        expect.any(Number),
+      );
+    });
+
+    test("never sends the learner's tracks to the piano", () => {
+      const midiOutput = {
+        noteOn: vi.fn(),
+        noteOff: vi.fn(),
+        clearScheduled: vi.fn(),
+      };
+      scheduler.setMidiOutput(midiOutput);
+      scheduler.setMidiExcludedTracks(new Set([0]));
+      scheduler.setSong(
+        song([track([note(0, 0.5, 60)]), track([note(0, 0.5, 48)])]),
+      );
+      scheduler.start(0);
+      vi.advanceTimersByTime(25);
+
+      expect(engine.noteOn).toHaveBeenCalledWith(60, 80, expect.any(Number));
+      expect(midiOutput.noteOn).toHaveBeenCalledTimes(1);
+      expect(midiOutput.noteOn).toHaveBeenCalledWith(
+        48,
+        80,
+        expect.any(Number),
+      );
+    });
+
     test("schedules noteOn and noteOff with correct AudioContext times", () => {
       engine._setCurrentTime(10); // audioContext.currentTime = 10
       const s = song([track([note(0, 0.5, 60, 100)])]);

@@ -579,6 +579,24 @@ flowchart LR
 
 ---
 
+## Phase 11 — 藍牙鋼琴與 colormon 家族介面 ✅
+
+> 只支援藍牙鋼琴；曲子可以從鋼琴彈出來（像 Synthesia）。介面換成和 colormon / sudomon 一樣的家族設計。
+
+- [x] 藍牙鋼琴輸出：BLE-MIDI 封包、排程送出、輸出延遲對齊（`BleMidiOutput`、`PianoPlaybackOutput`）
+- [x] 聲音來源：鋼琴／這台裝置；鋼琴出聲時電腦靜音
+- [x] Watch 全送、Wait 只送孩子沒在練的那手、Free 不送；孩子按的鍵不送回鋼琴
+- [x] 連上時切到平台鋼琴音色；暫停讓已響的音結束，停止／跳段／換歌／離開頁面全部停音
+- [x] 藍牙為主的連線介面；Web MIDI 輸入／輸出收進「其他連線方式」
+- [x] 沒有 Web Bluetooth 的瀏覽器：iPad 引導 Bluefy、Mac Safari 與其他引導 Chrome / Edge
+- [x] 家族配色、字型、頂列、卡片、設定頁；主題可選 跟著系統／淺色／深色
+- [x] 更新紀錄：`src/data/changelog.json` + ⓘ 紅點；`CHANGELOG.md` 由腳本產生，停用 release-please
+- [x] 設定頁加回備份匯出／匯入
+- [x] 琴鍵改為真實比例並加上材質；下落音符改為圓角色塊
+- [ ] 用真實藍牙鋼琴實測（Roland / Yamaha / Kawai / Casio；iPad + Bluefy）
+
+---
+
 ## 跨 Phase 持續改進項目
 
 > 這些項目不屬於特定 Phase，隨開發過程持續推進

@@ -30,7 +30,15 @@ const DEFAULT_CONFIG: AudioSchedulerConfig = {
 export interface MidiPlaybackOutput {
   noteOn(midi: number, velocity: number, timestamp: number): void;
   noteOff(midi: number, timestamp: number): void;
-  clearScheduled(): void;
+  /** Hard stop: drop everything scheduled and silence sounding notes. */
+  clearScheduled(): void | Promise<void>;
+  /**
+   * Soft stop for pause / speed change: drop notes that have not started,
+   * let sounding ones end on time. `cutoff` is the performance.now() time
+   * after which the scheduler will send notes again. Falls back to
+   * clearScheduled().
+   */
+  releaseScheduled?(cutoff?: number): void;
 }
 
 export class AudioScheduler implements IAudioScheduler {
@@ -57,6 +65,8 @@ export class AudioScheduler implements IAudioScheduler {
   /** Track indices excluded from playback scheduling. */
   private _mutedTracks = new Set<number>();
   private _midiOutput: MidiPlaybackOutput | null = null;
+  /** Track indices played by the computer but never sent to the piano. */
+  private _midiExcludedTracks = new Set<number>();
 
   constructor(engine: IAudioEngine, config?: Partial<AudioSchedulerConfig>) {
     this._engine = engine;
@@ -82,7 +92,7 @@ export class AudioScheduler implements IAudioScheduler {
           (audioTime - oldStartAudioTime) * oldSpeed + oldSeekOffset;
 
         this._engine.releaseScheduledAfter(audioTime);
-        this._midiOutput?.clearScheduled();
+        this._releaseMidiOutput();
         this._rewindCancelledCursors(
           audioTime,
           oldStartAudioTime,
@@ -110,6 +120,39 @@ export class AudioScheduler implements IAudioScheduler {
       this._engine.allNotesOff();
       this._midiOutput?.clearScheduled();
       this._resetCursors(currentTime);
+    }
+  }
+
+  /**
+   * Tracks the learner plays on the piano themselves: still scheduled on the
+   * computer (if it is the sound source) but never sent to the piano.
+   */
+  setMidiExcludedTracks(trackIndices: Set<number>): void {
+    const changed =
+      trackIndices.size !== this._midiExcludedTracks.size ||
+      [...trackIndices].some((track) => !this._midiExcludedTracks.has(track));
+    this._midiExcludedTracks = new Set(trackIndices);
+    if (!changed || this._intervalId === null) return;
+
+    // Mid-song hand switch: re-send the look-ahead under the new split.
+    const ctx = this._engine.audioContext;
+    if (!ctx) return;
+    this._engine.releaseScheduledAfter(ctx.currentTime);
+    this._releaseMidiOutput();
+    this._rewindCancelledCursors(
+      ctx.currentTime,
+      this._startAudioTime,
+      this._seekOffset,
+      this._speed,
+    );
+  }
+
+  private _releaseMidiOutput(): void {
+    if (!this._midiOutput) return;
+    if (this._midiOutput.releaseScheduled) {
+      this._midiOutput.releaseScheduled(performance.now());
+    } else {
+      this._midiOutput.clearScheduled();
     }
   }
 
@@ -173,7 +216,7 @@ export class AudioScheduler implements IAudioScheduler {
     if (ctx) {
       this._engine.releaseScheduledAfter(ctx.currentTime);
     }
-    this._midiOutput?.clearScheduled();
+    this._releaseMidiOutput();
 
     if (songTime !== null) {
       this._pausedSongTime = songTime;
@@ -345,7 +388,7 @@ export class AudioScheduler implements IAudioScheduler {
         const clampedOffTime = Math.max(offTime, clampedOnTime + 0.01);
         this._engine.noteOff(note.midi, clampedOffTime);
 
-        if (this._midiOutput) {
+        if (this._midiOutput && !this._midiExcludedTracks.has(t)) {
           const midiNow = performance.now();
           this._midiOutput.noteOn(
             note.midi,

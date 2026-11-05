@@ -108,3 +108,33 @@ describe("calculateSplitLayoutDimensions", () => {
     );
   });
 });
+
+describe("proportional keyboard", () => {
+  test("keys are about four times longer than wide, within the window cap", () => {
+    const wide = calculateSplitLayoutDimensions({
+      viewportHeight: 820,
+      isSplitMode: false,
+      isNarrowViewport: false,
+      whiteKeyWidth: 40,
+    });
+    expect(wide.keyboardHeight).toBe(160);
+
+    const capped = calculateSplitLayoutDimensions({
+      viewportHeight: 820,
+      isSplitMode: true,
+      isNarrowViewport: false,
+      whiteKeyWidth: 56,
+    });
+    expect(capped.keyboardHeight).toBe(Math.round(820 * 0.21));
+  });
+
+  test("never shorter than the old fixed heights", () => {
+    const tiny = calculateSplitLayoutDimensions({
+      viewportHeight: 820,
+      isSplitMode: false,
+      isNarrowViewport: false,
+      whiteKeyWidth: 10,
+    });
+    expect(tiny.keyboardHeight).toBe(100);
+  });
+});

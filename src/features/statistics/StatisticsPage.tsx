@@ -115,7 +115,7 @@ export function StatisticsPage({
           </div>
           <div
             className="mt-1 text-base font-display font-bold"
-            style={{ color: "var(--color-accent)" }}
+            style={{ color: "var(--color-accent-text)" }}
           >
             {t(reward)}
           </div>

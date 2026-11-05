@@ -32,8 +32,8 @@ export default defineConfig({
         scope: "/",
         display: "standalone",
         orientation: "landscape",
-        background_color: "#fffaf0",
-        theme_color: "#1e2327",
+        background_color: "#EAF1F8",
+        theme_color: "#EAF1F8",
         icons: [
           { src: "icons/icon-192.png", sizes: "192x192", type: "image/png" },
           { src: "icons/icon-512.png", sizes: "512x512", type: "image/png" },
@@ -61,7 +61,18 @@ export default defineConfig({
           "**/*.{js,css,html,woff,woff2,png,svg,sf2,mid}",
           "midi/songs.json",
         ],
-        globIgnores: ["scores/**"],
+        // Chinese font subsets are large; cache the ones actually used instead.
+        globIgnores: ["scores/**", "**/noto-sans-tc-*"],
+        runtimeCaching: [
+          {
+            urlPattern: /\/assets\/noto-sans-tc-.*\.woff2?$/,
+            handler: "CacheFirst",
+            options: {
+              cacheName: "rexiano-fonts",
+              expiration: { maxEntries: 400 },
+            },
+          },
+        ],
         maximumFileSizeToCacheInBytes: 16 * 1024 * 1024,
         navigateFallback: "/index.html",
         cleanupOutdatedCaches: true,

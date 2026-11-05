@@ -1,13 +1,13 @@
-import { Upload, ArrowLeft } from "lucide-react";
+import { Upload } from "lucide-react";
 import { useTranslation } from "@renderer/i18n/useTranslation";
-import { ThemePicker } from "../settings/ThemePicker";
 import { DailyGoalBanner } from "./DailyGoalBanner";
-import appIcon from "../../../docs/figure/Rexiano_icon.png";
+import { FamilyTopBar } from "../shell/FamilyTopBar";
 import type { DailyGoalStatus } from "../practice/nextPracticeAction";
 
 export interface SongLibraryHeaderProps {
   onBack?: () => void;
   onOpenFile: () => void;
+  onOpenSettings?: () => void;
   greeting: string;
   dailyGoalStatus: DailyGoalStatus;
 }
@@ -15,6 +15,7 @@ export interface SongLibraryHeaderProps {
 export function SongLibraryHeader({
   onBack,
   onOpenFile,
+  onOpenSettings,
   greeting,
   dailyGoalStatus,
 }: SongLibraryHeaderProps): React.JSX.Element {
@@ -22,60 +23,32 @@ export function SongLibraryHeader({
 
   return (
     <>
-      {/* Only the compact title row sticks, flush with the scroll edge so rows
-        never show above it. The daily goal scrolls with the page. */}
-      <header
-        className="surface-panel subtle-shadow mb-4 px-4 py-3 animate-page-enter sm:sticky sm:top-0 sm:z-20"
-        style={{ background: "var(--color-surface)" }}
+      {/* The bar sticks to the top of the scrolling library. */}
+      <div
+        className="sticky top-0 z-20 -mx-1 mb-3 px-1 pb-1"
+        style={{ background: "var(--color-bg)" }}
       >
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div className="flex items-center gap-3">
-            {onBack && (
-              <button
-                onClick={onBack}
-                className="btn-surface-themed flex min-h-9 min-w-9 items-center justify-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs cursor-pointer"
-                aria-label={t("settings.shortcut.closeBack")}
-              >
-                <ArrowLeft size={13} />
-              </button>
-            )}
-            <img
-              src={appIcon}
-              alt=""
-              width={36}
-              height={36}
-              className="rounded-xl subtle-shadow"
-            />
-            <div className="min-w-0">
-              <span className="kicker-label">{t("app.subtitle")}</span>
-              <h1
-                className="text-2xl font-display font-bold tracking-tight leading-none"
-                style={{ color: "var(--color-text)" }}
-              >
-                Rexiano
-              </h1>
-              <p
-                className="text-sm mt-1"
-                style={{ color: "var(--color-text-muted)" }}
-              >
-                {greeting}
-              </p>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-2.5">
-            <button
-              onClick={onOpenFile}
-              data-testid="library-import-file"
-              className="btn-primary-themed flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium cursor-pointer"
-            >
-              <Upload size={15} />
-              {t("library.importMidi")}
-            </button>
-            <ThemePicker />
-          </div>
-        </div>
-      </header>
+        <FamilyTopBar
+          title={t("library.title")}
+          onBack={onBack}
+          onOpenSettings={onOpenSettings}
+        >
+          <button
+            onClick={onOpenFile}
+            data-testid="library-import-file"
+            className="btn-primary-themed flex min-h-11 items-center gap-2 rounded-2xl px-4 text-sm cursor-pointer"
+          >
+            <Upload size={16} />
+            <span className="hidden sm:inline">{t("library.importMidi")}</span>
+          </button>
+        </FamilyTopBar>
+      </div>
+      <p
+        className="mb-3 mt-0 px-1 font-display text-xl font-extrabold"
+        data-testid="library-greeting"
+      >
+        {greeting}
+      </p>
       <div className="mb-5">
         <DailyGoalBanner dailyGoalStatus={dailyGoalStatus} />
       </div>

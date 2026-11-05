@@ -27,31 +27,20 @@ export function DisplayModeToggle({
   const setDisplayMode = usePracticeStore((s) => s.setDisplayMode);
 
   return (
-    <div
-      className="flex items-center gap-1 rounded-xl p-1"
-      style={{
-        background: "color-mix(in srgb, var(--color-surface) 78%, transparent)",
-        border: "1px solid var(--color-border)",
-      }}
-    >
+    <div className="segmented" style={{ gap: 4, padding: 3 }}>
       {modes.map(({ value, labelKey, Icon }) => {
         const isActive = displayMode === value;
         return (
           <button
             key={value}
             onClick={() => setDisplayMode(value)}
-            className="flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] font-body cursor-pointer transition-colors"
-            style={{
-              background: isActive ? "var(--color-accent)" : "transparent",
-              color: isActive
-                ? "var(--color-on-accent)"
-                : "var(--color-text-muted)",
-            }}
+            className="flex items-center justify-center gap-1.5 px-3 text-sm"
+            style={{ minHeight: 36 }}
             aria-pressed={isActive}
             aria-label={t(labelKey)}
             data-testid={`${testIdPrefix}-${value}`}
           >
-            <Icon size={12} />
+            <Icon size={16} />
             <span className="hidden sm:inline">{t(labelKey)}</span>
           </button>
         );

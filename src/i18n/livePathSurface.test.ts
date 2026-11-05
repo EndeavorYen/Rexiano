@@ -34,8 +34,6 @@ const DROPPED_LIVE_LABELS = [
   "sheetMusic.modeSheet",
   "settings.tab.backup",
   "settings.tab.about",
-  "midi.outputLabel",
-  "midi.outputDevice",
   "midi.testLabel",
   "app.insightsTitle",
   "settings.showFingering",

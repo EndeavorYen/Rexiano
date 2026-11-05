@@ -1,0 +1,42 @@
+{
+  "versions": [
+    {
+      "version": "2.1",
+      "date": "2026-11-05",
+      "title": "鋼琴自己會彈了，也換上新外觀",
+      "items": [
+        "接上藍牙鋼琴後，曲子會從鋼琴彈出來；等待模式只彈你沒在練的那一手",
+        "一個按鈕就能連鋼琴；在 iPad 上會告訴你怎麼用 Bluefy 打開",
+        "換成和顏色寶可夢一樣的外觀，可以選淺色、深色或跟著系統",
+        "右上角的 ⓘ 可以看更新紀錄，有新東西時會出現小紅點"
+      ],
+      "en": {
+        "title": "The piano plays along, and a new look",
+        "items": [
+          "With a Bluetooth piano connected, the song plays on the piano; in Wait mode it only plays the hand you're not practising",
+          "One button connects the piano; on iPad, Rexiano shows how to open it in Bluefy",
+          "A new look shared with our other games, in light, dark, or following the system",
+          "The ⓘ at the top shows what's new, with a red dot when there's something you haven't seen"
+        ]
+      }
+    },
+    {
+      "version": "2.0",
+      "date": "2026-11-03",
+      "title": "變成網頁版了",
+      "items": [
+        "打開瀏覽器就能練琴，不用再安裝",
+        "可以安裝成 App，沒有網路也能練",
+        "匯入的曲子會留在瀏覽器裡，下次直接打開"
+      ],
+      "en": {
+        "title": "Rexiano is now a web app",
+        "items": [
+          "Practice right in the browser — nothing to install",
+          "Install it as an app to practice offline",
+          "Imported songs stay in the browser so you can reopen them"
+        ]
+      }
+    }
+  ]
+}

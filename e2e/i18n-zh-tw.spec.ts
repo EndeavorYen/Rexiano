@@ -26,8 +26,11 @@ test.describe("Traditional Chinese player flow", () => {
       "初次識譜",
     );
     await expect(
-      appPage.getByRole("button", { name: "切換主題" }),
+      appPage.getByRole("button", { name: "更新紀錄" }),
     ).toBeVisible();
+    await expect(
+      appPage.getByTestId("library-device-drawer-trigger"),
+    ).toContainText("鋼琴");
     const libraryAx = await appPage.locator("body").ariaSnapshot();
     expect(libraryAx).not.toMatch(FORBIDDEN_ENGLISH_UI);
 

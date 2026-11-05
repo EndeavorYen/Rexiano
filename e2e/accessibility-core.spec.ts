@@ -46,7 +46,7 @@ test.describe("Core accessibility guardrails", () => {
     await expect(settingsLauncher).toBeFocused();
   });
 
-  test("library MIDI drawer supports keyboard open, focus trapping, and Escape", async ({
+  test("library piano drawer supports keyboard open, focus trapping, and Escape", async ({
     appPage,
   }) => {
     await gotoLibrary(appPage);
@@ -56,7 +56,7 @@ test.describe("Core accessibility guardrails", () => {
     await expect(drawerLauncher).toBeFocused();
     await appPage.keyboard.press("Enter");
 
-    const drawer = appPage.getByRole("dialog", { name: /^MIDI$/ });
+    const drawer = appPage.getByRole("dialog", { name: /^Piano$/ });
     await expect(drawer).toBeVisible();
     await expectFocusWithin(appPage, "[data-testid='library-midi-drawer']");
 
@@ -70,56 +70,45 @@ test.describe("Core accessibility guardrails", () => {
     await expect(drawerLauncher).toBeFocused();
   });
 
-  test("ThemePicker exposes a menu-radio model and restores focus on every close path", async ({
+  test("theme choice in settings is a pressed-button group that applies at once", async ({
     appPage,
   }) => {
-    await gotoLibrary(appPage);
+    await appPage.getByTestId("main-menu-settings").click();
+    const group = appPage
+      .getByTestId("settings-appearance")
+      .getByRole("group", { name: "Theme" });
+    const dark = group.getByRole("button", { name: "Dark" });
+    const system = group.getByRole("button", { name: "System" });
+    await expect(system).toHaveAttribute("aria-pressed", "true");
 
-    const trigger = appPage.getByRole("button", { name: "Change theme" });
-    await expect(trigger).toHaveAttribute("aria-haspopup", "menu");
-    await expect(trigger).toHaveAttribute("aria-expanded", "false");
-    await trigger.focus();
+    await dark.focus();
     await appPage.keyboard.press("Enter");
+    await expect(dark).toHaveAttribute("aria-pressed", "true");
+    await expect(appPage.locator("html")).toHaveAttribute("data-theme", "dark");
 
-    const menu = appPage.getByRole("menu", { name: "Choose a Theme" });
-    await expect(menu).toBeVisible();
-    await expect(trigger).toHaveAttribute("aria-expanded", "true");
-    await expect(trigger).toHaveAttribute(
-      "aria-controls",
-      await menu.getAttribute("id"),
-    );
+    await appPage.reload();
+    await expect(appPage.locator("html")).toHaveAttribute("data-theme", "dark");
+  });
 
-    const ocean = menu.getByRole("menuitemradio", { name: "Ocean" });
-    const peach = menu.getByRole("menuitemradio", { name: "Peach" });
-    await expect(ocean).toHaveAttribute("aria-checked", "true");
-    await expect(ocean).toBeFocused();
-
-    await appPage.keyboard.press("ArrowRight");
-    await expect(peach).toBeFocused();
+  test("what's new opens from the top bar, clears the red dot, and restores focus", async ({
+    appPage,
+  }) => {
+    const info = appPage.getByTestId("changelog");
+    await expect(info.locator(".dot")).toHaveCount(1);
+    await info.focus();
     await appPage.keyboard.press("Enter");
-    await expect(menu).toBeHidden();
-    await expect(trigger).toBeFocused();
-
-    await appPage.keyboard.press("Enter");
-    await expect(peach).toBeFocused();
+    const sheet = appPage.getByRole("dialog", { name: "What's new" });
+    await expect(sheet).toBeVisible();
+    await expect(sheet.locator("article.new")).toHaveCount(1);
     await appPage.keyboard.press("Escape");
-    await expect(menu).toBeHidden();
-    await expect(trigger).toBeFocused();
+    await expect(sheet).toBeHidden();
+    await expect(info).toBeFocused();
+    await expect(info.locator(".dot")).toHaveCount(0);
 
-    await appPage.keyboard.press("Enter");
-    await expect(menu).toBeVisible();
-    await appPage.getByRole("heading", { name: "Rexiano" }).click();
-    await expect(menu).toBeHidden();
-    await expect(trigger).toBeFocused();
-
-    await appPage.keyboard.press("Enter");
-    await expect(menu).toBeVisible();
-    await expect(peach).toBeFocused();
-    await appPage.keyboard.press("Tab");
-    await expect(menu).toBeHidden();
-    // The recommendation card is hidden when it repeats the next lesson
-    // (#278), so focus moves on to the lesson path.
-    await expect(appPage.getByTestId("lesson-progression-next")).toBeFocused();
+    await appPage.reload();
+    await expect(appPage.getByTestId("changelog").locator(".dot")).toHaveCount(
+      0,
+    );
   });
 
   test("playback drawer and transport controls expose keyboard-safe names", async ({

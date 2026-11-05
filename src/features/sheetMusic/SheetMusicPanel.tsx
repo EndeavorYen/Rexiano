@@ -746,7 +746,7 @@ export function SheetMusicPanel({
       >
         <div
           ref={svgHostRef}
-          className="h-full w-full"
+          className="sheet-svg-host h-full w-full"
           data-testid="sheet-music-svg-host"
         />
 

@@ -34,7 +34,11 @@ import {
 } from "@renderer/features/practice/usePracticeLifecycle";
 import { getPracticeEngines } from "@renderer/engines/practice/practiceManager";
 import { getMutedTrackIndices } from "@renderer/features/practice/splitLayoutMath";
-import { getMidiPlaybackOutputSender } from "@renderer/stores/useMidiDeviceStore";
+import {
+  getPianoPlaybackOutput,
+  useMidiDeviceStore,
+} from "@renderer/stores/useMidiDeviceStore";
+import { planPianoOutput } from "./pianoOutputPolicy";
 import { initAutoSave } from "@renderer/stores/useProgressStore";
 import { usePlaybackStore } from "@renderer/stores/usePlaybackStore";
 import { usePracticeStore } from "@renderer/stores/usePracticeStore";
@@ -90,6 +94,35 @@ export function resolveAudioEngineLatencyHint(
   audioCompatibilityMode: boolean,
 ): "playback" | "interactive" {
   return audioCompatibilityMode ? "playback" : "interactive";
+}
+
+/**
+ * Decide where the song sounds and apply it: piano on/off, which tracks the
+ * piano skips, and whether the computer speakers are silent.
+ */
+function applyPianoOutputPlan(
+  engine: AudioEngine | null,
+  scheduler: AudioScheduler | null,
+): void {
+  const settings = useSettingsStore.getState();
+  const practice = usePracticeStore.getState();
+  const song = useSongStore.getState().song;
+  const piano = getPianoPlaybackOutput();
+  const plan = planPianoOutput({
+    soundSource: settings.soundSource,
+    hasPiano: useMidiDeviceStore.getState().pianoOutputAvailable,
+    mode: practice.mode,
+    activeTracks: practice.activeTracks,
+    trackCount: song?.tracks.length ?? 0,
+  });
+  piano.setLatencyMs(settings.pianoOutputLatency);
+  scheduler?.setMidiExcludedTracks(plan.excludedTracks);
+  piano.setEnabled(plan.pianoIsSource);
+  engine?.setVolume(
+    settings.muted || plan.pianoIsSource
+      ? 0
+      : usePlaybackStore.getState().volume,
+  );
 }
 
 export function useAudioPlaybackEngine({
@@ -241,7 +274,7 @@ export function useAudioPlaybackEngine({
         },
       });
       const scheduler = new AudioScheduler(engine);
-      scheduler.setMidiOutput(getMidiPlaybackOutputSender());
+      scheduler.setMidiOutput(getPianoPlaybackOutput());
       const stack = { engine, scheduler };
       const owner = audioInitializationOwnerRef.current;
       if (!owner) {
@@ -264,9 +297,6 @@ export function useAudioPlaybackEngine({
           }
         },
         commit: () => {
-          const { muted } = useSettingsStore.getState();
-          engine.setVolume(muted ? 0 : usePlaybackStore.getState().volume);
-
           disposeMetronome();
           if (engine.audioContext) {
             initMetronome(engine.audioContext);
@@ -277,6 +307,7 @@ export function useAudioPlaybackEngine({
           scheduler.setMutedTracks(
             getMutedTrackIndices(usePracticeStore.getState().trackPreferences),
           );
+          applyPianoOutputPlan(engine, scheduler);
           audioReadySongRef.current = targetSong;
           usePlaybackStore.getState().setAudioStatus("ready");
           usePlaybackStore.getState().clearAudioRecovery();
@@ -497,6 +528,7 @@ export function useAudioPlaybackEngine({
         scheduler.setMutedTracks(
           getMutedTrackIndices(usePracticeStore.getState().trackPreferences),
         );
+        applyPianoOutputPlan(engine, scheduler);
         audioReadySongRef.current = song;
         usePlaybackStore.getState().setAudioStatus("ready");
         attemptPendingPlaybackStart();
@@ -550,7 +582,7 @@ export function useAudioPlaybackEngine({
       if (!engine || !scheduler) return;
 
       if (state.volume !== prev.volume) {
-        engine.setVolume(state.volume);
+        applyPianoOutputPlan(engine, scheduler);
       }
 
       if (state.isPlaying && !prev.isPlaying) {
@@ -639,10 +671,15 @@ export function useAudioPlaybackEngine({
 
   useEffect(() => {
     const unsub = useSettingsStore.subscribe((state, prev) => {
-      if (state.muted === prev.muted) return;
-      const { engine } = audioRef.current;
-      if (!engine) return;
-      engine.setVolume(state.muted ? 0 : usePlaybackStore.getState().volume);
+      if (
+        state.muted === prev.muted &&
+        state.soundSource === prev.soundSource &&
+        state.pianoOutputLatency === prev.pianoOutputLatency
+      ) {
+        return;
+      }
+      const { engine, scheduler } = audioRef.current;
+      applyPianoOutputPlan(engine, scheduler);
     });
     return unsub;
   }, []);
@@ -697,6 +734,33 @@ export function useAudioPlaybackEngine({
     });
     return unsub;
   }, [syncCurrentMetronome]);
+
+  // Piano output follows the mode, the practised hand and the connection.
+  useEffect(() => {
+    const apply = (): void =>
+      applyPianoOutputPlan(audioRef.current.engine, audioRef.current.scheduler);
+    const unsubPractice = usePracticeStore.subscribe((state, prev) => {
+      if (
+        state.mode !== prev.mode ||
+        state.activeTracks !== prev.activeTracks
+      ) {
+        apply();
+      }
+    });
+    const unsubMidi = useMidiDeviceStore.subscribe((state, prev) => {
+      if (state.pianoOutputAvailable !== prev.pianoOutputAvailable) apply();
+    });
+    // Leaving the page must never leave a key held down on the piano.
+    const silence = (): void => {
+      void getPianoPlaybackOutput().clearScheduled();
+    };
+    window.addEventListener("pagehide", silence);
+    return () => {
+      unsubPractice();
+      unsubMidi();
+      window.removeEventListener("pagehide", silence);
+    };
+  }, []);
 
   return {
     audioRef,

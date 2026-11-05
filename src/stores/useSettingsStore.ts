@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import type { PracticeMode } from "@shared/types";
+import type { SoundSource } from "@renderer/features/audio/pianoOutputPolicy";
 import { USER_DATA_STORAGE_KEYS } from "@renderer/features/settings/userDataStorageKeys";
 
 export type Language = "en" | "zh-TW";
@@ -26,6 +27,10 @@ interface SettingsState {
   latencyCompensation: number;
   audioCompatibilityMode: boolean;
   childFocusMode: boolean;
+  /** Where the song sounds when a piano is connected */
+  soundSource: SoundSource;
+  /** Send the song this many ms early so the piano lines up with the notes */
+  pianoOutputLatency: number;
 
   setShowNoteLabels: (v: boolean) => void;
   setShowFallingNoteLabels: (v: boolean) => void;
@@ -41,6 +46,8 @@ interface SettingsState {
   setLatencyCompensation: (ms: number) => void;
   setAudioCompatibilityMode: (v: boolean) => void;
   setChildFocusMode: (v: boolean) => void;
+  setSoundSource: (v: SoundSource) => void;
+  setPianoOutputLatency: (ms: number) => void;
 }
 
 interface PersistedSettings {
@@ -58,6 +65,8 @@ interface PersistedSettings {
   latencyCompensation?: number;
   audioCompatibilityMode?: boolean;
   childFocusMode?: boolean;
+  soundSource?: SoundSource;
+  pianoOutputLatency?: number;
 }
 
 const defaults: PersistedSettings = {
@@ -75,6 +84,8 @@ const defaults: PersistedSettings = {
   latencyCompensation: 0,
   audioCompatibilityMode: false,
   childFocusMode: false,
+  soundSource: "piano",
+  pianoOutputLatency: 0,
 };
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -146,6 +157,17 @@ export function normalizePersistedSettings(value: unknown): PersistedSettings {
       defaults.audioCompatibilityMode!,
     ),
     childFocusMode: false,
+    soundSource:
+      source.soundSource === "computer" || source.soundSource === "piano"
+        ? source.soundSource
+        : defaults.soundSource!,
+    pianoOutputLatency: Math.round(
+      clampNumber(
+        savedNumber(source.pianoOutputLatency, defaults.pianoOutputLatency!),
+        0,
+        150,
+      ),
+    ),
   };
 }
 
@@ -189,6 +211,8 @@ export const useSettingsStore = create<SettingsState>()((set) => {
     latencyCompensation: saved.latencyCompensation!,
     audioCompatibilityMode: saved.audioCompatibilityMode!,
     childFocusMode: saved.childFocusMode!,
+    soundSource: saved.soundSource!,
+    pianoOutputLatency: saved.pianoOutputLatency!,
 
     setShowNoteLabels: (v) => {
       persist({ showNoteLabels: v });
@@ -250,6 +274,15 @@ export const useSettingsStore = create<SettingsState>()((set) => {
     setChildFocusMode: (v) => {
       persist({ childFocusMode: v });
       set({ childFocusMode: v });
+    },
+    setSoundSource: (v) => {
+      persist({ soundSource: v });
+      set({ soundSource: v });
+    },
+    setPianoOutputLatency: (ms) => {
+      const clamped = Math.max(0, Math.min(150, Math.round(ms)));
+      persist({ pianoOutputLatency: clamped });
+      set({ pianoOutputLatency: clamped });
     },
   };
 });

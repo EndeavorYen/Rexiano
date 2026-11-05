@@ -14,7 +14,7 @@
 2. [Song Library and MIDI Import](#2-song-library-and-midi-import)
 3. [Player and Display Modes](#3-player-and-display-modes)
 4. [Practice Modes and Speed](#4-practice-modes-and-speed)
-5. [Connecting a MIDI Keyboard](#5-connecting-a-midi-keyboard)
+5. [Connecting a Bluetooth Piano](#5-connecting-a-bluetooth-piano)
 6. [Settings and Backup](#6-settings-and-backup)
 7. [Keyboard Shortcuts](#7-keyboard-shortcuts)
 8. [FAQ](#8-faq)
@@ -134,53 +134,52 @@ At the end of a session, Rexiano shows accuracy, hits, misses, best streak, new-
 
 ---
 
-## 5. Connecting a MIDI Keyboard
+## 5. Connecting a Bluetooth Piano
 
-You can watch and listen without a keyboard. Wait mode, play-along scoring, and real key feedback need USB or Bluetooth MIDI.
+Rexiano supports Bluetooth (BLE-MIDI) pianos only. Without a piano you can still watch, listen, or tap the on-screen keys.
 
-### USB Keyboard
+### Connect
 
-1. Connect the keyboard with USB and turn it on.
-2. Open Rexiano and go to the library or player.
-3. Open the **MIDI** drawer.
-4. Choose your keyboard under **In**. If you want Rexiano to send sound or test notes to the keyboard, choose it under **Out** too.
-5. When the status turns green, press a few keys. The on-screen keyboard should light up.
-6. If an output is selected, press **Test** to send a C4 test note.
+1. Turn on the piano's Bluetooth (usually a long press on Function or Bluetooth, depending on the brand).
+2. Open Rexiano in Chrome or Edge and press **Connect piano** on the home screen or at the bottom right of the library.
+3. Pick your piano in the browser's dialog (Yamaha shows two names — pick the one ending in **MIDI**).
+4. Once it says Connected, press a few keys; the on-screen keyboard should light up.
 
-### Bluetooth MIDI
+| Device                | How                                                                          |
+| --------------------- | ---------------------------------------------------------------------------- |
+| Windows / Mac / Linux | Chrome or Edge, press **Connect piano**; Safari on a Mac can't               |
+| Android tablet        | Chrome, press **Connect piano**                                              |
+| iPad                  | Install the free Bluefy browser, open Rexiano there, press **Connect piano** |
 
-> Use Chrome or Edge. No iPad browser has Web MIDI; open Rexiano in a browser app with Web MIDI built in (for example Web MIDI Browser).
+A piano already paired in the system (macOS Audio MIDI Setup, MIDIberry on Windows) can be picked under **Other ways to connect**.
 
-| Platform | Suggested setup                                                                                                       |
-| -------- | --------------------------------------------------------------------------------------------------------------------- |
-| macOS    | Pair in system Bluetooth settings, then select the device in Rexiano; the **Bluetooth** button can also scan BLE MIDI |
-| Windows  | Pair first, then press **Bluetooth**; if no MIDI input appears, use MIDIberry or KORG BLE-MIDI Driver as a bridge     |
-| Android  | Press **Bluetooth** and choose the keyboard in the browser pairing dialog                                             |
+### Let the piano play
 
-### Latency Compensation
+With **Where the song plays** set to **Piano** (the default), the song plays on the piano once connected and the computer stays quiet:
 
-If Bluetooth feels slightly late in Wait mode, open **Settings -> Advanced -> Practice** and adjust **Latency compensation**. USB usually stays at 0 ms; Bluetooth often feels better around 10-30 ms.
+- **Watch**: the piano plays the whole song.
+- **Wait**: the piano plays only the hand you're not practising, and waits with you.
+- The piano switches to its grand piano voice when it connects.
+- If the piano sounds a little behind the falling notes, move **Line up the piano sound** to the right.
 
 ---
 
 ## 6. Settings and Backup
 
-Settings opens in **Basic** mode with theme and language only. Switch to **Advanced** for the full panel.
+The gear at the top opens Settings, one card per topic:
 
-| Tab       | Controls                                                                                 |
-| --------- | ---------------------------------------------------------------------------------------- |
-| Theme     | Lavender, Ocean, Peach, Midnight                                                         |
-| Display   | Piano key labels, falling note labels, fingering numbers, compact key labels             |
-| Audio     | Volume, mute, audio compatibility mode                                                   |
-| Practice  | Child Focus Mode, default mode, default speed, metronome, count-in, latency compensation |
-| Shortcuts | Common playback, speed, and back shortcuts                                               |
-| Language  | English / 繁體中文                                                                       |
-| Backup    | Export, import, or reset settings, progress, and recents                                 |
-| About     | Version information                                                                      |
+| Card                    | Controls                                                   |
+| ----------------------- | ---------------------------------------------------------- |
+| Theme                   | System / Light / Dark                                      |
+| Language                | English / 繁體中文                                         |
+| Audio                   | Volume, mute                                               |
+| Piano                   | Connect piano, where the song plays, other ways to connect |
+| Line up the piano sound | Align the piano's sound with the screen                    |
+| User Data Backup        | Export or import practice history and settings             |
 
 Practice history and settings live in the browser. Export a **Backup** before switching computers or browsers or clearing site data.
 
-**Child Focus Mode** hides some advanced controls for children practicing alone. If playback is active and someone tries to leave the player, Rexiano asks before returning to the library.
+The ⓘ at the top shows **What's new**, with a red dot when there's a version you haven't opened.
 
 ---
 

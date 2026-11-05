@@ -60,7 +60,7 @@ export function WaitInputHint({
           <Piano
             size={22}
             aria-hidden="true"
-            style={{ color: "var(--color-accent)", flexShrink: 0 }}
+            style={{ color: "var(--color-accent-text)", flexShrink: 0 }}
           />
           <div className="min-w-0">
             <p className="text-sm font-semibold leading-tight">
