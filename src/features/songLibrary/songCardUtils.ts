@@ -67,7 +67,7 @@ export function getBestScoreColor(accuracy: number): string {
 
 // ─── Category grouping ──────────────────────────────────────────────
 
-/** The four song categories in display order */
+/** The song categories in display order */
 export type SongCategory = NonNullable<BuiltinSongMeta["category"]>;
 
 /** Ordered list of categories for display */
@@ -77,6 +77,7 @@ export const CATEGORY_ORDER: SongCategory[] = [
   "popular",
   "holiday",
   "classical",
+  "study",
 ];
 
 /** Human-readable labels for each category */
@@ -86,6 +87,7 @@ export const categoryLabelKeys: Record<SongCategory, TranslationKey> = {
   popular: "library.category.popular",
   holiday: "library.category.holiday",
   classical: "library.category.classical",
+  study: "library.category.study",
 };
 
 /** A category group with its songs */

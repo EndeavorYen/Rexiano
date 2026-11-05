@@ -146,6 +146,11 @@ export interface TranslationMap {
   "library.tag.classic": string;
   "library.tag.classical": string;
   "library.tag.dance": string;
+  "library.tag.etude": string;
+  "library.tag.march": string;
+  "library.tag.minuet": string;
+  "library.tag.musette": string;
+  "library.tag.polonaise": string;
   "library.tag.duet": string;
   "library.tag.english": string;
   "library.tag.fast": string;
@@ -181,6 +186,7 @@ export interface TranslationMap {
   "library.category.popular": string;
   "library.category.holiday": string;
   "library.category.classical": string;
+  "library.category.study": string;
   "library.practiced": string;
   "library.bestScoreValue": string;
   "library.lessonGroup.firstNotes.title": string;

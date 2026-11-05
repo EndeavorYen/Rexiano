@@ -17,7 +17,14 @@ describe("built-in song catalogue labels (#309)", () => {
   });
 
   test("every song has a known category", () => {
-    const known = ["exercise", "folk", "popular", "holiday", "classical"];
+    const known = [
+      "exercise",
+      "folk",
+      "popular",
+      "holiday",
+      "classical",
+      "study",
+    ];
     expect(
       songs.filter((song) => !known.includes(song.category ?? "")),
     ).toEqual([]);

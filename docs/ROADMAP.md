@@ -597,6 +597,17 @@ flowchart LR
 
 ---
 
+## Phase 12 — 古典教材小品
+
+> 只收公有領域的曲子。來源是 Mutopia Project 與 Nathanael Meister 的 LilyPond 檔，轉成 MIDI 後由 `pnpm generate:songs` 產生 MusicXML。
+
+- [x] 匯入流程：`scripts/mutopia/`（`manifest.json`、`ly2midi.py`、`import-mutopia.ts`）；展開反覆、去掉倚音、保留記譜時值、弱起小節、D.C. al Fine
+- [x] 曲庫新增「教材小品」分類與曲目標籤（小步舞曲、波蘭舞曲、風笛舞曲、進行曲、練習曲）
+- [x] 第一批 38 首：安娜·瑪德蓮娜 9、莫札特 K.2、車爾尼 Op.821 6、布格繆勒 Op.100 16、克萊曼第 Op.36 No.1 三個樂章、庫勞 Op.20 No.1 第三樂章、柴可夫斯基 Op.39 3
+- [x] 第二批：拜耳 Op.101 第 8–31 首 24 首（來源 Nathanael Meister 的 LilyPond 教材，「歡迎教學用途複製」；只取音高與節奏）
+
+---
+
 ## 跨 Phase 持續改進項目
 
 > 這些項目不屬於特定 Phase，隨開發過程持續推進

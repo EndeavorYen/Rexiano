@@ -107,6 +107,7 @@ src/platform/
 - **引擎層（`engines/`）為純邏輯，不依賴 React**；Store 層橋接引擎與 React；Features 層為 UI 元件
 - **播放時間由 `engines/transport/TransportClock.ts` 擁有**，不要把時間推進寫回 PixiJS ticker。ticker 只負責畫，讀取 store 的 currentTime。這樣純樂譜模式才能卸載 canvas 而播放不中斷
 - **樂譜一律用 tick，不要用秒數反推**。任何需要音樂時間的地方走 `engines/midi/TempoMap.ts`；用 `tempos[0].bpm` 換算只在等速曲正確，變速曲會讓時值與小節線全錯
+- **教材小品從 Mutopia 匯入**：清單在 `scripts/mutopia/manifest.json`，跑 `import-mutopia.ts --mutopia <clone> --meister <clone>` 再跑 `pnpm generate:songs`。只收公有領域；樂譜引擎畫不出的節奏（16 分三連音、六連音、多數 32 分音符）的曲子先不收，`groundTruthAudit` 會擋
 - 新增建立 `ParsedNote` 的程式碼時，若能取得 tick 就一併填入 `ticks` / `durationTicks`；合成音符可省略，由 `toMusicalNote()` 邊界推導
 - 新增 store 或引擎時，遵循現有的 callback pattern（非 EventEmitter）
 - **文件中的流程圖 / 架構圖一律使用 Mermaid**（`graph TB` / `flowchart TD` / `stateDiagram-v2`），不使用 ANSI 繪製的 box-drawing 圖形（┌ ─ │ 等）
