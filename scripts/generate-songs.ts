@@ -1166,25 +1166,6 @@ const songDefs: SongDef[] = [
   },
   // ── Checked note-list songs (#334) ──
   {
-    id: "clementi-sonatina",
-    file: "clementi-sonatina.mid",
-    title: "Sonatina in C Major (Op. 36 No. 1)",
-    composer: "Muzio Clementi",
-    difficulty: "intermediate",
-    category: "classical",
-    tags: [
-      "classical",
-      "sonatina",
-      "alberti-bass",
-      "c-major",
-      "4-4",
-      "two-hands",
-    ],
-    bpm: 112,
-    grade: 6,
-    build: fromSpec("clementi-sonatina", 112),
-  },
-  {
     id: "german-dance",
     file: "german-dance.mid",
     title: "German Dance (WoO 13 No. 1)",

@@ -45,7 +45,13 @@ export interface BuiltinSongMeta {
   searchAliases?: string[];
   composer: string;
   difficulty: "beginner" | "intermediate" | "advanced";
-  category?: "exercise" | "classical" | "folk" | "popular" | "holiday";
+  category?:
+    | "exercise"
+    | "classical"
+    | "study"
+    | "folk"
+    | "popular"
+    | "holiday";
   durationSeconds: number;
   tags: string[];
   /**
