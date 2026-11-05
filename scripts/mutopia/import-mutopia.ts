@@ -1,10 +1,14 @@
 /**
- * Import public-domain teaching pieces from the Mutopia Project.
+ * Import public-domain teaching pieces from LilyPond sources.
  *
  * Run (needs Python + `pip install lilypond`):
- *   pnpm exec jiti scripts/mutopia/import-mutopia.ts --mutopia <clone> [--only id,id]
+ *   pnpm exec jiti scripts/mutopia/import-mutopia.ts \
+ *     --mutopia <clone> --meister <clone> [--only id,id]
  *
- * <clone> is a checkout of github.com/MutopiaProject/mutopiaproject.
+ * Each piece names the collection it comes from (`root`, default mutopia):
+ *   mutopia: github.com/MutopiaProject/mutopiaproject (path under ftp/)
+ *   meister: github.com/nathanaelmeister/piano_-_first_two_hand_exercises
+ *            (Beyer Op. 101; "educational copying welcome")
  * For each piece in manifest.json this renders the LilyPond source to MIDI
  * (ly2midi.py: repeats unfolded, grace notes dropped), fixes the pickup bar,
  * names the hands, sets one tempo, writes public/midi/<id>.mid and upserts
@@ -14,7 +18,7 @@
 import { Midi } from "@tonejs/midi";
 import { execFileSync } from "child_process";
 import { existsSync, readFileSync, rmSync, writeFileSync } from "fs";
-import { basename, dirname, join, resolve } from "path";
+import { dirname, join, parse, resolve } from "path";
 import { fileURLToPath } from "url";
 import { builtinScoreFileName } from "../../src/engines/score/builtinScoreSource";
 import {
@@ -32,6 +36,7 @@ const scoresDir = join(root, "public", "scores");
 interface Piece {
   id: string;
   source: string;
+  root?: "mutopia" | "meister";
   score?: number;
   title: string;
   titleZhTW: string;
@@ -130,9 +135,19 @@ export function irregularBars(
   return odd;
 }
 
-function renderMidi(mutopia: string, piece: Piece, work: string): string {
-  const src = join(mutopia, "ftp", piece.source);
-  const out = join(work, basename(piece.source, ".ly"));
+function renderMidi(
+  roots: Record<"mutopia" | "meister", string | undefined>,
+  piece: Piece,
+  work: string,
+): string {
+  const rootName = piece.root ?? "mutopia";
+  const root = roots[rootName];
+  if (!root) throw new Error(`${piece.id}: pass --${rootName} <clone>`);
+  const src =
+    rootName === "mutopia"
+      ? join(root, "ftp", piece.source)
+      : join(root, piece.source);
+  const out = join(work, parse(piece.source).name);
   if (!existsSync(join(out, "barlog.txt"))) {
     execFileSync("python3", ["-I", join(here, "ly2midi.py"), src, out], {
       stdio: "inherit",
@@ -325,8 +340,7 @@ function main(): void {
     const i = args.indexOf(name);
     return i >= 0 ? args[i + 1] : undefined;
   };
-  const mutopia = arg("--mutopia");
-  if (!mutopia) throw new Error("--mutopia <clone> is required");
+  const roots = { mutopia: arg("--mutopia"), meister: arg("--meister") };
   const work = arg("--work") ?? join(root, "node_modules", ".cache", "mutopia");
   const only = arg("--only")?.split(",");
 
@@ -340,7 +354,7 @@ function main(): void {
 
   for (const piece of manifest.pieces) {
     if (only && !only.includes(piece.id)) continue;
-    const out = renderMidi(mutopia, piece, work);
+    const out = renderMidi(roots, piece, work);
     const { midi, warnings } = convert(piece, out);
     writeFileSync(
       join(midiDir, `${piece.id}.mid`),

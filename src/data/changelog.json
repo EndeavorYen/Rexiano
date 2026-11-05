@@ -3,18 +3,20 @@
     {
       "version": "2.2",
       "date": "2026-11-05",
-      "title": "曲庫多了 38 首古典教材小品",
+      "title": "曲庫多了 62 首教材小品",
       "items": [
-        "新增「教材小品」：巴哈《安娜·瑪德蓮娜筆記本》、車爾尼、布格繆勒 25 首、小奏鳴曲和柴可夫斯基《兒童曲集》",
+        "新增「教材小品」：拜耳 24 首，適合剛開始用雙手彈的孩子",
+        "也有巴哈《安娜·瑪德蓮娜筆記本》、車爾尼、布格繆勒 25 首、小奏鳴曲和柴可夫斯基《兒童曲集》",
         "克萊曼第小奏鳴曲現在三個樂章都能練，第一樂章也變成完整版",
-        "搜尋「布格繆勒」、「小步舞曲」或「車爾尼」就找得到"
+        "搜尋「拜耳」、「布格繆勒」或「小步舞曲」就找得到"
       ],
       "en": {
-        "title": "38 classical teaching pieces",
+        "title": "62 teaching pieces",
         "items": [
-          "New Teaching Pieces: Bach's Anna Magdalena Notebook, Czerny, Burgmüller's 25 Studies, sonatinas and Tchaikovsky's Children's Album",
+          "New Teaching Pieces: 24 pieces from Beyer, made for first steps with both hands",
+          "Also Bach's Anna Magdalena Notebook, Czerny, Burgmüller's 25 Studies, sonatinas and Tchaikovsky's Children's Album",
           "Clementi's Sonatina now has all three movements, and the first is complete",
-          "Search for Burgmüller, minuet or Czerny to find them"
+          "Search for Beyer, Burgmüller or minuet to find them"
         ]
       }
     },
