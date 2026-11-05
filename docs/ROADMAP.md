@@ -591,6 +591,7 @@ flowchart LR
 - [x] 沒有 Web Bluetooth 的瀏覽器：iPad 引導 Bluefy、Mac Safari 與其他引導 Chrome / Edge
 - [x] 家族配色、字型、頂列、卡片、設定頁；主題可選 跟著系統／淺色／深色
 - [x] 更新紀錄：`src/data/changelog.json` + ⓘ 紅點；`CHANGELOG.md` 由腳本產生，停用 release-please
+- [x] 自動發版：changelog 新增版本合併進 main 後，`github-release.yml` 建立標籤與 GitHub Release
 - [x] 設定頁加回備份匯出／匯入
 - [x] 琴鍵改為真實比例並加上材質；下落音符改為圓角色塊
 - [ ] 用真實藍牙鋼琴實測（Roland / Yamaha / Kawai / Casio；iPad + Bluefy）

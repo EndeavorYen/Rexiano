@@ -70,6 +70,34 @@ describe("release workflow", () => {
     expect(readRepoFile("CHANGELOG.md")).toBe(renderChangelog(data));
   });
 
+  test("a new changelog version on main publishes its own release", async () => {
+    const workflow = readRepoFile(".github/workflows/github-release.yml");
+    expect(workflow).toContain("branches: [main]");
+    expect(workflow).toContain("contents: write");
+    expect(workflow).toContain("node scripts/release-notes.mjs");
+    expect(workflow).toContain('gh release view "$TAG"');
+    expect(workflow).toContain("gh release create");
+
+    const { renderRelease } = (await import("./release-notes.mjs")) as {
+      renderRelease: (
+        data: unknown,
+        packageVersion: string,
+      ) => { tag: string; title: string; body: string };
+    };
+    const data = JSON.parse(readRepoFile("src/data/changelog.json"));
+    const pkg = JSON.parse(readRepoFile("package.json"));
+    const release = renderRelease(data, pkg.version);
+    const latest = data.versions[0];
+    expect(release.tag).toBe(`v${pkg.version}`);
+    expect(release.title).toBe(`v${pkg.version} — ${latest.title}`);
+    expect(release.title).not.toContain("\n");
+    expect(release.body).toContain("https://rexiano.vercel.app/");
+    for (const item of [...latest.items, ...latest.en.items]) {
+      expect(release.body).toContain(`- ${item}`);
+    }
+    expect(() => renderRelease(data, "9.9.9")).toThrow(/does not match/);
+  });
+
   test("CI checks can still be dispatched for an exact commit", () => {
     for (const workflowPath of [
       ".github/workflows/ci.yml",

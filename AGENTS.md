@@ -34,7 +34,7 @@ Rexiano 預設使用 TDD 開發模式。除非使用者明確要求不要改程�
 - 實作時優先挑可用 TDD 完成的最小高價值切片；完成後 commit message 要 mention parent / child issue。完全解決的小 issue 要 close；parent issue 只有在全部 acceptance 完成後才 close。
 - 不要用單一龐大 commit 混合多個無法獨立驗證的行為；若需要拆分，先記錄拆分結果，再開始寫測試。
 - 合併 PR 時，Squash merge subject 使用 Conventional Commit 前綴：bug fix 用 `fix: ... (#N)`，新功能用 `feat: ... (#N)`，CI / 文件 / 重構分別用 `ci:` / `docs:` / `refactor:`。若 PR 真的不該進更新紀錄，才使用 `chore:`。
-- 使用者看得到的變更，要在 `src/data/changelog.json` 最上面加一版（版本號、日期、一句標題、2–4 條白話說明，中英都寫），再跑 `pnpm changelog` 產生 `CHANGELOG.md`，並同步 `package.json` 的 version。
+- 使用者看得到的變更，要在 `src/data/changelog.json` 最上面加一版（版本號、日期、一句標題、2–4 條白話說明，中英都寫），再跑 `pnpm changelog` 產生 `CHANGELOG.md`，並同步 `package.json` 的 version。合併進 main 後，`github-release.yml` 會自動建立標籤和 GitHub Release，不要手動發版。
 
 ## Test Rules
 

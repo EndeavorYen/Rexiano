@@ -146,6 +146,8 @@ pnpm exec playwright test -c scripts/playwright.readme-screenshots.config.ts
 
 在 Vercel 匯入這個 repo 即可，設定都在 `vercel.json`（Vite、pnpm、輸出 `dist/`）。推到 `main` 會自動部署，PR 會有預覽網址。
 
+發版也是自動的：在 `src/data/changelog.json` 最上面加一版、`package.json` 版本跟著改，合併進 `main` 後 GitHub Release workflow 會建立標籤和中英文的 release 說明。
+
 ## 專案地圖
 
 ```text
