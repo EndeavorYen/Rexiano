@@ -11,6 +11,15 @@ const assets = [
     "docs/assets/screenshots/rexiano-split-sheet.png",
     "rexiano-split-sheet.png",
   ],
+  ["docs/assets/screenshots/rexiano-library-zh.png", "rexiano-library-zh.png"],
+  [
+    "docs/assets/screenshots/rexiano-practice-zh.png",
+    "rexiano-practice-zh.png",
+  ],
+  [
+    "docs/assets/screenshots/rexiano-split-sheet-zh.png",
+    "rexiano-split-sheet-zh.png",
+  ],
   ["docs/figure/Rexiano_icon.png", "Rexiano_icon.png"],
 ];
 
