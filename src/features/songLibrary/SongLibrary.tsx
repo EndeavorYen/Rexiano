@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useCallback, useState } from "react";
-import { parseImportedPracticeFile } from "../../engines/score/decodeImportedPracticeFile";
+import { openImportedPracticeFile } from "../fileImport/openImportedPracticeFile";
 import { useSongStore } from "../../stores/useSongStore";
 import { usePlaybackStore } from "../../stores/usePlaybackStore";
 import { usePracticeStore } from "../../stores/usePracticeStore";
@@ -335,7 +335,7 @@ export function SongLibrary({
         }
         let parsed;
         try {
-          parsed = parseImportedPracticeFile(result.fileName, result.data);
+          parsed = await openImportedPracticeFile(result.fileName, result.data);
         } catch (e) {
           setRecentRecovery(
             getRecentFileRecovery(
@@ -419,7 +419,10 @@ export function SongLibrary({
           setError(t("library.importedMissing"));
           return;
         }
-        const parsed = parseImportedPracticeFile(result.fileName, result.data);
+        const parsed = await openImportedPracticeFile(
+          result.fileName,
+          result.data,
+        );
         loadSong(parsed);
         usePracticeStore
           .getState()

@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useSyncExternalStore } from "react";
 import type { ParsedSong } from "@renderer/engines/midi/types";
 import { useSongLibraryStore } from "@renderer/stores/useSongLibraryStore";
 import {
@@ -6,6 +6,11 @@ import {
   type BuiltinNotationMetadata,
 } from "./builtinNotationMetadata";
 import { convertSongToNotation } from "./MidiToNotation";
+import {
+  getCachedImportedNotation,
+  isAwaitingImportedNotation,
+  subscribeImportedNotation,
+} from "./importedNotationCache";
 import { TempoMap } from "@renderer/engines/midi/TempoMap";
 import type { NotationData } from "./types";
 
@@ -17,9 +22,19 @@ export function buildNotationData(
   song: ParsedSong | null,
   fixtureData: NotationData | null,
   builtinMeta: BuiltinNotationMetadata | null,
+  offThread = song ? getCachedImportedNotation(song) : null,
+  awaitingNotation = false,
 ): NotationData | null {
   if (fixtureData) return fixtureData;
   if (!song) return null;
+
+  // An import may already have been quantized and voice-split in a worker. That
+  // result is only reusable when no built-in key/meter tags change the answer.
+  if (!builtinMeta) {
+    if (offThread) return offThread;
+    // Still running there: repeating it here would block the page twice.
+    if (awaitingNotation) return null;
+  }
 
   return convertSongToNotation(song, {
     keySignature: builtinMeta?.keySignature,
@@ -50,6 +65,17 @@ export function useSheetMusicNotation({
   const builtinSongs = useSongLibraryStore((s) => s.songs);
   const [sheetFixtureNotationData, setSheetFixtureNotationData] =
     useState<NotationData | null>(null);
+  // An import's notation can land after the song has already opened.
+  const offThreadNotation = useSyncExternalStore(
+    subscribeImportedNotation,
+    () => (song ? getCachedImportedNotation(song) : null),
+    () => null,
+  );
+  const awaitingOffThreadNotation = useSyncExternalStore(
+    subscribeImportedNotation,
+    () => (song ? isAwaitingImportedNotation(song.fileName) : false),
+    () => false,
+  );
 
   const builtinNotationMetadata = useMemo(() => {
     if (!song) return null;
@@ -62,8 +88,16 @@ export function useSheetMusicNotation({
         song,
         sheetFixtureNotationData,
         builtinNotationMetadata,
+        offThreadNotation,
+        awaitingOffThreadNotation,
       ),
-    [builtinNotationMetadata, sheetFixtureNotationData, song],
+    [
+      offThreadNotation,
+      awaitingOffThreadNotation,
+      builtinNotationMetadata,
+      sheetFixtureNotationData,
+      song,
+    ],
   );
 
   const notationTempoMap = useMemo(
