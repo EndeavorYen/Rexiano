@@ -79,7 +79,7 @@ export function TransportBar({
 }: TransportBarProps): React.JSX.Element {
   const { t } = useTranslation();
   const song = useSongStore((s) => s.song);
-  const currentTime = usePlaybackStore((s) => s.currentTime);
+  const currentTime = usePlaybackStore((s) => s.displayTime);
   const isPlaying = usePlaybackStore((s) => s.isPlaying);
   const setPlaying = usePlaybackStore((s) => s.setPlaying);
   const audioStatus = usePlaybackStore((s) => s.audioStatus);

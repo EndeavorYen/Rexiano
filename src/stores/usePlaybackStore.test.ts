@@ -54,3 +54,82 @@ describe("usePlaybackStore audio recovery state", () => {
     expect(usePlaybackStore.getState().countInActive).toBe(false);
   });
 });
+
+describe("usePlaybackStore displayTime publishing", () => {
+  beforeEach(() => {
+    usePlaybackStore.setState({
+      currentTime: 0,
+      displayTime: 0,
+      isPlaying: false,
+      countInActive: false,
+    });
+  });
+
+  test("currentTime advances every frame tick while displayTime advances on a cadence", () => {
+    usePlaybackStore.getState().setPlaying(true);
+    const { setCurrentTime } = usePlaybackStore.getState();
+
+    for (let i = 1; i <= 5; i++) {
+      setCurrentTime(i * (1 / 60));
+    }
+    let state = usePlaybackStore.getState();
+    expect(state.currentTime).toBeCloseTo(0.0833, 3);
+    expect(state.displayTime).toBe(0);
+
+    setCurrentTime(0.1);
+    state = usePlaybackStore.getState();
+    expect(state.displayTime).toBeCloseTo(0.1, 5);
+
+    setCurrentTime(0.15);
+    expect(usePlaybackStore.getState().displayTime).toBeCloseTo(0.1, 5);
+
+    setCurrentTime(0.2);
+    expect(usePlaybackStore.getState().displayTime).toBeCloseTo(0.2, 5);
+  });
+
+  test("a rewind while playing shows up immediately, so loops do not jump", () => {
+    usePlaybackStore.getState().setPlaying(true);
+    const { setCurrentTime } = usePlaybackStore.getState();
+
+    setCurrentTime(5.4);
+    setCurrentTime(2);
+
+    const state = usePlaybackStore.getState();
+    expect(state.currentTime).toBe(2);
+    expect(state.displayTime).toBe(2);
+  });
+
+  test("every paused seek shows up immediately", () => {
+    const { setCurrentTime } = usePlaybackStore.getState();
+
+    setCurrentTime(10);
+    setCurrentTime(10.03);
+
+    expect(usePlaybackStore.getState().displayTime).toBeCloseTo(10.03, 5);
+  });
+
+  test("reset clears both clocks", () => {
+    usePlaybackStore.getState().setPlaying(true);
+    usePlaybackStore.getState().setCurrentTime(12.5);
+
+    usePlaybackStore.getState().reset();
+
+    const state = usePlaybackStore.getState();
+    expect(state.currentTime).toBe(0);
+    expect(state.displayTime).toBe(0);
+  });
+
+  test("renderers that need the raw clock can still read currentTime per tick", () => {
+    usePlaybackStore.getState().setPlaying(true);
+    const seen: number[] = [];
+    const unsubscribe = usePlaybackStore.subscribe((state) => {
+      seen.push(state.currentTime);
+    });
+
+    usePlaybackStore.getState().setCurrentTime(0.016);
+    usePlaybackStore.getState().setCurrentTime(0.033);
+    unsubscribe();
+
+    expect(seen.at(-1)).toBeCloseTo(0.033, 5);
+  });
+});

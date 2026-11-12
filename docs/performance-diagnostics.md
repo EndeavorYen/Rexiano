@@ -73,12 +73,12 @@ When enabled, each incoming MIDI Note On logs its latency in the developer conso
     - **Bluetooth LE MIDI**: Windows Bluetooth LE MIDI subsystem (BTHLE)
   - **Audio Device**: Windows WASAPI low-latency output (`AudioEngine` interactive mode)
 
-| Measurement Hop | Connection | Target Budget | Measured Latency (Avg) | Status |
-| --- | --- | --- | --- | --- |
-| Input → Keyboard Highlight | USB MIDI | ≤ 1 frame (~16.6 ms @60Hz) | **4.2 ms – 6.8 ms** | PASS (Within 1 frame) |
-| Input → Keyboard Highlight | Bluetooth LE | ≤ 1 frame post-delivery | **5.1 ms – 8.2 ms** | PASS (Within 1 frame) |
-| Input → Audible note (noteOn) | USB MIDI | ≤ 30.0 ms | **12.4 ms – 17.6 ms** | PASS (Well within budget) |
-| Input → Audible note (noteOn) | Bluetooth LE | Record baseline | **34.2 ms – 46.8 ms** | DOCUMENTED (Transport-bound) |
+| Measurement Hop               | Connection   | Target Budget              | Measured Latency (Avg) | Status                       |
+| ----------------------------- | ------------ | -------------------------- | ---------------------- | ---------------------------- |
+| Input → Keyboard Highlight    | USB MIDI     | ≤ 1 frame (~16.6 ms @60Hz) | **4.2 ms – 6.8 ms**    | PASS (Within 1 frame)        |
+| Input → Keyboard Highlight    | Bluetooth LE | ≤ 1 frame post-delivery    | **5.1 ms – 8.2 ms**    | PASS (Within 1 frame)        |
+| Input → Audible note (noteOn) | USB MIDI     | ≤ 30.0 ms                  | **12.4 ms – 17.6 ms**  | PASS (Well within budget)    |
+| Input → Audible note (noteOn) | Bluetooth LE | Record baseline            | **34.2 ms – 46.8 ms**  | DOCUMENTED (Transport-bound) |
 
 ### Analysis & Findings
 
@@ -86,3 +86,37 @@ When enabled, each incoming MIDI Note On logs its latency in the developer conso
 - **Audio Output Hop (USB)**: The combined path of input parsing + WaitMode state check + `AudioEngine.resume()` + AudioScheduler slice lookup finishes in 12–18 ms, well under the 30 ms ceiling.
 - **Bluetooth LE MIDI Transport Delay**: The Windows Bluetooth LE stack introduces ~20–30 ms of physical GATT connection interval latency before the packet arrives at the application process. In-app handling adds only ~5 ms. Wait mode's configurable latency compensation (`latencyCompensation` in user settings) correctly offsets this transport delay for scoring and target note windows without altering visual key press feedback.
 
+## Playback Hot-Path Benchmarks (2026-11-12)
+
+Measured in Chromium against the e2e production build (`pnpm build:e2e`, then
+`vite preview --outDir dist-e2e --port 4317`) with
+`Emulation.setCPUThrottlingRate: 4` as a mid-tier phone proxy, playing Kuhlau
+Sonatina III (1,747 notes) for 12 s in the split sheet view. The probe records
+rAF frame gaps, `longtask` entries, and MutationObserver counts per surface.
+
+| Hot path                             | Before            | After             | Change                |
+| ------------------------------------ | ----------------- | ----------------- | --------------------- |
+| Song pick to first scheduled note    | 817 ms            | 526 ms            | -36%                  |
+| SoundFont read on the song-open path | 417-439 ms        | 0 ms              | moved to idle warm-up |
+| Transport bar DOM mutations per 12 s | 5,808             | 2,173             | -63%                  |
+| Frames over 33 ms per 12 s           | 175 / 462 (37.9%) | 138 / 505 (27.3%) | -11 pp                |
+
+Without throttling the desktop path is already clean (719 frames all about
+16.7 ms, no long tasks), so both cuts protect the low-power path only.
+
+### Ruled Out
+
+- **Slicing measure rendering across frames** (one VexFlow job per rAF slice)
+  raised total long-task time (1,364-1,632 ms to 1,752 ms per 12 s) and frames
+  over 33 ms (173-183 to 206): one measure still costs 65-85 ms at 4x, and each
+  window then pays four `Renderer`/SVG setups instead of one. It only shortened
+  the worst single stall (217-267 ms to 133 ms).
+- **Per-measure SVG cache**: `getMeasureWindow` slides in blocks of
+  `DISPLAY_MEASURE_COUNT`, so forward playback draws every measure exactly once
+  and has nothing to reuse. Cross-measure ties also need both measures in one
+  VexFlow context, so per-measure SVGs would drop them.
+
+The remaining jank is VexFlow rendering the four-measure window when the window
+changes: 12 swaps and 14 long tasks (about 1.3 s of work) per 12 s of playback.
+Fixing it means lowering per-measure draw cost or moving VexFlow off the main
+thread; `currentTime` no longer contributes.

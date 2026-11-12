@@ -19,6 +19,20 @@ import type { ISoundFontLoader, NoteSample } from "./types";
 const PIANO_MIN = 21;
 const PIANO_MAX = 108;
 
+type DecodedSampleSet = Map<number, NoteSample>;
+
+/**
+ * Decoded SF2 samples, keyed by the asset name they came from.
+ *
+ * Switching songs rebuilds the audio stack, which would otherwise re-fetch the
+ * 9 MB piano.sf2, box it into a 9 M-element `number[]` and re-parse it on every
+ * song open (~0.3 s and ~70 MB of throwaway garbage each time). AudioBuffers are
+ * not bound to the AudioContext that created them, so the decoded set is reused
+ * across engine rebuilds. Only successful SF2 parses are cached: a failed load
+ * must stay retryable for the next song.
+ */
+const decodedSampleCache = new Map<string, DecodedSampleSet>();
+
 export class SoundFontLoader implements ISoundFontLoader {
   /** Map of MIDI note number → decoded sample */
   private _samples = new Map<number, NoteSample>();
@@ -32,6 +46,13 @@ export class SoundFontLoader implements ISoundFontLoader {
     audioContext: AudioContext,
   ): Promise<void> {
     this._samples.clear();
+
+    const cacheKey = typeof source === "string" ? source : null;
+    const cached = cacheKey ? decodedSampleCache.get(cacheKey) : null;
+    if (cached) {
+      this._samples = new Map(cached);
+      return;
+    }
 
     let arrayBuffer: ArrayBuffer | null = null;
 
@@ -48,6 +69,7 @@ export class SoundFontLoader implements ISoundFontLoader {
     if (arrayBuffer) {
       try {
         await this._parseSF2(arrayBuffer, audioContext);
+        if (cacheKey) decodedSampleCache.set(cacheKey, new Map(this._samples));
         return;
       } catch (err) {
         console.warn(
@@ -67,6 +89,11 @@ export class SoundFontLoader implements ISoundFontLoader {
 
   dispose(): void {
     this._samples.clear();
+  }
+
+  /** Drop the shared decoded-sample cache (used by tests and sound reloads). */
+  static clearSampleCache(): void {
+    decodedSampleCache.clear();
   }
 
   // ─── SF2 Parsing ─────────────────────────────────────

@@ -1,6 +1,26 @@
 {
   "versions": [
     {
+      "version": "2.3",
+      "date": "2026-11-12",
+      "title": "選完曲子更快聽到第一個音",
+      "items": [
+        "從選好曲子到聽到第一個音，等待時間縮短約三分之一",
+        "9 MB 的鋼琴音色改在頁面空閒時背景載入，不再卡在你按下播放的那一刻",
+        "換曲子不會重新載入音色，開第一首時也不會再凍結約 0.4 秒",
+        "進度列和時間數字不再每秒重繪 60 次，效能較差的裝置上掉幀少了約四分之一"
+      ],
+      "en": {
+        "title": "The first note arrives sooner",
+        "items": [
+          "The wait from picking a song to hearing the first note is about a third shorter",
+          "The 9 MB piano sound loads in the background while the page is idle, not when you press play",
+          "Switching songs no longer reloads the sound, and opening the first song no longer freezes the page for ~0.4s",
+          "The seek bar and time readout no longer repaint 60 times a second, for about a quarter fewer dropped frames on slower devices"
+        ]
+      }
+    },
+    {
       "version": "2.2",
       "date": "2026-11-05",
       "title": "曲庫多了 62 首教材小品",

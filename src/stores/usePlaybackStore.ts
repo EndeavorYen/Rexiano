@@ -3,9 +3,28 @@ import type { AudioEngineStatus } from "@renderer/engines/audio/types";
 
 export type AudioRecoveryState = "idle" | "recovering" | "failed";
 
+/**
+ * How far the UI clock trails the transport clock, in seconds.
+ *
+ * The transport publishes `currentTime` once per animation frame, but the only
+ * React consumers are the transport bar's readout/seek fill and the sheet
+ * cursor. Re-rendering them at 60 Hz costs thousands of DOM writes per playback
+ * segment without adding visible smoothness: a 3-minute song moves the seek fill
+ * about 3 px per second, so 10 Hz steps stay sub-pixel. Time is published to the
+ * UI at this interval while playing, and immediately for anything the user did
+ * (seeks, loops, resets) so discrete jumps never lag behind the interaction.
+ */
+export const DISPLAY_TIME_INTERVAL_SECONDS = 0.1;
+
 interface PlaybackState {
   /** Current playback position in seconds */
   currentTime: number;
+  /**
+   * Playback position for UI that can trail {@link currentTime} by up to
+   * {@link DISPLAY_TIME_INTERVAL_SECONDS} while playing. Renderers that need the
+   * exact clock (`tickerLoop`, `TransportClock`, Wait mode) read `currentTime`.
+   */
+  displayTime: number;
   /** Whether auto-play is active */
   isPlaying: boolean;
   /** True while the metronome gates transport before beat one. */
@@ -50,6 +69,7 @@ let recoverySuccessTimer: ReturnType<typeof setTimeout> | null = null;
 
 export const usePlaybackStore = create<PlaybackState>()((set) => ({
   currentTime: 0,
+  displayTime: 0,
   isPlaying: false,
   countInActive: false,
   pixelsPerSecond: 200,
@@ -64,7 +84,16 @@ export const usePlaybackStore = create<PlaybackState>()((set) => ({
   audioRecoverySignal: 0,
   resetSignal: 0,
 
-  setCurrentTime: (time) => set({ currentTime: time }),
+  setCurrentTime: (time) =>
+    set((state) => ({
+      currentTime: time,
+      displayTime:
+        state.isPlaying &&
+        time >= state.displayTime &&
+        time - state.displayTime < DISPLAY_TIME_INTERVAL_SECONDS
+          ? state.displayTime
+          : time,
+    })),
   setPlaying: (playing) => set({ isPlaying: playing }),
   setCountInActive: (active) => set({ countInActive: active }),
   setPixelsPerSecond: (pps) => set({ pixelsPerSecond: pps }),
@@ -109,6 +138,7 @@ export const usePlaybackStore = create<PlaybackState>()((set) => ({
     }
     set((state) => ({
       currentTime: 0,
+      displayTime: 0,
       isPlaying: false,
       countInActive: false,
       audioRecoveryState: "idle",
