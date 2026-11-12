@@ -3,6 +3,7 @@ import { useSongStore } from "./stores/useSongStore";
 import { usePlaybackStore } from "./stores/usePlaybackStore";
 import { useSettingsStore } from "./stores/useSettingsStore";
 import { getMetronome } from "./engines/metronome/metronomeManager";
+import { scheduleSoundFontWarmup } from "./engines/audio/soundFontWarmup";
 import { FallingNotesCanvas } from "./features/fallingNotes/FallingNotesCanvas";
 import { PianoKeyboard } from "./features/fallingNotes/PianoKeyboard";
 import { createOnScreenKeyInput } from "./features/practice/onScreenKeyInput";
@@ -436,6 +437,12 @@ function App(): React.JSX.Element {
         : null,
     [builtinNotationMetadata, notationData, song],
   );
+
+  useEffect(() => {
+    // Decode the piano SoundFont while idle: opening a song then plays the
+    // first note immediately instead of paying ~0.4 s of SF2 read + parse.
+    scheduleSoundFontWarmup();
+  }, []);
 
   useEffect(() => {
     const token = `${view}:${song?.fileName ?? ""}`;

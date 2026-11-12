@@ -4,10 +4,11 @@ import { SoundFontLoader } from "./SoundFontLoader";
 // ─── Mock soundfont2 library ─────────────────────
 // The source uses `new SoundFont2(uint8)` so we need a class-like mock.
 
-let sf2ConstructorBehavior: "throw" | "empty" = "throw";
+let sf2ConstructorBehavior: "throw" | "empty" | "samples" = "throw";
 
 vi.mock("soundfont2", () => {
   return {
+    GeneratorType: { OverridingRootKey: 58, CoarseTune: 61, FineTune: 6 },
     SoundFont2: class MockSoundFont2 {
       presets: Array<{ header: { bank: number; preset: number } }> = [];
       constructor() {
@@ -16,8 +17,15 @@ vi.mock("soundfont2", () => {
         }
       }
       // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
-      getKeyData() {
-        return null;
+      getKeyData(midi: number) {
+        if (sf2ConstructorBehavior !== "samples") return null;
+        return {
+          sample: {
+            data: new Int16Array([0, 40, -40, 80, -80]),
+            header: { sampleRate: 8000, originalPitch: midi },
+          },
+          generators: {},
+        };
       }
     },
   };
@@ -116,6 +124,80 @@ describe("SoundFontLoader", () => {
       expect(loader.isLoaded).toBe(true);
       // Piano range A0 (21) to C8 (108)
       expect(loader.getSample(60)).toBeDefined();
+    });
+  });
+
+  describe("decoded sample cache across audio engine rebuilds", () => {
+    function freshBufferContext(): AudioContext {
+      return {
+        sampleRate: 44100,
+        createBuffer: vi
+          .fn()
+          .mockImplementation(
+            (_channels: number, length: number, sampleRate: number) => ({
+              length,
+              sampleRate,
+              duration: length / sampleRate,
+              numberOfChannels: 1,
+              getChannelData: () => new Float32Array(length),
+            }),
+          ),
+      } as unknown as AudioContext;
+    }
+
+    beforeEach(() => {
+      SoundFontLoader.clearSampleCache();
+      sf2ConstructorBehavior = "samples";
+    });
+
+    test("a second loader reuses decoded samples instead of loading the SF2 again", async () => {
+      const loadSoundFont = vi.fn().mockResolvedValue({
+        fileName: "piano.sf2",
+        data: Array.from(new Uint8Array(64)),
+      });
+      vi.stubGlobal("window", { api: { loadSoundFont } });
+
+      const first = new SoundFontLoader();
+      await first.load("piano.sf2", freshBufferContext());
+      const firstSample = first.getSample(60);
+      expect(firstSample).toBeDefined();
+
+      // Switching songs tears this engine down (#344 web rebuild path).
+      first.dispose();
+      expect(first.isLoaded).toBe(false);
+
+      const second = new SoundFontLoader();
+      await second.load("piano.sf2", freshBufferContext());
+
+      expect(loadSoundFont).toHaveBeenCalledTimes(1);
+      expect(second.isLoaded).toBe(true);
+      expect(second.getSample(60)?.buffer).toBe(firstSample?.buffer);
+    });
+
+    test("clearSampleCache makes the next load read the SF2 again", async () => {
+      const loadSoundFont = vi.fn().mockResolvedValue({
+        fileName: "piano.sf2",
+        data: Array.from(new Uint8Array(64)),
+      });
+      vi.stubGlobal("window", { api: { loadSoundFont } });
+
+      await new SoundFontLoader().load("piano.sf2", freshBufferContext());
+      SoundFontLoader.clearSampleCache();
+      const again = new SoundFontLoader();
+      await again.load("piano.sf2", freshBufferContext());
+
+      expect(loadSoundFont).toHaveBeenCalledTimes(2);
+      expect(again.getSample(60)).toBeDefined();
+    });
+
+    test("a failed SF2 load is not cached, so the next song can retry", async () => {
+      const loadSoundFont = vi.fn().mockResolvedValue(null);
+      vi.stubGlobal("window", { api: { loadSoundFont } });
+
+      await new SoundFontLoader().load("piano.sf2", freshBufferContext());
+      await new SoundFontLoader().load("piano.sf2", freshBufferContext());
+
+      expect(loadSoundFont).toHaveBeenCalledTimes(2);
     });
   });
 
