@@ -5,8 +5,7 @@ import {
   useState,
   type DragEvent,
 } from "react";
-import { parseMidiFile } from "@renderer/engines/midi/MidiFileParser";
-import { decodeImportedPracticeFile } from "@renderer/engines/score/decodeImportedPracticeFile";
+import { openImportedPracticeFile } from "./openImportedPracticeFile";
 import {
   practiceSourceFromFileName,
   preferredDisplayModeForSource,
@@ -182,11 +181,8 @@ export function useMidiImportActions({
   );
 
   const loadParsedSong = useCallback(
-    (fileName: string, data: number[]): void => {
-      const parsed = parseMidiFile(
-        fileName,
-        decodeImportedPracticeFile(fileName, data),
-      );
+    async (fileName: string, data: number[]): Promise<void> => {
+      const parsed = await openImportedPracticeFile(fileName, data);
       loadSong(parsed);
       usePracticeStore
         .getState()
@@ -207,7 +203,7 @@ export function useMidiImportActions({
       if (!result) return;
 
       try {
-        loadParsedSong(result.fileName, result.data);
+        await loadParsedSong(result.fileName, result.data);
       } catch (error) {
         console.error("Failed to parse MIDI file:", error);
         showImportError({
@@ -243,7 +239,7 @@ export function useMidiImportActions({
         }
 
         try {
-          loadParsedSong(result.fileName, result.data);
+          await loadParsedSong(result.fileName, result.data);
         } catch (error) {
           console.error("Failed to parse MIDI from path:", error);
           showImportError({
@@ -435,7 +431,7 @@ export function useMidiImportActions({
           return;
         }
         try {
-          loadParsedSong(result.fileName, result.data);
+          await loadParsedSong(result.fileName, result.data);
         } catch (error) {
           console.error("Failed to parse dropped MIDI file:", error);
           showImportError({

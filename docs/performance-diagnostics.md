@@ -120,3 +120,46 @@ The remaining jank is VexFlow rendering the four-measure window when the window
 changes: 12 swaps and 14 long tasks (about 1.3 s of work) per 12 s of playback.
 Fixing it means lowering per-measure draw cost or moving VexFlow off the main
 thread; `currentTime` no longer contributes.
+
+## Imported File Hot Path (2026-11-12)
+
+Measured on the e2e production build (`pnpm build:e2e`, served by `vite preview`) with
+`Emulation.setCPUThrottlingRate: 4`. The probe drops a synthetic MIDI into the app shell
+and times from the drop to the transport carrying the new song's duration, while recording
+`longtask` entries in the same window. The synthetic file packs one note every 0.05 s, so
+note count drives both the decode and the quantization work.
+
+| Import                | Drop to song open       | Worst single freeze | Total blocking          |
+| --------------------- | ----------------------- | ------------------- | ----------------------- |
+| 500 notes (4 KB)      | 221 to 209 ms           | 177 to 145 ms       | 308 to 278 ms           |
+| 2,000 notes (16 KB)   | 278 to 256 ms           | 199 to 149 ms       | 350 to 321 ms           |
+| 20,000 notes (160 KB) | 1,769 to 1,475-1,530 ms | 1,067 to 330-383 ms | 1,493 to 1,027-1,071 ms |
+
+Before/after, with the parse and the notation conversion moved to
+`practiceImportParseWorker`.
+
+What was actually expensive: profiling the drop showed the MIDI decode was not the
+problem. A CPU profile of a 20,000-note import put about 870 ms of a 1.8 s task in
+`MidiToNotation` (`buildNotation`, `assignSegmentsToVoices`, `clusterSegmentsBySpan`)
+against roughly 120 ms in `@tonejs/midi`. Moving only the decode to a worker changed the
+worst freeze by about 7%.
+
+Two mistakes found by measuring, both fixed:
+
+- **One reply per import.** Waiting for the notation before opening the song made latency
+  worse (1,046 to 1,957 ms drop to song open). The worker now posts the song as soon as it
+  is parsed and the notation when the conversion finishes.
+- **Converting twice.** Opening the song first let the sheet layer run the same conversion
+  on the main thread: `buildNotation` still showed 513 ms of self time and the worker's
+  result was never read. `beginImportedNotationWait` tells the sheet a conversion is
+  running off-thread, so it waits instead of repeating the work.
+
+The boundary has a price: results are structured-cloned back, and for a 20,000-note song
+plus its notation that deserialization is about 194 ms of main-thread self time. It is why
+the largest import improves by less than the saved work alone would suggest.
+
+Still on the open path, unclaimed:
+
+- `focus()` on the freshly mounted view costs 130-150 ms of self time at 4x.
+- `usePreviewTrackCounts` still parses imported files on the main thread to show track
+  counts in the library list.

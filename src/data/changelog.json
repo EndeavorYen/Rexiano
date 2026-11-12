@@ -1,6 +1,26 @@
 {
   "versions": [
     {
+      "version": "2.4",
+      "date": "2026-11-12",
+      "title": "拖進長譜檔，畫面不再卡住",
+      "items": [
+        "拖入或開啟較大的 MIDI / MusicXML，解碼與譜面換算改在背景進行，畫面不會再卡住約一秒",
+        "兩萬個音的檔案，最長的一次卡頓從約 1.07 秒降到約 0.35 秒（四倍降速模擬）",
+        "五百到兩千個音的一般譜檔也比較不會卡，開譜時間還變短了一點",
+        "譜面會在換算完成的那一刻出現，不會再做第二次"
+      ],
+      "en": {
+        "title": "Long imports no longer freeze the page",
+        "items": [
+          "Dropping or opening a larger MIDI / MusicXML now decodes and converts in the background, so the screen stops freezing for about a second",
+          "For a 20,000-note file the worst single stall drops from about 1.07 s to about 0.35 s in a 4x-slowdown simulation",
+          "Ordinary imports of 500 to 2,000 notes stall less too, and open slightly sooner",
+          "The sheet appears the moment its conversion lands, instead of being built a second time"
+        ]
+      }
+    },
+    {
       "version": "2.3",
       "date": "2026-11-12",
       "title": "選完曲子更快聽到第一個音",

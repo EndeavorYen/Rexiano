@@ -5,7 +5,7 @@ import {
 } from "./useSheetMusicNotation";
 import type { ParsedSong } from "@renderer/engines/midi/types";
 import type { NotationData } from "./types";
-
+import { rememberImportedNotation } from "./importedNotationCache";
 describe("useSheetMusicNotation helper functions", () => {
   const dummySong: ParsedSong = {
     fileName: "twinkle.mid",
@@ -49,6 +49,41 @@ describe("useSheetMusicNotation helper functions", () => {
     expect(result?.measures[0]?.keySignature).toBe(2);
     expect(result?.measures[0]?.timeSignatureTop).toBe(3);
     expect(result?.measures[0]?.timeSignatureBottom).toBe(4);
+  });
+
+  it("reuses the conversion that already ran off the main thread", () => {
+    const imported: ParsedSong = { ...dummySong, fileName: "imported-a.mid" };
+    const offThread: NotationData = {
+      measures: [],
+      bpm: 120,
+      ticksPerQuarter: 480,
+    };
+    rememberImportedNotation(imported, offThread);
+    expect(buildNotationData(imported, null, null)).toBe(offThread);
+  });
+
+  it("converts on the main thread when built-in metadata changes the result", () => {
+    const imported: ParsedSong = { ...dummySong, fileName: "imported-b.mid" };
+    const offThread: NotationData = {
+      measures: [],
+      bpm: 120,
+      ticksPerQuarter: 480,
+    };
+    rememberImportedNotation(imported, offThread);
+    const result = buildNotationData(imported, null, { keySignature: 2 });
+    expect(result).not.toBe(offThread);
+    expect(result?.measures[0]?.keySignature).toBe(2);
+  });
+
+  it("waits for the off-thread conversion instead of repeating it here", () => {
+    const imported: ParsedSong = {
+      ...dummySong,
+      fileName: "still-working.mid",
+    };
+    expect(buildNotationData(imported, null, null, null, true)).toBeNull();
+    expect(
+      buildNotationData(imported, null, null, null, false)?.measures.length,
+    ).toBeGreaterThan(0);
   });
 
   it("buildNotationTempoMap returns null if fixtureData is present or song is null", () => {
