@@ -713,7 +713,7 @@ input.seek-slider-input {
   font-family: var(--font-display);
   font-weight: 800;
   font-size: 1.35rem;
-  line-height: 1.2;
+  line-height: 1.6;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
