@@ -64,6 +64,11 @@ export interface BuiltinSongMeta {
   grade?: 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8;
   /** How the built-in was produced: MusicXML score vs programmatic MIDI. */
   origin?: "score" | "midi";
+  /**
+   * Opening of the melody as flattened [midi, length 1–4] pairs, written by
+   * `pnpm generate:songs`. Song covers draw it (see songContour.ts).
+   */
+  contour?: number[];
 }
 
 // ─── Phase 5: MIDI Device Connection ─────────────────────────────────

@@ -25,6 +25,7 @@ const REQUIRED_COLOR_KEYS: (keyof ThemeTokens["colors"])[] = [
   "note2",
   "note3",
   "note4",
+  "unit5",
   "keyActive",
   "keyWhite",
   "keyWhiteBottom",

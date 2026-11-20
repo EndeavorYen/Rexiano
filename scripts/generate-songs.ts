@@ -33,6 +33,7 @@ import {
   type SongMeta,
 } from "./generatedSongLibrary";
 import { buildMidiFromSpec, loadSongSpec } from "./songSpec";
+import { computeSongContour } from "../src/features/songLibrary/songContour";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const outDir = join(__dirname, "..", "public", "midi");
@@ -1362,6 +1363,10 @@ function formatSongMeta(song: SongMeta): string {
     lines.push(`    "origin": ${jsonValue(song.origin)},`);
   }
 
+  if (song.contour && song.contour.length > 0) {
+    lines.push(`    "contour": [${song.contour.join(", ")}],`);
+  }
+
   lines.push(`    "durationSeconds": ${song.durationSeconds},`);
   const tagLines = formatTags(song.tags);
   lines.push(...tagLines);
@@ -1405,6 +1410,13 @@ export function runGenerateSongs(): void {
   }
 
   updateExistingOnlyMidiHeaders(songsMeta, generatedIds);
+
+  for (const song of songsMeta) {
+    const midiPath = join(outDir, song.file);
+    if (!existsSync(midiPath)) continue;
+    const midi = new Midi(readFileSync(midiPath));
+    song.contour = computeSongContour(midi.tracks.map((track) => track.notes));
+  }
 
   const songsJsonPath = join(outDir, "songs.json");
   writeFileSync(songsJsonPath, formatSongsJson(songsMeta));

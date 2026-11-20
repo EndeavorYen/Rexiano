@@ -10,6 +10,7 @@
     "category": "folk",
     "grade": 0,
     "origin": "score",
+    "contour": [64, 1, 62, 1, 60, 2, 64, 1, 62, 1, 60, 2, 60, 1, 60, 1, 60, 1, 60, 1, 62, 1, 62, 1],
     "durationSeconds": 12,
     "tags": ["traditional", "melody", "beginner", "c-major", "4-4", "level-0"]
   },
@@ -24,6 +25,7 @@
     "category": "folk",
     "grade": 0,
     "origin": "score",
+    "contour": [60, 1, 60, 1, 60, 1, 62, 1, 64, 2, 62, 2, 60, 1, 64, 1, 62, 1, 62, 1, 60, 4, 60, 1],
     "durationSeconds": 20,
     "tags": ["traditional", "melody", "french", "c-major", "4-4", "level-0"]
   },
@@ -38,6 +40,7 @@
     "category": "exercise",
     "grade": 1,
     "origin": "score",
+    "contour": [60, 1, 62, 1, 64, 1, 65, 1, 67, 1, 69, 1, 71, 1, 72, 1, 71, 1, 69, 1, 67, 1, 65, 1],
     "durationSeconds": 8,
     "tags": ["exercise", "scale", "c-major", "4-4", "level-1"]
   },
@@ -52,6 +55,7 @@
     "category": "folk",
     "grade": 1,
     "origin": "score",
+    "contour": [64, 1, 62, 1, 60, 1, 62, 1, 64, 1, 64, 1, 64, 2, 62, 1, 62, 1, 62, 2, 64, 1, 67, 1],
     "durationSeconds": 18,
     "tags": ["traditional", "melody", "beginner", "c-major", "4-4", "level-1"]
   },
@@ -66,6 +70,7 @@
     "category": "folk",
     "grade": 2,
     "origin": "score",
+    "contour": [67, 3, 69, 1, 67, 2, 65, 2, 64, 2, 65, 2, 67, 4, 62, 2, 64, 2, 65, 4, 64, 2, 65, 2],
     "durationSeconds": 16,
     "tags": ["traditional", "melody", "c-major", "4-4", "level-2"]
   },
@@ -80,6 +85,7 @@
     "category": "holiday",
     "grade": 2,
     "origin": "score",
+    "contour": [64, 1, 64, 1, 64, 2, 64, 1, 64, 1, 64, 2, 64, 1, 67, 1, 60, 1, 62, 1, 64, 4, 65, 1],
     "durationSeconds": 16,
     "tags": ["holiday", "christmas", "melody", "c-major", "4-4", "level-2"]
   },
@@ -93,6 +99,7 @@
     "category": "classical",
     "grade": 2,
     "origin": "score",
+    "contour": [64, 1, 64, 1, 65, 1, 67, 1, 67, 1, 65, 1, 64, 1, 62, 1, 60, 1, 60, 1, 62, 1, 64, 1],
     "durationSeconds": 16,
     "tags": ["classical", "melody", "c-major", "4-4", "level-2"]
   },
@@ -106,6 +113,7 @@
     "category": "popular",
     "grade": 2,
     "origin": "score",
+    "contour": [60, 3, 60, 1, 62, 4, 60, 4, 65, 4, 64, 4, 60, 3, 60, 1, 62, 4, 60, 4, 67, 4, 65, 4],
     "durationSeconds": 15,
     "tags": ["popular", "melody", "f-major", "3-4", "level-2"]
   },
@@ -120,6 +128,7 @@
     "category": "folk",
     "grade": 2,
     "origin": "score",
+    "contour": [60, 3, 60, 3, 60, 2, 62, 1, 64, 3, 64, 2, 62, 1, 64, 2, 65, 1, 67, 4, 72, 1, 72, 1],
     "durationSeconds": 15,
     "tags": ["traditional", "melody", "c-major", "6-8", "level-2"]
   },
@@ -133,6 +142,7 @@
     "category": "folk",
     "grade": 2,
     "origin": "score",
+    "contour": [60, 2, 67, 2, 67, 2, 67, 2, 65, 1, 64, 1, 62, 1, 60, 1, 60, 2, 69, 2, 69, 2, 69, 4],
     "durationSeconds": 29,
     "tags": ["traditional", "melody", "folk", "c-major", "3-4", "level-2"]
   },
@@ -147,6 +157,7 @@
     "category": "folk",
     "grade": 2,
     "origin": "score",
+    "contour": [60, 1, 60, 1, 67, 1, 67, 1, 69, 1, 69, 1, 67, 2, 65, 1, 65, 1, 64, 1, 64, 1, 62, 1],
     "durationSeconds": 29,
     "tags": ["traditional", "melody", "c-major", "4-4", "level-2"]
   },
@@ -161,6 +172,7 @@
     "category": "popular",
     "grade": 3,
     "origin": "score",
+    "contour": [79, 1, 79, 1, 79, 1, 79, 1, 79, 1, 79, 1, 79, 1, 79, 1, 79, 1, 79, 1, 79, 1, 79, 1],
     "durationSeconds": 24,
     "tags": [
       "popular",
@@ -183,6 +195,7 @@
     "category": "folk",
     "grade": 3,
     "origin": "score",
+    "contour": [60, 1, 62, 1, 64, 1, 60, 1, 60, 1, 62, 1, 64, 1, 60, 1, 64, 1, 65, 1, 67, 2, 64, 1],
     "durationSeconds": 28,
     "tags": ["traditional", "french", "c-major", "4-4", "two-hands", "level-3"]
   },
@@ -197,6 +210,7 @@
     "category": "classical",
     "grade": 3,
     "origin": "score",
+    "contour": [64, 1, 64, 1, 67, 3, 64, 1, 64, 2, 67, 2, 64, 1, 67, 1, 72, 2, 71, 3, 69, 1, 69, 2],
     "durationSeconds": 44,
     "tags": ["classical", "lullaby", "3-4", "two-hands", "level-3"]
   },
@@ -210,6 +224,7 @@
     "category": "folk",
     "grade": 3,
     "origin": "score",
+    "contour": [67, 1, 67, 1, 69, 1, 71, 1, 67, 1, 71, 1, 69, 1, 62, 1, 67, 1, 67, 1, 69, 1, 71, 1],
     "durationSeconds": 48,
     "tags": [
       "traditional",
@@ -230,6 +245,7 @@
     "category": "folk",
     "grade": 4,
     "origin": "score",
+    "contour": [62, 2, 67, 4, 71, 1, 67, 1, 71, 4, 69, 2, 67, 4, 64, 2, 62, 4, 62, 2, 67, 4, 71, 1],
     "durationSeconds": 80,
     "tags": ["traditional", "3-4", "g-major", "two-hands", "level-4"]
   },
@@ -243,6 +259,7 @@
     "category": "folk",
     "grade": 4,
     "origin": "score",
+    "contour": [69, 4, 69, 2, 76, 4, 76, 2, 71, 3, 72, 1, 71, 2, 69, 4, 76, 2, 79, 2, 81, 4, 79, 2],
     "durationSeconds": 90,
     "tags": ["traditional", "english", "a-minor", "3-4", "two-hands", "level-4"]
   },
@@ -256,6 +273,7 @@
     "category": "classical",
     "grade": 4,
     "origin": "score",
+    "contour": [60, 2, 60, 1, 62, 1, 64, 2, 64, 1, 65, 1, 67, 2, 69, 1, 67, 1, 64, 4, 67, 2, 65, 1],
     "durationSeconds": 54,
     "tags": ["classical", "lyrical", "c-major", "4-4", "two-hands", "level-4"]
   },
@@ -270,6 +288,7 @@
     "category": "classical",
     "grade": 5,
     "origin": "score",
+    "contour": [76, 1, 75, 1, 76, 1, 75, 1, 76, 1, 71, 1, 74, 1, 72, 1, 69, 2, 60, 1, 64, 1, 69, 1],
     "durationSeconds": 20,
     "tags": ["classical", "romantic", "a-minor", "3-8", "two-hands", "level-5"]
   },
@@ -284,6 +303,7 @@
     "category": "classical",
     "grade": 5,
     "origin": "score",
+    "contour": [74, 2, 67, 1, 69, 1, 71, 1, 72, 1, 74, 2, 67, 2, 67, 2, 76, 2, 72, 1, 74, 1, 76, 1],
     "durationSeconds": 14,
     "tags": ["classical", "baroque", "g-major", "3-4", "two-hands", "level-5"]
   },
@@ -298,6 +318,7 @@
     "category": "classical",
     "grade": 5,
     "origin": "score",
+    "contour": [78, 1, 76, 1, 74, 1, 73, 1, 71, 1, 69, 1, 71, 1, 73, 1],
     "durationSeconds": 12,
     "tags": ["classical", "baroque", "d-major", "4-4", "two-hands", "level-5"]
   },
@@ -312,6 +333,7 @@
     "category": "classical",
     "grade": 6,
     "origin": "score",
+    "contour": [67, 1, 72, 1, 76, 1, 67, 1, 72, 1, 76, 1, 67, 1, 72, 1, 76, 1, 67, 1, 72, 1, 76, 1],
     "durationSeconds": 64,
     "tags": [
       "classical",
@@ -334,6 +356,7 @@
     "category": "study",
     "grade": 6,
     "origin": "score",
+    "contour": [72, 2, 76, 1, 72, 1, 67, 2, 67, 2, 72, 2, 76, 1, 72, 1, 67, 2, 79, 2, 77, 1, 76, 1],
     "durationSeconds": 138,
     "tags": [
       "sonatina",
@@ -354,6 +377,7 @@
     "category": "classical",
     "grade": 6,
     "origin": "score",
+    "contour": [57, 2, 62, 4, 66, 1, 64, 1, 62, 1, 61, 1, 62, 1, 64, 1, 66, 1, 64, 1, 62, 1, 61, 1],
     "durationSeconds": 50,
     "tags": ["classical", "dance", "d-major", "3-4", "two-hands", "level-6"]
   },
@@ -368,6 +392,7 @@
     "category": "classical",
     "grade": 7,
     "origin": "score",
+    "contour": [68, 1, 73, 1, 76, 1, 68, 1, 73, 1, 76, 1, 68, 1, 73, 1, 76, 1, 68, 1, 73, 1, 76, 1],
     "durationSeconds": 35,
     "tags": ["classical", "romantic", "c#-minor", "2-2", "two-hands", "level-7"]
   },
@@ -381,6 +406,7 @@
     "category": "classical",
     "grade": 7,
     "origin": "score",
+    "contour": [71, 1, 69, 1, 68, 1, 69, 1, 72, 2, 74, 1, 72, 1, 71, 1, 72, 1, 76, 2, 77, 1, 76, 1],
     "durationSeconds": 22,
     "tags": ["classical", "fast", "a-minor", "2-4", "two-hands", "level-7"]
   },
@@ -395,6 +421,7 @@
     "category": "folk",
     "grade": 1,
     "origin": "score",
+    "contour": [67, 1, 64, 1, 64, 2, 65, 1, 62, 1, 62, 2, 60, 1, 62, 1, 64, 1, 65, 1, 67, 1, 67, 1],
     "durationSeconds": 20,
     "tags": ["traditional", "melody", "beginner", "c-major", "4-4", "level-1"]
   },
@@ -409,6 +436,7 @@
     "category": "folk",
     "grade": 2,
     "origin": "score",
+    "contour": [72, 1, 72, 1, 72, 1, 67, 1, 69, 1, 69, 1, 67, 2, 64, 1, 64, 1, 62, 1, 62, 1, 60, 4],
     "durationSeconds": 34,
     "tags": ["traditional", "melody", "beginner", "c-major", "4-4", "level-2"]
   },
@@ -421,6 +449,7 @@
     "category": "folk",
     "grade": 2,
     "origin": "score",
+    "contour": [67, 1, 64, 1, 67, 2, 67, 1, 64, 1, 67, 2, 69, 1, 67, 1, 65, 1, 64, 1, 62, 1, 64, 1],
     "durationSeconds": 18,
     "tags": ["traditional", "melody", "c-major", "4-4", "level-2"]
   },
@@ -434,6 +463,7 @@
     "category": "folk",
     "grade": 2,
     "origin": "score",
+    "contour": [60, 3, 62, 1, 64, 2, 64, 2, 62, 1, 60, 1, 62, 1, 64, 1, 60, 2, 60, 3, 62, 1, 64, 2],
     "durationSeconds": 28,
     "tags": ["traditional", "melody", "french", "c-major", "4-4", "level-2"]
   },
@@ -446,6 +476,7 @@
     "category": "folk",
     "grade": 3,
     "origin": "score",
+    "contour": [64, 2, 64, 1, 62, 1, 60, 2, 60, 2, 62, 2, 62, 1, 65, 1, 64, 1, 62, 1, 60, 2, 67, 2],
     "durationSeconds": 20,
     "tags": ["traditional", "melody", "c-major", "4-4", "two-hands", "level-3"]
   },
@@ -459,6 +490,7 @@
     "category": "folk",
     "grade": 3,
     "origin": "score",
+    "contour": [60, 1, 64, 1, 65, 1, 67, 4, 60, 1, 64, 1, 65, 1, 67, 4, 60, 1, 64, 1, 65, 1, 67, 2],
     "durationSeconds": 35,
     "tags": ["traditional", "melody", "c-major", "4-4", "level-3"]
   },
@@ -473,6 +505,7 @@
     "category": "folk",
     "grade": 4,
     "origin": "score",
+    "contour": [60, 1, 62, 1, 64, 2, 67, 2, 67, 3, 69, 1, 67, 2, 64, 2, 60, 3, 62, 1, 64, 2, 64, 2],
     "durationSeconds": 35,
     "tags": [
       "traditional",
@@ -493,6 +526,7 @@
     "category": "holiday",
     "grade": 4,
     "origin": "score",
+    "contour": [67, 3, 69, 1, 67, 2, 64, 4, 67, 3, 69, 1, 67, 2, 64, 4, 72, 4, 72, 2, 67, 4, 69, 4],
     "durationSeconds": 37,
     "tags": ["holiday", "christmas", "c-major", "3-4", "two-hands", "level-4"]
   },
@@ -507,6 +541,7 @@
     "category": "study",
     "grade": 4,
     "origin": "score",
+    "contour": [72, 4, 74, 1, 76, 1, 77, 2, 76, 4, 77, 1, 76, 1, 74, 1, 72, 4, 74, 1, 75, 1, 74, 1],
     "durationSeconds": 103,
     "tags": ["baroque", "minuet", "f-major", "3-4", "two-hands", "level-4"]
   },
@@ -521,6 +556,7 @@
     "category": "study",
     "grade": 5,
     "origin": "score",
+    "contour": [82, 2, 81, 2, 79, 2, 81, 2, 74, 2, 74, 2, 79, 2, 67, 1, 69, 1, 70, 1, 72, 1, 74, 4],
     "durationSeconds": 103,
     "tags": ["baroque", "minuet", "g-minor", "3-4", "two-hands", "level-5"]
   },
@@ -535,6 +571,7 @@
     "category": "study",
     "grade": 5,
     "origin": "score",
+    "contour": [67, 1, 71, 1, 74, 1, 79, 1, 69, 1, 78, 1, 79, 2, 67, 2, 67, 2, 67, 1, 71, 1, 74, 1],
     "durationSeconds": 129,
     "tags": ["baroque", "minuet", "g-major", "3-4", "two-hands", "level-5"]
   },
@@ -549,6 +586,7 @@
     "category": "study",
     "grade": 5,
     "origin": "score",
+    "contour": [77, 2, 77, 1, 79, 1, 81, 2, 79, 1, 81, 1, 82, 1, 81, 1, 79, 1, 77, 1, 79, 2, 79, 1],
     "durationSeconds": 60,
     "tags": ["baroque", "polonaise", "f-major", "3-4", "two-hands", "level-5"]
   },
@@ -563,6 +601,7 @@
     "category": "study",
     "grade": 5,
     "origin": "score",
+    "contour": [70, 4, 70, 4, 65, 3, 67, 1, 63, 4, 62, 4, 60, 4, 72, 4, 74, 1, 75, 1, 81, 4, 82, 4],
     "durationSeconds": 80,
     "tags": ["baroque", "minuet", "bb-major", "3-4", "two-hands", "level-5"]
   },
@@ -577,6 +616,7 @@
     "category": "study",
     "grade": 5,
     "origin": "score",
+    "contour": [67, 3, 69, 1, 70, 4, 72, 4, 69, 2, 69, 1, 70, 1, 72, 4, 70, 2, 70, 1, 72, 1, 74, 2],
     "durationSeconds": 63,
     "tags": ["baroque", "polonaise", "g-minor", "3-4", "two-hands", "level-5"]
   },
@@ -591,6 +631,7 @@
     "category": "study",
     "grade": 4,
     "origin": "score",
+    "contour": [64, 4, 69, 3, 71, 1, 72, 4, 71, 4, 72, 4, 69, 4, 76, 4, 76, 2, 74, 2, 72, 2, 71, 2],
     "durationSeconds": 99,
     "tags": ["baroque", "minuet", "a-minor", "3-4", "two-hands", "level-4"]
   },
@@ -605,6 +646,7 @@
     "category": "study",
     "grade": 5,
     "origin": "score",
+    "contour": [72, 2, 72, 2, 74, 2, 75, 2, 75, 2, 77, 2, 79, 2, 79, 2, 80, 2, 78, 4, 79, 3, 80, 1],
     "durationSeconds": 84,
     "tags": ["baroque", "minuet", "c-minor", "3-4", "two-hands", "level-5"]
   },
@@ -619,6 +661,7 @@
     "category": "study",
     "grade": 6,
     "origin": "score",
+    "contour": [81, 4, 79, 1, 78, 1, 76, 1, 74, 1, 81, 4, 79, 1, 78, 1, 76, 1, 74, 1, 66, 1, 67, 1],
     "durationSeconds": 43,
     "tags": ["baroque", "musette", "d-major", "2-4", "two-hands", "level-6"]
   },
@@ -633,6 +676,7 @@
     "category": "study",
     "grade": 4,
     "origin": "score",
+    "contour": [77, 1, 81, 1, 72, 2, 72, 2, 74, 1, 77, 1, 70, 2, 70, 2, 69, 1, 72, 1, 65, 2, 64, 2],
     "durationSeconds": 56,
     "tags": ["classical", "minuet", "f-major", "3-4", "two-hands", "level-4"]
   },
@@ -647,6 +691,7 @@
     "category": "study",
     "grade": 4,
     "origin": "score",
+    "contour": [79, 4, 76, 2, 77, 4, 74, 2, 76, 4, 76, 2, 74, 4, 74, 2, 72, 4, 71, 4, 72, 2, 67, 1],
     "durationSeconds": 13,
     "tags": ["etude", "c-major", "3-4", "two-hands", "level-4"]
   },
@@ -661,6 +706,7 @@
     "category": "study",
     "grade": 5,
     "origin": "score",
+    "contour": [72, 1, 73, 1, 74, 1, 75, 1, 76, 1, 77, 1, 78, 1, 79, 1, 79, 1, 81, 1, 82, 1, 83, 1],
     "durationSeconds": 17,
     "tags": ["etude", "f-major", "4-4", "two-hands", "level-5"]
   },
@@ -675,6 +721,7 @@
     "category": "study",
     "grade": 5,
     "origin": "score",
+    "contour": [96, 1, 94, 1, 93, 1, 91, 1, 89, 1, 88, 1, 86, 1, 84, 1, 82, 1, 81, 1, 79, 1, 77, 1],
     "durationSeconds": 13,
     "tags": ["etude", "f-major", "6-8", "two-hands", "level-5"]
   },
@@ -689,6 +736,7 @@
     "category": "study",
     "grade": 5,
     "origin": "score",
+    "contour": [70, 1, 74, 1, 72, 1, 75, 1, 74, 1, 77, 1, 75, 1, 72, 1, 70, 1, 74, 1, 72, 1, 75, 1],
     "durationSeconds": 18,
     "tags": ["etude", "bb-major", "4-4", "two-hands", "level-5"]
   },
@@ -703,6 +751,7 @@
     "category": "study",
     "grade": 5,
     "origin": "score",
+    "contour": [74, 1, 74, 1, 74, 1, 74, 1, 83, 2, 72, 1, 72, 1, 72, 1, 72, 1, 81, 2, 71, 1, 71, 1],
     "durationSeconds": 17,
     "tags": ["etude", "g-major", "4-4", "two-hands", "level-5"]
   },
@@ -717,6 +766,7 @@
     "category": "study",
     "grade": 5,
     "origin": "score",
+    "contour": [79, 1, 76, 1, 74, 1, 72, 1, 79, 1, 76, 1, 74, 1, 72, 1, 84, 1, 81, 1, 79, 1, 77, 1],
     "durationSeconds": 70,
     "tags": ["romantic", "etude", "c-major", "4-4", "two-hands", "level-5"]
   },
@@ -731,6 +781,7 @@
     "category": "study",
     "grade": 6,
     "origin": "score",
+    "contour": [69, 1, 71, 1, 72, 1, 71, 1, 69, 2, 69, 1, 71, 1, 72, 1, 74, 1, 76, 2, 74, 1, 76, 1],
     "durationSeconds": 50,
     "tags": ["romantic", "etude", "a-minor", "2-4", "two-hands", "level-6"]
   },
@@ -745,6 +796,7 @@
     "category": "study",
     "grade": 5,
     "origin": "score",
+    "contour": [67, 1, 71, 1, 72, 1, 74, 1, 71, 1, 76, 1, 74, 1, 79, 1, 76, 1, 74, 1, 71, 1, 72, 1],
     "durationSeconds": 66,
     "tags": ["romantic", "etude", "g-major", "6-8", "two-hands", "level-5"]
   },
@@ -759,6 +811,7 @@
     "category": "study",
     "grade": 6,
     "origin": "score",
+    "contour": [81, 1, 79, 1, 77, 1, 76, 1, 77, 1, 76, 1, 74, 1, 72, 1, 74, 1, 72, 1, 70, 1, 69, 1],
     "durationSeconds": 55,
     "tags": ["romantic", "etude", "f-major", "3-4", "two-hands", "level-6"]
   },
@@ -773,6 +826,7 @@
     "category": "study",
     "grade": 6,
     "origin": "score",
+    "contour": [64, 2, 65, 1, 67, 1, 69, 1, 71, 1, 72, 1, 74, 1, 76, 2, 71, 2, 72, 2, 69, 2, 67, 2],
     "durationSeconds": 64,
     "tags": ["romantic", "etude", "c-major", "4-4", "two-hands", "level-6"]
   },
@@ -787,6 +841,7 @@
     "category": "study",
     "grade": 6,
     "origin": "score",
+    "contour": [72, 4, 74, 1, 72, 1, 71, 1, 72, 1, 77, 4, 79, 1, 77, 1, 76, 1, 77, 1, 81, 4, 72, 4],
     "durationSeconds": 63,
     "tags": ["romantic", "etude", "f-major", "3-4", "two-hands", "level-6"]
   },
@@ -801,6 +856,7 @@
     "category": "study",
     "grade": 7,
     "origin": "score",
+    "contour": [79, 1, 67, 1, 67, 1, 79, 1, 67, 1, 67, 1, 79, 1, 67, 1, 67, 1, 79, 1, 67, 1, 67, 1],
     "durationSeconds": 66,
     "tags": ["romantic", "etude", "c-major", "6-8", "two-hands", "level-7"]
   },
@@ -815,6 +871,7 @@
     "category": "study",
     "grade": 7,
     "origin": "score",
+    "contour": [91, 1, 88, 1, 84, 2, 88, 1, 84, 1, 79, 2, 84, 1, 79, 1, 76, 2, 79, 1, 76, 1, 72, 2],
     "durationSeconds": 38,
     "tags": ["romantic", "etude", "c-major", "2-4", "two-hands", "level-7"]
   },
@@ -829,6 +886,7 @@
     "category": "study",
     "grade": 7,
     "origin": "score",
+    "contour": [76, 1, 77, 1, 76, 1, 76, 2, 74, 2, 74, 1, 76, 1, 74, 1, 74, 2, 72, 2, 76, 1, 75, 1],
     "durationSeconds": 59,
     "tags": ["romantic", "etude", "a-minor", "4-4", "two-hands", "level-7"]
   },
@@ -843,6 +901,7 @@
     "category": "study",
     "grade": 6,
     "origin": "score",
+    "contour": [67, 4, 74, 1, 76, 1, 74, 1, 76, 1, 74, 1, 76, 1, 74, 1, 67, 4, 72, 1, 74, 1, 72, 1],
     "durationSeconds": 83,
     "tags": ["romantic", "etude", "c-major", "4-4", "two-hands", "level-6"]
   },
@@ -857,6 +916,7 @@
     "category": "study",
     "grade": 7,
     "origin": "score",
+    "contour": [67, 1, 67, 1, 67, 1, 67, 1, 67, 1, 67, 1, 67, 1, 67, 1, 67, 1, 67, 1, 67, 1, 67, 1],
     "durationSeconds": 101,
     "tags": ["romantic", "etude", "c-minor", "3-8", "two-hands", "level-7"]
   },
@@ -871,6 +931,7 @@
     "category": "study",
     "grade": 7,
     "origin": "score",
+    "contour": [79, 1, 78, 1, 76, 1, 76, 1, 74, 1, 72, 1, 71, 1, 70, 1, 71, 1, 71, 1, 72, 1, 71, 1],
     "durationSeconds": 42,
     "tags": ["romantic", "etude", "e-minor", "2-4", "two-hands", "level-7"]
   },
@@ -885,6 +946,7 @@
     "category": "study",
     "grade": 6,
     "origin": "score",
+    "contour": [72, 4, 77, 3, 69, 4, 72, 3, 65, 4, 67, 3, 69, 3, 65, 1, 69, 1, 72, 1, 77, 1, 77, 1],
     "durationSeconds": 56,
     "tags": ["sonatina", "f-major", "3-4", "two-hands", "level-6"]
   },
@@ -899,6 +961,7 @@
     "category": "study",
     "grade": 6,
     "origin": "score",
+    "contour": [76, 1, 74, 1, 72, 2, 72, 2, 79, 4, 77, 1, 76, 1, 74, 2, 77, 2, 71, 2, 72, 2, 67, 2],
     "durationSeconds": 88,
     "tags": ["sonatina", "c-major", "3-8", "two-hands", "level-6"]
   },
@@ -913,6 +976,7 @@
     "category": "study",
     "grade": 7,
     "origin": "score",
+    "contour": [76, 1, 77, 1, 79, 3, 79, 1, 78, 1, 79, 1, 81, 1, 79, 1, 76, 3, 76, 1, 75, 1, 76, 1],
     "durationSeconds": 169,
     "tags": ["sonatina", "c-major", "2-4", "two-hands", "level-7"]
   },
@@ -927,6 +991,7 @@
     "category": "study",
     "grade": 6,
     "origin": "score",
+    "contour": [71, 2, 71, 3, 69, 1, 72, 2, 71, 4, 69, 2, 67, 2, 69, 2, 71, 4, 71, 2, 64, 3, 69, 1],
     "durationSeconds": 70,
     "tags": ["romantic", "g-major", "3-4", "two-hands", "level-6"]
   },
@@ -941,6 +1006,7 @@
     "category": "study",
     "grade": 6,
     "origin": "score",
+    "contour": [74, 2, 74, 2, 71, 3, 70, 1, 71, 2, 73, 1, 74, 2, 74, 2, 71, 3, 70, 1, 71, 2, 73, 1],
     "durationSeconds": 48,
     "tags": ["romantic", "march", "d-major", "2-4", "two-hands", "level-6"]
   },
@@ -955,6 +1021,7 @@
     "category": "study",
     "grade": 5,
     "origin": "score",
+    "contour": [62, 1, 67, 1, 69, 1, 70, 1, 72, 1, 74, 3, 74, 1, 72, 1, 74, 1, 75, 1, 72, 1, 74, 3],
     "durationSeconds": 56,
     "tags": ["romantic", "g-minor", "2-4", "two-hands", "level-5"]
   },
@@ -969,6 +1036,7 @@
     "category": "study",
     "grade": 5,
     "origin": "score",
+    "contour": [76, 1, 79, 1, 77, 1, 79, 1, 76, 1, 77, 1, 74, 1, 76, 1, 72, 1, 84, 1, 83, 1, 84, 1],
     "durationSeconds": 17,
     "tags": ["etude", "c-major", "4-4", "two-hands", "level-5"]
   },
@@ -983,6 +1051,7 @@
     "category": "study",
     "grade": 6,
     "origin": "score",
+    "contour": [77, 1, 76, 1, 74, 1, 72, 1, 71, 1, 69, 1, 67, 1, 65, 1, 64, 2, 77, 1, 76, 1, 74, 1],
     "durationSeconds": 98,
     "tags": ["romantic", "etude", "c-major", "4-4", "two-hands", "level-6"]
   },
@@ -997,6 +1066,7 @@
     "category": "study",
     "grade": 6,
     "origin": "score",
+    "contour": [62, 1, 64, 1, 66, 1, 69, 1, 69, 1, 74, 1, 74, 1, 78, 1, 78, 1, 76, 1, 73, 1, 69, 1],
     "durationSeconds": 87,
     "tags": ["romantic", "etude", "d-major", "4-4", "two-hands", "level-6"]
   },
@@ -1011,6 +1081,7 @@
     "category": "study",
     "grade": 6,
     "origin": "score",
+    "contour": [74, 4, 72, 1, 70, 1, 69, 1, 67, 4, 74, 1, 79, 1, 77, 1, 75, 4, 75, 1, 74, 1, 72, 1],
     "durationSeconds": 68,
     "tags": ["romantic", "etude", "g-minor", "4-4", "two-hands", "level-6"]
   },
@@ -1025,6 +1096,7 @@
     "category": "study",
     "grade": 7,
     "origin": "score",
+    "contour": [67, 4, 67, 2, 70, 2, 69, 4, 69, 2, 74, 2, 72, 4, 70, 2, 67, 2, 72, 1, 72, 1, 72, 1],
     "durationSeconds": 52,
     "tags": ["romantic", "etude", "f-major", "3-8", "two-hands", "level-7"]
   },
@@ -1039,6 +1111,7 @@
     "category": "study",
     "grade": 2,
     "origin": "score",
+    "contour": [60, 1, 64, 1, 60, 1, 64, 1, 67, 1, 60, 1, 60, 1, 60, 1, 62, 1, 62, 1, 62, 1, 62, 1],
     "durationSeconds": 60,
     "tags": ["etude", "c-major", "4-4", "two-hands", "level-2"]
   },
@@ -1053,6 +1126,7 @@
     "category": "study",
     "grade": 2,
     "origin": "score",
+    "contour": [60, 3, 64, 1, 62, 1, 60, 1, 62, 3, 67, 3, 60, 3, 64, 1, 62, 1, 60, 1, 62, 3, 62, 1],
     "durationSeconds": 80,
     "tags": ["etude", "c-major", "3-4", "two-hands", "level-2"]
   },
@@ -1067,6 +1141,7 @@
     "category": "study",
     "grade": 2,
     "origin": "score",
+    "contour": [60, 1, 62, 1, 64, 1, 62, 1, 64, 1, 65, 1, 64, 1, 67, 1, 60, 1, 62, 3, 60, 1, 62, 1],
     "durationSeconds": 45,
     "tags": ["etude", "c-major", "3-4", "two-hands", "level-2"]
   },
@@ -1081,6 +1156,7 @@
     "category": "study",
     "grade": 2,
     "origin": "score",
+    "contour": [60, 2, 64, 2, 60, 2, 64, 2, 62, 2, 60, 1, 62, 1, 64, 2, 64, 1, 62, 1, 60, 2, 64, 2],
     "durationSeconds": 60,
     "tags": ["etude", "c-major", "4-4", "two-hands", "level-2"]
   },
@@ -1095,6 +1171,7 @@
     "category": "study",
     "grade": 2,
     "origin": "score",
+    "contour": [60, 1, 62, 1, 64, 1, 65, 1, 67, 1, 65, 1, 64, 1, 62, 1, 60, 1, 62, 1, 64, 1, 65, 1],
     "durationSeconds": 20,
     "tags": ["etude", "c-major", "4-4", "two-hands", "level-2"]
   },
@@ -1109,6 +1186,7 @@
     "category": "study",
     "grade": 2,
     "origin": "score",
+    "contour": [60, 2, 67, 2, 60, 2, 67, 2, 60, 2, 67, 2, 60, 1, 67, 1, 60, 2],
     "durationSeconds": 20,
     "tags": ["etude", "c-major", "4-4", "two-hands", "level-2"]
   },
@@ -1123,6 +1201,7 @@
     "category": "study",
     "grade": 3,
     "origin": "score",
+    "contour": [60, 1, 62, 1, 64, 1, 65, 1, 67, 1, 65, 1, 64, 1, 62, 1, 60, 4, 67, 4, 60, 1, 62, 1],
     "durationSeconds": 30,
     "tags": ["etude", "c-major", "4-4", "two-hands", "level-3"]
   },
@@ -1137,6 +1216,7 @@
     "category": "study",
     "grade": 3,
     "origin": "score",
+    "contour": [60, 1, 62, 1, 64, 1, 65, 1, 67, 1, 65, 1, 64, 1, 62, 1, 60, 1, 62, 1, 64, 1, 65, 1],
     "durationSeconds": 60,
     "tags": ["etude", "c-major", "4-4", "two-hands", "level-3"]
   },
@@ -1151,6 +1231,7 @@
     "category": "study",
     "grade": 3,
     "origin": "score",
+    "contour": [60, 1, 64, 1, 62, 1, 65, 1, 64, 1, 60, 1, 62, 2, 60, 1, 64, 1, 62, 1, 65, 1, 64, 1],
     "durationSeconds": 30,
     "tags": ["etude", "c-major", "2-4", "two-hands", "level-3"]
   },
@@ -1165,6 +1246,7 @@
     "category": "study",
     "grade": 3,
     "origin": "score",
+    "contour": [60, 2, 67, 2, 65, 2, 64, 2, 60, 2, 67, 2, 65, 1, 62, 1, 60, 2, 62, 2, 60, 2, 65, 2],
     "durationSeconds": 54,
     "tags": ["etude", "c-major", "4-4", "two-hands", "level-3"]
   },
@@ -1179,6 +1261,7 @@
     "category": "study",
     "grade": 3,
     "origin": "score",
+    "contour": [60, 1, 62, 1, 64, 1, 64, 1, 62, 1, 60, 1, 62, 1, 64, 1, 62, 1, 60, 1, 67, 1, 67, 1],
     "durationSeconds": 40,
     "tags": ["etude", "c-major", "3-4", "two-hands", "level-3"]
   },
@@ -1193,6 +1276,7 @@
     "category": "study",
     "grade": 3,
     "origin": "score",
+    "contour": [60, 1, 62, 1, 64, 1, 60, 1, 62, 1, 64, 1, 62, 1, 60, 1, 62, 1, 64, 1, 64, 1, 64, 1],
     "durationSeconds": 45,
     "tags": ["etude", "c-major", "3-4", "two-hands", "level-3"]
   },
@@ -1207,6 +1291,7 @@
     "category": "study",
     "grade": 3,
     "origin": "score",
+    "contour": [60, 3, 64, 1, 60, 3, 64, 1, 62, 2, 62, 2, 64, 2, 60, 2, 60, 3, 64, 1, 60, 3, 64, 1],
     "durationSeconds": 54,
     "tags": ["etude", "c-major", "4-4", "two-hands", "level-3"]
   },
@@ -1221,6 +1306,7 @@
     "category": "study",
     "grade": 3,
     "origin": "score",
+    "contour": [64, 1, 60, 1, 64, 1, 60, 1, 62, 1, 62, 1, 67, 1, 65, 1, 64, 1, 60, 1, 64, 1, 60, 1],
     "durationSeconds": 60,
     "tags": ["etude", "c-major", "4-4", "two-hands", "level-3"]
   },
@@ -1235,6 +1321,7 @@
     "category": "study",
     "grade": 3,
     "origin": "score",
+    "contour": [60, 1, 64, 1, 67, 1, 64, 1, 62, 1, 65, 1, 64, 1, 62, 1, 64, 4, 60, 1, 64, 1, 67, 1],
     "durationSeconds": 60,
     "tags": ["etude", "c-major", "4-4", "two-hands", "level-3"]
   },
@@ -1249,6 +1336,7 @@
     "category": "study",
     "grade": 3,
     "origin": "score",
+    "contour": [64, 1, 60, 1, 62, 1, 64, 1, 65, 1, 62, 1, 64, 1, 65, 1, 67, 1, 60, 1, 62, 1, 64, 1],
     "durationSeconds": 60,
     "tags": ["etude", "c-major", "4-4", "two-hands", "level-3"]
   },
@@ -1263,6 +1351,7 @@
     "category": "study",
     "grade": 3,
     "origin": "score",
+    "contour": [67, 2, 65, 2, 64, 4, 62, 1, 64, 1, 65, 1, 62, 1, 60, 4, 64, 1, 65, 1, 67, 1, 64, 1],
     "durationSeconds": 30,
     "tags": ["etude", "c-major", "4-4", "two-hands", "level-3"]
   },
@@ -1277,6 +1366,7 @@
     "category": "study",
     "grade": 3,
     "origin": "score",
+    "contour": [67, 1, 65, 1, 64, 1, 64, 1, 62, 1, 60, 1, 62, 1, 64, 1, 62, 1, 60, 1, 62, 1, 64, 1],
     "durationSeconds": 45,
     "tags": ["etude", "c-major", "3-4", "two-hands", "level-3"]
   },
@@ -1291,6 +1381,7 @@
     "category": "study",
     "grade": 3,
     "origin": "score",
+    "contour": [60, 1, 64, 1, 60, 1, 64, 1, 67, 1, 64, 1, 67, 1, 64, 1, 62, 1, 65, 1, 62, 1, 65, 1],
     "durationSeconds": 60,
     "tags": ["etude", "c-major", "4-4", "two-hands", "level-3"]
   },
@@ -1305,6 +1396,7 @@
     "category": "study",
     "grade": 3,
     "origin": "score",
+    "contour": [60, 1, 62, 1, 64, 1, 62, 1, 60, 4, 62, 1, 64, 1, 65, 1, 64, 1, 62, 4, 64, 1, 65, 1],
     "durationSeconds": 60,
     "tags": ["etude", "c-major", "4-4", "two-hands", "level-3"]
   },
@@ -1319,6 +1411,7 @@
     "category": "study",
     "grade": 3,
     "origin": "score",
+    "contour": [64, 1, 67, 1, 62, 1, 67, 1, 60, 1, 67, 1, 62, 1, 67, 1, 64, 1, 67, 1, 62, 1, 67, 1],
     "durationSeconds": 40,
     "tags": ["etude", "c-major", "4-4", "two-hands", "level-3"]
   },
@@ -1333,6 +1426,7 @@
     "category": "study",
     "grade": 3,
     "origin": "score",
+    "contour": [60, 1, 62, 1, 64, 1, 60, 1, 67, 4, 65, 1, 62, 1, 65, 1, 64, 4, 60, 1, 62, 1, 64, 1],
     "durationSeconds": 60,
     "tags": ["etude", "c-major", "4-4", "two-hands", "level-3"]
   },
@@ -1347,6 +1441,7 @@
     "category": "study",
     "grade": 3,
     "origin": "score",
+    "contour": [64, 1, 65, 1, 67, 1, 64, 1, 62, 1, 64, 1, 65, 1, 62, 1, 60, 1, 62, 1, 64, 1, 60, 1],
     "durationSeconds": 40,
     "tags": ["etude", "c-major", "4-4", "two-hands", "level-3"]
   },
@@ -1361,6 +1456,7 @@
     "category": "study",
     "grade": 3,
     "origin": "score",
+    "contour": [64, 2, 60, 1, 62, 1, 64, 2, 60, 1, 62, 1, 64, 2, 60, 1, 64, 1, 62, 1, 64, 1, 65, 1],
     "durationSeconds": 60,
     "tags": ["etude", "c-major", "4-4", "two-hands", "level-3"]
   }

@@ -47,6 +47,8 @@ export interface SongMeta {
   durationSeconds: number;
   tags: string[];
   origin?: "score" | "midi";
+  /** Melody opening for the song cover; recomputed from the MIDI on every run */
+  contour?: number[];
 }
 
 /**
