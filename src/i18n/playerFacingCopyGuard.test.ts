@@ -5,7 +5,7 @@ import { describe, expect, test } from "vitest";
 const PLAYER_FLOW_FILES = [
   "features/songLibrary/songCardUtils.ts",
   "features/songLibrary/lessonProgression.ts",
-  "features/songLibrary/SongCard.tsx",
+  "features/songLibrary/SongCoverCard.tsx",
   "features/songLibrary/SongLibrary.tsx",
   "features/settings/SettingsPanel.tsx",
   "features/shell/FamilyTopBar.tsx",
