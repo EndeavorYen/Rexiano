@@ -613,6 +613,36 @@ export interface TranslationMap {
   "settings.themeDark": string;
   "settings.backupBrowserDesc": string;
   "settings.reloadNow": string;
+  // ── UI round 1: home-map ──
+  "map.routeLabel": string;
+  "map.today": string;
+  "map.streak": string;
+  "map.days": string;
+  "map.minutesUnit": string;
+  "map.weekLabel": string;
+  "map.weekdayShort": string;
+  "map.stars": string;
+  "map.hudLabel": string;
+  "map.unitsLabel": string;
+  "map.allSongs": string;
+  "map.next": string;
+  "map.status.done": string;
+  "map.status.played": string;
+  "map.status.new": string;
+  "map.starsCount": string;
+  "map.seconds": string;
+  "map.reason.first": string;
+  "map.reason.new": string;
+  "map.reason.played": string;
+  "map.reason.done": string;
+  "map.reason.next": string;
+  "map.playAgain": string;
+  "map.allMastered": string;
+  "map.firstInvite": string;
+  "map.firstInviteHint": string;
+  "map.loading": string;
+  "map.recentLabel": string;
+  "map.unitFlag": string;
 }
 
 /**

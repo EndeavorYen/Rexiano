@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { PLAYBACK_EXIT_ROUTE, shouldSyncRouteHash } from "./useAppNavigation";
+import { playbackExitRoute, shouldSyncRouteHash } from "./useAppNavigation";
 
 describe("shouldSyncRouteHash", () => {
   test("returns true when current hash differs from target hash", () => {
@@ -13,8 +13,16 @@ describe("shouldSyncRouteHash", () => {
   });
 });
 
-describe("PLAYBACK_EXIT_ROUTE (#325)", () => {
-  test("the playback header's 曲庫 button returns to the library", () => {
-    expect(PLAYBACK_EXIT_ROUTE).toBe("library");
+describe("playbackExitRoute (#325)", () => {
+  test("returns to the map when the song was started from the map", () => {
+    expect(playbackExitRoute("menu")).toBe("menu");
+  });
+
+  test("returns to the library when the song was started from the shelf", () => {
+    expect(playbackExitRoute("library")).toBe("library");
+  });
+
+  test("falls back to the library when the origin is unknown", () => {
+    expect(playbackExitRoute("playback")).toBe("library");
   });
 });

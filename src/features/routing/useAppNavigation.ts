@@ -15,8 +15,18 @@ import { useTranslation } from "@renderer/i18n/useTranslation";
 import type { PracticeSessionIntent } from "@renderer/features/practice/sessionIntent";
 import type { ParsedSong } from "@renderer/engines/midi/types";
 
-/** The playback header's button is labelled 曲庫 / "Library" (#325). */
-export const PLAYBACK_EXIT_ROUTE: AppRoute = "library";
+/** The screens a child can start a song from, and so return to. */
+export type BrowseRoute = "menu" | "library";
+
+/** Where leaving playback goes when we never saw a browse screen (#325). */
+export const DEFAULT_BROWSE_ROUTE: BrowseRoute = "library";
+
+/** Leaving playback returns to the screen the song was started from. */
+export function playbackExitRoute(origin: AppRoute): BrowseRoute {
+  return origin === "menu" || origin === "library"
+    ? origin
+    : DEFAULT_BROWSE_ROUTE;
+}
 
 export function shouldSyncRouteHash(
   currentHash: string,
@@ -36,6 +46,8 @@ export interface UseAppNavigationResult {
   sessionIntentRef: React.MutableRefObject<PracticeSessionIntent>;
   setSessionIntent: (intent: PracticeSessionIntent) => void;
   applyRoute: (nextRoute: AppRoute) => void;
+  /** The screen (map or library) the current song was started from */
+  getBrowseRoute: () => BrowseRoute;
   showMenuSettings: boolean;
   setShowMenuSettings: (show: boolean) => void;
   showPlaybackDrawer: boolean;
@@ -66,6 +78,12 @@ export function useAppNavigation({
   }, []);
 
   const view: AppRoute = resolveRoute(routeIntent, !!song);
+  const browseRouteRef = useRef<BrowseRoute>(DEFAULT_BROWSE_ROUTE);
+  useEffect(() => {
+    // The last browse screen we showed is where playback returns to.
+    if (view !== "playback") browseRouteRef.current = playbackExitRoute(view);
+  }, [view]);
+  const getBrowseRoute = useCallback(() => browseRouteRef.current, []);
   const [showPlaybackDrawer, setShowPlaybackDrawer] = useState(false);
   const playbackDrawerRef = useRef<HTMLElement | null>(null);
   const playbackDrawerTriggerRef = useRef<HTMLButtonElement | null>(null);
@@ -134,7 +152,7 @@ export function useAppNavigation({
     useSongStore.getState().clearSong();
     usePracticeStore.getState().resetScore();
     setSessionIntent("practice");
-    applyRoute(PLAYBACK_EXIT_ROUTE);
+    applyRoute(browseRouteRef.current);
   }, [applyRoute, setSessionIntent, t]);
 
   return {
@@ -144,6 +162,7 @@ export function useAppNavigation({
     sessionIntentRef,
     setSessionIntent,
     applyRoute,
+    getBrowseRoute,
     showMenuSettings,
     setShowMenuSettings,
     showPlaybackDrawer,

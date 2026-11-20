@@ -107,6 +107,7 @@ function App(): React.JSX.Element {
     sessionIntentRef,
     setSessionIntent,
     applyRoute,
+    getBrowseRoute,
     showMenuSettings,
     setShowMenuSettings,
     showPlaybackDrawer,
@@ -199,6 +200,7 @@ function App(): React.JSX.Element {
     sessionIntentRef,
     setSessionIntent,
     applyRoute,
+    getBrowseRoute,
     mode,
     speed,
     activeTracks,
@@ -530,6 +532,8 @@ function App(): React.JSX.Element {
               setSessionIntent("practice");
               void handleOpenRecent(file);
             }}
+            onSessionIntentSelected={setSessionIntent}
+            onRefreshRecentFiles={refreshRecentFiles}
           />
         </>
       )}
