@@ -32,10 +32,8 @@ import { useMidiImportActions } from "./features/fileImport/useMidiImportActions
 import { FileImportErrorAlert } from "./features/fileImport/FileImportErrorAlert";
 import { buildMidiDiagnosticNotice } from "./features/midiDiagnostics/midiDiagnosticNotice";
 import { useRecentFiles } from "./hooks/useRecentFiles";
-import {
-  displayTitleForName,
-  songDisplayTitle,
-} from "./features/songLibrary/songTitle";
+import { songDisplayTitle } from "./features/songLibrary/songTitle";
+import { playbackSongTitle } from "./features/practice/playbackSongTitle";
 import {
   clearPendingRecent,
   flushPendingRecent,
@@ -44,6 +42,11 @@ import {
   calculateSplitLayoutDimensions,
   getMutedTrackIndices,
 } from "./features/practice/splitLayoutMath";
+import {
+  installVolumeSync,
+  toggleSharedMute,
+} from "./features/audio/volumeSync";
+import type { ParsedSong } from "./engines/midi/types";
 import { useAudioPlaybackEngine } from "./features/audio/useAudioPlaybackEngine";
 import { usePracticeNotes } from "./features/practice/usePracticeNotes";
 import { useAppNavigation } from "./features/routing/useAppNavigation";
@@ -87,6 +90,14 @@ function App(): React.JSX.Element {
   const { t, lang } = useTranslation();
   const songCatalogue = useSongLibraryStore((s) => s.songs);
   const song = useSongStore((s) => s.song);
+  const importedSongs = useSongLibraryStore((s) => s.importedSongs);
+  const playbackTitle = useMemo(
+    () =>
+      song
+        ? playbackSongTitle(song.fileName, songCatalogue, importedSongs, lang)
+        : "",
+    [song, songCatalogue, importedSongs, lang],
+  );
   // Fit the keyboard and falling-notes lane to the song, fixed per song.
   const keyRange = useMemo(
     () =>
@@ -404,16 +415,9 @@ function App(): React.JSX.Element {
     onTriggerMissingMidiImport: handleLoadMidiPath,
   });
 
-  const muteRef = useRef({ prevVolume: 0.8 });
-  const handleToggleMute = useCallback(() => {
-    const pb = usePlaybackStore.getState();
-    if (pb.volume > 0) {
-      muteRef.current.prevVolume = pb.volume;
-      pb.setVolume(0);
-    } else {
-      pb.setVolume(muteRef.current.prevVolume || 0.8);
-    }
-  }, []);
+  // One volume and one mute for the control bar, the drawer and the M key.
+  useEffect(() => installVolumeSync(), []);
+  const handleToggleMute = toggleSharedMute;
 
   useKeyboardShortcuts({
     onOpenFile: handleOpenFile,
@@ -448,6 +452,9 @@ function App(): React.JSX.Element {
 
   const splitFocus = isSplitMode ? splitFocusPanel : "sheet";
 
+  // Dismissed for this opening of this song; opening it again shows it again.
+  const [dismissedNoticeSong, setDismissedNoticeSong] =
+    useState<ParsedSong | null>(null);
   const midiDiagnosticNotice = useMemo(
     () =>
       song
@@ -591,13 +598,18 @@ function App(): React.JSX.Element {
           className="flex-1 min-h-0 flex flex-col animate-page-enter px-3 pb-3 pt-3"
         >
           <PlaybackHeader
-            songTitle={displayTitleForName(song.fileName, songCatalogue, lang)}
+            songTitle={playbackTitle}
             isSplitMode={isSplitMode}
             playbackDrawerTriggerRef={playbackDrawerTriggerRef}
             onOpenPlaybackDrawer={() => setShowPlaybackDrawer(true)}
             onExitPlayback={handleExitPlayback}
             browseRoute={getBrowseRoute()}
-            midiDiagnosticNotice={midiDiagnosticNotice}
+            midiDiagnosticNotice={
+              showCelebration || dismissedNoticeSong === song
+                ? null
+                : midiDiagnosticNotice
+            }
+            onDismissMidiNotice={() => setDismissedNoticeSong(song)}
           />
 
           <PlaybackDrawer
@@ -685,7 +697,7 @@ function App(): React.JSX.Element {
       {/* Mode selection modal */}
       {song && showModeModal && (
         <ModeSelectionModal
-          songTitle={displayTitleForName(song.fileName, songCatalogue, lang)}
+          songTitle={playbackTitle}
           onSelect={handleModeSelect}
           browseRoute={getBrowseRoute()}
           onDismiss={handleModeDismiss}

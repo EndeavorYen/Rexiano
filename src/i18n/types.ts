@@ -687,6 +687,13 @@ export interface TranslationMap {
   "celebration.slowAgain": string;
   "celebration.slowAdvice": string;
   "celebration.againAdvice": string;
+  "midiNotice.warnTitle": string;
+  "midiNotice.errorTitle": string;
+  "midiNotice.errorBody": string;
+  "midiNotice.timeSignatureBody": string;
+  "midiNotice.rhythmBody": string;
+  "midiNotice.genericBody": string;
+  "midiNotice.dismiss": string;
 }
 
 /**

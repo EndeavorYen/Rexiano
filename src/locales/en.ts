@@ -758,4 +758,14 @@ export const en: TranslationMap = {
   "celebration.slowAgain": "Slow down and play again",
   "celebration.slowAdvice": "Slow it down and try again. It gets easier.",
   "celebration.againAdvice": "Play it once more and it gets better.",
+  "midiNotice.warnTitle": "The sheet may differ from the original",
+  "midiNotice.errorTitle": "This file may not be playable",
+  "midiNotice.errorBody": "Something in the file is wrong. Try another file.",
+  "midiNotice.timeSignatureBody":
+    "This file has incomplete time signature data, so the sheet may differ from the original.",
+  "midiNotice.rhythmBody":
+    "Some rhythms can only be drawn approximately on the sheet. The sound is not affected.",
+  "midiNotice.genericBody":
+    "This file has incomplete data, so the sheet may differ from the original.",
+  "midiNotice.dismiss": "Got it, hide this notice",
 };

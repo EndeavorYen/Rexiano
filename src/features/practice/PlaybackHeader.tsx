@@ -1,4 +1,5 @@
-import { AlertTriangle, ArrowLeft, SlidersHorizontal } from "lucide-react";
+import { AlertTriangle, ArrowLeft, SlidersHorizontal, X } from "lucide-react";
+import { describeMidiDiagnosticNotice } from "@renderer/features/midiDiagnostics/midiDiagnosticText";
 import { DisplayModeToggle } from "@renderer/features/sheetMusic/DisplayModeToggle";
 import { ScoreOverlay } from "./ScoreOverlay";
 import type { BrowseRoute } from "@renderer/features/routing/useAppNavigation";
@@ -15,6 +16,8 @@ export interface PlaybackHeaderProps {
   midiDiagnosticNotice: MidiDiagnosticNotice | null;
   /** The screen the song was started from: names the back button */
   browseRoute?: BrowseRoute;
+  /** Hides the quality notice for this song until it is opened again */
+  onDismissMidiNotice?: () => void;
 }
 
 export function PlaybackHeader({
@@ -25,8 +28,12 @@ export function PlaybackHeader({
   onExitPlayback,
   midiDiagnosticNotice,
   browseRoute = "menu",
+  onDismissMidiNotice,
 }: PlaybackHeaderProps): React.JSX.Element {
   const { t } = useTranslation();
+  const noticeText = midiDiagnosticNotice
+    ? describeMidiDiagnosticNotice(midiDiagnosticNotice, t)
+    : null;
 
   return (
     <div
@@ -72,7 +79,7 @@ export function PlaybackHeader({
       </div>
       {midiDiagnosticNotice && (
         <div
-          className="mt-1.5 flex items-start gap-1.5 rounded-lg px-2 py-1 text-[11px] leading-snug"
+          className="mt-1.5 flex items-center gap-2 rounded-xl py-1 pl-3 pr-1 text-[13px] leading-snug"
           style={{
             color:
               midiDiagnosticNotice.kind === "error"
@@ -90,16 +97,23 @@ export function PlaybackHeader({
           title={midiDiagnosticNotice.diagnosticTitle}
           data-testid="midi-diagnostic-notice"
         >
-          <AlertTriangle size={13} className="mt-[1px] shrink-0" />
-          <div className="min-w-0">
-            <span className="font-semibold">{midiDiagnosticNotice.title}</span>
-            <span className="ml-1">{midiDiagnosticNotice.summary}</span>
-            {midiDiagnosticNotice.details.length > 0 && (
-              <span className="ml-1 text-[10px] opacity-80">
-                {midiDiagnosticNotice.details[0]}
-              </span>
-            )}
+          <AlertTriangle size={16} className="shrink-0" />
+          <div className="min-w-0 flex-1">
+            <span className="font-semibold">{noticeText?.title}</span>
+            <span className="ml-2">{noticeText?.body}</span>
           </div>
+          {onDismissMidiNotice && (
+            <button
+              type="button"
+              onClick={onDismissMidiNotice}
+              className="icon-btn"
+              aria-label={t("midiNotice.dismiss")}
+              title={t("midiNotice.dismiss")}
+              data-testid="midi-diagnostic-dismiss"
+            >
+              <X size={18} />
+            </button>
+          )}
         </div>
       )}
     </div>

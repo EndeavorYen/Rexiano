@@ -21,26 +21,6 @@ const SEEK_STEP_LARGE = 15;
 /** Speed change per arrow key press */
 const SPEED_STEP = 0.25;
 
-/** Whether the shortcut help overlay is currently shown (toggled by ?) */
-let _showHelp = false;
-const _helpListeners = new Set<(show: boolean) => void>();
-
-export function onHelpChange(cb: (show: boolean) => void): () => void {
-  _helpListeners.add(cb);
-  return () => {
-    _helpListeners.delete(cb);
-  };
-}
-
-function setShowHelp(show: boolean): void {
-  _showHelp = show;
-  for (const cb of _helpListeners) cb(_showHelp);
-}
-
-export function getShowHelp(): boolean {
-  return _showHelp;
-}
-
 /** Mode map: number key → PracticeMode */
 const MODE_MAP: Record<string, PracticeMode> = {
   "1": "watch",
@@ -234,14 +214,6 @@ export function createKeyboardHandler(
         if (e.ctrlKey || e.metaKey) {
           e.preventDefault();
           getDeps().onOpenFile?.();
-        }
-        break;
-      }
-
-      // ── Help overlay ────────────────────────────────
-      default: {
-        if (e.key === "?") {
-          setShowHelp(!_showHelp);
         }
         break;
       }
