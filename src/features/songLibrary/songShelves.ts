@@ -4,7 +4,7 @@ import type {
   DifficultyFilter,
   GradeFilter,
 } from "../../stores/useSongLibraryStore";
-import { starsForAccuracy, type StarCount } from "../progress/stars";
+import { MAX_STARS, starsForAccuracy, type StarCount } from "../progress/stars";
 import {
   importedSongMatchesQuery,
   normalizeImportedSongPath,
@@ -42,12 +42,20 @@ export type SongbookItem =
       bestAccuracy: number | null;
     };
 
-export type SongbookShelfId = "played" | "imported" | LessonGroupId;
+export type SongbookShelfId =
+  | "continue"
+  | "favorites"
+  | "imported"
+  | LessonGroupId;
 
 export interface SongbookShelf {
   id: SongbookShelfId;
-  /** Lesson units carry a title key; "played" and "imported" use their own */
+  /** Lesson units carry a title key; the other shelves use their own */
   titleKey: TranslationKey;
+  /** One line under a lesson unit's title */
+  descriptionKey?: TranslationKey;
+  /** The "keep practising" shelf: bigger covers, the page's visual centre */
+  featured?: boolean;
   items: SongbookItem[];
   /** Only lesson units count progress (songs at 3 stars) */
   completedCount: number | null;
@@ -105,8 +113,9 @@ function isFiltering(filters: SongbookFilters): boolean {
 }
 
 /**
- * What the songbook page shows. At rest: a shelf of played songs, a shelf
- * of the child's own imports, then one shelf per lesson unit. With a search
+ * What the songbook page shows. At rest: "keep practising" (played, under
+ * 3 stars), favourites, the child's own imports, then one shelf per lesson
+ * unit. A song at 3 stars shows only on its unit shelf. With a search
  * word or a level picked: one flat list of covers, lesson order first.
  */
 export function buildSongbook(input: BuildSongbookInput): Songbook {
@@ -139,7 +148,12 @@ export function buildSongbook(input: BuildSongbookInput): Songbook {
   const progression = buildLessonProgression(songs, songActivity);
   const shelves: SongbookShelf[] = [];
 
-  const played = progression.groups
+  const byRecent = (a: SongbookItem, b: SongbookItem): number =>
+    (songActivity.get(b.id)?.lastPlayedAt ?? 0) -
+      (songActivity.get(a.id)?.lastPlayedAt ?? 0) || a.id.localeCompare(b.id);
+
+  // Played but not yet at 3 stars: the songs worth another go.
+  const keepPracticing = progression.groups
     .flatMap((group) =>
       group.songs
         .filter((entry) => entry.bestAccuracy !== null)
@@ -147,19 +161,33 @@ export function buildSongbook(input: BuildSongbookInput): Songbook {
           builtinItem(entry.song, group.id, songActivity.get(entry.song.id)),
         ),
     )
-    .sort(
-      (a, b) =>
-        (songActivity.get(b.id)?.lastPlayedAt ?? 0) -
-          (songActivity.get(a.id)?.lastPlayedAt ?? 0) ||
-        a.id.localeCompare(b.id),
-    );
-  if (played.length > 0) {
+    .filter((item) => item.stars < MAX_STARS)
+    .sort(byRecent);
+  if (keepPracticing.length > 0) {
     shelves.push({
-      id: "played",
-      titleKey: "songbook.shelf.played",
-      items: played,
+      id: "continue",
+      titleKey: "songbook.shelf.continue",
+      items: keepPracticing,
+      featured: true,
       completedCount: null,
-      totalCount: played.length,
+      totalCount: keepPracticing.length,
+    });
+  }
+
+  const favorites = progression.groups.flatMap((group) =>
+    group.songs
+      .filter((entry) => songActivity.get(entry.song.id)?.isFavorite === true)
+      .map((entry) =>
+        builtinItem(entry.song, group.id, songActivity.get(entry.song.id)),
+      ),
+  );
+  if (favorites.length > 0) {
+    shelves.push({
+      id: "favorites",
+      titleKey: "songbook.shelf.favorites",
+      items: favorites,
+      completedCount: null,
+      totalCount: favorites.length,
     });
   }
 
@@ -179,6 +207,7 @@ export function buildSongbook(input: BuildSongbookInput): Songbook {
     shelves.push({
       id: group.id,
       titleKey: group.titleKey,
+      descriptionKey: group.descriptionKey,
       items: group.songs.map((entry) =>
         builtinItem(entry.song, group.id, songActivity.get(entry.song.id)),
       ),

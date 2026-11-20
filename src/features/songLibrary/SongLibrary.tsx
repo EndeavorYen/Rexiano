@@ -36,7 +36,10 @@ import {
   selectLooseRecentFiles,
   type Songbook,
 } from "./songShelves";
-import { SongLibraryMidiDrawer } from "./SongLibraryMidiDrawer";
+import {
+  SongLibraryMidiDrawer,
+  SongLibraryPianoButton,
+} from "./SongLibraryMidiDrawer";
 import {
   useLibraryReturnFocus,
   rememberLibraryReturnFocus,
@@ -127,6 +130,8 @@ export function SongLibrary({
     string | null
   >(null);
   const previewReturnFocusRef = useRef<HTMLElement | null>(null);
+  const pianoButtonRef = useRef<HTMLButtonElement | null>(null);
+  const [isPianoDrawerOpen, setIsPianoDrawerOpen] = useState(false);
   const [importedMetadataDraft, setImportedMetadataDraft] =
     useState<ImportedSongMetadataDraft | null>(null);
 
@@ -483,6 +488,12 @@ export function SongLibrary({
         onBack={onBack}
         onOpenFile={onOpenFile}
         onOpenSettings={onOpenSettings}
+        trailing={
+          <SongLibraryPianoButton
+            buttonRef={pianoButtonRef}
+            onClick={() => setIsPianoDrawerOpen(true)}
+          />
+        }
       />
 
       <main className="songbook-main">
@@ -544,7 +555,11 @@ export function SongLibrary({
         />
       )}
 
-      <SongLibraryMidiDrawer />
+      <SongLibraryMidiDrawer
+        isOpen={isPianoDrawerOpen}
+        onClose={() => setIsPianoDrawerOpen(false)}
+        returnFocusRef={pianoButtonRef}
+      />
     </div>
   );
 }

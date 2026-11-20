@@ -7,7 +7,6 @@ function render(overrides: Partial<SongCoverCardProps> = {}): string {
   const props: SongCoverCardProps = {
     title: "小星星",
     durationSeconds: 80,
-    levelLabel: "等級 2",
     stars: 0,
     color: "var(--color-note2)",
     contour: [0, 1, 2],
@@ -34,6 +33,7 @@ describe("SongCoverCard", () => {
     expect(label).toContain("小星星");
     expect(label).toContain("1 分 20 秒");
     expect(label).toContain("2 顆星");
+    expect(label).not.toContain("等級");
   });
 
   test("no badge when the song has no stars yet", () => {
@@ -41,14 +41,14 @@ describe("SongCoverCard", () => {
     expect(render({ stars: 3 })).toContain('class="badge"');
   });
 
-  test("the label shows length and level under the name", () => {
+  test("the label shows only the length under the name, never a level", () => {
     const html = render({ durationSeconds: 16 });
-    expect(html).toContain("16 秒 · 等級 2");
+    expect(html).toContain("16 秒");
+    expect(html).not.toContain("等級");
   });
 
   test("a note replaces the length line", () => {
     const html = render({ durationSeconds: null, noteOverride: "遺失" });
     expect(html).toContain("遺失");
-    expect(html).not.toContain("等級 2 ·");
   });
 });

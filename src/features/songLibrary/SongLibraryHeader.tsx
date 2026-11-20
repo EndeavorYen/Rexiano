@@ -7,12 +7,15 @@ export interface SongLibraryHeaderProps {
   onBack?: () => void;
   onOpenFile: () => void;
   onOpenSettings?: () => void;
+  /** Extra top-bar button after the import button (the piano) */
+  trailing?: React.ReactNode;
 }
 
 export function SongLibraryHeader({
   onBack,
   onOpenFile,
   onOpenSettings,
+  trailing,
 }: SongLibraryHeaderProps): React.JSX.Element {
   const { t } = useTranslation();
 
@@ -33,6 +36,7 @@ export function SongLibraryHeader({
           <Upload size={18} aria-hidden="true" />
           <span>{t("library.importMidi")}</span>
         </button>
+        {trailing}
       </FamilyTopBar>
     </div>
   );

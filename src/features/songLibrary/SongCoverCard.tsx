@@ -10,8 +10,6 @@ export interface SongCoverCardProps {
   title: string;
   /** Length in seconds; imported songs have none until they are opened */
   durationSeconds: number | null;
-  /** Small text after the length, e.g. "等級 2" */
-  levelLabel: string | null;
   /** Replaces the length line (imported songs that cannot be found) */
   noteOverride?: string;
   stars: StarCount;
@@ -31,7 +29,6 @@ export interface SongCoverCardProps {
 export function SongCoverCard({
   title,
   durationSeconds,
-  levelLabel,
   noteOverride,
   stars,
   color,
@@ -45,12 +42,10 @@ export function SongCoverCard({
   const duration =
     durationSeconds === null ? null : formatShelfDuration(durationSeconds, t);
   const starsLabel = t("songbook.stars.label", { stars });
-  const meta =
-    noteOverride ?? [duration, levelLabel].filter(Boolean).join(" · ");
+  const meta = noteOverride ?? duration ?? "";
   const ariaLabel = [
     title,
     noteOverride ?? duration,
-    levelLabel,
     stars > 0 ? starsLabel : null,
   ]
     .filter(Boolean)

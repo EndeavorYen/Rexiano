@@ -36,11 +36,6 @@ function SongbookCover({
       <SongCoverCard
         title={songDisplayTitle(song, lang).primary}
         durationSeconds={song.durationSeconds}
-        levelLabel={
-          song.grade !== undefined
-            ? t("songbook.level", { level: song.grade })
-            : null
-        }
         stars={item.stars}
         color={lessonGroupColor(item.groupId)}
         contour={song.contour}
@@ -57,11 +52,6 @@ function SongbookCover({
     <SongCoverCard
       title={record.title}
       durationSeconds={null}
-      levelLabel={
-        record.grade !== undefined
-          ? t("songbook.level", { level: record.grade })
-          : null
-      }
       noteOverride={
         record.missing
           ? t("library.importedMissingBadge")
@@ -157,13 +147,19 @@ export function SongbookView({
           key={shelf.id}
           testId={`songbook-shelf-${shelf.id}`}
           title={t(shelf.titleKey)}
+          description={
+            shelf.descriptionKey ? t(shelf.descriptionKey) : undefined
+          }
+          featured={shelf.featured}
           sub={
-            shelf.completedCount === null
-              ? t("songbook.count", { count: shelf.totalCount })
-              : t("songbook.progress", {
-                  done: shelf.completedCount,
-                  total: shelf.totalCount,
-                })
+            shelf.id === "continue"
+              ? t("songbook.shelf.continueHint")
+              : shelf.completedCount === null
+                ? t("songbook.count", { count: shelf.totalCount })
+                : t("songbook.progress", {
+                    done: shelf.completedCount,
+                    total: shelf.totalCount,
+                  })
           }
         >
           {shelf.items.map((item) => (

@@ -7,6 +7,10 @@ export interface SongShelfRowProps {
   title: string;
   /** Small text after the title, e.g. "完成 2/5" */
   sub?: string;
+  /** One quiet line under the title */
+  description?: string;
+  /** Bigger covers: the shelf the page is built around */
+  featured?: boolean;
   testId?: string;
   children: React.ReactNode;
 }
@@ -18,6 +22,8 @@ export interface SongShelfRowProps {
 export function SongShelfRow({
   title,
   sub,
+  description,
+  featured = false,
   testId,
   children,
 }: SongShelfRowProps): React.JSX.Element {
@@ -56,29 +62,43 @@ export function SongShelfRow({
   };
 
   return (
-    <section className="shelf" aria-labelledby={headingId} data-testid={testId}>
+    <section
+      className={featured ? "shelf is-featured" : "shelf"}
+      aria-labelledby={headingId}
+      data-testid={testId}
+    >
       <div className="shelf-head">
-        <h2 id={headingId}>{title}</h2>
-        {sub && <span className="sub">{sub}</span>}
+        <div className="shelf-titles">
+          <div className="shelf-title-line">
+            <h2 id={headingId}>{title}</h2>
+            {sub && <span className="sub">{sub}</span>}
+          </div>
+          {description && <p className="shelf-desc">{description}</p>}
+        </div>
         <span className="spacer" />
-        <button
-          type="button"
-          className="icon-btn"
-          aria-label={t("songbook.shelf.scrollLeft")}
-          disabled={!canLeft}
-          onClick={() => scrollByPage(-1)}
-        >
-          <ChevronLeft size={20} />
-        </button>
-        <button
-          type="button"
-          className="icon-btn"
-          aria-label={t("songbook.shelf.scrollRight")}
-          disabled={!canRight}
-          onClick={() => scrollByPage(1)}
-        >
-          <ChevronRight size={20} />
-        </button>
+        {/* a shelf that fits on screen has nothing to scroll: no arrows */}
+        {(canLeft || canRight) && (
+          <>
+            <button
+              type="button"
+              className="icon-btn"
+              aria-label={t("songbook.shelf.scrollLeft")}
+              disabled={!canLeft}
+              onClick={() => scrollByPage(-1)}
+            >
+              <ChevronLeft size={20} />
+            </button>
+            <button
+              type="button"
+              className="icon-btn"
+              aria-label={t("songbook.shelf.scrollRight")}
+              disabled={!canRight}
+              onClick={() => scrollByPage(1)}
+            >
+              <ChevronRight size={20} />
+            </button>
+          </>
+        )}
       </div>
       <div className="row" ref={rowRef} onScroll={updateEdges}>
         {children}

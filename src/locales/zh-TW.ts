@@ -678,7 +678,6 @@ export const zhTW: TranslationMap = {
   "songbook.title": "全部曲子",
   "songbook.search.placeholder": "找曲子",
   "songbook.levels.label": "挑等級",
-  "songbook.shelf.played": "彈過的曲子",
   "songbook.shelf.imported": "我的曲子",
   "songbook.shelf.scrollLeft": "往左捲",
   "songbook.shelf.scrollRight": "往右捲",
@@ -687,7 +686,6 @@ export const zhTW: TranslationMap = {
   "songbook.results": "找到 {count} 首",
   "songbook.duration.seconds": "{s} 秒",
   "songbook.duration.minutes": "{m} 分 {s} 秒",
-  "songbook.level": "等級 {level}",
   "songbook.stars.label": "{stars} 顆星，最多 3 顆",
   "songbook.loading": "曲子載入中",
   "songbook.empty.title": "找不到這首曲子",
@@ -711,4 +709,14 @@ export const zhTW: TranslationMap = {
   "celebration.moreStars": "星星變多了！",
   "celebration.bestScore": "新的最佳成績！",
   "celebration.hitCount": "彈對 {hit}／{total} 個音（{accuracy}%）",
+
+  // ── UI round 2: songbook ──
+  "songbook.shelf.continue": "繼續練",
+  "songbook.shelf.continueHint": "再彈一次就更好",
+  "songbook.shelf.favorites": "我的最愛",
+  "songbook.composer.traditional": "傳統民謠",
+  "songbook.preview.better": "再彈一次就更好",
+  "songbook.preview.threeStars": "已經三顆星",
+  "songbook.favorite.add": "加到我的最愛",
+  "songbook.favorite.remove": "從我的最愛移除",
 };

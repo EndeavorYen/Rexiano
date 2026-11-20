@@ -1,14 +1,14 @@
 import "./songbook.css";
 import { useCallback, useId, useRef, type RefObject } from "react";
-import { Pencil, Play, Star, Trash2, X } from "lucide-react";
+import { Heart, Pencil, Play, Trash2, X } from "lucide-react";
 import { useTranslation } from "@renderer/i18n/useTranslation";
 import { useDialogFocus } from "@renderer/hooks/useDialogFocus";
 import { StarRow } from "../progress/StarRow";
-import { starsForAccuracy } from "../progress/stars";
+import { MAX_STARS, starsForAccuracy } from "../progress/stars";
 import { SongCoverArt } from "./SongCoverArt";
 import { classifySongLessonGroup } from "./lessonProgression";
 import { IMPORTED_SONG_COLOR, lessonGroupColor } from "./lessonGroupColor";
-import { songDisplayTitle } from "./songTitle";
+import { songByline, songDisplayTitle } from "./songTitle";
 import { formatShelfDuration } from "./songShelves";
 import { ImportedSongMetadataEditor } from "./ImportedSongRow";
 import type { SongSelectionPreviewModel } from "./songLibrarySelectors";
@@ -87,13 +87,15 @@ export function SongSelectionPreviewPanel({
   const stars = starsForAccuracy(preview.bestAccuracy);
   const played = preview.bestAccuracy !== null;
   const missing = !isBuiltin && preview.importedSong.missing;
-  const level =
-    preview.grade !== undefined
-      ? t("songbook.level", { level: preview.grade })
-      : null;
-  const byline = [title.secondary, preview.composer]
-    .filter(Boolean)
-    .join(" · ");
+  const byline = songByline(
+    { secondary: title.secondary, composer: preview.composer },
+    lang,
+    t,
+  );
+  const favoriteLabel =
+    isBuiltin && preview.isFavorite
+      ? t("songbook.favorite.remove")
+      : t("songbook.favorite.add");
 
   return (
     <div className="family-scrim" onClick={handleScrimClick}>
@@ -144,21 +146,23 @@ export function SongSelectionPreviewPanel({
                     {Math.round(preview.bestAccuracy ?? 0)}%
                   </span>
                 </>
-              ) : (
-                <span className="song-dialog-never">
-                  {t("songbook.preview.never")}
-                </span>
-              )}
+              ) : null}
             </div>
+            <p className="song-dialog-never" data-testid="song-preview-note">
+              {!played
+                ? t("songbook.preview.never")
+                : stars >= MAX_STARS
+                  ? t("songbook.preview.threeStars")
+                  : t("songbook.preview.better")}
+            </p>
 
-            <div className="song-dialog-pills">
-              {preview.durationSeconds !== null && (
+            {preview.durationSeconds !== null && (
+              <div className="song-dialog-pills">
                 <span className="pill">
                   {formatShelfDuration(preview.durationSeconds, t)}
                 </span>
-              )}
-              {level && <span className="pill">{level}</span>}
-            </div>
+              </div>
+            )}
 
             {missing && (
               <p className="song-dialog-missing" role="alert">
@@ -191,24 +195,17 @@ export function SongSelectionPreviewPanel({
               {isBuiltin && (
                 <button
                   type="button"
-                  className="icon-btn"
+                  className="icon-btn song-dialog-heart"
                   data-testid="song-favorite-toggle"
                   aria-pressed={preview.isFavorite}
-                  aria-label={`${
-                    preview.isFavorite
-                      ? t("library.unfavorite")
-                      : t("library.favorite")
-                  }: ${title.primary}`}
-                  title={
-                    preview.isFavorite
-                      ? t("library.unfavorite")
-                      : t("library.favorite")
-                  }
+                  aria-label={favoriteLabel}
+                  title={favoriteLabel}
                   onClick={() => onToggleFavorite(preview.song.id)}
                 >
-                  <Star
-                    size={20}
+                  <Heart
+                    size={22}
                     fill={preview.isFavorite ? "currentColor" : "none"}
+                    aria-hidden="true"
                   />
                 </button>
               )}

@@ -55,7 +55,23 @@
 }
 
 .songbook-main {
-  padding-bottom: 120px;
+  padding-bottom: 48px;
+}
+
+/* the piano entry lives in the top bar: a square button with a status dot */
+.songbook-piano .status-dot {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--color-text-muted);
+  box-shadow: 0 0 0 2px var(--color-surface);
+}
+
+.songbook-piano[data-connected="true"] .status-dot {
+  background: var(--color-success-text);
 }
 
 /* ── Search and level ── */
@@ -87,6 +103,7 @@
 .songbook-search input {
   width: 100%;
   height: 44px;
+  box-sizing: border-box;
   border-radius: 14px;
   border: 1.5px solid var(--color-border);
   background: var(--color-surface);
@@ -104,13 +121,22 @@
   border-color: var(--color-control-border);
 }
 
+/* same 44px as the search box, same baseline; the chosen look comes from
+   the global .segmented rule */
 .songbook-levels {
   flex: 0 1 auto;
+  gap: 4px;
+  padding: 0;
+  border: 0;
+  height: 44px;
+  box-sizing: border-box;
 }
 
 .songbook-levels button {
-  padding: 0 14px;
+  height: 44px;
+  padding: 0 16px;
   white-space: nowrap;
+  font-size: 0.95rem;
 }
 
 /* ── Recent files that have no cover (moved or unlisted files) ── */
@@ -120,7 +146,22 @@
 
 /* ── Shelves ── */
 .shelf {
-  margin-top: 24px;
+  margin-top: 32px;
+}
+
+.shelf:first-child {
+  margin-top: 16px;
+}
+
+/* "keep practising": one size up, the visual centre of the page */
+.shelf.is-featured {
+  --cw: 200px;
+}
+
+@media (max-width: 1199px) {
+  .shelf.is-featured {
+    --cw: 176px;
+  }
 }
 
 .shelf-head {
@@ -129,6 +170,24 @@
   gap: 12px;
   padding: 0 var(--gutter);
   min-height: 44px;
+}
+
+.shelf-titles {
+  min-width: 0;
+}
+
+.shelf-title-line {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.shelf-desc {
+  margin: 2px 0 0;
+  font-size: 0.9rem;
+  line-height: 1.4;
+  color: var(--color-text-muted);
 }
 
 .shelf-head h2 {
@@ -161,10 +220,6 @@
   padding: 14px var(--gutter) 22px;
   scroll-snap-type: x proximity;
   scroll-padding-left: var(--gutter);
-  /* the shelf board the books stand on */
-  background: linear-gradient(var(--color-border), var(--color-border)) 0
-    calc(100% - 9px) / 100% 4px no-repeat;
-  background-attachment: local;
   scrollbar-width: none;
 }
 
@@ -241,15 +296,6 @@
   margin: 16px var(--gutter) 0;
   color: var(--color-danger-text);
   font-size: 0.9rem;
-}
-
-/* The floating piano button is a quiet chip here: the page's one yellow
-   button belongs to the preview dialog. */
-.songbook [data-testid="library-device-drawer-trigger"].btn-primary-themed {
-  background: var(--color-surface);
-  color: var(--color-text);
-  border: 1.5px solid var(--color-border);
-  box-shadow: 0 2px 0 rgba(0, 0, 0, 0.08);
 }
 
 /* ── Cover card ── */
@@ -342,7 +388,7 @@
   overflow: hidden;
   font-family: var(--font-display);
   font-weight: 800;
-  font-size: 9.8cqw;
+  font-size: max(14px, 9.8cqw);
   line-height: 1.25;
   overflow-wrap: anywhere;
 }
@@ -350,7 +396,7 @@
 .cover-card .m {
   display: block;
   margin-top: 0.6cqw;
-  font-size: 7cqw;
+  font-size: max(12px, 7cqw);
   line-height: 1.3;
   font-weight: 700;
   color: var(--color-text-muted);
@@ -435,7 +481,7 @@
 /* ── Preview dialog (sits on .family-scrim / .family-sheet) ── */
 .song-dialog {
   position: relative;
-  width: min(640px, 100%);
+  width: min(560px, 100%);
   padding: 24px;
   gap: 16px;
   overflow-y: auto;
@@ -450,14 +496,14 @@
 
 .song-dialog-body {
   display: grid;
-  grid-template-columns: 184px minmax(0, 1fr);
+  grid-template-columns: 200px minmax(0, 1fr);
   gap: 24px;
-  align-items: start;
+  align-items: stretch;
 }
 
 .song-dialog-cover {
   position: relative;
-  width: 184px;
+  width: 200px;
   aspect-ratio: 3 / 4;
   border-radius: 14px;
   overflow: hidden;
@@ -475,9 +521,14 @@
 .song-dialog-info {
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
+  align-items: stretch;
   gap: 12px;
   min-width: 0;
+}
+
+/* the close button sits top-right: only the name makes room for it */
+.song-dialog-info h2,
+.song-dialog-by {
   padding-right: 44px;
 }
 
@@ -515,6 +566,7 @@
 }
 
 .song-dialog-never {
+  margin: 0;
   font-weight: 700;
   color: var(--color-text-muted);
 }
@@ -547,13 +599,21 @@
   display: flex;
   align-items: center;
   gap: 12px;
-  margin-top: 4px;
+  margin-top: auto;
+}
+
+.song-dialog-heart[aria-pressed="true"] {
+  color: var(--color-danger-text);
+  background: var(--color-surface);
+  border-color: var(--color-border);
 }
 
 .song-dialog-primary {
+  flex: 1 1 auto;
+  min-width: 0;
   min-height: 56px;
-  padding: 0 28px 0 22px;
-  border-radius: 16px;
+  padding: 0 22px;
+  border-radius: 14px;
   font-size: 1.2rem;
   display: inline-flex;
   align-items: center;
@@ -601,7 +661,8 @@
   .song-dialog-cover {
     width: 148px;
   }
-  .song-dialog-info {
+  .song-dialog-info h2,
+  .song-dialog-by {
     padding-right: 0;
   }
 }

@@ -114,7 +114,7 @@ describe("buildSongbook (resting shelves)", () => {
     expect(right).toMatchObject({ completedCount: 0, totalCount: 4 });
   });
 
-  test("played songs get their own shelf first, most recent first", () => {
+  test("'keep practising' holds played songs under 3 stars, latest first", () => {
     const result = buildSongbook({
       songs,
       importedSongs: [],
@@ -128,11 +128,11 @@ describe("buildSongbook (resting shelves)", () => {
       filters: noFilters,
     });
     if (result.mode !== "shelves") throw new Error("expected shelves");
-    expect(result.shelves[0].id).toBe("played");
+    expect(result.shelves[0].id).toBe("continue");
+    expect(result.shelves[0].featured).toBe(true);
     expect(result.shelves[0].items.map((i) => i.id)).toEqual([
       "london",
       "scale",
-      "hot-cross",
     ]);
     expect(result.shelves[0].items[0]).toMatchObject({
       kind: "builtin",
@@ -140,17 +140,83 @@ describe("buildSongbook (resting shelves)", () => {
     });
   });
 
-  test("imported songs get a shelf after played, only when there are some", () => {
+  test("a 3-star song only shows on its unit shelf", () => {
+    const result = buildSongbook({
+      songs,
+      importedSongs: [],
+      songActivity: new Map([["hot-cross", act(95, 100)]]),
+      importedActivity: new Map(),
+      filters: noFilters,
+    });
+    if (result.mode !== "shelves") throw new Error("expected shelves");
+    expect(result.shelves.map((s) => s.id)).not.toContain("continue");
+    const first = result.shelves.find((s) => s.id === "first-notes");
+    expect(first?.items.map((i) => i.id)).toEqual(["hot-cross"]);
+  });
+
+  test("favourites get a shelf right after 'keep practising'", () => {
+    const result = buildSongbook({
+      songs,
+      importedSongs: [makeImported("mine")],
+      songActivity: new Map([
+        ["london", { ...act(50, 300), isFavorite: false }],
+        ["star", { ...act(null, null), isFavorite: true }],
+        ["hot-cross", { ...act(95, 100), isFavorite: true }],
+      ]),
+      importedActivity: new Map(),
+      filters: noFilters,
+    });
+    if (result.mode !== "shelves") throw new Error("expected shelves");
+    expect(result.shelves.map((s) => s.id).slice(0, 4)).toEqual([
+      "continue",
+      "favorites",
+      "imported",
+      "first-notes",
+    ]);
+    expect(result.shelves[1].items.map((i) => i.id)).toEqual([
+      "hot-cross",
+      "star",
+    ]);
+    expect(result.shelves[1].featured).toBeFalsy();
+  });
+
+  test("no favourites means no favourites shelf", () => {
+    const result = buildSongbook({
+      songs,
+      importedSongs: [],
+      songActivity: new Map(),
+      importedActivity: new Map(),
+      filters: noFilters,
+    });
+    if (result.mode !== "shelves") throw new Error("expected shelves");
+    expect(result.shelves.map((s) => s.id)).not.toContain("favorites");
+  });
+
+  test("lesson shelves carry their description key", () => {
+    const result = buildSongbook({
+      songs,
+      importedSongs: [],
+      songActivity: new Map(),
+      importedActivity: new Map(),
+      filters: noFilters,
+    });
+    if (result.mode !== "shelves") throw new Error("expected shelves");
+    expect(result.shelves[0].descriptionKey).toBe(
+      "library.lessonGroup.firstNotes.description",
+    );
+  });
+
+  test("imported songs get a shelf after the practice shelves, only when there are some", () => {
     const withImported = buildSongbook({
       songs,
       importedSongs: [makeImported("mine")],
-      songActivity: new Map([["hot-cross", act(95, 100)]]),
+      songActivity: new Map([["hot-cross", act(60, 100)]]),
       importedActivity: new Map([["mine", act(75, 5)]]),
       filters: noFilters,
     });
     if (withImported.mode !== "shelves") throw new Error("expected shelves");
     expect(withImported.shelves.map((s) => s.id).slice(0, 3)).toEqual([
-      "played",
+      "continue",
       "imported",
       "first-notes",
     ]);

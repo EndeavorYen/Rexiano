@@ -35,3 +35,21 @@ export function displayTitleForName(
   const song = songs.find((candidate) => candidate.title === name);
   return song ? songDisplayTitle(song, lang).primary : name;
 }
+
+/**
+ * The line under a song name in the preview: who wrote it. In Chinese the
+ * English title is left out (a child cannot read it) and "Traditional" is
+ * said in words; in English the English title stays as before.
+ */
+export function songByline(
+  song: { secondary: string | null; composer: string },
+  lang: string,
+  t: (key: "songbook.composer.traditional") => string,
+): string {
+  const composer =
+    song.composer.trim().toLowerCase() === "traditional"
+      ? t("songbook.composer.traditional")
+      : song.composer;
+  const parts = lang === "zh-TW" ? [composer] : [song.secondary, composer];
+  return parts.filter(Boolean).join(" · ");
+}

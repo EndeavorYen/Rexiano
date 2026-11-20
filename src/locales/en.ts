@@ -716,7 +716,6 @@ export const en: TranslationMap = {
   "songbook.title": "All songs",
   "songbook.search.placeholder": "Find a song",
   "songbook.levels.label": "Pick a level",
-  "songbook.shelf.played": "Songs you played",
   "songbook.shelf.imported": "My songs",
   "songbook.shelf.scrollLeft": "Scroll left",
   "songbook.shelf.scrollRight": "Scroll right",
@@ -725,7 +724,6 @@ export const en: TranslationMap = {
   "songbook.results": "Found {count} songs",
   "songbook.duration.seconds": "{s} sec",
   "songbook.duration.minutes": "{m} min {s} sec",
-  "songbook.level": "Level {level}",
   "songbook.stars.label": "{stars} of 3 stars",
   "songbook.loading": "Loading songs",
   "songbook.empty.title": "No song found",
@@ -751,4 +749,14 @@ export const en: TranslationMap = {
   "celebration.bestScore": "New best score!",
   "celebration.hitCount":
     "You played {hit} of {total} notes right ({accuracy}%)",
+
+  // ── UI round 2: songbook ──
+  "songbook.shelf.continue": "Keep practising",
+  "songbook.shelf.continueHint": "One more try makes it better",
+  "songbook.shelf.favorites": "My favorites",
+  "songbook.composer.traditional": "Traditional",
+  "songbook.preview.better": "One more try makes it better",
+  "songbook.preview.threeStars": "Already three stars",
+  "songbook.favorite.add": "Add to my favorites",
+  "songbook.favorite.remove": "Remove from my favorites",
 };

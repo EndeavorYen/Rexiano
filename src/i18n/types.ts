@@ -647,7 +647,6 @@ export interface TranslationMap {
   "songbook.title": string;
   "songbook.search.placeholder": string;
   "songbook.levels.label": string;
-  "songbook.shelf.played": string;
   "songbook.shelf.imported": string;
   "songbook.shelf.scrollLeft": string;
   "songbook.shelf.scrollRight": string;
@@ -656,7 +655,6 @@ export interface TranslationMap {
   "songbook.results": string;
   "songbook.duration.seconds": string;
   "songbook.duration.minutes": string;
-  "songbook.level": string;
   "songbook.stars.label": string;
   "songbook.loading": string;
   "songbook.empty.title": string;
@@ -680,6 +678,15 @@ export interface TranslationMap {
   "celebration.moreStars": string;
   "celebration.bestScore": string;
   "celebration.hitCount": string;
+  // ── UI round 2: songbook ──
+  "songbook.shelf.continue": string;
+  "songbook.shelf.continueHint": string;
+  "songbook.shelf.favorites": string;
+  "songbook.composer.traditional": string;
+  "songbook.preview.better": string;
+  "songbook.preview.threeStars": string;
+  "songbook.favorite.add": string;
+  "songbook.favorite.remove": string;
 }
 
 /**
