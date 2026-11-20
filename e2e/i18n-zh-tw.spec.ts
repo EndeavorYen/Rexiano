@@ -22,9 +22,9 @@ test.describe("Traditional Chinese player flow", () => {
     await waitForUiSettled(appPage);
     await gotoLibrary(appPage);
 
-    await expect(appPage.getByTestId("lesson-group-first-notes")).toContainText(
-      "初次識譜",
-    );
+    await expect(
+      appPage.getByTestId("songbook-shelf-first-notes"),
+    ).toContainText("初次識譜");
     await expect(
       appPage.getByRole("button", { name: "更新紀錄" }),
     ).toBeVisible();
@@ -45,7 +45,7 @@ test.describe("Traditional Chinese player flow", () => {
     const previewPractice = appPage.getByTestId(
       "song-selection-preview-practice",
     );
-    await expect(previewPractice).toHaveAccessibleName("開始練習");
+    await expect(previewPractice).toHaveAccessibleName("開始彈琴");
     await previewPractice.click();
     await appPage.getByTestId("mode-select-wait").click();
 

@@ -152,8 +152,7 @@ test.describe("Post-session next action", () => {
 
     const nextAction = appPage.getByTestId("celebration-next-action");
     await expect(nextAction).toBeVisible();
-    await expect(nextAction).toContainText("Next step");
-    await expect(nextAction).toContainText("Slow down");
+    // The advice is one sentence under the title, not a card with a heading.
     await expect(nextAction).toContainText("75%");
     await expect(appPage.getByTestId("celebration-again")).toContainText(
       "Play again at 75%",

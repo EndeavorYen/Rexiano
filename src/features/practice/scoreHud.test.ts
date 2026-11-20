@@ -31,17 +31,20 @@ describe("buildScoreHud", () => {
     expect(hud).toMatchObject({ stars: 0, played: 0, total: 40, combo: null });
   });
 
-  test("stars follow the running accuracy", () => {
-    const at = (accuracy: number): number | undefined =>
+  test("stars fill up as notes are hit and never drop", () => {
+    const at = (hitNotes: number): number | undefined =>
       buildScoreHud({
         mode: "wait",
-        score: score({ totalNotes: 20, hitNotes: 10, accuracy }),
+        score: score({ totalNotes: hitNotes + 3, hitNotes, accuracy: 50 }),
         totalNotes: 40,
       })?.stars;
-    expect(at(100)).toBe(3);
-    expect(at(90)).toBe(3);
-    expect(at(75)).toBe(2);
-    expect(at(40)).toBe(1);
+    expect(at(1)).toBe(0);
+    expect(at(13)).toBe(0);
+    expect(at(14)).toBe(1);
+    expect(at(27)).toBe(1);
+    expect(at(28)).toBe(2);
+    expect(at(36)).toBe(3);
+    expect(at(40)).toBe(3);
   });
 
   test("played counts the notes hit, never above the total", () => {

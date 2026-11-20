@@ -532,7 +532,7 @@ export const zhTW: TranslationMap = {
   "modeSelect.escToSkip": "按 Esc 跳過",
   "modeSelect.mustChoose": "點一張卡片就開始",
   "modeSelect.currentDefault": "目前預設",
-  "modeSelect.backToLibrary": "返回曲庫",
+  "modeSelect.backToLibrary": "返回",
 
   // ── Statistics ─────────────────────────────────────────────────
   "stats.title": "練習統計",

@@ -560,7 +560,7 @@ export const en: TranslationMap = {
   "modeSelect.escToSkip": "Press Esc to skip",
   "modeSelect.mustChoose": "Tap a card to start",
   "modeSelect.currentDefault": "Current default",
-  "modeSelect.backToLibrary": "Back to library",
+  "modeSelect.backToLibrary": "Back",
 
   // ── Statistics ─────────────────────────────────────────────────
   "stats.title": "Session Stats",
