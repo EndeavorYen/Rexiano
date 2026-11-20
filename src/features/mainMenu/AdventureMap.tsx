@@ -8,7 +8,7 @@ import {
   useState,
 } from "react";
 import { createPortal } from "react-dom";
-import { ArrowDown, ArrowUp, Play } from "lucide-react";
+import { ArrowDown, ArrowUp, Play, Trophy } from "lucide-react";
 import { useTranslation } from "@renderer/i18n/useTranslation";
 import { StarRow } from "../progress/StarRow";
 import { SongCoverArt } from "../songLibrary/SongCoverArt";
@@ -16,11 +16,22 @@ import { lessonGroupColor } from "../songLibrary/lessonGroupColor";
 import { songDisplayTitle } from "../songLibrary/songTitle";
 import type { TranslationKey } from "@renderer/i18n/types";
 import {
+  isMilestoneStation,
   isRoadWalked,
+  unitEndStatus,
   type AdventureMapModel,
+  type MapRegion,
   type MapStation,
 } from "./adventureMap";
-import { layoutRoute, rowAnchorTop, segmentPath } from "./routeLayout";
+import {
+  arrivalScrollTop,
+  CARD_HEIGHT,
+  cardSpaceFor,
+  layoutRoute,
+  rowAnchorTop,
+  segmentPath,
+  terrainShapes,
+} from "./routeLayout";
 import "./home-map.css";
 
 interface AdventureMapProps {
@@ -35,12 +46,13 @@ interface AdventureMapProps {
   onPlay: (songId: string) => void;
 }
 
-/** Gap between the fixed area and the upper edge of the next stop's row */
+/** Gap between the fixed area and a unit flag when a chip jumps to it */
 const ARRIVAL_GAP = 24;
 /** Half the card width plus a margin, so the card stays inside the map */
 const CARD_HALF = 162;
-/** The larger first-visit card */
-const CARD_HALF_FIRST = 186;
+/** Disk centre to the top of an open card; a "next" disk is bigger */
+const CARD_OFFSET = 128;
+const NEXT_CARD_OFFSET = 140;
 const WIDE_QUERY = "(min-width: 900px)";
 
 function useRouteColumns(): number {
@@ -123,19 +135,76 @@ export function AdventureMap({
   const selectedRow = selected
     ? (baseLayout.stations[selected.index]?.row ?? null)
     : null;
+  // Room under the open row: the card plus 24px, more when the next stop's
+  // halo sits in the row right below.
+  const nextRow = model.nextStation
+    ? (baseLayout.stations[model.nextStation.index]?.row ?? null)
+    : null;
+  const cardSpace = cardSpaceFor({
+    cardOffset: selected?.status === "next" ? NEXT_CARD_OFFSET : CARD_OFFSET,
+    nextStopBelow:
+      selectedRow !== null &&
+      nextRow === selectedRow + 1 &&
+      selected?.status !== "next",
+  });
   const layout = useMemo(
-    () => layoutRoute({ regionSizes, cols, openCardRow: selectedRow }),
-    [regionSizes, cols, selectedRow],
+    () =>
+      layoutRoute({ regionSizes, cols, openCardRow: selectedRow, cardSpace }),
+    [regionSizes, cols, selectedRow, cardSpace],
   );
 
+  // The first stop of a row gets the road from above; its "next" tag sits on
+  // the side the road does not come from.
+  const tagSides = useMemo(() => {
+    const regionOf = new Map(model.regions.map((r, i) => [r.groupId, i]));
+    return model.stations.map((station, i): "left" | "right" | null => {
+      const pos = layout.stations[i];
+      const first =
+        model.regions[regionOf.get(station.groupId) ?? 0].firstIndex === i;
+      const prev = first
+        ? layout.ends[(regionOf.get(station.groupId) ?? 0) - 1]
+        : layout.stations[i - 1];
+      if (!prev) return pos.x < 500 ? "right" : "left";
+      if (prev.row === pos.row) return null;
+      return prev.heading > 0 ? "left" : "right";
+    });
+  }, [model.regions, model.stations, layout]);
+
+  // One road through every stop and every unit finish mark, in route order.
   const paths = useMemo(() => {
-    return model.stations.slice(1).map((station, i) => ({
-      key: station.song.id,
-      d: segmentPath(layout.stations[i], layout.stations[i + 1], layout.cols),
-      walked: isRoadWalked(model.stations[i], station),
-      color: lessonGroupColor(station.groupId),
-    }));
-  }, [model.stations, layout]);
+    const stops: { key: string; station: MapStation | null; region: number }[] =
+      [];
+    model.regions.forEach((region, ri) => {
+      region.stations.forEach((station) =>
+        stops.push({ key: station.song.id, station, region: ri }),
+      );
+      if (region.stations.length > 0) {
+        stops.push({ key: `end-${region.groupId}`, station: null, region: ri });
+      }
+    });
+    let lastStation: MapStation | null = null;
+    return stops.slice(1).map((stop, i) => {
+      const prev = stops[i];
+      const a = layout.nodes[i];
+      const b = layout.nodes[i + 1];
+      if (prev.station) lastStation = prev.station;
+      let walked: boolean;
+      if (prev.station && stop.station) {
+        walked = isRoadWalked(prev.station, stop.station);
+      } else if (!stop.station) {
+        // Into a finish mark: walked once the unit's last stop has a star.
+        walked = (lastStation?.stars ?? 0) > 0;
+      } else {
+        walked = lastStation ? isRoadWalked(lastStation, stop.station) : false;
+      }
+      return {
+        key: stop.key,
+        d: segmentPath(a, b, layout.cols),
+        walked,
+        color: lessonGroupColor(model.regions[stop.region].groupId),
+      };
+    });
+  }, [model.regions, layout]);
 
   // The next stop's row: where every arrival and every "back to next" lands.
   const hasStations = model.stations.length > 0;
@@ -158,14 +227,19 @@ export function AdventureMap({
       if (!scroller || !map || nextIndex === null) return;
       let top = 0;
       if (unitStartOf !== 0) {
+        const current = layoutRef.current;
         const mapTop =
           map.getBoundingClientRect().top -
           scroller.getBoundingClientRect().top +
           scroller.scrollTop;
-        top =
-          mapTop +
-          rowAnchorTop(layoutRef.current, nextIndex, unitStartOf) -
-          ARRIVAL_GAP;
+        const rel = arrivalScrollTop({
+          anchor: rowAnchorTop(current, nextIndex, unitStartOf),
+          contentBottom:
+            current.stations[nextIndex].y + NEXT_CARD_OFFSET + CARD_HEIGHT,
+          viewHeight: scroller.clientHeight,
+          flagYs: current.flags.map((flag) => flag.y),
+        });
+        top = rel <= 0 ? 0 : mapTop + rel;
       }
       scroller.scrollTo({
         top: Math.max(0, Math.round(top)),
@@ -348,6 +422,24 @@ export function AdventureMap({
     <>
       {chipsHost && createPortal(chips, chipsHost)}
 
+      {backDirection && (
+        <div className="hm-back-dock">
+          <button
+            type="button"
+            className="btn-ghost-themed hm-back"
+            data-testid="map-back-to-next"
+            onClick={backToNext}
+          >
+            {backDirection === "up" ? (
+              <ArrowUp size={18} aria-hidden="true" />
+            ) : (
+              <ArrowDown size={18} aria-hidden="true" />
+            )}
+            {t("map.backToNext")}
+          </button>
+        </div>
+      )}
+
       <section
         className="hm-map"
         ref={mapRef}
@@ -369,7 +461,26 @@ export function AdventureMap({
                     height: band.bottom - band.top,
                   } as React.CSSProperties
                 }
-              />
+              >
+                {terrainShapes(region.groupId, layout.flags[i].x).map(
+                  (shape, k) => (
+                    <i
+                      key={k}
+                      className={`hm-shape is-${shape.kind}`}
+                      style={
+                        {
+                          left: `${shape.x / 10}%`,
+                          top: layout.flags[i].y + shape.dy - band.top,
+                          width: shape.size,
+                          height: shape.size,
+                          opacity: shape.opacity,
+                          transform: `translate(-50%, -50%) rotate(${shape.rotate}deg)`,
+                        } as React.CSSProperties
+                      }
+                    />
+                  ),
+                )}
+              </div>
             );
           })}
         </div>
@@ -425,6 +536,7 @@ export function AdventureMap({
               <StationNode
                 key={station.song.id}
                 station={station}
+                tagSide={tagSides[station.index]}
                 x={pos.x}
                 y={pos.y}
                 selected={station.song.id === selected?.song.id}
@@ -433,6 +545,15 @@ export function AdventureMap({
             );
           })}
         </ol>
+
+        {model.regions.map((region, i) => (
+          <UnitEndMark
+            key={region.groupId}
+            region={region}
+            x={layout.ends[i].x}
+            y={layout.ends[i].y}
+          />
+        ))}
 
         {selected && (
           <StationCard
@@ -448,30 +569,14 @@ export function AdventureMap({
           />
         )}
       </section>
-
-      {backDirection && (
-        <div className="hm-back-dock">
-          <button
-            type="button"
-            className="btn-ghost-themed hm-back"
-            data-testid="map-back-to-next"
-            onClick={backToNext}
-          >
-            {backDirection === "up" ? (
-              <ArrowUp size={18} aria-hidden="true" />
-            ) : (
-              <ArrowDown size={18} aria-hidden="true" />
-            )}
-            {t("map.backToNext")}
-          </button>
-        </div>
-      )}
     </>
   );
 }
 
 interface StationNodeProps {
   station: MapStation;
+  /** First stop of its row, where "next" puts its tag: the side the road does not come from */
+  tagSide: "left" | "right" | null;
   x: number;
   y: number;
   selected: boolean;
@@ -480,6 +585,7 @@ interface StationNodeProps {
 
 const StationNode = memo(function StationNode({
   station,
+  tagSide,
   x,
   y,
   selected,
@@ -488,10 +594,13 @@ const StationNode = memo(function StationNode({
   const { t, lang } = useTranslation();
   const title = songDisplayTitle(station.song, lang).primary;
   const starsLabel = t("map.starsCount", { n: station.stars });
+  const secondsLabel = t("map.seconds", {
+    n: Math.round(station.song.durationSeconds),
+  });
 
   return (
     <li
-      className={`hm-stn is-${station.status}${selected ? " is-selected" : ""}`}
+      className={`hm-stn is-${station.status}${selected ? " is-selected" : ""}${isMilestoneStation(station.index) ? " is-milestone" : ""}${tagSide ? ` is-tag-${tagSide}` : ""}`}
       style={
         {
           "--z": lessonGroupColor(station.groupId),
@@ -504,6 +613,13 @@ const StationNode = memo(function StationNode({
         type="button"
         className="hm-node"
         aria-pressed={selected}
+        // The name and length are hidden on the open station (the card says
+        // them), so the button keeps its full name for screen readers.
+        aria-label={
+          selected
+            ? `${station.index + 1}. ${title}, ${starsLabel}, ${secondsLabel}`
+            : undefined
+        }
         data-testid={`map-station-${station.song.id}`}
         data-station-id={station.song.id}
         data-status={station.status}
@@ -536,9 +652,7 @@ const StationNode = memo(function StationNode({
           />
         )}
         <span className="hm-name">{title}</span>
-        <span className="hm-meta">
-          {t("map.seconds", { n: Math.round(station.song.durationSeconds) })}
-        </span>
+        <span className="hm-meta">{secondsLabel}</span>
       </button>
     </li>
   );
@@ -581,12 +695,12 @@ function StationCard({
   const title = songDisplayTitle(station.song, lang).primary;
   const color = lessonGroupColor(station.groupId);
   const played = station.stars > 0 || station.playCount > 0;
-  const nextOffset = station.status === "next" ? 140 : 128;
-  const half = firstTime ? CARD_HALF_FIRST : CARD_HALF;
+  const nextOffset = station.status === "next" ? NEXT_CARD_OFFSET : CARD_OFFSET;
+  const half = CARD_HALF;
 
   return (
     <div
-      className={`hm-card${firstTime ? " is-first" : ""}`}
+      className="hm-card"
       style={
         {
           "--z": color,
@@ -633,6 +747,46 @@ function StationCard({
         <Play size={20} fill="currentColor" aria-hidden="true" />
         {played ? t("map.playAgain") : t("app.startPractice")}
       </button>
+    </div>
+  );
+}
+
+function UnitEndMark({
+  region,
+  x,
+  y,
+}: {
+  region: MapRegion;
+  x: number;
+  y: number;
+}): React.JSX.Element {
+  const { t } = useTranslation();
+  const { complete, remaining } = unitEndStatus(region);
+  const unit = t(region.group.titleKey);
+  const caption = complete
+    ? t("map.unitComplete")
+    : t("map.unitRemaining", { n: remaining });
+  return (
+    <div
+      className={`hm-end${complete ? " is-complete" : ""}`}
+      style={
+        {
+          "--z": lessonGroupColor(region.groupId),
+          left: `${x / 10}%`,
+          top: y,
+        } as React.CSSProperties
+      }
+      role="img"
+      aria-label={t("map.unitEndLabel", { unit, caption })}
+      data-testid={`map-unit-end-${region.groupId}`}
+      data-complete={complete}
+    >
+      <span className="hm-end-disk" aria-hidden="true">
+        <Trophy aria-hidden="true" strokeWidth={2.2} />
+      </span>
+      <span className="hm-end-caption" aria-hidden="true">
+        {caption}
+      </span>
     </div>
   );
 }

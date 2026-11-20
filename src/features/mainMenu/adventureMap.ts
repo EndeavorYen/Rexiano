@@ -104,3 +104,17 @@ export function isRoadWalked(from: MapStation, to: MapStation): boolean {
   if (from.stars === 0) return false;
   return to.stars > 0 || to.status === "next";
 }
+
+/** The finish mark at the end of a unit: done, or how many songs are left. */
+export function unitEndStatus(region: MapRegion): {
+  complete: boolean;
+  remaining: number;
+} {
+  const remaining = region.stations.filter((s) => s.stars < MAX_STARS).length;
+  return { complete: remaining === 0, remaining };
+}
+
+/** Stop numbers 5, 10, 15 ... wear an extra ring so a long road has a rhythm. */
+export function isMilestoneStation(index: number): boolean {
+  return (index + 1) % 5 === 0;
+}

@@ -744,4 +744,10 @@ export const zhTW: TranslationMap = {
   // ── UI round 3: songbook ──
   "songbook.summary.title": "我的星星",
   "songbook.summary.aria": "已經得到 {earned} 顆星，全部有 {max} 顆",
+  // ── UI round 3: home-map ──
+  "map.unitComplete": "完成！",
+  "map.unitRemaining": "還差 {n} 首",
+  "map.unitEndLabel": "{unit}，{caption}",
+  "piano.homeShort": "連上藍牙鋼琴，彈的音才算分",
+  "piano.homeShortConnected": "已連上",
 };

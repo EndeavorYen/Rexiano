@@ -787,4 +787,10 @@ export const en: TranslationMap = {
   // ── UI round 3: songbook ──
   "songbook.summary.title": "My stars",
   "songbook.summary.aria": "{earned} stars so far, {max} in all",
+  // ── UI round 3: home-map ──
+  "map.unitComplete": "Done!",
+  "map.unitRemaining": "{n} to go",
+  "map.unitEndLabel": "{unit}: {caption}",
+  "piano.homeShort": "Connect a piano to score your notes",
+  "piano.homeShortConnected": "Connected",
 };

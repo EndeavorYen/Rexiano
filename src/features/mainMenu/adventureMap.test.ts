@@ -2,7 +2,12 @@ import { describe, expect, test } from "vitest";
 import type { BuiltinSongMeta } from "@shared/types";
 import type { SongActivity } from "../songLibrary/songLibrarySelectors";
 import { buildLessonProgression } from "../songLibrary/lessonProgression";
-import { buildAdventureMap, isRoadWalked } from "./adventureMap";
+import {
+  buildAdventureMap,
+  isMilestoneStation,
+  isRoadWalked,
+  unitEndStatus,
+} from "./adventureMap";
 
 function song(id: string, grade: BuiltinSongMeta["grade"]): BuiltinSongMeta {
   return {
@@ -121,5 +126,56 @@ describe("isRoadWalked", () => {
   test("a fresh route has no solid road", () => {
     const map = build(new Map());
     expect(isRoadWalked(map.stations[0], map.stations[1])).toBe(false);
+  });
+});
+
+describe("unitEndStatus", () => {
+  test("counts the songs that are not at three stars yet", () => {
+    const map = build(
+      new Map([
+        ["a", act(95, 1)],
+        ["b", act(75, 1)],
+      ]),
+    );
+    expect(unitEndStatus(map.regions[0])).toEqual({
+      complete: false,
+      remaining: 2,
+    });
+    expect(unitEndStatus(map.regions[1])).toEqual({
+      complete: false,
+      remaining: 2,
+    });
+  });
+
+  test("a unit with every song at three stars is complete", () => {
+    const map = build(
+      new Map([
+        ["a", act(95, 1)],
+        ["b", act(95, 1)],
+        ["c", act(95, 1)],
+      ]),
+    );
+    expect(unitEndStatus(map.regions[0])).toEqual({
+      complete: true,
+      remaining: 0,
+    });
+  });
+});
+
+describe("isMilestoneStation", () => {
+  test("every fifth stop is a milestone", () => {
+    const flags = [0, 1, 2, 3, 4, 5, 8, 9, 10, 14].map(isMilestoneStation);
+    expect(flags).toEqual([
+      false,
+      false,
+      false,
+      false,
+      true,
+      false,
+      false,
+      true,
+      false,
+      true,
+    ]);
   });
 });

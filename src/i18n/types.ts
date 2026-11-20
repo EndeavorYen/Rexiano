@@ -694,6 +694,12 @@ export interface TranslationMap {
   // ── UI round 2: home-map ──
   "map.backToNext": string;
   "map.goalDone": string;
+  // ── UI round 3: home-map ──
+  "map.unitComplete": string;
+  "map.unitRemaining": string;
+  "map.unitEndLabel": string;
+  "piano.homeShort": string;
+  "piano.homeShortConnected": string;
 
   // ── UI round 2: play ──
   "nav.backToMap": string;
