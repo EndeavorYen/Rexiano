@@ -751,4 +751,7 @@ export const en: TranslationMap = {
   "celebration.bestScore": "New best score!",
   "celebration.hitCount":
     "You played {hit} of {total} notes right ({accuracy}%)",
+  // ── UI round 2: home-map ──
+  "map.backToNext": "Back to next stop",
+  "map.goalDone": "Today's goal reached",
 };

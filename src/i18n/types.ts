@@ -680,6 +680,9 @@ export interface TranslationMap {
   "celebration.moreStars": string;
   "celebration.bestScore": string;
   "celebration.hitCount": string;
+  // ── UI round 2: home-map ──
+  "map.backToNext": string;
+  "map.goalDone": string;
 }
 
 /**

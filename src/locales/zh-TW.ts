@@ -711,4 +711,7 @@ export const zhTW: TranslationMap = {
   "celebration.moreStars": "星星變多了！",
   "celebration.bestScore": "新的最佳成績！",
   "celebration.hitCount": "彈對 {hit}／{total} 個音（{accuracy}%）",
+  // ── UI round 2: home-map ──
+  "map.backToNext": "回到下一站",
+  "map.goalDone": "今天的目標達成了",
 };

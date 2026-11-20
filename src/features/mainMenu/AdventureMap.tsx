@@ -7,29 +7,40 @@ import {
   useRef,
   useState,
 } from "react";
-import { Music2, Play } from "lucide-react";
+import { createPortal } from "react-dom";
+import { ArrowDown, ArrowUp, Play } from "lucide-react";
 import { useTranslation } from "@renderer/i18n/useTranslation";
 import { StarRow } from "../progress/StarRow";
 import { SongCoverArt } from "../songLibrary/SongCoverArt";
 import { lessonGroupColor } from "../songLibrary/lessonGroupColor";
 import { songDisplayTitle } from "../songLibrary/songTitle";
 import type { TranslationKey } from "@renderer/i18n/types";
-import type { AdventureMapModel, MapStation } from "./adventureMap";
-import { layoutRoute, segmentPath } from "./routeLayout";
+import {
+  isRoadWalked,
+  type AdventureMapModel,
+  type MapStation,
+} from "./adventureMap";
+import { layoutRoute, rowAnchorTop, segmentPath } from "./routeLayout";
 import "./home-map.css";
 
 interface AdventureMapProps {
   model: AdventureMapModel;
   /** The scrolling ancestor; the map moves it to bring stations into view */
   scrollerRef: React.RefObject<HTMLElement | null>;
+  /** Where the unit chip row goes: the fixed area above the scroller */
+  chipsHost: HTMLElement | null;
   /** Buttons that sit at the right end of the unit chip row */
   toolbar?: React.ReactNode;
   loadingSongId?: string | null;
   onPlay: (songId: string) => void;
 }
 
-/** From a station centre down to the bottom of its open card */
-const CARD_REACH = 360;
+/** Gap between the fixed area and the upper edge of the next stop's row */
+const ARRIVAL_GAP = 24;
+/** Half the card width plus a margin, so the card stays inside the map */
+const CARD_HALF = 162;
+/** The larger first-visit card */
+const CARD_HALF_FIRST = 186;
 const WIDE_QUERY = "(min-width: 900px)";
 
 function useRouteColumns(): number {
@@ -56,23 +67,17 @@ function prefersReducedMotion(): boolean {
   );
 }
 
-/** Scroll `scroller` so `target` sits `ratio` of the way down the viewport. */
-function scrollToTarget(
+/** Scroll `scroller` so the top of `target` sits `gap` px below the scroller's top. */
+function scrollToEdge(
   scroller: HTMLElement,
   target: HTMLElement,
-  ratio: number,
+  gap: number,
   smooth: boolean,
 ): void {
-  const scrollerBox = scroller.getBoundingClientRect();
-  const targetBox = target.getBoundingClientRect();
-  const offset = targetBox.top - scrollerBox.top;
-  const top =
-    scroller.scrollTop +
-    offset -
-    scroller.clientHeight * ratio +
-    targetBox.height / 2;
+  const offset =
+    target.getBoundingClientRect().top - scroller.getBoundingClientRect().top;
   scroller.scrollTo({
-    top: Math.max(0, top),
+    top: Math.max(0, Math.round(scroller.scrollTop + offset - gap)),
     behavior: smooth && !prefersReducedMotion() ? "smooth" : "auto",
   });
 }
@@ -80,6 +85,7 @@ function scrollToTarget(
 export function AdventureMap({
   model,
   scrollerRef,
+  chipsHost,
   toolbar,
   loadingSongId = null,
   onPlay,
@@ -90,6 +96,9 @@ export function AdventureMap({
   const cardButtonRef = useRef<HTMLButtonElement>(null);
   const focusCardRef = useRef(false);
   const anchorRef = useRef<{ id: string; top: number } | null>(null);
+  // True once the child has scrolled or tapped: from then on nothing moves the page.
+  const settledRef = useRef(false);
+  const pendingAlignRef = useRef(false);
   const [pickedId, setPickedId] = useState<string | null>(null);
   // Bumps on every tap, so tapping the already-open station still moves focus.
   const [tapCount, setTapCount] = useState(0);
@@ -123,10 +132,131 @@ export function AdventureMap({
     return model.stations.slice(1).map((station, i) => ({
       key: station.song.id,
       d: segmentPath(layout.stations[i], layout.stations[i + 1], layout.cols),
-      walked: station.status !== "new",
+      walked: isRoadWalked(model.stations[i], station),
       color: lessonGroupColor(station.groupId),
     }));
   }, [model.stations, layout]);
+
+  // The next stop's row: where every arrival and every "back to next" lands.
+  const hasStations = model.stations.length > 0;
+  const nextId = model.nextStation?.song.id ?? null;
+  const nextIndex = model.nextStation?.index ?? null;
+  const unitStartOf = useMemo(() => {
+    if (nextIndex === null) return null;
+    const i = model.regions.findIndex((r) => r.firstIndex === nextIndex);
+    return i < 0 ? null : i;
+  }, [model.regions, nextIndex]);
+
+  const layoutRef = useRef(layout);
+  useLayoutEffect(() => {
+    layoutRef.current = layout;
+  }, [layout]);
+  const alignToNext = useCallback(
+    (smooth: boolean) => {
+      const scroller = scrollerRef.current;
+      const map = mapRef.current;
+      if (!scroller || !map || nextIndex === null) return;
+      let top = 0;
+      if (unitStartOf !== 0) {
+        const mapTop =
+          map.getBoundingClientRect().top -
+          scroller.getBoundingClientRect().top +
+          scroller.scrollTop;
+        top =
+          mapTop +
+          rowAnchorTop(layoutRef.current, nextIndex, unitStartOf) -
+          ARRIVAL_GAP;
+      }
+      scroller.scrollTo({
+        top: Math.max(0, Math.round(top)),
+        behavior: smooth && !prefersReducedMotion() ? "smooth" : "auto",
+      });
+    },
+    [nextIndex, scrollerRef, unitStartOf],
+  );
+
+  // Arrival: align before the first paint, then again whenever the layout
+  // moves (fonts, late data, window size) until the child takes over.
+  useLayoutEffect(() => {
+    if (!hasStations || nextIndex === null) return;
+    settledRef.current = false;
+    alignToNext(false);
+  }, [hasStations, nextIndex, alignToNext]);
+
+  useEffect(() => {
+    const scroller = scrollerRef.current;
+    const map = mapRef.current;
+    if (!scroller || !map || !hasStations || nextIndex === null) return;
+    const realign = (): void => {
+      if (!settledRef.current) alignToNext(false);
+    };
+    const settle = (): void => {
+      settledRef.current = true;
+    };
+    void document.fonts?.ready.then(realign);
+    const observer =
+      typeof ResizeObserver === "undefined"
+        ? null
+        : new ResizeObserver(realign);
+    observer?.observe(map);
+    observer?.observe(scroller);
+    const events = ["wheel", "touchstart", "pointerdown", "keydown"] as const;
+    events.forEach((name) =>
+      scroller.addEventListener(name, settle, { passive: true }),
+    );
+    return () => {
+      observer?.disconnect();
+      events.forEach((name) => scroller.removeEventListener(name, settle));
+    };
+  }, [hasStations, nextIndex, alignToNext, scrollerRef]);
+
+  // "Back to next stop": shown while the next stop is out of view.
+  const [backDirection, setBackDirection] = useState<"up" | "down" | null>(
+    null,
+  );
+  useEffect(() => {
+    const scroller = scrollerRef.current;
+    if (!scroller || !nextId) return;
+    let frame = 0;
+    const measure = (): void => {
+      frame = 0;
+      const node = mapRef.current?.querySelector<HTMLElement>(
+        `[data-station-id="${CSS.escape(nextId)}"]`,
+      );
+      if (!node) return;
+      const view = scroller.getBoundingClientRect();
+      const box = node.getBoundingClientRect();
+      const centre = box.top + box.height / 2;
+      setBackDirection(
+        centre < view.top ? "up" : centre > view.bottom ? "down" : null,
+      );
+    };
+    const schedule = (): void => {
+      if (!frame) frame = requestAnimationFrame(measure);
+    };
+    measure();
+    scroller.addEventListener("scroll", schedule, { passive: true });
+    const observer =
+      typeof ResizeObserver === "undefined"
+        ? null
+        : new ResizeObserver(schedule);
+    observer?.observe(scroller);
+    if (mapRef.current) observer?.observe(mapRef.current);
+    return () => {
+      if (frame) cancelAnimationFrame(frame);
+      scroller.removeEventListener("scroll", schedule);
+      observer?.disconnect();
+    };
+  }, [nextId, scrollerRef]);
+
+  const backToNext = useCallback(() => {
+    settledRef.current = true;
+    pendingAlignRef.current = true;
+    focusCardRef.current = false;
+    anchorRef.current = null;
+    setPickedId(null);
+    setTapCount((n) => n + 1);
+  }, []);
 
   const handleSelect = useCallback((songId: string) => {
     const button = mapRef.current?.querySelector<HTMLElement>(
@@ -136,6 +266,7 @@ export function AdventureMap({
     anchorRef.current = button
       ? { id: songId, top: button.getBoundingClientRect().top }
       : null;
+    settledRef.current = true;
     focusCardRef.current = true;
     setPickedId(songId);
     setTapCount((n) => n + 1);
@@ -154,6 +285,10 @@ export function AdventureMap({
       }
     }
     anchorRef.current = null;
+    if (pendingAlignRef.current) {
+      pendingAlignRef.current = false;
+      alignToNext(true);
+    }
     if (focusCardRef.current) {
       focusCardRef.current = false;
       const card = cardButtonRef.current;
@@ -162,37 +297,7 @@ export function AdventureMap({
         card.scrollIntoView({ block: "nearest" });
       }
     }
-  }, [selected?.song.id, tapCount, scrollerRef]);
-
-  // On arrival, put the next stop a little above the middle of the screen.
-  const hasStations = model.stations.length > 0;
-  const hasProgress = model.hasAnyProgress;
-  const arrivedRef = useRef(false);
-  const nextId = model.nextStation?.song.id ?? null;
-  useLayoutEffect(() => {
-    if (!hasStations || arrivedRef.current) return;
-    arrivedRef.current = true;
-    const scroller = scrollerRef.current;
-    if (!scroller || !nextId) return;
-    const target = mapRef.current?.querySelector<HTMLElement>(
-      `[data-station-id="${CSS.escape(nextId)}"]`,
-    );
-    if (!target) return;
-    if (!hasProgress) {
-      // First visit: only scroll as far as it takes to show the start button,
-      // so the child's numbers stay in view.
-      const box = target.getBoundingClientRect();
-      const centre =
-        box.top -
-        scroller.getBoundingClientRect().top +
-        scroller.scrollTop +
-        box.height / 2;
-      const needed = centre + CARD_REACH - scroller.clientHeight;
-      scroller.scrollTop = Math.max(0, needed);
-      return;
-    }
-    scrollToTarget(scroller, target, 0.38, false);
-  }, [hasStations, hasProgress, nextId, scrollerRef]);
+  }, [selected?.song.id, tapCount, scrollerRef, alignToNext]);
 
   const jumpToRegion = useCallback(
     (groupId: string) => {
@@ -200,41 +305,48 @@ export function AdventureMap({
       const flag = mapRef.current?.querySelector<HTMLElement>(
         `[data-region-flag="${groupId}"]`,
       );
-      if (scroller && flag) scrollToTarget(scroller, flag, 0.12, true);
+      if (scroller && flag) {
+        settledRef.current = true;
+        scrollToEdge(scroller, flag, ARRIVAL_GAP, true);
+      }
     },
     [scrollerRef],
   );
 
   const currentGroupId = model.nextStation?.groupId ?? null;
 
+  const chips = (
+    <nav className="hm-units-row" aria-label={t("map.unitsLabel")}>
+      <div className="hm-units">
+        {model.regions.map((region) => (
+          <button
+            key={region.groupId}
+            type="button"
+            className={`hm-unit-chip${region.groupId === currentGroupId ? " is-here" : ""}`}
+            style={
+              {
+                "--z": lessonGroupColor(region.groupId),
+              } as React.CSSProperties
+            }
+            aria-current={region.groupId === currentGroupId || undefined}
+            data-testid={`map-unit-${region.groupId}`}
+            onClick={() => jumpToRegion(region.groupId)}
+          >
+            <i aria-hidden="true" />
+            {t(region.group.titleKey)}
+            <b>
+              {region.completedCount}/{region.totalCount}
+            </b>
+          </button>
+        ))}
+      </div>
+      <div className="hm-entries">{toolbar}</div>
+    </nav>
+  );
+
   return (
     <>
-      <nav className="hm-units-row" aria-label={t("map.unitsLabel")}>
-        <div className="hm-units">
-          {model.regions.map((region) => (
-            <button
-              key={region.groupId}
-              type="button"
-              className={`hm-unit-chip${region.groupId === currentGroupId ? " is-here" : ""}`}
-              style={
-                {
-                  "--z": lessonGroupColor(region.groupId),
-                } as React.CSSProperties
-              }
-              aria-current={region.groupId === currentGroupId || undefined}
-              data-testid={`map-unit-${region.groupId}`}
-              onClick={() => jumpToRegion(region.groupId)}
-            >
-              <i aria-hidden="true" />
-              {t(region.group.titleKey)}
-              <b>
-                {region.completedCount}/{region.totalCount}
-              </b>
-            </button>
-          ))}
-        </div>
-        <div className="hm-entries">{toolbar}</div>
-      </nav>
+      {chipsHost && createPortal(chips, chipsHost)}
 
       <section
         className="hm-map"
@@ -302,9 +414,6 @@ export function AdventureMap({
             >
               <i aria-hidden="true" />
               {t(region.group.titleKey)}
-              <b>
-                {region.completedCount}/{region.totalCount}
-              </b>
             </span>
           );
         })}
@@ -339,6 +448,24 @@ export function AdventureMap({
           />
         )}
       </section>
+
+      {backDirection && (
+        <div className="hm-back-dock">
+          <button
+            type="button"
+            className="btn-ghost-themed hm-back"
+            data-testid="map-back-to-next"
+            onClick={backToNext}
+          >
+            {backDirection === "up" ? (
+              <ArrowUp size={18} aria-hidden="true" />
+            ) : (
+              <ArrowDown size={18} aria-hidden="true" />
+            )}
+            {t("map.backToNext")}
+          </button>
+        </div>
+      )}
     </>
   );
 }
@@ -386,7 +513,11 @@ const StationNode = memo(function StationNode({
           <span className="hm-tag">{t("map.next")}</span>
         )}
         <span className="hm-disk">
-          <Music2 aria-hidden="true" strokeWidth={2.4} />
+          {station.status === "next" ? (
+            <Play fill="currentColor" aria-hidden="true" strokeWidth={2} />
+          ) : (
+            <span className="hm-num">{station.index + 1}</span>
+          )}
         </span>
         {station.stars > 0 && (
           <StarRow
@@ -451,14 +582,15 @@ function StationCard({
   const color = lessonGroupColor(station.groupId);
   const played = station.stars > 0 || station.playCount > 0;
   const nextOffset = station.status === "next" ? 140 : 128;
+  const half = firstTime ? CARD_HALF_FIRST : CARD_HALF;
 
   return (
     <div
-      className="hm-card"
+      className={`hm-card${firstTime ? " is-first" : ""}`}
       style={
         {
           "--z": color,
-          left: `clamp(156px, ${x / 10}%, calc(100% - 156px))`,
+          left: `clamp(${half}px, ${x / 10}%, calc(100% - ${half}px))`,
           top: y + nextOffset,
         } as React.CSSProperties
       }

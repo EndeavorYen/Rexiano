@@ -1,4 +1,4 @@
-import { Flame, Star } from "lucide-react";
+import { Check, Flame, Star } from "lucide-react";
 import { useTranslation } from "@renderer/i18n/useTranslation";
 import type { DailyGoalStatus } from "../practice/nextPracticeAction";
 import type { PracticeCalendar } from "./practiceCalendar";
@@ -39,11 +39,19 @@ export function HomeStatsBar({
         <div className="hm-stat-text">
           <span className="hm-k">{t("map.today")}</span>
           <span className="hm-v">
-            {goal.practicedMinutes}
+            {Math.floor(goal.practicedMinutes)}
             <small>
               {" / "}
               {goal.targetMinutes} {t("map.minutesUnit")}
             </small>
+            {goal.practicedMinutes >= goal.targetMinutes && (
+              <Check
+                className="hm-done-mark"
+                size={20}
+                strokeWidth={3}
+                aria-label={t("map.goalDone")}
+              />
+            )}
           </span>
         </div>
       </div>

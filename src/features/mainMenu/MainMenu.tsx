@@ -49,6 +49,7 @@ export function MainMenu({
 }: MainMenuProps): React.JSX.Element {
   const { t, lang } = useTranslation();
   const scrollerRef = useRef<HTMLDivElement>(null);
+  const [chipsHost, setChipsHost] = useState<HTMLDivElement | null>(null);
   const songs = useSongLibraryStore((s) => s.songs);
   const sessions = useProgressStore((s) => s.sessions);
   const isProgressLoaded = useProgressStore((s) => s.isLoaded);
@@ -144,84 +145,94 @@ export function MainMenu({
   const firstRun = ready && !model.hasAnyProgress;
 
   return (
-    <div
-      ref={scrollerRef}
-      className="flex-1 min-h-0 overflow-y-auto"
-      data-testid="main-menu-scroller"
-    >
-      <div className="hm-page animate-page-enter">
-        <FamilyTopBar
-          onOpenSettings={onOpenSettings}
-          settingsTestId="main-menu-settings"
-        />
-
-        <section className="hm-hud" aria-label={t("map.hudLabel")}>
-          <HomeStatsBar
-            goal={goal}
-            calendar={calendar}
-            totalStars={model.totalStars}
-            maxStars={model.maxStars}
+    <div className="hm-shell hm-fade">
+      <div className="hm-fixed" data-testid="main-menu-fixed">
+        <div className="hm-wrap">
+          <FamilyTopBar
+            onOpenSettings={onOpenSettings}
+            settingsTestId="main-menu-settings"
           />
-          <PianoQuickConnect
-            onOpenDetails={onOpenSettings}
-            testId="main-menu-piano"
-            quiet
-          />
-        </section>
 
-        {firstRun && (
-          <p className="hm-invite" data-testid="map-first-invite">
-            <b>{t("map.firstInvite")}</b> {t("map.firstInviteHint")}
-          </p>
-        )}
-
-        {showRecents && (
-          <section
-            className="hm-recents"
-            aria-label={t("map.recentLabel")}
-            data-testid="main-menu-recents"
-          >
-            <span className="hm-recents-label">
-              {t("library.recentlyPlayed")}
-            </span>
-            {importedRecents.map((file) => {
-              const title = displayTitleForName(file.name, songs, lang);
-              return (
-                <button
-                  key={file.path}
-                  type="button"
-                  className="btn-surface-themed hm-recent"
-                  title={title}
-                  onClick={() => onSelectRecent(file)}
-                >
-                  <span>{title}</span>
-                </button>
-              );
-            })}
+          <section className="hm-hud" aria-label={t("map.hudLabel")}>
+            <HomeStatsBar
+              goal={goal}
+              calendar={calendar}
+              totalStars={model.totalStars}
+              maxStars={model.maxStars}
+            />
+            <PianoQuickConnect
+              onOpenDetails={onOpenSettings}
+              testId="main-menu-piano"
+              quiet
+            />
           </section>
-        )}
 
-        {ready ? (
-          <AdventureMap
-            model={model}
-            scrollerRef={scrollerRef}
-            loadingSongId={loadingSongId}
-            onPlay={(songId) => void handlePlay(songId)}
-            toolbar={entries}
-          />
-        ) : (
-          <>
-            <div className="hm-units-row">
-              <span />
-              <div className="hm-entries">{entries}</div>
-            </div>
+          <div ref={setChipsHost} className="hm-chips-slot">
+            {!ready && (
+              <div className="hm-units-row">
+                <span />
+                <div className="hm-entries">{entries}</div>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      <div
+        ref={scrollerRef}
+        className="hm-scroll"
+        data-testid="main-menu-scroller"
+      >
+        <div className="hm-wrap hm-scroll-inner">
+          {firstRun && (
+            <p className="hm-invite" data-testid="map-first-invite">
+              <b>{t("map.firstInvite")}</b> {t("map.firstInviteHint")}
+            </p>
+          )}
+
+          {showRecents && (
+            <section
+              className="hm-recents"
+              aria-label={t("map.recentLabel")}
+              data-testid="main-menu-recents"
+            >
+              <span className="hm-recents-label">
+                {t("library.recentlyPlayed")}
+              </span>
+              {importedRecents.map((file) => {
+                const title = displayTitleForName(file.name, songs, lang);
+                return (
+                  <button
+                    key={file.path}
+                    type="button"
+                    className="btn-surface-themed hm-recent"
+                    title={title}
+                    onClick={() => onSelectRecent(file)}
+                  >
+                    <span>{title}</span>
+                  </button>
+                );
+              })}
+            </section>
+          )}
+
+          {ready ? (
+            <AdventureMap
+              model={model}
+              scrollerRef={scrollerRef}
+              chipsHost={chipsHost}
+              loadingSongId={loadingSongId}
+              onPlay={(songId) => void handlePlay(songId)}
+              toolbar={entries}
+            />
+          ) : (
             <div
               className="hm-skeleton"
               role="status"
               aria-label={t("map.loading")}
             />
-          </>
-        )}
+          )}
+        </div>
       </div>
     </div>
   );

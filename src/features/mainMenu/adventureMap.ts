@@ -94,3 +94,13 @@ export function buildAdventureMap(
     hasAnyProgress,
   };
 }
+
+/**
+ * Whether the road between two neighbouring stations is drawn solid.
+ * Solid means the child has been along it: a star at both ends, or a star at
+ * the start of the road that leads to the next stop.
+ */
+export function isRoadWalked(from: MapStation, to: MapStation): boolean {
+  if (from.stars === 0) return false;
+  return to.stars > 0 || to.status === "next";
+}

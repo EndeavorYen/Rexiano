@@ -146,3 +146,22 @@ export function segmentPath(
   const my = a.y + dy / 2;
   return `M${a.x} ${a.y}C${a.x} ${my} ${b.x} ${my} ${b.x} ${b.y}`;
 }
+
+/** From the top of a "next" station's tag and halo down to its disk centre. */
+export const STATION_REACH_ABOVE = 112;
+
+/**
+ * Map-relative y of a station's upper edge, the line the home screen scrolls
+ * to. A unit's first station brings its flag along, so a new unit starts with
+ * its name in view.
+ */
+export function rowAnchorTop(
+  layout: RouteLayout,
+  index: number,
+  /** Region index when this station opens its unit, otherwise null */
+  unitStartOf: number | null,
+): number {
+  const flag = unitStartOf === null ? undefined : layout.flags[unitStartOf];
+  const y = flag ? flag.y : layout.stations[index].y - STATION_REACH_ABOVE;
+  return Math.max(0, y);
+}
