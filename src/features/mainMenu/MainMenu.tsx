@@ -164,6 +164,7 @@ export function MainMenu({
               onOpenDetails={onOpenSettings}
               testId="main-menu-piano"
               quiet
+              shortCopy
             />
           </section>
 

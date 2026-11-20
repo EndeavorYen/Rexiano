@@ -741,4 +741,10 @@ export const zhTW: TranslationMap = {
     "有些節奏在樂譜上只能畫成相近的樣子，聽到的聲音不受影響。",
   "midiNotice.genericBody": "這個檔案的資料不太完整，樂譜可能和原曲不太一樣。",
   "midiNotice.dismiss": "知道了，關閉提示",
+  // ── UI round 3: home-map ──
+  "map.unitComplete": "完成！",
+  "map.unitRemaining": "還差 {n} 首",
+  "map.unitEndLabel": "{unit}，{caption}",
+  "piano.homeShort": "連上藍牙鋼琴，彈的音才算分",
+  "piano.homeShortConnected": "已連上",
 };

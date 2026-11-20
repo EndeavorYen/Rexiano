@@ -784,4 +784,10 @@ export const en: TranslationMap = {
   "midiNotice.genericBody":
     "This file has incomplete data, so the sheet may differ from the original.",
   "midiNotice.dismiss": "Got it, hide this notice",
+  // ── UI round 3: home-map ──
+  "map.unitComplete": "Done!",
+  "map.unitRemaining": "{n} to go",
+  "map.unitEndLabel": "{unit}: {caption}",
+  "piano.homeShort": "Connect a piano to score your notes",
+  "piano.homeShortConnected": "Connected",
 };
