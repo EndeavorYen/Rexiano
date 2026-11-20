@@ -1,5 +1,5 @@
 /* Home: the adventure map (UI round 1, group home-map). Tokens only. */
-.hm-page {
+.hm-shell {
   --hm-disk: 76px;
   --hm-disk-next: 112px;
   --hm-edge: 0 4px 0 rgba(0, 0, 0, 0.14);
@@ -8,18 +8,59 @@
   --hm-dashed: 55%;
 }
 
-:root[data-theme="dark"] .hm-page {
+:root[data-theme="dark"] .hm-shell {
   --hm-ink-on-unit: #0e1420;
   --hm-road: var(--color-surface-alt);
 }
 
-.hm-page {
-  width: min(100% - 32px, 1290px);
-  margin: 0 auto;
-  padding: 12px 0 32px;
+/* The shell never gets a transform, filter or will-change: they would turn
+   every position: fixed dialog (what's new) into a box relative to the page. */
+.hm-shell {
+  position: relative;
+  flex: 1;
+  min-height: 0;
   display: flex;
   flex-direction: column;
+}
+
+.hm-fade {
+  animation: hm-fade-in 0.28s ease backwards;
+}
+
+@keyframes hm-fade-in {
+  from {
+    opacity: 0;
+  }
+}
+
+.hm-fixed {
+  flex: none;
+  padding: 8px 0;
+}
+
+.hm-wrap {
+  width: min(100% - 32px, 1290px);
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.hm-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.hm-scroll-inner {
+  padding: 4px 0 32px;
   gap: 12px;
+}
+
+.hm-chips-slot {
+  display: flex;
+  flex-direction: column;
 }
 
 /* ── Top HUD: numbers + piano ── */
@@ -33,10 +74,11 @@
   flex-direction: row;
   align-items: center;
   min-width: 0;
+  padding-block: 8px;
 }
 
 .hm-stats {
-  padding: 10px 8px;
+  padding-inline: 8px;
   gap: 0;
 }
 
@@ -45,7 +87,7 @@
   display: flex;
   align-items: center;
   gap: 12px;
-  min-height: 60px;
+  min-height: 44px;
   min-width: 0;
   padding: 0 12px;
 }
@@ -90,8 +132,8 @@
 }
 
 .hm-ring {
-  width: 48px;
-  height: 48px;
+  width: 44px;
+  height: 44px;
   flex: none;
 }
 
@@ -138,8 +180,20 @@
 }
 
 .hm-week i.is-on {
-  background: var(--color-note3);
-  border-color: var(--color-note3);
+  background: var(--color-accent);
+  border-color: var(--color-accent);
+}
+
+.hm-ring-wrap {
+  position: relative;
+  display: grid;
+  place-items: center;
+  flex: none;
+}
+
+.hm-ring-wrap .hm-done-mark {
+  position: absolute;
+  color: var(--color-success-text);
 }
 
 .hm-week i.is-today:not(.is-on) {
@@ -157,12 +211,17 @@
   color: var(--color-text);
 }
 
-/* The piano card keeps to two lines of hint so the numbers row stays slim. */
-.hm-hud [data-testid="main-menu-piano"] p:last-of-type {
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
+/* The piano card keeps to one line of hint so the fixed area stays slim. */
+.hm-hud [data-testid="main-menu-piano"] p {
   overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  line-height: 1.35;
+}
+
+.hm-hud [data-testid="main-menu-piano"] > span {
+  width: 40px;
+  height: 40px;
 }
 
 /* ── Recent imported songs ── */
@@ -350,29 +409,25 @@
   transform: translateX(-50%);
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  height: 30px;
-  padding: 0 12px;
+  gap: 8px;
+  height: 40px;
+  padding: 0 18px;
   border-radius: 999px;
   background: var(--color-surface);
-  border: 1.5px solid var(--z);
+  border: 2px solid var(--z);
+  box-shadow: 0 4px 0 color-mix(in srgb, var(--z) 30%, transparent);
   color: var(--color-text);
-  font-size: 0.75rem;
-  font-weight: 700;
+  font-family: var(--font-display);
+  font-size: 1rem;
+  font-weight: 800;
   white-space: nowrap;
 }
 
 .hm-flag i {
-  width: 8px;
-  height: 8px;
+  width: 12px;
+  height: 12px;
   border-radius: 50%;
   background: var(--z);
-}
-
-.hm-flag b {
-  font-family: var(--font-display);
-  font-weight: 800;
-  color: var(--color-text-muted);
 }
 
 .hm-stations {
@@ -428,6 +483,14 @@
   height: 38px;
 }
 
+.hm-num {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 1.75rem;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
 .hm-node:hover .hm-disk {
   transform: translateY(-3px);
 }
@@ -459,9 +522,8 @@
   color: var(--color-text-muted);
 }
 
-.is-new .hm-disk svg {
-  width: 28px;
-  height: 28px;
+.is-new .hm-num {
+  font-size: 1.5rem;
 }
 
 .is-next .hm-disk {
@@ -476,8 +538,9 @@
 }
 
 .is-next .hm-disk svg {
-  width: 58px;
-  height: 58px;
+  width: 52px;
+  height: 52px;
+  margin-left: 5px;
 }
 
 @keyframes hm-halo {
@@ -497,8 +560,8 @@
 }
 
 .is-selected .hm-disk {
-  outline: 3px solid var(--color-text);
-  outline-offset: 5px;
+  outline: 2px solid var(--color-accent);
+  outline-offset: 4px;
 }
 
 .is-selected.is-next .hm-disk {
@@ -644,6 +707,54 @@
 .hm-go:focus-visible {
   outline: 3px solid var(--color-text);
   outline-offset: 2px;
+}
+
+/* First visit: the first stop and its card are the centre of the first screen. */
+.hm-card.is-first {
+  width: 360px;
+  padding: 16px;
+}
+
+.hm-card.is-first .hm-cover {
+  width: 84px;
+}
+
+.hm-card.is-first .hm-card-title {
+  font-size: 1.4rem;
+}
+
+.hm-card.is-first .hm-card-why {
+  font-size: 0.9375rem;
+}
+
+.hm-card.is-first .hm-go {
+  min-height: 56px;
+  font-size: 1.2rem;
+}
+
+/* ── Back to the next stop ── */
+.hm-back-dock {
+  position: sticky;
+  bottom: 0;
+  height: 0;
+  z-index: 6;
+}
+
+.hm-back {
+  position: absolute;
+  right: 0;
+  bottom: 16px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 0 16px;
+  border-radius: 14px;
+  font-weight: 700;
+  font-size: 0.9375rem;
+  background: var(--color-surface);
+  box-shadow: var(--family-shadow);
+  cursor: pointer;
 }
 
 .hm-empty {

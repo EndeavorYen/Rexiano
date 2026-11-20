@@ -692,6 +692,9 @@ export interface TranslationMap {
   "songbook.remove.cancel": string;
   "songbook.edit.save": string;
   "songbook.edit.cancel": string;
+  // ── UI round 2: home-map ──
+  "map.backToNext": string;
+  "map.goalDone": string;
 }
 
 /**

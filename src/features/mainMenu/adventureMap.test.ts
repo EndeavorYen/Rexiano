@@ -2,7 +2,7 @@ import { describe, expect, test } from "vitest";
 import type { BuiltinSongMeta } from "@shared/types";
 import type { SongActivity } from "../songLibrary/songLibrarySelectors";
 import { buildLessonProgression } from "../songLibrary/lessonProgression";
-import { buildAdventureMap } from "./adventureMap";
+import { buildAdventureMap, isRoadWalked } from "./adventureMap";
 
 function song(id: string, grade: BuiltinSongMeta["grade"]): BuiltinSongMeta {
   return {
@@ -87,5 +87,39 @@ describe("buildAdventureMap", () => {
     const map = build(all);
     expect(map.nextStation).toBeNull();
     expect(map.stations.every((s) => s.status === "done")).toBe(true);
+  });
+});
+
+describe("isRoadWalked", () => {
+  test("a road is solid only when both ends have a star", () => {
+    const map = build(
+      new Map([
+        ["a", act(null, 0)],
+        ["b", act(95, 1)],
+        ["c", act(75, 1)],
+      ]),
+    );
+    const [a, b, c, d] = map.stations;
+    // first song not played, second played: not solid
+    expect(isRoadWalked(a, b)).toBe(false);
+    expect(isRoadWalked(b, c)).toBe(true);
+    // c has stars and d is new: not solid
+    expect(isRoadWalked(c, d)).toBe(false);
+  });
+
+  test("the road into the next station is solid when the road starts at a star", () => {
+    const map = build(
+      new Map([
+        ["a", act(95, 1)],
+        ["b", act(null, 0)],
+      ]),
+    );
+    expect(map.stations[1].status).toBe("next");
+    expect(isRoadWalked(map.stations[0], map.stations[1])).toBe(true);
+  });
+
+  test("a fresh route has no solid road", () => {
+    const map = build(new Map());
+    expect(isRoadWalked(map.stations[0], map.stations[1])).toBe(false);
   });
 });

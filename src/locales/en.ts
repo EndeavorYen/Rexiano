@@ -765,4 +765,7 @@ export const en: TranslationMap = {
   "songbook.remove.cancel": "Not now",
   "songbook.edit.save": "Save",
   "songbook.edit.cancel": "Cancel",
+  // ── UI round 2: home-map ──
+  "map.backToNext": "Back to next stop",
+  "map.goalDone": "Today's goal reached",
 };

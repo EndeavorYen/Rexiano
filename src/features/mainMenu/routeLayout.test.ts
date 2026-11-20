@@ -1,5 +1,10 @@
 import { describe, expect, test } from "vitest";
-import { layoutRoute, ROUTE_WIDTH, segmentPath } from "./routeLayout";
+import {
+  layoutRoute,
+  rowAnchorTop,
+  ROUTE_WIDTH,
+  segmentPath,
+} from "./routeLayout";
 
 describe("layoutRoute", () => {
   test("snakes: the second row runs right to left", () => {
@@ -54,5 +59,22 @@ describe("layoutRoute", () => {
     expect(same.endsWith(`${l.stations[1].x} ${l.stations[1].y}`)).toBe(true);
     const turn = segmentPath(l.stations[3], l.stations[4], 4);
     expect(turn.endsWith(`${l.stations[4].x} ${l.stations[4].y}`)).toBe(true);
+  });
+});
+
+describe("rowAnchorTop", () => {
+  const l = layoutRoute({ regionSizes: [3, 5], cols: 4 });
+
+  test("the first station of a unit anchors to its flag", () => {
+    expect(rowAnchorTop(l, 3, 1)).toBe(l.flags[1].y);
+    expect(rowAnchorTop(l, 0, 0)).toBe(l.flags[0].y);
+  });
+
+  test("any other station anchors a fixed reach above its disk", () => {
+    expect(rowAnchorTop(l, 1, null)).toBe(l.stations[1].y - 112);
+  });
+
+  test("never above the top of the map", () => {
+    expect(rowAnchorTop(l, 0, null)).toBeGreaterThanOrEqual(0);
   });
 });

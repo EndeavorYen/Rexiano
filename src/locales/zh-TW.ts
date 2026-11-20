@@ -723,4 +723,7 @@ export const zhTW: TranslationMap = {
   "songbook.remove.cancel": "先不要",
   "songbook.edit.save": "儲存",
   "songbook.edit.cancel": "取消",
+  // ── UI round 2: home-map ──
+  "map.backToNext": "回到下一站",
+  "map.goalDone": "今天的目標達成了",
 };
