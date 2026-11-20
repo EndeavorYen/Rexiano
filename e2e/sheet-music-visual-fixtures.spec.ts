@@ -53,7 +53,7 @@ async function loadBuiltInSongSheet(
   songId: string,
 ): Promise<void> {
   const playbackLibraryButton = appPage.getByRole("button", {
-    name: /Library|曲庫/i,
+    name: /Library|曲庫|Back to (the )?(map|shelf|songbook)|回地圖|回書架/i,
   });
   if (
     (await playbackLibraryButton.count()) > 0 &&

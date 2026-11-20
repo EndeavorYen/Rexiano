@@ -21,7 +21,7 @@ export const en: TranslationMap = {
     "Check that {fileName} is a valid MusicXML or MIDI file, then try importing it again.",
   "app.importErrorMissingTitle": "Recent file is no longer available",
   "app.importErrorMissingGuidance":
-    "We can't find this file any more. Please import it again.",
+    "We can't find {fileName} any more. Please import it again.",
   "app.importErrorBuiltinTitle": "This song couldn't open",
   "app.importErrorBuiltinGuidance":
     "{fileName} couldn't open. Pick another song; if it keeps happening, reload the page.",

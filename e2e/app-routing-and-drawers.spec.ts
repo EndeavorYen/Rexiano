@@ -46,10 +46,7 @@ test.describe("App routing and drawer behavior", () => {
     await gotoLibrary(appPage);
     await loadFirstBuiltInSong(appPage);
 
-    await appPage.evaluate(() => {
-      window.location.hash = "#/menu";
-    });
-
+    await expect(appPage).toHaveURL(/#\/playback$/);
     await expect(appPage.getByTestId("playback-drawer-trigger")).toBeVisible();
 
     await openPlaybackDrawer(appPage);

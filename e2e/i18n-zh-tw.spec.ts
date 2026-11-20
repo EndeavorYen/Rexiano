@@ -30,7 +30,7 @@ test.describe("Traditional Chinese player flow", () => {
     ).toBeVisible();
     await expect(
       appPage.getByTestId("library-device-drawer-trigger"),
-    ).toContainText("鋼琴");
+    ).toHaveAccessibleName(/鋼琴/);
     const libraryAx = await appPage.locator("body").ariaSnapshot();
     expect(libraryAx).not.toMatch(FORBIDDEN_ENGLISH_UI);
 

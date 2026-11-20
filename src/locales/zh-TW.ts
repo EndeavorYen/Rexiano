@@ -20,7 +20,7 @@ export const zhTW: TranslationMap = {
   "app.importErrorParseGuidance":
     "請確認 {fileName} 是有效的 MusicXML 或 MIDI，然後重新匯入。",
   "app.importErrorMissingTitle": "最近檔案已無法使用",
-  "app.importErrorMissingGuidance": "這個檔案找不到了，請再匯入一次。",
+  "app.importErrorMissingGuidance": "找不到「{fileName}」了，請再匯入一次。",
   "app.importErrorBuiltinTitle": "這首曲子打不開",
   "app.importErrorBuiltinGuidance":
     "{fileName} 暫時打不開。先選別首曲子；如果一直這樣，請重新整理頁面。",
