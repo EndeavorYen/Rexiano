@@ -3,7 +3,20 @@
  * Manages a double-buffered sprite pool, per-frame viewport updates, and
  * practice mode visual feedback (hit flash, miss fade, combo text pop).
  */
-import { Container, NineSliceSprite, Text, TextStyle, Texture } from "pixi.js";
+import {
+  Container,
+  Graphics,
+  NineSliceSprite,
+  Text,
+  TextStyle,
+  Texture,
+} from "pixi.js";
+import {
+  BURST_POOL_SIZE,
+  HitBurstPool,
+  burstAlpha,
+  burstScale,
+} from "./hitBurst";
 
 /** Falling notes are nine-slice sprites so their rounded corners never stretch. */
 type Sprite = NineSliceSprite;
@@ -179,6 +192,37 @@ function parseHexColor(value: string | undefined): number | null {
   return Number.parseInt(match[1], 16);
 }
 
+/** Sun-yellow, same value as the `--color-hit-glow` token in both themes. */
+const HIT_GLOW_COLOR = 0xffd76a;
+/** Radius of the spark at scale 1, in px. */
+const BURST_RADIUS = 36;
+
+function nowMs(): number {
+  return globalThis.performance?.now?.() ?? Date.now();
+}
+
+/** A ring and a few short rays, drawn once and reused. */
+function createBurstGraphic(): Graphics {
+  const g = new Graphics();
+  g.circle(0, 0, BURST_RADIUS).stroke({
+    color: HIT_GLOW_COLOR,
+    width: 4,
+    alpha: 1,
+  });
+  for (let i = 0; i < 5; i++) {
+    const angle = Math.PI + (Math.PI * (i + 0.5)) / 5;
+    const inner = BURST_RADIUS * 0.8;
+    const outer = BURST_RADIUS * 1.35;
+    g.moveTo(Math.cos(angle) * inner, Math.sin(angle) * inner).lineTo(
+      Math.cos(angle) * outer,
+      Math.sin(angle) * outer,
+    );
+  }
+  g.stroke({ color: HIT_GLOW_COLOR, width: 4, alpha: 1, cap: "round" });
+  g.visible = false;
+  return g;
+}
+
 export class NoteRenderer {
   private container: Container;
   private pool: Sprite[] = [];
@@ -206,6 +250,13 @@ export class NoteRenderer {
   public showNoteLabels = true;
 
   public activeNotes = new Set<number>();
+
+  // ── Hit bursts: a fixed pool of pre-drawn sparks at the hit line ──
+  private burstLayer: Container | null = null;
+  private burstPool = new HitBurstPool();
+  private burstGraphics: Graphics[] = [];
+  private hitLineY = 0;
+  private burstShown = false;
 
   private handAssignments: Record<number, TrackHandAssignment> = {};
   private trackPreferences: Record<number, TrackRenderPreferences> = {};
@@ -239,6 +290,14 @@ export class NoteRenderer {
 
     for (let i = 0; i < INITIAL_POOL_SIZE; i++) {
       this.pool.push(this.createSprite());
+    }
+
+    this.burstLayer = new Container();
+    this.container.addChild(this.burstLayer);
+    for (let i = 0; i < BURST_POOL_SIZE; i++) {
+      const graphic = createBurstGraphic();
+      this.burstGraphics.push(graphic);
+      this.burstLayer.addChild(graphic);
     }
 
     // Pre-fill label pool (smaller than sprite pool — not every note needs a label)
@@ -290,6 +349,7 @@ export class NoteRenderer {
     this.activeNotes.clear();
     this.lastVisibleNoteCount = 0;
 
+    this.hitLineY = vp.height;
     const hitWindow = 0.05;
     const showFingering = useSettingsStore.getState().showFingering;
     const maxVisibleLabels =
@@ -421,6 +481,51 @@ export class NoteRenderer {
     // Swap fingering label buffers
     this.nextFingeringLabels = this.activeFingeringLabels;
     this.activeFingeringLabels = nextFLabels;
+
+    this.updateBursts();
+  }
+
+  /**
+   * Start a spark on the key the child just played right. The sprites already
+   * exist; this only claims a slot, so a fast run of notes costs no allocation.
+   */
+  triggerHitBurst(midi: number): void {
+    if (!this.keyPositions.has(midi)) return;
+    this.burstPool.trigger(midi, nowMs());
+  }
+
+  /** Move and fade the live sparks; a loop over the fixed pool, nothing new. */
+  private updateBursts(): void {
+    if (!this.burstPool.hasLive()) {
+      // Hide any spark that finished since last frame, then do nothing.
+      if (this.burstShown) {
+        for (const graphic of this.burstGraphics) graphic.visible = false;
+        this.burstShown = false;
+      }
+      return;
+    }
+    this.burstShown = true;
+    const now = nowMs();
+    this.burstPool.expire(now);
+    for (let i = 0; i < this.burstGraphics.length; i++) {
+      const graphic = this.burstGraphics[i];
+      const slot = this.burstPool.slots[i];
+      if (!slot.active) {
+        if (graphic.visible) graphic.visible = false;
+        continue;
+      }
+      const kp = this.keyPositions.get(slot.midi);
+      if (!kp) {
+        graphic.visible = false;
+        continue;
+      }
+      const t = this.burstPool.progress(i, now);
+      graphic.visible = true;
+      graphic.x = kp.x + kp.width / 2;
+      graphic.y = this.hitLineY - 8 - t * 16;
+      graphic.alpha = burstAlpha(t);
+      graphic.scale.set(burstScale(t));
+    }
   }
 
   /**
@@ -439,6 +544,9 @@ export class NoteRenderer {
     this._comboHandles.clear();
 
     this.container.removeChildren();
+    this.burstLayer = null;
+    this.burstGraphics.length = 0;
+    this.burstPool.reset();
     this.pool.length = 0;
     this.active.clear();
     this.nextActive.clear();

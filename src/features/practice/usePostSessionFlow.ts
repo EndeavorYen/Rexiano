@@ -10,8 +10,6 @@ import { applyPracticeModeChangeForSong } from "./practiceSetupControlActions";
 import type { PracticeSessionIntent } from "./sessionIntent";
 import { shouldPromptForPracticeMode } from "./sessionIntent";
 
-const CELEBRATION_DURATION_MS = 2200;
-
 interface CompletionCelebrationInput {
   wasPlaying: boolean;
   isPlaying: boolean;
@@ -41,7 +39,6 @@ interface ModeSelectionInput {
 export interface PostSessionFlowState {
   showModeModal: boolean;
   showCelebration: boolean;
-  showStats: boolean;
   completedSessionScore: PracticeScore | null;
   displayScore: PracticeScore;
   handleModeSelect: (mode: PracticeMode) => void;
@@ -50,7 +47,6 @@ export interface PostSessionFlowState {
   /** Replay the current song in Wait mode (end-card advice after Watch) */
   handleTryWait: () => void;
   handleChooseSong: () => void;
-  handleViewStats: () => void;
   hidePostSessionFlow: () => void;
   showCelebrationForScore: (score: PracticeScore) => void;
 }
@@ -71,11 +67,6 @@ export function shouldShowCompletionCelebration({
   if (!endedNearClose) return false;
   if (mode === "watch") return true;
   return totalNotes > 0;
-}
-
-export function shouldAdvanceCelebrationToStats(_mode: PracticeMode): boolean {
-  void _mode;
-  return false;
 }
 
 export function shouldShowModeSelectionModal({
@@ -155,7 +146,6 @@ export function usePostSessionFlow({
   const getSessionIntentRef = useRef(getSessionIntent);
   const [showModeModal, setShowModeModal] = useState(false);
   const [showCelebration, setShowCelebration] = useState(false);
-  const [showStats, setShowStats] = useState(false);
   const [completedSessionScore, setCompletedSessionScore] =
     useState<PracticeScore | null>(null);
   const displayScore = completedSessionScore ?? score;
@@ -176,7 +166,6 @@ export function usePostSessionFlow({
         );
         if (state.song) {
           setShowCelebration(false);
-          setShowStats(false);
           setCompletedSessionScore(null);
         }
       }
@@ -200,27 +189,13 @@ export function usePostSessionFlow({
       ) {
         setCompletedSessionScore(currentScore);
         setShowCelebration(true);
-        setShowStats(false);
       }
     });
   }, []);
 
-  useEffect(() => {
-    if (!showCelebration) return;
-    if (!shouldAdvanceCelebrationToStats(usePracticeStore.getState().mode)) {
-      return;
-    }
-    const timer = setTimeout(() => {
-      setShowCelebration(false);
-      setShowStats(true);
-    }, CELEBRATION_DURATION_MS);
-    return () => clearTimeout(timer);
-  }, [showCelebration]);
-
   const resetPostSessionState = useCallback(() => {
     setShowModeModal(false);
     setShowCelebration(false);
-    setShowStats(false);
     setCompletedSessionScore(null);
   }, []);
 
@@ -284,24 +259,17 @@ export function usePostSessionFlow({
 
   const handleChooseSong = dismissToLibrary;
 
-  const handleViewStats = useCallback(() => {
-    setShowCelebration(false);
-    setShowStats(true);
-  }, []);
-
   const hidePostSessionFlow = resetPostSessionState;
 
   const showCelebrationForScore = useCallback((score: PracticeScore) => {
     setCompletedSessionScore(score);
     setShowModeModal(false);
     setShowCelebration(true);
-    setShowStats(false);
   }, []);
 
   return {
     showModeModal,
     showCelebration,
-    showStats,
     completedSessionScore,
     displayScore,
     handleModeSelect,
@@ -309,7 +277,6 @@ export function usePostSessionFlow({
     handlePracticeAgain,
     handleTryWait,
     handleChooseSong,
-    handleViewStats,
     hidePostSessionFlow,
     showCelebrationForScore,
   };

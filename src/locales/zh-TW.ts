@@ -448,22 +448,22 @@ export const zhTW: TranslationMap = {
   "insights.sessionAccuracy": "第 {session} 次：{accuracy}%",
 
   // ── Celebration ────────────────────────────────────────────────
-  "celebration.amazing.title": "你是最棒的！",
-  "celebration.amazing.subtitle": "真的彈得非常好！",
-  "celebration.great.title": "做得好！",
-  "celebration.great.subtitle": "你每次都在進步！",
-  "celebration.encourage.title": "很努力！",
-  "celebration.encourage.subtitle": "每次練習都讓你更強！",
+  "celebration.amazing.title": "三顆星！你好厲害！",
+  "celebration.amazing.subtitle": "這首你彈得又穩又準。",
+  "celebration.great.title": "彈得真好！",
+  "celebration.great.subtitle": "再彈一次，星星會更多。",
+  "celebration.encourage.title": "你完成了！",
+  "celebration.encourage.subtitle": "慢慢來，每彈一次都會更熟。",
   "celebration.listen.title": "聽完了！",
   "celebration.listen.subtitle": "接下來跟著彈彈看，曲子會停下來等你。",
-  "celebration.listen.tryWait": "試試跟彈",
+  "celebration.listen.tryWait": "跟著彈",
   "celebration.listen.listenAgain": "再聽一次",
-  "celebration.newRecord": "新紀錄！",
+  "celebration.newRecord": "新的最佳成績！",
   "celebration.playAgain": "再玩一次！",
   "celebration.playAgainAtSpeed": "用 {speed} 再彈一次",
   "celebration.oneMoreTime": "再試一次！",
   "celebration.tryAgain": "繼續努力！",
-  "celebration.pickSong": "選首曲子",
+  "celebration.pickSong": "回地圖",
   "celebration.accuracy": "準確率",
   "celebration.nextAction.label": "下一步",
   "celebration.nextAction.slowDown.title": "放慢一點",
@@ -475,8 +475,7 @@ export const zhTW: TranslationMap = {
   "celebration.nextAction.repeatOnce.title": "再練一次",
   "celebration.nextAction.repeatOnce.body": "趁手感還在，再完整彈一次。",
   "celebration.nextAction.nextSong.title": "選下一首",
-  "celebration.nextAction.nextSong.body":
-    "這次已經很穩了，可以選一首同等級的新曲子。",
+  "celebration.nextAction.nextSong.body": "這次很穩了，往下一首前進吧。",
   "celebration.starRating": "獲得 {filled} 顆星，共 {total} 顆",
 
   // ── Piano Roll Editor ─────────────────────────────────────────
@@ -525,7 +524,7 @@ export const zhTW: TranslationMap = {
   "sheetMusic.displayMode": "顯示模式",
 
   // ── Mode Selection ─────────────────────────────────────────────
-  "modeSelect.title": "你想怎麼練習？",
+  "modeSelect.title": "今天怎麼練？",
   "modeSelect.subtitle": "選擇你的練習方式",
   "modeSelect.watchDesc": "觀看音符下落並聆聽",
   "modeSelect.waitDesc": "樂曲等待你彈奏每個音符",
@@ -699,4 +698,17 @@ export const zhTW: TranslationMap = {
   "songbook.preview.again": "再彈一次",
   "songbook.preview.close": "關閉",
   "songbook.preview.edit": "改曲名",
+
+  // ── UI round 1: play ──
+  "practice.hudPlayed": "已彈 {played}/{total}",
+  "practice.hudStars": "目前 {filled} 顆星，共 {total} 顆",
+  "modeSelect.watchTitle": "先聽一次",
+  "modeSelect.watchKidDesc": "看著音符落下，把整首曲子聽完。",
+  "modeSelect.waitTitle": "跟著彈",
+  "modeSelect.waitKidDesc": "曲子會停下來，等你按對琴鍵。",
+  "celebration.again": "再彈一次",
+  "celebration.nextSong": "下一首：{title}",
+  "celebration.moreStars": "星星變多了！",
+  "celebration.bestScore": "新的最佳成績！",
+  "celebration.hitCount": "彈對 {hit}／{total} 個音（{accuracy}%）",
 };

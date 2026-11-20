@@ -60,8 +60,26 @@ vi.mock("pixi.js", () => {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars, @typescript-eslint/no-empty-function
     constructor(_opts?: unknown) {}
   }
+  class MockGraphics extends MockSprite {
+    circle(): this {
+      return this;
+    }
+    moveTo(): this {
+      return this;
+    }
+    lineTo(): this {
+      return this;
+    }
+    fill(): this {
+      return this;
+    }
+    stroke(): this {
+      return this;
+    }
+  }
   return {
     Container: MockContainer,
+    Graphics: MockGraphics,
     Sprite: MockSprite,
     NineSliceSprite: MockSprite,
     Text: MockText,
@@ -537,6 +555,42 @@ describe("NoteRenderer", () => {
       expect(sprite.alpha).toBeLessThan(originalAlpha);
 
       vi.unstubAllGlobals();
+    });
+  });
+
+  describe("hit burst", () => {
+    type BurstView = {
+      burstGraphics: { visible: boolean; x: number; y: number }[];
+    };
+    const song = (): ParsedSong =>
+      makeSong([{ notes: [{ midi: 60, time: 10, duration: 1 }] }]);
+
+    test("a correct hit lights one spark at the key on the hit line", () => {
+      const view = renderer as unknown as BurstView;
+      renderer.triggerHitBurst(60);
+      renderer.update(song(), makeViewport());
+      const lit = view.burstGraphics.filter((g) => g.visible);
+      expect(lit).toHaveLength(1);
+      expect(lit[0].y).toBeLessThanOrEqual(600);
+      expect(lit[0].y).toBeGreaterThan(560);
+    });
+
+    test("keys outside the shown range start nothing", () => {
+      const view = renderer as unknown as BurstView;
+      renderer.triggerHitBurst(5);
+      renderer.update(song(), makeViewport());
+      expect(view.burstGraphics.some((g) => g.visible)).toBe(false);
+    });
+
+    test("a burst spawns no sprites: the pool size is fixed", () => {
+      const view = renderer as unknown as BurstView;
+      const before = view.burstGraphics.length;
+      for (let i = 0; i < 40; i++) renderer.triggerHitBurst(60 + (i % 12));
+      renderer.update(song(), makeViewport());
+      expect(view.burstGraphics).toHaveLength(before);
+      expect(
+        view.burstGraphics.filter((g) => g.visible).length,
+      ).toBeLessThanOrEqual(before);
     });
   });
 

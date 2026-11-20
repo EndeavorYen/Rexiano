@@ -6,7 +6,6 @@ export type CelebrationVariant = "scored" | "listen";
 export interface CelebrationPresentation {
   variant: CelebrationVariant;
   showScore: boolean;
-  chooseSongGoesToStats: boolean;
 }
 
 export function getCelebrationPresentation({
@@ -20,14 +19,12 @@ export function getCelebrationPresentation({
     return {
       variant: "listen",
       showScore: false,
-      chooseSongGoesToStats: false,
     };
   }
 
   return {
     variant: "scored",
     showScore: totalNotes > 0,
-    chooseSongGoesToStats: false,
   };
 }
 
@@ -55,16 +52,24 @@ export function isNewRecord(
   return previousBestAccuracy === null || accuracy > previousBestAccuracy;
 }
 
-export type CelebrationActionId = "try-wait" | "play-again" | "choose-song";
+export type CelebrationActionId =
+  | "next-song"
+  | "try-wait"
+  | "play-again"
+  | "choose-song";
 
 /**
- * End-card buttons, primary first. After a Watch run the advice is "try
- * playing along", so that is the primary button rather than a note (#310).
+ * End-card buttons, primary first; the card shows exactly one solid button.
+ * Three stars move on to the next song (when there is one). Fewer stars
+ * replay. After a Watch run the advice is "play along" (#310).
  */
 export function getCelebrationActions(
   variant: CelebrationPresentation["variant"],
+  options: { stars?: number; hasNextSong?: boolean } = {},
 ): CelebrationActionId[] {
-  return variant === "listen"
-    ? ["try-wait", "play-again", "choose-song"]
-    : ["play-again", "choose-song"];
+  if (variant === "listen") return ["try-wait", "play-again", "choose-song"];
+  if (options.stars === 3 && options.hasNextSong) {
+    return ["next-song", "play-again", "choose-song"];
+  }
+  return ["play-again", "choose-song"];
 }

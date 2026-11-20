@@ -32,7 +32,10 @@ import { useMidiImportActions } from "./features/fileImport/useMidiImportActions
 import { FileImportErrorAlert } from "./features/fileImport/FileImportErrorAlert";
 import { buildMidiDiagnosticNotice } from "./features/midiDiagnostics/midiDiagnosticNotice";
 import { useRecentFiles } from "./hooks/useRecentFiles";
-import { displayTitleForName } from "./features/songLibrary/songTitle";
+import {
+  displayTitleForName,
+  songDisplayTitle,
+} from "./features/songLibrary/songTitle";
 import {
   clearPendingRecent,
   flushPendingRecent,
@@ -47,6 +50,7 @@ import { useAppNavigation } from "./features/routing/useAppNavigation";
 import { useAppE2eFixtures } from "./hooks/useAppE2eFixtures";
 import { PlaybackHeader } from "./features/practice/PlaybackHeader";
 import { PlaybackDrawer } from "./features/practice/PlaybackDrawer";
+import { useNextSong } from "./features/practice/useNextSong";
 import { usePracticeInsights } from "./features/practice/usePracticeInsights";
 import { getRetrySpeed } from "./features/practice/nextPracticeAction";
 import { applyPracticeSpeedChangeForSong } from "./features/practice/practiceSetupControlActions";
@@ -182,6 +186,7 @@ function App(): React.JSX.Element {
     audioReadySongRef,
     pendingPlaybackStartSongRef,
     attemptPendingPlaybackStart,
+    requestPlaybackStart,
     cancelPendingPlaybackStart,
     showModeModal,
     showCelebration,
@@ -193,7 +198,6 @@ function App(): React.JSX.Element {
     handleTryWait,
     hidePostSessionFlow,
     showCelebrationForScore,
-    modeSelectionDefault,
   } = usePracticeSessionFlow({
     song,
     sessionIntent,
@@ -236,6 +240,17 @@ function App(): React.JSX.Element {
     speed,
   });
 
+  const { nextSong, handleNextSong } = useNextSong({
+    song,
+    score: showCelebration ? displayScore : null,
+    showCelebration,
+    loadSong,
+    resetPlayback: reset,
+    setSessionIntent,
+    requestPlaybackStart,
+    cancelPendingPlaybackStart,
+  });
+
   // Replay applies the end card's speed advice (#290).
   const handlePracticeAgainWithAdvice = useCallback(() => {
     const retrySpeed = getRetrySpeed(nextPracticeAction);
@@ -268,10 +283,12 @@ function App(): React.JSX.Element {
     activeNotes,
     midiActiveNotes,
     wrongNotes,
+    hitNotes,
     splitFocusPanel,
     setSplitFocusPanel,
     handleActiveNotesChange,
     handleWrongPracticeInput,
+    handleCorrectPracticeInput,
   } = usePracticeNotes();
 
   const [viewportSize, setViewportSize] = useState(() =>
@@ -303,6 +320,7 @@ function App(): React.JSX.Element {
     song,
     audioRef,
     handleWrongPracticeInput,
+    handleCorrectPracticeInput,
   );
 
   const handleFallingNoteRendererReady = useCallback(
@@ -626,9 +644,6 @@ function App(): React.JSX.Element {
               }}
               onMouseEnter={() => isSplitMode && setSplitFocusPanel("falling")}
             >
-              <WaitInputHint
-                onConnectKeyboard={() => setShowPlaybackDrawer(true)}
-              />
               <FallingNotesCanvas
                 onActiveNotesChange={handleActiveNotesChange}
                 onNoteRendererReady={handleFallingNoteRendererReady}
@@ -638,6 +653,10 @@ function App(): React.JSX.Element {
             </div>
           </div>
 
+          <WaitInputHint
+            onConnectKeyboard={() => setShowPlaybackDrawer(true)}
+          />
+
           <TransportBar compact={compactPlaybackChrome} />
 
           <PianoKeyboard
@@ -645,6 +664,7 @@ function App(): React.JSX.Element {
             // note lit (#310).
             activeNotes={showCelebration ? NO_NOTES : activeNotes}
             midiActiveNotes={midiActiveNotes}
+            hitNotes={hitNotes}
             missedNotes={wrongNotes}
             height={keyboardHeight}
             compactLabels={compactKeyLabels}
@@ -657,7 +677,7 @@ function App(): React.JSX.Element {
       {/* Mode selection modal */}
       {song && showModeModal && (
         <ModeSelectionModal
-          defaultMode={modeSelectionDefault}
+          songTitle={displayTitleForName(song.fileName, songCatalogue, lang)}
           onSelect={handleModeSelect}
           onDismiss={handleModeDismiss}
         />
@@ -674,6 +694,10 @@ function App(): React.JSX.Element {
           songId={songId}
           nextAction={nextPracticeAction}
           mode={mode}
+          nextSongTitle={
+            nextSong ? songDisplayTitle(nextSong, lang).primary : undefined
+          }
+          onNextSong={nextSong ? () => void handleNextSong() : undefined}
         />
       )}
     </div>

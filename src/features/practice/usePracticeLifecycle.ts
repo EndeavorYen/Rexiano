@@ -35,9 +35,6 @@ interface AudioRef {
   scheduler: AudioScheduler | null;
 }
 
-/** Streak milestones that trigger a combo pop — defined once, not on every hit. */
-const COMBO_MILESTONES = new Set([5, 10, 25, 50, 100]);
-
 function syncCurrentPracticeMetronome(): void {
   const engine = getMetronome();
   const song = useSongStore.getState().song;
@@ -206,6 +203,7 @@ export function usePracticeLifecycle(
   song: ParsedSong | null,
   audioRef: React.MutableRefObject<AudioRef>,
   onWrongInput?: (midi: number) => void,
+  onCorrectInput?: (midi: number) => void,
 ): PracticeLifecycleResult {
   const noteRendererRef = useRef<NoteRenderer | null>(null);
   const wrongInputSequenceRef = useRef(0);
@@ -252,11 +250,10 @@ export function usePracticeLifecycle(
             }
           }
         }
-        // Show combo at milestones
-        const score = usePracticeStore.getState().score;
-        if (nr && COMBO_MILESTONES.has(score.currentStreak)) {
-          nr.showCombo(score.currentStreak, 400, 200);
-        }
+        // A spark at the hit line and a glow on the key. The streak numbers
+        // live in the HUD, not over the falling notes.
+        nr?.triggerHitBurst(midi);
+        onCorrectInput?.(midi);
       },
       onMiss: (midi, time) => {
         const key = `${midi}:${Math.round(time * 1e6)}`;
@@ -316,7 +313,7 @@ export function usePracticeLifecycle(
     return () => {
       disposePracticeEngines();
     };
-  }, [song, audioRef, onWrongInput]);
+  }, [song, audioRef, onWrongInput, onCorrectInput]);
 
   // ── Sync practice store → engine singletons (permanent subscriber) ──
   useEffect(() => {

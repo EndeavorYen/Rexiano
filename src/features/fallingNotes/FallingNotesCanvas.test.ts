@@ -62,9 +62,27 @@ vi.mock("pixi.js", () => {
       this.children.length = 0;
     }
   }
+  class MockGraphics extends MockSprite {
+    circle(): this {
+      return this;
+    }
+    moveTo(): this {
+      return this;
+    }
+    lineTo(): this {
+      return this;
+    }
+    fill(): this {
+      return this;
+    }
+    stroke(): this {
+      return this;
+    }
+  }
   return {
     Application: vi.fn(),
     Container: MockContainer,
+    Graphics: MockGraphics,
     Sprite: MockSprite,
     NineSliceSprite: MockSprite,
     Text: MockText,

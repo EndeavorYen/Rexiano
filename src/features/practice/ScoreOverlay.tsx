@@ -1,89 +1,62 @@
+import { useMemo } from "react";
 import { usePracticeStore } from "@renderer/stores/usePracticeStore";
+import { useSongStore } from "@renderer/stores/useSongStore";
 import { useTranslation } from "@renderer/i18n/useTranslation";
-import type { TranslationKey } from "@renderer/i18n/types";
+import { StarRow } from "../progress/StarRow";
+import { MAX_STARS } from "../progress/stars";
+import { buildScoreHud, countPlayableNotes } from "./scoreHud";
+import "./play-feedback.css";
 
-function getEncouragementKey(accuracy: number, streak: number): TranslationKey {
-  if (streak >= 25) return "practice.encourageOnFire";
-  if (streak >= 10) return "practice.encourageStreak";
-  if (accuracy >= 95) return "practice.encouragePerfect";
-  if (accuracy >= 85) return "practice.encourageGreat";
-  if (accuracy >= 70) return "practice.encourageKeepGoing";
-  if (accuracy >= 50) return "practice.encourageGettingThere";
-  return "practice.encourageYouCanDoIt";
-}
-
+/**
+ * The live HUD: stars so far, how many notes are played, and the streak.
+ * A fixed-width pill in the title bar, so it never covers the falling notes
+ * and never jumps as the numbers change. Watch mode has no scoring, so no HUD.
+ */
 export function ScoreOverlay(): React.JSX.Element {
   const { t } = useTranslation();
   const score = usePracticeStore((s) => s.score);
   const mode = usePracticeStore((s) => s.mode);
+  const activeTracks = usePracticeStore((s) => s.activeTracks);
+  const song = useSongStore((s) => s.song);
 
-  // In watch mode there's no scoring
-  if (mode === "watch") return <></>;
-  // Don't show overlay until practice begins
-  if (score.totalNotes === 0) return <></>;
-
-  const encouragement = t(
-    getEncouragementKey(score.accuracy, score.currentStreak),
+  const totalNotes = useMemo(
+    () => (song ? countPlayableNotes(song.tracks, activeTracks) : 0),
+    [song, activeTracks],
   );
+  const hud = buildScoreHud({ mode, score, totalNotes });
+  if (!hud) return <></>;
 
   return (
     <div
-      className="fixed top-3 right-3 z-50 flex flex-col items-end gap-1 px-4 py-3 rounded-xl pointer-events-none select-none animate-score-enter"
-      style={{
-        background: "color-mix(in srgb, var(--color-surface) 80%, transparent)",
-        border:
-          "1px solid color-mix(in srgb, var(--color-border) 60%, transparent)",
-        boxShadow: "0 4px 24px rgba(0,0,0,0.08), 0 1px 4px rgba(0,0,0,0.04)",
-        backdropFilter: "blur(16px)",
-        WebkitBackdropFilter: "blur(16px)",
-      }}
+      className="play-hud"
       role="status"
       aria-label={t("practice.scoreLabel")}
+      data-testid="score-hud"
     >
-      {/* Encouragement text */}
-      <span
-        className="text-xs font-display font-semibold"
-        style={{ color: "var(--color-accent-text)" }}
-      >
-        {encouragement}
+      <StarRow
+        stars={hud.stars}
+        size={18}
+        label={t("practice.hudStars", {
+          filled: hud.stars,
+          total: MAX_STARS,
+        })}
+      />
+      <span className="play-hud-progress" data-testid="score-hud-progress">
+        {t("practice.hudPlayed", { played: hud.played, total: hud.total })}
       </span>
-
-      {/* Accuracy */}
-      <div className="flex items-baseline gap-1.5">
-        <span
-          className="text-2xl font-display font-bold tabular-nums leading-none"
-          style={{ color: "var(--color-text)" }}
-        >
-          {Math.round(score.accuracy)}
-        </span>
-        <span
-          className="text-sm font-display font-semibold"
-          style={{ color: "var(--color-text-muted)" }}
-        >
-          %
-        </span>
-      </div>
-
-      {/* Combo streak with pop animation */}
-      {score.currentStreak > 1 && (
-        <div
-          className="flex items-baseline gap-1 mt-0.5"
-          key={`combo-${score.currentStreak}`}
-        >
+      <span className="play-hud-combo-slot">
+        {hud.combo && (
           <span
-            className="text-sm font-display font-bold tabular-nums"
-            style={{ color: "var(--color-combo-text, var(--color-accent))" }}
+            // A new key restarts the pop on every note in the streak.
+            key={hud.combo.count}
+            className={`play-hud-combo${hud.combo.milestone ? " is-milestone" : ""}`}
+            data-testid="score-hud-combo"
           >
-            {score.currentStreak}
+            <span className="play-hud-combo-count">{hud.combo.count}</span>
+            <span className="play-hud-combo-label">{t("practice.combo")}</span>
           </span>
-          <span
-            className="text-[10px] font-body"
-            style={{ color: "var(--color-text-muted)" }}
-          >
-            {t("practice.combo")}
-          </span>
-        </div>
-      )}
+        )}
+      </span>
     </div>
   );
 }

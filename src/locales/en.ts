@@ -470,23 +470,23 @@ export const en: TranslationMap = {
   "insights.sessionAccuracy": "Session {session}: {accuracy}%",
 
   // ── Celebration ────────────────────────────────────────────────
-  "celebration.amazing.title": "You're a star!",
-  "celebration.amazing.subtitle": "That was absolutely wonderful!",
-  "celebration.great.title": "Well done!",
-  "celebration.great.subtitle": "You're getting better every time!",
-  "celebration.encourage.title": "Great effort!",
-  "celebration.encourage.subtitle": "Every practice makes you stronger!",
+  "celebration.amazing.title": "Three stars! Amazing!",
+  "celebration.amazing.subtitle": "You played this one smooth and steady.",
+  "celebration.great.title": "Nicely played!",
+  "celebration.great.subtitle": "Play it once more for more stars.",
+  "celebration.encourage.title": "You finished it!",
+  "celebration.encourage.subtitle": "Take it slow. Each try makes it easier.",
   "celebration.listen.title": "Nice listen!",
   "celebration.listen.subtitle":
     "Next, play along: the song will wait for each note.",
-  "celebration.listen.tryWait": "Try playing along",
+  "celebration.listen.tryWait": "Play along",
   "celebration.listen.listenAgain": "Listen again",
-  "celebration.newRecord": "New Record!",
+  "celebration.newRecord": "New best score!",
   "celebration.playAgain": "Play Again!",
   "celebration.playAgainAtSpeed": "Play again at {speed}",
   "celebration.oneMoreTime": "One More Time!",
   "celebration.tryAgain": "Try Again!",
-  "celebration.pickSong": "Pick a Song",
+  "celebration.pickSong": "Back to map",
   "celebration.accuracy": "Accuracy",
   "celebration.nextAction.label": "Next step",
   "celebration.nextAction.slowDown.title": "Slow down",
@@ -500,7 +500,7 @@ export const en: TranslationMap = {
     "Play it once more while the pattern is fresh.",
   "celebration.nextAction.nextSong.title": "Choose the next song",
   "celebration.nextAction.nextSong.body":
-    "That pass is solid. Pick a new song near this level.",
+    "That pass is solid. On to the next song.",
   "celebration.starRating": "{filled} out of {total} stars",
 
   // ── Piano Roll Editor ─────────────────────────────────────────
@@ -552,7 +552,7 @@ export const en: TranslationMap = {
   "sheetMusic.displayMode": "Display mode",
 
   // ── Mode Selection ─────────────────────────────────────────────
-  "modeSelect.title": "How do you want to play?",
+  "modeSelect.title": "How shall we play today?",
   "modeSelect.subtitle": "Choose your practice style",
   "modeSelect.watchDesc": "Watch the notes fall and listen",
   "modeSelect.waitDesc": "Music waits for you to play each note",
@@ -736,4 +736,19 @@ export const en: TranslationMap = {
   "songbook.preview.again": "Play again",
   "songbook.preview.close": "Close",
   "songbook.preview.edit": "Edit details",
+
+  // ── UI round 1: play ──
+  "practice.hudPlayed": "Played {played}/{total}",
+  "practice.hudStars": "{filled} of {total} stars so far",
+  "modeSelect.watchTitle": "Listen first",
+  "modeSelect.watchKidDesc": "Watch the notes fall and hear the whole song.",
+  "modeSelect.waitTitle": "Play along",
+  "modeSelect.waitKidDesc":
+    "The song stops and waits until you play the right key.",
+  "celebration.again": "Play again",
+  "celebration.nextSong": "Next song: {title}",
+  "celebration.moreStars": "More stars!",
+  "celebration.bestScore": "New best score!",
+  "celebration.hitCount":
+    "You played {hit} of {total} notes right ({accuracy}%)",
 };

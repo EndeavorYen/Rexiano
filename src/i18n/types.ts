@@ -667,6 +667,19 @@ export interface TranslationMap {
   "songbook.preview.again": string;
   "songbook.preview.close": string;
   "songbook.preview.edit": string;
+
+  // ── UI round 1: play ──
+  "practice.hudPlayed": string;
+  "practice.hudStars": string;
+  "modeSelect.watchTitle": string;
+  "modeSelect.watchKidDesc": string;
+  "modeSelect.waitTitle": string;
+  "modeSelect.waitKidDesc": string;
+  "celebration.again": string;
+  "celebration.nextSong": string;
+  "celebration.moreStars": string;
+  "celebration.bestScore": string;
+  "celebration.hitCount": string;
 }
 
 /**
