@@ -184,8 +184,15 @@
   border-color: var(--color-accent);
 }
 
-.hm-done-mark {
-  margin-left: 6px;
+.hm-ring-wrap {
+  position: relative;
+  display: grid;
+  place-items: center;
+  flex: none;
+}
+
+.hm-ring-wrap .hm-done-mark {
+  position: absolute;
   color: var(--color-success-text);
 }
 

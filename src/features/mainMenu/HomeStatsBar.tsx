@@ -21,21 +21,33 @@ export function HomeStatsBar({
   maxStars,
 }: HomeStatsBarProps): React.JSX.Element {
   const { t } = useTranslation();
+  const goalReached = goal.practicedMinutes >= goal.targetMinutes;
   const dayLetters = [...t("map.weekdayShort")];
   return (
     <div className="set-card hm-stats" data-testid="home-stats">
       <div className="hm-stat" data-testid="home-stat-today">
-        <svg className="hm-ring" viewBox="0 0 52 52" aria-hidden="true">
-          <circle cx="26" cy="26" r={RING_RADIUS} className="hm-ring-track" />
-          <circle
-            cx="26"
-            cy="26"
-            r={RING_RADIUS}
-            className="hm-ring-value"
-            strokeDasharray={`${(goal.completionRatio * RING_LENGTH).toFixed(1)} ${RING_LENGTH.toFixed(1)}`}
-            transform="rotate(-90 26 26)"
-          />
-        </svg>
+        <span className="hm-ring-wrap">
+          <svg className="hm-ring" viewBox="0 0 52 52" aria-hidden="true">
+            <circle cx="26" cy="26" r={RING_RADIUS} className="hm-ring-track" />
+            <circle
+              cx="26"
+              cy="26"
+              r={RING_RADIUS}
+              className="hm-ring-value"
+              strokeDasharray={`${(goal.completionRatio * RING_LENGTH).toFixed(1)} ${RING_LENGTH.toFixed(1)}`}
+              transform="rotate(-90 26 26)"
+            />
+          </svg>
+          {goalReached && (
+            <Check
+              className="hm-done-mark"
+              size={20}
+              strokeWidth={3.5}
+              role="img"
+              aria-label={t("map.goalDone")}
+            />
+          )}
+        </span>
         <div className="hm-stat-text">
           <span className="hm-k">{t("map.today")}</span>
           <span className="hm-v">
@@ -44,14 +56,6 @@ export function HomeStatsBar({
               {" / "}
               {goal.targetMinutes} {t("map.minutesUnit")}
             </small>
-            {goal.practicedMinutes >= goal.targetMinutes && (
-              <Check
-                className="hm-done-mark"
-                size={20}
-                strokeWidth={3}
-                aria-label={t("map.goalDone")}
-              />
-            )}
           </span>
         </div>
       </div>
