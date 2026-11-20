@@ -308,6 +308,10 @@
 }
 
 /* The unit you are in: the same "selected" look as everywhere else. */
+.hm-unit-chip.is-here b {
+  color: var(--color-text);
+}
+
 .hm-unit-chip.is-here,
 .hm-unit-chip.is-here:hover {
   border: 2px solid var(--color-accent);
@@ -846,10 +850,18 @@
   left: calc(50% + var(--hm-d) / 2 + 14px);
 }
 
-/* The card already says the name and length (the button keeps an aria-label). */
+/* The card already says the name and length: hide them from the eye only,
+   so the button's accessible name still comes from its own text. */
 .is-selected .hm-name,
 .is-selected .hm-meta {
-  display: none;
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
 }
 
 /* Quiet motion: no halo pulse. */

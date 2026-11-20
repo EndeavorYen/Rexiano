@@ -613,13 +613,6 @@ const StationNode = memo(function StationNode({
         type="button"
         className="hm-node"
         aria-pressed={selected}
-        // The name and length are hidden on the open station (the card says
-        // them), so the button keeps its full name for screen readers.
-        aria-label={
-          selected
-            ? `${station.index + 1}. ${title}, ${starsLabel}, ${secondsLabel}`
-            : undefined
-        }
         data-testid={`map-station-${station.song.id}`}
         data-station-id={station.song.id}
         data-status={station.status}
