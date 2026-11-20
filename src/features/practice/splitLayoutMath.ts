@@ -10,6 +10,8 @@ export const CHROME_VERTICAL_PADDING = 34;
 export const SPLIT_SHEET_MIN = 132;
 /** A treble-only score (80 px staff + margins at 0.6 zoom still fits) */
 export const SPLIT_SHEET_MIN_TREBLE = 96;
+/** ...and never needs to be taller than one staff at full zoom (116 x 1.35) */
+export const SPLIT_SHEET_MAX_TREBLE = 160;
 /** The falling-notes lane gets at least this much before the score grows. */
 export const SPLIT_FALLING_TARGET = 280;
 /**
@@ -143,7 +145,7 @@ export function calculateSplitLayoutDimensions({
             estimatedWorkspaceHeight - SPLIT_FALLING_TARGET,
           ),
           sheetMin,
-          SPLIT_SHEET_MAX,
+          hasBassStaff ? SPLIT_SHEET_MAX : SPLIT_SHEET_MAX_TREBLE,
         ),
       )
     : undefined;

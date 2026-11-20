@@ -741,6 +741,10 @@
   .display-mode-label {
     display: none;
   }
+  .display-mode-btn {
+    min-width: 44px;
+    padding: 0 10px;
+  }
 }
 
 /* The tools column is narrower than the title; keep the toggle compact. */

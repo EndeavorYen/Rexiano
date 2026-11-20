@@ -176,3 +176,13 @@ describe("falling-notes lane first (round 3)", () => {
     expect(d.splitFallingAvailableHeight).toBeGreaterThanOrEqual(280);
   });
 });
+
+test("a treble-only score never gets a sheet panel taller than one staff needs", () => {
+  const d = calculateSplitLayoutDimensions({
+    viewportHeight: 1180,
+    isSplitMode: true,
+    isNarrowViewport: true,
+    hasBassStaff: false,
+  });
+  expect(d.splitSheetHeight!).toBeLessThanOrEqual(160);
+});
