@@ -85,7 +85,7 @@ const INITIAL_POOL_SIZE = 512;
 /** Frames around the note(s) to play now; a chord rarely needs more. */
 const HALO_POOL_SIZE = 16;
 /** How far the frame sticks out past the note, per side, in px. */
-const HALO_SPREAD = 3;
+const HALO_SPREAD = 4;
 
 /** Minimum note rectangle height (px) to show a label inside it. */
 const MIN_HEIGHT_FOR_LABEL = 16;
@@ -453,7 +453,7 @@ export class NoteRenderer {
           halo.y = sprite.y - HALO_SPREAD;
           halo.width = sprite.width + HALO_SPREAD * 2;
           halo.height = sprite.height + HALO_SPREAD * 2;
-          halo.tint = lerpColor(color, 0xffffff, 0.75);
+          halo.tint = lerpColor(color, 0xffffff, 0.92);
           halo.visible = true;
           haloCount += 1;
         }
