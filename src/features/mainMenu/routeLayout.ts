@@ -4,11 +4,11 @@
  * real pixels, so the SVG route and the buttons always line up.
  */
 export const ROUTE_WIDTH = 1000;
-export const ROW_PITCH = 232;
-export const REGION_HEADER = 64;
+export const ROW_PITCH = 220;
+export const REGION_HEADER = 100;
 /** Extra height reserved under a row while a station card is open. */
 export const CARD_SPACE = 176;
-const TOP_PAD = 70;
+const TOP_PAD = 150;
 const BOTTOM_PAD = 90;
 
 export interface LaidOutStation {
@@ -105,9 +105,9 @@ export function layoutRoute({
     if (size === 0) return;
     const rr = regionRows[flags.length];
     const first = stations[firstStation];
-    flags.push({ x: first.x, y: (rowTop.get(rr.first) ?? 0) - 62 });
+    flags.push({ x: first.x, y: (rowTop.get(rr.first) ?? 0) - 146 });
     regionBands.push({
-      top: flags.length === 1 ? 0 : (rowTop.get(rr.first) ?? 0) - 90,
+      top: flags.length === 1 ? 0 : (rowTop.get(rr.first) ?? 0) - 168,
       bottom: 0,
     });
     firstStation += size;

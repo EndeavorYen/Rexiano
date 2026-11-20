@@ -167,22 +167,13 @@ export function MainMenu({
             testId="main-menu-piano"
             quiet
           />
-          {firstRun && (
-            <div className="set-card hm-invite" data-testid="map-first-invite">
-              <div>
-                <h2 className="m-0 text-base font-bold">
-                  {t("map.firstInvite")}
-                </h2>
-                <p
-                  className="m-0 text-sm"
-                  style={{ color: "var(--color-text-muted)" }}
-                >
-                  {t("map.firstInviteHint")}
-                </p>
-              </div>
-            </div>
-          )}
         </section>
+
+        {firstRun && (
+          <p className="hm-invite" data-testid="map-first-invite">
+            <b>{t("map.firstInvite")}</b> {t("map.firstInviteHint")}
+          </p>
+        )}
 
         {showRecents && (
           <section

@@ -28,6 +28,8 @@ interface AdventureMapProps {
   onPlay: (songId: string) => void;
 }
 
+/** From a station centre down to the bottom of its open card */
+const CARD_REACH = 360;
 const WIDE_QUERY = "(min-width: 900px)";
 
 function useRouteColumns(): number {
@@ -89,6 +91,8 @@ export function AdventureMap({
   const focusCardRef = useRef(false);
   const anchorRef = useRef<{ id: string; top: number } | null>(null);
   const [pickedId, setPickedId] = useState<string | null>(null);
+  // Bumps on every tap, so tapping the already-open station still moves focus.
+  const [tapCount, setTapCount] = useState(0);
 
   const stationsById = useMemo(
     () => new Map(model.stations.map((s) => [s.song.id, s])),
@@ -134,6 +138,7 @@ export function AdventureMap({
       : null;
     focusCardRef.current = true;
     setPickedId(songId);
+    setTapCount((n) => n + 1);
   }, []);
 
   // Keep the clicked station under the pointer, then bring the card in view.
@@ -157,10 +162,11 @@ export function AdventureMap({
         card.scrollIntoView({ block: "nearest" });
       }
     }
-  }, [selected?.song.id, scrollerRef]);
+  }, [selected?.song.id, tapCount, scrollerRef]);
 
   // On arrival, put the next stop a little above the middle of the screen.
   const hasStations = model.stations.length > 0;
+  const hasProgress = model.hasAnyProgress;
   const arrivedRef = useRef(false);
   const nextId = model.nextStation?.song.id ?? null;
   useLayoutEffect(() => {
@@ -171,8 +177,22 @@ export function AdventureMap({
     const target = mapRef.current?.querySelector<HTMLElement>(
       `[data-station-id="${CSS.escape(nextId)}"]`,
     );
-    if (target) scrollToTarget(scroller, target, 0.38, false);
-  }, [hasStations, nextId, scrollerRef]);
+    if (!target) return;
+    if (!hasProgress) {
+      // First visit: only scroll as far as it takes to show the start button,
+      // so the child's numbers stay in view.
+      const box = target.getBoundingClientRect();
+      const centre =
+        box.top -
+        scroller.getBoundingClientRect().top +
+        scroller.scrollTop +
+        box.height / 2;
+      const needed = centre + CARD_REACH - scroller.clientHeight;
+      scroller.scrollTop = Math.max(0, needed);
+      return;
+    }
+    scrollToTarget(scroller, target, 0.38, false);
+  }, [hasStations, hasProgress, nextId, scrollerRef]);
 
   const jumpToRegion = useCallback(
     (groupId: string) => {
@@ -439,7 +459,7 @@ function StationCard({
   const title = songDisplayTitle(station.song, lang).primary;
   const color = lessonGroupColor(station.groupId);
   const played = station.stars > 0 || station.playCount > 0;
-  const nextOffset = station.status === "next" ? 150 : 128;
+  const nextOffset = station.status === "next" ? 140 : 128;
 
   return (
     <div
