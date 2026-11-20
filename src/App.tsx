@@ -282,12 +282,14 @@ function App(): React.JSX.Element {
 
   const {
     activeNotes,
+    activeNoteColors,
     midiActiveNotes,
     wrongNotes,
     hitNotes,
     splitFocusPanel,
     setSplitFocusPanel,
     handleActiveNotesChange,
+    handleActiveNoteColorsChange,
     handleWrongPracticeInput,
     handleCorrectPracticeInput,
   } = usePracticeNotes();
@@ -650,6 +652,7 @@ function App(): React.JSX.Element {
             >
               <FallingNotesCanvas
                 onActiveNotesChange={handleActiveNotesChange}
+                onActiveNoteColorsChange={handleActiveNoteColorsChange}
                 onNoteRendererReady={handleFallingNoteRendererReady}
                 minHeight={fallingCanvasMinHeight}
                 keyRange={keyRange}
@@ -667,6 +670,7 @@ function App(): React.JSX.Element {
             // The song is over behind the end card; do not leave its last
             // note lit (#310).
             activeNotes={showCelebration ? NO_NOTES : activeNotes}
+            activeNoteColors={activeNoteColors}
             midiActiveNotes={midiActiveNotes}
             hitNotes={hitNotes}
             missedNotes={wrongNotes}

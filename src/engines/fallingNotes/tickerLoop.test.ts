@@ -63,7 +63,7 @@ vi.mock("@renderer/engines/practice/practiceManager", () => ({
 }));
 
 // ── Import after mocks ─────────────────────────────────────────
-import { createTickerUpdate } from "./tickerLoop";
+import { createTickerUpdate, mapsEqual } from "./tickerLoop";
 
 // ── Helpers ────────────────────────────────────────────────────
 
@@ -248,5 +248,13 @@ describe("tickerLoop — createTickerUpdate", () => {
 
     // Should not throw
     expect(() => tick({ deltaMS: 16 })).not.toThrow();
+  });
+});
+
+describe("mapsEqual", () => {
+  it("same entries are equal, any difference is not", () => {
+    expect(mapsEqual(new Map([[60, 1]]), new Map([[60, 1]]))).toBe(true);
+    expect(mapsEqual(new Map([[60, 1]]), new Map([[60, 2]]))).toBe(false);
+    expect(mapsEqual(new Map([[60, 1]]), new Map())).toBe(false);
   });
 });
