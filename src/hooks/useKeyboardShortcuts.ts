@@ -126,7 +126,14 @@ export function createKeyboardHandler(
   getDeps: () => KeyboardShortcutDeps,
 ): (e: KeyboardEvent) => void {
   return function handler(e: KeyboardEvent): void {
-    if (isInteractiveTarget(e.target) || hasActiveModal()) return;
+    if (hasActiveModal()) return;
+    if (e.code === "Escape") {
+      // Esc is never "press this button", so a focused button must not
+      // swallow it; only typing in a text field keeps it.
+      if (isTextInput(e.target)) return;
+    } else if (isInteractiveTarget(e.target)) {
+      return;
+    }
 
     const hasSong = useSongStore.getState().song !== null;
 

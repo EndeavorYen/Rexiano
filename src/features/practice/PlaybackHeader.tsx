@@ -33,38 +33,30 @@ export function PlaybackHeader({
       className={isSplitMode ? "mb-1.5" : "mb-2"}
       data-testid="playback-header-panel"
     >
-      <div className="family-bar min-w-0" style={{ minHeight: 48 }}>
-        <button
-          onClick={onExitPlayback}
-          className="icon-btn"
-          aria-label={t(backLabelKey(browseRoute))}
-          title={t(backLabelKey(browseRoute))}
-        >
-          <ArrowLeft size={20} />
-        </button>
-        <div
-          className="min-w-0 flex-1 flex items-baseline gap-2 overflow-hidden"
-          data-testid="playback-title-meta-row"
-        >
+      <div className="family-bar play-bar min-w-0">
+        <div className="play-bar-start" data-testid="playback-title-meta-row">
+          <button
+            onClick={onExitPlayback}
+            className="icon-btn"
+            aria-label={t(backLabelKey(browseRoute))}
+            title={t(backLabelKey(browseRoute))}
+          >
+            <ArrowLeft size={20} />
+          </button>
           <h2
-            className="m-0 truncate font-display text-xl font-extrabold leading-tight"
+            className="m-0 min-w-0 truncate font-display text-xl font-extrabold leading-tight"
             data-testid="playback-song-title"
+            title={songTitle}
           >
             {songTitle}
           </h2>
-          <span
-            className="hidden shrink-0 text-sm font-bold md:inline"
-            style={{ color: "var(--color-text-muted)" }}
-          >
-            {t("app.subtitle")}
-          </span>
         </div>
 
-        <div
-          className="flex items-center justify-end gap-2 shrink-0"
-          data-testid="playback-header-actions"
-        >
+        <div className="play-bar-center">
           <ScoreOverlay />
+        </div>
+
+        <div className="play-bar-end" data-testid="playback-header-actions">
           <DisplayModeToggle />
           <button
             ref={playbackDrawerTriggerRef}

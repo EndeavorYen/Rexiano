@@ -5,6 +5,7 @@ import {
   COMBO_MIN_STREAK,
   buildScoreHud,
   countPlayableNotes,
+  starJustLit,
 } from "./scoreHud";
 
 function score(overrides: Partial<PracticeScore> = {}): PracticeScore {
@@ -108,5 +109,18 @@ describe("countPlayableNotes", () => {
     const tracks = [{ notes: [1, 2, 3] }, { notes: [1] }, { notes: [1, 2] }];
     expect(countPlayableNotes(tracks, new Set([0, 2]))).toBe(5);
     expect(countPlayableNotes(tracks, new Set())).toBe(0);
+  });
+});
+
+describe("starJustLit", () => {
+  test("a star that just lit is reported by its number", () => {
+    expect(starJustLit(0, 1)).toBe(1);
+    expect(starJustLit(1, 2)).toBe(2);
+    expect(starJustLit(2, 3)).toBe(3);
+  });
+
+  test("nothing pops when the count is the same or lower", () => {
+    expect(starJustLit(2, 2)).toBeNull();
+    expect(starJustLit(3, 0)).toBeNull();
   });
 });

@@ -1,10 +1,10 @@
-import { useMemo } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { usePracticeStore } from "@renderer/stores/usePracticeStore";
 import { useSongStore } from "@renderer/stores/useSongStore";
 import { useTranslation } from "@renderer/i18n/useTranslation";
 import { StarRow } from "../progress/StarRow";
 import { MAX_STARS } from "../progress/stars";
-import { buildScoreHud, countPlayableNotes } from "./scoreHud";
+import { buildScoreHud, countPlayableNotes, starJustLit } from "./scoreHud";
 import "./play-feedback.css";
 
 /**
@@ -24,6 +24,21 @@ export function ScoreOverlay(): React.JSX.Element {
     [song, activeTracks],
   );
   const hud = buildScoreHud({ mode, score, totalNotes });
+
+  // The star that just lit gets one pop; the state clears itself so the same
+  // star can pop again after a restart.
+  const stars = hud?.stars ?? 0;
+  const previousStars = useRef(stars);
+  const [litStar, setLitStar] = useState<number | null>(null);
+  useEffect(() => {
+    const lit = starJustLit(previousStars.current, stars);
+    previousStars.current = stars;
+    if (lit === null) return;
+    setLitStar(lit);
+    const timer = window.setTimeout(() => setLitStar(null), 900);
+    return () => window.clearTimeout(timer);
+  }, [stars]);
+
   if (!hud) return <></>;
 
   return (
@@ -33,14 +48,16 @@ export function ScoreOverlay(): React.JSX.Element {
       aria-label={t("practice.scoreLabel")}
       data-testid="score-hud"
     >
-      <StarRow
-        stars={hud.stars}
-        size={18}
-        label={t("practice.hudStars", {
-          filled: hud.stars,
-          total: MAX_STARS,
-        })}
-      />
+      <span className="play-hud-stars" data-lit={litStar ?? undefined}>
+        <StarRow
+          stars={hud.stars}
+          size={28}
+          label={t("practice.hudStars", {
+            filled: hud.stars,
+            total: MAX_STARS,
+          })}
+        />
+      </span>
       <span className="play-hud-progress" data-testid="score-hud-progress">
         {t("practice.hudPlayed", { played: hud.played, total: hud.total })}
       </span>

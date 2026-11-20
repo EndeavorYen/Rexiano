@@ -1,5 +1,9 @@
 import { describe, expect, test } from "vitest";
-import { playbackExitRoute, shouldSyncRouteHash } from "./useAppNavigation";
+import {
+  decideHashChange,
+  playbackExitRoute,
+  shouldSyncRouteHash,
+} from "./useAppNavigation";
 
 describe("shouldSyncRouteHash", () => {
   test("returns true when current hash differs from target hash", () => {
@@ -24,5 +28,25 @@ describe("playbackExitRoute (#325)", () => {
 
   test("falls back to the library when the origin is unknown", () => {
     expect(playbackExitRoute("playback")).toBe("library");
+  });
+});
+
+describe("decideHashChange (browser Back during playback)", () => {
+  test("Back to a browse hash while a song is open leaves playback", () => {
+    expect(decideHashChange("library", true, false)).toBe("exit-playback");
+    expect(decideHashChange("menu", true, false)).toBe("exit-playback");
+  });
+
+  test("the playback hash with a song open is not an exit", () => {
+    expect(decideHashChange("playback", true, false)).toBe("apply");
+  });
+
+  test("hash changes we made ourselves are applied, never treated as Back", () => {
+    expect(decideHashChange("library", true, true)).toBe("apply");
+  });
+
+  test("without a song every hash change just sets the route", () => {
+    expect(decideHashChange("library", false, false)).toBe("apply");
+    expect(decideHashChange("menu", false, false)).toBe("apply");
   });
 });

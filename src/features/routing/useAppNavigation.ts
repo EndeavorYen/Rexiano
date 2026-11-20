@@ -35,6 +35,21 @@ export function shouldSyncRouteHash(
   return currentHash !== targetHash;
 }
 
+/**
+ * What a hash change means. While a song is on screen, a hash that is not
+ * "#/playback" came from the browser's back/forward buttons (our own route
+ * changes are tagged and skipped): that is "leave playback", the same as
+ * the back arrow in the title bar.
+ */
+export function decideHashChange(
+  hashRoute: AppRoute,
+  hasSong: boolean,
+  isOwnChange: boolean,
+): "exit-playback" | "apply" {
+  if (isOwnChange) return "apply";
+  return hasSong && hashRoute !== "playback" ? "exit-playback" : "apply";
+}
+
 export interface UseAppNavigationOptions {
   song: ParsedSong | null;
 }
@@ -57,6 +72,8 @@ export interface UseAppNavigationResult {
   playbackDrawerRef: React.RefObject<HTMLElement | null>;
   playbackDrawerTriggerRef: React.RefObject<HTMLButtonElement | null>;
   playbackDrawerCloseRef: React.RefObject<HTMLButtonElement | null>;
+  /** The stage; closing the drawer gives it the focus so Space keeps working */
+  playbackStageRef: React.RefObject<HTMLDivElement | null>;
 }
 
 export function useAppNavigation({
@@ -88,6 +105,7 @@ export function useAppNavigation({
   const playbackDrawerRef = useRef<HTMLElement | null>(null);
   const playbackDrawerTriggerRef = useRef<HTMLButtonElement | null>(null);
   const playbackDrawerCloseRef = useRef<HTMLButtonElement | null>(null);
+  const playbackStageRef = useRef<HTMLDivElement | null>(null);
 
   const closePlaybackDrawer = useCallback(() => {
     setShowPlaybackDrawer(false);
@@ -97,9 +115,17 @@ export function useAppNavigation({
     active: showPlaybackDrawer,
     containerRef: playbackDrawerRef,
     initialFocusRef: playbackDrawerCloseRef,
-    returnFocusRef: playbackDrawerTriggerRef,
+    returnFocusRef: playbackStageRef,
     onDismiss: closePlaybackDrawer,
   });
+
+  // The hash we set ourselves; its hashchange event is not the browser's.
+  const ownHashRef = useRef<string | null>(null);
+  const songRef = useRef<ParsedSong | null>(song);
+  useEffect(() => {
+    songRef.current = song;
+  }, [song]);
+  const exitPlaybackRef = useRef<(fromHistory?: boolean) => void>(() => {});
 
   const applyRoute = useCallback((nextRoute: AppRoute): void => {
     if (nextRoute !== "playback") {
@@ -109,6 +135,7 @@ export function useAppNavigation({
     if (typeof window === "undefined") return;
     const targetHash = routeToHash(nextRoute);
     if (shouldSyncRouteHash(window.location.hash, targetHash)) {
+      ownHashRef.current = targetHash;
       window.location.hash = targetHash;
     }
   }, []);
@@ -116,7 +143,18 @@ export function useAppNavigation({
   useEffect(() => {
     if (typeof window === "undefined") return;
     const onHashChange = (): void => {
-      setRouteIntent(parseRouteHash(window.location.hash));
+      const hash = window.location.hash;
+      const route = parseRouteHash(hash);
+      const isOwn = ownHashRef.current !== null && ownHashRef.current === hash;
+      ownHashRef.current = null;
+      if (
+        decideHashChange(route, songRef.current !== null, isOwn) ===
+        "exit-playback"
+      ) {
+        exitPlaybackRef.current(true);
+        return;
+      }
+      setRouteIntent(route);
     };
     window.addEventListener("hashchange", onHashChange);
     onHashChange();
@@ -127,33 +165,53 @@ export function useAppNavigation({
     if (typeof window === "undefined") return;
     const targetHash = routeToHash(view);
     if (shouldSyncRouteHash(window.location.hash, targetHash)) {
-      window.history.replaceState(null, "", targetHash);
+      // Entering playback adds a history entry, so the browser's Back button
+      // has somewhere to go: the screen the song was started from.
+      if (view === "playback") {
+        window.history.pushState(null, "", targetHash);
+      } else {
+        window.history.replaceState(null, "", targetHash);
+      }
     }
   }, [view]);
 
-  const handleExitPlayback = useCallback(() => {
-    const decision = getFocusModeExitDecision({
-      childFocusMode: useSettingsStore.getState().childFocusMode,
-      isPlaying: usePlaybackStore.getState().isPlaying,
-      hasSong: useSongStore.getState().song !== null,
-    });
+  const exitPlayback = useCallback(
+    (fromHistory = false) => {
+      const decision = getFocusModeExitDecision({
+        childFocusMode: useSettingsStore.getState().childFocusMode,
+        isPlaying: usePlaybackStore.getState().isPlaying,
+        hasSong: useSongStore.getState().song !== null,
+      });
 
-    if (decision.pauseBeforeConfirm) {
-      usePlaybackStore.getState().setPlaying(false);
-    }
-    if (
-      decision.confirmBeforeExit &&
-      !window.confirm(t("practice.confirmExitPlaying"))
-    ) {
-      return;
-    }
+      if (decision.pauseBeforeConfirm) {
+        usePlaybackStore.getState().setPlaying(false);
+      }
+      if (
+        decision.confirmBeforeExit &&
+        !window.confirm(t("practice.confirmExitPlaying"))
+      ) {
+        // The browser already moved the address; put it back where we are.
+        if (fromHistory) {
+          window.history.pushState(null, "", routeToHash("playback"));
+        }
+        return;
+      }
 
-    usePlaybackStore.getState().reset();
-    useSongStore.getState().clearSong();
-    usePracticeStore.getState().resetScore();
-    setSessionIntent("practice");
-    applyRoute(browseRouteRef.current);
-  }, [applyRoute, setSessionIntent, t]);
+      usePlaybackStore.getState().reset();
+      useSongStore.getState().clearSong();
+      usePracticeStore.getState().resetScore();
+      setSessionIntent("practice");
+      applyRoute(browseRouteRef.current);
+    },
+    [applyRoute, setSessionIntent, t],
+  );
+  useEffect(() => {
+    exitPlaybackRef.current = exitPlayback;
+  }, [exitPlayback]);
+  const handleExitPlayback = useCallback(
+    () => exitPlayback(false),
+    [exitPlayback],
+  );
 
   return {
     view,
@@ -172,5 +230,6 @@ export function useAppNavigation({
     playbackDrawerRef,
     playbackDrawerTriggerRef,
     playbackDrawerCloseRef,
+    playbackStageRef,
   };
 }

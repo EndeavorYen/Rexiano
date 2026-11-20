@@ -121,6 +121,7 @@ function App(): React.JSX.Element {
     playbackDrawerRef,
     playbackDrawerTriggerRef,
     playbackDrawerCloseRef,
+    playbackStageRef,
   } = useAppNavigation({ song });
 
   const appShellRef = useRef<HTMLDivElement>(null);
@@ -606,7 +607,9 @@ function App(): React.JSX.Element {
 
           {/* Main display area: sheet music / falling notes */}
           <div
-            className={`workspace-frame ${isPlaying ? "workspace-frame-live" : ""} flex-1 relative flex flex-col min-h-0 surface-panel overflow-hidden`}
+            ref={playbackStageRef}
+            tabIndex={-1}
+            className={`workspace-frame ${isPlaying ? "workspace-frame-live" : ""} flex-1 relative flex flex-col min-h-0 surface-panel overflow-hidden outline-none`}
           >
             <div
               className="relative"

@@ -3,11 +3,12 @@ import { useCallback, useRef } from "react";
 import { VolumeX, Volume1, Volume2 } from "lucide-react";
 import { usePlaybackStore } from "@renderer/stores/usePlaybackStore";
 import { useTranslation } from "@renderer/i18n/useTranslation";
+import "../practice/play-feedback.css";
 
 function VolumeIcon({ level }: { level: number }): React.JSX.Element {
-  if (level === 0) return <VolumeX size={15} />;
-  if (level <= 50) return <Volume1 size={15} />;
-  return <Volume2 size={15} />;
+  if (level === 0) return <VolumeX size={20} />;
+  if (level <= 50) return <Volume1 size={20} />;
+  return <Volume2 size={20} />;
 }
 
 export function VolumeControl(): React.JSX.Element {
@@ -46,10 +47,8 @@ export function VolumeControl(): React.JSX.Element {
     >
       <button
         onClick={handleToggleMute}
-        className="flex items-center justify-center rounded-md cursor-pointer"
+        className="play-icon-btn"
         style={{
-          width: 36,
-          height: 36,
           color: isMuted ? "var(--color-text-muted)" : "var(--color-text)",
           opacity: isMuted ? 0.5 : 0.92,
           transition: "opacity 0.15s, color 0.15s, background 0.15s",
@@ -69,7 +68,7 @@ export function VolumeControl(): React.JSX.Element {
         className="volume-slider-input"
         style={{
           accentColor: "var(--color-accent)",
-          width: 88,
+          width: 72,
           ...rangeProgressStyle(displayValue, 0, 100),
         }}
         aria-label={t("transport.volume")}
