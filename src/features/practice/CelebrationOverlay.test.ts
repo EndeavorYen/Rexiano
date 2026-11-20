@@ -3,7 +3,8 @@ import {
   getCelebrationActions,
   getCelebrationPresentation,
   getTier,
-  isNewRecord,
+  getRecordBadge,
+  isResultKeyGuardActive,
 } from "./celebrationUtils";
 import type { CelebrationTier } from "./celebrationUtils";
 
@@ -37,42 +38,38 @@ describe("CelebrationOverlay — getTier()", () => {
   });
 });
 
-describe("CelebrationOverlay — isNewRecord()", () => {
-  test("returns true when no previous best exists", () => {
-    expect(isNewRecord(85, 10, "song-1", null)).toBe(true);
+describe("getRecordBadge()", () => {
+  test("the first finished run gets no badge, even with one star", () => {
+    expect(getRecordBadge(50, 10, "song-1", null)).toBeNull();
+    expect(getRecordBadge(95, 10, "song-1", null)).toBeNull();
   });
 
-  test("returns true when accuracy exceeds previous best", () => {
-    expect(isNewRecord(90, 10, "song-1", 85)).toBe(true);
+  test("more stars than before says more stars", () => {
+    expect(getRecordBadge(75, 10, "song-1", 50)).toBe("more-stars");
+    expect(getRecordBadge(92, 10, "song-1", 75)).toBe("more-stars");
   });
 
-  test("returns false when accuracy equals previous best", () => {
-    expect(isNewRecord(85, 10, "song-1", 85)).toBe(false);
+  test("same stars but higher accuracy says better than last time", () => {
+    expect(getRecordBadge(80, 10, "song-1", 72)).toBe("better");
   });
 
-  test("returns false when accuracy is below previous best", () => {
-    expect(isNewRecord(70, 10, "song-1", 85)).toBe(false);
+  test("same or lower accuracy gives no badge", () => {
+    expect(getRecordBadge(72, 10, "song-1", 72)).toBeNull();
+    expect(getRecordBadge(60, 10, "song-1", 85)).toBeNull();
   });
 
-  test("returns false when totalNotes is 0 (empty session)", () => {
-    expect(isNewRecord(100, 0, "song-1", null)).toBe(false);
+  test("empty sessions and missing song ids give no badge", () => {
+    expect(getRecordBadge(100, 0, "song-1", 50)).toBeNull();
+    expect(getRecordBadge(95, 10, undefined, 50)).toBeNull();
+    expect(getRecordBadge(95, 10, "", 50)).toBeNull();
   });
+});
 
-  test("returns false when songId is undefined", () => {
-    expect(isNewRecord(95, 10, undefined, null)).toBe(false);
-  });
-
-  test("returns false when songId is empty string", () => {
-    expect(isNewRecord(95, 10, "", null)).toBe(false);
-  });
-
-  test("returns true for first session of a song (previousBest = null)", () => {
-    expect(isNewRecord(50, 5, "new-song", null)).toBe(true);
-  });
-
-  test("handles edge case: accuracy just barely exceeds previous best", () => {
-    expect(isNewRecord(85.01, 20, "song-1", 85)).toBe(true);
-    expect(isNewRecord(85.001, 20, "song-1", 85)).toBe(true);
+describe("isResultKeyGuardActive()", () => {
+  test("blocks keyboard activation for the first 600 ms", () => {
+    expect(isResultKeyGuardActive(1000, 1000)).toBe(true);
+    expect(isResultKeyGuardActive(1000, 1599)).toBe(true);
+    expect(isResultKeyGuardActive(1000, 1600)).toBe(false);
   });
 });
 

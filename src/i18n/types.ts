@@ -678,8 +678,15 @@ export interface TranslationMap {
   "celebration.again": string;
   "celebration.nextSong": string;
   "celebration.moreStars": string;
-  "celebration.bestScore": string;
   "celebration.hitCount": string;
+
+  // ── UI round 2: play ──
+  "nav.backToMap": string;
+  "nav.backToShelf": string;
+  "celebration.better": string;
+  "celebration.slowAgain": string;
+  "celebration.slowAdvice": string;
+  "celebration.againAdvice": string;
 }
 
 /**

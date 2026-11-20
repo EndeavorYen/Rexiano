@@ -748,7 +748,14 @@ export const en: TranslationMap = {
   "celebration.again": "Play again",
   "celebration.nextSong": "Next song: {title}",
   "celebration.moreStars": "More stars!",
-  "celebration.bestScore": "New best score!",
   "celebration.hitCount":
     "You played {hit} of {total} notes right ({accuracy}%)",
+
+  // ── UI round 2: play ──
+  "nav.backToMap": "Back to map",
+  "nav.backToShelf": "Back to shelf",
+  "celebration.better": "Better than last time!",
+  "celebration.slowAgain": "Slow down and play again",
+  "celebration.slowAdvice": "Slow it down and try again. It gets easier.",
+  "celebration.againAdvice": "Play it once more and it gets better.",
 };

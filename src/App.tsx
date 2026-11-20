@@ -593,6 +593,7 @@ function App(): React.JSX.Element {
             playbackDrawerTriggerRef={playbackDrawerTriggerRef}
             onOpenPlaybackDrawer={() => setShowPlaybackDrawer(true)}
             onExitPlayback={handleExitPlayback}
+            browseRoute={getBrowseRoute()}
             midiDiagnosticNotice={midiDiagnosticNotice}
           />
 
@@ -679,6 +680,7 @@ function App(): React.JSX.Element {
         <ModeSelectionModal
           songTitle={displayTitleForName(song.fileName, songCatalogue, lang)}
           onSelect={handleModeSelect}
+          browseRoute={getBrowseRoute()}
           onDismiss={handleModeDismiss}
         />
       )}
@@ -690,6 +692,7 @@ function App(): React.JSX.Element {
           visible={showCelebration}
           onPracticeAgain={handlePracticeAgainWithAdvice}
           onChooseSong={handleChooseSong}
+          browseRoute={getBrowseRoute()}
           onTryWait={handleTryWait}
           songId={songId}
           nextAction={nextPracticeAction}

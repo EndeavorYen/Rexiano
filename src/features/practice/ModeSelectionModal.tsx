@@ -3,6 +3,8 @@ import { ArrowLeft, Ear, Hand } from "lucide-react";
 import type { PracticeMode } from "@shared/types";
 import { useTranslation } from "@renderer/i18n/useTranslation";
 import { useDialogFocus } from "@renderer/hooks/useDialogFocus";
+import type { BrowseRoute } from "../routing/useAppNavigation";
+import { backLabelKey } from "../routing/browseRouteLabel";
 import { getModeSelectionOptions } from "./modeSelectionOptions";
 import "./play-feedback.css";
 
@@ -11,6 +13,8 @@ export interface ModeSelectionModalProps {
   songTitle?: string;
   onSelect: (mode: PracticeMode) => void;
   onDismiss: () => void;
+  /** Where the song was started from: names the back button */
+  browseRoute?: BrowseRoute;
 }
 
 /**
@@ -21,6 +25,7 @@ export function ModeSelectionModal({
   songTitle,
   onSelect,
   onDismiss,
+  browseRoute = "menu",
 }: ModeSelectionModalProps): React.JSX.Element {
   const { t } = useTranslation();
   const dialogRef = useRef<HTMLDivElement>(null);
@@ -88,7 +93,7 @@ export function ModeSelectionModal({
           data-testid="mode-select-back"
         >
           <ArrowLeft size={16} aria-hidden="true" />
-          {t("modeSelect.backToLibrary")}
+          {t(backLabelKey(browseRoute))}
         </button>
       </div>
     </div>

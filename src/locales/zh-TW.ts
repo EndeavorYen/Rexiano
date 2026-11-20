@@ -709,6 +709,13 @@ export const zhTW: TranslationMap = {
   "celebration.again": "再彈一次",
   "celebration.nextSong": "下一首：{title}",
   "celebration.moreStars": "星星變多了！",
-  "celebration.bestScore": "新的最佳成績！",
   "celebration.hitCount": "彈對 {hit}／{total} 個音（{accuracy}%）",
+
+  // ── UI round 2: play ──
+  "nav.backToMap": "回地圖",
+  "nav.backToShelf": "回書架",
+  "celebration.better": "比上次更好！",
+  "celebration.slowAgain": "放慢再彈一次",
+  "celebration.slowAdvice": "放慢一點再彈一次，會更容易。",
+  "celebration.againAdvice": "再彈一次就更好。",
 };

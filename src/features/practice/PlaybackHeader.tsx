@@ -1,6 +1,8 @@
 import { AlertTriangle, ArrowLeft, SlidersHorizontal } from "lucide-react";
 import { DisplayModeToggle } from "@renderer/features/sheetMusic/DisplayModeToggle";
 import { ScoreOverlay } from "./ScoreOverlay";
+import type { BrowseRoute } from "@renderer/features/routing/useAppNavigation";
+import { backLabelKey } from "@renderer/features/routing/browseRouteLabel";
 import { useTranslation } from "@renderer/i18n/useTranslation";
 import type { MidiDiagnosticNotice } from "@renderer/features/midiDiagnostics/midiDiagnosticNotice";
 
@@ -11,6 +13,8 @@ export interface PlaybackHeaderProps {
   onOpenPlaybackDrawer: () => void;
   onExitPlayback: () => void;
   midiDiagnosticNotice: MidiDiagnosticNotice | null;
+  /** The screen the song was started from: names the back button */
+  browseRoute?: BrowseRoute;
 }
 
 export function PlaybackHeader({
@@ -20,6 +24,7 @@ export function PlaybackHeader({
   onOpenPlaybackDrawer,
   onExitPlayback,
   midiDiagnosticNotice,
+  browseRoute = "menu",
 }: PlaybackHeaderProps): React.JSX.Element {
   const { t } = useTranslation();
 
@@ -32,8 +37,8 @@ export function PlaybackHeader({
         <button
           onClick={onExitPlayback}
           className="icon-btn"
-          aria-label={t("song.backToLibrary")}
-          title={t("song.backToLibrary")}
+          aria-label={t(backLabelKey(browseRoute))}
+          title={t(backLabelKey(browseRoute))}
         >
           <ArrowLeft size={20} />
         </button>

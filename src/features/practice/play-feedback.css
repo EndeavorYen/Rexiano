@@ -374,7 +374,6 @@
   gap: 10px;
   padding: 28px 24px 24px;
   text-align: center;
-  background: var(--color-surface);
   overflow: hidden;
 }
 
@@ -428,7 +427,7 @@
 .play-result-primary {
   min-height: 56px;
   padding: 0 20px;
-  border-radius: 16px;
+  border-radius: 14px;
   font-size: 1.1rem;
   cursor: pointer;
 }
@@ -471,13 +470,14 @@
 .play-confetti-piece {
   position: absolute;
   top: -14px;
-  left: calc(var(--i) * 6.4% + 2%);
+  /* --x is a percentage across the whole card, spread by the component. */
+  left: calc(var(--x) * 1%);
   width: 10px;
   height: 14px;
   border-radius: 2px;
   background: var(--color-accent);
   opacity: 0;
-  animation: play-confetti-fall 1.9s ease-in calc(var(--i) * 0.07s) 1 both;
+  animation: play-confetti-fall 1.6s ease-in calc(var(--i) * 0.045s) 1 both;
 }
 
 .play-confetti-piece:nth-child(4n + 1) {
@@ -492,17 +492,21 @@
   height: 9px;
 }
 
+/* Falls to just under the stars, then is gone (and out of the tree of
+   paint: visibility hidden at the end). */
 @keyframes play-confetti-fall {
   0% {
     opacity: 1;
+    visibility: visible;
     transform: translateY(0) rotate(0deg);
   }
-  85% {
+  70% {
     opacity: 1;
   }
   100% {
     opacity: 0;
-    transform: translateY(120px) rotate(420deg);
+    visibility: hidden;
+    transform: translateY(190px) rotate(420deg);
   }
 }
 
