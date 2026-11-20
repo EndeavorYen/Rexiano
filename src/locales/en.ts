@@ -784,4 +784,7 @@ export const en: TranslationMap = {
   "midiNotice.genericBody":
     "This file has incomplete data, so the sheet may differ from the original.",
   "midiNotice.dismiss": "Got it, hide this notice",
+  // ── UI round 3: songbook ──
+  "songbook.summary.title": "My stars",
+  "songbook.summary.aria": "{earned} stars so far, {max} in all",
 };

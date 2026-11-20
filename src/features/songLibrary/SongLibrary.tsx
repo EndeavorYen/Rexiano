@@ -30,6 +30,8 @@ import { SongLibraryHeader } from "./SongLibraryHeader";
 import { SongSelectionPreviewPanel } from "./SongSelectionPreviewPanel";
 import { RecentSongsSection } from "./RecentSongsSection";
 import { SongbookView } from "./SongbookView";
+import { coverVariantsByUnit } from "./coverStyle";
+import { buildStarsSummary } from "./starsSummary";
 import { SongLibraryFilters } from "./SongLibraryFilters";
 import {
   buildSongbook,
@@ -182,6 +184,12 @@ export function SongLibrary({
     difficultyFilter,
     gradeFilter,
   ]);
+
+  const coverVariants = useMemo(() => coverVariantsByUnit(songs), [songs]);
+  const starsSummary = useMemo(
+    () => buildStarsSummary(songs, songActivity),
+    [songs, songActivity],
+  );
 
   const looseRecentFiles = useMemo(
     () => selectLooseRecentFiles(recentFiles, importedSongs),
@@ -530,6 +538,8 @@ export function SongLibrary({
           catalogueEmpty={songs.length === 0 && importedSongs.length === 0}
           loadingId={loadingId}
           loadingImportedPath={loadingImportedPath}
+          coverVariants={coverVariants}
+          starsSummary={starsSummary}
           onPreviewSong={handlePreviewSong}
           onPreviewImported={handlePreviewImportedSong}
           onClearSearch={handleClearSearch}
@@ -546,6 +556,9 @@ export function SongLibrary({
         <SongSelectionPreviewPanel
           preview={selectedSongPreview}
           isLoading={selectedPreviewIsLoading}
+          coverVariant={
+            selectedSong ? coverVariants.get(selectedSong.id) : undefined
+          }
           returnFocusRef={previewReturnFocusRef}
           onClose={handleClosePreview}
           onStartSession={handleStartPreviewSession}

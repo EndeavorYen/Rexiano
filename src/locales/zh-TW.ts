@@ -741,4 +741,7 @@ export const zhTW: TranslationMap = {
     "有些節奏在樂譜上只能畫成相近的樣子，聽到的聲音不受影響。",
   "midiNotice.genericBody": "這個檔案的資料不太完整，樂譜可能和原曲不太一樣。",
   "midiNotice.dismiss": "知道了，關閉提示",
+  // ── UI round 3: songbook ──
+  "songbook.summary.title": "我的星星",
+  "songbook.summary.aria": "已經得到 {earned} 顆星，全部有 {max} 顆",
 };

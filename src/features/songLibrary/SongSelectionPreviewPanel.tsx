@@ -27,6 +27,8 @@ import type { ImportedSongMetadataDraft } from "./importedSongMetadata";
 export interface SongSelectionPreviewPanelProps {
   preview: SongSelectionPreviewModel;
   isLoading: boolean;
+  /** Position in the song's unit: the same cover as on the shelf */
+  coverVariant?: number;
   /** The cover that opened the dialog; focus goes back to it on close */
   returnFocusRef: RefObject<HTMLElement | null>;
   onClose: () => void;
@@ -52,6 +54,7 @@ export interface SongSelectionPreviewPanelProps {
 export function SongSelectionPreviewPanel({
   preview,
   isLoading,
+  coverVariant,
   returnFocusRef,
   onClose,
   onStartSession,
@@ -155,6 +158,7 @@ export function SongSelectionPreviewPanel({
             <SongCoverArt
               contour={contour}
               seed={seed}
+              variant={coverVariant}
               color={color}
               className="art"
             />
