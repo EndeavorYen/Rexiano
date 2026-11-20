@@ -239,12 +239,12 @@ function parseGroundTruthMusicXml(
   return { measures, staves, fifths };
 }
 
-describe("Ground truth score audit across all 103 built-in songs", () => {
+describe("Ground truth score audit across all 110 built-in songs", () => {
   const songsJson: BuiltinSongMeta[] = JSON.parse(
     readFileSync(join(process.cwd(), "public/midi/songs.json"), "utf8"),
   );
 
-  it("audits all 103 songs against their ground-truth MusicXML scores", () => {
+  it("audits all 110 songs against their ground-truth MusicXML scores", () => {
     const summary: string[] = [];
     let totalSongsWithErrors = 0;
 
@@ -622,7 +622,7 @@ describe("Ground truth score audit across all 103 built-in songs", () => {
       }
     }
 
-    expect(songsJson.length).toBe(103);
+    expect(songsJson.length).toBe(110);
     expect(summary).toEqual([]);
     expect(totalSongsWithErrors).toBe(0);
   });

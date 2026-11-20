@@ -140,6 +140,62 @@ const BEGINNER_EXPANSION: readonly {
     grade: 2,
     group: "right-hand-melodies",
   },
+  {
+    id: "sakura",
+    title: "Sakura Sakura",
+    titleZhTW: "櫻花",
+    composer: "Traditional (Japanese)",
+    grade: 2,
+    group: "right-hand-melodies",
+  },
+  {
+    id: "frog-song",
+    title: "Frog Song",
+    titleZhTW: "青蛙合唱",
+    composer: "Traditional (German)",
+    grade: 2,
+    group: "right-hand-melodies",
+  },
+  {
+    id: "korobeiniki",
+    title: "Korobeiniki",
+    titleZhTW: "貨郎",
+    composer: "Traditional (Russian)",
+    grade: 2,
+    group: "right-hand-melodies",
+  },
+  {
+    id: "surprise-symphony",
+    title: "Surprise Symphony (Theme)",
+    titleZhTW: "驚愕交響曲",
+    composer: "Joseph Haydn",
+    grade: 2,
+    group: "right-hand-melodies",
+  },
+  {
+    id: "we-wish-you-a-merry-christmas",
+    title: "We Wish You a Merry Christmas",
+    titleZhTW: "祝你聖誕快樂",
+    composer: "Traditional (English)",
+    grade: 2,
+    group: "right-hand-melodies",
+  },
+  {
+    id: "good-king-wenceslas",
+    title: "Good King Wenceslas",
+    titleZhTW: "好國王溫徹斯拉",
+    composer: "Traditional",
+    grade: 2,
+    group: "right-hand-melodies",
+  },
+  {
+    id: "the-first-noel",
+    title: "The First Noel",
+    titleZhTW: "聖誕佳音",
+    composer: "Traditional (English)",
+    grade: 2,
+    group: "right-hand-melodies",
+  },
 ];
 
 type ExpectedKeySignature = {
@@ -428,6 +484,23 @@ describe("generated built-in MIDI resources", () => {
           note.durationTicks / midi.header.ppq,
         );
       }
+    }
+  });
+
+  it("keeps beginner melodies on one hand and two-hand pieces on two", () => {
+    const catalog = manifest as BuiltinSongMeta[];
+
+    for (const expected of BEGINNER_EXPANSION) {
+      const song = catalog.find((entry) => entry.id === expected.id);
+      expect(song, expected.id).toBeDefined();
+      // A melody note below middle C is written on the bass staff and would
+      // turn a right-hand song into a two-hand one.
+      const playedTracks = readMidi(song!).tracks.filter(
+        (track) => track.notes.length > 0,
+      );
+      expect(playedTracks.length, expected.id).toBe(
+        song!.tags.includes("two-hands") ? 2 : 1,
+      );
     }
   });
 });
