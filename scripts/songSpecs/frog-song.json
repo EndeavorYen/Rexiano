@@ -1,0 +1,43 @@
+{
+  "id": "frog-song",
+  "meter": [4, 4],
+  "keyFifths": 0,
+  "mode": "major",
+  "pickupBeats": 0,
+  "rh": [
+    [60, 0, 1],
+    [62, 1, 1],
+    [64, 2, 1],
+    [65, 3, 1],
+    [64, 4, 1],
+    [62, 5, 1],
+    [60, 6, 1],
+    [64, 8, 1],
+    [65, 9, 1],
+    [67, 10, 1],
+    [69, 11, 1],
+    [67, 12, 1],
+    [65, 13, 1],
+    [64, 14, 1],
+    [60, 16, 1],
+    [60, 18, 1],
+    [60, 20, 1],
+    [60, 22, 1],
+    [60, 24, 0.5],
+    [60, 24.5, 0.5],
+    [62, 25, 0.5],
+    [62, 25.5, 0.5],
+    [64, 26, 0.5],
+    [64, 26.5, 0.5],
+    [65, 27, 0.5],
+    [65, 27.5, 0.5],
+    [64, 28, 1],
+    [62, 29, 1],
+    [60, 30, 1]
+  ],
+  "lh": [],
+  "sources": [
+    "Froschgesang — German traditional round, known in Japan as かえるの合唱; public domain"
+  ],
+  "notes": "C major, C4-A4. Written out from memory in the simplest form; no network in the build environment, so not compared against an online score. Needs a listen by a person."
+}

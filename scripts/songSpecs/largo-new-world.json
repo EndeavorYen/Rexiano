@@ -1,0 +1,36 @@
+{
+  "id": "largo-new-world",
+  "meter": [4, 4],
+  "keyFifths": 0,
+  "mode": "major",
+  "pickupBeats": 0,
+  "rh": [
+    [64, 0, 1],
+    [67, 1, 1],
+    [67, 2, 2],
+    [64, 4, 1],
+    [62, 5, 1],
+    [60, 6, 2],
+    [62, 8, 1],
+    [64, 9, 1],
+    [67, 10, 1],
+    [64, 11, 1],
+    [62, 12, 4],
+    [64, 16, 1],
+    [67, 17, 1],
+    [67, 18, 2],
+    [64, 20, 1],
+    [62, 21, 1],
+    [60, 22, 2],
+    [62, 24, 1],
+    [64, 25, 1],
+    [62, 26, 1],
+    [60, 27, 1],
+    [60, 28, 4]
+  ],
+  "lh": [],
+  "sources": [
+    "Antonín Dvořák (1841-1904), Symphony No. 9 'From the New World', Op. 95, II. Largo — cor anglais theme, first eight bars; public domain"
+  ],
+  "notes": "Theme transposed from D-flat to C so it sits in C position (C-G). The original dotted-quarter + eighth pairs (E. G | E. D | D. E G. E | D. C) are written as even quarters because level 0 allows only quarter/half/whole notes, as was done for hot-cross-buns. Written out from memory in the simplest form; no network in the build environment, so not compared against an online score. Needs a listen by a person."
+}

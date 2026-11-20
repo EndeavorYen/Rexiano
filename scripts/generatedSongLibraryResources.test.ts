@@ -10,6 +10,10 @@ import type { BuiltinSongMeta } from "@shared/types";
 import { filterSongsForLibrary } from "@renderer/features/songLibrary/songLibrarySelectors";
 import { buildGeneratedSongArtifacts } from "./generate-songs";
 import { findPickup } from "../src/engines/midi/pickup";
+import {
+  classifySongLessonGroup,
+  type LessonGroupId,
+} from "@renderer/features/songLibrary/lessonProgression";
 
 type SongMeta = {
   id: string;
@@ -70,6 +74,177 @@ const PUBLIC_DOMAIN_EXPANSION = [
     grade: 4,
   },
 ] as const;
+
+/** Short, familiar public-domain songs for the first lesson groups. */
+const BEGINNER_EXPANSION: readonly {
+  id: string;
+  title: string;
+  titleZhTW: string;
+  composer: string;
+  grade: number;
+  group: LessonGroupId;
+}[] = [
+  {
+    id: "the-cuckoo",
+    title: "The Cuckoo",
+    titleZhTW: "布穀",
+    composer: "Traditional (German)",
+    grade: 0,
+    group: "first-notes",
+  },
+  {
+    id: "largo-new-world",
+    title: "Largo (New World Symphony)",
+    titleZhTW: "念故鄉",
+    composer: "Antonín Dvořák",
+    grade: 0,
+    group: "first-notes",
+  },
+  {
+    id: "buzz-buzz-buzz",
+    title: "Buzz, Buzz, Buzz",
+    titleZhTW: "蜜蜂嗡嗡嗡",
+    composer: "Traditional (German)",
+    grade: 0,
+    group: "first-notes",
+  },
+  {
+    id: "the-more-we-get-together",
+    title: "The More We Get Together",
+    titleZhTW: "當我們同在一起",
+    composer: "Traditional",
+    grade: 2,
+    group: "right-hand-melodies",
+  },
+  {
+    id: "oh-my-darling-clementine",
+    title: "Oh My Darling, Clementine",
+    titleZhTW: "新年好",
+    composer: "Traditional",
+    grade: 2,
+    group: "right-hand-melodies",
+  },
+  {
+    id: "alle-voegel-sind-schon-da",
+    title: "Alle Vögel sind schon da",
+    titleZhTW: "春神來了",
+    composer: "Traditional (German)",
+    grade: 2,
+    group: "right-hand-melodies",
+  },
+  {
+    id: "song-bie",
+    title: "Farewell (Song Bie)",
+    titleZhTW: "送別",
+    composer: "John P. Ordway",
+    grade: 2,
+    group: "right-hand-melodies",
+  },
+  {
+    id: "sakura",
+    title: "Sakura Sakura",
+    titleZhTW: "櫻花",
+    composer: "Traditional (Japanese)",
+    grade: 2,
+    group: "right-hand-melodies",
+  },
+  {
+    id: "frog-song",
+    title: "Frog Song",
+    titleZhTW: "青蛙合唱",
+    composer: "Traditional (German)",
+    grade: 2,
+    group: "right-hand-melodies",
+  },
+  {
+    id: "korobeiniki",
+    title: "Korobeiniki",
+    titleZhTW: "貨郎",
+    composer: "Traditional (Russian)",
+    grade: 2,
+    group: "right-hand-melodies",
+  },
+  {
+    id: "surprise-symphony",
+    title: "Surprise Symphony (Theme)",
+    titleZhTW: "驚愕交響曲",
+    composer: "Joseph Haydn",
+    grade: 2,
+    group: "right-hand-melodies",
+  },
+  {
+    id: "we-wish-you-a-merry-christmas",
+    title: "We Wish You a Merry Christmas",
+    titleZhTW: "祝你聖誕快樂",
+    composer: "Traditional (English)",
+    grade: 2,
+    group: "right-hand-melodies",
+  },
+  {
+    id: "good-king-wenceslas",
+    title: "Good King Wenceslas",
+    titleZhTW: "好國王溫徹斯拉",
+    composer: "Traditional",
+    grade: 2,
+    group: "right-hand-melodies",
+  },
+  {
+    id: "the-first-noel",
+    title: "The First Noel",
+    titleZhTW: "聖誕佳音",
+    composer: "Traditional (English)",
+    grade: 2,
+    group: "right-hand-melodies",
+  },
+  {
+    id: "auld-lang-syne",
+    title: "Auld Lang Syne",
+    titleZhTW: "驪歌",
+    composer: "Traditional (Scottish)",
+    grade: 3,
+    group: "first-two-hand",
+  },
+  {
+    id: "aura-lee",
+    title: "Aura Lee",
+    titleZhTW: "奧拉莉",
+    composer: "George R. Poulton",
+    grade: 3,
+    group: "first-two-hand",
+  },
+  {
+    id: "joy-to-the-world",
+    title: "Joy to the World",
+    titleZhTW: "普世歡騰",
+    composer: "Lowell Mason",
+    grade: 3,
+    group: "first-two-hand",
+  },
+  {
+    id: "jasmine-flower",
+    title: "Jasmine Flower (Mo Li Hua)",
+    titleZhTW: "茉莉花",
+    composer: "Traditional (Chinese)",
+    grade: 3,
+    group: "first-two-hand",
+  },
+  {
+    id: "arirang",
+    title: "Arirang",
+    titleZhTW: "阿里郎",
+    composer: "Traditional (Korean)",
+    grade: 3,
+    group: "first-two-hand",
+  },
+  {
+    id: "greensleeves",
+    title: "Greensleeves",
+    titleZhTW: "綠袖子",
+    composer: "Traditional (English)",
+    grade: 3,
+    group: "rhythm-and-expression",
+  },
+];
 
 type ExpectedKeySignature = {
   key: string;
@@ -302,5 +477,78 @@ describe("generated built-in MIDI resources", () => {
         searchQuery: "",
       }).map((song) => song.id),
     ).toEqual(expect.arrayContaining(["oh-susanna", "silent-night"]));
+  });
+
+  it("generates the beginner expansion with title, composer, and grade", () => {
+    const { midiFiles, songsMeta } = buildGeneratedSongArtifacts([]);
+
+    for (const { id, title, composer, grade } of BEGINNER_EXPANSION) {
+      expect(songsMeta.find((song) => song.id === id)).toMatchObject({
+        title,
+        composer,
+        grade,
+      });
+      expect(midiFiles.some((file) => file.id === id)).toBe(true);
+    }
+  });
+
+  it("ships the beginner expansion in the lesson group it was written for", () => {
+    const catalog = manifest as BuiltinSongMeta[];
+
+    for (const expected of BEGINNER_EXPANSION) {
+      const song = catalog.find((entry) => entry.id === expected.id);
+      expect(song, expected.id).toMatchObject({
+        title: expected.title,
+        titleZhTW: expected.titleZhTW,
+        composer: expected.composer,
+        grade: expected.grade,
+        difficulty: "beginner",
+        origin: "score",
+      });
+      expect(song!.tags, expected.id).toContain(`level-${expected.grade}`);
+      expect(classifySongLessonGroup(song!), expected.id).toBe(expected.group);
+      expect(existsSync(join(resourcesDir, song!.file)), expected.id).toBe(
+        true,
+      );
+    }
+  });
+
+  it("keeps first-notes songs in C position with whole, half and quarter notes", () => {
+    const catalog = manifest as BuiltinSongMeta[];
+
+    for (const expected of BEGINNER_EXPANSION) {
+      if (expected.group !== "first-notes") continue;
+      const song = catalog.find((entry) => entry.id === expected.id);
+      expect(song, expected.id).toBeDefined();
+      const midi = readMidi(song!);
+      const notes = midi.tracks.flatMap((track) => track.notes);
+      expect(
+        midi.tracks.filter((track) => track.notes.length > 0),
+      ).toHaveLength(1);
+      for (const note of notes) {
+        expect(note.midi, expected.id).toBeGreaterThanOrEqual(60);
+        expect(note.midi, expected.id).toBeLessThanOrEqual(67);
+        expect([1, 2, 3, 4], expected.id).toContain(
+          note.durationTicks / midi.header.ppq,
+        );
+      }
+    }
+  });
+
+  it("keeps beginner melodies on one hand and two-hand pieces on two", () => {
+    const catalog = manifest as BuiltinSongMeta[];
+
+    for (const expected of BEGINNER_EXPANSION) {
+      const song = catalog.find((entry) => entry.id === expected.id);
+      expect(song, expected.id).toBeDefined();
+      // A melody note below middle C is written on the bass staff and would
+      // turn a right-hand song into a two-hand one.
+      const playedTracks = readMidi(song!).tracks.filter(
+        (track) => track.notes.length > 0,
+      );
+      expect(playedTracks.length, expected.id).toBe(
+        song!.tags.includes("two-hands") ? 2 : 1,
+      );
+    }
   });
 });

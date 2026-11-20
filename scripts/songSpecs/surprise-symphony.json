@@ -1,0 +1,40 @@
+{
+  "id": "surprise-symphony",
+  "meter": [4, 4],
+  "keyFifths": -1,
+  "mode": "major",
+  "pickupBeats": 0,
+  "rh": [
+    [65, 0, 1],
+    [65, 1, 1],
+    [69, 2, 1],
+    [69, 3, 1],
+    [72, 4, 1],
+    [72, 5, 1],
+    [69, 6, 2],
+    [70, 8, 1],
+    [70, 9, 1],
+    [67, 10, 1],
+    [67, 11, 1],
+    [64, 12, 1],
+    [64, 13, 1],
+    [60, 14, 2],
+    [65, 16, 1],
+    [65, 17, 1],
+    [69, 18, 1],
+    [69, 19, 1],
+    [72, 20, 1],
+    [72, 21, 1],
+    [69, 22, 2],
+    [77, 24, 1],
+    [77, 25, 1],
+    [71, 26, 1],
+    [71, 27, 1],
+    [72, 28, 4]
+  ],
+  "lh": [],
+  "sources": [
+    "Joseph Haydn (1732-1809), Symphony No. 94 in G 'Surprise', II. Andante — opening theme (original key C major); public domain"
+  ],
+  "notes": "First eight bars of the theme, in F major instead of C so the low notes stay at or above middle C (C4-F5; one B natural). Note values doubled from Haydn's 2/4 (eighths, quarter) to quarters and halves; the last note is held instead of followed by the loud chord. Written out from memory in the simplest form; no network in the build environment, so not compared against an online score. Needs a listen by a person."
+}
