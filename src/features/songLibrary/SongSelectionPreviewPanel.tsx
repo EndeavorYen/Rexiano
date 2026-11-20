@@ -1,6 +1,14 @@
 import "./songbook.css";
-import { useCallback, useId, useRef, type RefObject } from "react";
-import { Heart, Pencil, Play, Trash2, X } from "lucide-react";
+import {
+  useCallback,
+  useEffect,
+  useId,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type RefObject,
+} from "react";
+import { Heart, Play, X } from "lucide-react";
 import { useTranslation } from "@renderer/i18n/useTranslation";
 import { useDialogFocus } from "@renderer/hooks/useDialogFocus";
 import { StarRow } from "../progress/StarRow";
@@ -11,6 +19,7 @@ import { IMPORTED_SONG_COLOR, lessonGroupColor } from "./lessonGroupColor";
 import { songByline, songDisplayTitle } from "./songTitle";
 import { formatShelfDuration } from "./songShelves";
 import { ImportedSongMetadataEditor } from "./ImportedSongRow";
+import { ImportedSongManage } from "./ImportedSongManage";
 import type { SongSelectionPreviewModel } from "./songLibrarySelectors";
 import type { PracticeSessionIntent } from "@renderer/features/practice/sessionIntent";
 import type { ImportedSongMetadataDraft } from "./importedSongMetadata";
@@ -60,13 +69,36 @@ export function SongSelectionPreviewPanel({
   const sheetRef = useRef<HTMLDivElement | null>(null);
   const primaryRef = useRef<HTMLButtonElement | null>(null);
 
+  const editButtonRef = useRef<HTMLButtonElement | null>(null);
+  const [confirmingRemove, setConfirmingRemove] = useState(false);
+
+  // Esc steps back one level: the remove question, then the rename form,
+  // then the dialog itself.
+  const dismissRef = useRef<() => void>(onClose);
+  useLayoutEffect(() => {
+    dismissRef.current = () => {
+      if (confirmingRemove) setConfirmingRemove(false);
+      else if (isEditing) onCancelMetadata();
+      else onClose();
+    };
+  });
+  // stable, so the dialog's focus trap is not rebuilt on every state change
+  const handleDismiss = useCallback(() => dismissRef.current(), []);
+
   useDialogFocus({
     active: true,
     containerRef: sheetRef,
     initialFocusRef: primaryRef,
     returnFocusRef,
-    onDismiss: onClose,
+    onDismiss: handleDismiss,
   });
+
+  // Closing the rename form (save or cancel) hands focus back to its button.
+  const wasEditing = useRef(false);
+  useEffect(() => {
+    if (wasEditing.current && !isEditing) editButtonRef.current?.focus();
+    wasEditing.current = isEditing;
+  }, [isEditing]);
 
   const handleScrimClick = useCallback(
     (event: React.MouseEvent<HTMLDivElement>) => {
@@ -212,27 +244,16 @@ export function SongSelectionPreviewPanel({
             </div>
 
             {!isBuiltin && (
-              <div className="song-dialog-manage">
-                <button
-                  type="button"
-                  className="btn-ghost-themed"
-                  aria-pressed={isEditing}
-                  onClick={onEditImported}
-                  data-testid="imported-song-edit"
-                >
-                  <Pencil size={16} aria-hidden="true" />
-                  {t("songbook.preview.edit")}
-                </button>
-                <button
-                  type="button"
-                  className="btn-ghost-themed"
-                  onClick={onRemoveImported}
-                  data-testid="imported-song-remove"
-                >
-                  <Trash2 size={16} aria-hidden="true" />
-                  {t("library.removeImported")}
-                </button>
-              </div>
+              <ImportedSongManage
+                ref={editButtonRef}
+                title={title.primary}
+                isEditing={isEditing}
+                confirmingRemove={confirmingRemove}
+                onEdit={onEditImported}
+                onAskRemove={() => setConfirmingRemove(true)}
+                onConfirmRemove={onRemoveImported}
+                onCancelRemove={() => setConfirmingRemove(false)}
+              />
             )}
           </div>
         </div>

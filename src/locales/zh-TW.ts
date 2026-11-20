@@ -20,8 +20,7 @@ export const zhTW: TranslationMap = {
   "app.importErrorParseGuidance":
     "請確認 {fileName} 是有效的 MusicXML 或 MIDI，然後重新匯入。",
   "app.importErrorMissingTitle": "最近檔案已無法使用",
-  "app.importErrorMissingGuidance":
-    "{fileName} 已不在這個瀏覽器裡，請從電腦重新匯入。",
+  "app.importErrorMissingGuidance": "這個檔案找不到了，請再匯入一次。",
   "app.importErrorBuiltinTitle": "這首曲子打不開",
   "app.importErrorBuiltinGuidance":
     "{fileName} 暫時打不開。先選別首曲子；如果一直這樣，請重新整理頁面。",
@@ -719,4 +718,9 @@ export const zhTW: TranslationMap = {
   "songbook.preview.threeStars": "已經三顆星",
   "songbook.favorite.add": "加到我的最愛",
   "songbook.favorite.remove": "從我的最愛移除",
+  "songbook.remove.ask": "要移除「{title}」嗎？成績會留著，檔案會刪掉。",
+  "songbook.remove.confirm": "移除",
+  "songbook.remove.cancel": "先不要",
+  "songbook.edit.save": "儲存",
+  "songbook.edit.cancel": "取消",
 };

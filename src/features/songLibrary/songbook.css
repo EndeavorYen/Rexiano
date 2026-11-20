@@ -142,11 +142,71 @@
 /* ── Recent files that have no cover (moved or unlisted files) ── */
 .songbook-recent {
   margin: 16px var(--gutter) 0;
+  gap: 10px;
+}
+
+.songbook-recent-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 700;
+  font-size: 0.95rem;
+  color: var(--color-text-muted);
+}
+
+.songbook-recent-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.songbook-recent-item {
+  min-height: 44px;
+  max-width: 280px;
+  padding: 6px 14px;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.95rem;
+  cursor: pointer;
+}
+
+.songbook-recent-item .name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 700;
+}
+
+.songbook-recent-item .when {
+  flex: none;
+  font-size: 0.875rem;
+  color: var(--color-text-muted);
+}
+
+.songbook-recent-recovery {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+  font-size: 0.95rem;
+  color: var(--color-danger-text);
+}
+
+.songbook-recent-recovery button {
+  min-height: 44px;
+  padding: 0 14px;
+  border-radius: 14px;
+  font-weight: 700;
+  color: var(--color-text);
+  cursor: pointer;
 }
 
 /* ── Shelves ── */
 .shelf {
-  margin-top: 32px;
+  margin-top: 28px;
 }
 
 .shelf:first-child {
@@ -389,6 +449,8 @@
   font-family: var(--font-display);
   font-weight: 800;
   font-size: max(14px, 9.8cqw);
+  /* body font: Baloo's capital C is nearly x-height ("C 大調音階" read as "c") */
+  font-family: var(--font-body);
   line-height: 1.25;
   overflow-wrap: anywhere;
 }
@@ -649,9 +711,69 @@
   border-color: var(--color-control-border);
 }
 
-/* the metadata editor is a 5-column row elsewhere; in a dialog it stacks */
-.song-dialog [data-testid="imported-song-metadata-editor"] {
-  grid-template-columns: 1fr 1fr;
+/* rename: one field and two text buttons */
+.song-dialog-editor {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.song-dialog-editor input {
+  flex: 1 1 auto;
+  min-width: 0;
+  height: 44px;
+  box-sizing: border-box;
+  padding: 0 14px;
+  border-radius: 14px;
+  border: 1.5px solid var(--color-border);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font: inherit;
+}
+
+.song-dialog-editor button {
+  flex: none;
+  min-height: 44px;
+  padding: 0 18px;
+  border-radius: 14px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+/* the dialog keeps one yellow button: save is a quiet outline */
+.song-dialog-save {
+  border-color: var(--color-accent);
+}
+
+.song-dialog-confirm {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.song-dialog-confirm p {
+  margin: 0;
+  font-weight: 700;
+  line-height: 1.4;
+}
+
+.song-dialog-confirm-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.song-dialog-confirm-actions button {
+  min-height: 44px;
+  padding: 0 18px;
+  border-radius: 14px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.song-dialog-danger {
+  color: var(--color-danger-text);
+  border-color: var(--color-danger-text);
 }
 
 @media (max-width: 719px) {
@@ -671,13 +793,4 @@
   to {
     transform: rotate(360deg);
   }
-}
-
-/* editing opens a second panel; its save button stays quiet so the dialog
-   keeps exactly one yellow button */
-.song-dialog [data-testid="imported-song-metadata-save"] {
-  background: var(--color-surface);
-  color: var(--color-text);
-  border: 1.5px solid var(--color-border);
-  box-shadow: none;
 }

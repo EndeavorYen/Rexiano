@@ -687,6 +687,11 @@ export interface TranslationMap {
   "songbook.preview.threeStars": string;
   "songbook.favorite.add": string;
   "songbook.favorite.remove": string;
+  "songbook.remove.ask": string;
+  "songbook.remove.confirm": string;
+  "songbook.remove.cancel": string;
+  "songbook.edit.save": string;
+  "songbook.edit.cancel": string;
 }
 
 /**

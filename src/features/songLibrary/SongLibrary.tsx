@@ -447,9 +447,23 @@ export function SongLibrary({
         setEditingImportedSongId(null);
         setImportedMetadataDraft(null);
       }
-      void removeImportedSong(record.id);
+      void removeImportedSong(record.id).then(async () => {
+        // its "recently played" trace goes with it
+        await handleRemoveRecent(record.sourcePath);
+        refreshRecents();
+      });
+      // the dialog is gone with the cover: focus goes to the search box
+      window.setTimeout(() => {
+        findByTestId("song-library-search")?.focus({ preventScroll: true });
+      }, 60);
     },
-    [editingImportedSongId, removeImportedSong, selectedImportedSongId],
+    [
+      editingImportedSongId,
+      handleRemoveRecent,
+      refreshRecents,
+      removeImportedSong,
+      selectedImportedSongId,
+    ],
   );
 
   const handleCancelImportedMetadata = useCallback(() => {

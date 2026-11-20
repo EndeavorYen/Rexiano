@@ -21,7 +21,7 @@ export const en: TranslationMap = {
     "Check that {fileName} is a valid MusicXML or MIDI file, then try importing it again.",
   "app.importErrorMissingTitle": "Recent file is no longer available",
   "app.importErrorMissingGuidance":
-    "{fileName} is no longer saved in this browser. Import it again from your computer.",
+    "We can't find this file any more. Please import it again.",
   "app.importErrorBuiltinTitle": "This song couldn't open",
   "app.importErrorBuiltinGuidance":
     "{fileName} couldn't open. Pick another song; if it keeps happening, reload the page.",
@@ -759,4 +759,10 @@ export const en: TranslationMap = {
   "songbook.preview.threeStars": "Already three stars",
   "songbook.favorite.add": "Add to my favorites",
   "songbook.favorite.remove": "Remove from my favorites",
+  "songbook.remove.ask":
+    'Remove "{title}"? Your stars stay, the file is deleted.',
+  "songbook.remove.confirm": "Remove",
+  "songbook.remove.cancel": "Not now",
+  "songbook.edit.save": "Save",
+  "songbook.edit.cancel": "Cancel",
 };

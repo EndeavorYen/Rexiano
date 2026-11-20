@@ -34,24 +34,20 @@ export function RecentSongsSection({
   // A compact list: the one big "play next" entry is the lesson path (#307).
   return (
     <section
-      className="surface-elevated mb-5 p-4 animate-page-enter"
+      className="set-card songbook-recent"
       data-testid="song-library-continue"
     >
-      <div className="mb-2 flex items-center gap-2">
-        <PlayCircle size={14} style={{ color: "var(--color-accent-text)" }} />
-        <span
-          className="text-xs font-body font-semibold uppercase tracking-wide"
-          style={{ color: "var(--color-accent-text)" }}
-        >
-          {t("library.recentlyPlayed")}
-        </span>
+      <div className="songbook-recent-head">
+        <PlayCircle size={18} aria-hidden="true" />
+        <span>{t("library.recentlyPlayed")}</span>
       </div>
-      <div className="flex flex-wrap gap-2">
+      <div className="songbook-recent-list">
         {visibleRecents.map((file, idx) => {
           const isLatest = idx === 0;
           return (
             <button
               key={file.path}
+              type="button"
               onClick={() => {
                 if (isLatest) {
                   rememberReturnFocus("song-library-continue-action");
@@ -59,35 +55,16 @@ export function RecentSongsSection({
                 onSelectRecent(file);
               }}
               disabled={loadingRecentPath === file.path}
-              className="card-hover animate-page-enter group relative min-w-[170px] max-w-[260px] flex flex-col items-start gap-1 rounded-lg px-3 py-2 text-xs font-body font-medium cursor-pointer transition-all duration-150 disabled:opacity-50 disabled:cursor-wait"
-              style={{
-                background:
-                  "color-mix(in srgb, var(--color-surface) 82%, transparent)",
-                color: "var(--color-text)",
-                border: "1px solid var(--color-border)",
-                animationDelay: `${idx * 40}ms`,
-              }}
+              className="btn-ghost-themed songbook-recent-item"
               title={file.path}
               data-testid={
                 isLatest ? "song-library-continue-action" : undefined
               }
             >
-              <span
-                className="w-full text-left leading-tight"
-                style={{
-                  color: "var(--color-text)",
-                  display: "-webkit-box",
-                  WebkitLineClamp: 2,
-                  WebkitBoxOrient: "vertical",
-                  overflow: "hidden",
-                }}
-              >
+              <span className="name">
                 {displayTitleForName(file.name, catalogue, lang)}
               </span>
-              <span
-                className="shrink-0 opacity-70 font-mono tabular-nums text-[11px]"
-                style={{ color: "var(--color-text-muted)" }}
-              >
+              <span className="when">
                 {formatRelativeTime(file.timestamp, t)}
               </span>
             </button>
@@ -96,23 +73,20 @@ export function RecentSongsSection({
       </div>
       {recentRecovery && (
         <div
-          className="flex flex-wrap items-center gap-2 mt-2 text-xs font-body"
-          style={{ color: "var(--color-danger-text)" }}
+          className="songbook-recent-recovery"
           title={recentRecovery.guidance.diagnostic || undefined}
           data-testid="recent-file-recovery"
         >
-          <AlertCircle size={12} />
+          <AlertCircle size={18} aria-hidden="true" />
           <span className="min-w-0">
-            <span className="font-semibold">
-              {recentRecovery.guidance.title}
-            </span>
-            <span className="ml-1">{recentRecovery.guidance.guidance}</span>
+            <strong>{recentRecovery.guidance.title}</strong>{" "}
+            <span>{recentRecovery.guidance.guidance}</span>
           </span>
           {recentRecovery.canRemove && (
             <button
+              type="button"
               onClick={() => onRemoveRecent(recentRecovery.removePath)}
-              className="btn-surface-themed rounded-md px-2 py-0.5 text-[10px] font-body cursor-pointer"
-              style={{ color: "var(--color-text)" }}
+              className="btn-ghost-themed"
               data-testid="recent-file-remove-stale"
             >
               {recentRecovery.actionLabel}
