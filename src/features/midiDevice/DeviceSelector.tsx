@@ -104,7 +104,7 @@ export function DeviceSelector({
         {connectedLabel ? (
           <button
             onClick={disconnectBluetooth}
-            className="btn-ghost-themed min-h-11 shrink-0 rounded-2xl px-4 text-sm font-bold cursor-pointer"
+            className="btn-ghost-themed min-h-11 shrink-0 rounded-[14px] px-4 text-sm font-bold cursor-pointer"
             aria-label={t("midi.bleDisconnect")}
             title={t("midi.bleDeviceTitle", { name: connectedLabel })}
           >
@@ -115,7 +115,7 @@ export function DeviceSelector({
             <button
               onClick={handleBluetoothConnect}
               disabled={busy}
-              className="btn-primary-themed flex min-h-11 shrink-0 items-center gap-2 rounded-2xl px-4 text-sm cursor-pointer"
+              className="btn-primary-themed flex min-h-11 shrink-0 items-center gap-2 rounded-[14px] px-4 text-sm cursor-pointer"
               aria-label={t("midi.bluetooth")}
               title={t("midi.bleConnect")}
               data-testid="piano-connect-bluetooth"
@@ -172,13 +172,13 @@ function BrowserGuide({
             href={BLUEFY_APP_STORE_URL}
             target="_blank"
             rel="noreferrer"
-            className="btn-primary-themed inline-flex min-h-11 items-center rounded-2xl px-4 text-sm no-underline"
+            className="btn-primary-themed inline-flex min-h-11 items-center rounded-[14px] px-4 text-sm no-underline"
           >
             {t("piano.getBluefy")}
           </a>
           <button
             onClick={copyAddress}
-            className="btn-surface-themed inline-flex min-h-11 items-center gap-2 rounded-2xl px-4 text-sm font-bold cursor-pointer"
+            className="btn-surface-themed inline-flex min-h-11 items-center gap-2 rounded-[14px] px-4 text-sm font-bold cursor-pointer"
           >
             <Copy size={15} />
             {copied ? t("piano.copied") : t("piano.copyAddress")}
@@ -221,7 +221,7 @@ function ErrorCard({
       {onRetry && (
         <button
           onClick={onRetry}
-          className="btn-surface-themed self-start min-h-10 rounded-xl px-3 text-sm font-bold cursor-pointer"
+          className="btn-surface-themed self-start min-h-10 rounded-[14px] px-3 text-sm font-bold cursor-pointer"
           data-recovery-action="connect-bluetooth-midi"
         >
           {t("piano.tryAgain")}

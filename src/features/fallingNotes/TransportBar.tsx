@@ -166,7 +166,7 @@ export function TransportBar({
           <button
             onClick={resetPlayback}
             disabled={!song}
-            className="btn-surface-themed flex items-center justify-center rounded-lg disabled:opacity-40 cursor-pointer"
+            className="btn-surface-themed flex items-center justify-center rounded-[14px] disabled:opacity-40 cursor-pointer"
             style={{
               width: utilityButtonSize,
               height: utilityButtonSize,

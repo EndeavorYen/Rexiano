@@ -66,3 +66,11 @@ Rexiano 預設使用 TDD 開發模式。除非使用者明確要求不要改程�
 - 保持變更小、可回復、聚焦在使用者要求的行為面；避免順手重構無關區域。
 - 寫程式後做 review pass；寫文件後做 cut pass，刪掉重複與空泛句。
 - 對完成、修好、通過這類結論要附驗證證據，不只靠直覺或測試應該會過。
+
+## UI 規則（ui-forge 第 1 輪學到的）
+
+- 新畫面先讀 `docs/DESIGN.md` 第 16 節，只用零件表裡的零件；一個畫面只有一顆 `.btn-primary-themed`（2026-11-20）。
+- 成績一律用 `features/progress` 的 `starsForAccuracy`／`StarRow`（0–3 顆），不要再寫百分比或 5 顆星的顯示（2026-11-20）。
+- 曲子一律用封面卡（`SongCoverCard`／`SongCoverArt`）呈現，不做文字清單（2026-11-20）。
+- 新元件的樣式寫在元件旁的 CSS 檔並由元件 import；有 `.btn-*-themed` 的按鈕不要再加 Tailwind 圓角（2026-11-20）。
+- 改到畫面流程後跑 `tests/ui-forge/scenes.mjs`（ui-forge 的 `shoot-states.mjs --axe`，淺色和 `--dark` 各一次）：可捲動的面板要 `tabIndex={0}`，按鈕的 `aria-label` 要包含它看得見的字（2026-11-20）。

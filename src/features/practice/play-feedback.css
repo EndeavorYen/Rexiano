@@ -55,6 +55,7 @@
 }
 
 .play-hud-combo-label {
+  color: var(--color-text);
   font-size: 0.7rem;
   font-weight: 700;
 }

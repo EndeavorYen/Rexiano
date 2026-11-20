@@ -360,15 +360,7 @@ const StationNode = memo(function StationNode({
 }: StationNodeProps): React.JSX.Element {
   const { t, lang } = useTranslation();
   const title = songDisplayTitle(station.song, lang).primary;
-  const statusLabel =
-    station.status === "next"
-      ? t("map.next")
-      : t(`map.status.${station.status}` as TranslationKey);
   const starsLabel = t("map.starsCount", { n: station.stars });
-  const label =
-    station.status === "new" || station.status === "next"
-      ? `${title}，${statusLabel}`
-      : `${title}，${starsLabel}，${statusLabel}`;
 
   return (
     <li
@@ -384,7 +376,6 @@ const StationNode = memo(function StationNode({
       <button
         type="button"
         className="hm-node"
-        aria-label={label}
         aria-pressed={selected}
         data-testid={`map-station-${station.song.id}`}
         data-station-id={station.song.id}

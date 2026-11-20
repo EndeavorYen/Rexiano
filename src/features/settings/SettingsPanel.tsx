@@ -213,14 +213,14 @@ function BackupCard(): React.JSX.Element {
       <div className="grid grid-cols-2 gap-2">
         <button
           onClick={() => void exportBackup()}
-          className="btn-surface-themed min-h-11 rounded-2xl px-3 text-sm font-bold cursor-pointer"
+          className="btn-surface-themed min-h-11 rounded-[14px] px-3 text-sm font-bold cursor-pointer"
           data-testid="user-data-export"
         >
           {t("settings.backupExport")}
         </button>
         <button
           onClick={() => void importBackup()}
-          className="btn-surface-themed min-h-11 rounded-2xl px-3 text-sm font-bold cursor-pointer"
+          className="btn-surface-themed min-h-11 rounded-[14px] px-3 text-sm font-bold cursor-pointer"
           data-testid="user-data-import"
         >
           {t("settings.backupImport")}
@@ -240,7 +240,7 @@ function BackupCard(): React.JSX.Element {
           {message.reload && (
             <button
               onClick={() => window.location.reload()}
-              className="btn-primary-themed min-h-9 rounded-xl px-3 text-sm cursor-pointer"
+              className="btn-primary-themed min-h-9 rounded-[14px] px-3 text-sm cursor-pointer"
             >
               {t("settings.reloadNow")}
             </button>
@@ -317,7 +317,7 @@ export function SettingsPanel({
             <X size={20} />
           </button>
         </div>
-        <div className="family-sheet-body">
+        <div className="family-sheet-body" tabIndex={0}>
           <AppearanceCard />
           <LanguageCard />
           <SoundCard />

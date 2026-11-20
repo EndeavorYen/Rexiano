@@ -1,6 +1,6 @@
 # Rexiano — 開發路線圖與追蹤清單
 
-> **最後更新**: 2026-11-03
+> **最後更新**: 2026-11-20
 >
 > 詳細設計請參考 [DESIGN.md](./DESIGN.md)
 >
@@ -49,6 +49,7 @@ flowchart LR
 > 目標：體感要壓過 Synthesia 級手感。漂亮、簡潔、優雅，不是功能對照表打勾。
 
 - [x] 主路徑（開曲 → 練習）顯示切換只留舞台，抽屜不再重複
+- [x] 首頁改成冒險地圖、全部曲子改成琴譜書架、彈奏即時星星與連擊、結算 3 顆星與「下一首」（2026-11-20，設計憲法見 DESIGN.md 第 16 節）
 - [ ] 剩下的只對照 `docs/p2-synthesia-feel-checklist.md`：在 falling / split 與 Watch / Wait 上看得到的項。不要為了打贏 Synthesia 另開功能清單。
 - [x] 驗收清單：`docs/p2-synthesia-feel-checklist.md`（對照項已寫；尚未與 Synthesia 並排過關）
 

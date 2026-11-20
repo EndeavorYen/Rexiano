@@ -105,7 +105,7 @@ function ChangelogSheet({
             <X size={20} />
           </button>
         </div>
-        <div className="family-sheet-body changelog">
+        <div className="family-sheet-body changelog" tabIndex={0}>
           {CHANGELOG_VERSIONS.map((version, index) => {
             const text = localizedVersion(
               version,

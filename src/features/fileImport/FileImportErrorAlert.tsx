@@ -121,7 +121,7 @@ export function FileImportErrorAlert({
               action.emphasis === "primary"
                 ? "btn-primary-themed"
                 : "btn-surface-themed"
-            } min-h-9 rounded-lg px-3 py-1.5 text-xs font-body font-semibold cursor-pointer`}
+            } min-h-9 rounded-[14px] px-3 py-1.5 text-xs font-body font-semibold cursor-pointer`}
             data-import-recovery-action={action.id}
           >
             {action.label}
@@ -130,7 +130,7 @@ export function FileImportErrorAlert({
         <button
           type="button"
           onClick={onDismiss}
-          className="btn-surface-themed ml-auto flex min-h-9 items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-body font-semibold cursor-pointer"
+          className="btn-surface-themed ml-auto flex min-h-9 items-center gap-1.5 rounded-[14px] px-3 py-1.5 text-xs font-body font-semibold cursor-pointer"
         >
           <X size={13} aria-hidden="true" />
           {t("general.close")}

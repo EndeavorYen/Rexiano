@@ -108,7 +108,7 @@ export function PianoQuickConnect({
       <button
         onClick={handleClick}
         disabled={busy}
-        className={`flex min-h-11 shrink-0 items-center gap-2 rounded-2xl px-4 text-sm font-bold cursor-pointer ${connected || quiet ? "btn-ghost-themed" : "btn-primary-themed"}`}
+        className={`flex min-h-11 shrink-0 items-center gap-2 rounded-[14px] px-4 text-sm font-bold cursor-pointer ${connected || quiet ? "btn-ghost-themed" : "btn-primary-themed"}`}
       >
         {!connected && support === "ok" && <Bluetooth size={16} />}
         {connected ? t("piano.manage") : label}
