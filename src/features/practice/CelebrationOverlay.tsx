@@ -18,6 +18,8 @@ import { useTranslation } from "@renderer/i18n/useTranslation";
 import type { TranslationKey } from "@renderer/i18n/types";
 import { getRetrySpeed, type NextPracticeAction } from "./nextPracticeAction";
 import { StarRow } from "../progress/StarRow";
+import { SongCoverArt } from "../songLibrary/SongCoverArt";
+import type { PlaybackCover } from "./playbackCover";
 import { MAX_STARS, starsForAccuracy } from "../progress/stars";
 import "./play-feedback.css";
 
@@ -37,6 +39,9 @@ interface CelebrationOverlayProps {
   onNextSong?: () => void;
   /** Where the song was started from: names the secondary button */
   browseRoute?: BrowseRoute;
+  /** The name and cover of the song just played, shown at the top */
+  songTitle?: string;
+  cover?: PlaybackCover;
 }
 
 /** Translation keys for tier titles and subtitles */
@@ -86,6 +91,8 @@ export function CelebrationOverlay({
   nextSongTitle,
   onNextSong,
   browseRoute = "menu",
+  songTitle,
+  cover,
 }: CelebrationOverlayProps): React.JSX.Element {
   const { t } = useTranslation();
   const presentation = getCelebrationPresentation({
@@ -198,6 +205,7 @@ export function CelebrationOverlay({
         aria-labelledby="celebration-title"
         tabIndex={-1}
         className="family-sheet play-result"
+        data-stars={presentation.showScore ? stars : undefined}
         onKeyDownCapture={(event) => {
           if (
             (event.key === "Enter" || event.key === " ") &&
@@ -226,17 +234,46 @@ export function CelebrationOverlay({
           </div>
         )}
 
+        {(songTitle || cover) && (
+          <div className="play-result-song" data-testid="celebration-song">
+            {cover && (
+              <span className="play-result-cover" aria-hidden="true">
+                <SongCoverArt
+                  contour={cover.contour}
+                  seed={cover.seed}
+                  color={cover.color}
+                />
+              </span>
+            )}
+            {songTitle && (
+              <span className="play-result-song-title" title={songTitle}>
+                {songTitle}
+              </span>
+            )}
+          </div>
+        )}
+
         {presentation.showScore && (
-          <StarRow
-            stars={stars}
-            size={56}
-            animate
-            label={t("celebration.starRating", {
-              filled: stars,
-              total: MAX_STARS,
-            })}
-            className="play-result-stars"
-          />
+          <div className="play-result-stars-wrap">
+            {stars === 3 && (
+              <span
+                className="play-result-rays"
+                aria-hidden="true"
+                data-testid="celebration-rays"
+              />
+            )}
+            <StarRow
+              stars={stars}
+              size={stars === 3 ? 72 : 56}
+              animate
+              stagger={0.4}
+              label={t("celebration.starRating", {
+                filled: stars,
+                total: MAX_STARS,
+              })}
+              className="play-result-stars"
+            />
+          </div>
         )}
 
         <h2 id="celebration-title" className="play-result-title">

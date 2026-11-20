@@ -41,7 +41,7 @@ export function DisplayModeToggle({
             data-testid={`${testIdPrefix}-${value}`}
           >
             <Icon size={16} />
-            <span className="hidden sm:inline">{t(labelKey)}</span>
+            <span className="display-mode-label">{t(labelKey)}</span>
           </button>
         );
       })}

@@ -64,7 +64,7 @@ export function WaitInputHint({
           <button
             type="button"
             onClick={onConnectKeyboard}
-            className="btn-surface-themed play-hint-connect"
+            className="btn-ghost-themed play-hint-connect"
           >
             {t("practice.waitInputHintConnect")}
           </button>

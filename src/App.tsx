@@ -52,12 +52,14 @@ import { usePracticeNotes } from "./features/practice/usePracticeNotes";
 import { useAppNavigation } from "./features/routing/useAppNavigation";
 import { useAppE2eFixtures } from "./hooks/useAppE2eFixtures";
 import { PlaybackHeader } from "./features/practice/PlaybackHeader";
+import { playbackCover } from "./features/practice/playbackCover";
 import { StarToast } from "./features/practice/StarToast";
 import { PlaybackDrawer } from "./features/practice/PlaybackDrawer";
 import { useNextSong } from "./features/practice/useNextSong";
 import { usePracticeInsights } from "./features/practice/usePracticeInsights";
 import { getRetrySpeed } from "./features/practice/nextPracticeAction";
 import { applyPracticeSpeedChangeForSong } from "./features/practice/practiceSetupControlActions";
+import { shouldRenderBassStaff } from "./features/sheetMusic/sheetMusicUtils";
 import { useSheetMusicNotation } from "./features/sheetMusic/useSheetMusicNotation";
 
 /**
@@ -98,6 +100,10 @@ function App(): React.JSX.Element {
         ? playbackSongTitle(song.fileName, songCatalogue, importedSongs, lang)
         : "",
     [song, songCatalogue, importedSongs, lang],
+  );
+  const playbackCoverArt = useMemo(
+    () => (song ? playbackCover(song.fileName, songCatalogue) : undefined),
+    [song, songCatalogue],
   );
   // Fit the keyboard and falling-notes lane to the song, fixed per song.
   const keyRange = useMemo(
@@ -441,8 +447,12 @@ function App(): React.JSX.Element {
         isSplitMode,
         isNarrowViewport,
         whiteKeyWidth: viewportSize.width / countWhiteKeys(keyRange),
+        hasBassStaff: notationData
+          ? shouldRenderBassStaff(notationData.measures)
+          : true,
       }),
     [
+      notationData,
       isNarrowViewport,
       isSplitMode,
       viewportHeight,
@@ -723,6 +733,8 @@ function App(): React.JSX.Element {
             nextSong ? songDisplayTitle(nextSong, lang).primary : undefined
           }
           onNextSong={nextSong ? () => void handleNextSong() : undefined}
+          songTitle={playbackTitle}
+          cover={playbackCoverArt}
         />
       )}
     </div>
