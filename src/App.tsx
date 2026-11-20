@@ -52,6 +52,7 @@ import { usePracticeNotes } from "./features/practice/usePracticeNotes";
 import { useAppNavigation } from "./features/routing/useAppNavigation";
 import { useAppE2eFixtures } from "./hooks/useAppE2eFixtures";
 import { PlaybackHeader } from "./features/practice/PlaybackHeader";
+import { StarToast } from "./features/practice/StarToast";
 import { PlaybackDrawer } from "./features/practice/PlaybackDrawer";
 import { useNextSong } from "./features/practice/useNextSong";
 import { usePracticeInsights } from "./features/practice/usePracticeInsights";
@@ -619,6 +620,8 @@ function App(): React.JSX.Element {
             onClose={closePlaybackDrawer}
           />
 
+          <StarToast />
+
           {/* Main display area: sheet music / falling notes */}
           <div
             ref={playbackStageRef}
@@ -632,8 +635,8 @@ function App(): React.JSX.Element {
                   ? {
                       filter:
                         splitFocus === "sheet"
-                          ? "saturate(1.03) brightness(1.015)"
-                          : "saturate(0.9) brightness(0.965)",
+                          ? "saturate(1.03)"
+                          : "saturate(0.9)",
                       transition: "filter 160ms ease",
                     }
                   : undefined

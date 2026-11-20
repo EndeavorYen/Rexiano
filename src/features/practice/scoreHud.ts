@@ -86,3 +86,26 @@ export function countPlayableNotes(
   });
   return total;
 }
+
+export interface StarCelebrationStep {
+  /** Which star to announce now (1-3), or null for nothing */
+  announce: StarCount | null;
+  /** Highest star already announced in this run; keep it for the next call */
+  celebrated: StarCount;
+}
+
+/**
+ * The big star on the stage: announced once per star per run. `celebrated`
+ * is the highest star already shown, so a star that dips (a wrong note makes
+ * the song "longer") and comes back is not announced twice. A new run starts
+ * when no note has been hit yet.
+ */
+export function nextStarCelebration(
+  celebrated: StarCount,
+  stars: StarCount,
+  hitNotes: number,
+): StarCelebrationStep {
+  if (hitNotes <= 0) return { announce: null, celebrated: 0 };
+  if (stars > celebrated) return { announce: stars, celebrated: stars };
+  return { announce: null, celebrated };
+}

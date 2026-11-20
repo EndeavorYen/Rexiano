@@ -641,3 +641,37 @@
   opacity: 0.4;
   cursor: default;
 }
+
+/* ── The big star on the stage (round 3): where the child is looking ── */
+.play-star-toast {
+  position: fixed;
+  z-index: 150;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  /* left/top are the star's centre; the box hangs below it. */
+  transform: translate(-50%, -48px);
+  transform-origin: 50% 48px;
+  pointer-events: none;
+  user-select: none;
+  opacity: 0;
+}
+
+.play-star-toast-star {
+  display: block;
+  filter: drop-shadow(0 4px 10px color-mix(in srgb, var(--color-accent) 55%, transparent));
+}
+
+.play-star-toast-text {
+  padding: 2px 16px;
+  border-radius: 999px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  color: var(--color-text);
+  font-family: var(--font-display);
+  font-size: 1.375rem;
+  font-weight: 800;
+  line-height: 1.6;
+  white-space: nowrap;
+}

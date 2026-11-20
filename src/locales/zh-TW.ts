@@ -449,9 +449,9 @@ export const zhTW: TranslationMap = {
   // ── Celebration ────────────────────────────────────────────────
   "celebration.amazing.title": "三顆星！你好厲害！",
   "celebration.amazing.subtitle": "這首你彈得又穩又準。",
-  "celebration.great.title": "彈得真好！",
+  "celebration.great.title": "差一點就三顆星！",
   "celebration.great.subtitle": "再彈一次，星星會更多。",
-  "celebration.encourage.title": "你完成了！",
+  "celebration.encourage.title": "彈完了！再彈一次會更好。",
   "celebration.encourage.subtitle": "慢慢來，每彈一次都會更熟。",
   "celebration.listen.title": "聽完了！",
   "celebration.listen.subtitle": "接下來跟著彈彈看，曲子會停下來等你。",
@@ -741,4 +741,8 @@ export const zhTW: TranslationMap = {
     "有些節奏在樂譜上只能畫成相近的樣子，聽到的聲音不受影響。",
   "midiNotice.genericBody": "這個檔案的資料不太完整，樂譜可能和原曲不太一樣。",
   "midiNotice.dismiss": "知道了，關閉提示",
+  // ── UI round 3: play ──
+  "practice.starToast1": "第 1 顆星！",
+  "practice.starToast2": "第 2 顆星！",
+  "practice.starToast3": "三顆星！",
 };

@@ -5,6 +5,7 @@ import {
   COMBO_MIN_STREAK,
   buildScoreHud,
   countPlayableNotes,
+  nextStarCelebration,
   starJustLit,
 } from "./scoreHud";
 
@@ -122,5 +123,45 @@ describe("starJustLit", () => {
   test("nothing pops when the count is the same or lower", () => {
     expect(starJustLit(2, 2)).toBeNull();
     expect(starJustLit(3, 0)).toBeNull();
+  });
+});
+
+describe("nextStarCelebration", () => {
+  test("announces a star the first time it is reached", () => {
+    expect(nextStarCelebration(0, 1, 14)).toEqual({
+      announce: 1,
+      celebrated: 1,
+    });
+    expect(nextStarCelebration(1, 2, 28)).toEqual({
+      announce: 2,
+      celebrated: 2,
+    });
+  });
+
+  test("says nothing while the star count stays the same", () => {
+    expect(nextStarCelebration(1, 1, 20)).toEqual({
+      announce: null,
+      celebrated: 1,
+    });
+  });
+
+  test("does not announce a star again after it dipped and came back", () => {
+    const dipped = nextStarCelebration(2, 1, 30);
+    expect(dipped).toEqual({ announce: null, celebrated: 2 });
+    expect(nextStarCelebration(dipped.celebrated, 2, 31)).toEqual({
+      announce: null,
+      celebrated: 2,
+    });
+  });
+
+  test("announces the newest star when two are gained at once", () => {
+    expect(nextStarCelebration(0, 2, 30).announce).toBe(2);
+  });
+
+  test("a restarted run (no hits yet) starts over", () => {
+    expect(nextStarCelebration(3, 0, 0)).toEqual({
+      announce: null,
+      celebrated: 0,
+    });
   });
 });

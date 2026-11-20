@@ -709,6 +709,10 @@ export interface TranslationMap {
   "midiNotice.rhythmBody": string;
   "midiNotice.genericBody": string;
   "midiNotice.dismiss": string;
+  // ── UI round 3: play ──
+  "practice.starToast1": string;
+  "practice.starToast2": string;
+  "practice.starToast3": string;
 }
 
 /**
