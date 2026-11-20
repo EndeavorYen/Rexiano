@@ -805,19 +805,23 @@ input.seek-slider-input {
 }
 
 .segmented button {
-  min-height: 40px;
+  min-height: 44px;
   border-radius: 10px;
-  border: 0;
+  border: 2px solid transparent;
   background: transparent;
   color: var(--color-text-muted);
   font-weight: 700;
   cursor: pointer;
 }
 
-.segmented button[aria-pressed="true"] {
-  background: var(--color-accent);
-  color: var(--color-on-accent);
-  box-shadow: 0 2px 0 rgba(0, 0, 0, 0.12);
+/* "Chosen" is pale yellow with a sun-yellow edge. Solid yellow belongs to
+   the one primary button of a screen (DESIGN.md 16.5). */
+.segmented button[aria-pressed="true"],
+.segmented button[aria-checked="true"],
+.segmented button[aria-selected="true"] {
+  background: color-mix(in srgb, var(--color-accent) 26%, var(--color-surface));
+  border-color: var(--color-accent);
+  color: var(--color-text);
 }
 
 /* ── On-screen piano: dark case, felt strip, keys with depth ── */
