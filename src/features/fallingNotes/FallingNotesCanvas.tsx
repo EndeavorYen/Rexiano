@@ -24,6 +24,8 @@ import {
 interface FallingNotesCanvasProps {
   /** Callback to send active MIDI notes to PianoKeyboard */
   onActiveNotesChange?: (notes: Set<number>) => void;
+  /** Colour (0xRRGGBB) of the track each sounding note belongs to */
+  onActiveNoteColorsChange?: (colors: ReadonlyMap<number, number>) => void;
   /** Expose the NoteRenderer instance for external use (e.g. practice visual feedback) */
   onNoteRendererReady?: (renderer: NoteRenderer) => void;
   /** Optional minimum render height in px */
@@ -34,6 +36,7 @@ interface FallingNotesCanvasProps {
 
 export function FallingNotesCanvas({
   onActiveNotesChange,
+  onActiveNoteColorsChange,
   onNoteRendererReady,
   minHeight = 200,
   keyRange = FULL_KEY_RANGE,
@@ -51,6 +54,10 @@ export function FallingNotesCanvas({
 
   // Stable ref so the ticker closure always sees the latest callback
   // without re-running the effect (fix: avoid destroying PixiJS on parent re-render)
+  const onActiveNoteColorsChangeRef = useRef(onActiveNoteColorsChange);
+  useEffect(() => {
+    onActiveNoteColorsChangeRef.current = onActiveNoteColorsChange;
+  }, [onActiveNoteColorsChange]);
   const onActiveNotesChangeRef = useRef(onActiveNotesChange);
   useEffect(() => {
     onActiveNotesChangeRef.current = onActiveNotesChange;
@@ -146,6 +153,7 @@ export function FallingNotesCanvas({
           diagnosticsEnabled
             ? (frame) => onRenderDiagnosticsRef.current?.(frame)
             : undefined,
+          onActiveNoteColorsChangeRef,
         ),
       );
 

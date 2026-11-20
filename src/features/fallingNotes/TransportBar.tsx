@@ -111,15 +111,15 @@ export function TransportBar({
     setPlayPulse(true);
     setTimeout(() => setPlayPulse(false), 300);
   };
-  const primaryButtonSize = compact ? 36 : 40;
-  const iconSize = compact ? 16 : 18;
-  const utilityButtonSize = 36;
+  // The only solid yellow on the screen; every control is 44px or more.
+  const primaryButtonSize = 48;
+  const iconSize = 20;
   const controlVisibility = getTransportControlVisibility();
 
   return (
     <div
       className={`transport-strip surface-panel mx-3 rounded-2xl sm:px-4 ${
-        compact ? "mt-2 px-2.5 py-2" : "mt-3 px-3 py-2.5"
+        compact ? "mt-2 px-2.5 py-1.5" : "mt-3 px-3 py-2"
       }`}
       data-testid="transport-strip"
     >
@@ -166,16 +166,12 @@ export function TransportBar({
           <button
             onClick={resetPlayback}
             disabled={!song}
-            className="btn-surface-themed flex items-center justify-center rounded-[14px] disabled:opacity-40 cursor-pointer"
-            style={{
-              width: utilityButtonSize,
-              height: utilityButtonSize,
-              color: "var(--color-text-muted)",
-            }}
+            className="btn-surface-themed play-icon-btn"
+            style={{ color: "var(--color-text-muted)" }}
             title={t("transport.reset")}
             aria-label={t("transport.resetLabel")}
           >
-            <SkipBack size={compact ? 13 : 14} fill="currentColor" />
+            <SkipBack size={16} fill="currentColor" />
           </button>
 
           {audioStatus === "loading" && audioRecoveryState !== "recovering" && (
@@ -256,12 +252,12 @@ export function TransportBar({
         </div>
 
         <div
-          className={`order-last flex basis-full items-center min-w-0 lg:order-none lg:basis-0 lg:flex-1 lg:min-w-[220px] ${
+          className={`order-last flex basis-full items-center min-w-0 lg:order-none lg:basis-0 lg:flex-1 lg:min-w-[140px] ${
             compact ? "gap-2" : "gap-3"
           }`}
         >
           <span
-            className="text-xs font-mono tabular-nums shrink-0"
+            className="transport-label font-mono tabular-nums shrink-0"
             style={{
               color: "var(--color-text)",
               minWidth: 36,
@@ -273,7 +269,7 @@ export function TransportBar({
 
           <div
             className="relative flex-1 flex items-center"
-            style={{ height: 36 }}
+            style={{ height: 44 }}
           >
             <input
               type="range"
@@ -293,7 +289,7 @@ export function TransportBar({
           </div>
 
           <span
-            className="text-xs font-mono tabular-nums shrink-0"
+            className="transport-label font-mono tabular-nums shrink-0"
             style={{
               color: "var(--color-text-muted)",
               minWidth: 36,

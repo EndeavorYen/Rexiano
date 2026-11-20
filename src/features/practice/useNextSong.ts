@@ -5,6 +5,8 @@ import { useProgressStore } from "@renderer/stores/useProgressStore";
 import { useSongStore } from "@renderer/stores/useSongStore";
 import { useSongLibraryStore } from "@renderer/stores/useSongLibraryStore";
 import { openBuiltinSong } from "../songLibrary/openBuiltinSong";
+import { usePracticeStore } from "@renderer/stores/usePracticeStore";
+import { openKeepingDisplayMode } from "./keepDisplayMode";
 import { pickNextSong } from "./nextSongPick";
 import type { PracticeSessionIntent } from "./sessionIntent";
 
@@ -57,10 +59,13 @@ export function useNextSong({
     setSessionIntent("play-along");
     cancelPendingPlaybackStart();
     try {
-      const title = await openBuiltinSong(nextSong.id, {
-        loadSong,
-        resetPlayback,
-      });
+      const title = await openKeepingDisplayMode(
+        () => openBuiltinSong(nextSong.id, { loadSong, resetPlayback }),
+        {
+          get: () => usePracticeStore.getState().displayMode,
+          set: (mode) => usePracticeStore.getState().setDisplayMode(mode),
+        },
+      );
       if (!title) return;
       const loaded = useSongStore.getState().song;
       if (loaded) requestPlaybackStart(loaded);

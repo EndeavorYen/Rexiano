@@ -746,7 +746,6 @@ export const en: TranslationMap = {
   "celebration.again": "Play again",
   "celebration.nextSong": "Next song: {title}",
   "celebration.moreStars": "More stars!",
-  "celebration.bestScore": "New best score!",
   "celebration.hitCount":
     "You played {hit} of {total} notes right ({accuracy}%)",
 
@@ -768,4 +767,21 @@ export const en: TranslationMap = {
   // ── UI round 2: home-map ──
   "map.backToNext": "Back to next stop",
   "map.goalDone": "Today's goal reached",
+  // ── UI round 2: play ──
+  "nav.backToMap": "Back to map",
+  "nav.backToShelf": "Back to shelf",
+  "celebration.better": "Better than last time!",
+  "celebration.slowAgain": "Slow down and play again",
+  "celebration.slowAdvice": "Slow it down and try again. It gets easier.",
+  "celebration.againAdvice": "Play it once more and it gets better.",
+  "midiNotice.warnTitle": "The sheet may differ from the original",
+  "midiNotice.errorTitle": "This file may not be playable",
+  "midiNotice.errorBody": "Something in the file is wrong. Try another file.",
+  "midiNotice.timeSignatureBody":
+    "This file has incomplete time signature data, so the sheet may differ from the original.",
+  "midiNotice.rhythmBody":
+    "Some rhythms can only be drawn approximately on the sheet. The sound is not affected.",
+  "midiNotice.genericBody":
+    "This file has incomplete data, so the sheet may differ from the original.",
+  "midiNotice.dismiss": "Got it, hide this notice",
 };

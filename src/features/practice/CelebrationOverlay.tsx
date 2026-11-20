@@ -1,11 +1,15 @@
 import type { PracticeMode, PracticeScore } from "@shared/types";
 import { useProgressStore } from "../../stores/useProgressStore";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import type { BrowseRoute } from "../routing/useAppNavigation";
+import { backLabelKey } from "../routing/browseRouteLabel";
 import {
   getCelebrationActions,
   getCelebrationPresentation,
+  getRecordBadge,
   getTier,
-  isNewRecord,
+  isResultKeyGuardActive,
+  nowMs,
   type CelebrationActionId,
   type CelebrationTier,
 } from "./celebrationUtils";
@@ -31,6 +35,8 @@ interface CelebrationOverlayProps {
   /** The next station on the lesson route; only offered after three stars */
   nextSongTitle?: string;
   onNextSong?: () => void;
+  /** Where the song was started from: names the secondary button */
+  browseRoute?: BrowseRoute;
 }
 
 /** Translation keys for tier titles and subtitles */
@@ -50,9 +56,9 @@ const NEXT_ACTION_BODY_KEYS: Record<
   NextPracticeAction["kind"],
   TranslationKey
 > = {
-  "slow-down": "celebration.nextAction.slowDown.body",
+  "slow-down": "celebration.slowAdvice",
   "raise-speed": "celebration.nextAction.raiseSpeed.body",
-  "repeat-once": "celebration.nextAction.repeatOnce.body",
+  "repeat-once": "celebration.againAdvice",
   "next-song": "celebration.nextAction.nextSong.body",
 };
 
@@ -79,6 +85,7 @@ export function CelebrationOverlay({
   mode = "wait",
   nextSongTitle,
   onNextSong,
+  browseRoute = "menu",
 }: CelebrationOverlayProps): React.JSX.Element {
   const { t } = useTranslation();
   const presentation = getCelebrationPresentation({
@@ -95,14 +102,12 @@ export function CelebrationOverlay({
     songId ? useProgressStore.getState().getBestScore(songId) : null,
   );
   const previousAccuracy = previousBest ? previousBest.score.accuracy : null;
-  const showNewRecord = isNewRecord(
+  const recordBadge = getRecordBadge(
     score.accuracy,
     score.totalNotes,
     songId,
     previousAccuracy,
   );
-  const starsGained =
-    previousAccuracy !== null && stars > starsForAccuracy(previousAccuracy);
 
   // The replay button applies speed advice, so advice and button agree.
   const retrySpeed = isListenThrough ? null : getRetrySpeed(nextAction);
@@ -110,6 +115,13 @@ export function CelebrationOverlay({
   const [advancing, setAdvancing] = useState(false);
   const cardRef = useRef<HTMLDivElement>(null);
   const primaryRef = useRef<HTMLButtonElement>(null);
+  // Keys held down at the end of a run must not press a button for the child.
+  const openedAtRef = useRef(0);
+  useEffect(() => {
+    openedAtRef.current = nowMs();
+  }, []);
+  const keyGuardActive = (): boolean =>
+    isResultKeyGuardActive(openedAtRef.current, nowMs());
   useDialogFocus({
     active: visible,
     containerRef: cardRef,
@@ -129,11 +141,18 @@ export function CelebrationOverlay({
       return t("celebration.nextSong", { title: nextSongTitle ?? "" });
     }
     if (action === "try-wait") return t("celebration.listen.tryWait");
-    if (action === "choose-song") return t("celebration.pickSong");
+    if (action === "choose-song") return t(backLabelKey(browseRoute));
     if (isListenThrough) return t("celebration.listen.listenAgain");
-    return retrySpeed !== null
-      ? t("celebration.playAgainAtSpeed", { speed: formatSpeed(retrySpeed) })
-      : t("celebration.again");
+    if (retrySpeed !== null && nextAction?.kind === "slow-down") {
+      return t("celebration.slowAgain");
+    }
+    if (retrySpeed !== null) {
+      // Three stars: the replay moves up a speed, so the button says which.
+      return t("celebration.playAgainAtSpeed", {
+        speed: formatSpeed(retrySpeed),
+      });
+    }
+    return t("celebration.again");
   };
   const actionHandler = (action: CelebrationActionId): (() => void) => {
     if (action === "next-song") {
@@ -179,6 +198,14 @@ export function CelebrationOverlay({
         aria-labelledby="celebration-title"
         tabIndex={-1}
         className="family-sheet play-result"
+        onKeyDownCapture={(event) => {
+          if (
+            (event.key === "Enter" || event.key === " ") &&
+            keyGuardActive()
+          ) {
+            event.preventDefault();
+          }
+        }}
       >
         {stars === 3 && !isListenThrough && (
           <div className="play-confetti" aria-hidden="true">
@@ -189,6 +216,9 @@ export function CelebrationOverlay({
                 style={
                   {
                     "--i": index,
+                    // 7 and 16 share no factor: pieces that fall one after
+                    // another land far apart across the card's width.
+                    "--x": ((index * 7) % 16) * 6 + 4,
                   } as React.CSSProperties
                 }
               />
@@ -215,14 +245,14 @@ export function CelebrationOverlay({
             : t(TIER_TITLE_KEYS[tier])}
         </h2>
 
-        {presentation.showScore && (starsGained || showNewRecord) && (
+        {presentation.showScore && recordBadge && (
           <p
             className="play-result-record"
             data-testid="celebration-new-record"
           >
-            {starsGained
+            {recordBadge === "more-stars"
               ? t("celebration.moreStars")
-              : t("celebration.bestScore")}
+              : t("celebration.better")}
           </p>
         )}
 
@@ -252,7 +282,11 @@ export function CelebrationOverlay({
             <button
               ref={primaryRef}
               type="button"
-              onClick={actionHandler(primaryAction)}
+              onClick={(event) => {
+                // detail 0 means a key pressed the button, not a pointer.
+                if (event.detail === 0 && keyGuardActive()) return;
+                actionHandler(primaryAction)();
+              }}
               disabled={advancing}
               className="btn-primary-themed play-result-primary"
               data-testid={actionTestId[primaryAction]}

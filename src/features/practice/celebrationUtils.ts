@@ -1,4 +1,5 @@
 import type { PracticeMode } from "@shared/types";
+import { starsForAccuracy } from "../progress/stars";
 
 export type CelebrationTier = "amazing" | "great" | "encourage";
 export type CelebrationVariant = "scored" | "listen";
@@ -34,22 +35,43 @@ export function getTier(accuracy: number): CelebrationTier {
   return "encourage";
 }
 
+export type RecordBadge = "more-stars" | "better";
+
 /**
- * Determine whether the current score qualifies as a new personal record.
- *
- * Returns `true` when:
- * - The session has at least one note (`totalNotes > 0`)
- * - A `songId` is provided
- * - There is no previous best, **or** the current accuracy exceeds it
+ * The little badge under the title. The very first finished run of a song has
+ * nothing to beat, so it gets none. After that: more stars, or (same stars)
+ * a higher accuracy. `previousBestAccuracy` is from finished runs only.
  */
-export function isNewRecord(
+export function getRecordBadge(
   accuracy: number,
   totalNotes: number,
   songId: string | undefined,
   previousBestAccuracy: number | null,
+): RecordBadge | null {
+  if (totalNotes <= 0 || !songId) return null;
+  if (previousBestAccuracy === null) return null;
+  const before = starsForAccuracy(previousBestAccuracy);
+  const now = starsForAccuracy(accuracy);
+  if (now > before) return "more-stars";
+  if (now === before && accuracy > previousBestAccuracy) return "better";
+  return null;
+}
+
+/** Ignore keyboard activation of the primary button this long after the card opens. */
+export const RESULT_KEY_GUARD_MS = 600;
+
+/** The clock the guard reads; a function so components stay pure. */
+export function nowMs(): number {
+  return performance.now();
+}
+
+/** True while a key press must not trigger the result card's buttons. */
+export function isResultKeyGuardActive(
+  openedAt: number,
+  now: number,
+  guardMs: number = RESULT_KEY_GUARD_MS,
 ): boolean {
-  if (totalNotes <= 0 || !songId) return false;
-  return previousBestAccuracy === null || accuracy > previousBestAccuracy;
+  return now - openedAt < guardMs;
 }
 
 export type CelebrationActionId =

@@ -676,7 +676,6 @@ export interface TranslationMap {
   "celebration.again": string;
   "celebration.nextSong": string;
   "celebration.moreStars": string;
-  "celebration.bestScore": string;
   "celebration.hitCount": string;
   // ── UI round 2: songbook ──
   "songbook.shelf.continue": string;
@@ -695,6 +694,21 @@ export interface TranslationMap {
   // ── UI round 2: home-map ──
   "map.backToNext": string;
   "map.goalDone": string;
+
+  // ── UI round 2: play ──
+  "nav.backToMap": string;
+  "nav.backToShelf": string;
+  "celebration.better": string;
+  "celebration.slowAgain": string;
+  "celebration.slowAdvice": string;
+  "celebration.againAdvice": string;
+  "midiNotice.warnTitle": string;
+  "midiNotice.errorTitle": string;
+  "midiNotice.errorBody": string;
+  "midiNotice.timeSignatureBody": string;
+  "midiNotice.rhythmBody": string;
+  "midiNotice.genericBody": string;
+  "midiNotice.dismiss": string;
 }
 
 /**

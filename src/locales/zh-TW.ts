@@ -706,7 +706,6 @@ export const zhTW: TranslationMap = {
   "celebration.again": "再彈一次",
   "celebration.nextSong": "下一首：{title}",
   "celebration.moreStars": "星星變多了！",
-  "celebration.bestScore": "新的最佳成績！",
   "celebration.hitCount": "彈對 {hit}／{total} 個音（{accuracy}%）",
 
   // ── UI round 2: songbook ──
@@ -726,4 +725,20 @@ export const zhTW: TranslationMap = {
   // ── UI round 2: home-map ──
   "map.backToNext": "回到下一站",
   "map.goalDone": "今天的目標達成了",
+  // ── UI round 2: play ──
+  "nav.backToMap": "回地圖",
+  "nav.backToShelf": "回書架",
+  "celebration.better": "比上次更好！",
+  "celebration.slowAgain": "放慢再彈一次",
+  "celebration.slowAdvice": "放慢一點再彈一次，會更容易。",
+  "celebration.againAdvice": "再彈一次就更好。",
+  "midiNotice.warnTitle": "樂譜可能和原曲不太一樣",
+  "midiNotice.errorTitle": "這個檔案可能沒辦法練習",
+  "midiNotice.errorBody": "檔案裡的資料有問題，可以換一個檔案試試。",
+  "midiNotice.timeSignatureBody":
+    "這個檔案的拍號資料不完整，樂譜可能和原曲不太一樣。",
+  "midiNotice.rhythmBody":
+    "有些節奏在樂譜上只能畫成相近的樣子，聽到的聲音不受影響。",
+  "midiNotice.genericBody": "這個檔案的資料不太完整，樂譜可能和原曲不太一樣。",
+  "midiNotice.dismiss": "知道了，關閉提示",
 };

@@ -62,6 +62,7 @@ import {
   type KeyRange,
 } from "./keyPositions";
 import { getTrackColor } from "./noteColors";
+import { foldNextNoteTime, isTargetNote } from "./targetGroup";
 import {
   noteToScreenY,
   durationToHeight,
@@ -80,6 +81,11 @@ function noteKey(trackIdx: number, midi: number, time: number): string {
 }
 
 const INITIAL_POOL_SIZE = 512;
+
+/** Frames around the note(s) to play now; a chord rarely needs more. */
+const HALO_POOL_SIZE = 16;
+/** How far the frame sticks out past the note, per side, in px. */
+const HALO_SPREAD = 4;
 
 /** Minimum note rectangle height (px) to show a label inside it. */
 const MIN_HEIGHT_FOR_LABEL = 16;
@@ -250,6 +256,13 @@ export class NoteRenderer {
   public showNoteLabels = true;
 
   public activeNotes = new Set<number>();
+  /** Colour (0xRRGGBB) of the track each sounding note belongs to, by midi. */
+  public activeNoteColors = new Map<number, number>();
+
+  // ── "Play this now" frame around the next note or chord ──
+  private haloLayer: Container | null = null;
+  private haloPool: Sprite[] = [];
+  private targetTime = Infinity;
 
   // ── Hit bursts: a fixed pool of pre-drawn sparks at the hit line ──
   private burstLayer: Container | null = null;
@@ -287,6 +300,23 @@ export class NoteRenderer {
     this.canvasWidth = canvasWidth;
     this.keyPositions = buildKeyPositions(canvasWidth, this.keyRange);
     this.noteTexture = createNoteTexture() ?? Texture.WHITE;
+
+    // Frames go in first so they sit behind every note.
+    this.haloLayer = new Container();
+    this.container.addChild(this.haloLayer);
+    for (let i = 0; i < HALO_POOL_SIZE; i++) {
+      const halo = new NineSliceSprite({
+        texture: this.noteTexture,
+        leftWidth: NOTE_SLICE,
+        rightWidth: NOTE_SLICE,
+        topHeight: NOTE_SLICE,
+        bottomHeight: NOTE_SLICE,
+      });
+      halo.visible = false;
+      halo.alpha = 0.9;
+      this.haloPool.push(halo);
+      this.haloLayer.addChild(halo);
+    }
 
     for (let i = 0; i < INITIAL_POOL_SIZE; i++) {
       this.pool.push(this.createSprite());
@@ -347,7 +377,13 @@ export class NoteRenderer {
     const nextActive = this.nextActive;
     nextActive.clear();
     this.activeNotes.clear();
+    this.activeNoteColors.clear();
     this.lastVisibleNoteCount = 0;
+    // The next group is found while drawing and used on the following frame;
+    // one frame of lag is invisible and saves a second pass over the notes.
+    const targetTime = this.targetTime;
+    let nextTargetTime = Infinity;
+    let haloCount = 0;
 
     this.hitLineY = vp.height;
     const hitWindow = 0.05;
@@ -402,6 +438,26 @@ export class NoteRenderer {
         sprite.visible = true;
         nextActive.set(key, sprite);
 
+        nextTargetTime = foldNextNoteTime(
+          nextTargetTime,
+          note.time,
+          vp.currentTime,
+          hitWindow,
+        );
+        if (
+          haloCount < this.haloPool.length &&
+          isTargetNote(note.time, targetTime)
+        ) {
+          const halo = this.haloPool[haloCount];
+          halo.x = sprite.x - HALO_SPREAD;
+          halo.y = sprite.y - HALO_SPREAD;
+          halo.width = sprite.width + HALO_SPREAD * 2;
+          halo.height = sprite.height + HALO_SPREAD * 2;
+          halo.tint = lerpColor(color, 0xffffff, 0.92);
+          halo.visible = true;
+          haloCount += 1;
+        }
+
         // ── Note label management ──
         if (
           this.showNoteLabels &&
@@ -433,6 +489,9 @@ export class NoteRenderer {
           note.time + note.duration >= vp.currentTime - hitWindow
         ) {
           this.activeNotes.add(note.midi);
+          if (!this.activeNoteColors.has(note.midi)) {
+            this.activeNoteColors.set(note.midi, color);
+          }
         }
 
         // ── Fingering label overlay ──────────────────────────────
@@ -452,6 +511,11 @@ export class NoteRenderer {
           }
         }
       }
+    }
+
+    this.targetTime = nextTargetTime;
+    for (let i = haloCount; i < this.haloPool.length; i++) {
+      if (this.haloPool[i].visible) this.haloPool[i].visible = false;
     }
 
     for (const [key, sprite] of this.active) {
@@ -547,6 +611,10 @@ export class NoteRenderer {
     this.burstLayer = null;
     this.burstGraphics.length = 0;
     this.burstPool.reset();
+    this.haloLayer = null;
+    this.haloPool.length = 0;
+    this.targetTime = Infinity;
+    this.activeNoteColors.clear();
     this.pool.length = 0;
     this.active.clear();
     this.nextActive.clear();

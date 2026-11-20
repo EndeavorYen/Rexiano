@@ -49,6 +49,14 @@ export function buildScoreHud({
   };
 }
 
+/**
+ * Which star (1-based) just lit up when the count went from `previous` to
+ * `next`, or null. Used for the pop: only a star that is new gets one.
+ */
+export function starJustLit(previous: number, next: number): number | null {
+  return next > previous ? next : null;
+}
+
 /** The first star lights up halfway to two stars. */
 const FIRST_STAR_SHARE = TWO_STAR_ACCURACY / 2;
 

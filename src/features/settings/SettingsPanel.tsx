@@ -8,6 +8,7 @@ import { LanguageSwitcher } from "./LanguageSwitcher";
 import { useTranslation } from "@renderer/i18n/useTranslation";
 import type { TranslationKey } from "@renderer/i18n/types";
 import { useDialogFocus } from "@renderer/hooks/useDialogFocus";
+import { setSharedVolume } from "../audio/volumeSync";
 import { DeviceSelector } from "../midiDevice/DeviceSelector";
 import {
   applyUserDataBackupToRuntime,
@@ -67,7 +68,6 @@ function SoundCard(): React.JSX.Element {
   const { t } = useTranslation();
   const volume = useSettingsStore((s) => s.volume);
   const muted = useSettingsStore((s) => s.muted);
-  const setVolume = useSettingsStore((s) => s.setVolume);
   const setMuted = useSettingsStore((s) => s.setMuted);
 
   return (
@@ -88,10 +88,9 @@ function SoundCard(): React.JSX.Element {
           min={0}
           max={100}
           value={muted ? 0 : volume}
-          onChange={(e) => setVolume(Number(e.target.value))}
+          onChange={(e) => setSharedVolume(Number(e.target.value))}
           className="w-full"
           style={rangeProgressStyle(muted ? 0 : volume, 0, 100)}
-          disabled={muted}
           aria-label={t("settings.volume")}
           data-testid="volume-slider"
         />

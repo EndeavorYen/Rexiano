@@ -1,14 +1,41 @@
 /* UI round 1 (play): live feedback, the "how to practise" cards, the result.
    Every colour is a token; the sun-yellow solid is used once per screen. */
 
-/* ── Live HUD: a fixed-size pill in the title bar ── */
+/* ── Title bar: song on the left, the score in the middle, tools on the
+   right. The middle column is as wide as the HUD and the side columns are
+   equal, so the HUD sits in the centre of the screen. ── */
+.play-bar {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  gap: 12px;
+  min-height: 56px;
+}
+
+.play-bar-start,
+.play-bar-end {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.play-bar-end {
+  justify-content: flex-end;
+}
+
+.play-bar-center {
+  display: flex;
+  justify-content: center;
+}
+
+/* ── Live HUD: the stars and the streak are the point of the screen ── */
 .play-hud {
   display: inline-flex;
   align-items: center;
-  gap: 10px;
+  gap: 14px;
   flex-shrink: 0;
-  min-height: 44px;
-  padding: 0 14px;
+  min-height: 52px;
+  padding: 0 18px;
   border-radius: 999px;
   background: var(--color-surface-alt);
   border: 1px solid var(--color-border);
@@ -16,13 +43,47 @@
   pointer-events: none;
 }
 
+.play-hud-stars {
+  display: inline-flex;
+  line-height: 0;
+}
+
+.play-hud-stars .star-row {
+  gap: 4px;
+}
+
+/* The star that just lit pops once and gives off a ring of light. */
+.play-hud-stars[data-lit="1"] .star-row-star:nth-child(1),
+.play-hud-stars[data-lit="2"] .star-row-star:nth-child(2),
+.play-hud-stars[data-lit="3"] .star-row-star:nth-child(3) {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: play-star-lit 0.7s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+@keyframes play-star-lit {
+  0% {
+    transform: scale(1);
+    filter: drop-shadow(0 0 0 var(--color-accent));
+  }
+  35% {
+    transform: scale(1.6) rotate(-8deg);
+    filter: drop-shadow(0 0 10px var(--color-accent))
+      drop-shadow(0 0 3px var(--color-accent));
+  }
+  100% {
+    transform: scale(1) rotate(0);
+    filter: drop-shadow(0 0 0 transparent);
+  }
+}
+
 .play-hud-progress {
-  min-width: 78px;
+  min-width: 96px;
   font-family: var(--font-display);
-  font-size: 0.8rem;
+  font-size: 0.9375rem;
   font-weight: 700;
   font-variant-numeric: tabular-nums;
-  color: var(--color-text-muted);
+  color: var(--color-text);
   white-space: nowrap;
 }
 
@@ -31,8 +92,8 @@
   display: inline-flex;
   align-items: center;
   justify-content: flex-end;
-  min-width: 64px;
-  height: 28px;
+  min-width: 108px;
+  height: 40px;
 }
 
 .play-hud-combo {
@@ -48,7 +109,7 @@
 
 .play-hud-combo-count {
   font-family: var(--font-display);
-  font-size: 1.15rem;
+  font-size: 1.5rem;
   font-weight: 800;
   line-height: 1.3;
   font-variant-numeric: tabular-nums;
@@ -56,7 +117,7 @@
 
 .play-hud-combo-label {
   color: var(--color-text);
-  font-size: 0.7rem;
+  font-size: 0.8125rem;
   font-weight: 700;
 }
 
@@ -158,7 +219,8 @@
 
 @media (prefers-reduced-motion: reduce) {
   .play-hud-combo,
-  .play-hud-combo.is-milestone {
+  .play-hud-combo.is-milestone,
+  .play-hud-stars[data-lit] .star-row-star {
     animation: none;
   }
   /* No motion: the key simply holds its colour for the same moment. */
@@ -374,7 +436,6 @@
   gap: 10px;
   padding: 28px 24px 24px;
   text-align: center;
-  background: var(--color-surface);
   overflow: hidden;
 }
 
@@ -428,7 +489,7 @@
 .play-result-primary {
   min-height: 56px;
   padding: 0 20px;
-  border-radius: 16px;
+  border-radius: 14px;
   font-size: 1.1rem;
   cursor: pointer;
 }
@@ -471,13 +532,14 @@
 .play-confetti-piece {
   position: absolute;
   top: -14px;
-  left: calc(var(--i) * 6.4% + 2%);
+  /* --x is a percentage across the whole card, spread by the component. */
+  left: calc(var(--x) * 1%);
   width: 10px;
   height: 14px;
   border-radius: 2px;
   background: var(--color-accent);
   opacity: 0;
-  animation: play-confetti-fall 1.9s ease-in calc(var(--i) * 0.07s) 1 both;
+  animation: play-confetti-fall 1.6s ease-in calc(var(--i) * 0.045s) 1 both;
 }
 
 .play-confetti-piece:nth-child(4n + 1) {
@@ -492,17 +554,21 @@
   height: 9px;
 }
 
+/* Falls to just under the stars, then is gone (and out of the tree of
+   paint: visibility hidden at the end). */
 @keyframes play-confetti-fall {
   0% {
     opacity: 1;
+    visibility: visible;
     transform: translateY(0) rotate(0deg);
   }
-  85% {
+  70% {
     opacity: 1;
   }
   100% {
     opacity: 0;
-    transform: translateY(120px) rotate(420deg);
+    visibility: hidden;
+    transform: translateY(190px) rotate(420deg);
   }
 }
 
@@ -512,14 +578,14 @@
   }
 }
 
-/* ── Control bar: one white card, flat groups. The selected state is the
-   same everywhere (sun-yellow, radius 10, one weight); play is the only
-   solid round yellow button. ── */
+/* ── Control bar: one white card, flat groups. The chosen state comes from
+   the global .segmented rule (pale yellow, 2px sun-yellow edge); play is the
+   only solid yellow, and the bar's own work here is size: 44px and up. ── */
 .transport-segmented {
   display: inline-grid;
   gap: 2px;
-  padding: 3px;
-  border-radius: 12px;
+  padding: 2px;
+  border-radius: 14px;
 }
 
 .transport-seg-btn {
@@ -527,28 +593,51 @@
   align-items: center;
   justify-content: center;
   gap: 6px;
-  min-height: 36px;
-  padding: 0 12px;
-  border: 0;
-  border-radius: 10px;
-  background: transparent;
-  color: var(--color-text-muted);
-  font-size: 0.8rem;
-  font-weight: 700;
+  padding: 0 14px;
+  font-size: 0.875rem;
   white-space: nowrap;
-  cursor: pointer;
-  transition:
-    background 0.12s ease,
-    color 0.12s ease;
 }
 
 .transport-seg-btn:hover {
   color: var(--color-text);
 }
 
-.transport-seg-btn[aria-pressed="true"],
-.transport-seg-btn[aria-checked="true"] {
-  background: var(--color-accent);
-  color: var(--color-on-accent);
-  box-shadow: 0 2px 0 rgba(0, 0, 0, 0.12);
+/* Slim track, tall touch area. */
+.transport-strip input[type="range"] {
+  height: 44px;
+  padding: 0;
+}
+
+.transport-label {
+  font-size: 0.8125rem;
+  font-weight: 600;
+}
+
+.display-mode-btn {
+  gap: 6px;
+  padding: 0 14px;
+  font-size: 0.875rem;
+}
+
+/* The tools column is narrower than the title; keep the toggle compact. */
+@media (max-width: 1100px) {
+  .display-mode-btn {
+    padding: 0 10px;
+  }
+}
+
+.play-icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  flex: none;
+  border-radius: 14px;
+  cursor: pointer;
+}
+
+.play-icon-btn:disabled {
+  opacity: 0.4;
+  cursor: default;
 }

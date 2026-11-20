@@ -52,7 +52,7 @@ export function SpeedSlider(): React.JSX.Element {
       data-testid="speed-slider-control"
     >
       <span
-        className="text-[11px] font-body font-medium shrink-0"
+        className="transport-label font-body shrink-0"
         style={{ color: "var(--color-text-muted)" }}
       >
         {t("practice.speed")}
@@ -89,7 +89,7 @@ export function SpeedSlider(): React.JSX.Element {
         className="speed-slider-input shrink-0"
         style={{
           accentColor: "var(--color-accent)",
-          width: 96,
+          width: 80,
           ...rangeProgressStyle(speedPercent, SPEED_MIN, SPEED_MAX),
         }}
         aria-label={t("practice.playbackSpeedPercentage")}
@@ -98,7 +98,7 @@ export function SpeedSlider(): React.JSX.Element {
 
       {!isPresetSpeed && (
         <span
-          className="text-[11px] font-mono tabular-nums shrink-0"
+          className="transport-label font-mono tabular-nums shrink-0"
           style={{ color: "var(--color-text)" }}
           data-testid="speed-slider-percent"
         >

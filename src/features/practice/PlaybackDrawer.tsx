@@ -37,10 +37,11 @@ export function PlaybackDrawer({
           <button
             ref={closeRef}
             onClick={onClose}
-            className="btn-surface-themed w-9 h-9 rounded-full flex items-center justify-center cursor-pointer"
+            className="icon-btn"
             aria-label={t("settings.close")}
+            title={t("settings.close")}
           >
-            <X size={14} />
+            <X size={20} />
           </button>
         </div>
         <div className="app-side-drawer-body">
