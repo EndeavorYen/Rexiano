@@ -31,6 +31,9 @@ When adding a song to `resources/midi/songs.json`:
   enforces this.
 - Prefer short, readable beginner pieces for L0-L2. Longer or denser pieces
   should start at L3+.
+- Keep a one-hand melody at or above middle C (MIDI 60). A lower note is
+  written on the bass staff and comes back from the score as a left-hand
+  track; transpose the tune instead (for example C major to F major).
 
 The lesson model uses only existing metadata and progress activity. It does not
 block the all-songs library view or free exploration.
