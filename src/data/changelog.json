@@ -7,16 +7,16 @@
       "items": [
         "首頁是一條練琴路線：每首曲子是一站，彈完拿 1 到 3 顆星，一站一站往前走",
         "「全部曲子」變成有封面的琴譜書架，每張封面畫的是那首曲子開頭的旋律",
-        "彈對的時候琴鍵會發光、連續彈對會數連擊，星星邊彈邊亮起來",
-        "彈完拿到三顆星，可以直接按「下一首」接著彈"
+        "彈對時琴鍵會發光、連續彈對會數連擊；拿到三顆星可以直接按「下一首」",
+        "新增 20 首曲子：茉莉花、送別、櫻花、驪歌、新年好、春神來了、綠袖子等"
       ],
       "en": {
         "title": "Home is now a practice map, and every song earns stars",
         "items": [
           "Home is a route of songs: each one is a stop, and finishing it earns 1 to 3 stars as you move along",
           "All songs is now a shelf of covers, each drawn from the opening of that song's melody",
-          "Correct notes make the key glow, streaks count up, and stars light up as you play",
-          "With three stars you can press Next song and keep going"
+          "Correct notes make the key glow and streaks count up; with three stars you can press Next song",
+          "20 new songs, including Jasmine Flower, Sakura, Auld Lang Syne, Greensleeves and Joy to the World"
         ]
       }
     },
