@@ -4,8 +4,11 @@ import { SongCoverCard, SongCoverSkeleton } from "./SongCoverCard";
 import { SongShelfRow } from "./SongShelfRow";
 import { lessonGroupColor, IMPORTED_SONG_COLOR } from "./lessonGroupColor";
 import { songDisplayTitle } from "./songTitle";
-import type { Songbook, SongbookItem } from "./songShelves";
+import type { Songbook, SongbookItem, SongbookShelfId } from "./songShelves";
+import type { LessonGroupId } from "./lessonProgression";
 import type { ImportedSongRecord } from "./importedSongMetadata";
+import { StarsSummaryCard } from "./StarsSummaryCard";
+import type { StarsSummary } from "./starsSummary";
 
 export interface SongbookViewProps {
   songbook: Songbook;
@@ -13,6 +16,9 @@ export interface SongbookViewProps {
   catalogueEmpty: boolean;
   loadingId: string | null;
   loadingImportedPath: string | null;
+  /** song id → position in its unit (see coverVariantsByUnit) */
+  coverVariants: ReadonlyMap<string, number>;
+  starsSummary: StarsSummary;
   onPreviewSong: (songId: string, viaKeyboard: boolean) => void;
   onPreviewImported: (record: ImportedSongRecord, viaKeyboard: boolean) => void;
   onClearSearch: () => void;
@@ -22,11 +28,16 @@ function SongbookCover({
   item,
   loadingId,
   loadingImportedPath,
+  coverVariants,
   onPreviewSong,
   onPreviewImported,
 }: { item: SongbookItem } & Pick<
   SongbookViewProps,
-  "loadingId" | "loadingImportedPath" | "onPreviewSong" | "onPreviewImported"
+  | "loadingId"
+  | "loadingImportedPath"
+  | "coverVariants"
+  | "onPreviewSong"
+  | "onPreviewImported"
 >): React.JSX.Element {
   const { t, lang } = useTranslation();
 
@@ -40,6 +51,7 @@ function SongbookCover({
         color={lessonGroupColor(item.groupId)}
         contour={song.contour}
         seed={song.id}
+        variant={coverVariants.get(song.id)}
         testId={`song-select-${song.id}`}
         isLoading={loadingId === song.id}
         onSelect={(viaKeyboard) => onPreviewSong(song.id, viaKeyboard)}
@@ -74,6 +86,7 @@ export function SongbookView({
   isLoading,
   catalogueEmpty,
   onClearSearch,
+  starsSummary,
   ...coverProps
 }: SongbookViewProps): React.JSX.Element {
   const { t } = useTranslation();
@@ -128,9 +141,19 @@ export function SongbookView({
         aria-label={t("songbook.results", { count: songbook.items.length })}
         data-testid="song-library-results"
       >
-        <h2 className="songbook-results-title">
-          {t("songbook.results", { count: songbook.items.length })}
-        </h2>
+        <div className="songbook-results-head">
+          <h2 className="songbook-results-title">
+            {t("songbook.results", { count: songbook.items.length })}
+          </h2>
+          <button
+            type="button"
+            className="btn-ghost-themed songbook-results-clear"
+            onClick={onClearSearch}
+            data-testid="song-library-clear-results"
+          >
+            {t("songbook.empty.clear")}
+          </button>
+        </div>
         <div className="songbook-grid">
           {songbook.items.map((item) => (
             <SongbookCover key={item.id} item={item} {...coverProps} />
@@ -140,8 +163,15 @@ export function SongbookView({
     );
   }
 
+  const hasContinue = songbook.shelves[0]?.id === "continue";
+  const showSummary = starsSummary.max > 0;
+
   return (
     <>
+      {/* no "keep practising" shelf: the summary is a slim card of its own */}
+      {!hasContinue && showSummary && (
+        <StarsSummaryCard summary={starsSummary} layout="wide" standalone />
+      )}
       {songbook.shelves.map((shelf) => (
         <SongShelfRow
           key={shelf.id}
@@ -151,6 +181,14 @@ export function SongbookView({
             shelf.descriptionKey ? t(shelf.descriptionKey) : undefined
           }
           featured={shelf.featured}
+          dotColor={
+            isUnitShelf(shelf.id) ? lessonGroupColor(shelf.id) : undefined
+          }
+          aside={
+            shelf.id === "continue" && showSummary ? (
+              <StarsSummaryCard summary={starsSummary} />
+            ) : undefined
+          }
           sub={
             shelf.id === "continue"
               ? t("songbook.shelf.continueHint")
@@ -169,4 +207,8 @@ export function SongbookView({
       ))}
     </>
   );
+}
+
+function isUnitShelf(id: SongbookShelfId): id is LessonGroupId {
+  return id !== "continue" && id !== "favorites" && id !== "imported";
 }

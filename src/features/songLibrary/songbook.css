@@ -245,9 +245,19 @@
 
 .shelf-desc {
   margin: 2px 0 0;
-  font-size: 0.9rem;
-  line-height: 1.4;
+  font-size: 0.875rem;
+  line-height: 1.5;
   color: var(--color-text-muted);
+}
+
+/* the unit color, same dot as the home chips and the map flags */
+.shelf-dot {
+  align-self: center;
+  flex: none;
+  width: 12px;
+  height: 12px;
+  margin-right: -4px;
+  border-radius: 50%;
 }
 
 .shelf-head h2 {
@@ -260,7 +270,8 @@
 
 .shelf-head .sub {
   color: var(--color-text-muted);
-  font-size: 0.9rem;
+  font-size: 0.875rem;
+  line-height: 1.5;
   font-weight: 500;
 }
 
@@ -301,8 +312,24 @@
   padding: 20px var(--gutter) 0;
 }
 
+.songbook-results-head {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 14px;
+  min-height: 44px;
+}
+
+.songbook-results-clear {
+  min-height: 44px;
+  padding: 0 18px;
+  border-radius: 14px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
 .songbook-results-title {
-  margin: 0 0 14px;
+  margin: 0;
   font-family: var(--font-display);
   font-weight: 800;
   font-size: 1.4rem;
@@ -792,4 +819,171 @@
   to {
     transform: rotate(360deg);
   }
+}
+
+/* ── Shelf body: covers, plus the "my stars" card in the free space ── */
+.shelf-body {
+  display: flex;
+  align-items: stretch;
+}
+
+.shelf-body.has-side .row {
+  flex: none;
+  max-width: 100%;
+  padding-right: 0;
+  overflow: visible;
+}
+
+.shelf-aside.is-side {
+  flex: 1 1 0;
+  min-width: 0;
+  max-width: 420px;
+  display: flex;
+  margin: 14px var(--gutter) 22px var(--cover-gap);
+}
+
+.shelf-aside.is-below {
+  flex: 1 1 100%;
+  margin: -6px var(--gutter) 0;
+}
+
+.shelf-body:has(.shelf-aside.is-below) {
+  flex-wrap: wrap;
+}
+
+.shelf-body:has(.shelf-aside.is-below) .row {
+  flex: 1 1 100%;
+}
+
+/* ── My stars ── */
+.stars-summary {
+  --track: var(--color-border);
+  box-sizing: border-box;
+  width: 100%;
+  margin: 0;
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  background: var(--color-surface);
+}
+
+.stars-summary-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.stars-summary-title {
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 1.05rem;
+  line-height: 1.6;
+}
+
+.stars-summary-title svg {
+  flex: none;
+  color: var(--color-accent);
+  fill: var(--color-accent);
+}
+
+.stars-summary-total {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1rem;
+  line-height: 1.6;
+  color: var(--color-text-muted);
+  white-space: nowrap;
+}
+
+.stars-summary-total b {
+  font-weight: 800;
+  font-size: 1.75rem;
+  line-height: 1.3;
+  color: var(--color-text);
+}
+
+.stars-summary-units {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 6px;
+}
+
+.stars-summary-units li {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  column-gap: 8px;
+  row-gap: 2px;
+}
+
+.stars-summary-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  line-height: 1.5;
+}
+
+.stars-summary-count {
+  font-size: 0.8125rem;
+  font-weight: 700;
+  line-height: 1.5;
+  color: var(--color-text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.stars-summary-bar {
+  grid-column: 1 / -1;
+  height: 6px;
+  border-radius: 99px;
+  background: var(--track);
+  overflow: hidden;
+}
+
+.stars-summary-bar span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--c);
+}
+
+/* slim row: total on the left, the five units side by side */
+.stars-summary.is-wide,
+.shelf-aside.is-below .stars-summary {
+  flex-direction: row;
+  align-items: center;
+  gap: 24px;
+  padding: 12px 20px;
+  min-height: 0;
+}
+
+.stars-summary.is-wide .stars-summary-head,
+.shelf-aside.is-below .stars-summary-head {
+  flex: none;
+  justify-content: flex-start;
+  gap: 16px;
+}
+
+.stars-summary.is-wide .stars-summary-units,
+.shelf-aside.is-below .stars-summary-units {
+  flex: 1 1 auto;
+  min-width: 0;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(0, 1fr);
+  gap: 16px;
+}
+
+.stars-summary.is-standalone {
+  width: auto;
+  margin: 16px var(--gutter) 0;
 }

@@ -709,6 +709,9 @@ export interface TranslationMap {
   "midiNotice.rhythmBody": string;
   "midiNotice.genericBody": string;
   "midiNotice.dismiss": string;
+  // ── UI round 3: songbook ──
+  "songbook.summary.title": string;
+  "songbook.summary.aria": string;
 }
 
 /**

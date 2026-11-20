@@ -17,6 +17,8 @@ export interface SongCoverCardProps {
   color: string;
   contour: readonly number[] | undefined;
   seed: string;
+  /** Position in the song's unit, so neighbouring covers differ */
+  variant?: number;
   testId: string;
   isLoading?: boolean;
   onSelect: (viaKeyboard: boolean) => void;
@@ -34,6 +36,7 @@ export function SongCoverCard({
   color,
   contour,
   seed,
+  variant,
   testId,
   isLoading = false,
   onSelect,
@@ -66,6 +69,7 @@ export function SongCoverCard({
         className="art"
         contour={contour}
         seed={seed}
+        variant={variant}
         color={color}
       />
       {stars > 0 && (
