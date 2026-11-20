@@ -1,6 +1,6 @@
 import { MAX_STARS, type StarCount } from "./stars";
 
-const STAR_PATH =
+export const STAR_PATH =
   "M12 2.6l2.9 5.9 6.5.9-4.7 4.6 1.1 6.5L12 17.4l-5.8 3.1 1.1-6.5L2.6 9.4l6.5-.9z";
 
 interface StarRowProps {
@@ -11,6 +11,12 @@ interface StarRowProps {
   label: string;
   /** Pop each earned star in, one after another (result screens) */
   animate?: boolean;
+  /**
+   * With `animate`: seconds between one earned star and the next. The first
+   * one then pops in at 0.35s (the result card). Left out, the stars pop in
+   * quickly one after another (0.25s, 0.22s apart).
+   */
+  stagger?: number;
   className?: string;
 }
 
@@ -23,6 +29,7 @@ export function StarRow({
   size = 18,
   label,
   animate = false,
+  stagger,
   className,
 }: StarRowProps): React.JSX.Element {
   return (
@@ -48,7 +55,13 @@ export function StarRow({
             }
             style={
               animate && earned
-                ? { animationDelay: `${0.25 + index * 0.22}s` }
+                ? {
+                    animationDelay: `${
+                      stagger === undefined
+                        ? 0.25 + index * 0.22
+                        : 0.35 + index * stagger
+                    }s`,
+                  }
                 : undefined
             }
           >

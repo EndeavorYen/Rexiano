@@ -138,3 +138,51 @@ describe("proportional keyboard", () => {
     expect(tiny.keyboardHeight).toBe(100);
   });
 });
+
+describe("falling-notes lane first (round 3)", () => {
+  test("a 1024x768 two-hand score keeps the sheet at its floor", () => {
+    const d = calculateSplitLayoutDimensions({
+      viewportHeight: 768,
+      isSplitMode: true,
+      isNarrowViewport: false,
+      whiteKeyWidth: 1024 / 21,
+    });
+    expect(d.splitSheetHeight).toBe(SPLIT_SHEET_MIN);
+  });
+
+  test("a treble-only score gets a shorter sheet and a taller lane", () => {
+    const base = {
+      viewportHeight: 768,
+      isSplitMode: true,
+      isNarrowViewport: false,
+      whiteKeyWidth: 1024 / 21,
+    };
+    const grand = calculateSplitLayoutDimensions(base);
+    const treble = calculateSplitLayoutDimensions({
+      ...base,
+      hasBassStaff: false,
+    });
+    expect(treble.splitSheetHeight!).toBeLessThan(grand.splitSheetHeight!);
+    expect(treble.splitFallingAvailableHeight).toBeGreaterThanOrEqual(280);
+  });
+
+  test("a tall window gives the lane 280px before the sheet grows", () => {
+    const d = calculateSplitLayoutDimensions({
+      viewportHeight: 900,
+      isSplitMode: true,
+      isNarrowViewport: false,
+      whiteKeyWidth: 1440 / 21,
+    });
+    expect(d.splitFallingAvailableHeight).toBeGreaterThanOrEqual(280);
+  });
+});
+
+test("a treble-only score never gets a sheet panel taller than one staff needs", () => {
+  const d = calculateSplitLayoutDimensions({
+    viewportHeight: 1180,
+    isSplitMode: true,
+    isNarrowViewport: true,
+    hasBassStaff: false,
+  });
+  expect(d.splitSheetHeight!).toBeLessThanOrEqual(160);
+});

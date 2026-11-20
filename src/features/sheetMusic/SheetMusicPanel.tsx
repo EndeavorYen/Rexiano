@@ -725,8 +725,7 @@ export function SheetMusicPanel({
         height: mode === "split" ? height : undefined,
         flexShrink: mode === "split" ? 0 : undefined,
         minHeight: mode === "split" ? height : undefined,
-        background:
-          "color-mix(in srgb, var(--color-surface) 88%, var(--color-bg))",
+        background: "var(--color-surface)",
         borderBottom:
           mode === "split" ? "1px solid var(--color-border)" : undefined,
       }}

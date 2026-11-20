@@ -1,10 +1,9 @@
-import { useEffect, useMemo, useRef, useState } from "react";
-import { usePracticeStore } from "@renderer/stores/usePracticeStore";
-import { useSongStore } from "@renderer/stores/useSongStore";
+import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "@renderer/i18n/useTranslation";
 import { StarRow } from "../progress/StarRow";
 import { MAX_STARS } from "../progress/stars";
-import { buildScoreHud, countPlayableNotes, starJustLit } from "./scoreHud";
+import { starJustLit } from "./scoreHud";
+import { useScoreHud } from "./useScoreHud";
 import "./play-feedback.css";
 
 /**
@@ -14,16 +13,7 @@ import "./play-feedback.css";
  */
 export function ScoreOverlay(): React.JSX.Element {
   const { t } = useTranslation();
-  const score = usePracticeStore((s) => s.score);
-  const mode = usePracticeStore((s) => s.mode);
-  const activeTracks = usePracticeStore((s) => s.activeTracks);
-  const song = useSongStore((s) => s.song);
-
-  const totalNotes = useMemo(
-    () => (song ? countPlayableNotes(song.tracks, activeTracks) : 0),
-    [song, activeTracks],
-  );
-  const hud = buildScoreHud({ mode, score, totalNotes });
+  const hud = useScoreHud();
 
   // The star that just lit gets one pop; the state clears itself so the same
   // star can pop again after a restart.

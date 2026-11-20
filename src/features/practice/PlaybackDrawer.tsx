@@ -33,7 +33,9 @@ export function PlaybackDrawer({
         onClick={(e) => e.stopPropagation()}
       >
         <div className="app-side-drawer-header">
-          <span className="kicker-label">{t("settings.title")}</span>
+          <h2 className="m-0 font-display text-xl font-extrabold">
+            {t("settings.title")}
+          </h2>
           <button
             ref={closeRef}
             onClick={onClose}

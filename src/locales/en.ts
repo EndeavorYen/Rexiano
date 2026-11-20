@@ -472,9 +472,9 @@ export const en: TranslationMap = {
   // ── Celebration ────────────────────────────────────────────────
   "celebration.amazing.title": "Three stars! Amazing!",
   "celebration.amazing.subtitle": "You played this one smooth and steady.",
-  "celebration.great.title": "Nicely played!",
+  "celebration.great.title": "So close to three stars!",
   "celebration.great.subtitle": "Play it once more for more stars.",
-  "celebration.encourage.title": "You finished it!",
+  "celebration.encourage.title": "You finished! Play again to get better.",
   "celebration.encourage.subtitle": "Take it slow. Each try makes it easier.",
   "celebration.listen.title": "Nice listen!",
   "celebration.listen.subtitle":
@@ -793,4 +793,8 @@ export const en: TranslationMap = {
   "map.unitEndLabel": "{unit}: {caption}",
   "piano.homeShort": "Connect a piano to score your notes",
   "piano.homeShortConnected": "Connected",
+  // ── UI round 3: play ──
+  "practice.starToast1": "Star 1!",
+  "practice.starToast2": "Star 2!",
+  "practice.starToast3": "Three stars!",
 };

@@ -110,7 +110,12 @@ vi.mock("@renderer/engines/practice/FingeringEngine", () => ({
   },
 }));
 
-import { NoteRenderer, labelFitsWidth } from "./NoteRenderer";
+import {
+  NoteRenderer,
+  labelFitsWidth,
+  noteCornerRadius,
+  noteTopTint,
+} from "./NoteRenderer";
 import { Container } from "pixi.js";
 import type { ParsedSong } from "@renderer/engines/midi/types";
 import type { Viewport } from "./ViewportManager";
@@ -351,7 +356,7 @@ describe("NoteRenderer", () => {
       tint: number;
     }[];
     const visible = sprites.filter((s) => s.visible && !("text" in s));
-    expect(visible.map((s) => s.tint)).toContain(0x44cc88);
+    expect(visible.map((s) => s.tint)).toContain(noteTopTint(0x44cc88));
   });
 
   test("hides background tracks when saved display preferences disable them", () => {
@@ -441,7 +446,7 @@ describe("NoteRenderer", () => {
     }[];
     const visible = sprites.filter((s) => s.visible);
     expect(visible.length).toBe(1);
-    expect(visible[0].height).toBe(12);
+    expect(visible[0].height).toBe(6);
   });
 
   test("destroy cleans up resources", () => {
@@ -511,10 +516,17 @@ describe("NoteRenderer", () => {
       expect(rafCb).not.toBeNull();
       rafCb!(0);
       // Second rAF is queued; fire it partway through animation
-      rafCb!(60); // 60ms into 200ms animation — in the flash-up phase (t<0.3 → t/0.3 = 1.0)
+      rafCb!(60); // 60ms in: still flashing up toward white
 
       // Tint should have shifted toward white
       expect(sprite.tint).not.toBe(originalTint);
+
+      // Then the note fades out over 120ms (80ms flash + 120ms fade)
+      rafCb!(140);
+      expect(sprite.alpha).toBeCloseTo(0.5, 1);
+      rafCb!(200);
+      expect(sprite.alpha).toBe(0);
+      expect(sprite.tint).toBe(originalTint);
 
       vi.unstubAllGlobals();
     });
@@ -848,5 +860,22 @@ describe("NoteRenderer.setKeyRange", () => {
     ).keyPositions;
     expect(positions.get(48)).toEqual({ x: 0, width: 100 });
     expect(positions.has(21)).toBe(false);
+  });
+});
+
+describe("note look", () => {
+  test("corner radius is about 28% of the short edge, 3 to 10 px", () => {
+    expect(noteCornerRadius(24, 80)).toBe(7);
+    expect(noteCornerRadius(80, 24)).toBe(7);
+    expect(noteCornerRadius(16, 80)).toBe(4);
+    expect(noteCornerRadius(60, 200)).toBe(10);
+    expect(noteCornerRadius(4, 4)).toBe(3);
+  });
+
+  test("the top tint is lighter than the track colour and never overflows", () => {
+    const lighter = noteTopTint(0x808080);
+    expect(lighter & 0xff).toBeGreaterThan(0x80);
+    expect(noteTopTint(0xffffff)).toBe(0xffffff);
+    expect(noteTopTint(0xffd76a) >> 16).toBe(0xff);
   });
 });

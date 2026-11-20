@@ -51,7 +51,7 @@ export function PlaybackHeader({
             <ArrowLeft size={20} />
           </button>
           <h2
-            className="m-0 min-w-0 truncate font-display text-xl font-extrabold leading-tight"
+            className="m-0 min-w-0 truncate font-display text-xl font-extrabold leading-[1.6]"
             data-testid="playback-song-title"
             title={songTitle}
           >

@@ -718,6 +718,10 @@ export interface TranslationMap {
   // ── UI round 3: songbook ──
   "songbook.summary.title": string;
   "songbook.summary.aria": string;
+  // ── UI round 3: play ──
+  "practice.starToast1": string;
+  "practice.starToast2": string;
+  "practice.starToast3": string;
 }
 
 /**
