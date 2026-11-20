@@ -74,3 +74,8 @@ Rexiano 預設使用 TDD 開發模式。除非使用者明確要求不要改程�
 - 曲子一律用封面卡（`SongCoverCard`／`SongCoverArt`）呈現，不做文字清單（2026-11-20）。
 - 新元件的樣式寫在元件旁的 CSS 檔並由元件 import；有 `.btn-*-themed` 的按鈕不要再加 Tailwind 圓角（2026-11-20）。
 - 改到畫面流程後跑 `tests/ui-forge/scenes.mjs`（ui-forge 的 `shoot-states.mjs --axe`，淺色和 `--dark` 各一次）：可捲動的面板要 `tabIndex={0}`，按鈕的 `aria-label` 要包含它看得見的字（2026-11-20）。
+- 「選中」用 `.segmented` 的淡黃底＋太陽黃邊；不要再寫黃色實心的選中樣式，黃色實心只給每個畫面的一顆主要按鈕（2026-11-20）。
+- 會開對話框的頁面，外層不要用留下 transform 的進場動畫（`position: fixed` 會跑到畫面外）；改用 opacity（2026-11-20）。
+- 成績只認 `SessionRecord.completed !== false` 的紀錄；任何「最佳」「星星」的計算都要過濾半途離開的（2026-11-20）。
+- 按鈕上的字要和它去的地方一致；會依來源改變去處的按鈕，用 `routing/browseRouteLabel.ts`（2026-11-20）。
+- 用 `useDialogFocus` 時 `onDismiss` 要是穩定的 callback（用 ref 包），否則狀態一變焦點陷阱就重建（2026-11-20）。
