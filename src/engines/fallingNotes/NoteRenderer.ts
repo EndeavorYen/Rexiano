@@ -195,22 +195,18 @@ function parseHexColor(value: string | undefined): number | null {
 /** Sun-yellow, same value as the `--color-hit-glow` token in both themes. */
 const HIT_GLOW_COLOR = 0xffd76a;
 /** Radius of the spark at scale 1, in px. */
-const BURST_RADIUS = 26;
+const BURST_RADIUS = 36;
 
 function nowMs(): number {
   return globalThis.performance?.now?.() ?? Date.now();
 }
 
-/** A soft glow, a ring and a few short rays, drawn once and reused. */
+/** A ring and a few short rays, drawn once and reused. */
 function createBurstGraphic(): Graphics {
   const g = new Graphics();
-  g.circle(0, 0, BURST_RADIUS * 0.55).fill({
-    color: HIT_GLOW_COLOR,
-    alpha: 0.35,
-  });
   g.circle(0, 0, BURST_RADIUS).stroke({
     color: HIT_GLOW_COLOR,
-    width: 3,
+    width: 4,
     alpha: 1,
   });
   for (let i = 0; i < 5; i++) {
@@ -222,7 +218,7 @@ function createBurstGraphic(): Graphics {
       Math.sin(angle) * outer,
     );
   }
-  g.stroke({ color: HIT_GLOW_COLOR, width: 3, alpha: 1, cap: "round" });
+  g.stroke({ color: HIT_GLOW_COLOR, width: 4, alpha: 1, cap: "round" });
   g.visible = false;
   return g;
 }
@@ -526,7 +522,7 @@ export class NoteRenderer {
       const t = this.burstPool.progress(i, now);
       graphic.visible = true;
       graphic.x = kp.x + kp.width / 2;
-      graphic.y = this.hitLineY - 2 - t * 18;
+      graphic.y = this.hitLineY - 8 - t * 16;
       graphic.alpha = burstAlpha(t);
       graphic.scale.set(burstScale(t));
     }
