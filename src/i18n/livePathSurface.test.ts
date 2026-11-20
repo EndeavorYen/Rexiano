@@ -5,7 +5,7 @@ import { describe, expect, test } from "vitest";
 const LIVE_PATH_FILES = [
   "App.tsx",
   "features/mainMenu/MainMenu.tsx",
-  "features/songLibrary/SongCard.tsx",
+  "features/songLibrary/SongCoverCard.tsx",
   "features/songLibrary/SongLibrary.tsx",
   "features/songLibrary/SongLibraryFilters.tsx",
   "features/songLibrary/SongSelectionPreviewPanel.tsx",

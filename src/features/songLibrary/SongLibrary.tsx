@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useCallback, useState } from "react";
+import { useEffect, useMemo, useCallback, useRef, useState } from "react";
 import { parseImportedPracticeFile } from "../../engines/score/decodeImportedPracticeFile";
 import { useSongStore } from "../../stores/useSongStore";
 import { usePlaybackStore } from "../../stores/usePlaybackStore";
@@ -9,50 +9,38 @@ import {
 } from "../../engines/score/builtinScoreSource";
 import { useSongLibraryStore } from "../../stores/useSongLibraryStore";
 import { useProgressStore } from "../../stores/useProgressStore";
-import { groupSongsByCategory } from "./songCardUtils";
 import { openBuiltinSong, recentOpenTarget } from "./openBuiltinSong";
-import { pickLibraryHeroEntry } from "./libraryEntryPoints";
 import { queueRecentFile } from "./pendingRecent";
 import {
   buildImportedSongActivity,
   buildImportedSongSelectionPreviewModel,
-  buildPracticeRecommendationModel,
   buildSongActivity,
   buildSongSelectionPreviewModel,
-  filterSongsForLibrary,
-  sortSongsForLibrary,
-  type SongActivity,
   type SongSelectionPreviewModel,
 } from "./songLibrarySelectors";
 import {
   getRecentFileRecovery,
   type RecentFileRecovery,
 } from "./recentFileRecovery";
-import {
-  importedSongMatchesQuery,
-  type ImportedSongRecord,
-} from "./importedSongMetadata";
-import { buildLessonProgression } from "./lessonProgression";
+import type { ImportedSongRecord } from "./importedSongMetadata";
 import { useTranslation } from "../../i18n/useTranslation";
-import { buildDailyGoalStatus } from "../practice/nextPracticeAction";
 import type { PracticeSessionIntent } from "../practice/sessionIntent";
 import type { RecentFile } from "../../shared/types";
 import { SongLibraryHeader } from "./SongLibraryHeader";
-import { PracticeRecommendationBanner } from "./PracticeRecommendationBanner";
-import { LessonProgressionSection } from "./LessonProgressionSection";
 import { SongSelectionPreviewPanel } from "./SongSelectionPreviewPanel";
 import { RecentSongsSection } from "./RecentSongsSection";
-import { ImportedSongsSection } from "./ImportedSongsSection";
-import { SongCatalogSection } from "./SongCatalogSection";
+import { SongbookView } from "./SongbookView";
+import { SongLibraryFilters } from "./SongLibraryFilters";
+import {
+  buildSongbook,
+  selectLooseRecentFiles,
+  type Songbook,
+} from "./songShelves";
 import { SongLibraryMidiDrawer } from "./SongLibraryMidiDrawer";
 import {
   useLibraryReturnFocus,
   rememberLibraryReturnFocus,
 } from "./useLibraryReturnFocus";
-import {
-  usePreviewTrackCounts,
-  previewTrackCountKey,
-} from "./usePreviewTrackCounts";
 import {
   createImportedMetadataDraft,
   createImportedMetadataPatch,
@@ -69,12 +57,13 @@ interface SongLibraryProps {
   onRemoveRecentFile: (filePath: string) => Promise<boolean>;
 }
 
-const emptyActivity: SongActivity = {
-  isFavorite: false,
-  lastPlayedAt: null,
-  playCount: 0,
-  bestAccuracy: null,
-};
+function findByTestId(testId: string): HTMLElement | null {
+  return (
+    Array.from(document.querySelectorAll<HTMLElement>("[data-testid]")).find(
+      (element) => element.dataset.testid === testId,
+    ) ?? null
+  );
+}
 
 function previewSourceTestId(preview: SongSelectionPreviewModel): string {
   return preview.kind === "builtin"
@@ -93,21 +82,16 @@ export function SongLibrary({
 }: SongLibraryProps): React.JSX.Element {
   const { t } = useTranslation();
 
-  const greeting = useMemo(() => {
-    const hour = new Date().getHours();
-    if (hour < 12) return t("library.greeting.morning");
-    if (hour < 17) return t("library.greeting.afternoon");
-    return t("library.greeting.evening");
-  }, [t]);
-
   const songs = useSongLibraryStore((s) => s.songs);
   const importedSongs = useSongLibraryStore((s) => s.importedSongs);
   const isLoading = useSongLibraryStore((s) => s.isLoading);
   const searchQuery = useSongLibraryStore((s) => s.searchQuery);
   const difficultyFilter = useSongLibraryStore((s) => s.difficultyFilter);
   const gradeFilter = useSongLibraryStore((s) => s.gradeFilter);
-  const sortMode = useSongLibraryStore((s) => s.sortMode);
-  const viewMode = useSongLibraryStore((s) => s.viewMode);
+  const favoriteSongIds = useSongLibraryStore((s) => s.favoriteSongIds);
+  const setSearchQuery = useSongLibraryStore((s) => s.setSearchQuery);
+  const setDifficultyFilter = useSongLibraryStore((s) => s.setDifficultyFilter);
+  const setGradeFilter = useSongLibraryStore((s) => s.setGradeFilter);
   const fetchSongs = useSongLibraryStore((s) => s.fetchSongs);
   const refreshImportedSongs = useSongLibraryStore(
     (s) => s.refreshImportedSongs,
@@ -142,7 +126,7 @@ export function SongLibrary({
   const [selectedImportedSongId, setSelectedImportedSongId] = useState<
     string | null
   >(null);
-  const [focusPreviewPrimary, setFocusPreviewPrimary] = useState(false);
+  const previewReturnFocusRef = useRef<HTMLElement | null>(null);
   const [importedMetadataDraft, setImportedMetadataDraft] =
     useState<ImportedSongMetadataDraft | null>(null);
 
@@ -162,24 +146,9 @@ export function SongLibrary({
     }
   }, [isProgressLoaded, loadSessions]);
 
-  const filteredSongs = useMemo(() => {
-    return filterSongsForLibrary(songs, {
-      difficultyFilter,
-      gradeFilter,
-      searchQuery,
-    });
-  }, [songs, difficultyFilter, gradeFilter, searchQuery]);
-
-  const filteredImportedSongs = useMemo(() => {
-    return importedSongs.filter((song) => {
-      if (gradeFilter !== "all" && song.grade !== gradeFilter) return false;
-      return importedSongMatchesQuery(song, searchQuery);
-    });
-  }, [importedSongs, gradeFilter, searchQuery]);
-
   const songActivity = useMemo(
-    () => buildSongActivity(songs, sessions, recentFiles, []),
-    [songs, sessions, recentFiles],
+    () => buildSongActivity(songs, sessions, recentFiles, favoriteSongIds),
+    [songs, sessions, recentFiles, favoriteSongIds],
   );
 
   const importedSongActivity = useMemo(
@@ -187,9 +156,31 @@ export function SongLibrary({
     [importedSongs, sessions, recentFiles],
   );
 
-  const sortedSongs = useMemo(
-    () => sortSongsForLibrary(filteredSongs, songActivity, sortMode),
-    [filteredSongs, songActivity, sortMode],
+  const songbook = useMemo<Songbook>(() => {
+    const built = buildSongbook({
+      songs,
+      importedSongs,
+      songActivity,
+      importedActivity: importedSongActivity,
+      filters: { searchQuery, difficultyFilter, gradeFilter },
+    });
+    // No songs at all reads as an empty result, not as zero shelves.
+    return built.mode === "shelves" && built.shelves.length === 0
+      ? { mode: "results", items: [] }
+      : built;
+  }, [
+    songs,
+    importedSongs,
+    songActivity,
+    importedSongActivity,
+    searchQuery,
+    difficultyFilter,
+    gradeFilter,
+  ]);
+
+  const looseRecentFiles = useMemo(
+    () => selectLooseRecentFiles(recentFiles, importedSongs),
+    [recentFiles, importedSongs],
   );
 
   const selectedSong = useMemo(
@@ -203,62 +194,34 @@ export function SongLibrary({
     [importedSongs, selectedImportedSongId],
   );
 
-  const previewTrackCounts = usePreviewTrackCounts(
-    selectedSong,
-    selectedImportedSong,
-  );
-
   const selectedSongPreview = useMemo(() => {
     if (selectedSong) {
-      const key = previewTrackCountKey("builtin", selectedSong.id);
       return buildSongSelectionPreviewModel(
         selectedSong,
         songActivity.get(selectedSong.id),
-        previewTrackCounts[key] ?? null,
       );
     }
 
     if (selectedImportedSong) {
-      const key = previewTrackCountKey("imported", selectedImportedSong.id);
       return buildImportedSongSelectionPreviewModel(
         selectedImportedSong,
         importedSongActivity.get(selectedImportedSong.id),
-        previewTrackCounts[key] ?? null,
       );
     }
 
     return null;
-  }, [
-    importedSongActivity,
-    previewTrackCounts,
-    selectedImportedSong,
-    selectedSong,
-    songActivity,
-  ]);
+  }, [importedSongActivity, selectedImportedSong, selectedSong, songActivity]);
 
-  const practiceRecommendation = useMemo(
-    () => buildPracticeRecommendationModel(filteredSongs, songActivity),
-    [filteredSongs, songActivity],
-  );
+  const isFilteringSongs =
+    searchQuery.trim() !== "" ||
+    difficultyFilter !== "all" ||
+    gradeFilter !== "all";
 
-  const lessonProgression = useMemo(
-    () => buildLessonProgression(songs, songActivity),
-    [songs, songActivity],
-  );
-
-  const dailyGoalStatus = useMemo(
-    () =>
-      buildDailyGoalStatus(sessions, {
-        dayTimestamp: Date.now(),
-        targetMinutes: 10,
-      }),
-    [sessions],
-  );
-
-  const categoryGroups = useMemo(
-    () => groupSongsByCategory(sortedSongs),
-    [sortedSongs],
-  );
+  const handleClearSearch = useCallback(() => {
+    setSearchQuery("");
+    setDifficultyFilter("all");
+    setGradeFilter("all");
+  }, [setDifficultyFilter, setGradeFilter, setSearchQuery]);
 
   const handleSelectSong = useCallback(
     async (songId: string, intent: PracticeSessionIntent = "practice") => {
@@ -282,15 +245,19 @@ export function SongLibrary({
     [loadSong, onSessionIntentSelected, reset, refreshRecents, t],
   );
 
-  const handlePreviewSong = useCallback(
-    (songId: string, viaKeyboard: boolean) => {
-      setError(null);
-      setFocusPreviewPrimary(viaKeyboard);
-      setSelectedSongId(songId);
-      setSelectedImportedSongId(null);
-    },
-    [],
-  );
+  const handlePreviewSong = useCallback((songId: string) => {
+    setError(null);
+    previewReturnFocusRef.current = findByTestId(`song-select-${songId}`);
+    setSelectedSongId(songId);
+    setSelectedImportedSongId(null);
+  }, []);
+
+  const handleClosePreview = useCallback(() => {
+    setSelectedSongId(null);
+    setSelectedImportedSongId(null);
+    setEditingImportedSongId(null);
+    setImportedMetadataDraft(null);
+  }, []);
 
   const handleSelectRecent = useCallback(
     async (file: RecentFile) => {
@@ -386,18 +353,15 @@ export function SongLibrary({
   );
 
   const handlePreviewImportedSong = useCallback(
-    (record: ImportedSongRecord, viaKeyboard: boolean) => {
-      if (record.missing) {
-        setError(t("library.importedMissing"));
-        return;
-      }
-
+    (record: ImportedSongRecord) => {
       setError(null);
-      setFocusPreviewPrimary(viaKeyboard);
+      previewReturnFocusRef.current = findByTestId(
+        `imported-song-select-${record.id}`,
+      );
       setSelectedSongId(null);
       setSelectedImportedSongId(record.id);
     },
-    [t],
+    [],
   );
 
   const handlePracticeImportedSong = useCallback(
@@ -514,95 +478,73 @@ export function SongLibrary({
   ]);
 
   return (
-    <div className="flex-1 min-h-0 app-shell overflow-y-auto overflow-x-hidden">
-      <div className="mx-auto w-full max-w-6xl px-6 py-6 pb-24">
-        <SongLibraryHeader
-          onBack={onBack}
-          onOpenFile={onOpenFile}
-          onOpenSettings={onOpenSettings}
-          greeting={greeting}
-          dailyGoalStatus={dailyGoalStatus}
-        />
+    <div className="flex-1 min-h-0 app-shell overflow-y-auto overflow-x-hidden songbook">
+      <SongLibraryHeader
+        onBack={onBack}
+        onOpenFile={onOpenFile}
+        onOpenSettings={onOpenSettings}
+      />
 
-        {/* One big "play this next" entry: the lesson path leads (#307). */}
-        {practiceRecommendation &&
-          pickLibraryHeroEntry({
-            nextLessonSongId: lessonProgression.nextLesson?.song.id ?? null,
-            recommendationSongId: practiceRecommendation.song.id,
-          }) === "recommendation" && (
-            <PracticeRecommendationBanner
-              recommendation={practiceRecommendation}
-              isLoading={loadingId === practiceRecommendation.song.id}
-              onSelectSong={(songId) => void handleSelectSong(songId)}
-              rememberReturnFocus={rememberLibraryReturnFocus}
-            />
-          )}
+      <main className="songbook-main">
+        <SongLibraryFilters />
 
-        {lessonProgression.groups.length > 0 && (
-          <LessonProgressionSection
-            lessonProgression={lessonProgression}
-            loadingId={loadingId}
-            onSelectSong={(songId) => void handleSelectSong(songId)}
+        {!isFilteringSongs && (
+          <RecentSongsSection
+            recentFiles={looseRecentFiles}
+            loadingRecentPath={loadingRecentPath}
+            recentRecovery={recentRecovery}
+            onSelectRecent={(file) => void handleSelectRecent(file)}
+            onRemoveRecent={(filePath) => void handleRemoveRecent(filePath)}
             rememberReturnFocus={rememberLibraryReturnFocus}
           />
         )}
 
-        {selectedSongPreview && (
-          <SongSelectionPreviewPanel
-            preview={selectedSongPreview}
-            focusPrimaryAction={focusPreviewPrimary}
-            isLoading={selectedPreviewIsLoading}
-            onStartSession={handleStartPreviewSession}
-          />
-        )}
-
-        <RecentSongsSection
-          recentFiles={recentFiles}
-          loadingRecentPath={loadingRecentPath}
-          recentRecovery={recentRecovery}
-          onSelectRecent={(file) => void handleSelectRecent(file)}
-          onRemoveRecent={(filePath) => void handleRemoveRecent(filePath)}
-          rememberReturnFocus={rememberLibraryReturnFocus}
+        <SongbookView
+          songbook={songbook}
+          isLoading={isLoading}
+          catalogueEmpty={songs.length === 0 && importedSongs.length === 0}
+          loadingId={loadingId}
+          loadingImportedPath={loadingImportedPath}
+          onPreviewSong={handlePreviewSong}
+          onPreviewImported={handlePreviewImportedSong}
+          onClearSearch={handleClearSearch}
         />
 
-        <ImportedSongsSection
-          songs={filteredImportedSongs}
-          loadingImportedPath={loadingImportedPath}
-          editingImportedSongId={editingImportedSongId}
-          importedMetadataDraft={importedMetadataDraft}
-          onSelectSong={handlePreviewImportedSong}
-          onEditSong={handleEditImportedMetadata}
-          onRemoveSong={handleRemoveImportedSong}
+        {error && (
+          <p className="songbook-error" role="alert">
+            {error}
+          </p>
+        )}
+      </main>
+
+      {selectedSongPreview && (
+        <SongSelectionPreviewPanel
+          preview={selectedSongPreview}
+          isLoading={selectedPreviewIsLoading}
+          returnFocusRef={previewReturnFocusRef}
+          onClose={handleClosePreview}
+          onStartSession={handleStartPreviewSession}
+          onToggleFavorite={toggleFavoriteSong}
+          isEditing={
+            selectedImportedSong !== null &&
+            editingImportedSongId === selectedImportedSong.id
+          }
+          metadataDraft={importedMetadataDraft}
+          onEditImported={() => {
+            if (selectedImportedSong)
+              handleEditImportedMetadata(selectedImportedSong);
+          }}
+          onRemoveImported={() => {
+            if (selectedImportedSong)
+              handleRemoveImportedSong(selectedImportedSong);
+          }}
           onUpdateDraft={handleUpdateImportedMetadataDraft}
           onSaveMetadata={handleSaveImportedMetadata}
           onCancelMetadata={handleCancelImportedMetadata}
         />
+      )}
 
-        <SongCatalogSection
-          songs={songs}
-          sortedSongs={sortedSongs}
-          categoryGroups={categoryGroups}
-          songActivity={songActivity}
-          emptyActivity={emptyActivity}
-          isLoading={isLoading}
-          viewMode={viewMode}
-          loadingId={loadingId}
-          selectedSongId={selectedSongId}
-          onSelectSong={handlePreviewSong}
-          onToggleFavorite={toggleFavoriteSong}
-        />
-
-        {error && (
-          <p
-            className="mt-4 text-sm font-body"
-            style={{ color: "var(--color-danger-text)" }}
-          >
-            {error}
-          </p>
-        )}
-
-        <SongLibraryMidiDrawer />
-      </div>
+      <SongLibraryMidiDrawer />
     </div>
   );
 }

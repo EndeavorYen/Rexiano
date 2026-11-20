@@ -613,6 +613,30 @@ export interface TranslationMap {
   "settings.themeDark": string;
   "settings.backupBrowserDesc": string;
   "settings.reloadNow": string;
+  // ── UI round 1: songbook ──
+  "songbook.title": string;
+  "songbook.search.placeholder": string;
+  "songbook.levels.label": string;
+  "songbook.shelf.played": string;
+  "songbook.shelf.imported": string;
+  "songbook.shelf.scrollLeft": string;
+  "songbook.shelf.scrollRight": string;
+  "songbook.progress": string;
+  "songbook.count": string;
+  "songbook.results": string;
+  "songbook.duration.seconds": string;
+  "songbook.duration.minutes": string;
+  "songbook.level": string;
+  "songbook.stars.label": string;
+  "songbook.loading": string;
+  "songbook.empty.title": string;
+  "songbook.empty.hint": string;
+  "songbook.empty.clear": string;
+  "songbook.preview.never": string;
+  "songbook.preview.play": string;
+  "songbook.preview.again": string;
+  "songbook.preview.close": string;
+  "songbook.preview.edit": string;
 }
 
 /**
