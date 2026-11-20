@@ -4,13 +4,17 @@ import { useTranslation } from "@renderer/i18n/useTranslation";
 import { useMidiDeviceStore } from "@renderer/stores/useMidiDeviceStore";
 import { usePracticeStore } from "@renderer/stores/usePracticeStore";
 import { shouldShowWaitInputHint } from "./waitInputHintVisibility";
+import "./play-feedback.css";
 
 interface WaitInputHintProps {
   /** Opens the playback drawer, which holds the MIDI connection controls */
   onConnectKeyboard: () => void;
 }
 
-/** Tells a child what to do when Wait mode has no keyboard to listen to. */
+/**
+ * Tells a child what to do when Wait mode has no keyboard to listen to. A thin
+ * strip between the stage and the controls, never over the falling notes.
+ */
 export function WaitInputHint({
   onConnectKeyboard,
 }: WaitInputHintProps): React.JSX.Element {
@@ -50,33 +54,17 @@ export function WaitInputHint({
       {visible && (
         <div
           data-testid="wait-input-hint"
-          className="absolute left-1/2 top-3 z-10 flex max-w-[92%] -translate-x-1/2 items-center gap-3 rounded-2xl px-4 py-2.5 subtle-shadow animate-page-enter"
-          style={{
-            background: "var(--color-surface)",
-            border: "1px solid var(--color-border)",
-            color: "var(--color-text)",
-          }}
+          className="play-hint-bar animate-page-enter"
         >
-          <Piano
-            size={22}
-            aria-hidden="true"
-            style={{ color: "var(--color-accent-text)", flexShrink: 0 }}
-          />
-          <div className="min-w-0">
-            <p className="text-sm font-semibold leading-tight">
-              {t("practice.waitInputHintTitle")}
-            </p>
-            <p
-              className="text-xs leading-snug"
-              style={{ color: "var(--color-text-muted)" }}
-            >
-              {t("practice.waitInputHintBody")}
-            </p>
-          </div>
+          <Piano size={20} aria-hidden="true" className="play-hint-icon" />
+          <p className="play-hint-text">
+            <strong>{t("practice.waitInputHintTitle")}</strong>
+            <span>{t("practice.waitInputHintBody")}</span>
+          </p>
           <button
             type="button"
             onClick={onConnectKeyboard}
-            className="btn-surface-themed shrink-0 rounded-full px-3 py-1.5 text-xs font-semibold"
+            className="btn-surface-themed play-hint-connect"
           >
             {t("practice.waitInputHintConnect")}
           </button>

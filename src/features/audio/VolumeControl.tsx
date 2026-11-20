@@ -41,12 +41,7 @@ export function VolumeControl(): React.JSX.Element {
 
   return (
     <div
-      className="flex min-w-0 items-center gap-1.5 rounded-lg px-1.5 py-1.5"
-      style={{
-        background:
-          "color-mix(in srgb, var(--color-surface-alt) 72%, var(--color-surface))",
-        border: "1px solid var(--color-border)",
-      }}
+      className="flex min-w-0 items-center gap-1.5"
       data-testid="volume-control"
     >
       <button

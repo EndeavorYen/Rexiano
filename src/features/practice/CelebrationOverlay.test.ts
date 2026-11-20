@@ -86,7 +86,6 @@ describe("getCelebrationPresentation", () => {
     ).toEqual({
       variant: "listen",
       showScore: false,
-      chooseSongGoesToStats: false,
     });
   });
 
@@ -99,7 +98,6 @@ describe("getCelebrationPresentation", () => {
     ).toEqual({
       variant: "scored",
       showScore: true,
-      chooseSongGoesToStats: false,
     });
     expect(
       getCelebrationPresentation({
@@ -109,7 +107,6 @@ describe("getCelebrationPresentation", () => {
     ).toEqual({
       variant: "scored",
       showScore: true,
-      chooseSongGoesToStats: false,
     });
   });
 });
@@ -128,5 +125,25 @@ describe("getCelebrationActions (#310)", () => {
       "play-again",
       "choose-song",
     ]);
+  });
+
+  test("three stars with a next song lead with the next song", () => {
+    expect(
+      getCelebrationActions("scored", { stars: 3, hasNextSong: true }),
+    ).toEqual(["next-song", "play-again", "choose-song"]);
+  });
+
+  test("three stars without a next song fall back to replay", () => {
+    expect(
+      getCelebrationActions("scored", { stars: 3, hasNextSong: false }),
+    ).toEqual(["play-again", "choose-song"]);
+  });
+
+  test("one or two stars never offer the next song", () => {
+    for (const stars of [1, 2]) {
+      expect(
+        getCelebrationActions("scored", { stars, hasNextSong: true }),
+      ).toEqual(["play-again", "choose-song"]);
+    }
   });
 });

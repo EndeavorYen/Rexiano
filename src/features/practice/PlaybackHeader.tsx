@@ -1,5 +1,6 @@
 import { AlertTriangle, ArrowLeft, SlidersHorizontal } from "lucide-react";
 import { DisplayModeToggle } from "@renderer/features/sheetMusic/DisplayModeToggle";
+import { ScoreOverlay } from "./ScoreOverlay";
 import { useTranslation } from "@renderer/i18n/useTranslation";
 import type { MidiDiagnosticNotice } from "@renderer/features/midiDiagnostics/midiDiagnosticNotice";
 
@@ -58,6 +59,7 @@ export function PlaybackHeader({
           className="flex items-center justify-end gap-2 shrink-0"
           data-testid="playback-header-actions"
         >
+          <ScoreOverlay />
           <DisplayModeToggle />
           <button
             ref={playbackDrawerTriggerRef}

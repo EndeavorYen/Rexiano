@@ -130,16 +130,7 @@ export function TransportBar({
           compact ? "gap-1.5 lg:gap-2.5" : "gap-2 lg:gap-3"
         }`}
       >
-        <div
-          className={`flex items-center gap-2 overflow-x-auto lg:overflow-visible rounded-xl ${
-            compact ? "px-1.5 py-0.5" : "px-1.5 py-1"
-          }`}
-          style={{
-            background:
-              "color-mix(in srgb, var(--color-surface-alt) 46%, var(--color-surface))",
-            border: "1px solid var(--color-border)",
-          }}
-        >
+        <div className="flex items-center gap-2 overflow-x-auto lg:overflow-visible">
           <button
             onClick={handlePlayPause}
             disabled={!song}
@@ -265,14 +256,9 @@ export function TransportBar({
         </div>
 
         <div
-          className={`order-last flex basis-full items-center min-w-0 rounded-xl px-2 lg:order-none lg:basis-0 lg:flex-1 lg:min-w-[220px] ${
-            compact ? "gap-2 py-0.5" : "gap-3 py-1"
+          className={`order-last flex basis-full items-center min-w-0 lg:order-none lg:basis-0 lg:flex-1 lg:min-w-[220px] ${
+            compact ? "gap-2" : "gap-3"
           }`}
-          style={{
-            background:
-              "color-mix(in srgb, var(--color-surface) 72%, transparent)",
-            border: "1px solid var(--color-border)",
-          }}
         >
           <span
             className="text-xs font-mono tabular-nums shrink-0"
@@ -326,16 +312,7 @@ export function TransportBar({
         </div>
 
         {controlVisibility.showVolumeControls && (
-          <div
-            className={`ml-auto flex items-center justify-end rounded-xl px-1.5 ${
-              compact ? "gap-2 py-1" : "gap-2.5 py-1.5"
-            }`}
-            style={{
-              background:
-                "color-mix(in srgb, var(--color-surface-alt) 46%, var(--color-surface))",
-              border: "1px solid var(--color-border)",
-            }}
-          >
+          <div className="ml-auto flex items-center justify-end">
             <VolumeControl />
           </div>
         )}

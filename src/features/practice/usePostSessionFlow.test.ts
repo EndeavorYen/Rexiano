@@ -3,7 +3,6 @@ import {
   canStartRequestedPlayback,
   runPracticeDismissal,
   runPracticeRetry,
-  shouldAdvanceCelebrationToStats,
   shouldShowCompletionCelebration,
   shouldShowModeSelectionModal,
 } from "./usePostSessionFlow";
@@ -85,14 +84,6 @@ describe("shouldShowCompletionCelebration", () => {
         mode: "free",
       }),
     ).toBe(false);
-  });
-});
-
-describe("shouldAdvanceCelebrationToStats", () => {
-  test("keeps the end card in place for every mode", () => {
-    expect(shouldAdvanceCelebrationToStats("watch")).toBe(false);
-    expect(shouldAdvanceCelebrationToStats("wait")).toBe(false);
-    expect(shouldAdvanceCelebrationToStats("free")).toBe(false);
   });
 });
 

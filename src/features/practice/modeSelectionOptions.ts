@@ -2,30 +2,28 @@ import type { PracticeMode } from "@shared/types";
 
 export interface ModeOptionModel {
   mode: PracticeMode;
-  titleKey: "practice.watch" | "practice.wait";
-  descKey: "modeSelect.watchDesc" | "modeSelect.waitDesc";
-  isDefault: boolean;
+  titleKey: "modeSelect.watchTitle" | "modeSelect.waitTitle";
+  descKey: "modeSelect.watchKidDesc" | "modeSelect.waitKidDesc";
+  /** The one sun-yellow card: the way most children should start */
+  isPrimary: boolean;
 }
 
-const MODE_OPTIONS: Array<Omit<ModeOptionModel, "isDefault">> = [
+const MODE_OPTIONS: ModeOptionModel[] = [
   {
     mode: "watch",
-    titleKey: "practice.watch",
-    descKey: "modeSelect.watchDesc",
+    titleKey: "modeSelect.watchTitle",
+    descKey: "modeSelect.watchKidDesc",
+    isPrimary: false,
   },
   {
     mode: "wait",
-    titleKey: "practice.wait",
-    descKey: "modeSelect.waitDesc",
+    titleKey: "modeSelect.waitTitle",
+    descKey: "modeSelect.waitKidDesc",
+    isPrimary: true,
   },
 ];
 
-export function getModeSelectionOptions(
-  defaultMode: PracticeMode,
-): ModeOptionModel[] {
-  const visibleDefault = defaultMode === "free" ? "wait" : defaultMode;
-  return MODE_OPTIONS.map((option) => ({
-    ...option,
-    isDefault: option.mode === visibleDefault,
-  }));
+/** Listen first, then play along. Play along is the primary card. */
+export function getModeSelectionOptions(): ModeOptionModel[] {
+  return MODE_OPTIONS.map((option) => ({ ...option }));
 }
