@@ -56,7 +56,10 @@ export const useProgressStore = create<ProgressState>()((set, get) => ({
   },
 
   getBestScore: (songId) => {
-    const songSessions = get().sessions.filter((s) => s.songId === songId);
+    // A run the child left halfway is practice time, not a score.
+    const songSessions = get().sessions.filter(
+      (s) => s.songId === songId && s.completed !== false,
+    );
     if (songSessions.length === 0) return null;
     return songSessions.reduce((best, current) =>
       current.score.accuracy > best.score.accuracy ? current : best,
@@ -99,7 +102,7 @@ export function initAutoSave(): () => void {
     _activeSession.activeSegmentStartedAt = null;
   };
 
-  const finalizeSession = (): void => {
+  const finalizeSession = (completed = false): void => {
     const session = _activeSession;
     if (!session) return;
     finishActiveSegment(Date.now());
@@ -119,6 +122,7 @@ export function initAutoSave(): () => void {
       durationSeconds: Math.round(session.accumulatedMs / 1000),
       tracksPlayed: Array.from(practiceState.activeTracks),
       noteResults: Array.from(practiceState.noteResults.entries()),
+      completed,
     };
     void useProgressStore.getState().addSession(record);
   };
@@ -148,20 +152,20 @@ export function initAutoSave(): () => void {
       const song = useSongStore.getState().song;
       const reachedEnd =
         song !== null && state.currentTime >= Math.max(0, song.duration - 0.01);
-      if (reachedEnd) finalizeSession();
+      if (reachedEnd) finalizeSession(true);
     }
 
-    if (state.resetSignal !== prev.resetSignal) finalizeSession();
+    if (state.resetSignal !== prev.resetSignal) finalizeSession(false);
   });
 
   const songUnsub = useSongStore.subscribe((state, prev) => {
-    if (state.song !== prev.song) finalizeSession();
+    if (state.song !== prev.song) finalizeSession(false);
   });
 
   // Browser/Electron cannot guarantee async IPC completion after a crash. A
   // graceful page hide is best-effort; an abrupt crash deliberately discards
   // the unfinished in-memory session instead of duplicating partial records.
-  const handlePageHide = (): void => finalizeSession();
+  const handlePageHide = (): void => finalizeSession(false);
   if (typeof window.addEventListener === "function") {
     window.addEventListener("pagehide", handlePageHide);
   }

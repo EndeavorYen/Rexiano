@@ -140,6 +140,12 @@ export interface SessionRecord {
   tracksPlayed: number[];
   /** Per-note hit/miss results as JSON-safe entries for weak-spot analysis */
   noteResults?: [string, NoteResult][];
+  /**
+   * False when the child left before the end of the song. Such a run still
+   * counts as practice time, but never as a best score or stars. Records
+   * saved before this field existed are treated as completed.
+   */
+  completed?: boolean;
 }
 
 // ─── User Data Backup ────────────────────────────────────────────────

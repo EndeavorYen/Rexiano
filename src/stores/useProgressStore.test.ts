@@ -188,6 +188,21 @@ describe("useProgressStore", () => {
     expect(best!.score.accuracy).toBe(95);
   });
 
+  test("getBestScore() ignores runs the child left halfway", () => {
+    const partial = makeSession({
+      songId: "song-x",
+      score: makeScore(100),
+      completed: false,
+    });
+    const full = makeSession({ songId: "song-x", score: makeScore(65) });
+
+    useProgressStore.setState({ sessions: [partial, full] });
+
+    expect(
+      useProgressStore.getState().getBestScore("song-x")!.score.accuracy,
+    ).toBe(65);
+  });
+
   test("getBestScore() returns null for unknown song", () => {
     useProgressStore.setState({ sessions: [makeSession()] });
     expect(useProgressStore.getState().getBestScore("nope")).toBeNull();
@@ -337,6 +352,25 @@ describe("initAutoSave()", () => {
     expect(vi.mocked(window.api.saveSession).mock.calls[0][0]).toMatchObject({
       songId: "test-song.mid",
       durationSeconds: 2,
+      // Left before the end: practice time, but not a score.
+      completed: false,
+    });
+    unsub();
+  });
+
+  test("marks a run that reaches the end of the song as completed", async () => {
+    const unsub = initAutoSave();
+    useSongStore.getState().loadSong(fakeSong);
+    usePracticeStore.getState().recordHit("n1");
+    usePlaybackStore.getState().setPlaying(true);
+    usePlaybackStore.getState().setCurrentTime(fakeSong.duration);
+    usePlaybackStore.getState().setPlaying(false);
+
+    await vi.waitFor(() => {
+      expect(window.api.saveSession).toHaveBeenCalledTimes(1);
+    });
+    expect(vi.mocked(window.api.saveSession).mock.calls[0][0]).toMatchObject({
+      completed: true,
     });
     unsub();
   });

@@ -32,7 +32,9 @@ export function buildScoreHud({
   totalNotes: number;
 }): ScoreHudModel | null {
   if (mode === "watch") return null;
-  const stars = liveStars(score.hitNotes, totalNotes);
+  // Wrong notes count against the stars exactly as they do on the result
+  // screen, so the two never disagree at the end of a run.
+  const stars = liveStars(score.hitNotes, totalNotes + score.missedNotes);
   return {
     stars,
     played: Math.min(score.hitNotes, totalNotes),
@@ -52,8 +54,9 @@ const FIRST_STAR_SHARE = TWO_STAR_ACCURACY / 2;
 
 /**
  * Stars while playing are the share of the whole song already hit, so they
- * fill up one by one and never drop. A run with every note played ends on
- * the same count the result screen shows.
+ * fill up one by one. A wrong note makes the song a little "longer", which
+ * is the same arithmetic as the final accuracy: a finished run ends on the
+ * count the result screen shows.
  */
 export function liveStars(hitNotes: number, totalNotes: number): StarCount {
   if (totalNotes <= 0) return 0;

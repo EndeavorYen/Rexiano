@@ -47,6 +47,21 @@ describe("buildScoreHud", () => {
     expect(at(40)).toBe(3);
   });
 
+  test("ends on the result screen's stars when half the notes were wrong", () => {
+    // 17 hits and 9 wrong notes is 65% on the result screen: one star.
+    const hud = buildScoreHud({
+      mode: "wait",
+      score: score({
+        totalNotes: 26,
+        hitNotes: 17,
+        missedNotes: 9,
+        accuracy: 65.4,
+      }),
+      totalNotes: 17,
+    });
+    expect(hud?.stars).toBe(1);
+  });
+
   test("played counts the notes hit, never above the total", () => {
     const hud = buildScoreHud({
       mode: "wait",

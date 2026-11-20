@@ -314,6 +314,8 @@ export function buildSongActivity(
         session.timestamp,
       );
       current.playCount += 1;
+      // Leaving halfway never earns a best score (or stars).
+      if (session.completed === false) continue;
       current.bestAccuracy = Math.max(
         current.bestAccuracy ?? Number.NEGATIVE_INFINITY,
         session.score.accuracy,
@@ -362,6 +364,8 @@ export function buildImportedSongActivity(
         session.timestamp,
       );
       current.playCount += 1;
+      // Leaving halfway never earns a best score (or stars).
+      if (session.completed === false) continue;
       current.bestAccuracy = Math.max(
         current.bestAccuracy ?? Number.NEGATIVE_INFINITY,
         session.score.accuracy,
