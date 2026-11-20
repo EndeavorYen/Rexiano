@@ -1,0 +1,40 @@
+{
+  "id": "the-cuckoo",
+  "meter": [3, 4],
+  "keyFifths": 0,
+  "mode": "major",
+  "pickupBeats": 0,
+  "rh": [
+    [67, 0, 1],
+    [64, 1, 1],
+    [67, 3, 1],
+    [64, 4, 1],
+    [62, 6, 1],
+    [60, 7, 1],
+    [62, 8, 1],
+    [60, 9, 2],
+    [62, 12, 1],
+    [62, 13, 1],
+    [64, 14, 1],
+    [65, 15, 2],
+    [62, 17, 1],
+    [64, 18, 1],
+    [64, 19, 1],
+    [65, 20, 1],
+    [67, 21, 2],
+    [64, 23, 1],
+    [67, 24, 1],
+    [64, 25, 1],
+    [67, 27, 1],
+    [64, 28, 1],
+    [65, 30, 1],
+    [64, 31, 1],
+    [62, 32, 1],
+    [60, 33, 3]
+  ],
+  "lh": [],
+  "sources": [
+    "Kuckuck, Kuckuck, ruft's aus dem Wald — Austrian folk melody, text Hoffmann von Fallersleben (1835); public domain"
+  ],
+  "notes": "C position (C-G), quarters, halves and quarter rests. Lines: G E, G E, D C D C / D D E F- D, E E F G- E / G E, G E, F E D C. Written out from memory in the simplest form; no network in the build environment, so not compared against an online score. Needs a listen by a person."
+}

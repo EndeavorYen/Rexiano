@@ -10,6 +10,10 @@ import type { BuiltinSongMeta } from "@shared/types";
 import { filterSongsForLibrary } from "@renderer/features/songLibrary/songLibrarySelectors";
 import { buildGeneratedSongArtifacts } from "./generate-songs";
 import { findPickup } from "../src/engines/midi/pickup";
+import {
+  classifySongLessonGroup,
+  type LessonGroupId,
+} from "@renderer/features/songLibrary/lessonProgression";
 
 type SongMeta = {
   id: string;
@@ -70,6 +74,73 @@ const PUBLIC_DOMAIN_EXPANSION = [
     grade: 4,
   },
 ] as const;
+
+/** Short, familiar public-domain songs for the first lesson groups. */
+const BEGINNER_EXPANSION: readonly {
+  id: string;
+  title: string;
+  titleZhTW: string;
+  composer: string;
+  grade: number;
+  group: LessonGroupId;
+}[] = [
+  {
+    id: "the-cuckoo",
+    title: "The Cuckoo",
+    titleZhTW: "布穀",
+    composer: "Traditional (German)",
+    grade: 0,
+    group: "first-notes",
+  },
+  {
+    id: "largo-new-world",
+    title: "Largo (New World Symphony)",
+    titleZhTW: "念故鄉",
+    composer: "Antonín Dvořák",
+    grade: 0,
+    group: "first-notes",
+  },
+  {
+    id: "buzz-buzz-buzz",
+    title: "Buzz, Buzz, Buzz",
+    titleZhTW: "蜜蜂嗡嗡嗡",
+    composer: "Traditional (German)",
+    grade: 0,
+    group: "first-notes",
+  },
+  {
+    id: "the-more-we-get-together",
+    title: "The More We Get Together",
+    titleZhTW: "當我們同在一起",
+    composer: "Traditional",
+    grade: 2,
+    group: "right-hand-melodies",
+  },
+  {
+    id: "oh-my-darling-clementine",
+    title: "Oh My Darling, Clementine",
+    titleZhTW: "新年好",
+    composer: "Traditional",
+    grade: 2,
+    group: "right-hand-melodies",
+  },
+  {
+    id: "alle-voegel-sind-schon-da",
+    title: "Alle Vögel sind schon da",
+    titleZhTW: "春神來了",
+    composer: "Traditional (German)",
+    grade: 2,
+    group: "right-hand-melodies",
+  },
+  {
+    id: "song-bie",
+    title: "Farewell (Song Bie)",
+    titleZhTW: "送別",
+    composer: "John P. Ordway",
+    grade: 2,
+    group: "right-hand-melodies",
+  },
+];
 
 type ExpectedKeySignature = {
   key: string;
@@ -302,5 +373,61 @@ describe("generated built-in MIDI resources", () => {
         searchQuery: "",
       }).map((song) => song.id),
     ).toEqual(expect.arrayContaining(["oh-susanna", "silent-night"]));
+  });
+
+  it("generates the beginner expansion with title, composer, and grade", () => {
+    const { midiFiles, songsMeta } = buildGeneratedSongArtifacts([]);
+
+    for (const { id, title, composer, grade } of BEGINNER_EXPANSION) {
+      expect(songsMeta.find((song) => song.id === id)).toMatchObject({
+        title,
+        composer,
+        grade,
+      });
+      expect(midiFiles.some((file) => file.id === id)).toBe(true);
+    }
+  });
+
+  it("ships the beginner expansion in the lesson group it was written for", () => {
+    const catalog = manifest as BuiltinSongMeta[];
+
+    for (const expected of BEGINNER_EXPANSION) {
+      const song = catalog.find((entry) => entry.id === expected.id);
+      expect(song, expected.id).toMatchObject({
+        title: expected.title,
+        titleZhTW: expected.titleZhTW,
+        composer: expected.composer,
+        grade: expected.grade,
+        difficulty: "beginner",
+        origin: "score",
+      });
+      expect(song!.tags, expected.id).toContain(`level-${expected.grade}`);
+      expect(classifySongLessonGroup(song!), expected.id).toBe(expected.group);
+      expect(existsSync(join(resourcesDir, song!.file)), expected.id).toBe(
+        true,
+      );
+    }
+  });
+
+  it("keeps first-notes songs in C position with whole, half and quarter notes", () => {
+    const catalog = manifest as BuiltinSongMeta[];
+
+    for (const expected of BEGINNER_EXPANSION) {
+      if (expected.group !== "first-notes") continue;
+      const song = catalog.find((entry) => entry.id === expected.id);
+      expect(song, expected.id).toBeDefined();
+      const midi = readMidi(song!);
+      const notes = midi.tracks.flatMap((track) => track.notes);
+      expect(
+        midi.tracks.filter((track) => track.notes.length > 0),
+      ).toHaveLength(1);
+      for (const note of notes) {
+        expect(note.midi, expected.id).toBeGreaterThanOrEqual(60);
+        expect(note.midi, expected.id).toBeLessThanOrEqual(67);
+        expect([1, 2, 3, 4], expected.id).toContain(
+          note.durationTicks / midi.header.ppq,
+        );
+      }
+    }
   });
 });
