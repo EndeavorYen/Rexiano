@@ -2,20 +2,20 @@
   "versions": [
     {
       "version": "2.4",
-      "date": "2026-11-20",
+      "date": "2026-11-22",
       "title": "首頁變成練琴地圖，彈完拿星星",
       "items": [
-        "首頁是一條練琴路線：每首曲子是一站，彈完拿 1 到 3 顆星，一站一站往前走",
-        "「全部曲子」變成有封面的琴譜書架，每張封面畫的是那首曲子開頭的旋律",
+        "首頁是一條練琴路線：每首曲子是一站，彈完拿 1 到 3 顆星；「全部曲子」變成有封面的琴譜書架",
         "彈對時琴鍵會發光、連續彈對會數連擊；拿到三顆星可以直接按「下一首」",
+        "點首頁的「今天／連續／星星」可以看這週每天練了幾分鐘、哪些曲子進步了，也能把每天的目標改成 5 到 20 分鐘",
         "新增 20 首曲子：茉莉花、送別、櫻花、驪歌、新年好、春神來了、綠袖子等"
       ],
       "en": {
         "title": "Home is now a practice map, and every song earns stars",
         "items": [
-          "Home is a route of songs: each one is a stop, and finishing it earns 1 to 3 stars as you move along",
-          "All songs is now a shelf of covers, each drawn from the opening of that song's melody",
+          "Home is a route of songs where each stop earns 1 to 3 stars; All songs is now a shelf of covers",
           "Correct notes make the key glow and streaks count up; with three stars you can press Next song",
+          "Tap today / streak / stars on the home screen to see minutes per day this week and which songs improved, and set the daily goal from 5 to 20 minutes",
           "20 new songs, including Jasmine Flower, Sakura, Auld Lang Syne, Greensleeves and Joy to the World"
         ]
       }

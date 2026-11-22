@@ -34,7 +34,6 @@ export function HomeStatsBar({
       type="button"
       className="set-card hm-stats hm-stats-btn"
       data-testid="home-stats-open-week"
-      aria-label={t("week.open")}
       aria-haspopup="dialog"
       onClick={onOpenWeek}
     >
@@ -105,6 +104,7 @@ export function HomeStatsBar({
           </span>
         </span>
       </span>
+      <span className="wk-sr">{t("week.open")}</span>
     </button>
   );
 }

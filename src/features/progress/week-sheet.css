@@ -285,7 +285,7 @@
   font-weight: 800;
   padding: 2px 8px;
   border-radius: 999px;
-  color: var(--color-success-text);
+  color: var(--color-text);
   background: color-mix(
     in srgb,
     var(--color-success-text) 14%,
