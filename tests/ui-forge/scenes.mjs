@@ -41,12 +41,50 @@ const WEEK = [
   session("mary-had-a-little-lamb", 50, 4),
 ];
 
+// A parent's week: minutes spread over this week's days (clamped to today), plus
+// older sessions so some songs gain stars and some are new. Goal day: 12 min.
+const startOfWeek = () => {
+  const d = new Date();
+  d.setHours(0, 0, 0, 0);
+  d.setDate(d.getDate() - ((d.getDay() + 6) % 7));
+  return d.getTime();
+};
+const weekSession = (songId, accuracy, dayIndex, seconds, hour = 9) => {
+  const todayIndex = (new Date().getDay() + 6) % 7;
+  const day = Math.min(dayIndex, todayIndex);
+  const at = startOfWeek() + day * DAY + hour * 3_600_000;
+  return {
+    ...session(songId, accuracy, 0),
+    id: `w-${songId}-${dayIndex}-${hour}`,
+    timestamp: Math.min(at, Date.now() - 60_000),
+    durationSeconds: seconds,
+  };
+};
+const WEEK_SPREAD = [
+  // before this week: lightly-row at 1 star, hot-cross-buns at 2
+  {
+    ...session("lightly-row", 50, 0),
+    id: "old-1",
+    timestamp: startOfWeek() - 3 * DAY,
+  },
+  {
+    ...session("hot-cross-buns", 75, 0),
+    id: "old-2",
+    timestamp: startOfWeek() - 5 * DAY,
+  },
+  weekSession("c-major-scale", 91, 0, 720),
+  weekSession("hot-cross-buns", 92, 1, 480),
+  weekSession("au-clair-de-la-lune", 95, 1, 300, 17),
+  weekSession("lightly-row", 75, 2, 600),
+  weekSession("mary-had-a-little-lamb", 50, 4, 180),
+];
+
 const ready = async (p) => {
   await p.waitForFunction(() => typeof window.api === "object");
   await p.evaluate(() => document.fonts.ready);
   await p.waitForTimeout(400);
 };
-const seedWeek = async (p) => {
+const seedWeek = async (p, sessions = WEEK) => {
   await ready(p);
   await p.evaluate(
     (sessions) =>
@@ -70,7 +108,7 @@ const seedWeek = async (p) => {
           };
         };
       }),
-    WEEK,
+    sessions,
   );
   await p.reload();
   await ready(p);
@@ -301,6 +339,29 @@ export default [
       await p.getByTestId("main-menu-settings").click();
       await p.getByTestId("settings-panel").waitFor();
       await p.waitForTimeout(400);
+    },
+  },
+  {
+    name: "week-sheet",
+    url: "/",
+    storage: base,
+    run: async (p) => {
+      await seedWeek(p, WEEK_SPREAD);
+      await toMap(p);
+      await p.getByTestId("home-stats-open-week").click();
+      await p.getByTestId("week-sheet").waitFor();
+      await p.waitForTimeout(500);
+    },
+  },
+  {
+    name: "week-empty",
+    url: "/",
+    storage: base,
+    run: async (p) => {
+      await toMap(p);
+      await p.getByTestId("home-stats-open-week").click();
+      await p.getByTestId("week-sheet").waitFor();
+      await p.waitForTimeout(500);
     },
   },
   {
