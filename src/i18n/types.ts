@@ -722,6 +722,34 @@ export interface TranslationMap {
   "practice.starToast1": string;
   "practice.starToast2": string;
   "practice.starToast3": string;
+  "week.title": string;
+  "week.otherWeek": string;
+  "week.open": string;
+  "week.prev": string;
+  "week.next": string;
+  "week.statMinutes": string;
+  "week.statDays": string;
+  "week.statStars": string;
+  "week.chartTitle": string;
+  "week.goalLine": string;
+  "week.goalHit": string;
+  "week.barLabel": string;
+  "week.noPractice": string;
+  "week.tableDate": string;
+  "week.tableMinutes": string;
+  "week.tableSongs": string;
+  "week.improvedTitle": string;
+  "week.improvedNone": string;
+  "week.newlyLearned": string;
+  "week.moreSongs": string;
+  "week.starsBefore": string;
+  "week.starsNow": string;
+  "week.topTitle": string;
+  "week.topValue": string;
+  "week.goalTitle": string;
+  "week.minutesValue": string;
+  "week.goalOption": string;
+  "week.settingsEntry": string;
 }
 
 /**

@@ -95,7 +95,7 @@ function normalize(value: string): string {
   return value.trim().toLowerCase();
 }
 
-function matchesSongIdentity(
+export function matchesSongIdentity(
   session: SessionRecord,
   song: BuiltinSongMeta,
 ): boolean {
@@ -110,7 +110,7 @@ function sourceFileName(sourcePath: string): string {
   return normalizeImportedSongPath(sourcePath).split("/").pop() ?? sourcePath;
 }
 
-function matchesImportedSongIdentity(
+export function matchesImportedSongIdentity(
   session: SessionRecord,
   song: ImportedSongRecord,
 ): boolean {

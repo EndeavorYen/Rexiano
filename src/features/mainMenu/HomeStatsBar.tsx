@@ -8,6 +8,9 @@ interface HomeStatsBarProps {
   calendar: PracticeCalendar;
   totalStars: number;
   maxStars: number;
+  /** Opens the "this week" sheet */
+  onOpenWeek: () => void;
+  triggerRef?: React.Ref<HTMLButtonElement>;
 }
 
 const RING_RADIUS = 21;
@@ -19,13 +22,23 @@ export function HomeStatsBar({
   calendar,
   totalStars,
   maxStars,
+  onOpenWeek,
+  triggerRef,
 }: HomeStatsBarProps): React.JSX.Element {
   const { t } = useTranslation();
   const goalReached = goal.practicedMinutes >= goal.targetMinutes;
   const dayLetters = [...t("map.weekdayShort")];
   return (
-    <div className="set-card hm-stats" data-testid="home-stats">
-      <div className="hm-stat" data-testid="home-stat-today">
+    <button
+      ref={triggerRef}
+      type="button"
+      className="set-card hm-stats hm-stats-btn"
+      data-testid="home-stats-open-week"
+      aria-label={t("week.open")}
+      aria-haspopup="dialog"
+      onClick={onOpenWeek}
+    >
+      <span className="hm-stat" data-testid="home-stat-today">
         <span className="hm-ring-wrap">
           <svg className="hm-ring" viewBox="0 0 52 52" aria-hidden="true">
             <circle cx="26" cy="26" r={RING_RADIUS} className="hm-ring-track" />
@@ -48,7 +61,7 @@ export function HomeStatsBar({
             />
           )}
         </span>
-        <div className="hm-stat-text">
+        <span className="hm-stat-text">
           <span className="hm-k">{t("map.today")}</span>
           <span className="hm-v">
             {Math.floor(goal.practicedMinutes)}
@@ -57,11 +70,11 @@ export function HomeStatsBar({
               {goal.targetMinutes} {t("map.minutesUnit")}
             </small>
           </span>
-        </div>
-      </div>
-      <div className="hm-stat" data-testid="home-stat-streak">
+        </span>
+      </span>
+      <span className="hm-stat" data-testid="home-stat-streak">
         <Flame className="hm-ico hm-flame" size={32} aria-hidden="true" />
-        <div className="hm-stat-text">
+        <span className="hm-stat-text">
           <span className="hm-k">{t("map.streak")}</span>
           <span className="hm-v">
             {calendar.streakDays}
@@ -80,18 +93,18 @@ export function HomeStatsBar({
               ))}
             </span>
           </span>
-        </div>
-      </div>
-      <div className="hm-stat" data-testid="home-stat-stars">
+        </span>
+      </span>
+      <span className="hm-stat" data-testid="home-stat-stars">
         <Star className="hm-ico hm-gold" size={32} aria-hidden="true" />
-        <div className="hm-stat-text">
+        <span className="hm-stat-text">
           <span className="hm-k">{t("map.stars")}</span>
           <span className="hm-v">
             {totalStars}
             <small> / {maxStars}</small>
           </span>
-        </div>
-      </div>
-    </div>
+        </span>
+      </span>
+    </button>
   );
 }

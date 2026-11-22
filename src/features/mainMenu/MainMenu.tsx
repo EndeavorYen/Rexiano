@@ -6,6 +6,8 @@ import { useSongStore } from "@renderer/stores/useSongStore";
 import { usePlaybackStore } from "@renderer/stores/usePlaybackStore";
 import { useTranslation } from "@renderer/i18n/useTranslation";
 import { useProgressStore } from "@renderer/stores/useProgressStore";
+import { useSettingsStore } from "@renderer/stores/useSettingsStore";
+import { WeekSheet } from "../progress/WeekSheet";
 import { FamilyTopBar } from "../shell/FamilyTopBar";
 import { PianoQuickConnect } from "../midiDevice/PianoQuickConnect";
 import { buildLessonProgression } from "../songLibrary/lessonProgression";
@@ -20,7 +22,6 @@ import { buildPracticeCalendar } from "./practiceCalendar";
 import { HomeStatsBar } from "./HomeStatsBar";
 import "./home-map.css";
 
-const DAILY_GOAL_MINUTES = 10;
 const MAX_IMPORTED_RECENTS = 3;
 
 interface MainMenuProps {
@@ -57,6 +58,9 @@ export function MainMenu({
   const loadSong = useSongStore((s) => s.loadSong);
   const resetPlayback = usePlaybackStore((s) => s.reset);
   const [loadingSongId, setLoadingSongId] = useState<string | null>(null);
+  const dailyGoalMinutes = useSettingsStore((s) => s.dailyGoalMinutes);
+  const [weekOpen, setWeekOpen] = useState(false);
+  const statsRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
     const library = useSongLibraryStore.getState();
@@ -81,9 +85,9 @@ export function MainMenu({
     () =>
       buildDailyGoalStatus(sessions, {
         dayTimestamp: Date.now(),
-        targetMinutes: DAILY_GOAL_MINUTES,
+        targetMinutes: dailyGoalMinutes,
       }),
-    [sessions],
+    [sessions, dailyGoalMinutes],
   );
   const calendar = useMemo(() => buildPracticeCalendar(sessions), [sessions]);
 
@@ -159,6 +163,8 @@ export function MainMenu({
               calendar={calendar}
               totalStars={model.totalStars}
               maxStars={model.maxStars}
+              onOpenWeek={() => setWeekOpen(true)}
+              triggerRef={statsRef}
             />
             <PianoQuickConnect
               onOpenDetails={onOpenSettings}
@@ -235,6 +241,12 @@ export function MainMenu({
           )}
         </div>
       </div>
+      {weekOpen && (
+        <WeekSheet
+          returnFocusRef={statsRef}
+          onClose={() => setWeekOpen(false)}
+        />
+      )}
     </div>
   );
 }

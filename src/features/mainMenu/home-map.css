@@ -909,3 +909,21 @@
     flex-wrap: wrap;
   }
 }
+
+/* The numbers row is one button: it opens "this week". */
+.hm-stats-btn {
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+  width: 100%;
+  transition: background-color 0.16s ease;
+}
+
+.hm-stats-btn:hover {
+  background: color-mix(in srgb, var(--color-text) 5%, var(--color-surface));
+}
+
+.hm-stats-btn:active {
+  background: color-mix(in srgb, var(--color-text) 8%, var(--color-surface));
+}

@@ -5,6 +5,17 @@ import { USER_DATA_STORAGE_KEYS } from "@renderer/features/settings/userDataStor
 
 export type Language = "en" | "zh-TW";
 
+export const DAILY_GOAL_OPTIONS = [5, 10, 15, 20] as const;
+export type DailyGoalMinutes = (typeof DAILY_GOAL_OPTIONS)[number];
+export const DEFAULT_DAILY_GOAL_MINUTES: DailyGoalMinutes = 10;
+
+function savedDailyGoal(value: unknown): DailyGoalMinutes {
+  return (
+    DAILY_GOAL_OPTIONS.find((option) => option === value) ??
+    DEFAULT_DAILY_GOAL_MINUTES
+  );
+}
+
 const STORAGE_KEY = USER_DATA_STORAGE_KEYS.settings;
 
 /** Detect initial language from browser/OS setting */
@@ -31,6 +42,8 @@ interface SettingsState {
   soundSource: SoundSource;
   /** Send the song this many ms early so the piano lines up with the notes */
   pianoOutputLatency: number;
+  /** Minutes of practice a day the parent wants (5, 10, 15 or 20) */
+  dailyGoalMinutes: DailyGoalMinutes;
 
   setShowNoteLabels: (v: boolean) => void;
   setShowFallingNoteLabels: (v: boolean) => void;
@@ -48,6 +61,7 @@ interface SettingsState {
   setChildFocusMode: (v: boolean) => void;
   setSoundSource: (v: SoundSource) => void;
   setPianoOutputLatency: (ms: number) => void;
+  setDailyGoalMinutes: (minutes: DailyGoalMinutes) => void;
 }
 
 interface PersistedSettings {
@@ -67,6 +81,7 @@ interface PersistedSettings {
   childFocusMode?: boolean;
   soundSource?: SoundSource;
   pianoOutputLatency?: number;
+  dailyGoalMinutes?: DailyGoalMinutes;
 }
 
 const defaults: PersistedSettings = {
@@ -86,6 +101,7 @@ const defaults: PersistedSettings = {
   childFocusMode: false,
   soundSource: "piano",
   pianoOutputLatency: 0,
+  dailyGoalMinutes: DEFAULT_DAILY_GOAL_MINUTES,
 };
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -168,6 +184,7 @@ export function normalizePersistedSettings(value: unknown): PersistedSettings {
         150,
       ),
     ),
+    dailyGoalMinutes: savedDailyGoal(source.dailyGoalMinutes),
   };
 }
 
@@ -213,6 +230,7 @@ export const useSettingsStore = create<SettingsState>()((set) => {
     childFocusMode: saved.childFocusMode!,
     soundSource: saved.soundSource!,
     pianoOutputLatency: saved.pianoOutputLatency!,
+    dailyGoalMinutes: saved.dailyGoalMinutes!,
 
     setShowNoteLabels: (v) => {
       persist({ showNoteLabels: v });
@@ -283,6 +301,12 @@ export const useSettingsStore = create<SettingsState>()((set) => {
       const clamped = Math.max(0, Math.min(150, Math.round(ms)));
       persist({ pianoOutputLatency: clamped });
       set({ pianoOutputLatency: clamped });
+    },
+    setDailyGoalMinutes: (minutes) => {
+      const valid = savedDailyGoal(minutes);
+      if (valid !== minutes) return;
+      persist({ dailyGoalMinutes: valid });
+      set({ dailyGoalMinutes: valid });
     },
   };
 });

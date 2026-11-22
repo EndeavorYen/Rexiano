@@ -1,5 +1,5 @@
 import { useCallback, useRef, useState } from "react";
-import { X } from "lucide-react";
+import { ChartColumn, X } from "lucide-react";
 import { useSettingsStore } from "@renderer/stores/useSettingsStore";
 import { useThemeStore } from "@renderer/stores/useThemeStore";
 import type { ThemePreference } from "@renderer/themes/tokens";
@@ -9,6 +9,7 @@ import { useTranslation } from "@renderer/i18n/useTranslation";
 import type { TranslationKey } from "@renderer/i18n/types";
 import { useDialogFocus } from "@renderer/hooks/useDialogFocus";
 import { setSharedVolume } from "../audio/volumeSync";
+import { WeekSheet } from "../progress/WeekSheet";
 import { DeviceSelector } from "../midiDevice/DeviceSelector";
 import {
   applyUserDataBackupToRuntime,
@@ -275,13 +276,16 @@ export function SettingsPanel({
   const { t } = useTranslation();
   const panelRef = useRef<HTMLDivElement>(null);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
+  const weekButtonRef = useRef<HTMLButtonElement>(null);
+  const [weekOpen, setWeekOpen] = useState(false);
 
   const handleClose = useCallback(() => {
     onClose?.();
   }, [onClose]);
 
+  // While the week sheet is on top it owns Escape and Tab.
   useDialogFocus({
-    active: true,
+    active: !weekOpen,
     containerRef: panelRef,
     initialFocusRef: closeButtonRef,
     onDismiss: handleClose,
@@ -317,6 +321,19 @@ export function SettingsPanel({
           </button>
         </div>
         <div className="family-sheet-body" tabIndex={0}>
+          <section className="set-card" data-testid="settings-week">
+            <button
+              ref={weekButtonRef}
+              type="button"
+              className="btn-ghost-themed"
+              aria-haspopup="dialog"
+              onClick={() => setWeekOpen(true)}
+              data-testid="settings-open-week"
+            >
+              <ChartColumn size={18} aria-hidden="true" />
+              {t("week.settingsEntry")}
+            </button>
+          </section>
           <AppearanceCard />
           <LanguageCard />
           <SoundCard />
@@ -333,6 +350,12 @@ export function SettingsPanel({
           <BackupCard />
         </div>
       </div>
+      {weekOpen && (
+        <WeekSheet
+          returnFocusRef={weekButtonRef}
+          onClose={() => setWeekOpen(false)}
+        />
+      )}
     </div>
   );
 }
