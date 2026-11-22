@@ -1,9 +1,8 @@
-import { Pencil, AlertCircle, Check, Trash2, X } from "lucide-react";
+import { useEffect, useRef } from "react";
+import { Pencil, AlertCircle, Trash2 } from "lucide-react";
 import { useTranslation } from "@renderer/i18n/useTranslation";
 import { categoryLabelKeys } from "./songCardUtils";
 import {
-  importedCategoryOptions,
-  type ImportedCategoryDraft,
   type ImportedSongMetadataDraft,
   type ImportedSongRecord,
 } from "./importedSongMetadata";
@@ -165,6 +164,11 @@ export interface ImportedSongMetadataEditorProps {
   onCancel: () => void;
 }
 
+/**
+ * Renaming an imported song: one field, the name. Composer, tags and
+ * category stay as they are (the draft still carries them). Enter saves;
+ * Esc cancels (the dialog routes it to onCancel).
+ */
 export function ImportedSongMetadataEditor({
   draft,
   onChange,
@@ -172,101 +176,50 @@ export function ImportedSongMetadataEditor({
   onCancel,
 }: ImportedSongMetadataEditorProps): React.JSX.Element {
   const { t } = useTranslation();
+  const inputRef = useRef<HTMLInputElement | null>(null);
   const canSave = draft.title.trim().length > 0;
+
+  useEffect(() => {
+    inputRef.current?.focus({ preventScroll: true });
+    inputRef.current?.select();
+  }, []);
 
   return (
     <div
-      className="grid gap-2 rounded-lg px-3 py-3 md:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)_minmax(0,1.1fr)_auto_auto]"
-      style={{
-        background: "color-mix(in srgb, var(--color-note3) 7%, transparent)",
-        border:
-          "1px solid color-mix(in srgb, var(--color-note3) 22%, var(--color-border))",
-      }}
+      className="song-dialog-editor"
       data-testid="imported-song-metadata-editor"
     >
       <input
+        ref={inputRef}
         value={draft.title}
         onChange={(event) => onChange({ title: event.target.value })}
-        className="min-w-0 rounded-md px-2 py-1.5 text-xs font-body"
-        style={{
-          color: "var(--color-text)",
-          background: "var(--color-surface)",
-          border: "1px solid var(--color-border)",
+        onKeyDown={(event) => {
+          if (event.key === "Enter" && !event.nativeEvent.isComposing) {
+            event.preventDefault();
+            if (canSave) onSave();
+          }
         }}
         aria-label={t("library.importedMetadataTitle")}
         placeholder={t("library.importedMetadataTitle")}
         data-testid="imported-song-title-input"
       />
-      <input
-        value={draft.composer}
-        onChange={(event) => onChange({ composer: event.target.value })}
-        className="min-w-0 rounded-md px-2 py-1.5 text-xs font-body"
-        style={{
-          color: "var(--color-text)",
-          background: "var(--color-surface)",
-          border: "1px solid var(--color-border)",
-        }}
-        aria-label={t("library.importedMetadataComposer")}
-        placeholder={t("library.importedMetadataComposer")}
-        data-testid="imported-song-composer-input"
-      />
-      <input
-        value={draft.tags}
-        onChange={(event) => onChange({ tags: event.target.value })}
-        className="min-w-0 rounded-md px-2 py-1.5 text-xs font-body"
-        style={{
-          color: "var(--color-text)",
-          background: "var(--color-surface)",
-          border: "1px solid var(--color-border)",
-        }}
-        aria-label={t("library.importedMetadataTags")}
-        placeholder={t("library.importedMetadataTags")}
-        data-testid="imported-song-tags-input"
-      />
-      <select
-        value={draft.category}
-        onChange={(event) =>
-          onChange({ category: event.target.value as ImportedCategoryDraft })
-        }
-        className="rounded-md px-2 py-1.5 text-xs font-body"
-        style={{
-          color: "var(--color-text)",
-          background: "var(--color-surface)",
-          border: "1px solid var(--color-border)",
-        }}
-        aria-label={t("library.importedMetadataCategory")}
-        data-testid="imported-song-category-select"
+      <button
+        type="button"
+        onClick={onSave}
+        disabled={!canSave}
+        className="btn-ghost-themed song-dialog-save"
+        data-testid="imported-song-metadata-save"
       >
-        <option value="">--</option>
-        {importedCategoryOptions.map((category) => (
-          <option key={category} value={category}>
-            {t(categoryLabelKeys[category])}
-          </option>
-        ))}
-      </select>
-      <div className="flex items-center gap-1.5 justify-end">
-        <button
-          type="button"
-          onClick={onSave}
-          disabled={!canSave}
-          className="btn-primary-themed flex h-7 items-center justify-center gap-1 rounded-md px-2 text-xs font-body font-medium cursor-pointer disabled:opacity-50"
-          aria-label={t("library.saveImportedMetadata")}
-          title={t("library.saveImportedMetadata")}
-          data-testid="imported-song-metadata-save"
-        >
-          <Check size={12} />
-        </button>
-        <button
-          type="button"
-          onClick={onCancel}
-          className="btn-surface-themed flex h-7 items-center justify-center gap-1 rounded-md px-2 text-xs font-body font-medium cursor-pointer"
-          aria-label={t("library.cancelImportedMetadata")}
-          title={t("library.cancelImportedMetadata")}
-          data-testid="imported-song-metadata-cancel"
-        >
-          <X size={12} />
-        </button>
-      </div>
+        {t("songbook.edit.save")}
+      </button>
+      <button
+        type="button"
+        onClick={onCancel}
+        className="btn-ghost-themed"
+        data-testid="imported-song-metadata-cancel"
+      >
+        {t("songbook.edit.cancel")}
+      </button>
     </div>
   );
 }

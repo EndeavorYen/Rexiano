@@ -1,9 +1,9 @@
+import "./songbook.css";
 import { useCallback } from "react";
-import { Grid2X2, List, Search } from "lucide-react";
+import { Search } from "lucide-react";
 import {
   useSongLibraryStore,
   type DifficultyFilter,
-  type SongLibraryViewMode,
 } from "../../stores/useSongLibraryStore";
 import { useTranslation } from "../../i18n/useTranslation";
 import type { TranslationKey } from "../../i18n/types";
@@ -15,23 +15,13 @@ const difficulties: { value: DifficultyFilter; key: TranslationKey }[] = [
   { value: "advanced", key: "library.difficulty.advanced" },
 ];
 
-const viewModes: {
-  value: SongLibraryViewMode;
-  key: TranslationKey;
-  icon: React.ComponentType<{ size?: number }>;
-}[] = [
-  { value: "list", key: "library.view.list", icon: List },
-  { value: "cards", key: "library.view.cards", icon: Grid2X2 },
-];
-
+/** Search box and level picker above the shelves. */
 export function SongLibraryFilters(): React.JSX.Element {
   const { t } = useTranslation();
   const searchQuery = useSongLibraryStore((s) => s.searchQuery);
   const difficultyFilter = useSongLibraryStore((s) => s.difficultyFilter);
-  const viewMode = useSongLibraryStore((s) => s.viewMode);
   const setSearchQuery = useSongLibraryStore((s) => s.setSearchQuery);
   const setDifficultyFilter = useSongLibraryStore((s) => s.setDifficultyFilter);
-  const setViewMode = useSongLibraryStore((s) => s.setViewMode);
 
   const handleSearch = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -41,86 +31,34 @@ export function SongLibraryFilters(): React.JSX.Element {
   );
 
   return (
-    <div className="flex flex-col gap-3 w-full">
-      {/* Search + difficulty + view toggle on one row */}
-      <div className="flex min-w-0 flex-col items-stretch gap-3 lg:flex-row lg:items-center">
-        <div className="flex-1 relative">
-          <Search
-            size={15}
-            className="absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none"
-            style={{ color: "var(--color-text-muted)" }}
-          />
-          <input
-            type="text"
-            value={searchQuery}
-            onChange={handleSearch}
-            placeholder={t("library.searchPlaceholder")}
-            className="w-full pl-9 pr-3.5 py-2.5 rounded-lg text-sm font-body input-themed"
-            data-testid="song-library-search"
-          />
-        </div>
-
-        <div
-          className="flex min-w-0 flex-wrap items-center gap-1.5 rounded-xl p-1"
-          style={{
-            background:
-              "color-mix(in srgb, var(--color-surface) 80%, transparent)",
-            border: "1px solid var(--color-border)",
-          }}
-        >
-          {difficulties.map((d) => (
-            <button
-              key={d.value}
-              onClick={() => setDifficultyFilter(d.value)}
-              className="min-h-9 px-3 py-1.5 rounded-lg text-xs font-body font-medium transition-colors cursor-pointer"
-              style={{
-                background:
-                  difficultyFilter === d.value
-                    ? "var(--color-accent)"
-                    : "transparent",
-                color:
-                  difficultyFilter === d.value
-                    ? "var(--color-on-accent)"
-                    : "var(--color-text)",
-              }}
-            >
-              {t(d.key)}
-            </button>
-          ))}
-        </div>
-
-        <div
-          className="flex shrink-0 items-center gap-1 self-end rounded-lg p-1 lg:self-auto"
-          style={{
-            background:
-              "color-mix(in srgb, var(--color-surface) 80%, transparent)",
-            border: "1px solid var(--color-border)",
-          }}
-        >
-          {viewModes.map((mode) => {
-            const Icon = mode.icon;
-            const isActive = viewMode === mode.value;
-            return (
-              <button
-                key={mode.value}
-                type="button"
-                data-testid={`song-library-view-${mode.value}`}
-                onClick={() => setViewMode(mode.value)}
-                className="flex h-9 w-9 items-center justify-center rounded-md transition-colors cursor-pointer"
-                aria-label={t(mode.key)}
-                aria-pressed={isActive}
-                style={{
-                  background: isActive ? "var(--color-accent)" : "transparent",
-                  color: isActive
-                    ? "var(--color-on-accent)"
-                    : "var(--color-text-muted)",
-                }}
-              >
-                <Icon size={14} />
-              </button>
-            );
-          })}
-        </div>
+    <div className="songbook-filters">
+      <label className="songbook-search">
+        <Search size={20} aria-hidden="true" />
+        <input
+          type="search"
+          value={searchQuery}
+          onChange={handleSearch}
+          placeholder={t("songbook.search.placeholder")}
+          aria-label={t("library.searchPlaceholder")}
+          data-testid="song-library-search"
+        />
+      </label>
+      <div
+        className="segmented songbook-levels"
+        role="group"
+        aria-label={t("songbook.levels.label")}
+      >
+        {difficulties.map((d) => (
+          <button
+            key={d.value}
+            type="button"
+            aria-pressed={difficultyFilter === d.value}
+            data-testid={`song-library-level-${d.value}`}
+            onClick={() => setDifficultyFilter(d.value)}
+          >
+            {t(d.key)}
+          </button>
+        ))}
       </div>
     </div>
   );

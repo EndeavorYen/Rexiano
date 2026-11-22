@@ -1,0 +1,14 @@
+/* Cover tones: three steps of one unit color. The steps are chosen so the
+   white notes keep at least 3:1 on every unit color in both themes
+   (the dark theme's unit colors are lighter, so its steps are deeper). */
+:root {
+  --cover-tone-0: 92%;
+  --cover-tone-1: 82%;
+  --cover-tone-2: 72%;
+}
+
+:root[data-theme="dark"] {
+  --cover-tone-0: 84%;
+  --cover-tone-1: 74%;
+  --cover-tone-2: 64%;
+}

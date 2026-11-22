@@ -2,6 +2,8 @@ import { useState, useCallback, useRef, useEffect } from "react";
 import { useMidiDeviceStore } from "@renderer/stores/useMidiDeviceStore";
 
 export const WRONG_NOTE_DISPLAY_DURATION_MS = 420;
+/** Matches the key glow animation, so the same key can glow again right after. */
+export const HIT_NOTE_DISPLAY_DURATION_MS = 520;
 
 export function addNoteToSet(notes: Set<number>, midi: number): Set<number> {
   const next = new Set(notes);
@@ -18,21 +20,38 @@ export function removeNoteFromSet(
   return next;
 }
 
+/** 0xRRGGBB (what the canvas uses) to "#rrggbb" (what CSS uses). */
+export function pixiToCss(color: number): string {
+  return `#${color.toString(16).padStart(6, "0")}`;
+}
+
 export interface UsePracticeNotesResult {
   activeNotes: Set<number>;
+  /** CSS colour of the note sounding on each key, by midi */
+  activeNoteColors: ReadonlyMap<number, string>;
   midiActiveNotes: Set<number>;
   wrongNotes: Set<number>;
+  hitNotes: Set<number>;
   splitFocusPanel: "sheet" | "falling";
   setSplitFocusPanel: (panel: "sheet" | "falling") => void;
   handleActiveNotesChange: (notes: Set<number>) => void;
+  handleActiveNoteColorsChange: (colors: ReadonlyMap<number, number>) => void;
   handleWrongPracticeInput: (midi: number) => void;
+  handleCorrectPracticeInput: (midi: number) => void;
 }
 
 export function usePracticeNotes(): UsePracticeNotesResult {
   const [activeNotes, setActiveNotes] = useState<Set<number>>(new Set());
+  const [activeNoteColors, setActiveNoteColors] = useState<
+    ReadonlyMap<number, string>
+  >(new Map());
   const midiActiveNotes = useMidiDeviceStore((s) => s.activeNotes);
   const [wrongNotes, setWrongNotes] = useState<Set<number>>(new Set());
   const wrongNoteTimersRef = useRef(
+    new Map<number, ReturnType<typeof setTimeout>>(),
+  );
+  const [hitNotes, setHitNotes] = useState<Set<number>>(new Set());
+  const hitNoteTimersRef = useRef(
     new Map<number, ReturnType<typeof setTimeout>>(),
   );
   const [splitFocusPanel, setSplitFocusPanel] = useState<"sheet" | "falling">(
@@ -42,6 +61,15 @@ export function usePracticeNotes(): UsePracticeNotesResult {
   const handleActiveNotesChange = useCallback((notes: Set<number>) => {
     setActiveNotes(notes);
   }, []);
+
+  const handleActiveNoteColorsChange = useCallback(
+    (colors: ReadonlyMap<number, number>) => {
+      const css = new Map<number, string>();
+      for (const [midi, color] of colors) css.set(midi, pixiToCss(color));
+      setActiveNoteColors(css);
+    },
+    [],
+  );
 
   const handleWrongPracticeInput = useCallback((midi: number): void => {
     const existingTimer = wrongNoteTimersRef.current.get(midi);
@@ -54,23 +82,38 @@ export function usePracticeNotes(): UsePracticeNotesResult {
     wrongNoteTimersRef.current.set(midi, timer);
   }, []);
 
+  const handleCorrectPracticeInput = useCallback((midi: number): void => {
+    const existingTimer = hitNoteTimersRef.current.get(midi);
+    if (existingTimer) clearTimeout(existingTimer);
+    setHitNotes((notes) => addNoteToSet(notes, midi));
+    const timer = setTimeout(() => {
+      setHitNotes((notes) => removeNoteFromSet(notes, midi));
+      hitNoteTimersRef.current.delete(midi);
+    }, HIT_NOTE_DISPLAY_DURATION_MS);
+    hitNoteTimersRef.current.set(midi, timer);
+  }, []);
+
   useEffect(() => {
-    const timers = wrongNoteTimersRef.current;
+    const timerMaps = [wrongNoteTimersRef.current, hitNoteTimersRef.current];
     return () => {
-      for (const timer of timers.values()) {
-        clearTimeout(timer);
+      for (const timers of timerMaps) {
+        for (const timer of timers.values()) clearTimeout(timer);
+        timers.clear();
       }
-      timers.clear();
     };
   }, []);
 
   return {
     activeNotes,
+    activeNoteColors,
     midiActiveNotes,
     wrongNotes,
+    hitNotes,
     splitFocusPanel,
     setSplitFocusPanel,
     handleActiveNotesChange,
+    handleActiveNoteColorsChange,
     handleWrongPracticeInput,
+    handleCorrectPracticeInput,
   };
 }

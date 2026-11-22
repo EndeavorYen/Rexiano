@@ -37,5 +37,10 @@ export default defineConfig(
       ...eslintPluginReactRefresh.configs.vite.rules,
     },
   },
+  {
+    // ui-forge scene scripts are plain Playwright helpers, not app code.
+    files: ["tests/ui-forge/**/*.mjs"],
+    rules: { "@typescript-eslint/explicit-function-return-type": "off" },
+  },
   eslintConfigPrettier,
 );

@@ -1,4 +1,5 @@
 import type { PracticeMode } from "@shared/types";
+import { starsForAccuracy } from "../progress/stars";
 
 export type CelebrationTier = "amazing" | "great" | "encourage";
 export type CelebrationVariant = "scored" | "listen";
@@ -6,7 +7,6 @@ export type CelebrationVariant = "scored" | "listen";
 export interface CelebrationPresentation {
   variant: CelebrationVariant;
   showScore: boolean;
-  chooseSongGoesToStats: boolean;
 }
 
 export function getCelebrationPresentation({
@@ -20,14 +20,12 @@ export function getCelebrationPresentation({
     return {
       variant: "listen",
       showScore: false,
-      chooseSongGoesToStats: false,
     };
   }
 
   return {
     variant: "scored",
     showScore: totalNotes > 0,
-    chooseSongGoesToStats: false,
   };
 }
 
@@ -37,34 +35,63 @@ export function getTier(accuracy: number): CelebrationTier {
   return "encourage";
 }
 
+export type RecordBadge = "more-stars" | "better";
+
 /**
- * Determine whether the current score qualifies as a new personal record.
- *
- * Returns `true` when:
- * - The session has at least one note (`totalNotes > 0`)
- * - A `songId` is provided
- * - There is no previous best, **or** the current accuracy exceeds it
+ * The little badge under the title. The very first finished run of a song has
+ * nothing to beat, so it gets none. After that: more stars, or (same stars)
+ * a higher accuracy. `previousBestAccuracy` is from finished runs only.
  */
-export function isNewRecord(
+export function getRecordBadge(
   accuracy: number,
   totalNotes: number,
   songId: string | undefined,
   previousBestAccuracy: number | null,
-): boolean {
-  if (totalNotes <= 0 || !songId) return false;
-  return previousBestAccuracy === null || accuracy > previousBestAccuracy;
+): RecordBadge | null {
+  if (totalNotes <= 0 || !songId) return null;
+  if (previousBestAccuracy === null) return null;
+  const before = starsForAccuracy(previousBestAccuracy);
+  const now = starsForAccuracy(accuracy);
+  if (now > before) return "more-stars";
+  if (now === before && accuracy > previousBestAccuracy) return "better";
+  return null;
 }
 
-export type CelebrationActionId = "try-wait" | "play-again" | "choose-song";
+/** Ignore keyboard activation of the primary button this long after the card opens. */
+export const RESULT_KEY_GUARD_MS = 600;
+
+/** The clock the guard reads; a function so components stay pure. */
+export function nowMs(): number {
+  return performance.now();
+}
+
+/** True while a key press must not trigger the result card's buttons. */
+export function isResultKeyGuardActive(
+  openedAt: number,
+  now: number,
+  guardMs: number = RESULT_KEY_GUARD_MS,
+): boolean {
+  return now - openedAt < guardMs;
+}
+
+export type CelebrationActionId =
+  | "next-song"
+  | "try-wait"
+  | "play-again"
+  | "choose-song";
 
 /**
- * End-card buttons, primary first. After a Watch run the advice is "try
- * playing along", so that is the primary button rather than a note (#310).
+ * End-card buttons, primary first; the card shows exactly one solid button.
+ * Three stars move on to the next song (when there is one). Fewer stars
+ * replay. After a Watch run the advice is "play along" (#310).
  */
 export function getCelebrationActions(
   variant: CelebrationPresentation["variant"],
+  options: { stars?: number; hasNextSong?: boolean } = {},
 ): CelebrationActionId[] {
-  return variant === "listen"
-    ? ["try-wait", "play-again", "choose-song"]
-    : ["play-again", "choose-song"];
+  if (variant === "listen") return ["try-wait", "play-again", "choose-song"];
+  if (options.stars === 3 && options.hasNextSong) {
+    return ["next-song", "play-again", "choose-song"];
+  }
+  return ["play-again", "choose-song"];
 }

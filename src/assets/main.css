@@ -713,7 +713,7 @@ input.seek-slider-input {
   font-family: var(--font-display);
   font-weight: 800;
   font-size: 1.35rem;
-  line-height: 1.2;
+  line-height: 1.6;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -805,19 +805,23 @@ input.seek-slider-input {
 }
 
 .segmented button {
-  min-height: 40px;
+  min-height: 44px;
   border-radius: 10px;
-  border: 0;
+  border: 2px solid transparent;
   background: transparent;
   color: var(--color-text-muted);
   font-weight: 700;
   cursor: pointer;
 }
 
-.segmented button[aria-pressed="true"] {
-  background: var(--color-accent);
-  color: var(--color-on-accent);
-  box-shadow: 0 2px 0 rgba(0, 0, 0, 0.12);
+/* "Chosen" is pale yellow with a sun-yellow edge. Solid yellow belongs to
+   the one primary button of a screen (DESIGN.md 16.5). */
+.segmented button[aria-pressed="true"],
+.segmented button[aria-checked="true"],
+.segmented button[aria-selected="true"] {
+  background: color-mix(in srgb, var(--color-accent) 26%, var(--color-surface));
+  border-color: var(--color-accent);
+  color: var(--color-text);
 }
 
 /* ── On-screen piano: dark case, felt strip, keys with depth ── */
@@ -1453,4 +1457,44 @@ input.seek-slider-input {
       var(--color-border)
     )
     var(--color-scrollbar-track);
+}
+
+/* ── Stars: the one reward currency (features/progress/StarRow.tsx) ── */
+.star-row {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  line-height: 0;
+}
+
+.star-row-star path {
+  fill: transparent;
+  stroke: var(--color-control-border);
+}
+
+.star-row-star.is-earned path {
+  fill: var(--color-accent);
+  stroke: var(--color-streak-gold);
+}
+
+.star-row-star.is-animated {
+  animation: star-pop 0.45s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+  transform-origin: center;
+}
+
+@keyframes star-pop {
+  from {
+    opacity: 0;
+    transform: scale(0.2) rotate(-30deg);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) rotate(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .star-row-star.is-animated {
+    animation: none;
+  }
 }

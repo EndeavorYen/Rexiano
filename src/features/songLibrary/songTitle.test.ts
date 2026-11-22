@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { displayTitleForName, songDisplayTitle } from "./songTitle";
+import { displayTitleForName, songByline, songDisplayTitle } from "./songTitle";
 
 const twinkle = {
   title: "Twinkle Twinkle Little Star",
@@ -39,6 +39,38 @@ describe("displayTitleForName", () => {
   test("leaves imported file names alone", () => {
     expect(displayTitleForName("my-song.mid", [twinkle], "zh-TW")).toBe(
       "my-song.mid",
+    );
+  });
+});
+
+describe("songByline", () => {
+  const say = (): string => "傳統民謠";
+  test("Chinese: no English title, Traditional in words", () => {
+    expect(
+      songByline(
+        { secondary: "Lightly Row", composer: "Traditional" },
+        "zh-TW",
+        say,
+      ),
+    ).toBe("傳統民謠");
+  });
+  test("Chinese: other composers stay as written", () => {
+    expect(
+      songByline({ secondary: "Ode", composer: "Beethoven" }, "zh-TW", say),
+    ).toBe("Beethoven");
+  });
+  test("English keeps the English title line", () => {
+    expect(
+      songByline(
+        { secondary: "Lightly Row", composer: "Traditional" },
+        "en",
+        () => "Traditional",
+      ),
+    ).toBe("Lightly Row · Traditional");
+  });
+  test("no composer gives an empty line", () => {
+    expect(songByline({ secondary: null, composer: "" }, "zh-TW", say)).toBe(
+      "",
     );
   });
 });

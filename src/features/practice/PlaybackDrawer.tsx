@@ -33,14 +33,17 @@ export function PlaybackDrawer({
         onClick={(e) => e.stopPropagation()}
       >
         <div className="app-side-drawer-header">
-          <span className="kicker-label">{t("settings.title")}</span>
+          <h2 className="m-0 font-display text-xl font-extrabold">
+            {t("settings.title")}
+          </h2>
           <button
             ref={closeRef}
             onClick={onClose}
-            className="btn-surface-themed w-9 h-9 rounded-full flex items-center justify-center cursor-pointer"
+            className="icon-btn"
             aria-label={t("settings.close")}
+            title={t("settings.close")}
           >
-            <X size={14} />
+            <X size={20} />
           </button>
         </div>
         <div className="app-side-drawer-body">

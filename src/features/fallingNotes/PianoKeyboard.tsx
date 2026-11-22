@@ -1,3 +1,4 @@
+import "../practice/play-feedback.css";
 import { useEffect, useMemo, useState } from "react";
 import {
   createKeyPointerTracker,
@@ -111,6 +112,8 @@ function buildLayout(range: KeyRange): Layout {
 interface PianoKeyboardProps {
   /** Notes highlighted by the falling notes hit line */
   activeNotes?: Set<number>;
+  /** CSS colour of the falling note on each sounding key; keys light in it */
+  activeNoteColors?: ReadonlyMap<number, string>;
   /** Notes highlighted by live MIDI input */
   midiActiveNotes?: Set<number>;
   /** Notes the player hit correctly (practice mode) */
@@ -229,8 +232,34 @@ const KEY_LABEL_STYLE: React.CSSProperties = {
   userSelect: "none",
 };
 
+/**
+ * A key struck by the song lights in the colour of its falling note, so a
+ * left-hand and a right-hand note can be told apart on the keys too.
+ */
+function songKeyColorVars(
+  songActive: boolean,
+  color: string | undefined,
+): React.CSSProperties {
+  if (!songActive || !color) return {};
+  return {
+    "--color-key-active": color,
+    "--color-accent": color,
+  } as React.CSSProperties;
+}
+
+/**
+ * White keys are light in both themes, so their names use a fixed dark grey
+ * (about 7:1 on the key) instead of the theme's muted text, which turns light
+ * in dark mode and vanishes.
+ */
+const WHITE_KEY_LABEL_IDLE: React.CSSProperties = {
+  color: "#3F4A5C",
+  opacity: 1,
+};
+
 export function PianoKeyboard({
   activeNotes,
+  activeNoteColors,
   midiActiveNotes,
   hitNotes,
   missedNotes,
@@ -290,6 +319,7 @@ export function PianoKeyboard({
             data-midi={key.midi}
             className={`absolute top-0 ${practiceClass}`}
             style={{
+              ...songKeyColorVars(songActive, activeNoteColors?.get(key.midi)),
               left: `calc(${key.index * wPct}% + ${WHITE_KEY_GAP / 2}px)`,
               width: `calc(${wPct}% - ${WHITE_KEY_GAP}px)`,
               height: "100%",
@@ -309,7 +339,7 @@ export function PianoKeyboard({
                   // Keep the name readable on the highlighted key.
                   ...(songActive || midiActive
                     ? { color: "var(--color-on-accent)", opacity: 0.95 }
-                    : { color: "var(--color-text-muted)" }),
+                    : WHITE_KEY_LABEL_IDLE),
                 }}
               >
                 {compactLabels
@@ -334,6 +364,7 @@ export function PianoKeyboard({
             data-midi={key.midi}
             className={`absolute top-0 ${practiceClass}`}
             style={{
+              ...songKeyColorVars(songActive, activeNoteColors?.get(key.midi)),
               left: `${centerX - bWidth / 2}%`,
               width: `${bWidth}%`,
               height: `${BLACK_KEY_HEIGHT_RATIO * 100}%`,

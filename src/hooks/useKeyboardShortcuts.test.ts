@@ -216,6 +216,52 @@ describe("useKeyboardShortcuts", () => {
   });
 
   // ─── R — Reset ──────────────────────────────────────────
+  describe("Escape — pause, never leave", () => {
+    test("pauses while playing", () => {
+      (usePlaybackStore.getState() as { isPlaying: boolean }).isPlaying = true;
+      fireKey("Escape");
+      expect(usePlaybackStore.getState().setPlaying).toHaveBeenCalledWith(
+        false,
+      );
+    });
+
+    test("does nothing when already paused", () => {
+      fireKey("Escape");
+      expect(usePlaybackStore.getState().setPlaying).not.toHaveBeenCalled();
+    });
+
+    test("works while a button has the focus (for example the gear)", () => {
+      (usePlaybackStore.getState() as { isPlaying: boolean }).isPlaying = true;
+      const target = {
+        closest: (selector: string) =>
+          selector.split(",").includes("button") ? ({} as Element) : null,
+      };
+      fireKey("Escape", { target });
+      expect(usePlaybackStore.getState().setPlaying).toHaveBeenCalledWith(
+        false,
+      );
+    });
+
+    test("leaves Esc to a text field", () => {
+      (usePlaybackStore.getState() as { isPlaying: boolean }).isPlaying = true;
+      const target = {
+        closest: (selector: string) =>
+          selector.split(",").includes("input") ? ({} as Element) : null,
+      };
+      fireKey("Escape", { target });
+      expect(usePlaybackStore.getState().setPlaying).not.toHaveBeenCalled();
+    });
+
+    test("leaves Esc to an open dialog", () => {
+      (usePlaybackStore.getState() as { isPlaying: boolean }).isPlaying = true;
+      vi.stubGlobal("document", {
+        querySelector: vi.fn(() => ({ role: "dialog" })),
+      });
+      fireKey("Escape");
+      expect(usePlaybackStore.getState().setPlaying).not.toHaveBeenCalled();
+    });
+  });
+
   describe("R — Reset", () => {
     test("resets time to 0", () => {
       fireKey("KeyR");

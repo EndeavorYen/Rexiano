@@ -34,6 +34,8 @@ export interface ThemeTokens {
     note2: string;
     note3: string;
     note4: string;
+    /** Fifth lesson-unit color (map regions, song covers) */
+    unit5: string;
     keyActive: string;
     keyWhite: string;
     keyWhiteBottom: string;
@@ -81,6 +83,7 @@ export const themes: Record<ThemeId, ThemeTokens> = {
       note2: "#F07B3F",
       note3: "#2E9E5B",
       note4: "#9B6BDF",
+      unit5: "#5B6F95",
       keyActive: "#FFC53D",
       keyWhite: "#FFFFFF",
       keyWhiteBottom: "#E6EDF5",
@@ -117,6 +120,7 @@ export const themes: Record<ThemeId, ThemeTokens> = {
       note2: "#FF8A50",
       note3: "#4CC27E",
       note4: "#B48CF2",
+      unit5: "#8FA3C8",
       keyActive: "#FFC53D",
       keyWhite: "#DCE3ED",
       keyWhiteBottom: "#C3CDDB",

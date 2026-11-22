@@ -1,0 +1,807 @@
+/* UI round 1 (play): live feedback, the "how to practise" cards, the result.
+   Every colour is a token; the sun-yellow solid is used once per screen. */
+
+/* ── Title bar: song on the left, the score in the middle, tools on the
+   right. The middle column is as wide as the HUD and the side columns are
+   equal, so the HUD sits in the centre of the screen. ── */
+.play-bar {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  gap: 12px;
+  min-height: 56px;
+}
+
+.play-bar-start,
+.play-bar-end {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.play-bar-end {
+  justify-content: flex-end;
+}
+
+.play-bar-center {
+  display: flex;
+  justify-content: center;
+}
+
+/* ── Live HUD: the stars and the streak are the point of the screen ── */
+.play-hud {
+  display: inline-flex;
+  align-items: center;
+  gap: 14px;
+  flex-shrink: 0;
+  justify-content: center;
+  /* Fixed width: the streak coming and going never changes the pill. */
+  width: 362px;
+  box-sizing: border-box;
+  min-height: 52px;
+  padding: 0 18px;
+  border-radius: 999px;
+  background: var(--color-surface-alt);
+  border: 1px solid var(--color-border);
+  user-select: none;
+  pointer-events: none;
+}
+
+.play-hud-stars {
+  display: inline-flex;
+  line-height: 0;
+}
+
+.play-hud-stars .star-row {
+  gap: 4px;
+}
+
+/* The star that just lit pops once and gives off a ring of light. */
+.play-hud-stars[data-lit="1"] .star-row-star:nth-child(1),
+.play-hud-stars[data-lit="2"] .star-row-star:nth-child(2),
+.play-hud-stars[data-lit="3"] .star-row-star:nth-child(3) {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: play-star-lit 0.7s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+@keyframes play-star-lit {
+  0% {
+    transform: scale(1);
+    filter: drop-shadow(0 0 0 var(--color-accent));
+  }
+  35% {
+    transform: scale(1.6) rotate(-8deg);
+    filter: drop-shadow(0 0 10px var(--color-accent))
+      drop-shadow(0 0 3px var(--color-accent));
+  }
+  100% {
+    transform: scale(1) rotate(0);
+    filter: drop-shadow(0 0 0 transparent);
+  }
+}
+
+.play-hud-progress {
+  min-width: 96px;
+  font-family: var(--font-display);
+  font-size: 0.9375rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--color-text);
+  white-space: nowrap;
+}
+
+/* No streak: the slot is empty and takes no room, so the stars and the
+   count sit in the middle of the pill; with one, the whole group is still
+   centred. */
+.play-hud-combo-slot {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  height: 40px;
+}
+
+.play-hud-combo-slot:empty {
+  display: none;
+}
+
+.play-hud-combo {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 4px;
+  padding: 0 10px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--color-accent) 22%, var(--color-surface));
+  color: var(--color-combo-text, var(--color-text));
+  animation: play-combo-pop 0.28s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+.play-hud-combo-count {
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  font-weight: 800;
+  line-height: 1.3;
+  font-variant-numeric: tabular-nums;
+}
+
+.play-hud-combo-label {
+  color: var(--color-text);
+  font-size: 0.8125rem;
+  font-weight: 700;
+}
+
+.play-hud-combo.is-milestone {
+  animation:
+    play-combo-pop 0.28s cubic-bezier(0.34, 1.56, 0.64, 1) both,
+    play-combo-milestone 0.9s ease-out both;
+}
+
+@keyframes play-combo-pop {
+  from {
+    transform: scale(0.7);
+  }
+  to {
+    transform: scale(1);
+  }
+}
+
+@keyframes play-combo-milestone {
+  0% {
+    box-shadow: 0 0 0 0 var(--color-hit-glow);
+  }
+  100% {
+    box-shadow: 0 0 0 14px transparent;
+  }
+}
+
+/* ── Keys: a clear glow for a right note, a soft blush for a wrong one ── */
+.piano-keyboard .practice-key-hit,
+.piano-keyboard .practice-key-miss {
+  animation: none;
+}
+
+.piano-keyboard .practice-key-hit::after,
+.piano-keyboard .practice-key-miss::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+}
+
+.piano-keyboard .practice-key-hit {
+  z-index: 3;
+  animation: play-key-hit 0.5s ease-out both;
+}
+
+.piano-keyboard .practice-key-hit::after {
+  background: linear-gradient(
+    to bottom,
+    var(--color-hit-glow),
+    color-mix(in srgb, var(--color-hit-glow) 70%, transparent)
+  );
+  animation: play-key-hit-fill 0.5s ease-out both;
+}
+
+.piano-keyboard .practice-key-miss::after {
+  background: color-mix(in srgb, var(--color-danger-text) 38%, transparent);
+  animation: play-key-miss-fill 0.42s ease-out both;
+}
+
+@keyframes play-key-hit {
+  0% {
+    box-shadow: 0 0 0 0 var(--color-hit-glow);
+  }
+  25% {
+    box-shadow:
+      0 0 30px 12px var(--color-hit-glow),
+      0 0 0 4px var(--color-hit-glow);
+  }
+  100% {
+    box-shadow: 0 0 0 0 transparent;
+  }
+}
+
+@keyframes play-key-hit-fill {
+  0% {
+    opacity: 0;
+  }
+  15% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes play-key-miss-fill {
+  0% {
+    opacity: 0;
+  }
+  20% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .play-hud-combo,
+  .play-hud-combo.is-milestone,
+  .play-hud-stars[data-lit] .star-row-star {
+    animation: none;
+  }
+  /* No motion: the key simply holds its colour for the same moment. */
+  .piano-keyboard .practice-key-hit,
+  .piano-keyboard .practice-key-hit::after,
+  .piano-keyboard .practice-key-miss::after {
+    animation: none;
+  }
+  .piano-keyboard .practice-key-hit::after,
+  .piano-keyboard .practice-key-miss::after {
+    opacity: 0.8;
+  }
+}
+
+/* ── "No piano yet" strip: between the stage and the controls ── */
+.play-hint-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 44px;
+  margin-top: 8px;
+  padding: 0 6px 0 14px;
+  border-radius: 14px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  color: var(--color-text);
+}
+
+.play-hint-icon {
+  flex-shrink: 0;
+  color: var(--color-accent-text);
+}
+
+.play-hint-text {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  column-gap: 10px;
+  font-size: 0.85rem;
+  line-height: 1.3;
+}
+
+.play-hint-text strong {
+  font-family: var(--font-display);
+  font-weight: 800;
+}
+
+.play-hint-text span {
+  color: var(--color-text-muted);
+}
+
+.play-hint-connect {
+  flex-shrink: 0;
+  min-height: 44px;
+  padding: 0 16px;
+  border-radius: 14px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+/* ── "How shall we play?": two big cards ── */
+.play-mode-sheet {
+  width: min(640px, 100%);
+  padding: 20px;
+  gap: 16px;
+}
+
+.play-mode-head {
+  text-align: center;
+}
+
+.play-mode-song {
+  margin: 0 0 4px;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--color-text-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.play-mode-head h2 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 1.7rem;
+  line-height: 1.2;
+}
+
+.play-mode-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.play-mode-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  min-height: 200px;
+  padding: 20px 16px;
+  border-radius: 18px;
+  border: 2px solid var(--color-border);
+  background: var(--color-surface);
+  color: var(--color-text);
+  text-align: center;
+  cursor: pointer;
+  box-shadow: var(--family-shadow);
+  transition:
+    transform 0.1s ease,
+    border-color 0.16s ease;
+}
+
+.play-mode-card:hover {
+  border-color: var(--color-control-border);
+  transform: translateY(-2px);
+}
+
+.play-mode-card:active {
+  transform: translateY(1px);
+}
+
+.play-mode-card.is-primary {
+  background: var(--color-accent);
+  border-color: transparent;
+  color: var(--color-on-accent);
+  box-shadow: 0 4px 0 rgba(0, 0, 0, 0.14);
+}
+
+.play-mode-card.is-primary:hover {
+  background: var(--color-accent-hover);
+}
+
+.play-mode-card-icon {
+  display: grid;
+  place-items: center;
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background: var(--color-surface-alt);
+  color: var(--color-text);
+}
+
+.play-mode-card.is-primary .play-mode-card-icon {
+  background: color-mix(in srgb, var(--color-on-accent) 14%, transparent);
+  color: var(--color-on-accent);
+}
+
+.play-mode-card-title {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 1.5rem;
+  line-height: 1.2;
+}
+
+.play-mode-card-desc {
+  font-size: 0.9rem;
+  line-height: 1.45;
+  color: var(--color-text-muted);
+}
+
+.play-mode-card.is-primary .play-mode-card-desc {
+  color: var(--color-on-accent);
+}
+
+.play-mode-back {
+  align-self: center;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 0 18px;
+  border-radius: 14px;
+  font-size: 0.9rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.play-mode-card:focus-visible,
+.play-mode-back:focus-visible {
+  outline: 3px solid var(--color-text);
+  outline-offset: 3px;
+}
+
+@media (max-width: 560px) {
+  .play-mode-grid {
+    grid-template-columns: 1fr;
+  }
+  .play-mode-card {
+    min-height: 0;
+  }
+}
+
+/* ── Result card: stars, one sentence, one next step ── */
+.play-result-scrim,
+.mode-selection-backdrop {
+  z-index: 200;
+}
+
+.play-result-scrim {
+  background: rgba(17, 23, 35, 0.55);
+}
+
+.play-result {
+  position: relative;
+  width: min(520px, 100%);
+  align-items: center;
+  gap: 10px;
+  padding: 28px 24px 24px;
+  text-align: center;
+  overflow: hidden;
+}
+
+/* Cover and name of the song, side by side above the stars. */
+.play-result-song {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  width: 100%;
+  min-width: 0;
+  margin-bottom: 6px;
+}
+
+.play-result-cover {
+  flex: none;
+  width: 72px;
+  height: 96px;
+  border-radius: 10px;
+  overflow: hidden;
+  border: 1px solid var(--color-border);
+}
+
+.play-result-cover svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.play-result-song-title {
+  min-width: 0;
+  max-width: 300px;
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 1.375rem;
+  line-height: 1.7;
+  text-align: left;
+  overflow-wrap: anywhere;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.play-result-stars-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 4px;
+}
+
+.play-result-stars {
+  position: relative;
+  z-index: 1;
+  gap: 8px;
+}
+
+/* Each earned star pops to 1.35x and settles; the outlines are just there. */
+.play-result-stars .star-row-star.is-animated {
+  animation-name: play-result-star-pop;
+  animation-duration: 0.55s;
+}
+
+@keyframes play-result-star-pop {
+  0% {
+    opacity: 0;
+    transform: scale(0.2) rotate(-30deg);
+  }
+  55% {
+    opacity: 1;
+    transform: scale(1.35) rotate(4deg);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) rotate(0);
+  }
+}
+
+/* Three stars: a soft ring of light turns slowly behind them. */
+.play-result-rays {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 320px;
+  height: 320px;
+  margin: -160px 0 0 -160px;
+  border-radius: 50%;
+  background: repeating-conic-gradient(
+    from 0deg,
+    color-mix(in srgb, var(--color-accent) 42%, transparent) 0 7deg,
+    transparent 7deg 22.5deg
+  );
+  -webkit-mask-image: radial-gradient(circle, #000 0 26%, transparent 68%);
+  mask-image: radial-gradient(circle, #000 0 26%, transparent 68%);
+  animation: play-rays-turn 12s linear infinite;
+  pointer-events: none;
+}
+
+@keyframes play-rays-turn {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.play-result[data-stars="3"] .play-result-title {
+  font-size: 2.2rem;
+}
+
+.play-result-title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 1.8rem;
+  line-height: 1.2;
+}
+
+.play-result-record {
+  margin: 0;
+  padding: 2px 14px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--color-accent) 24%, var(--color-surface));
+  color: var(--color-text);
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 0.95rem;
+}
+
+.play-result-line {
+  margin: 0;
+  max-width: 34ch;
+  font-size: 1rem;
+  line-height: 1.5;
+  color: var(--color-text);
+}
+
+.play-result-count {
+  margin: 0;
+  font-size: 0.82rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--color-text-muted);
+}
+
+.play-result-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 100%;
+  margin-top: 10px;
+}
+
+.play-result-primary {
+  min-height: 56px;
+  padding: 0 20px;
+  border-radius: 14px;
+  font-size: 1.1rem;
+  cursor: pointer;
+}
+
+.play-result-secondary {
+  display: flex;
+  gap: 10px;
+}
+
+.play-result-ghost {
+  flex: 1;
+  min-height: 48px;
+  padding: 0 12px;
+  border-radius: 14px;
+  font-size: 0.95rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.play-result-primary:focus-visible,
+.play-result-ghost:focus-visible {
+  outline: 3px solid var(--color-text);
+  outline-offset: 3px;
+}
+
+/* Colour pieces fall once, then are gone. Positions come from the index. */
+.play-confetti {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.play-result > :not(.play-confetti) {
+  position: relative;
+  z-index: 1;
+}
+
+.play-confetti-piece {
+  position: absolute;
+  top: -14px;
+  /* --x is a percentage across the whole card, spread by the component. */
+  left: calc(var(--x) * 1%);
+  width: 10px;
+  height: 14px;
+  border-radius: 2px;
+  background: var(--color-accent);
+  opacity: 0;
+  animation: play-confetti-fall 1.6s ease-in calc(var(--i) * 0.045s) 1 both;
+}
+
+.play-confetti-piece:nth-child(4n + 1) {
+  background: var(--color-note1);
+}
+.play-confetti-piece:nth-child(4n + 2) {
+  background: var(--color-note3);
+  width: 8px;
+}
+.play-confetti-piece:nth-child(4n + 3) {
+  background: var(--color-unit5);
+  height: 9px;
+}
+
+/* Falls to just under the stars, then is gone (and out of the tree of
+   paint: visibility hidden at the end). */
+@keyframes play-confetti-fall {
+  0% {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0) rotate(0deg);
+  }
+  70% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(190px) rotate(420deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .play-confetti {
+    display: none;
+  }
+  .play-result-rays {
+    animation: none;
+  }
+  .play-result-stars .star-row-star.is-animated {
+    animation: none;
+  }
+}
+
+/* ── Control bar: one white card, flat groups. The chosen state comes from
+   the global .segmented rule (pale yellow, 2px sun-yellow edge); play is the
+   only solid yellow, and the bar's own work here is size: 44px and up. ── */
+.transport-segmented {
+  display: inline-grid;
+  gap: 2px;
+  padding: 2px;
+  border-radius: 14px;
+}
+
+.transport-seg-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 0 14px;
+  font-size: 0.875rem;
+  white-space: nowrap;
+}
+
+.transport-seg-btn:hover {
+  color: var(--color-text);
+}
+
+/* Slim track, tall touch area. */
+.transport-strip input[type="range"] {
+  height: 44px;
+  padding: 0;
+}
+
+.transport-label {
+  font-size: 0.8125rem;
+  font-weight: 600;
+}
+
+.display-mode-btn {
+  gap: 6px;
+  padding: 0 14px;
+  font-size: 0.875rem;
+  white-space: nowrap;
+}
+
+/* Narrow (an upright tablet): the icons carry it, aria-label keeps the name. */
+@media (max-width: 900px) {
+  .display-mode-label {
+    display: none;
+  }
+  .display-mode-btn {
+    min-width: 44px;
+    padding: 0 10px;
+  }
+}
+
+/* The tools column is narrower than the title; keep the toggle compact. */
+@media (max-width: 1100px) {
+  .display-mode-btn {
+    padding: 0 10px;
+  }
+}
+
+.play-icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  flex: none;
+  border-radius: 14px;
+  cursor: pointer;
+}
+
+.play-icon-btn:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+/* ── The big star on the stage (round 3): where the child is looking ── */
+.play-star-toast {
+  position: fixed;
+  z-index: 150;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  /* left/top are the star's centre; the box hangs below it. */
+  transform: translate(-50%, -48px);
+  transform-origin: 50% 48px;
+  pointer-events: none;
+  user-select: none;
+  opacity: 0;
+}
+
+.play-star-toast-star {
+  display: block;
+  filter: drop-shadow(
+    0 4px 10px color-mix(in srgb, var(--color-accent) 55%, transparent)
+  );
+}
+
+.play-star-toast-text {
+  padding: 2px 16px;
+  border-radius: 999px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  color: var(--color-text);
+  font-family: var(--font-display);
+  font-size: 1.375rem;
+  font-weight: 800;
+  line-height: 1.6;
+  white-space: nowrap;
+}

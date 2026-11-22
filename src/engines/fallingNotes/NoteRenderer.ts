@@ -3,41 +3,92 @@
  * Manages a double-buffered sprite pool, per-frame viewport updates, and
  * practice mode visual feedback (hit flash, miss fade, combo text pop).
  */
-import { Container, NineSliceSprite, Text, TextStyle, Texture } from "pixi.js";
+import {
+  Container,
+  Graphics,
+  NineSliceSprite,
+  Text,
+  TextStyle,
+  Texture,
+} from "pixi.js";
+import {
+  BURST_POOL_SIZE,
+  HitBurstPool,
+  burstAlpha,
+  burstScale,
+} from "./hitBurst";
 
 /** Falling notes are nine-slice sprites so their rounded corners never stretch. */
-type Sprite = NineSliceSprite;
+type Sprite = NineSliceSprite & {
+  /** Corner radius its texture and slices are set for */
+  noteRadius?: number;
+};
 
-/** Corner slice of the note texture, in px. */
-const NOTE_SLICE = 6;
+/** Corner radii in px: one pre-drawn texture each, so no note is ever redrawn. */
+const NOTE_RADIUS_MIN = 3;
+const NOTE_RADIUS_MAX = 10;
+/** Corner share of the short edge. */
+const NOTE_RADIUS_SHARE = 0.28;
 /** Gap left between notes on neighbouring keys, in px per side. */
 const NOTE_INSET = 1;
+/** How much darker the bottom of a note is than its top. */
+const NOTE_SHADE = 0.12;
 
 /**
- * A small rounded, lightly shaded tile. Tinted per track, so it is drawn in
- * greys: full white at the top easing to a slightly darker bottom, with a
- * faint edge so touching notes stay distinct.
+ * Corner radius for a note: about 28% of its short edge, between 3 and 10 px.
+ * Whole pixels, so there are only eight textures to build.
  */
-function createNoteTexture(): Texture | null {
+export function noteCornerRadius(width: number, height: number): number {
+  const radius = Math.round(Math.min(width, height) * NOTE_RADIUS_SHARE);
+  return Math.min(NOTE_RADIUS_MAX, Math.max(NOTE_RADIUS_MIN, radius));
+}
+
+/**
+ * Tint that makes the top of a note brighter than its track colour so the
+ * texture's shade lands the bottom on the colour itself (clamped per channel).
+ */
+export function noteTopTint(color: number): number {
+  const gain = 1 / (1 - NOTE_SHADE);
+  const channel = (shift: number): number =>
+    Math.min(255, Math.round(((color >> shift) & 0xff) * gain));
+  return (channel(16) << 16) | (channel(8) << 8) | channel(0);
+}
+
+/**
+ * A rounded tile for one corner radius, drawn in greys and tinted per track:
+ * white at the top easing 12% darker at the bottom, with a 1px darker edge so
+ * neighbouring notes stay distinct. Nine-sliced at `radius`, so the corners
+ * never stretch and the gradient spreads over the note's whole height.
+ */
+function createNoteTexture(radius: number): Texture | null {
   if (typeof document === "undefined") return null;
-  const size = 16;
+  const size = radius * 2 + 4;
   const canvas = document.createElement("canvas");
   canvas.width = size;
   canvas.height = size;
   const ctx = canvas.getContext("2d");
   if (!ctx) return null;
-  const r = 5;
   const path = new Path2D();
-  path.roundRect(0.5, 0.5, size - 1, size - 1, r);
+  path.roundRect(0.5, 0.5, size - 1, size - 1, radius);
   const fill = ctx.createLinearGradient(0, 0, 0, size);
   fill.addColorStop(0, "#ffffff");
-  fill.addColorStop(1, "#e4e4e4");
+  const bottom = Math.round(255 * (1 - NOTE_SHADE));
+  fill.addColorStop(1, `rgb(${bottom},${bottom},${bottom})`);
   ctx.fillStyle = fill;
   ctx.fill(path);
-  ctx.strokeStyle = "rgba(0,0,0,0.16)";
+  ctx.strokeStyle = "rgba(0,0,0,0.24)";
   ctx.lineWidth = 1;
   ctx.stroke(path);
   return Texture.from(canvas);
+}
+
+/** Textures for every radius, index 0 is NOTE_RADIUS_MIN. */
+function createNoteTextures(): Texture[] {
+  const textures: Texture[] = [];
+  for (let r = NOTE_RADIUS_MIN; r <= NOTE_RADIUS_MAX; r++) {
+    textures.push(createNoteTexture(r) ?? Texture.WHITE);
+  }
+  return textures;
 }
 import type { ParsedSong, ParsedNote } from "@renderer/engines/midi/types";
 import type { TrackHandAssignment } from "@renderer/engines/midi/TrackHandAssignment";
@@ -49,6 +100,7 @@ import {
   type KeyRange,
 } from "./keyPositions";
 import { getTrackColor } from "./noteColors";
+import { foldNextNoteTime, isTargetNote } from "./targetGroup";
 import {
   noteToScreenY,
   durationToHeight,
@@ -67,6 +119,11 @@ function noteKey(trackIdx: number, midi: number, time: number): string {
 }
 
 const INITIAL_POOL_SIZE = 512;
+
+/** Frames around the note(s) to play now; a chord rarely needs more. */
+const HALO_POOL_SIZE = 16;
+/** How far the frame sticks out past the note, per side, in px. */
+const HALO_SPREAD = 4;
 
 /** Minimum note rectangle height (px) to show a label inside it. */
 const MIN_HEIGHT_FOR_LABEL = 16;
@@ -179,6 +236,39 @@ function parseHexColor(value: string | undefined): number | null {
   return Number.parseInt(match[1], 16);
 }
 
+/** Sun-yellow, same value as the `--color-hit-glow` token in both themes. */
+const HIT_GLOW_COLOR = 0xffd76a;
+/** A note the child played right fades out over this long. */
+const HIT_FADE_MS = 120;
+/** Radius of the spark at scale 1, in px. */
+const BURST_RADIUS = 36;
+
+function nowMs(): number {
+  return globalThis.performance?.now?.() ?? Date.now();
+}
+
+/** A ring and a few short rays, drawn once and reused. */
+function createBurstGraphic(): Graphics {
+  const g = new Graphics();
+  g.circle(0, 0, BURST_RADIUS).stroke({
+    color: HIT_GLOW_COLOR,
+    width: 4,
+    alpha: 1,
+  });
+  for (let i = 0; i < 5; i++) {
+    const angle = Math.PI + (Math.PI * (i + 0.5)) / 5;
+    const inner = BURST_RADIUS * 0.8;
+    const outer = BURST_RADIUS * 1.35;
+    g.moveTo(Math.cos(angle) * inner, Math.sin(angle) * inner).lineTo(
+      Math.cos(angle) * outer,
+      Math.sin(angle) * outer,
+    );
+  }
+  g.stroke({ color: HIT_GLOW_COLOR, width: 4, alpha: 1, cap: "round" });
+  g.visible = false;
+  return g;
+}
+
 export class NoteRenderer {
   private container: Container;
   private pool: Sprite[] = [];
@@ -190,7 +280,7 @@ export class NoteRenderer {
   private keyPositions = new Map<number, KeyPosition>();
   private keyRange: KeyRange = FULL_KEY_RANGE;
   private canvasWidth = 0;
-  private noteTexture: Texture = Texture.EMPTY;
+  private noteTextures: Texture[] = [];
 
   /** Tracks in-flight rAF animation handles per sprite to cancel on recycle */
   private _animHandles = new Map<Sprite, number>();
@@ -206,6 +296,20 @@ export class NoteRenderer {
   public showNoteLabels = true;
 
   public activeNotes = new Set<number>();
+  /** Colour (0xRRGGBB) of the track each sounding note belongs to, by midi. */
+  public activeNoteColors = new Map<number, number>();
+
+  // ── "Play this now" frame around the next note or chord ──
+  private haloLayer: Container | null = null;
+  private haloPool: Sprite[] = [];
+  private targetTime = Infinity;
+
+  // ── Hit bursts: a fixed pool of pre-drawn sparks at the hit line ──
+  private burstLayer: Container | null = null;
+  private burstPool = new HitBurstPool();
+  private burstGraphics: Graphics[] = [];
+  private hitLineY = 0;
+  private burstShown = false;
 
   private handAssignments: Record<number, TrackHandAssignment> = {};
   private trackPreferences: Record<number, TrackRenderPreferences> = {};
@@ -235,10 +339,36 @@ export class NoteRenderer {
   init(canvasWidth: number): void {
     this.canvasWidth = canvasWidth;
     this.keyPositions = buildKeyPositions(canvasWidth, this.keyRange);
-    this.noteTexture = createNoteTexture() ?? Texture.WHITE;
+    this.noteTextures = createNoteTextures();
+
+    // Frames go in first so they sit behind every note.
+    this.haloLayer = new Container();
+    this.container.addChild(this.haloLayer);
+    for (let i = 0; i < HALO_POOL_SIZE; i++) {
+      const halo: Sprite = new NineSliceSprite({
+        texture: this.noteTextures[0],
+        leftWidth: NOTE_RADIUS_MIN,
+        rightWidth: NOTE_RADIUS_MIN,
+        topHeight: NOTE_RADIUS_MIN,
+        bottomHeight: NOTE_RADIUS_MIN,
+      });
+      halo.noteRadius = NOTE_RADIUS_MIN;
+      halo.visible = false;
+      halo.alpha = 0.9;
+      this.haloPool.push(halo);
+      this.haloLayer.addChild(halo);
+    }
 
     for (let i = 0; i < INITIAL_POOL_SIZE; i++) {
       this.pool.push(this.createSprite());
+    }
+
+    this.burstLayer = new Container();
+    this.container.addChild(this.burstLayer);
+    for (let i = 0; i < BURST_POOL_SIZE; i++) {
+      const graphic = createBurstGraphic();
+      this.burstGraphics.push(graphic);
+      this.burstLayer.addChild(graphic);
     }
 
     // Pre-fill label pool (smaller than sprite pool — not every note needs a label)
@@ -288,8 +418,15 @@ export class NoteRenderer {
     const nextActive = this.nextActive;
     nextActive.clear();
     this.activeNotes.clear();
+    this.activeNoteColors.clear();
     this.lastVisibleNoteCount = 0;
+    // The next group is found while drawing and used on the following frame;
+    // one frame of lag is invisible and saves a second pass over the notes.
+    const targetTime = this.targetTime;
+    let nextTargetTime = Infinity;
+    let haloCount = 0;
 
+    this.hitLineY = vp.height;
     const hitWindow = 0.05;
     const showFingering = useSettingsStore.getState().showFingering;
     const maxVisibleLabels =
@@ -332,15 +469,45 @@ export class NoteRenderer {
         let sprite = this.active.get(key) ?? nextActive.get(key);
         if (!sprite) {
           sprite = this.allocate();
-          sprite.tint = color;
+          sprite.tint = noteTopTint(color);
         }
 
+        const noteWidth = Math.max(kp.width - NOTE_INSET * 2, 2);
+        const noteHeight = Math.max(h, NOTE_RADIUS_MIN * 2);
+        this.setRadius(sprite, noteCornerRadius(noteWidth, noteHeight));
         sprite.x = kp.x + NOTE_INSET;
         sprite.y = rectY;
-        sprite.width = Math.max(kp.width - NOTE_INSET * 2, 2);
-        sprite.height = Math.max(h, NOTE_SLICE * 2);
+        sprite.width = noteWidth;
+        sprite.height = noteHeight;
         sprite.visible = true;
         nextActive.set(key, sprite);
+
+        nextTargetTime = foldNextNoteTime(
+          nextTargetTime,
+          note.time,
+          vp.currentTime,
+          hitWindow,
+        );
+        if (
+          haloCount < this.haloPool.length &&
+          isTargetNote(note.time, targetTime)
+        ) {
+          const halo = this.haloPool[haloCount];
+          this.setRadius(
+            halo,
+            noteCornerRadius(
+              sprite.width + HALO_SPREAD * 2,
+              sprite.height + HALO_SPREAD * 2,
+            ),
+          );
+          halo.x = sprite.x - HALO_SPREAD;
+          halo.y = sprite.y - HALO_SPREAD;
+          halo.width = sprite.width + HALO_SPREAD * 2;
+          halo.height = sprite.height + HALO_SPREAD * 2;
+          halo.tint = lerpColor(color, 0xffffff, 0.92);
+          halo.visible = true;
+          haloCount += 1;
+        }
 
         // ── Note label management ──
         if (
@@ -373,6 +540,9 @@ export class NoteRenderer {
           note.time + note.duration >= vp.currentTime - hitWindow
         ) {
           this.activeNotes.add(note.midi);
+          if (!this.activeNoteColors.has(note.midi)) {
+            this.activeNoteColors.set(note.midi, color);
+          }
         }
 
         // ── Fingering label overlay ──────────────────────────────
@@ -392,6 +562,11 @@ export class NoteRenderer {
           }
         }
       }
+    }
+
+    this.targetTime = nextTargetTime;
+    for (let i = haloCount; i < this.haloPool.length; i++) {
+      if (this.haloPool[i].visible) this.haloPool[i].visible = false;
     }
 
     for (const [key, sprite] of this.active) {
@@ -421,6 +596,51 @@ export class NoteRenderer {
     // Swap fingering label buffers
     this.nextFingeringLabels = this.activeFingeringLabels;
     this.activeFingeringLabels = nextFLabels;
+
+    this.updateBursts();
+  }
+
+  /**
+   * Start a spark on the key the child just played right. The sprites already
+   * exist; this only claims a slot, so a fast run of notes costs no allocation.
+   */
+  triggerHitBurst(midi: number): void {
+    if (!this.keyPositions.has(midi)) return;
+    this.burstPool.trigger(midi, nowMs());
+  }
+
+  /** Move and fade the live sparks; a loop over the fixed pool, nothing new. */
+  private updateBursts(): void {
+    if (!this.burstPool.hasLive()) {
+      // Hide any spark that finished since last frame, then do nothing.
+      if (this.burstShown) {
+        for (const graphic of this.burstGraphics) graphic.visible = false;
+        this.burstShown = false;
+      }
+      return;
+    }
+    this.burstShown = true;
+    const now = nowMs();
+    this.burstPool.expire(now);
+    for (let i = 0; i < this.burstGraphics.length; i++) {
+      const graphic = this.burstGraphics[i];
+      const slot = this.burstPool.slots[i];
+      if (!slot.active) {
+        if (graphic.visible) graphic.visible = false;
+        continue;
+      }
+      const kp = this.keyPositions.get(slot.midi);
+      if (!kp) {
+        graphic.visible = false;
+        continue;
+      }
+      const t = this.burstPool.progress(i, now);
+      graphic.visible = true;
+      graphic.x = kp.x + kp.width / 2;
+      graphic.y = this.hitLineY - 8 - t * 16;
+      graphic.alpha = burstAlpha(t);
+      graphic.scale.set(burstScale(t));
+    }
   }
 
   /**
@@ -439,6 +659,13 @@ export class NoteRenderer {
     this._comboHandles.clear();
 
     this.container.removeChildren();
+    this.burstLayer = null;
+    this.burstGraphics.length = 0;
+    this.burstPool.reset();
+    this.haloLayer = null;
+    this.haloPool.length = 0;
+    this.targetTime = Infinity;
+    this.activeNoteColors.clear();
     this.pool.length = 0;
     this.active.clear();
     this.nextActive.clear();
@@ -488,14 +715,26 @@ export class NoteRenderer {
     );
   }
 
+  /** Switch a sprite to the texture and slices of `radius`; no-op if already. */
+  private setRadius(sprite: Sprite, radius: number): void {
+    if (sprite.noteRadius === radius) return;
+    sprite.noteRadius = radius;
+    sprite.texture = this.noteTextures[radius - NOTE_RADIUS_MIN];
+    sprite.leftWidth = radius;
+    sprite.rightWidth = radius;
+    sprite.topHeight = radius;
+    sprite.bottomHeight = radius;
+  }
+
   private createSprite(): Sprite {
-    const s = new NineSliceSprite({
-      texture: this.noteTexture,
-      leftWidth: NOTE_SLICE,
-      rightWidth: NOTE_SLICE,
-      topHeight: NOTE_SLICE,
-      bottomHeight: NOTE_SLICE,
+    const s: Sprite = new NineSliceSprite({
+      texture: this.noteTextures[0],
+      leftWidth: NOTE_RADIUS_MIN,
+      rightWidth: NOTE_RADIUS_MIN,
+      topHeight: NOTE_RADIUS_MIN,
+      bottomHeight: NOTE_RADIUS_MIN,
     });
+    s.noteRadius = NOTE_RADIUS_MIN;
     s.visible = false;
     this.container.addChild(s);
     return s;
@@ -631,8 +870,8 @@ export class NoteRenderer {
   // ── Practice mode visual feedback ──────────────────────────────────
 
   /**
-   * Flash a bright hit effect on a note sprite.
-   * Tint shifts to white and alpha pulses, then restores over ~200ms.
+   * A right note: it flashes white for a moment, then fades out over 120ms
+   * instead of vanishing, and stays gone until the sprite is recycled.
    * Animation is automatically cancelled if the sprite is recycled.
    */
   flashHit(sprite: Sprite): void {
@@ -642,7 +881,8 @@ export class NoteRenderer {
 
     const originalTint = sprite.tint;
     const originalAlpha = sprite.alpha;
-    const duration = 200; // ms
+    const flashMs = 80;
+    const fadeMs = HIT_FADE_MS;
     let start = -1;
 
     const tick = (now: number): void => {
@@ -651,19 +891,24 @@ export class NoteRenderer {
 
       if (start < 0) start = now;
       const elapsed = now - start;
-      const t = Math.min(elapsed / duration, 1);
 
-      // Quick flash up then ease back
-      const flash = t < 0.3 ? t / 0.3 : 1 - (t - 0.3) / 0.7;
-      sprite.tint = lerpColor(originalTint, 0xffffff, flash * 0.7);
-      sprite.alpha = originalAlpha + (1 - originalAlpha) * flash * 0.5;
+      if (elapsed < flashMs) {
+        // Quick flash up toward white
+        const flash = elapsed / flashMs;
+        sprite.tint = lerpColor(originalTint, 0xffffff, flash * 0.7);
+        sprite.alpha = originalAlpha;
+      } else {
+        const fade = Math.min((elapsed - flashMs) / fadeMs, 1);
+        sprite.tint = lerpColor(originalTint, 0xffffff, 0.7 * (1 - fade));
+        sprite.alpha = originalAlpha * (1 - fade);
+      }
 
-      if (t < 1) {
+      if (elapsed < flashMs + fadeMs) {
         this._animHandles.set(sprite, requestAnimationFrame(tick));
       } else {
         this._animHandles.delete(sprite);
         sprite.tint = originalTint;
-        sprite.alpha = originalAlpha;
+        sprite.alpha = 0;
       }
     };
     this._animHandles.set(sprite, requestAnimationFrame(tick));

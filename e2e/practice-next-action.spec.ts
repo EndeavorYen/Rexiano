@@ -152,11 +152,10 @@ test.describe("Post-session next action", () => {
 
     const nextAction = appPage.getByTestId("celebration-next-action");
     await expect(nextAction).toBeVisible();
-    await expect(nextAction).toContainText("Next step");
-    await expect(nextAction).toContainText("Slow down");
-    await expect(nextAction).toContainText("75%");
+    // The advice is one sentence under the title, not a card with a heading.
+    await expect(nextAction).toContainText("Slow it down");
     await expect(appPage.getByTestId("celebration-again")).toContainText(
-      "Play again at 75%",
+      "Slow down and play again",
     );
   });
 
@@ -165,7 +164,7 @@ test.describe("Post-session next action", () => {
 
     // 50% accuracy at full speed: the replay button carries the slow-down.
     await expect(appPage.getByTestId("celebration-again")).toContainText(
-      "Play again at 75%",
+      "Slow down and play again",
     );
     await appPage.getByTestId("celebration-again").click();
     await expect(appPage.getByTestId("speed-slider")).toHaveValue("75");

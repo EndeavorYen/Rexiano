@@ -95,7 +95,7 @@ function normalize(value: string): string {
   return value.trim().toLowerCase();
 }
 
-function matchesSongIdentity(
+export function matchesSongIdentity(
   session: SessionRecord,
   song: BuiltinSongMeta,
 ): boolean {
@@ -110,7 +110,7 @@ function sourceFileName(sourcePath: string): string {
   return normalizeImportedSongPath(sourcePath).split("/").pop() ?? sourcePath;
 }
 
-function matchesImportedSongIdentity(
+export function matchesImportedSongIdentity(
   session: SessionRecord,
   song: ImportedSongRecord,
 ): boolean {
@@ -314,6 +314,8 @@ export function buildSongActivity(
         session.timestamp,
       );
       current.playCount += 1;
+      // Leaving halfway never earns a best score (or stars).
+      if (session.completed === false) continue;
       current.bestAccuracy = Math.max(
         current.bestAccuracy ?? Number.NEGATIVE_INFINITY,
         session.score.accuracy,
@@ -362,6 +364,8 @@ export function buildImportedSongActivity(
         session.timestamp,
       );
       current.playCount += 1;
+      // Leaving halfway never earns a best score (or stars).
+      if (session.completed === false) continue;
       current.bestAccuracy = Math.max(
         current.bestAccuracy ?? Number.NEGATIVE_INFINITY,
         session.score.accuracy,

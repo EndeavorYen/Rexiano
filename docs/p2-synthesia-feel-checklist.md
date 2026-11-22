@@ -5,10 +5,11 @@ It is an acceptance list, not a claim that Rexiano already beats Synthesia.
 
 ## Open song
 
-1. Home shows one primary path: start practice / import.
-2. Library card states score vs MIDI origin.
-3. Choosing a song opens preview, then one practice start action.
-4. Mode pick is Watch / Wait only — no extra setup wall.
+1. Home is the practice map: the next stop and one start button; all songs and import are secondary.
+2. All songs is a shelf of covers; a played song shows its stars.
+3. Choosing a song opens a preview dialog with one start action.
+4. Mode pick is Watch / Wait only, shown as two cards (listen first / play along) — no extra setup wall.
+5. The result gives 1–3 stars and one primary action: next song at three stars, play again otherwise.
 
 ## Wait practice
 
@@ -25,4 +26,4 @@ It is an acceptance list, not a claim that Rexiano already beats Synthesia.
 ## Still open
 
 - Motion / density vs Synthesia side-by-side recording
-- Post-session still offers more than one next action
+- Motion of the hit burst and key glow on a real Bluetooth piano (measured only with on-screen input so far)

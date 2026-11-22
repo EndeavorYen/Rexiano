@@ -1,5 +1,5 @@
 import { useCallback, useRef, useState } from "react";
-import { X } from "lucide-react";
+import { ChartColumn, X } from "lucide-react";
 import { useSettingsStore } from "@renderer/stores/useSettingsStore";
 import { useThemeStore } from "@renderer/stores/useThemeStore";
 import type { ThemePreference } from "@renderer/themes/tokens";
@@ -8,6 +8,8 @@ import { LanguageSwitcher } from "./LanguageSwitcher";
 import { useTranslation } from "@renderer/i18n/useTranslation";
 import type { TranslationKey } from "@renderer/i18n/types";
 import { useDialogFocus } from "@renderer/hooks/useDialogFocus";
+import { setSharedVolume } from "../audio/volumeSync";
+import { WeekSheet } from "../progress/WeekSheet";
 import { DeviceSelector } from "../midiDevice/DeviceSelector";
 import {
   applyUserDataBackupToRuntime,
@@ -67,7 +69,6 @@ function SoundCard(): React.JSX.Element {
   const { t } = useTranslation();
   const volume = useSettingsStore((s) => s.volume);
   const muted = useSettingsStore((s) => s.muted);
-  const setVolume = useSettingsStore((s) => s.setVolume);
   const setMuted = useSettingsStore((s) => s.setMuted);
 
   return (
@@ -88,10 +89,9 @@ function SoundCard(): React.JSX.Element {
           min={0}
           max={100}
           value={muted ? 0 : volume}
-          onChange={(e) => setVolume(Number(e.target.value))}
+          onChange={(e) => setSharedVolume(Number(e.target.value))}
           className="w-full"
           style={rangeProgressStyle(muted ? 0 : volume, 0, 100)}
-          disabled={muted}
           aria-label={t("settings.volume")}
           data-testid="volume-slider"
         />
@@ -213,14 +213,14 @@ function BackupCard(): React.JSX.Element {
       <div className="grid grid-cols-2 gap-2">
         <button
           onClick={() => void exportBackup()}
-          className="btn-surface-themed min-h-11 rounded-2xl px-3 text-sm font-bold cursor-pointer"
+          className="btn-surface-themed min-h-11 rounded-[14px] px-3 text-sm font-bold cursor-pointer"
           data-testid="user-data-export"
         >
           {t("settings.backupExport")}
         </button>
         <button
           onClick={() => void importBackup()}
-          className="btn-surface-themed min-h-11 rounded-2xl px-3 text-sm font-bold cursor-pointer"
+          className="btn-surface-themed min-h-11 rounded-[14px] px-3 text-sm font-bold cursor-pointer"
           data-testid="user-data-import"
         >
           {t("settings.backupImport")}
@@ -240,7 +240,7 @@ function BackupCard(): React.JSX.Element {
           {message.reload && (
             <button
               onClick={() => window.location.reload()}
-              className="btn-primary-themed min-h-9 rounded-xl px-3 text-sm cursor-pointer"
+              className="btn-primary-themed min-h-9 rounded-[14px] px-3 text-sm cursor-pointer"
             >
               {t("settings.reloadNow")}
             </button>
@@ -276,13 +276,16 @@ export function SettingsPanel({
   const { t } = useTranslation();
   const panelRef = useRef<HTMLDivElement>(null);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
+  const weekButtonRef = useRef<HTMLButtonElement>(null);
+  const [weekOpen, setWeekOpen] = useState(false);
 
   const handleClose = useCallback(() => {
     onClose?.();
   }, [onClose]);
 
+  // While the week sheet is on top it owns Escape and Tab.
   useDialogFocus({
-    active: true,
+    active: !weekOpen,
     containerRef: panelRef,
     initialFocusRef: closeButtonRef,
     onDismiss: handleClose,
@@ -317,7 +320,20 @@ export function SettingsPanel({
             <X size={20} />
           </button>
         </div>
-        <div className="family-sheet-body">
+        <div className="family-sheet-body" tabIndex={0}>
+          <section className="set-card" data-testid="settings-week">
+            <button
+              ref={weekButtonRef}
+              type="button"
+              className="btn-ghost-themed"
+              aria-haspopup="dialog"
+              onClick={() => setWeekOpen(true)}
+              data-testid="settings-open-week"
+            >
+              <ChartColumn size={18} aria-hidden="true" />
+              {t("week.settingsEntry")}
+            </button>
+          </section>
           <AppearanceCard />
           <LanguageCard />
           <SoundCard />
@@ -334,6 +350,12 @@ export function SettingsPanel({
           <BackupCard />
         </div>
       </div>
+      {weekOpen && (
+        <WeekSheet
+          returnFocusRef={weekButtonRef}
+          onClose={() => setWeekOpen(false)}
+        />
+      )}
     </div>
   );
 }

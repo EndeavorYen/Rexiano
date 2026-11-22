@@ -351,4 +351,33 @@ describe("useSettingsStore", () => {
       expect(store.getState().latencyCompensation).toBe(0);
     });
   });
+
+  describe("dailyGoalMinutes", () => {
+    test("defaults to 10", async () => {
+      const store = await getStore();
+      expect(store.getState().dailyGoalMinutes).toBe(10);
+    });
+
+    test("accepts only 5, 10, 15 and 20 and persists", async () => {
+      const store = await getStore();
+      store.getState().setDailyGoalMinutes(15);
+      expect(store.getState().dailyGoalMinutes).toBe(15);
+      expect(JSON.parse(storage.get(STORAGE_KEY)!).dailyGoalMinutes).toBe(15);
+      store.getState().setDailyGoalMinutes(7 as never);
+      expect(store.getState().dailyGoalMinutes).toBe(15);
+    });
+
+    test("a bad saved value falls back to 10", async () => {
+      storage.set(STORAGE_KEY, JSON.stringify({ dailyGoalMinutes: 12 }));
+      expect((await getStore()).getState().dailyGoalMinutes).toBe(10);
+      vi.resetModules();
+      storage.set(STORAGE_KEY, JSON.stringify({ dailyGoalMinutes: "20" }));
+      expect((await getStore()).getState().dailyGoalMinutes).toBe(10);
+    });
+
+    test("a saved valid value is restored", async () => {
+      storage.set(STORAGE_KEY, JSON.stringify({ dailyGoalMinutes: 20 }));
+      expect((await getStore()).getState().dailyGoalMinutes).toBe(20);
+    });
+  });
 });

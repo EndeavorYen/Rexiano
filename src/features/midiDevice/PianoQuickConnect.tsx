@@ -14,6 +14,10 @@ interface PianoQuickConnectProps {
   variant?: "card" | "pill";
   testId?: string;
   triggerRef?: React.Ref<HTMLButtonElement>;
+  /** Card variant only: draw the button as a quiet outline, so another button on the screen stays the one sun-yellow action. */
+  quiet?: boolean;
+  /** Card variant only: one short line (home screen), instead of the full hint. */
+  shortCopy?: boolean;
 }
 
 /**
@@ -26,6 +30,8 @@ export function PianoQuickConnect({
   variant = "card",
   testId,
   triggerRef,
+  quiet = false,
+  shortCopy = false,
 }: PianoQuickConnectProps): React.JSX.Element {
   const { t } = useTranslation();
   const bleStatus = useMidiDeviceStore((s) => s.bleStatus);
@@ -74,7 +80,7 @@ export function PianoQuickConnect({
 
   return (
     <div
-      className="set-card"
+      className={`set-card piano-qc${shortCopy ? " is-short" : ""}`}
       style={{ flexDirection: "row", alignItems: "center" }}
       data-testid={testId}
     >
@@ -93,19 +99,30 @@ export function PianoQuickConnect({
         <Piano size={22} />
       </span>
       <div className="min-w-0 flex-1">
-        <p className="m-0 font-bold">
+        <p className="piano-qc-title m-0 font-bold">
           {connected
-            ? t("piano.connectedTo", { name: connected })
+            ? shortCopy
+              ? connected
+              : t("piano.connectedTo", { name: connected })
             : t("piano.notConnected")}
         </p>
-        <p className="m-0 text-sm" style={{ color: "var(--color-text-muted)" }}>
-          {connected ? t("piano.connectedHint") : t("piano.homeHint")}
+        <p
+          className="piano-qc-hint m-0 text-sm"
+          style={{ color: "var(--color-text-muted)" }}
+        >
+          {shortCopy
+            ? connected
+              ? t("piano.homeShortConnected")
+              : t("piano.homeShort")
+            : connected
+              ? t("piano.connectedHint")
+              : t("piano.homeHint")}
         </p>
       </div>
       <button
         onClick={handleClick}
         disabled={busy}
-        className={`flex min-h-11 shrink-0 items-center gap-2 rounded-2xl px-4 text-sm font-bold cursor-pointer ${connected ? "btn-ghost-themed" : "btn-primary-themed"}`}
+        className={`flex min-h-11 shrink-0 items-center gap-2 rounded-[14px] px-4 text-sm font-bold cursor-pointer ${connected || quiet ? "btn-ghost-themed" : "btn-primary-themed"}`}
       >
         {!connected && support === "ok" && <Bluetooth size={16} />}
         {connected ? t("piano.manage") : label}

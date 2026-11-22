@@ -11,6 +11,15 @@ function setsEqual(a: Set<number>, b: Set<number>): boolean {
   return true;
 }
 
+export function mapsEqual(
+  a: ReadonlyMap<number, number>,
+  b: ReadonlyMap<number, number>,
+): boolean {
+  if (a.size !== b.size) return false;
+  for (const [k, v] of a) if (b.get(k) !== v) return false;
+  return true;
+}
+
 function nowMs(): number {
   return globalThis.performance?.now?.() ?? Date.now();
 }
@@ -30,8 +39,12 @@ export function createTickerUpdate(
     current: ((notes: Set<number>) => void) | undefined;
   },
   onDiagnostics?: (frame: RenderDiagnosticsFrame) => void,
+  onActiveNoteColorsChangeRef?: {
+    current: ((colors: ReadonlyMap<number, number>) => void) | undefined;
+  },
 ) {
   let prevActiveNotes = new Set<number>();
+  let prevActiveColors = new Map<number, number>();
 
   return (time: { deltaMS: number }) => {
     const frameStart = onDiagnostics ? nowMs() : 0;
@@ -63,6 +76,15 @@ export function createTickerUpdate(
         const snapshot = new Set(next);
         prevActiveNotes = snapshot;
         onActiveNotesChangeRef.current(snapshot);
+      }
+    }
+
+    // Keys light up in the colour of their note; same rule: only on change.
+    if (onActiveNoteColorsChangeRef?.current) {
+      const next = noteRenderer.activeNoteColors;
+      if (!mapsEqual(prevActiveColors, next)) {
+        prevActiveColors = new Map(next);
+        onActiveNoteColorsChangeRef.current(prevActiveColors);
       }
     }
 

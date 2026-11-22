@@ -129,7 +129,8 @@ function compareLessonSongs(
 ): number {
   return (
     (a.song.grade ?? 99) - (b.song.grade ?? 99) ||
-    a.song.title.localeCompare(b.song.title)
+    // Numeric, so "Beyer No. 8" comes before "Beyer No. 10".
+    a.song.title.localeCompare(b.song.title, "en", { numeric: true })
   );
 }
 

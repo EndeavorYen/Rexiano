@@ -132,7 +132,8 @@ test.describe("Core accessibility guardrails", () => {
 
     await appPage.keyboard.press("Escape");
     await expect(drawer).toBeHidden();
-    await expect(drawerLauncher).toBeFocused();
+    // Focus goes back to the stage, so Space plays and pauses again.
+    await expect(appPage.locator(".workspace-frame")).toBeFocused();
 
     const playButton = appPage
       .getByTestId("transport-strip")

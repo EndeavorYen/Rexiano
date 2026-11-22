@@ -613,6 +613,143 @@ export interface TranslationMap {
   "settings.themeDark": string;
   "settings.backupBrowserDesc": string;
   "settings.reloadNow": string;
+  // ── UI round 1: home-map ──
+  "map.routeLabel": string;
+  "map.today": string;
+  "map.streak": string;
+  "map.days": string;
+  "map.minutesUnit": string;
+  "map.weekLabel": string;
+  "map.weekdayShort": string;
+  "map.stars": string;
+  "map.hudLabel": string;
+  "map.unitsLabel": string;
+  "map.allSongs": string;
+  "map.next": string;
+  "map.status.done": string;
+  "map.status.played": string;
+  "map.status.new": string;
+  "map.starsCount": string;
+  "map.seconds": string;
+  "map.reason.first": string;
+  "map.reason.new": string;
+  "map.reason.played": string;
+  "map.reason.done": string;
+  "map.reason.next": string;
+  "map.playAgain": string;
+  "map.allMastered": string;
+  "map.firstInvite": string;
+  "map.firstInviteHint": string;
+  "map.loading": string;
+  "map.recentLabel": string;
+  "map.unitFlag": string;
+  // ── UI round 1: songbook ──
+  "songbook.title": string;
+  "songbook.search.placeholder": string;
+  "songbook.levels.label": string;
+  "songbook.shelf.imported": string;
+  "songbook.shelf.scrollLeft": string;
+  "songbook.shelf.scrollRight": string;
+  "songbook.progress": string;
+  "songbook.count": string;
+  "songbook.results": string;
+  "songbook.duration.seconds": string;
+  "songbook.duration.minutes": string;
+  "songbook.stars.label": string;
+  "songbook.loading": string;
+  "songbook.empty.title": string;
+  "songbook.empty.hint": string;
+  "songbook.empty.clear": string;
+  "songbook.preview.never": string;
+  "songbook.preview.play": string;
+  "songbook.preview.again": string;
+  "songbook.preview.close": string;
+  "songbook.preview.edit": string;
+
+  // ── UI round 1: play ──
+  "practice.hudPlayed": string;
+  "practice.hudStars": string;
+  "modeSelect.watchTitle": string;
+  "modeSelect.watchKidDesc": string;
+  "modeSelect.waitTitle": string;
+  "modeSelect.waitKidDesc": string;
+  "celebration.again": string;
+  "celebration.nextSong": string;
+  "celebration.moreStars": string;
+  "celebration.hitCount": string;
+  // ── UI round 2: songbook ──
+  "songbook.shelf.continue": string;
+  "songbook.shelf.continueHint": string;
+  "songbook.shelf.favorites": string;
+  "songbook.composer.traditional": string;
+  "songbook.preview.better": string;
+  "songbook.preview.threeStars": string;
+  "songbook.favorite.add": string;
+  "songbook.favorite.remove": string;
+  "songbook.remove.ask": string;
+  "songbook.remove.confirm": string;
+  "songbook.remove.cancel": string;
+  "songbook.edit.save": string;
+  "songbook.edit.cancel": string;
+  // ── UI round 2: home-map ──
+  "map.backToNext": string;
+  "map.goalDone": string;
+  // ── UI round 3: home-map ──
+  "map.unitComplete": string;
+  "map.unitRemaining": string;
+  "map.unitEndLabel": string;
+  "piano.homeShort": string;
+  "piano.homeShortConnected": string;
+
+  // ── UI round 2: play ──
+  "nav.backToMap": string;
+  "nav.backToShelf": string;
+  "celebration.better": string;
+  "celebration.slowAgain": string;
+  "celebration.slowAdvice": string;
+  "celebration.againAdvice": string;
+  "midiNotice.warnTitle": string;
+  "midiNotice.errorTitle": string;
+  "midiNotice.errorBody": string;
+  "midiNotice.timeSignatureBody": string;
+  "midiNotice.rhythmBody": string;
+  "midiNotice.genericBody": string;
+  "midiNotice.dismiss": string;
+  // ── UI round 3: songbook ──
+  "songbook.summary.title": string;
+  "songbook.summary.aria": string;
+  // ── UI round 3: play ──
+  "practice.starToast1": string;
+  "practice.starToast2": string;
+  "practice.starToast3": string;
+  "week.title": string;
+  "week.otherWeek": string;
+  "week.open": string;
+  "week.prev": string;
+  "week.next": string;
+  "week.statMinutes": string;
+  "week.statDays": string;
+  "week.statStars": string;
+  "week.chartTitle": string;
+  "week.goalLine": string;
+  "week.goalHit": string;
+  "week.barLabel": string;
+  "week.noPractice": string;
+  "week.tableDate": string;
+  "week.tableMinutes": string;
+  "week.tableSongs": string;
+  "week.improvedTitle": string;
+  "week.improvedNone": string;
+  "week.newlyLearned": string;
+  "week.moreSongs": string;
+  "week.starsBefore": string;
+  "week.starsNow": string;
+  "week.topTitle": string;
+  "week.topValue": string;
+  "week.goalTitle": string;
+  "week.minutesValue": string;
+  "week.goalOption": string;
+  "week.settingsEntry": string;
 }
 
 /**

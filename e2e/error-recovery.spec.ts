@@ -183,7 +183,9 @@ test.describe("Error recovery", () => {
     await expect(alert).toBeHidden();
     await expect(staleCard).toBeHidden();
     await expect(
-      appPage.getByRole("button", { name: "Start Playing" }),
+      // The home map's start button belongs to a station; focus falls back
+      // to the "All songs" entry, which is always there.
+      appPage.getByTestId("main-menu-library"),
     ).toBeFocused();
     await expect.poll(() => readStoredRecord(appPage, "recents")).toEqual([]);
   });

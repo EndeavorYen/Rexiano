@@ -39,6 +39,8 @@ export interface UsePracticeSessionFlowOptions {
   sessionIntentRef: React.MutableRefObject<PracticeSessionIntent>;
   setSessionIntent: (intent: PracticeSessionIntent) => void;
   applyRoute: (route: AppRoute) => void;
+  /** The map or library, whichever the song was started from */
+  getBrowseRoute: () => AppRoute;
   mode: PracticeMode;
   speed: number;
   activeTracks: Set<number>;
@@ -71,6 +73,7 @@ export function usePracticeSessionFlow({
   sessionIntentRef,
   setSessionIntent,
   applyRoute,
+  getBrowseRoute,
   mode,
   speed,
   activeTracks,
@@ -124,8 +127,8 @@ export function usePracticeSessionFlow({
 
   const handleChooseSongRoute = useCallback(() => {
     setSessionIntent("practice");
-    applyRoute("library");
-  }, [applyRoute, setSessionIntent]);
+    applyRoute(getBrowseRoute());
+  }, [applyRoute, getBrowseRoute, setSessionIntent]);
 
   const {
     showModeModal,

@@ -5,6 +5,7 @@
 import { Piano, Layers } from "lucide-react";
 import { usePracticeStore } from "@renderer/stores/usePracticeStore";
 import { useTranslation } from "@renderer/i18n/useTranslation";
+import "../practice/play-feedback.css";
 import type { DisplayMode } from "./types";
 import type { TranslationKey } from "@renderer/i18n/types";
 
@@ -27,21 +28,20 @@ export function DisplayModeToggle({
   const setDisplayMode = usePracticeStore((s) => s.setDisplayMode);
 
   return (
-    <div className="segmented" style={{ gap: 4, padding: 3 }}>
+    <div className="segmented" style={{ gap: 4, padding: 2 }}>
       {modes.map(({ value, labelKey, Icon }) => {
         const isActive = displayMode === value;
         return (
           <button
             key={value}
             onClick={() => setDisplayMode(value)}
-            className="flex items-center justify-center gap-1.5 px-3 text-sm"
-            style={{ minHeight: 36 }}
+            className="display-mode-btn flex items-center justify-center"
             aria-pressed={isActive}
             aria-label={t(labelKey)}
             data-testid={`${testIdPrefix}-${value}`}
           >
             <Icon size={16} />
-            <span className="hidden sm:inline">{t(labelKey)}</span>
+            <span className="display-mode-label">{t(labelKey)}</span>
           </button>
         );
       })}

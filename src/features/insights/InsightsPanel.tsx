@@ -111,7 +111,7 @@ export function InsightsPanel({
             ref={closeButtonRef}
             type="button"
             onClick={onClose}
-            className="px-4 py-2 rounded-lg text-xs font-body font-medium cursor-pointer btn-ghost-themed"
+            className="px-4 py-2 rounded-[14px] text-xs font-body font-medium cursor-pointer btn-ghost-themed"
           >
             {t("general.close")}
           </button>

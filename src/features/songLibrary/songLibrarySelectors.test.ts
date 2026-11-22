@@ -156,6 +156,18 @@ describe("buildSongActivity", () => {
   });
 });
 
+test("buildSongActivity: a run left halfway counts as play, not as a best score", () => {
+  const songs = [makeSong("jingle", { title: "Jingle Bells" })];
+  const sessions = [
+    { ...makeSession("Jingle Bells", 1000, 100), completed: false },
+    makeSession("Jingle Bells", 2000, 65),
+  ];
+
+  expect(
+    buildSongActivity(songs, sessions, [], []).get("jingle"),
+  ).toMatchObject({ bestAccuracy: 65, playCount: 2 });
+});
+
 describe("buildImportedSongActivity", () => {
   test("matches imported songs from recents and completed sessions", () => {
     const importedSong = makeImportedSong();

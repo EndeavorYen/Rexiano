@@ -3,6 +3,7 @@ import { usePracticeStore } from "@renderer/stores/usePracticeStore";
 import { useSongStore } from "@renderer/stores/useSongStore";
 import { useTranslation } from "@renderer/i18n/useTranslation";
 import { applyPracticeSpeedChangeForSong } from "./practiceSetupControlActions";
+import "./play-feedback.css";
 
 /** Primary presets shown as big buttons */
 const mainPresets = [0.5, 1.0] as const;
@@ -51,31 +52,21 @@ export function SpeedSlider(): React.JSX.Element {
       data-testid="speed-slider-control"
     >
       <span
-        className="text-[11px] font-body font-medium shrink-0"
+        className="transport-label font-body shrink-0"
         style={{ color: "var(--color-text-muted)" }}
       >
         {t("practice.speed")}
       </span>
 
       {/* Main preset buttons */}
-      <div className="flex flex-wrap items-center gap-1">
+      <div className="segmented transport-segmented">
         {mainPresets.map((v) => {
           const isActive = Math.abs(speed - v) < 0.001;
           return (
             <button
               key={v}
               onClick={() => applySpeed(v)}
-              className="min-h-9 px-2.5 py-1 rounded-md text-[11px] font-body font-semibold tabular-nums cursor-pointer"
-              style={{
-                background: isActive
-                  ? "var(--color-accent)"
-                  : "var(--color-surface-alt)",
-                color: isActive
-                  ? "var(--color-on-accent)"
-                  : "var(--color-text)",
-                boxShadow: isActive ? "0 1px 4px rgba(0,0,0,0.12)" : "none",
-                transition: "all 0.15s ease",
-              }}
+              className="transport-seg-btn tabular-nums"
               aria-label={t("practice.setSpeedTo", {
                 speed: presetLabel(v),
               })}
@@ -98,7 +89,7 @@ export function SpeedSlider(): React.JSX.Element {
         className="speed-slider-input shrink-0"
         style={{
           accentColor: "var(--color-accent)",
-          width: 96,
+          width: 80,
           ...rangeProgressStyle(speedPercent, SPEED_MIN, SPEED_MAX),
         }}
         aria-label={t("practice.playbackSpeedPercentage")}
@@ -107,7 +98,7 @@ export function SpeedSlider(): React.JSX.Element {
 
       {!isPresetSpeed && (
         <span
-          className="text-[11px] font-mono tabular-nums shrink-0"
+          className="transport-label font-mono tabular-nums shrink-0"
           style={{ color: "var(--color-text)" }}
           data-testid="speed-slider-percent"
         >
